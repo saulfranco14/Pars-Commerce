@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pars Commerce
 
-## Getting Started
+Plataforma multi-tenant para negocios: productos, órdenes/tickets, sitio web por negocio y más.
 
-First, run the development server:
+## Stack
+
+- Next.js 15 (App Router)
+- TypeScript
+- Tailwind CSS
+- Supabase (Auth + Postgres + RLS)
+- Zustand
+
+## Configuración
+
+1. Copia las variables de entorno:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.local.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. En `.env.local` configura tu proyecto Supabase:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `NEXT_PUBLIC_SUPABASE_URL`: URL del proyecto (ej. https://xxx.supabase.co)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: clave anónima (anon key)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Aplica las migraciones en Supabase:
 
-## Learn More
+- En el dashboard de Supabase: SQL Editor, o con CLI `supabase db push`.
+- Ejecuta en orden los archivos en `supabase/migrations/`:
+  - `20260202000001_pars_commerce_core.sql`
+  - `20260202000002_pars_commerce_commerce.sql`
+  - `20260202000003_pars_commerce_seed_tenant.sql`
 
-To learn more about Next.js, take a look at the following resources:
+4. En Supabase Auth habilita Email (o el proveedor que uses). Opcional: desactiva "Confirm email" en desarrollo.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Desarrollo
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm install
+npm run dev
+```
 
-## Deploy on Vercel
+Abre [http://localhost:3000](http://localhost:3000).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Flujo actual
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Inicio**: enlace a Login y Dashboard.
+- **Registro**: crea cuenta (Supabase Auth); se crea perfil en `profiles`.
+- **Login**: inicia sesión; redirige a `/dashboard`.
+- **Dashboard**: requiere sesión. Si no hay negocios, permite "Crear negocio". Si hay, selector de negocio y acceso a:
+  - Productos (placeholder)
+  - Órdenes / Tickets (placeholder)
+  - Configuración (placeholder)
+
+Al crear un negocio se crean automáticamente el rol "owner", las páginas del sitio (inicio, productos, promociones, nosotros, contacto) y la membresía del usuario como owner.
+
+## Próximos pasos (plan)
+
+- API y UI de productos (CRUD, imágenes, inventario).
+- API y UI de órdenes (crear ticket, asignar, iniciar/completar trabajo, cobrar).
+- CMS del sitio web por tenant (editar páginas).
+- Sitio público por tenant (`/sitio/[slug]/`).
+- Integración MercadoPago (checkout y webhooks).
