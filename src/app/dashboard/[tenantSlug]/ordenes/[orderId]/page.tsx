@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { AddItemModal } from "@/components/orders/AddItemModal";
+import { formatOrderDate } from "@/lib/formatDate";
 
 interface OrderItem {
   id: string;
@@ -26,6 +27,11 @@ interface OrderDetail {
   total: number;
   created_at: string;
   assigned_to: string | null;
+  assigned_user?: {
+    id: string;
+    display_name: string | null;
+    email: string | null;
+  } | null;
   payment_method: string | null;
   items: OrderItem[];
 }
@@ -265,6 +271,18 @@ export default function OrdenDetallePage() {
           Orden {order.id.slice(0, 8)}
         </h1>
         <StatusBadge status={order.status} />
+        {order.assigned_user && (
+          <div className="flex items-center gap-2 rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700">
+            <div className="h-2 w-2 rounded-full bg-green-500" />
+            <span>
+              Asignado a:{" "}
+              <strong>
+                {order.assigned_user.display_name ||
+                  order.assigned_user.email?.split("@")[0]}
+              </strong>
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg border border-zinc-200 bg-white p-4">
@@ -345,7 +363,7 @@ export default function OrdenDetallePage() {
           </div>
         )}
         <p className="mt-3 text-sm text-zinc-500">
-          Creada: {new Date(order.created_at).toLocaleString()}
+          Creada: {formatOrderDate(order.created_at)}
         </p>
       </div>
 

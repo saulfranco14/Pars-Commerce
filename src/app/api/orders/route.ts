@@ -28,6 +28,7 @@ export async function GET(request: Request) {
         subtotal, discount, total, created_at, updated_at,
         created_by, assigned_to, completed_by, completed_at, paid_at,
         payment_method,
+        assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email),
         items:order_items(id, quantity, unit_price, subtotal, product:products(id, name, type))
       `
       )
@@ -53,7 +54,10 @@ export async function GET(request: Request) {
   let query = supabase
     .from("orders")
     .select(
-      "id, status, customer_name, customer_email, total, created_at, assigned_to"
+      `
+      id, status, customer_name, customer_email, total, created_at, assigned_to,
+      assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email)
+      `
     )
     .eq("tenant_id", tenantId)
     .order("created_at", { ascending: false });

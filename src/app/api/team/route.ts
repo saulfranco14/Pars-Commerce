@@ -128,19 +128,49 @@ export async function POST(request: Request) {
 
   let targetUserId = user_id;
   if (!targetUserId && email) {
+    const cleanEmail = email.trim().toLowerCase();
     const { data: profile } = await supabase
       .from("profiles")
       .select("id")
-      .eq("email", email.trim())
+      .eq("email", cleanEmail)
       .single();
-    targetUserId = profile?.id;
+
+    if (profile) {
+      targetUserId = profile.id;
+    } else {
+      // Auto-registro si no existe
+      const admin = createAdminClient();
+      const tempPassword = Math.random().toString(36).slice(-10);
+
+      const { data: authUser, error: signUpError } =
+        await admin.auth.admin.createUser({
+          email: cleanEmail,
+          password: tempPassword,
+          email_confirm: true,
+          user_metadata: {
+            display_name: cleanEmail.split("@")[0],
+          },
+        });
+
+      if (signUpError) {
+        return NextResponse.json(
+          { error: `Error al crear usuario: ${signUpError.message}` },
+          { status: 500 }
+        );
+      }
+
+      targetUserId = authUser.user.id;
+
+      // Nota: En un entorno real aquí enviaríamos un email con tempPassword
+      console.log(
+        `Usuario creado: ${cleanEmail} con password: ${tempPassword}`
+      );
+    }
   }
+
   if (!targetUserId) {
     return NextResponse.json(
-      {
-        error:
-          "No hay ningún usuario registrado con ese email. Debe registrarse primero en la plataforma.",
-      },
+      { error: "No se pudo identificar o crear al usuario." },
       { status: 400 }
     );
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -8,6 +8,7 @@ import { useAuthInitializer } from "@/hooks/useAuthInitializer";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { Menu } from "lucide-react";
 
 export default function DashboardLayout({
   children,
@@ -16,6 +17,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   useAuthInitializer();
   const profile = useSessionStore((s) => s.profile);
   const memberships = useTenantStore((s) => s.memberships);
@@ -31,6 +33,10 @@ export default function DashboardLayout({
     pathParts[1] !== "perfil"
       ? pathParts[1]
       : null;
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -55,7 +61,7 @@ export default function DashboardLayout({
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-100">
+      <div className="flex min-h-screen items-center justify-center bg-zinc-100">
         <p className="text-zinc-600">Cargando...</p>
       </div>
     );
@@ -63,18 +69,31 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-zinc-50">
-      <Sidebar tenantSlug={tenantSlug} />
-      <div className="flex flex-1 flex-col">
-        <header className="flex h-14 items-center justify-end border-b border-zinc-200 bg-white px-4">
+      <Sidebar
+        tenantSlug={tenantSlug}
+        mobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
+      />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 safe-area-inset-left">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 md:hidden"
+            aria-label="Abrir menú"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <div className="flex-1 md:hidden" />
           <button
             type="button"
             onClick={handleSignOut}
-            className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
+            className="min-h-[44px] rounded-lg px-3 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 md:min-h-0"
           >
             Salir
           </button>
         </header>
-        <main className="flex-1 px-4 py-6">
+        <main className="min-h-0 flex-1 px-4 py-4 sm:px-6 sm:py-6">
           {pathname === "/dashboard/crear-negocio" ||
           pathname === "/dashboard/perfil" ? (
             children
