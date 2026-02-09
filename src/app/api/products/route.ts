@@ -28,7 +28,7 @@ export async function GET(request: Request) {
     const { data: product, error: prodError } = await supabase
       .from("products")
       .select(
-        "id, name, slug, sku, description, price, unit, type, track_stock, is_public, image_url, created_at, updated_at"
+        "id, name, slug, sku, description, price, cost_price, commission_amount, unit, type, track_stock, is_public, image_url, created_at, updated_at"
       )
       .eq("id", productId)
       .single();
@@ -40,15 +40,29 @@ export async function GET(request: Request) {
       );
     }
 
-    const { data: inv } = await supabase
-      .from("product_inventory")
-      .select("quantity")
-      .eq("product_id", product.id)
-      .single();
+    const [invRes, imagesRes] = await Promise.all([
+      supabase
+        .from("product_inventory")
+        .select("quantity")
+        .eq("product_id", product.id)
+        .single(),
+      supabase
+        .from("product_images")
+        .select("id, url, position")
+        .eq("product_id", product.id)
+        .order("position", { ascending: true }),
+    ]);
+
+    const imageUrls = imagesRes.data?.length
+      ? imagesRes.data.map((r) => r.url)
+      : product.image_url
+      ? [product.image_url]
+      : [];
 
     return NextResponse.json({
       ...product,
-      stock: inv?.quantity ?? 0,
+      stock: invRes.data?.quantity ?? 0,
+      image_urls: imageUrls,
     });
   }
 
@@ -56,7 +70,7 @@ export async function GET(request: Request) {
   let query = supabase
     .from("products")
     .select(
-      "id, name, slug, sku, description, price, unit, type, track_stock, is_public, image_url, created_at"
+      "id, name, slug, sku, description, price, cost_price, commission_amount, unit, type, track_stock, is_public, image_url, created_at"
     )
     .eq("tenant_id", tid)
     .order("created_at", { ascending: false });
@@ -112,11 +126,14 @@ export async function POST(request: Request) {
     sku,
     description,
     price,
+    cost_price,
+    commission_amount,
     unit,
     type,
     track_stock,
     is_public,
     image_url,
+    image_urls,
   } = body as {
     tenant_id: string;
     name: string;
@@ -124,16 +141,20 @@ export async function POST(request: Request) {
     sku?: string;
     description?: string;
     price: number;
+    cost_price: number;
+    commission_amount?: number;
     unit?: string;
     type?: string;
     track_stock?: boolean;
     is_public?: boolean;
     image_url?: string;
+    image_urls?: string[];
+    theme?: string;
   };
 
-  if (!tenant_id || !name || !slug || price == null) {
+  if (!tenant_id || !name || !slug || price == null || cost_price == null) {
     return NextResponse.json(
-      { error: "tenant_id, name, slug and price are required" },
+      { error: "tenant_id, name, slug, price and cost_price are required" },
       { status: 400 }
     );
   }
@@ -144,6 +165,11 @@ export async function POST(request: Request) {
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "");
 
+  const urls = Array.isArray(image_urls)
+    ? image_urls.filter((u) => typeof u === "string" && u.trim())
+    : [];
+  const firstImage = urls[0] ?? image_url?.trim() ?? null;
+
   const { data: product, error: productError } = await supabase
     .from("products")
     .insert({
@@ -153,11 +179,14 @@ export async function POST(request: Request) {
       sku: sku?.trim() || null,
       description: description?.trim() || null,
       price: Number(price),
+      cost_price: Number(cost_price),
+      commission_amount:
+        commission_amount !== undefined ? Number(commission_amount) : null,
       unit: unit?.trim() || "unit",
       type: type?.trim() || "product",
       track_stock: track_stock ?? true,
       is_public: is_public ?? true,
-      image_url: image_url?.trim() || null,
+      image_url: firstImage,
     })
     .select("id, name, slug, price, created_at")
     .single();
@@ -184,6 +213,15 @@ export async function POST(request: Request) {
     );
   }
 
+  if (urls.length > 0) {
+    const rows = urls.map((url, i) => ({
+      product_id: product.id,
+      url: url.trim(),
+      position: i,
+    }));
+    await supabase.from("product_images").insert(rows);
+  }
+
   return NextResponse.json(product);
 }
 
@@ -206,11 +244,15 @@ export async function PATCH(request: Request) {
     sku,
     description,
     price,
+    cost_price,
+    commission_amount,
     unit,
     type,
     track_stock,
     is_public,
     image_url,
+    image_urls,
+    theme,
     stock,
   } = body as {
     product_id: string;
@@ -219,11 +261,14 @@ export async function PATCH(request: Request) {
     sku?: string;
     description?: string;
     price?: number;
+    cost_price?: number;
+    commission_amount?: number;
     unit?: string;
     type?: string;
     track_stock?: boolean;
     is_public?: boolean;
     image_url?: string;
+    image_urls?: string[];
     stock?: number;
   };
 
@@ -249,11 +294,22 @@ export async function PATCH(request: Request) {
   if (description !== undefined)
     updates.description = description?.trim() || null;
   if (price !== undefined) updates.price = Number(price);
+  if (cost_price !== undefined) updates.cost_price = Number(cost_price);
+  if (commission_amount !== undefined)
+    updates.commission_amount =
+      commission_amount !== null ? Number(commission_amount) : null;
   if (unit !== undefined) updates.unit = unit?.trim() || "unit";
   if (type !== undefined) updates.type = type?.trim() || "product";
   if (track_stock !== undefined) updates.track_stock = track_stock;
   if (is_public !== undefined) updates.is_public = is_public;
   if (image_url !== undefined) updates.image_url = image_url?.trim() || null;
+
+  const urls = Array.isArray(image_urls)
+    ? image_urls.filter((u) => typeof u === "string" && u.trim())
+    : null;
+  if (urls) {
+    updates.image_url = urls.length > 0 ? urls[0] : null;
+  }
 
   const { data: product, error } = await supabase
     .from("products")
@@ -270,6 +326,18 @@ export async function PATCH(request: Request) {
       );
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (urls) {
+    await supabase.from("product_images").delete().eq("product_id", product_id);
+    if (urls.length > 0) {
+      const rows = urls.map((url, i) => ({
+        product_id,
+        url: url.trim(),
+        position: i,
+      }));
+      await supabase.from("product_images").insert(rows);
+    }
   }
 
   if (typeof stock === "number" && stock >= 0) {

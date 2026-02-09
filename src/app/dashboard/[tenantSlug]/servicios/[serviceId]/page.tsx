@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
-import { ImageUpload } from "@/components/ImageUpload";
+import { MultiImageUpload } from "@/components/MultiImageUpload";
+import { serviceFormSchema } from "@/lib/serviceValidation";
 
 interface ServiceData {
   id: string;
@@ -13,11 +14,14 @@ interface ServiceData {
   sku: string | null;
   description: string | null;
   price: number;
+  cost_price: number;
+  commission_amount: number | null;
   unit: string;
   type: string;
   track_stock: boolean;
   is_public: boolean;
   image_url: string | null;
+  image_urls?: string[];
 }
 
 export default function EditarServicioPage() {
@@ -32,10 +36,13 @@ export default function EditarServicioPage() {
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [costPrice, setCostPrice] = useState("");
+  const [commissionAmount, setCommissionAmount] = useState("");
   const [sku, setSku] = useState("");
   const [isPublic, setIsPublic] = useState(true);
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
@@ -53,9 +60,13 @@ export default function EditarServicioPage() {
         setSlug(data.slug ?? "");
         setDescription(data.description ?? "");
         setPrice(String(data.price ?? ""));
+        setCostPrice(String(data.cost_price ?? ""));
+        setCommissionAmount(String(data.commission_amount ?? ""));
         setSku(data.sku ?? "");
         setIsPublic(data.is_public ?? true);
-        setImageUrl(data.image_url ?? "");
+        setImageUrls(
+          data.image_urls ?? (data.image_url ? [data.image_url] : [])
+        );
       })
       .catch(() => setFetchError("No se pudo cargar el servicio"))
       .finally(() => setLoading(false));
@@ -72,19 +83,62 @@ export default function EditarServicioPage() {
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
     setName(value);
-    if (!slug || slug === deriveSlug(name)) {
-      setSlug(deriveSlug(value));
-    }
+    if (!slug || slug === deriveSlug(name)) setSlug(deriveSlug(value));
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
     const priceNum = parseFloat(price.replace(",", "."));
-    if (Number.isNaN(priceNum) || priceNum < 0) {
-      setError("Precio no válido");
+    const costPriceNum = parseFloat(costPrice.replace(",", "."));
+    try {
+      serviceFormSchema.validateSync(
+        {
+          name: name.trim(),
+          slug: (slug.trim() || deriveSlug(name)).toLowerCase(),
+          description: description.trim() || undefined,
+          price: Number.isNaN(priceNum) ? undefined : priceNum,
+          cost_price: Number.isNaN(costPriceNum) ? undefined : costPriceNum,
+          sku: sku.trim() || undefined,
+        },
+        { abortEarly: false }
+      );
+    } catch (err) {
+      if (err instanceof Error && "inner" in err) {
+        const inner = (err as { inner: { path?: string; message: string }[] })
+          .inner;
+        const next: Record<string, string> = {};
+        for (const e of inner) if (e.path) next[e.path] = e.message;
+        setFieldErrors(next);
+        return;
+      }
+      setError(err instanceof Error ? err.message : "Revisa los campos");
       return;
     }
+    if (Number.isNaN(priceNum) || priceNum < 0) {
+      setFieldErrors({ price: "El precio debe ser mayor o igual a 0" });
+      return;
+    }
+    if (Number.isNaN(costPriceNum) || costPriceNum < 0) {
+      setFieldErrors({ cost_price: "El costo debe ser mayor o igual a 0" });
+      return;
+    }
+
+    const commissionNum =
+      commissionAmount.trim() === ""
+        ? undefined
+        : parseFloat(commissionAmount.replace(",", "."));
+    if (
+      commissionNum !== undefined &&
+      (Number.isNaN(commissionNum) || commissionNum < 0)
+    ) {
+      setFieldErrors({
+        commission_amount: "La comisión debe ser mayor o igual a 0",
+      });
+      return;
+    }
+
     setLoading(true);
     const res = await fetch("/api/products", {
       method: "PATCH",
@@ -92,13 +146,17 @@ export default function EditarServicioPage() {
       body: JSON.stringify({
         product_id: serviceId,
         name: name.trim(),
-        slug: slug.trim() || deriveSlug(name),
+        slug: (slug.trim() || deriveSlug(name)).toLowerCase(),
         description: description.trim() || undefined,
         price: priceNum,
+        cost_price: costPriceNum,
+        commission_amount: commissionNum,
         sku: sku.trim() || undefined,
-        image_url: imageUrl.trim() || undefined,
+        unit: "service",
         is_public: isPublic,
         type: "service",
+        track_stock: false,
+        image_urls: imageUrls.length > 0 ? imageUrls : undefined,
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -130,151 +188,241 @@ export default function EditarServicioPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md">
-      <div className="mb-4">
+    <div className="mx-auto flex max-w-4xl min-h-[calc(100vh-10rem)] flex-col gap-4">
+      <div className="shrink-0 border-b border-zinc-200 pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/servicios`}
-          className="text-sm text-zinc-600 hover:text-zinc-900"
+          className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
         >
           ← Volver a servicios
         </Link>
-      </div>
-      <div className="border-l-4 border-teal-500 pl-3">
-        <h1 className="text-2xl font-semibold text-zinc-900">
+        <h1 className="mt-1 text-xl font-semibold text-zinc-900 sm:text-2xl">
           Editar servicio
         </h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Modifica los datos del servicio.
+        <p className="mt-0.5 text-sm text-zinc-500">
+          Modifica los datos del servicio
         </p>
-        <span className="mt-2 inline-block rounded bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800">
-          Servicio
-        </span>
       </div>
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        {error && (
-          <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <form
+          onSubmit={handleSubmit}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
+          <div className="flex-1 overflow-y-auto p-6 md:p-8">
+            {error && (
+              <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+            <div className="flex flex-col gap-8 md:flex-row md:items-start">
+              <div className="min-w-0 flex-1">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div className="space-y-4 md:col-span-2 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
+                    <div>
+                      <label
+                        htmlFor="name"
+                        className="block text-sm font-medium text-zinc-700"
+                      >
+                        Nombre *
+                      </label>
+                      <input
+                        id="name"
+                        type="text"
+                        value={name}
+                        onChange={handleNameChange}
+                        className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                        placeholder="Ej. Lavado básico"
+                      />
+                      {fieldErrors.name && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {fieldErrors.name}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="slug"
+                        className="block text-sm font-medium text-zinc-700"
+                      >
+                        Slug (URL) *
+                      </label>
+                      <input
+                        id="slug"
+                        type="text"
+                        value={slug}
+                        onChange={(e) => setSlug(e.target.value)}
+                        className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                        placeholder="lavado-basico"
+                      />
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Minúsculas, números y guiones.
+                      </p>
+                      {fieldErrors.slug && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {fieldErrors.slug}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="price"
+                      className="block text-sm font-medium text-zinc-700"
+                    >
+                      Precio de venta *
+                    </label>
+                    <input
+                      id="price"
+                      type="text"
+                      inputMode="decimal"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                      placeholder="0.00"
+                    />
+                    {fieldErrors.price && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {fieldErrors.price}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="cost_price"
+                      className="block text-sm font-medium text-zinc-700"
+                    >
+                      Costo del servicio *
+                    </label>
+                    <input
+                      id="cost_price"
+                      type="text"
+                      inputMode="decimal"
+                      value={costPrice}
+                      onChange={(e) => setCostPrice(e.target.value)}
+                      className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                      placeholder="0.00"
+                    />
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Cuánto te cuesta este servicio (para calcular ganancias)
+                    </p>
+                    {fieldErrors.cost_price && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {fieldErrors.cost_price}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="sku"
+                      className="block text-sm font-medium text-zinc-700"
+                    >
+                      SKU (opcional)
+                    </label>
+                    <input
+                      id="sku"
+                      type="text"
+                      value={sku}
+                      onChange={(e) => setSku(e.target.value)}
+                      className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                      placeholder="Ej. SVC-001"
+                    />
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Código único en inventario.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="commission_amount"
+                      className="block text-sm font-medium text-zinc-700"
+                    >
+                      Comisión por unidad (opcional)
+                    </label>
+                    <input
+                      id="commission_amount"
+                      type="text"
+                      inputMode="decimal"
+                      value={commissionAmount}
+                      onChange={(e) => setCommissionAmount(e.target.value)}
+                      className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                      placeholder="0.00"
+                    />
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Comisión que se pagará por cada servicio realizado
+                    </p>
+                    {fieldErrors.commission_amount && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {fieldErrors.commission_amount}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-6 md:col-span-2">
+                    <label className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={isPublic}
+                        onChange={(e) => setIsPublic(e.target.checked)}
+                        className="h-4 w-4 rounded border-zinc-300"
+                      />
+                      <span className="text-sm text-zinc-700">
+                        Visible en sitio público
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label
+                      htmlFor="description"
+                      className="block text-sm font-medium text-zinc-700"
+                    >
+                      Descripción (opcional)
+                    </label>
+                    <textarea
+                      id="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      rows={2}
+                      className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                      placeholder="Descripción del servicio"
+                    />
+                  </div>
+                </div>
+              </div>
+              {activeTenant && (
+                <div className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 md:w-72">
+                  <MultiImageUpload
+                    tenantId={activeTenant.id}
+                    productId={serviceId}
+                    urls={imageUrls}
+                    onChange={setImageUrls}
+                  />
+                </div>
+              )}
+            </div>
           </div>
-        )}
-        <div>
-          <label
-            htmlFor="name"
-            className="block text-sm font-medium text-zinc-700"
-          >
-            Nombre
-          </label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={handleNameChange}
-            required
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
-            placeholder="Ej. Lavado básico"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="slug"
-            className="block text-sm font-medium text-zinc-700"
-          >
-            Slug (URL)
-          </label>
-          <input
-            id="slug"
-            type="text"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
-            placeholder="lavado-basico"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="description"
-            className="block text-sm font-medium text-zinc-700"
-          >
-            Descripción (opcional)
-          </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
-            placeholder="Descripción del servicio"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="price"
-            className="block text-sm font-medium text-zinc-700"
-          >
-            Precio
-          </label>
-          <input
-            id="price"
-            type="text"
-            inputMode="decimal"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            required
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
-            placeholder="0.00"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="sku"
-            className="block text-sm font-medium text-zinc-700"
-          >
-            SKU (opcional)
-          </label>
-          <input
-            id="sku"
-            type="text"
-            value={sku}
-            onChange={(e) => setSku(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
-            placeholder="Ej. SVC-001"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            id="isPublic"
-            type="checkbox"
-            checked={isPublic}
-            onChange={(e) => setIsPublic(e.target.checked)}
-            className="h-4 w-4 rounded border-zinc-300"
-          />
-          <label htmlFor="isPublic" className="text-sm text-zinc-700">
-            Visible en sitio público
-          </label>
-        </div>
-        {activeTenant && (
-          <ImageUpload
-            tenantId={activeTenant.id}
-            productId={serviceId}
-            currentUrl={imageUrl || null}
-            onUploaded={setImageUrl}
-          />
-        )}
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-md bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 disabled:opacity-50"
-          >
-            {loading ? "Guardando..." : "Guardar"}
-          </button>
-          <Link
-            href={`/dashboard/${tenantSlug}/servicios`}
-            className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-          >
-            Cancelar
-          </Link>
-        </div>
-      </form>
+
+          <div className="shrink-0 border-t border-zinc-200 bg-white px-6 py-4 md:px-8">
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="submit"
+                disabled={loading}
+                className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+              >
+                {loading ? "Guardando..." : "Guardar"}
+              </button>
+              <Link
+                href={`/dashboard/${tenantSlug}/servicios`}
+                className="rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+              >
+                Cancelar
+              </Link>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

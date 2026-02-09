@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
+import { Pencil, Trash2 } from "lucide-react";
+import { ConfirmModal } from "@/components/ConfirmModal";
 
 interface ServiceRow {
   id: string;
@@ -11,8 +13,10 @@ interface ServiceRow {
   slug: string;
   sku: string | null;
   price: number;
+  unit: string;
   type: string;
   image_url: string | null;
+  theme: string | null;
   stock: number;
   created_at: string;
 }
@@ -25,6 +29,9 @@ export default function ServiciosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [serviceToDelete, setServiceToDelete] = useState<ServiceRow | null>(
+    null
+  );
 
   useEffect(() => {
     if (!activeTenant) {
@@ -47,19 +54,27 @@ export default function ServiciosPage() {
       .finally(() => setLoading(false));
   }, [activeTenant?.id]);
 
-  async function handleDelete(id: string) {
-    if (!confirm("¿Eliminar este servicio?")) return;
+  function openDeleteModal(s: ServiceRow) {
+    setServiceToDelete(s);
+  }
+
+  function closeDeleteModal() {
+    if (!deletingId) setServiceToDelete(null);
+  }
+
+  async function handleDeleteConfirm() {
+    if (!serviceToDelete) return;
+    const id = serviceToDelete.id;
     setDeletingId(id);
     try {
       const res = await fetch(
         `/api/products?product_id=${encodeURIComponent(id)}`,
-        {
-          method: "DELETE",
-        }
+        { method: "DELETE" }
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Error al eliminar");
       setServices((prev) => prev.filter((s) => s.id !== id));
+      setServiceToDelete(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al eliminar");
     } finally {
@@ -77,23 +92,20 @@ export default function ServiciosPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between border-l-4 border-teal-500 pl-3">
-        <h1 className="text-2xl font-semibold text-zinc-900">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-semibold text-zinc-900 sm:text-2xl">
           Servicios
-          <span className="ml-2 rounded bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800">
-            Catálogo de servicios
-          </span>
         </h1>
         <Link
           href={`/dashboard/${tenantSlug}/servicios/nuevo`}
-          className="rounded-md bg-teal-700 px-3 py-2 text-sm font-medium text-white hover:bg-teal-800"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 sm:min-h-0"
         >
           Nuevo servicio
         </Link>
       </div>
 
       {error && (
-        <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -101,82 +113,170 @@ export default function ServiciosPage() {
       {loading ? (
         <p className="text-sm text-zinc-500">Cargando servicios...</p>
       ) : services.length === 0 ? (
-        <p className="text-sm text-zinc-500">
-          No hay servicios. Crea uno con &quot;Nuevo servicio&quot;.
-        </p>
+        <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center">
+          <p className="text-sm text-zinc-500">
+            No hay servicios. Crea uno con &quot;Nuevo servicio&quot;.
+          </p>
+          <Link
+            href={`/dashboard/${tenantSlug}/servicios/nuevo`}
+            className="mt-4 inline-block rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+          >
+            Crear primer servicio
+          </Link>
+        </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-teal-200 bg-white">
-          <table className="min-w-full divide-y divide-zinc-200">
-            <thead className="bg-teal-50">
-              <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-600">
-                  Imagen
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-600">
-                  Nombre
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-600">
-                  SKU
-                </th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-zinc-600">
-                  Precio
-                </th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-zinc-600">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-200">
-              {services.map((s) => (
-                <tr key={s.id} className="bg-white">
-                  <td className="px-4 py-2">
+        <>
+          <div className="space-y-3 md:hidden">
+            {services.map((s) => (
+              <div
+                key={s.id}
+                className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+              >
+                <div className="flex gap-3">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-zinc-100">
                     {s.image_url ? (
                       <img
                         src={s.image_url}
                         alt=""
-                        className="h-10 w-10 rounded object-cover"
+                        className="h-full w-full object-cover"
                       />
                     ) : (
-                      <span className="text-xs text-zinc-400">—</span>
+                      <span className="flex h-full w-full items-center justify-center text-xs text-zinc-400">
+                        —
+                      </span>
                     )}
-                  </td>
-                  <td className="px-4 py-2">
-                    <span className="rounded bg-teal-100 px-1.5 py-0.5 text-xs font-medium text-teal-800">
-                      Servicio
-                    </span>
-                    <span className="ml-2 text-sm font-medium text-zinc-900">
-                      {s.name}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 text-sm text-zinc-600">
-                    {s.sku ?? "—"}
-                  </td>
-                  <td className="px-4 py-2 text-right text-sm text-zinc-900">
-                    ${Number(s.price).toFixed(2)}
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <Link
-                      href={`/dashboard/${tenantSlug}/servicios/${s.id}`}
-                      className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
-                    >
-                      Editar
-                    </Link>
-                    {" · "}
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(s.id)}
-                      disabled={deletingId === s.id}
-                      className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
-                    >
-                      {deletingId === s.id ? "..." : "Eliminar"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-zinc-900">{s.name}</p>
+                    {s.theme && (
+                      <p className="text-xs text-zinc-500">Tema: {s.theme}</p>
+                    )}
+                    <p className="mt-1 text-sm font-medium text-zinc-900">
+                      ${Number(s.price).toFixed(2)}
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      {s.sku ? `SKU: ${s.sku}` : "Sin SKU"}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2 border-t border-zinc-100 pt-3">
+                  <Link
+                    href={`/dashboard/${tenantSlug}/servicios/${s.id}`}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-200 bg-white py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Editar
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => openDeleteModal(s)}
+                    disabled={deletingId === s.id}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    {deletingId === s.id ? "..." : "Eliminar"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm md:block">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-zinc-200">
+                <thead className="bg-zinc-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      Imagen
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      Nombre
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      SKU
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      Precio
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-200 bg-white">
+                  {services.map((s) => (
+                    <tr key={s.id} className="hover:bg-zinc-50/50">
+                      <td className="px-4 py-3">
+                        {s.image_url ? (
+                          <img
+                            src={s.image_url}
+                            alt=""
+                            className="h-12 w-12 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <span className="text-xs text-zinc-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-medium text-zinc-900">
+                            {s.name}
+                          </span>
+                          {s.theme && (
+                            <span className="text-xs text-zinc-500">
+                              Tema: {s.theme}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-zinc-600">
+                        {s.sku ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-medium text-zinc-900">
+                        ${Number(s.price).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-2">
+                          <Link
+                            href={`/dashboard/${tenantSlug}/servicios/${s.id}`}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            Editar
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => openDeleteModal(s)}
+                            disabled={deletingId === s.id}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            {deletingId === s.id ? "..." : "Eliminar"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
+
+      <ConfirmModal
+        isOpen={serviceToDelete !== null}
+        onClose={closeDeleteModal}
+        onConfirm={handleDeleteConfirm}
+        title="Eliminar servicio"
+        message={
+          serviceToDelete
+            ? `¿Eliminar "${serviceToDelete.name}"? Esta acción no se puede deshacer.`
+            : ""
+        }
+        confirmLabel="Eliminar"
+        confirmDanger
+        loading={deletingId !== null}
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { AddItemModal } from "@/components/orders/AddItemModal";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { formatOrderDate } from "@/lib/formatDate";
 
 interface OrderItem {
@@ -60,6 +61,8 @@ export default function OrdenDetallePage() {
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [cancelOrderOpen, setCancelOrderOpen] = useState(false);
+  const [itemToRemove, setItemToRemove] = useState<OrderItem | null>(null);
 
   function fetchOrder() {
     return fetch(`/api/orders?order_id=${encodeURIComponent(orderId)}`)
@@ -209,8 +212,14 @@ export default function OrdenDetallePage() {
     }
   }
 
-  async function handleRemoveItem(itemId: string) {
-    if (!confirm("¿Quitar este item?")) return;
+  function openRemoveItemModal(item: OrderItem) {
+    setItemToRemove(item);
+  }
+
+  async function handleRemoveItemConfirm() {
+    if (!itemToRemove) return;
+    const itemId = itemToRemove.id;
+    setItemToRemove(null);
     setActionLoading(true);
     setError(null);
     try {
@@ -226,6 +235,16 @@ export default function OrdenDetallePage() {
     } finally {
       setActionLoading(false);
     }
+  }
+
+  function openCancelOrderModal() {
+    setCancelOrderOpen(true);
+  }
+
+  async function handleCancelOrderConfirm() {
+    if (!order) return;
+    setCancelOrderOpen(false);
+    await handleStatusChange("cancelled");
   }
 
   if (error && !order) {
@@ -250,46 +269,44 @@ export default function OrdenDetallePage() {
   const items = order.items ?? [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-4xl space-y-6">
+      <div className="shrink-0 border-b border-zinc-200 pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/ordenes`}
-          className="text-sm text-zinc-600 hover:text-zinc-900"
+          className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
         >
           ← Volver a órdenes
         </Link>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <h1 className="text-xl font-semibold text-zinc-900 sm:text-2xl">
+            Orden {order.id.slice(0, 8)}
+          </h1>
+          <StatusBadge status={order.status} />
+          {order.assigned_user && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700">
+              <span className="h-2 w-2 rounded-full bg-green-500" />
+              {order.assigned_user.display_name ||
+                order.assigned_user.email?.split("@")[0]}
+            </span>
+          )}
+        </div>
+        <p className="mt-1 text-sm text-zinc-500">
+          Creada: {formatOrderDate(order.created_at)}
+        </p>
       </div>
 
       {error && (
-        <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-4">
-        <h1 className="text-2xl font-semibold text-zinc-900">
-          Orden {order.id.slice(0, 8)}
-        </h1>
-        <StatusBadge status={order.status} />
-        {order.assigned_user && (
-          <div className="flex items-center gap-2 rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700">
-            <div className="h-2 w-2 rounded-full bg-green-500" />
-            <span>
-              Asignado a:{" "}
-              <strong>
-                {order.assigned_user.display_name ||
-                  order.assigned_user.email?.split("@")[0]}
-              </strong>
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="rounded-lg border border-zinc-200 bg-white p-4">
+      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <h2 className="text-sm font-medium text-zinc-900">Cliente</h2>
         {!editingCustomer ? (
           <>
-            <p className="text-sm text-zinc-600">
-              Cliente: {order.customer_name || order.customer_email || "—"}
+            <p className="mt-2 text-sm text-zinc-600">
+              {order.customer_name || order.customer_email || "—"}
             </p>
             {order.customer_phone && (
               <p className="text-sm text-zinc-600">
@@ -307,7 +324,7 @@ export default function OrdenDetallePage() {
             )}
           </>
         ) : (
-          <div className="space-y-2">
+          <div className="mt-2 space-y-1">
             <label className="block text-xs font-medium text-zinc-600">
               Nombre
             </label>
@@ -315,35 +332,35 @@ export default function OrdenDetallePage() {
               type="text"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              className="block w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm text-zinc-900"
+              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               placeholder="Nombre del cliente"
             />
-            <label className="block text-xs font-medium text-zinc-600">
+            <label className="mt-3 block text-xs font-medium text-zinc-600">
               Email
             </label>
             <input
               type="email"
               value={customerEmail}
               onChange={(e) => setCustomerEmail(e.target.value)}
-              className="block w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm text-zinc-900"
+              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               placeholder="cliente@ejemplo.com"
             />
-            <label className="block text-xs font-medium text-zinc-600">
+            <label className="mt-3 block text-xs font-medium text-zinc-600">
               Teléfono
             </label>
             <input
               type="tel"
               value={customerPhone}
               onChange={(e) => setCustomerPhone(e.target.value)}
-              className="block w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm text-zinc-900"
+              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               placeholder="555 123 4567"
             />
-            <div className="flex gap-2 pt-2">
+            <div className="mt-4 flex gap-2">
               <button
                 type="button"
                 onClick={handleSaveCustomer}
                 disabled={actionLoading}
-                className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+                className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
               >
                 Guardar
               </button>
@@ -355,21 +372,18 @@ export default function OrdenDetallePage() {
                   setCustomerEmail(order.customer_email ?? "");
                   setCustomerPhone(order.customer_phone ?? "");
                 }}
-                className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
               >
                 Cancelar
               </button>
             </div>
           </div>
         )}
-        <p className="mt-3 text-sm text-zinc-500">
-          Creada: {formatOrderDate(order.created_at)}
-        </p>
       </div>
 
       {(order.status === "draft" || order.status === "assigned") && (
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-          <p className="mb-2 text-sm font-medium text-zinc-900">
+        <div className="rounded-xl border border-zinc-200 bg-zinc-50/50 p-5 shadow-sm">
+          <p className="mb-3 text-sm font-medium text-zinc-900">
             {order.assigned_to
               ? "Orden asignada. Puedes cambiar la asignación o iniciar el trabajo."
               : "Asigna a un miembro del equipo (opcional). Luego inicia la orden."}
@@ -378,7 +392,7 @@ export default function OrdenDetallePage() {
             <select
               value={assignTo}
               onChange={(e) => setAssignTo(e.target.value)}
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+              className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
             >
               <option value="">Sin asignar</option>
               {team.map((t) => (
@@ -391,7 +405,7 @@ export default function OrdenDetallePage() {
               type="button"
               onClick={handleAssign}
               disabled={actionLoading}
-              className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+              className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
             >
               {order.assigned_to && assignTo ? "Cambiar asignación" : "Asignar"}
             </button>
@@ -400,7 +414,7 @@ export default function OrdenDetallePage() {
                 type="button"
                 onClick={handleUnassign}
                 disabled={actionLoading}
-                className="rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
               >
                 Quitar asignación
               </button>
@@ -409,116 +423,117 @@ export default function OrdenDetallePage() {
         </div>
       )}
 
-      <div>
-        <div className="flex items-center justify-between">
+      <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-zinc-200 p-4">
           <h2 className="text-lg font-medium text-zinc-900">Items</h2>
           {canEditItems && activeTenant && (
             <button
               type="button"
               onClick={() => setAddItemOpen(true)}
-              className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+              className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800"
             >
               + Agregar item
             </button>
           )}
         </div>
-        {items.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-500">
-            No hay items. Agrega productos o servicios.
-          </p>
-        ) : (
-          <div className="mt-2 overflow-hidden rounded-lg border border-zinc-200">
-            <table className="min-w-full divide-y divide-zinc-200">
-              <thead className="bg-zinc-50">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-zinc-600">
-                    Item
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-zinc-600">
-                    Tipo
-                  </th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-zinc-600">
-                    Cantidad
-                  </th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-zinc-600">
-                    P. unit.
-                  </th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-zinc-600">
-                    Subtotal
-                  </th>
-                  {canEditItems && (
-                    <th className="px-4 py-2 text-right text-xs font-medium text-zinc-600">
-                      Acciones
+        <div className="p-4">
+          {items.length === 0 ? (
+            <p className="text-sm text-zinc-500">
+              No hay items. Agrega productos o servicios.
+            </p>
+          ) : (
+            <div className="overflow-hidden rounded-lg border border-zinc-200">
+              <table className="min-w-full divide-y divide-zinc-200">
+                <thead className="bg-zinc-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      Item
                     </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-200 bg-white">
-                {items.map((item) => (
-                  <tr key={item.id}>
-                    <td className="px-4 py-2 text-sm text-zinc-900">
-                      {item.product?.name ?? "—"}
-                    </td>
-                    <td className="px-4 py-2">
-                      {item.product?.type === "service" ? (
-                        <span className="rounded bg-teal-100 px-1.5 py-0.5 text-xs font-medium text-teal-800">
-                          Servicio
-                        </span>
-                      ) : (
-                        <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-medium text-zinc-700">
-                          Producto
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2 text-right text-sm text-zinc-600">
-                      {item.quantity}
-                    </td>
-                    <td className="px-4 py-2 text-right text-sm text-zinc-600">
-                      ${Number(item.unit_price).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-2 text-right text-sm text-zinc-900">
-                      ${Number(item.subtotal).toFixed(2)}
-                    </td>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      Tipo
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      Cantidad
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      P. unit.
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      Subtotal
+                    </th>
                     {canEditItems && (
-                      <td className="px-4 py-2 text-right">
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveItem(item.id)}
-                          disabled={actionLoading}
-                          className="text-sm text-red-600 hover:text-red-700 disabled:opacity-50"
-                        >
-                          Quitar
-                        </button>
-                      </td>
+                      <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
+                        Acciones
+                      </th>
                     )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      <div className="rounded-lg border border-zinc-200 bg-white p-4">
-        <div className="flex justify-end gap-8 text-sm">
-          <span className="text-zinc-600">Subtotal:</span>
-          <span className="font-medium text-zinc-900">
-            ${Number(order.subtotal).toFixed(2)}
-          </span>
+                </thead>
+                <tbody className="divide-y divide-zinc-200 bg-white">
+                  {items.map((item) => (
+                    <tr key={item.id} className="hover:bg-zinc-50/50">
+                      <td className="px-4 py-3 text-sm text-zinc-900">
+                        {item.product?.name ?? "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        {item.product?.type === "service" ? (
+                          <span className="rounded bg-teal-100 px-1.5 py-0.5 text-xs font-medium text-teal-800">
+                            Servicio
+                          </span>
+                        ) : (
+                          <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-medium text-zinc-700">
+                            Producto
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm text-zinc-600">
+                        {item.quantity}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm text-zinc-600">
+                        ${Number(item.unit_price).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-medium text-zinc-900">
+                        ${Number(item.subtotal).toFixed(2)}
+                      </td>
+                      {canEditItems && (
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => openRemoveItemModal(item)}
+                            disabled={actionLoading}
+                            className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+                          >
+                            Quitar
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-        {Number(order.discount) > 0 && (
+        <div className="border-t border-zinc-200 px-4 py-3">
           <div className="flex justify-end gap-8 text-sm">
-            <span className="text-zinc-600">Descuento:</span>
+            <span className="text-zinc-600">Subtotal:</span>
             <span className="font-medium text-zinc-900">
-              -${Number(order.discount).toFixed(2)}
+              ${Number(order.subtotal).toFixed(2)}
             </span>
           </div>
-        )}
-        <div className="mt-2 flex justify-end gap-8 text-base font-medium">
-          <span className="text-zinc-600">Total:</span>
-          <span className="font-semibold text-zinc-900">
-            ${Number(order.total).toFixed(2)}
-          </span>
+          {Number(order.discount) > 0 && (
+            <div className="mt-1 flex justify-end gap-8 text-sm">
+              <span className="text-zinc-600">Descuento:</span>
+              <span className="font-medium text-zinc-900">
+                -${Number(order.discount).toFixed(2)}
+              </span>
+            </div>
+          )}
+          <div className="mt-2 flex justify-end gap-8 text-base font-medium">
+            <span className="text-zinc-600">Total:</span>
+            <span className="font-semibold text-zinc-900">
+              ${Number(order.total).toFixed(2)}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -528,7 +543,7 @@ export default function OrdenDetallePage() {
             type="button"
             onClick={() => handleStatusChange("in_progress")}
             disabled={actionLoading}
-            className="rounded-md bg-zinc-800 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
+            className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
           >
             Iniciar sin asignar
           </button>
@@ -538,7 +553,7 @@ export default function OrdenDetallePage() {
             type="button"
             onClick={() => handleStatusChange("in_progress")}
             disabled={actionLoading}
-            className="rounded-md bg-zinc-800 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
+            className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
           >
             Iniciar trabajo
           </button>
@@ -548,7 +563,7 @@ export default function OrdenDetallePage() {
             type="button"
             onClick={() => handleStatusChange("completed")}
             disabled={actionLoading}
-            className="rounded-md bg-green-700 px-3 py-2 text-sm font-medium text-white hover:bg-green-600 disabled:opacity-50"
+            className="rounded-lg bg-green-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-600 disabled:opacity-50"
           >
             Marcar completado
           </button>
@@ -559,7 +574,7 @@ export default function OrdenDetallePage() {
               type="button"
               onClick={() => handleStatusChange("pending_payment")}
               disabled={actionLoading}
-              className="rounded-md bg-orange-600 px-3 py-2 text-sm font-medium text-white hover:bg-orange-500 disabled:opacity-50"
+              className="rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-orange-500 disabled:opacity-50"
               title="Pasar a pago pendiente; con Mercado Pago se generará el link para que el cliente pague"
             >
               Generar cobro (link de pago)
@@ -568,7 +583,7 @@ export default function OrdenDetallePage() {
               type="button"
               onClick={() => handleStatusChange("paid")}
               disabled={actionLoading}
-              className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+              className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
             >
               Cobro directo
             </button>
@@ -576,7 +591,7 @@ export default function OrdenDetallePage() {
         )}
         {order.status === "pending_payment" && (
           <>
-            <div className="w-full rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <div className="w-full rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
               <p className="font-medium">Pago pendiente</p>
               <p className="mt-1 text-amber-800">
                 El cliente debe pagar. Cuando integres Mercado Pago, aquí se
@@ -592,7 +607,7 @@ export default function OrdenDetallePage() {
               type="button"
               onClick={() => handleStatusChange("paid")}
               disabled={actionLoading}
-              className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+              className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
             >
               Marcar como pagado
             </button>
@@ -601,9 +616,9 @@ export default function OrdenDetallePage() {
         {["draft", "assigned", "in_progress"].includes(order.status) && (
           <button
             type="button"
-            onClick={() => handleStatusChange("cancelled")}
+            onClick={openCancelOrderModal}
             disabled={actionLoading}
-            className="rounded-md border border-red-300 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+            className="rounded-lg border border-red-300 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
           >
             Cancelar orden
           </button>
@@ -619,6 +634,32 @@ export default function OrdenDetallePage() {
           onAdded={() => fetchOrder()}
         />
       )}
+
+      <ConfirmModal
+        isOpen={cancelOrderOpen}
+        onClose={() => setCancelOrderOpen(false)}
+        onConfirm={handleCancelOrderConfirm}
+        title="Cancelar orden"
+        message="¿Cancelar esta orden? El estado pasará a cancelada y no podrás revertirlo."
+        confirmLabel="Cancelar orden"
+        confirmDanger
+        loading={actionLoading}
+      />
+
+      <ConfirmModal
+        isOpen={itemToRemove !== null}
+        onClose={() => setItemToRemove(null)}
+        onConfirm={handleRemoveItemConfirm}
+        title="Quitar item"
+        message={
+          itemToRemove?.product?.name
+            ? `¿Quitar "${itemToRemove.product.name}" de la orden?`
+            : "¿Quitar este item de la orden?"
+        }
+        confirmLabel="Quitar"
+        confirmDanger
+        loading={actionLoading}
+      />
     </div>
   );
 }

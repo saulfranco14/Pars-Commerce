@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 
 interface ImageUploadProps {
   tenantId: string;
-  productId: string;
+  productId?: string;
   currentUrl: string | null;
   onUploaded: (url: string) => void;
   disabled?: boolean;

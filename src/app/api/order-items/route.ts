@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
   const { data: product, error: productError } = await supabase
     .from("products")
-    .select("id, price, track_stock")
+    .select("id, price, track_stock, type")
     .eq("id", product_id)
     .eq("tenant_id", order.tenant_id)
     .single();
@@ -60,6 +60,22 @@ export async function POST(request: Request) {
       { error: "Product not found or not in this tenant" },
       { status: 404 }
     );
+  }
+
+  if (product.track_stock && product.type === "product") {
+    const { data: inventory } = await supabase
+      .from("product_inventory")
+      .select("quantity")
+      .eq("product_id", product_id)
+      .single();
+
+    const availableStock = inventory?.quantity ?? 0;
+    if (availableStock < qty) {
+      return NextResponse.json(
+        { error: `Stock insuficiente. Disponible: ${availableStock}` },
+        { status: 409 }
+      );
+    }
   }
 
   const unitPrice = Number(product.price);

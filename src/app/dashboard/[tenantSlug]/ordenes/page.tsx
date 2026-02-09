@@ -91,7 +91,7 @@ export default function OrdenesPage() {
         </Link>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50/80 p-4">
         <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-zinc-700 sm:flex-none">
           Estado:
           <select
@@ -130,7 +130,7 @@ export default function OrdenesPage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -138,92 +138,104 @@ export default function OrdenesPage() {
       {loading ? (
         <p className="text-sm text-zinc-500">Cargando órdenes...</p>
       ) : orders.length === 0 ? (
-        <p className="text-sm text-zinc-500">
-          No hay órdenes. Crea una con &quot;Nueva orden&quot;.
-        </p>
+        <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center shadow-sm">
+          <p className="text-sm text-zinc-500">
+            No hay órdenes. Crea una con &quot;Nueva orden&quot;.
+          </p>
+          <Link
+            href={`/dashboard/${tenantSlug}/ordenes/nueva`}
+            className="mt-4 inline-block rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+          >
+            Crear primera orden
+          </Link>
+        </div>
       ) : (
         <>
-          <div className="hidden overflow-x-auto rounded-lg border border-zinc-200 bg-white md:block">
-            <table className="min-w-full divide-y divide-zinc-200">
-              <thead className="bg-zinc-50">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-zinc-600">
-                    Cliente
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-zinc-600">
-                    Contenido
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-zinc-600">
-                    Asignado
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-zinc-600">
-                    Estado
-                  </th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-zinc-600">
-                    Total
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-zinc-600">
-                    Fecha
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-200">
-                {orders.map((o) => {
-                  const tipo = orderContentType(o);
-                  return (
-                    <tr
-                      key={o.id}
-                      className="cursor-pointer bg-white hover:bg-zinc-50"
-                      onClick={() =>
-                        router.push(`/dashboard/${tenantSlug}/ordenes/${o.id}`)
-                      }
-                    >
-                      <td className="px-4 py-2 text-sm text-zinc-900">
-                        {o.customer_name || o.customer_email || "—"}
-                      </td>
-                      <td className="px-4 py-2">
-                        {tipo === "productos" && (
-                          <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-medium text-zinc-700">
-                            Productos
-                          </span>
-                        )}
-                        {tipo === "servicios" && (
-                          <span className="rounded bg-teal-100 px-1.5 py-0.5 text-xs font-medium text-teal-800">
-                            Servicios
-                          </span>
-                        )}
-                        {tipo === "mixto" && (
-                          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800">
-                            Mixto
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2">
-                        {o.assigned_user ? (
-                          <span className="text-sm text-zinc-700">
-                            {o.assigned_user.display_name ||
-                              o.assigned_user.email?.split("@")[0]}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-zinc-400 italic">
-                            Sin asignar
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2">
-                        <StatusBadge status={o.status} />
-                      </td>
-                      <td className="px-4 py-2 text-right text-sm text-zinc-900">
-                        ${Number(o.total).toFixed(2)}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-zinc-500">
-                        {formatOrderDate(o.created_at)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="hidden overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm md:block">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-zinc-200">
+                <thead className="bg-zinc-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      Cliente
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      Contenido
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      Asignado
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      Estado
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      Total
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      Fecha
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-200 bg-white">
+                  {orders.map((o) => {
+                    const tipo = orderContentType(o);
+                    return (
+                      <tr
+                        key={o.id}
+                        className="cursor-pointer hover:bg-zinc-50/50"
+                        onClick={() =>
+                          router.push(
+                            `/dashboard/${tenantSlug}/ordenes/${o.id}`
+                          )
+                        }
+                      >
+                        <td className="px-4 py-3 text-sm text-zinc-900">
+                          {o.customer_name || o.customer_email || "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          {tipo === "productos" && (
+                            <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-medium text-zinc-700">
+                              Productos
+                            </span>
+                          )}
+                          {tipo === "servicios" && (
+                            <span className="rounded bg-teal-100 px-1.5 py-0.5 text-xs font-medium text-teal-800">
+                              Servicios
+                            </span>
+                          )}
+                          {tipo === "mixto" && (
+                            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800">
+                              Mixto
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {o.assigned_user ? (
+                            <span className="text-sm text-zinc-700">
+                              {o.assigned_user.display_name ||
+                                o.assigned_user.email?.split("@")[0]}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-zinc-400 italic">
+                              Sin asignar
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusBadge status={o.status} />
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm font-medium text-zinc-900">
+                          ${Number(o.total).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-zinc-500">
+                          {formatOrderDate(o.created_at)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div className="space-y-2 md:hidden">
@@ -236,7 +248,7 @@ export default function OrdenesPage() {
                   onClick={() =>
                     router.push(`/dashboard/${tenantSlug}/ordenes/${o.id}`)
                   }
-                  className="w-full rounded-lg border border-zinc-200 bg-white p-4 text-left shadow-sm active:bg-zinc-50"
+                  className="w-full rounded-xl border border-zinc-200 bg-white p-4 text-left shadow-sm active:bg-zinc-50"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
