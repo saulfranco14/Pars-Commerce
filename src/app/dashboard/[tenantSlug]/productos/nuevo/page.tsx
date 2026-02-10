@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
 import { productFormSchema } from "@/lib/productValidation";
+import { create } from "@/services/productsService";
 
 export default function NuevoProductoPage() {
   const params = useParams();
@@ -103,10 +104,8 @@ export default function NuevoProductoPage() {
     }
 
     setLoading(true);
-    const res = await fetch("/api/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      await create({
         tenant_id: activeTenant.id,
         name: name.trim(),
         slug: (slug.trim() || deriveSlug(name)).toLowerCase(),
@@ -120,16 +119,14 @@ export default function NuevoProductoPage() {
         track_stock: trackStock,
         is_public: isPublic,
         image_urls: imageUrls.length > 0 ? imageUrls : undefined,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error || "Error al crear el producto");
-      return;
+      });
+      router.push(`/dashboard/${tenantSlug}/productos`);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al crear el producto");
+    } finally {
+      setLoading(false);
     }
-    router.push(`/dashboard/${tenantSlug}/productos`);
-    router.refresh();
   }
 
   if (!activeTenant) {

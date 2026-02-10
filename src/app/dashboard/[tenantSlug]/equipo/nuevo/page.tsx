@@ -4,11 +4,9 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
-
-interface RoleOption {
-  id: string;
-  name: string;
-}
+import type { TenantRoleOption } from "@/services/tenantRolesService";
+import { list as listTenantRoles } from "@/services/tenantRolesService";
+import { addMember } from "@/services/teamService";
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
   owner:
@@ -26,7 +24,7 @@ export default function NuevoMiembroPage() {
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [roleId, setRoleId] = useState("");
-  const [roles, setRoles] = useState<RoleOption[]>([]);
+  const [roles, setRoles] = useState<TenantRoleOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
@@ -35,10 +33,9 @@ export default function NuevoMiembroPage() {
 
   useEffect(() => {
     if (!activeTenant?.id) return;
-    fetch(`/api/tenant-roles?tenant_id=${encodeURIComponent(activeTenant.id)}`)
-      .then((res) => res.json())
-      .then((list: RoleOption[]) => {
-        const assignable = (list ?? []).filter((r) => r.name !== "owner");
+    listTenantRoles(activeTenant.id)
+      .then((list) => {
+        const assignable = list.filter((r) => r.name !== "owner");
         setRoles(assignable);
         if (assignable.length && !roleId) setRoleId(assignable[0].id);
       })
@@ -59,18 +56,12 @@ export default function NuevoMiembroPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/team", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tenant_id: activeTenant.id,
-          role_id: roleId,
-          email: email.trim(),
-          display_name: displayName.trim() || undefined,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Error al agregar");
+      const data = (await addMember({
+        tenant_id: activeTenant.id,
+        role_id: roleId,
+        email: email.trim(),
+        display_name: displayName.trim() || undefined,
+      })) as { invitedByEmail?: boolean; tempPassword?: string };
       if (data.invitedByEmail) {
         setInvitedByEmail(true);
       } else if (data.tempPassword) {

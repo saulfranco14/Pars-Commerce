@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
 import { serviceFormSchema } from "@/lib/serviceValidation";
+import { create } from "@/services/productsService";
 
 export default function NuevoServicioPage() {
   const params = useParams();
@@ -98,10 +99,8 @@ export default function NuevoServicioPage() {
     }
 
     setLoading(true);
-    const res = await fetch("/api/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      await create({
         tenant_id: activeTenant.id,
         name: name.trim(),
         slug: (slug.trim() || deriveSlug(name)).toLowerCase(),
@@ -115,16 +114,14 @@ export default function NuevoServicioPage() {
         type: "service",
         track_stock: false,
         image_urls: imageUrls.length > 0 ? imageUrls : undefined,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error || "Error al crear el servicio");
-      return;
+      });
+      router.push(`/dashboard/${tenantSlug}/servicios`);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al crear el servicio");
+    } finally {
+      setLoading(false);
     }
-    router.push(`/dashboard/${tenantSlug}/servicios`);
-    router.refresh();
   }
 
   if (!activeTenant) {

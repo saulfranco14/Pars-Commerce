@@ -6,23 +6,8 @@ import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
 import { serviceFormSchema } from "@/lib/serviceValidation";
-
-interface ServiceData {
-  id: string;
-  name: string;
-  slug: string;
-  sku: string | null;
-  description: string | null;
-  price: number;
-  cost_price: number;
-  commission_amount: number | null;
-  unit: string;
-  type: string;
-  track_stock: boolean;
-  is_public: boolean;
-  image_url: string | null;
-  image_urls?: string[];
-}
+import type { ProductDetail } from "@/types/products";
+import { getById, update } from "@/services/productsService";
 
 export default function EditarServicioPage() {
   const params = useParams();
@@ -31,7 +16,7 @@ export default function EditarServicioPage() {
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
 
-  const [service, setService] = useState<ServiceData | null>(null);
+  const [service, setService] = useState<ProductDetail | null>(null);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
@@ -49,11 +34,7 @@ export default function EditarServicioPage() {
   useEffect(() => {
     if (!serviceId) return;
     setLoading(true);
-    fetch(`/api/products?product_id=${encodeURIComponent(serviceId)}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Servicio no encontrado");
-        return res.json();
-      })
+    getById(serviceId)
       .then((data) => {
         setService(data);
         setName(data.name ?? "");
@@ -140,11 +121,8 @@ export default function EditarServicioPage() {
     }
 
     setLoading(true);
-    const res = await fetch("/api/products", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        product_id: serviceId,
+    try {
+      await update(serviceId, {
         name: name.trim(),
         slug: (slug.trim() || deriveSlug(name)).toLowerCase(),
         description: description.trim() || undefined,
@@ -157,16 +135,14 @@ export default function EditarServicioPage() {
         type: "service",
         track_stock: false,
         image_urls: imageUrls.length > 0 ? imageUrls : undefined,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error || "Error al guardar");
-      return;
+      });
+      router.push(`/dashboard/${tenantSlug}/servicios`);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al guardar");
+    } finally {
+      setLoading(false);
     }
-    router.push(`/dashboard/${tenantSlug}/servicios`);
-    router.refresh();
   }
 
   if (fetchError) {

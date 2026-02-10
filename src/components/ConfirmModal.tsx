@@ -1,11 +1,13 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 interface ConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  message: string;
+  message: ReactNode;
   confirmLabel?: string;
   confirmDanger?: boolean;
   loading?: boolean;

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { create as createTenant } from "@/services/tenantsService";
 
 export default function CrearNegocioPage() {
   const router = useRouter();
@@ -32,23 +33,19 @@ export default function CrearNegocioPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const res = await fetch("/api/tenants", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      await createTenant({
         name: name.trim(),
         slug: slug.trim() || deriveSlug(name),
         business_type: businessType.trim() || undefined,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error || "Error al crear el negocio");
-      return;
+      });
+      router.push("/dashboard");
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al crear el negocio");
+    } finally {
+      setLoading(false);
     }
-    router.push("/dashboard");
-    router.refresh();
   }
 
   return (

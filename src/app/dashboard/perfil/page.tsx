@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSessionStore } from "@/stores/useSessionStore";
+import type { Profile } from "@/types/database";
+import { update as updateProfile } from "@/services/profileService";
 
 export default function PerfilPage() {
   const profile = useSessionStore((s) => s.profile);
@@ -27,16 +29,10 @@ export default function PerfilPage() {
     setSuccess(false);
     setLoading(true);
     try {
-      const res = await fetch("/api/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          display_name: displayName.trim() || null,
-          phone: phone.trim() || null,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Error al guardar");
+      const data = (await updateProfile({
+        display_name: displayName.trim() || undefined,
+        phone: phone.trim() || undefined,
+      })) as Profile;
       setProfile(data);
       setSuccess(true);
     } catch (err) {

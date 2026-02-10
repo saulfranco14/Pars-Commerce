@@ -51,3 +51,28 @@ export interface CommissionSummary {
   paid_commission: number;
   pending_commission: number;
 }
+
+export interface CommissionPayment {
+  id: string;
+  user_id: string;
+  period_type: string;
+  period_start: string;
+  period_end: string;
+  total_orders: number;
+  total_items: number;
+  products_sold: number;
+  services_sold: number;
+  total_revenue: number;
+  total_cost: number;
+  gross_profit: number;
+  commission_amount: number;
+  payment_status: string;
+  paid_at: string | null;
+  payment_notes: string | null;
+  created_at: string;
+  profiles?: {
+    id: string;
+    display_name: string | null;
+    email: string | null;
+  };
+}

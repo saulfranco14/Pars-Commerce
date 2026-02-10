@@ -6,25 +6,8 @@ import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
 import { productFormSchema } from "@/lib/productValidation";
-
-interface ProductData {
-  id: string;
-  name: string;
-  slug: string;
-  sku: string | null;
-  description: string | null;
-  price: number;
-  cost_price: number;
-  commission_amount: number | null;
-  unit: string;
-  type: string;
-  track_stock: boolean;
-  is_public: boolean;
-  image_url: string | null;
-  theme: string | null;
-  image_urls?: string[];
-  stock?: number;
-}
+import type { ProductDetail } from "@/types/products";
+import { getById, update } from "@/services/productsService";
 
 export default function EditarProductoPage() {
   const params = useParams();
@@ -33,7 +16,7 @@ export default function EditarProductoPage() {
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
 
-  const [product, setProduct] = useState<ProductData | null>(null);
+  const [product, setProduct] = useState<ProductDetail | null>(null);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
@@ -55,11 +38,7 @@ export default function EditarProductoPage() {
   useEffect(() => {
     if (!productId) return;
     setLoading(true);
-    fetch(`/api/products?product_id=${encodeURIComponent(productId)}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Producto no encontrado");
-        return res.json();
-      })
+    getById(productId)
       .then((data) => {
         setProduct(data);
         setName(data.name ?? "");
@@ -70,7 +49,7 @@ export default function EditarProductoPage() {
         setCommissionAmount(String(data.commission_amount ?? ""));
         setSku(data.sku ?? "");
         setUnit(data.unit ?? "unit");
-        setTheme(data.theme ?? "");
+        setTheme((data as { theme?: string }).theme ?? "");
         setTrackStock(data.track_stock ?? true);
         setIsPublic(data.is_public ?? true);
         setStock(String(data.stock ?? 0));
@@ -157,11 +136,8 @@ export default function EditarProductoPage() {
     }
 
     setLoading(true);
-    const res = await fetch("/api/products", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        product_id: productId,
+    try {
+      await update(productId, {
         name: name.trim(),
         slug: (slug.trim() || deriveSlug(name)).toLowerCase(),
         description: description.trim() || undefined,
@@ -175,16 +151,14 @@ export default function EditarProductoPage() {
         is_public: isPublic,
         image_urls: imageUrls.length > 0 ? imageUrls : undefined,
         stock: stockNum,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error || "Error al guardar");
-      return;
+      });
+      router.push(`/dashboard/${tenantSlug}/productos`);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al guardar");
+    } finally {
+      setLoading(false);
     }
-    router.push(`/dashboard/${tenantSlug}/productos`);
-    router.refresh();
   }
 
   if (fetchError) {

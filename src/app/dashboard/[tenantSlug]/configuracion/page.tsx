@@ -2,16 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
-
-interface SitePage {
-  id: string;
-  slug: string;
-  title: string;
-  position: number;
-}
+import type { SitePage } from "@/types/tenantSitePages";
+import { list as listSitePages } from "@/services/tenantSitePagesService";
+import { update as updateTenant, list as listTenants } from "@/services/tenantsService";
 
 export default function ConfiguracionPage() {
   const params = useParams();
@@ -38,11 +33,8 @@ export default function ConfiguracionPage() {
 
   useEffect(() => {
     if (!activeTenant?.id) return;
-    fetch(
-      `/api/tenant-site-pages?tenant_id=${encodeURIComponent(activeTenant.id)}`
-    )
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: SitePage[]) => setSitePages(Array.isArray(data) ? data : []))
+    listSitePages(activeTenant.id)
+      .then(setSitePages)
       .catch(() => setSitePages([]));
   }, [activeTenant?.id]);
 
@@ -55,28 +47,20 @@ export default function ConfiguracionPage() {
       return;
     }
     setLoading(true);
-    const res = await fetch("/api/tenants", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        tenant_id: activeTenant.id,
+    try {
+      await updateTenant(activeTenant.id, {
         name: name.trim(),
-        description: description.trim() || null,
-        theme_color: themeColor.trim() || null,
+        description: description.trim() || undefined,
+        theme_color: themeColor.trim() || undefined,
         public_store_enabled: publicStoreEnabled,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error || "Error al guardar");
-      return;
-    }
-    setSuccess(true);
-    const tenantsRes = await fetch("/api/tenants");
-    if (tenantsRes.ok) {
-      const list = await tenantsRes.json();
-      setMemberships((list as MembershipItem[]) ?? []);
+      });
+      setSuccess(true);
+      const list = (await listTenants()) as MembershipItem[];
+      setMemberships(list ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al guardar");
+    } finally {
+      setLoading(false);
     }
   }
 

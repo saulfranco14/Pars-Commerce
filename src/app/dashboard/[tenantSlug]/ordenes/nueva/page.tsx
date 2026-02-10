@@ -4,14 +4,9 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
-
-interface TeamMember {
-  id: string;
-  user_id: string;
-  display_name: string;
-  email: string;
-  role_name: string;
-}
+import type { TeamMember } from "@/types/team";
+import { list as listTeam } from "@/services/teamService";
+import { create as createOrder } from "@/services/ordersService";
 
 export default function NuevaOrdenPage() {
   const params = useParams();
@@ -29,9 +24,8 @@ export default function NuevaOrdenPage() {
 
   useEffect(() => {
     if (!activeTenant?.id) return;
-    fetch(`/api/team?tenant_id=${encodeURIComponent(activeTenant.id)}`)
-      .then((res) => res.json())
-      .then((list: TeamMember[]) => setTeam(list ?? []))
+    listTeam(activeTenant.id)
+      .then(setTeam)
       .catch(() => setTeam([]));
   }, [activeTenant?.id]);
 
@@ -43,25 +37,21 @@ export default function NuevaOrdenPage() {
       return;
     }
     setLoading(true);
-    const res = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      const data = (await createOrder({
         tenant_id: activeTenant.id,
         customer_name: customerName.trim() || undefined,
         customer_email: customerEmail.trim() || undefined,
         customer_phone: customerPhone.trim() || undefined,
         assigned_to: assignedTo || undefined,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error || "Error al crear la orden");
-      return;
+      })) as { id: string };
+      router.push(`/dashboard/${tenantSlug}/ordenes/${data.id}`);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al crear la orden");
+    } finally {
+      setLoading(false);
     }
-    router.push(`/dashboard/${tenantSlug}/ordenes/${data.id}`);
-    router.refresh();
   }
 
   if (!activeTenant) {

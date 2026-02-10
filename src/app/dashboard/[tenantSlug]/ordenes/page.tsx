@@ -1,30 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { formatOrderDate } from "@/lib/formatDate";
+import type { OrderListItem } from "@/types/orders";
+import { list as listOrders } from "@/services/ordersService";
 
-interface OrderRow {
-  id: string;
-  status: string;
-  customer_name: string | null;
-  customer_email: string | null;
-  total: number;
-  created_at: string;
-  assigned_to: string | null;
-  assigned_user?: {
-    id: string;
-    display_name: string | null;
-    email: string | null;
-  } | null;
-  products_count?: number;
-  services_count?: number;
-}
-
-function orderContentType(o: OrderRow): "productos" | "servicios" | "mixto" {
+function orderContentType(o: OrderListItem): "productos" | "servicios" | "mixto" {
   const p = o.products_count ?? 0;
   const s = o.services_count ?? 0;
   if (p > 0 && s > 0) return "mixto";
@@ -34,11 +19,10 @@ function orderContentType(o: OrderRow): "productos" | "servicios" | "mixto" {
 
 export default function OrdenesPage() {
   const params = useParams();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
-  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,15 +39,12 @@ export default function OrdenesPage() {
     }
     setLoading(true);
     setError(null);
-    const params = new URLSearchParams({ tenant_id: activeTenant.id });
-    if (statusFilter) params.set("status", statusFilter);
-    if (dateFrom) params.set("date_from", dateFrom);
-    if (dateTo) params.set("date_to", dateTo);
-    fetch(`/api/orders?${params}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Error al cargar órdenes");
-        return res.json();
-      })
+    listOrders({
+      tenant_id: activeTenant.id,
+      status: statusFilter || undefined,
+      date_from: dateFrom || undefined,
+      date_to: dateTo || undefined,
+    })
       .then(setOrders)
       .catch(() => setError("No se pudieron cargar las órdenes"))
       .finally(() => setLoading(false));

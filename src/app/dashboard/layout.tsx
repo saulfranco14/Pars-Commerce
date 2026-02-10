@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthInitializer } from "@/hooks/useAuthInitializer";
@@ -15,7 +15,6 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   useAuthInitializer();
@@ -37,20 +36,6 @@ export default function DashboardLayout({
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) {
-        router.replace("/login?next=/dashboard");
-        return;
-      }
-      if (memberships.length > 0 && !activeTenantId) {
-        setActiveTenantId(memberships[0].tenant_id);
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only run when length/activeTenantId change
-  }, [memberships.length, activeTenantId, setActiveTenantId, router]);
 
   async function handleSignOut() {
     const supabase = createClient();

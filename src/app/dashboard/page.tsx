@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { formatOrderDate } from "@/lib/formatDate";
@@ -60,6 +61,8 @@ function getPeriodDates(period: string): { dateFrom: string; dateTo: string } {
   return { dateFrom: from.toISOString().slice(0, 10), dateTo: toStr };
 }
 
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
 function orderContentType(o: OrderRow): "productos" | "servicios" | "mixto" {
   const p = o.products_count ?? 0;
   const s = o.services_count ?? 0;
@@ -96,62 +99,44 @@ function salesByUser(orders: OrderRow[]) {
 
 export default function DashboardPage() {
   const activeTenant = useTenantStore((s) => s.activeTenant)();
-  const [orders, setOrders] = useState<OrderRow[]>([]);
-  const [catalogStats, setCatalogStats] = useState<CatalogStats | null>(null);
-  const [salesLoading, setSalesLoading] = useState(false);
-  const [catalogLoading, setCatalogLoading] = useState(false);
   const [period, setPeriod] = useState<
     "today" | "week" | "fortnight" | "month"
   >("week");
-  const [salesByItem, setSalesByItem] = useState<SalesByItem>({
-    products: [],
-    services: [],
-  });
-  const [salesByItemLoading, setSalesByItemLoading] = useState(false);
 
   const { dateFrom, dateTo } = getPeriodDates(period);
 
-  useEffect(() => {
-    if (!activeTenant?.id) return;
-    setSalesLoading(true);
-    const params = new URLSearchParams({
-      tenant_id: activeTenant.id,
-      date_from: dateFrom,
-      date_to: dateTo,
-    });
-    fetch(`/api/orders?${params}`)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: OrderRow[]) => setOrders(Array.isArray(data) ? data : []))
-      .catch(() => setOrders([]))
-      .finally(() => setSalesLoading(false));
-  }, [activeTenant?.id, dateFrom, dateTo]);
+  const ordersKey =
+    activeTenant?.id != null
+      ? `/api/orders?tenant_id=${encodeURIComponent(activeTenant.id)}&date_from=${dateFrom}&date_to=${dateTo}`
+      : null;
+  const { data: ordersData, isLoading: salesLoading } = useSWR<OrderRow[]>(
+    ordersKey,
+    fetcher,
+    { fallbackData: [] }
+  );
+  const orders = Array.isArray(ordersData) ? ordersData : [];
 
-  useEffect(() => {
-    if (!activeTenant?.id) return;
-    setSalesByItemLoading(true);
-    const params = new URLSearchParams({
-      tenant_id: activeTenant.id,
-      date_from: dateFrom,
-      date_to: dateTo,
+  const salesByItemKey =
+    activeTenant?.id != null
+      ? `/api/dashboard-sales-by-item?tenant_id=${encodeURIComponent(activeTenant.id)}&date_from=${dateFrom}&date_to=${dateTo}`
+      : null;
+  const { data: salesByItemData, isLoading: salesByItemLoading } =
+    useSWR<SalesByItem>(salesByItemKey, fetcher, {
+      fallbackData: { products: [], services: [] },
     });
-    fetch(`/api/dashboard-sales-by-item?${params}`)
-      .then((res) => (res.ok ? res.json() : { products: [], services: [] }))
-      .then((data: SalesByItem) => setSalesByItem(data))
-      .catch(() => setSalesByItem({ products: [], services: [] }))
-      .finally(() => setSalesByItemLoading(false));
-  }, [activeTenant?.id, dateFrom, dateTo]);
+  const salesByItem =
+    salesByItemData &&
+    Array.isArray(salesByItemData.products) &&
+    Array.isArray(salesByItemData.services)
+      ? salesByItemData
+      : { products: [], services: [] };
 
-  useEffect(() => {
-    if (!activeTenant?.id) return;
-    setCatalogLoading(true);
-    fetch(
-      `/api/dashboard-stats?tenant_id=${encodeURIComponent(activeTenant.id)}`
-    )
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: CatalogStats | null) => setCatalogStats(data))
-      .catch(() => setCatalogStats(null))
-      .finally(() => setCatalogLoading(false));
-  }, [activeTenant?.id]);
+  const statsKey =
+    activeTenant?.id != null
+      ? `/api/dashboard-stats?tenant_id=${encodeURIComponent(activeTenant.id)}`
+      : null;
+  const { data: catalogStats, isLoading: catalogLoading } =
+    useSWR<CatalogStats | null>(statsKey, fetcher);
 
   if (!activeTenant) {
     return null;

@@ -6,32 +6,19 @@ import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { Pencil, Trash2 } from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
-
-interface ServiceRow {
-  id: string;
-  name: string;
-  slug: string;
-  sku: string | null;
-  price: number;
-  unit: string;
-  type: string;
-  image_url: string | null;
-  theme: string | null;
-  stock: number;
-  created_at: string;
-}
+import type { ProductListItem } from "@/types/products";
+import { listByTenant, remove } from "@/services/productsService";
 
 export default function ServiciosPage() {
   const params = useParams();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
-  const [services, setServices] = useState<ServiceRow[]>([]);
+  const [services, setServices] = useState<ProductListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [serviceToDelete, setServiceToDelete] = useState<ServiceRow | null>(
-    null
-  );
+  const [serviceToDelete, setServiceToDelete] =
+    useState<ProductListItem | null>(null);
 
   useEffect(() => {
     if (!activeTenant) {
@@ -40,21 +27,13 @@ export default function ServiciosPage() {
     }
     setLoading(true);
     setError(null);
-    fetch(
-      `/api/products?tenant_id=${encodeURIComponent(
-        activeTenant.id
-      )}&type=service`
-    )
-      .then((res) => {
-        if (!res.ok) throw new Error("Error al cargar servicios");
-        return res.json();
-      })
+    listByTenant(activeTenant.id, { type: "service" })
       .then(setServices)
       .catch(() => setError("No se pudieron cargar los servicios"))
       .finally(() => setLoading(false));
   }, [activeTenant?.id]);
 
-  function openDeleteModal(s: ServiceRow) {
+  function openDeleteModal(s: ProductListItem) {
     setServiceToDelete(s);
   }
 
@@ -67,12 +46,7 @@ export default function ServiciosPage() {
     const id = serviceToDelete.id;
     setDeletingId(id);
     try {
-      const res = await fetch(
-        `/api/products?product_id=${encodeURIComponent(id)}`,
-        { method: "DELETE" }
-      );
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Error al eliminar");
+      await remove(id);
       setServices((prev) => prev.filter((s) => s.id !== id));
       setServiceToDelete(null);
     } catch (e) {

@@ -1,13 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-interface ProductOption {
-  id: string;
-  name: string;
-  price: number;
-  type: string;
-}
+import type { ProductListItem } from "@/types/products";
+import { listByTenant } from "@/services/productsService";
+import { create as createOrderItem } from "@/services/orderItemsService";
 
 interface AddItemModalProps {
   tenantId: string;
@@ -24,7 +20,7 @@ export function AddItemModal({
   onClose,
   onAdded,
 }: AddItemModalProps) {
-  const [products, setProducts] = useState<ProductOption[]>([]);
+  const [products, setProducts] = useState<ProductListItem[]>([]);
   const [productId, setProductId] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -33,9 +29,8 @@ export function AddItemModal({
   useEffect(() => {
     if (!isOpen || !tenantId) return;
     setError(null);
-    fetch(`/api/products?tenant_id=${encodeURIComponent(tenantId)}`)
-      .then((res) => res.json())
-      .then((list: ProductOption[]) => setProducts(list ?? []))
+    listByTenant(tenantId)
+      .then(setProducts)
       .catch(() => setProducts([]));
     setProductId("");
     setQuantity(1);
@@ -51,17 +46,7 @@ export function AddItemModal({
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/order-items", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_id: orderId,
-          product_id: productId,
-          quantity,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Error al agregar");
+      await createOrderItem({ order_id: orderId, product_id: productId, quantity });
       onAdded();
       onClose();
     } catch (err) {

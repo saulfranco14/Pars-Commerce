@@ -8,6 +8,9 @@ import { StatusBadge } from "@/components/orders/StatusBadge";
 import { AddItemModal } from "@/components/orders/AddItemModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { formatOrderDate } from "@/lib/formatDate";
+import { getById as getOrder, update as updateOrder } from "@/services/ordersService";
+import { list as listTeam } from "@/services/teamService";
+import { remove as removeOrderItem } from "@/services/orderItemsService";
 
 interface OrderItem {
   id: string;
@@ -37,7 +40,7 @@ interface OrderDetail {
   items: OrderItem[];
 }
 
-interface TeamMember {
+interface TeamMemberOption {
   user_id: string;
   display_name: string;
   email: string;
@@ -51,7 +54,7 @@ export default function OrdenDetallePage() {
   const activeTenant = useTenantStore((s) => s.activeTenant)();
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
-  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [team, setTeam] = useState<TeamMemberOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,12 +68,7 @@ export default function OrdenDetallePage() {
   const [itemToRemove, setItemToRemove] = useState<OrderItem | null>(null);
 
   function fetchOrder() {
-    return fetch(`/api/orders?order_id=${encodeURIComponent(orderId)}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Orden no encontrada");
-        return res.json();
-      })
-      .then(setOrder);
+    return getOrder(orderId).then((data) => setOrder(data as OrderDetail));
   }
 
   useEffect(() => {
@@ -84,9 +82,8 @@ export default function OrdenDetallePage() {
 
   useEffect(() => {
     if (!activeTenant?.id) return;
-    fetch(`/api/team?tenant_id=${encodeURIComponent(activeTenant.id)}`)
-      .then((res) => res.json())
-      .then((list: TeamMember[]) => setTeam(list ?? []))
+    listTeam(activeTenant.id)
+      .then((list) => setTeam(list.map((m) => ({ user_id: m.user_id, display_name: m.display_name, email: m.email }))))
       .catch(() => setTeam([]));
   }, [activeTenant?.id]);
 
@@ -112,13 +109,7 @@ export default function OrdenDetallePage() {
     setActionLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/orders", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order_id: order.id, status: newStatus }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Error al actualizar");
+      await updateOrder(order.id, { status: newStatus });
       await fetchOrder();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
@@ -132,27 +123,12 @@ export default function OrdenDetallePage() {
     setActionLoading(true);
     setError(null);
     try {
-      const body: {
-        order_id: string;
-        assigned_to: string | null;
-        status?: string;
-      } = {
-        order_id: order.id,
+      const payload: { assigned_to: string | null; status?: string } = {
         assigned_to: assignTo || null,
       };
-      if (order.status === "draft" && assignTo) {
-        body.status = "assigned";
-      }
-      if (order.status === "assigned" && !assignTo) {
-        body.status = "draft";
-      }
-      const res = await fetch("/api/orders", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Error al asignar");
+      if (order.status === "draft" && assignTo) payload.status = "assigned";
+      if (order.status === "assigned" && !assignTo) payload.status = "draft";
+      await updateOrder(order.id, payload);
       await fetchOrder();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
@@ -166,17 +142,7 @@ export default function OrdenDetallePage() {
     setActionLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/orders", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_id: order.id,
-          assigned_to: null,
-          status: "draft",
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Error al quitar asignación");
+      await updateOrder(order.id, { assigned_to: null, status: "draft" });
       setAssignTo("");
       await fetchOrder();
     } catch (err) {
@@ -191,18 +157,11 @@ export default function OrdenDetallePage() {
     setActionLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/orders", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_id: order.id,
-          customer_name: customerName.trim() || null,
-          customer_email: customerEmail.trim() || null,
-          customer_phone: customerPhone.trim() || null,
-        }),
+      await updateOrder(order.id, {
+        customer_name: customerName.trim() || null,
+        customer_email: customerEmail.trim() || null,
+        customer_phone: customerPhone.trim() || null,
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Error al guardar");
       setEditingCustomer(false);
       await fetchOrder();
     } catch (err) {
@@ -223,12 +182,7 @@ export default function OrdenDetallePage() {
     setActionLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/order-items?item_id=${encodeURIComponent(itemId)}`,
-        { method: "DELETE" }
-      );
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Error al quitar");
+      await removeOrderItem(itemId);
       await fetchOrder();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");

@@ -4,27 +4,17 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
-
-interface MemberRow {
-  id: string;
-  user_id: string;
-  role_id: string;
-  role_name: string;
-  display_name: string;
-  email: string;
-}
-
-interface RoleOption {
-  id: string;
-  name: string;
-}
+import type { TeamMember } from "@/types/team";
+import type { TenantRoleOption } from "@/services/tenantRolesService";
+import { list as listTeam, updateRole, remove as removeMember } from "@/services/teamService";
+import { list as listTenantRoles } from "@/services/tenantRolesService";
 
 export default function EquipoPage() {
   const params = useParams();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
-  const [members, setMembers] = useState<MemberRow[]>([]);
-  const [roles, setRoles] = useState<RoleOption[]>([]);
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [roles, setRoles] = useState<TenantRoleOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -38,16 +28,12 @@ export default function EquipoPage() {
     setLoading(true);
     setError(null);
     Promise.all([
-      fetch(`/api/team?tenant_id=${encodeURIComponent(activeTenant.id)}`).then(
-        (res) => res.json()
-      ),
-      fetch(
-        `/api/tenant-roles?tenant_id=${encodeURIComponent(activeTenant.id)}`
-      ).then((res) => res.json()),
+      listTeam(activeTenant.id),
+      listTenantRoles(activeTenant.id),
     ])
       .then(([membersList, rolesList]) => {
-        setMembers(membersList ?? []);
-        setRoles(rolesList ?? []);
+        setMembers(membersList);
+        setRoles(rolesList);
       })
       .catch(() => setError("No se pudo cargar el equipo"))
       .finally(() => setLoading(false));
@@ -57,13 +43,7 @@ export default function EquipoPage() {
     setUpdatingId(membershipId);
     setError(null);
     try {
-      const res = await fetch("/api/team", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ membership_id: membershipId, role_id: roleId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Error al actualizar");
+      await updateRole(membershipId, roleId);
       setMembers((prev) =>
         prev.map((m) =>
           m.id === membershipId
@@ -87,12 +67,7 @@ export default function EquipoPage() {
     setUpdatingId(membershipId);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/team?membership_id=${encodeURIComponent(membershipId)}`,
-        { method: "DELETE" }
-      );
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Error al quitar");
+      await removeMember(membershipId);
       setMembers((prev) => prev.filter((m) => m.id !== membershipId));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");

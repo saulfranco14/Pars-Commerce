@@ -5,34 +5,23 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
-import type { SalesCommission, CommissionSummary } from "@/types/sales";
+import type {
+  SalesCommission,
+  CommissionSummary,
+  CommissionPayment,
+} from "@/types/sales";
+import { list as listTeam } from "@/services/teamService";
+import {
+  list as listSalesCommissions,
+  update as updateSalesCommission,
+} from "@/services/salesCommissionsService";
+import {
+  list as listCommissionPayments,
+  create as createCommissionPayment,
+  update as updateCommissionPayment,
+} from "@/services/commissionPaymentsService";
 
 type TabView = "resumen" | "por-persona" | "por-orden" | "pagos";
-
-interface CommissionPayment {
-  id: string;
-  user_id: string;
-  period_type: string;
-  period_start: string;
-  period_end: string;
-  total_orders: number;
-  total_items: number;
-  products_sold: number;
-  services_sold: number;
-  total_revenue: number;
-  total_cost: number;
-  gross_profit: number;
-  commission_amount: number;
-  payment_status: string;
-  paid_at: string | null;
-  payment_notes: string | null;
-  created_at: string;
-  profiles?: {
-    id: string;
-    display_name: string | null;
-    email: string | null;
-  };
-}
 
 export default function VentasPage() {
   const params = useParams();
@@ -100,42 +89,37 @@ export default function VentasPage() {
 
   async function fetchPaymentsInternal() {
     if (!activeTenant) return;
-    const params = new URLSearchParams({ tenant_id: activeTenant.id });
-    if (selectedUser) params.set("user_id", selectedUser);
-    if (paymentStatus) params.set("status", paymentStatus);
-    const res = await fetch(`/api/commission-payments?${params}`);
-    if (res.ok) {
-      const data = await res.json();
-      setPayments(data ?? []);
+    try {
+      const data = await listCommissionPayments({
+        tenant_id: activeTenant.id,
+        user_id: selectedUser || undefined,
+        status: paymentStatus || undefined,
+      });
+      setPayments(data);
+    } catch {
+      setPayments([]);
     }
   }
 
   async function fetchPendingCommissionsInternal() {
     if (!activeTenant) return;
-    const params = new URLSearchParams({
-      tenant_id: activeTenant.id,
-      is_paid: "false",
-    });
-    const res = await fetch(`/api/sales-commissions?${params}`);
-    if (res.ok) {
-      const data = await res.json();
-      setCommissions(data ?? []);
+    try {
+      const data = await listSalesCommissions({
+        tenant_id: activeTenant.id,
+        is_paid: "false",
+      });
+      setCommissions(data);
+    } catch {
+      setCommissions([]);
     }
   }
 
   async function fetchTeamMembers() {
     if (!activeTenant) return;
     try {
-      const res = await fetch(`/api/team?tenant_id=${activeTenant.id}`);
-      if (!res.ok) throw new Error("Error al cargar equipo");
-      const data = (await res.json()) as {
-        id: string;
-        user_id: string;
-        display_name: string | null;
-        email: string | null;
-      }[];
+      const data = await listTeam(activeTenant.id);
       setTeamMembers(
-        (data ?? []).map((m) => ({
+        data.map((m) => ({
           id: m.user_id,
           display_name: m.display_name ?? null,
           email: m.email ?? null,
@@ -150,17 +134,15 @@ export default function VentasPage() {
     if (!activeTenant) return;
     setLoading(true);
     setError(null);
-    const params = new URLSearchParams({ tenant_id: activeTenant.id });
-    if (userFilter) params.set("user_id", userFilter);
-    if (paidFilter) params.set("is_paid", paidFilter);
-    if (dateFrom) params.set("date_from", dateFrom);
-    if (dateTo) params.set("date_to", dateTo);
-
     try {
-      const res = await fetch(`/api/sales-commissions?${params}`);
-      if (!res.ok) throw new Error("Error al cargar comisiones");
-      const data = await res.json();
-      setCommissions(data ?? []);
+      const data = await listSalesCommissions({
+        tenant_id: activeTenant.id,
+        user_id: userFilter || undefined,
+        is_paid: paidFilter || undefined,
+        date_from: dateFrom || undefined,
+        date_to: dateTo || undefined,
+      });
+      setCommissions(data);
     } catch {
       setError("No se pudieron cargar las comisiones");
     } finally {
@@ -186,15 +168,7 @@ export default function VentasPage() {
     if (!commissionToPay) return;
     setActionLoading(true);
     try {
-      const res = await fetch("/api/sales-commissions", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          commission_id: commissionToPay.id,
-          is_paid: true,
-        }),
-      });
-      if (!res.ok) throw new Error("Error al marcar como pagada");
+      await updateSalesCommission(commissionToPay.id, { is_paid: true });
       setCommissionToPay(null);
       fetchCommissions();
     } catch {
@@ -252,18 +226,13 @@ export default function VentasPage() {
     }
 
     try {
-      const res = await fetch("/api/commission-payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tenant_id: activeTenant.id,
-          user_id: userId,
-          period_type: periodType,
-          period_start: periodStart.toISOString().split("T")[0],
-          period_end: periodEnd.toISOString().split("T")[0],
-        }),
+      await createCommissionPayment({
+        tenant_id: activeTenant.id,
+        user_id: userId,
+        period_type: periodType,
+        period_start: periodStart.toISOString().split("T")[0],
+        period_end: periodEnd.toISOString().split("T")[0],
       });
-      if (!res.ok) throw new Error("Error al generar pago");
       fetchPayments();
     } catch {
       setError("No se pudo generar el pago del período");
@@ -276,15 +245,7 @@ export default function VentasPage() {
     if (!paymentToPay) return;
     setActionLoading(true);
     try {
-      const res = await fetch("/api/commission-payments", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          payment_id: paymentToPay.id,
-          payment_status: "paid",
-        }),
-      });
-      if (!res.ok) throw new Error("Error al marcar pago como pagado");
+      await updateCommissionPayment(paymentToPay.id, { payment_status: "paid" });
       setPaymentToPay(null);
       fetchPayments();
     } catch {
@@ -303,15 +264,9 @@ export default function VentasPage() {
     }
     setActionLoading(true);
     try {
-      const res = await fetch("/api/commission-payments", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          payment_id: paymentToEdit.id,
-          commission_amount: amount,
-        }),
+      await updateCommissionPayment(paymentToEdit.id, {
+        commission_amount: amount,
       });
-      if (!res.ok) throw new Error("Error al actualizar monto");
       setPaymentToEdit(null);
       setEditAmount("");
       fetchPayments();

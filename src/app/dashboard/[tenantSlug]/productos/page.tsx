@@ -6,32 +6,19 @@ import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { Pencil, Trash2 } from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
-
-interface ProductRow {
-  id: string;
-  name: string;
-  slug: string;
-  sku: string | null;
-  price: number;
-  unit: string;
-  type: string;
-  image_url: string | null;
-  theme: string | null;
-  stock: number;
-  created_at: string;
-}
+import type { ProductListItem } from "@/types/products";
+import { listByTenant, remove } from "@/services/productsService";
 
 export default function ProductosPage() {
   const params = useParams();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
-  const [products, setProducts] = useState<ProductRow[]>([]);
+  const [products, setProducts] = useState<ProductListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [productToDelete, setProductToDelete] = useState<ProductRow | null>(
-    null
-  );
+  const [productToDelete, setProductToDelete] =
+    useState<ProductListItem | null>(null);
 
   useEffect(() => {
     if (!activeTenant) {
@@ -40,21 +27,13 @@ export default function ProductosPage() {
     }
     setLoading(true);
     setError(null);
-    fetch(
-      `/api/products?tenant_id=${encodeURIComponent(
-        activeTenant.id
-      )}&type=product`
-    )
-      .then((res) => {
-        if (!res.ok) throw new Error("Error al cargar productos");
-        return res.json();
-      })
+    listByTenant(activeTenant.id, { type: "product" })
       .then(setProducts)
       .catch(() => setError("No se pudieron cargar los productos"))
       .finally(() => setLoading(false));
   }, [activeTenant?.id]);
 
-  function openDeleteModal(p: ProductRow) {
+  function openDeleteModal(p: ProductListItem) {
     setProductToDelete(p);
   }
 
@@ -67,12 +46,7 @@ export default function ProductosPage() {
     const id = productToDelete.id;
     setDeletingId(id);
     try {
-      const res = await fetch(
-        `/api/products?product_id=${encodeURIComponent(id)}`,
-        { method: "DELETE" }
-      );
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Error al eliminar");
+      await remove(id);
       setProducts((prev) => prev.filter((p) => p.id !== id));
       setProductToDelete(null);
     } catch (e) {
