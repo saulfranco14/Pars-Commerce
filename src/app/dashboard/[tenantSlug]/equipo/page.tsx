@@ -6,6 +6,16 @@ import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import type { TeamMember } from "@/types/team";
 import type { TenantRoleOption } from "@/services/tenantRolesService";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import {
+  TableWrapper,
+  tableHeaderRowClass,
+  tableHeaderCellClass,
+  tableHeaderCellRightClass,
+  tableBodyRowClass,
+  tableBodyCellClass,
+  tableBodyCellMutedClass,
+} from "@/components/ui/TableWrapper";
 import { list as listTeam, updateRole, remove as removeMember } from "@/services/teamService";
 import { list as listTenantRoles } from "@/services/tenantRolesService";
 
@@ -78,7 +88,7 @@ export default function EquipoPage() {
 
   if (!activeTenant) {
     return (
-      <div className="text-sm text-zinc-600">
+      <div className="text-sm text-muted-foreground">
         Selecciona un negocio para continuar.
       </div>
     );
@@ -87,10 +97,10 @@ export default function EquipoPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-zinc-900">Equipo</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Equipo</h1>
         <Link
           href={`/dashboard/${tenantSlug}/equipo/nuevo`}
-          className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+          className="rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
         >
           Agregar miembro
         </Link>
@@ -103,45 +113,39 @@ export default function EquipoPage() {
       )}
 
       {loading ? (
-        <p className="text-sm text-zinc-500">Cargando equipo...</p>
+        <LoadingBlock
+          variant="skeleton"
+          message="Cargando equipo"
+          skeletonRows={4}
+        />
       ) : members.length === 0 ? (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-muted">
           No hay miembros. Agrega uno con &quot;Agregar miembro&quot;.
         </p>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
-          <table className="min-w-full divide-y divide-zinc-200">
-            <thead className="bg-zinc-50">
-              <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-600">
-                  Nombre
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-600">
-                  Email
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-600">
-                  Rol
-                </th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-zinc-600">
-                  Acciones
-                </th>
+        <TableWrapper>
+          <table className="min-w-full">
+            <thead>
+              <tr className={tableHeaderRowClass}>
+                <th className={tableHeaderCellClass}>Nombre</th>
+                <th className={tableHeaderCellClass}>Email</th>
+                <th className={tableHeaderCellClass}>Rol</th>
+                <th className={tableHeaderCellRightClass}>Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-200">
+            <tbody>
               {members.map((m) => (
-                <tr key={m.id} className="bg-white">
-                  <td className="px-4 py-2 text-sm font-medium text-zinc-900">
+                <tr key={m.id} className={tableBodyRowClass}>
+                  <td className={tableBodyCellClass}>
                     {m.display_name || "—"}
                   </td>
-                  <td className="px-4 py-2 text-sm text-zinc-600">
-                    {m.email || "—"}
-                  </td>
-                  <td className="px-4 py-2">
+                  <td className={tableBodyCellMutedClass}>{m.email || "—"}</td>
+                  <td className={tableBodyCellClass}>
                     <select
                       value={m.role_id}
                       onChange={(e) => handleRoleChange(m.id, e.target.value)}
                       disabled={updatingId === m.id || m.role_name === "owner"}
-                      className="rounded-md border border-zinc-300 px-2 py-1 text-sm text-zinc-900 disabled:opacity-50"
+                      className="select-custom rounded-xl border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50"
                     >
                       {roles.map((r) => (
                         <option key={r.id} value={r.id}>
@@ -150,7 +154,7 @@ export default function EquipoPage() {
                       ))}
                     </select>
                   </td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="px-4 py-3 text-right">
                     {m.role_name !== "owner" && (
                       <button
                         type="button"
@@ -166,7 +170,7 @@ export default function EquipoPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableWrapper>
       )}
     </div>
   );

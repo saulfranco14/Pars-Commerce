@@ -45,7 +45,7 @@ export default function PerfilPage() {
   if (!profile) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-sm text-zinc-500">Cargando perfil...</p>
+        <p className="text-sm text-muted">Cargando perfil...</p>
       </div>
     );
   }
@@ -55,13 +55,13 @@ export default function PerfilPage() {
       <div className="mb-4">
         <Link
           href="/dashboard"
-          className="text-sm text-zinc-600 hover:text-zinc-900"
+          className="text-sm text-muted-foreground hover:text-foreground"
         >
           ← Volver al dashboard
         </Link>
       </div>
-      <h1 className="text-2xl font-semibold text-zinc-900">Mi perfil</h1>
-      <p className="mt-1 text-sm text-zinc-500">
+      <h1 className="text-2xl font-semibold text-foreground">Mi perfil</h1>
+      <p className="mt-1 text-sm text-muted">
         Edita tu nombre y datos de contacto.
       </p>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -78,7 +78,7 @@ export default function PerfilPage() {
         <div>
           <label
             htmlFor="displayName"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-muted-foreground"
           >
             Nombre
           </label>
@@ -87,14 +87,14 @@ export default function PerfilPage() {
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
+            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground"
             placeholder="Tu nombre"
           />
         </div>
         <div>
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-muted-foreground"
           >
             Email
           </label>
@@ -103,16 +103,16 @@ export default function PerfilPage() {
             type="email"
             value={profile.email ?? ""}
             readOnly
-            className="mt-1 block w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-500"
+            className="mt-1 block w-full rounded-md border border-border bg-border-soft px-3 py-2 text-muted"
           />
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-muted">
             El email no se puede cambiar desde aquí.
           </p>
         </div>
         <div>
           <label
             htmlFor="phone"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-muted-foreground"
           >
             Teléfono
           </label>
@@ -121,7 +121,7 @@ export default function PerfilPage() {
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
+            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground"
             placeholder="555 123 4567"
           />
         </div>
@@ -129,7 +129,7 @@ export default function PerfilPage() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
           >
             {loading ? "Guardando..." : "Guardar"}
           </button>

@@ -66,7 +66,7 @@ export default function ConfiguracionPage() {
 
   if (!activeTenant) {
     return (
-      <div className="text-sm text-zinc-600">
+      <div className="text-sm text-muted-foreground">
         Selecciona un negocio para continuar.
       </div>
     );
@@ -74,8 +74,8 @@ export default function ConfiguracionPage() {
 
   return (
     <div className="mx-auto max-w-md">
-      <h1 className="text-2xl font-semibold text-zinc-900">Configuración</h1>
-      <p className="mt-1 text-sm text-zinc-500">
+      <h1 className="text-2xl font-semibold text-foreground">Configuración</h1>
+      <p className="mt-1 text-sm text-muted">
         Datos del negocio y sitio web. El nombre y la descripción se muestran en
         tu sitio público. El color del tema se aplica al sitio. Si habilitas la
         tienda pública, el catálogo y las secciones serán visibles en la URL de
@@ -83,37 +83,37 @@ export default function ConfiguracionPage() {
       </p>
 
       {publicStoreEnabled && (
-        <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+        <div className="mt-4 rounded-lg border border-border bg-border-soft p-3">
           <a
             href={`/sitio/${tenantSlug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-medium text-zinc-900 underline hover:no-underline"
+            className="text-sm font-medium text-foreground underline hover:no-underline"
           >
             Ver mi sitio
           </a>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-muted">
             Se abre en una nueva pestaña.
           </p>
         </div>
       )}
       {!publicStoreEnabled && (
-        <p className="mt-2 text-sm text-zinc-500">
+        <p className="mt-2 text-sm text-muted">
           Habilita la tienda pública para ver el enlace a tu sitio.
         </p>
       )}
 
-      <div className="mt-4 rounded-lg border border-zinc-200 bg-white p-3">
-        <h2 className="text-sm font-medium text-zinc-900">
+      <div className="mt-4 rounded-lg border border-border bg-surface-raised p-3">
+        <h2 className="text-sm font-medium text-foreground">
           Secciones del sitio (hasta 5)
         </h2>
-        <ul className="mt-2 space-y-1 text-sm text-zinc-600">
+        <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
           {sitePages.length === 0 ? (
             <li>Cargando secciones...</li>
           ) : (
             sitePages.map((p) => (
               <li key={p.id}>
-                {p.title} <span className="text-zinc-400">/ {p.slug}</span>
+                {p.title} <span className="text-muted">/ {p.slug}</span>
               </li>
             ))
           )}
@@ -144,7 +144,7 @@ export default function ConfiguracionPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
+            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground"
             placeholder="Ej. Lavado express"
           />
         </div>
@@ -160,7 +160,7 @@ export default function ConfiguracionPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
+            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground"
             placeholder="Breve descripción del negocio"
           />
         </div>
@@ -177,13 +177,13 @@ export default function ConfiguracionPage() {
               type="color"
               value={themeColor || "#18181b"}
               onChange={(e) => setThemeColor(e.target.value)}
-              className="h-10 w-14 cursor-pointer rounded border border-zinc-300"
+              className="h-10 w-14 cursor-pointer rounded border border-border"
             />
             <input
               type="text"
               value={themeColor}
               onChange={(e) => setThemeColor(e.target.value)}
-              className="block flex-1 rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
+              className="block flex-1 rounded-md border border-border px-3 py-2 text-foreground"
               placeholder="#18181b"
             />
           </div>
@@ -194,7 +194,7 @@ export default function ConfiguracionPage() {
             type="checkbox"
             checked={publicStoreEnabled}
             onChange={(e) => setPublicStoreEnabled(e.target.checked)}
-            className="h-4 w-4 rounded border-zinc-300"
+            className="h-4 w-4 rounded border-border"
           />
           <label htmlFor="publicStore" className="text-sm text-zinc-700">
             Tienda pública habilitada (mostrar catálogo en sitio web)
@@ -204,7 +204,7 @@ export default function ConfiguracionPage() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
           >
             {loading ? "Guardando..." : "Guardar"}
           </button>

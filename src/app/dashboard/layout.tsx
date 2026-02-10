@@ -8,6 +8,7 @@ import { useAuthInitializer } from "@/hooks/useAuthInitializer";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Menu } from "lucide-react";
 
 export default function DashboardLayout({
@@ -45,14 +46,14 @@ export default function DashboardLayout({
 
   if (!profile) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-100">
-        <p className="text-zinc-600">Cargando...</p>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <LoadingBlock message="Cargando sesión…" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen max-h-screen overflow-hidden bg-zinc-50">
+    <div className="flex h-screen max-h-screen overflow-hidden bg-background">
       <Sidebar
         tenantSlug={tenantSlug}
         mobileOpen={mobileMenuOpen}
@@ -60,11 +61,11 @@ export default function DashboardLayout({
         onSignOut={handleSignOut}
       />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 safe-area-inset-left">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-soft bg-surface px-4 safe-area-inset-left">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 md:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-muted hover:bg-border-soft hover:text-foreground md:hidden"
             aria-label="Abrir menú"
           >
             <Menu className="h-6 w-6" />
@@ -76,28 +77,28 @@ export default function DashboardLayout({
           pathname === "/dashboard/perfil" ? (
             children
           ) : memberships.length === 0 ? (
-            <div className="rounded-lg border border-zinc-200 bg-white p-6 text-center">
-              <h2 className="text-lg font-semibold text-zinc-900">
+            <div className="rounded-xl border border-border bg-surface-raised p-6 text-center">
+              <h2 className="text-lg font-semibold text-foreground">
                 Sin negocios
               </h2>
-              <p className="mt-2 text-sm text-zinc-600">
+              <p className="mt-2 text-sm text-muted">
                 Crea tu primer negocio para empezar.
               </p>
               <Link
                 href="/dashboard/crear-negocio"
-                className="mt-4 inline-block rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+                className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
               >
                 Crear negocio
               </Link>
             </div>
           ) : !activeTenantId ? (
-            <div className="text-sm text-zinc-600">
+            <div className="text-sm text-muted">
               Selecciona un negocio en el menú.
             </div>
           ) : activeTenant ? (
             children
           ) : (
-            <div className="text-sm text-zinc-600">Cargando negocio...</div>
+            <div className="text-sm text-muted">Cargando negocio...</div>
           )}
         </main>
       </div>

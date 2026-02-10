@@ -41,27 +41,27 @@ export default async function SitioPublicoPage({ params }: PageProps) {
 
   return (
     <div
-      className="min-h-screen bg-white text-zinc-900"
+      className="min-h-screen bg-surface text-foreground"
       style={{ ["--accent" as string]: accentColor }}
     >
       <header
-        className="border-b border-zinc-200 px-4 py-4"
+        className="border-b border-border px-4 py-4"
         style={{ borderColor: accentColor, borderBottomWidth: "2px" }}
       >
         <h1 className="text-xl font-semibold" style={{ color: accentColor }}>
           {tenant.name}
         </h1>
         {tenant.description && (
-          <p className="mt-1 text-sm text-zinc-600">{tenant.description}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{tenant.description}</p>
         )}
       </header>
 
-      <nav className="flex flex-wrap gap-2 border-b border-zinc-200 px-4 py-3">
+      <nav className="flex flex-wrap gap-2 border-b border-border px-4 py-3">
         {pages.map((p) => (
           <a
             key={p.id}
             href={`#${p.slug}`}
-            className="rounded px-2 py-1 text-sm font-medium hover:bg-zinc-100"
+            className="rounded px-2 py-1 text-sm font-medium hover:bg-border-soft"
             style={{ color: accentColor }}
           >
             {p.title}
@@ -74,7 +74,7 @@ export default async function SitioPublicoPage({ params }: PageProps) {
           <section
             key={p.id}
             id={p.slug}
-            className="scroll-mt-4 border-b border-zinc-100 pb-6 last:border-0"
+            className="scroll-mt-4 border-b border-border-soft pb-6 last:border-0"
           >
             <h2
               className="text-lg font-semibold"
@@ -87,7 +87,7 @@ export default async function SitioPublicoPage({ params }: PageProps) {
                 {products.map((item) => (
                   <li
                     key={item.id}
-                    className="rounded-lg border border-zinc-200 p-3"
+                    className="rounded-lg border border-border p-3"
                   >
                     {item.image_url && (
                       <img
@@ -96,9 +96,9 @@ export default async function SitioPublicoPage({ params }: PageProps) {
                         className="mb-2 h-24 w-full rounded object-cover"
                       />
                     )}
-                    <p className="font-medium text-zinc-900">{item.name}</p>
+                    <p className="font-medium text-foreground">{item.name}</p>
                     {item.description && (
-                      <p className="mt-1 text-sm text-zinc-600 line-clamp-2">
+                      <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
                         {item.description}
                       </p>
                     )}
@@ -113,7 +113,7 @@ export default async function SitioPublicoPage({ params }: PageProps) {
               </ul>
             )}
             {p.slug === "productos" && products.length === 0 && (
-              <p className="mt-2 text-sm text-zinc-500">
+              <p className="mt-2 text-sm text-muted">
                 No hay productos públicos en el catálogo.
               </p>
             )}
@@ -121,7 +121,7 @@ export default async function SitioPublicoPage({ params }: PageProps) {
         ))}
       </main>
 
-      <footer className="mt-8 border-t border-zinc-200 px-4 py-4 text-center text-sm text-zinc-500">
+      <footer className="mt-8 border-t border-border px-4 py-4 text-center text-sm text-muted">
         {tenant.name}
       </footer>
     </div>

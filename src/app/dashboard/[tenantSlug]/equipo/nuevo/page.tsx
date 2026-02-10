@@ -86,7 +86,7 @@ export default function NuevoMiembroPage() {
 
   if (!activeTenant) {
     return (
-      <div className="text-sm text-zinc-600">
+      <div className="text-sm text-muted-foreground">
         Selecciona un negocio para continuar.
       </div>
     );
@@ -119,8 +119,8 @@ export default function NuevoMiembroPage() {
             <strong>{email}</strong>. La persona debe abrir el enlace del correo
             y establecer su contraseña. Ya está agregada al equipo.
           </p>
-          <div className="rounded-lg border border-green-300 bg-white p-3">
-            <p className="text-xs text-zinc-600">
+          <div className="rounded-lg border border-green-300 bg-surface-raised p-3">
+            <p className="text-xs text-muted-foreground">
               Si no llega el correo en unos minutos, revisar carpeta de spam o
               reenviar desde Supabase Dashboard → Authentication → Users.
             </p>
@@ -130,7 +130,7 @@ export default function NuevoMiembroPage() {
               router.push(`/dashboard/${tenantSlug}/equipo`);
               router.refresh();
             }}
-            className="mt-6 w-full rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+            className="mt-6 w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
           >
             Volver a equipo
           </button>
@@ -165,18 +165,18 @@ export default function NuevoMiembroPage() {
             Se ha enviado un correo de confirmación a <strong>{email}</strong>.
             La persona debe confirmar su email antes de poder acceder.
           </p>
-          <div className="rounded-lg border border-green-300 bg-white p-4">
-            <p className="mb-2 text-sm font-medium text-zinc-900">
+          <div className="rounded-lg border border-green-300 bg-surface-raised p-4">
+            <p className="mb-2 text-sm font-medium text-foreground">
               Contraseña temporal:
             </p>
             <div className="flex items-center gap-2">
-              <code className="flex-1 rounded border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-sm text-zinc-900">
+              <code className="flex-1 rounded border border-border bg-border-soft px-3 py-2 font-mono text-sm text-foreground">
                 {tempPassword}
               </code>
               <button
                 type="button"
                 onClick={handleCopyPassword}
-                className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-green-700"
               >
                 {copied ? "✓ Copiado" : "Copiar"}
               </button>
@@ -206,7 +206,7 @@ export default function NuevoMiembroPage() {
               router.push(`/dashboard/${tenantSlug}/equipo`);
               router.refresh();
             }}
-            className="mt-6 w-full rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+            className="mt-6 w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
           >
             Volver a equipo
           </button>
@@ -220,13 +220,13 @@ export default function NuevoMiembroPage() {
       <div className="mb-4">
         <Link
           href={`/dashboard/${tenantSlug}/equipo`}
-          className="text-sm text-zinc-600 hover:text-zinc-900"
+          className="text-sm text-muted-foreground hover:text-foreground"
         >
           ← Volver a equipo
         </Link>
       </div>
-      <h1 className="text-2xl font-semibold text-zinc-900">Agregar miembro</h1>
-      <p className="mt-1 text-sm text-zinc-500">
+      <h1 className="text-2xl font-semibold text-foreground">Agregar miembro</h1>
+      <p className="mt-1 text-sm text-muted">
         Si el usuario no existe, se le enviará una invitación por correo para
         que establezca su contraseña y se agregará al equipo.
       </p>
@@ -239,23 +239,23 @@ export default function NuevoMiembroPage() {
         <div>
           <label
             htmlFor="displayName"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-muted-foreground"
           >
-            Nombre <span className="font-normal text-zinc-400">(opcional)</span>
+            Nombre <span className="font-normal text-muted">(opcional)</span>
           </label>
           <input
             id="displayName"
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
+            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground"
             placeholder="Nombre de la persona"
           />
         </div>
         <div>
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-muted-foreground"
           >
             Email del usuario
           </label>
@@ -265,14 +265,14 @@ export default function NuevoMiembroPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
+            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground"
             placeholder="usuario@ejemplo.com"
           />
         </div>
         <div>
           <label
             htmlFor="role"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-muted-foreground"
           >
             Rol
           </label>
@@ -280,7 +280,7 @@ export default function NuevoMiembroPage() {
             id="role"
             value={roleId}
             onChange={(e) => setRoleId(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
+            className="select-custom mt-1 block w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
           >
             {roles.map((r) => (
               <option key={r.id} value={r.id}>
@@ -289,7 +289,7 @@ export default function NuevoMiembroPage() {
             ))}
           </select>
           {roleId && (
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-muted">
               {ROLE_DESCRIPTIONS[
                 roles.find((r) => r.id === roleId)?.name ?? ""
               ] ?? ""}
@@ -300,13 +300,13 @@ export default function NuevoMiembroPage() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
           >
             {loading ? "Agregando..." : "Agregar"}
           </button>
           <Link
             href={`/dashboard/${tenantSlug}/equipo`}
-            className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-border-soft"
           >
             Cancelar
           </Link>

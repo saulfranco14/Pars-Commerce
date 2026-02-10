@@ -1,10 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import {
+  TableWrapper,
+  tableHeaderRowClass,
+  tableHeaderCellClass,
+  tableHeaderCellRightClass,
+  tableBodyRowClass,
+  tableBodyCellClass,
+  tableBodyCellMutedClass,
+  tableBodyCellRightClass,
+} from "@/components/ui/TableWrapper";
 import { formatOrderDate } from "@/lib/formatDate";
 import type { OrderListItem } from "@/types/orders";
 import { list as listOrders } from "@/services/ordersService";
@@ -20,6 +31,7 @@ function orderContentType(o: OrderListItem): "productos" | "servicios" | "mixto"
 export default function OrdenesPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
   const [orders, setOrders] = useState<OrderListItem[]>([]);
@@ -52,7 +64,7 @@ export default function OrdenesPage() {
 
   if (!activeTenant) {
     return (
-      <div className="text-sm text-zinc-600">
+      <div className="text-sm text-muted-foreground">
         Selecciona un negocio para continuar.
       </div>
     );
@@ -61,24 +73,24 @@ export default function OrdenesPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold text-zinc-900 sm:text-2xl">
+        <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
           Órdenes / Tickets
         </h1>
         <Link
           href={`/dashboard/${tenantSlug}/ordenes/nueva`}
-          className="min-h-[44px] inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 active:bg-zinc-700 sm:min-h-0"
+          className="min-h-[44px] inline-flex items-center justify-center rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 active:opacity-95 sm:min-h-0"
         >
           Nueva orden
         </Link>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50/80 p-4">
-        <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-zinc-700 sm:flex-none">
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-border-soft/60 p-4">
+        <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
           Estado:
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="min-h-[44px] flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 focus:ring-2 focus:ring-zinc-500 sm:min-h-0 sm:flex-none sm:py-1.5"
+            className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none sm:py-1.5"
           >
             <option value="">Todos</option>
             <option value="draft">Borrador</option>
@@ -90,22 +102,22 @@ export default function OrdenesPage() {
             <option value="cancelled">Cancelada</option>
           </select>
         </label>
-        <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-zinc-700 sm:flex-none">
+        <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
           Desde:
           <input
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="min-h-[44px] flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 sm:min-h-0 sm:py-1.5"
+            className="min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:py-1.5"
           />
         </label>
-        <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-zinc-700 sm:flex-none">
+        <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
           Hasta:
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="min-h-[44px] flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 sm:min-h-0 sm:py-1.5"
+            className="min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:py-1.5"
           />
         </label>
       </div>
@@ -117,65 +129,57 @@ export default function OrdenesPage() {
       )}
 
       {loading ? (
-        <p className="text-sm text-zinc-500">Cargando órdenes...</p>
+        <LoadingBlock
+          variant="skeleton"
+          message="Cargando órdenes"
+          skeletonRows={6}
+        />
       ) : orders.length === 0 ? (
-        <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-zinc-500">
+        <div className="rounded-xl border border-border bg-surface-raised p-8 text-center shadow-sm">
+          <p className="text-sm text-muted">
             No hay órdenes. Crea una con &quot;Nueva orden&quot;.
           </p>
           <Link
             href={`/dashboard/${tenantSlug}/ordenes/nueva`}
-            className="mt-4 inline-block rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+            className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
           >
             Crear primera orden
           </Link>
         </div>
       ) : (
         <>
-          <div className="hidden overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm md:block">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-zinc-200">
-                <thead className="bg-zinc-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      Cliente
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      Contenido
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      Asignado
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      Estado
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      Total
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      Fecha
-                    </th>
+          <div className="hidden md:block">
+            <TableWrapper>
+              <table className="min-w-full">
+                <thead>
+                  <tr className={tableHeaderRowClass}>
+                    <th className={tableHeaderCellClass}>Cliente</th>
+                    <th className={tableHeaderCellClass}>Contenido</th>
+                    <th className={tableHeaderCellClass}>Asignado</th>
+                    <th className={tableHeaderCellClass}>Estado</th>
+                    <th className={tableHeaderCellRightClass}>Total</th>
+                    <th className={tableHeaderCellClass}>Fecha</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-200 bg-white">
+                <tbody>
                   {orders.map((o) => {
                     const tipo = orderContentType(o);
                     return (
                       <tr
                         key={o.id}
-                        className="cursor-pointer hover:bg-zinc-50/50"
+                        className={`cursor-pointer ${tableBodyRowClass}`}
                         onClick={() =>
                           router.push(
                             `/dashboard/${tenantSlug}/ordenes/${o.id}`
                           )
                         }
                       >
-                        <td className="px-4 py-3 text-sm text-zinc-900">
+                        <td className={tableBodyCellClass}>
                           {o.customer_name || o.customer_email || "—"}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className={tableBodyCellClass}>
                           {tipo === "productos" && (
-                            <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-medium text-zinc-700">
+                            <span className="rounded bg-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
                               Productos
                             </span>
                           )}
@@ -190,25 +194,25 @@ export default function OrdenesPage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className={tableBodyCellClass}>
                           {o.assigned_user ? (
-                            <span className="text-sm text-zinc-700">
+                            <span className="text-muted-foreground">
                               {o.assigned_user.display_name ||
                                 o.assigned_user.email?.split("@")[0]}
                             </span>
                           ) : (
-                            <span className="text-sm text-zinc-400 italic">
+                            <span className="text-muted italic">
                               Sin asignar
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className={tableBodyCellClass}>
                           <StatusBadge status={o.status} />
                         </td>
-                        <td className="px-4 py-3 text-right text-sm font-medium text-zinc-900">
+                        <td className={tableBodyCellRightClass}>
                           ${Number(o.total).toFixed(2)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-zinc-500">
+                        <td className={tableBodyCellMutedClass}>
                           {formatOrderDate(o.created_at)}
                         </td>
                       </tr>
@@ -216,7 +220,7 @@ export default function OrdenesPage() {
                   })}
                 </tbody>
               </table>
-            </div>
+            </TableWrapper>
           </div>
 
           <div className="space-y-2 md:hidden">
@@ -229,19 +233,19 @@ export default function OrdenesPage() {
                   onClick={() =>
                     router.push(`/dashboard/${tenantSlug}/ordenes/${o.id}`)
                   }
-                  className="w-full rounded-xl border border-zinc-200 bg-white p-4 text-left shadow-sm active:bg-zinc-50"
+                  className="w-full rounded-xl border border-border bg-surface-raised p-4 text-left shadow-sm active:bg-border-soft"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-zinc-900">
+                      <p className="font-medium text-foreground">
                         {o.customer_name || o.customer_email || "—"}
                       </p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-muted">
                         {formatOrderDate(o.created_at)}
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         {tipo === "productos" && (
-                          <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-medium text-zinc-700">
+                          <span className="rounded bg-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
                             Productos
                           </span>
                         )}
@@ -257,7 +261,7 @@ export default function OrdenesPage() {
                         )}
                         <StatusBadge status={o.status} />
                         {o.assigned_user && (
-                          <span className="text-xs text-zinc-500">
+                          <span className="text-xs text-muted">
                             →{" "}
                             {o.assigned_user.display_name ||
                               o.assigned_user.email?.split("@")[0]}
@@ -265,7 +269,7 @@ export default function OrdenesPage() {
                         )}
                       </div>
                     </div>
-                    <span className="shrink-0 text-sm font-semibold text-zinc-900">
+                    <span className="shrink-0 text-sm font-semibold text-foreground">
                       ${Number(o.total).toFixed(2)}
                     </span>
                   </div>

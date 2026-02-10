@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { createClient } from "@/lib/supabase/client";
 
 function parseHashParams() {
@@ -104,32 +105,35 @@ function LoginForm() {
 
   if (inviteMode === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-100">
-        <p className="text-zinc-600">Cargando...</p>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <LoadingBlock message="Cargando…" />
       </div>
     );
   }
 
+  const inputClass =
+    "mt-1 block w-full rounded-xl border border-border bg-border-soft/80 px-3 py-2.5 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+  const errorClass =
+    "rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700";
+
   if (inviteMode === true) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-100">
-        <div className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-          <h1 className="text-xl font-semibold text-zinc-900">
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="w-full max-w-sm rounded-xl border border-border bg-surface-raised p-6 shadow-card">
+          <h1 className="text-xl font-semibold text-foreground">
             Establece tu contraseña
           </h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-muted">
             Crea una contraseña para acceder a tu cuenta
           </p>
           <form onSubmit={handleSetPassword} className="mt-6 space-y-4">
             {setPasswordError && (
-              <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-                {setPasswordError}
-              </div>
+              <div className={errorClass}>{setPasswordError}</div>
             )}
             <div>
               <label
                 htmlFor="invite-email"
-                className="block text-sm font-medium text-zinc-700"
+                className="block text-sm font-medium text-muted"
               >
                 Email
               </label>
@@ -140,13 +144,13 @@ function LoginForm() {
                 value={email}
                 readOnly
                 autoComplete="off"
-                className="mt-1 block w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-500"
+                className={`${inputClass} text-muted`}
               />
             </div>
             <div>
               <label
                 htmlFor="new-password"
-                className="block text-sm font-medium text-zinc-700"
+                className="block text-sm font-medium text-muted"
               >
                 Nueva contraseña
               </label>
@@ -158,7 +162,7 @@ function LoginForm() {
                 onChange={(e) => setSetPasswordNew(e.target.value)}
                 required
                 minLength={6}
-                className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                className={inputClass}
                 autoComplete="new-password"
                 placeholder="Mínimo 6 caracteres"
               />
@@ -166,7 +170,7 @@ function LoginForm() {
             <div>
               <label
                 htmlFor="new-password-confirm"
-                className="block text-sm font-medium text-zinc-700"
+                className="block text-sm font-medium text-muted"
               >
                 Confirmar contraseña
               </label>
@@ -178,14 +182,14 @@ function LoginForm() {
                 onChange={(e) => setSetPasswordConfirm(e.target.value)}
                 required
                 minLength={6}
-                className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                className={inputClass}
                 autoComplete="new-password"
               />
             </div>
             <button
               type="submit"
               disabled={setPasswordLoading}
-              className="w-full rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+              className="w-full rounded-xl bg-accent px-3 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
             >
               {setPasswordLoading ? "Guardando..." : "Guardar y entrar"}
             </button>
@@ -196,22 +200,20 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-100">
-      <div className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold text-zinc-900">Iniciar sesión</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="w-full max-w-sm rounded-xl border border-border bg-surface-raised p-6 shadow-card">
+        <h1 className="text-xl font-semibold text-foreground">
+          Iniciar sesión
+        </h1>
+        <p className="mt-1 text-sm text-muted">
           Ingresa con tu email y contraseña
         </p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          {error && (
-            <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </div>
-          )}
+          {error && <div className={errorClass}>{error}</div>}
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-zinc-700"
+              className="block text-sm font-medium text-muted"
             >
               Email
             </label>
@@ -221,14 +223,14 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+              className={inputClass}
               autoComplete="email"
             />
           </div>
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-zinc-700"
+              className="block text-sm font-medium text-muted"
             >
               Contraseña
             </label>
@@ -238,23 +240,23 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+              className={inputClass}
               autoComplete="current-password"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+            className="w-full rounded-xl bg-accent px-3 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
           >
             {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
-        <p className="mt-4 text-center text-sm text-zinc-600">
+        <p className="mt-4 text-center text-sm text-muted">
           ¿No tienes cuenta?{" "}
           <Link
             href="/registro"
-            className="font-medium text-zinc-900 underline"
+            className="font-medium text-foreground underline hover:text-accent"
           >
             Regístrate
           </Link>
@@ -268,8 +270,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-zinc-100">
-          <p className="text-zinc-600">Cargando...</p>
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <LoadingBlock message="Cargando…" />
         </div>
       }
     >

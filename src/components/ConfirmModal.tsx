@@ -34,22 +34,22 @@ export function ConfirmModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm rounded-xl border border-zinc-200 bg-white p-6 shadow-lg"
+        className="w-full max-w-sm rounded-xl border border-border bg-surface-raised p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <h3
           id="confirm-modal-title"
-          className="text-lg font-semibold text-zinc-900"
+          className="text-lg font-semibold text-foreground"
         >
           {title}
         </h3>
-        <p className="mt-2 text-sm text-zinc-600">{message}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{message}</p>
         <div className="mt-6 flex gap-3">
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="flex-1 rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+            className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-border-soft/60 disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -60,7 +60,7 @@ export function ConfirmModal({
             className={
               confirmDanger
                 ? "flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                : "flex-1 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+                : "flex-1 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
             }
           >
             {loading ? "..." : confirmLabel}

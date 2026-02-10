@@ -7,6 +7,7 @@ import { useTenantStore } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { AddItemModal } from "@/components/orders/AddItemModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { formatOrderDate } from "@/lib/formatDate";
 import { getById as getOrder, update as updateOrder } from "@/services/ordersService";
 import { list as listTeam } from "@/services/teamService";
@@ -203,11 +204,11 @@ export default function OrdenDetallePage() {
 
   if (error && !order) {
     return (
-      <div className="text-sm text-zinc-600">
+      <div className="text-sm text-muted-foreground">
         {error}{" "}
         <Link
           href={`/dashboard/${tenantSlug}/ordenes`}
-          className="text-zinc-900 underline"
+          className="text-foreground underline"
         >
           Volver a órdenes
         </Link>
@@ -216,7 +217,7 @@ export default function OrdenDetallePage() {
   }
 
   if (!order) {
-    return <p className="text-sm text-zinc-500">Cargando...</p>;
+    return <LoadingBlock message="Cargando orden…" />;
   }
 
   const canEditItems = ["draft", "assigned"].includes(order.status);
@@ -224,27 +225,27 @@ export default function OrdenDetallePage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <div className="shrink-0 border-b border-zinc-200 pb-4">
+      <div className="shrink-0 border-b border-border pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/ordenes`}
-          className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
+          className="text-sm font-medium text-muted-foreground hover:text-foreground"
         >
           ← Volver a órdenes
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="text-xl font-semibold text-zinc-900 sm:text-2xl">
+          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
             Orden {order.id.slice(0, 8)}
           </h1>
           <StatusBadge status={order.status} />
           {order.assigned_user && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-border-soft px-3 py-1 text-sm text-muted-foreground">
               <span className="h-2 w-2 rounded-full bg-green-500" />
               {order.assigned_user.display_name ||
                 order.assigned_user.email?.split("@")[0]}
             </span>
           )}
         </div>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-muted">
           Creada: {formatOrderDate(order.created_at)}
         </p>
       </div>
@@ -255,15 +256,15 @@ export default function OrdenDetallePage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-medium text-zinc-900">Cliente</h2>
+      <div className="rounded-xl border border-border bg-surface-raised p-5 shadow-sm">
+        <h2 className="text-sm font-medium text-foreground">Cliente</h2>
         {!editingCustomer ? (
           <>
-            <p className="mt-2 text-sm text-zinc-600">
+            <p className="mt-2 text-sm text-muted-foreground">
               {order.customer_name || order.customer_email || "—"}
             </p>
             {order.customer_phone && (
-              <p className="text-sm text-zinc-600">
+              <p className="text-sm text-muted-foreground">
                 Tel: {order.customer_phone}
               </p>
             )}
@@ -271,7 +272,7 @@ export default function OrdenDetallePage() {
               <button
                 type="button"
                 onClick={() => setEditingCustomer(true)}
-                className="mt-2 text-sm font-medium text-zinc-700 hover:text-zinc-900"
+                className="mt-2 text-sm font-medium text-muted-foreground hover:text-foreground"
               >
                 Editar cliente
               </button>
@@ -279,34 +280,34 @@ export default function OrdenDetallePage() {
           </>
         ) : (
           <div className="mt-2 space-y-1">
-            <label className="block text-xs font-medium text-zinc-600">
+            <label className="block text-xs font-medium text-muted-foreground">
               Nombre
             </label>
             <input
               type="text"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-accent focus:ring-1 focus:ring-accent"
               placeholder="Nombre del cliente"
             />
-            <label className="mt-3 block text-xs font-medium text-zinc-600">
+            <label className="mt-3 block text-xs font-medium text-muted-foreground">
               Email
             </label>
             <input
               type="email"
               value={customerEmail}
               onChange={(e) => setCustomerEmail(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-accent focus:ring-1 focus:ring-accent"
               placeholder="cliente@ejemplo.com"
             />
-            <label className="mt-3 block text-xs font-medium text-zinc-600">
+            <label className="mt-3 block text-xs font-medium text-muted-foreground">
               Teléfono
             </label>
             <input
               type="tel"
               value={customerPhone}
               onChange={(e) => setCustomerPhone(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-accent focus:ring-1 focus:ring-accent"
               placeholder="555 123 4567"
             />
             <div className="mt-4 flex gap-2">
@@ -314,7 +315,7 @@ export default function OrdenDetallePage() {
                 type="button"
                 onClick={handleSaveCustomer}
                 disabled={actionLoading}
-                className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+                className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
               >
                 Guardar
               </button>
@@ -326,7 +327,7 @@ export default function OrdenDetallePage() {
                   setCustomerEmail(order.customer_email ?? "");
                   setCustomerPhone(order.customer_phone ?? "");
                 }}
-                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-border-soft"
               >
                 Cancelar
               </button>
@@ -336,8 +337,8 @@ export default function OrdenDetallePage() {
       </div>
 
       {(order.status === "draft" || order.status === "assigned") && (
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50/50 p-5 shadow-sm">
-          <p className="mb-3 text-sm font-medium text-zinc-900">
+        <div className="rounded-xl border border-border bg-border-soft/60 p-5 shadow-sm">
+          <p className="mb-3 text-sm font-medium text-foreground">
             {order.assigned_to
               ? "Orden asignada. Puedes cambiar la asignación o iniciar el trabajo."
               : "Asigna a un miembro del equipo (opcional). Luego inicia la orden."}
@@ -346,7 +347,7 @@ export default function OrdenDetallePage() {
             <select
               value={assignTo}
               onChange={(e) => setAssignTo(e.target.value)}
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+              className="select-custom block w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             >
               <option value="">Sin asignar</option>
               {team.map((t) => (
@@ -359,7 +360,7 @@ export default function OrdenDetallePage() {
               type="button"
               onClick={handleAssign}
               disabled={actionLoading}
-              className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+              className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
             >
               {order.assigned_to && assignTo ? "Cambiar asignación" : "Asignar"}
             </button>
@@ -368,7 +369,7 @@ export default function OrdenDetallePage() {
                 type="button"
                 onClick={handleUnassign}
                 disabled={actionLoading}
-                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
+                className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-border-soft"
               >
                 Quitar asignación
               </button>
@@ -377,14 +378,14 @@ export default function OrdenDetallePage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-zinc-200 p-4">
-          <h2 className="text-lg font-medium text-zinc-900">Items</h2>
+      <div className="rounded-xl border border-border bg-surface-raised shadow-sm">
+        <div className="flex items-center justify-between border-b border-border p-4">
+          <h2 className="text-lg font-medium text-foreground">Items</h2>
           {canEditItems && activeTenant && (
             <button
               type="button"
               onClick={() => setAddItemOpen(true)}
-              className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+              className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
             >
               + Agregar item
             </button>
@@ -392,40 +393,40 @@ export default function OrdenDetallePage() {
         </div>
         <div className="p-4">
           {items.length === 0 ? (
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-muted">
               No hay items. Agrega productos o servicios.
             </p>
           ) : (
-            <div className="overflow-hidden rounded-lg border border-zinc-200">
-              <table className="min-w-full divide-y divide-zinc-200">
-                <thead className="bg-zinc-50">
+            <div className="overflow-hidden rounded-lg border border-border">
+              <table className="min-w-full divide-y divide-border">
+                <thead className="bg-border-soft">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
                       Item
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
                       Tipo
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted">
                       Cantidad
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted">
                       P. unit.
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted">
                       Subtotal
                     </th>
                     {canEditItems && (
-                      <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted">
                         Acciones
                       </th>
                     )}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-200 bg-white">
+                <tbody className="divide-y divide-border bg-surface-raised">
                   {items.map((item) => (
-                    <tr key={item.id} className="hover:bg-zinc-50/50">
-                      <td className="px-4 py-3 text-sm text-zinc-900">
+                    <tr key={item.id} className="hover:bg-border-soft/60">
+                      <td className="px-4 py-3 text-sm text-foreground">
                         {item.product?.name ?? "—"}
                       </td>
                       <td className="px-4 py-3">
@@ -434,18 +435,18 @@ export default function OrdenDetallePage() {
                             Servicio
                           </span>
                         ) : (
-                          <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-medium text-zinc-700">
+                          <span className="rounded bg-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
                             Producto
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-zinc-600">
+                      <td className="px-4 py-3 text-right text-sm text-muted-foreground">
                         {item.quantity}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-zinc-600">
+                      <td className="px-4 py-3 text-right text-sm text-muted-foreground">
                         ${Number(item.unit_price).toFixed(2)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-medium text-zinc-900">
+                      <td className="px-4 py-3 text-right text-sm font-medium text-foreground">
                         ${Number(item.subtotal).toFixed(2)}
                       </td>
                       {canEditItems && (
@@ -467,24 +468,24 @@ export default function OrdenDetallePage() {
             </div>
           )}
         </div>
-        <div className="border-t border-zinc-200 px-4 py-3">
+        <div className="border-t border-border px-4 py-3">
           <div className="flex justify-end gap-8 text-sm">
-            <span className="text-zinc-600">Subtotal:</span>
-            <span className="font-medium text-zinc-900">
+            <span className="text-muted-foreground">Subtotal:</span>
+            <span className="font-medium text-foreground">
               ${Number(order.subtotal).toFixed(2)}
             </span>
           </div>
           {Number(order.discount) > 0 && (
             <div className="mt-1 flex justify-end gap-8 text-sm">
-              <span className="text-zinc-600">Descuento:</span>
-              <span className="font-medium text-zinc-900">
+              <span className="text-muted-foreground">Descuento:</span>
+              <span className="font-medium text-foreground">
                 -${Number(order.discount).toFixed(2)}
               </span>
             </div>
           )}
           <div className="mt-2 flex justify-end gap-8 text-base font-medium">
-            <span className="text-zinc-600">Total:</span>
-            <span className="font-semibold text-zinc-900">
+            <span className="text-muted-foreground">Total:</span>
+            <span className="font-semibold text-foreground">
               ${Number(order.total).toFixed(2)}
             </span>
           </div>
@@ -497,7 +498,7 @@ export default function OrdenDetallePage() {
             type="button"
             onClick={() => handleStatusChange("in_progress")}
             disabled={actionLoading}
-            className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+            className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
           >
             Iniciar sin asignar
           </button>
@@ -507,7 +508,7 @@ export default function OrdenDetallePage() {
             type="button"
             onClick={() => handleStatusChange("in_progress")}
             disabled={actionLoading}
-            className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+            className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
           >
             Iniciar trabajo
           </button>

@@ -6,6 +6,17 @@ import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { Pencil, Trash2 } from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import {
+  TableWrapper,
+  tableHeaderRowClass,
+  tableHeaderCellClass,
+  tableHeaderCellRightClass,
+  tableBodyRowClass,
+  tableBodyCellClass,
+  tableBodyCellMutedClass,
+  tableBodyCellRightClass,
+} from "@/components/ui/TableWrapper";
 import type { ProductListItem } from "@/types/products";
 import { listByTenant, remove } from "@/services/productsService";
 
@@ -58,7 +69,7 @@ export default function ProductosPage() {
 
   if (!activeTenant) {
     return (
-      <div className="text-sm text-zinc-600">
+      <div className="text-sm text-muted-foreground">
         Selecciona un negocio para continuar.
       </div>
     );
@@ -67,12 +78,12 @@ export default function ProductosPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold text-zinc-900 sm:text-2xl">
+        <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
           Productos
         </h1>
         <Link
           href={`/dashboard/${tenantSlug}/productos/nuevo`}
-          className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 sm:min-h-0"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 sm:min-h-0"
         >
           Nuevo producto
         </Link>
@@ -85,15 +96,19 @@ export default function ProductosPage() {
       )}
 
       {loading ? (
-        <p className="text-sm text-zinc-500">Cargando productos...</p>
+        <LoadingBlock
+          variant="skeleton"
+          message="Cargando productos"
+          skeletonRows={6}
+        />
       ) : products.length === 0 ? (
-        <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center">
-          <p className="text-sm text-zinc-500">
+        <div className="rounded-xl border border-border bg-surface-raised p-8 text-center">
+          <p className="text-sm text-muted">
             No hay productos. Crea uno con &quot;Nuevo producto&quot;.
           </p>
           <Link
             href={`/dashboard/${tenantSlug}/productos/nuevo`}
-            className="mt-4 inline-block rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+            className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
           >
             Crear primer producto
           </Link>
@@ -104,10 +119,10 @@ export default function ProductosPage() {
             {products.map((p) => (
               <div
                 key={p.id}
-                className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+                className="rounded-xl border border-border bg-surface-raised p-4"
               >
                 <div className="flex gap-3">
-                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-zinc-100">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-border-soft">
                     {p.image_url ? (
                       <img
                         src={p.image_url}
@@ -115,20 +130,20 @@ export default function ProductosPage() {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <span className="flex h-full w-full items-center justify-center text-xs text-zinc-400">
+                      <span className="flex h-full w-full items-center justify-center text-xs text-muted">
                         —
                       </span>
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-zinc-900">{p.name}</p>
+                    <p className="font-medium text-foreground">{p.name}</p>
                     {p.theme && (
-                      <p className="text-xs text-zinc-500">Tema: {p.theme}</p>
+                      <p className="text-xs text-muted">Tema: {p.theme}</p>
                     )}
-                    <p className="mt-1 text-sm font-medium text-zinc-900">
+                    <p className="mt-1 text-sm font-medium text-foreground">
                       ${Number(p.price).toFixed(2)}
                     </p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-muted">
                       {p.unit || "unit"}
                       {p.sku ? ` · ${p.sku}` : ""}
                       {" · "}
@@ -136,10 +151,10 @@ export default function ProductosPage() {
                     </p>
                   </div>
                 </div>
-                <div className="mt-3 flex gap-2 border-t border-zinc-100 pt-3">
+                <div className="mt-3 flex gap-2 border-t border-border-soft pt-3">
                   <Link
                     href={`/dashboard/${tenantSlug}/productos/${p.id}`}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-200 bg-white py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface py-2 text-sm font-medium text-muted-foreground hover:bg-border-soft/60"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                     Editar
@@ -148,7 +163,7 @@ export default function ProductosPage() {
                     type="button"
                     onClick={() => openDeleteModal(p)}
                     disabled={deletingId === p.id}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-surface py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     {deletingId === p.id ? "..." : "Eliminar"}
@@ -157,38 +172,24 @@ export default function ProductosPage() {
               </div>
             ))}
           </div>
-          <div className="hidden overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm md:block">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-zinc-200">
-                <thead className="bg-zinc-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      Imagen
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      Nombre
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      SKU
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      Unidad
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      Precio
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      Stock
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      Acciones
-                    </th>
+          <div className="hidden md:block">
+            <TableWrapper>
+              <table className="min-w-full">
+                <thead>
+                  <tr className={tableHeaderRowClass}>
+                    <th className={tableHeaderCellClass}>Imagen</th>
+                    <th className={tableHeaderCellClass}>Nombre</th>
+                    <th className={tableHeaderCellClass}>SKU</th>
+                    <th className={tableHeaderCellClass}>Unidad</th>
+                    <th className={tableHeaderCellRightClass}>Precio</th>
+                    <th className={tableHeaderCellRightClass}>Stock</th>
+                    <th className={tableHeaderCellRightClass}>Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-200 bg-white">
+                <tbody>
                   {products.map((p) => (
-                    <tr key={p.id} className="hover:bg-zinc-50/50">
-                      <td className="px-4 py-3">
+                    <tr key={p.id} className={tableBodyRowClass}>
+                      <td className={tableBodyCellClass}>
                         {p.image_url ? (
                           <img
                             src={p.image_url}
@@ -196,38 +197,36 @@ export default function ProductosPage() {
                             className="h-12 w-12 rounded-lg object-cover"
                           />
                         ) : (
-                          <span className="text-xs text-zinc-400">—</span>
+                          <span className="text-xs text-muted">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className={tableBodyCellClass}>
                         <div className="flex flex-col gap-0.5">
-                          <span className="font-medium text-zinc-900">
+                          <span className="font-medium text-foreground">
                             {p.name}
                           </span>
                           {p.theme && (
-                            <span className="text-xs text-zinc-500">
+                            <span className="text-xs text-muted">
                               Tema: {p.theme}
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-zinc-600">
-                        {p.sku ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-zinc-600">
+                      <td className={tableBodyCellMutedClass}>{p.sku ?? "—"}</td>
+                      <td className={tableBodyCellMutedClass}>
                         {p.unit || "unit"}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-medium text-zinc-900">
+                      <td className={tableBodyCellRightClass}>
                         ${Number(p.price).toFixed(2)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-zinc-600">
+                      <td className={`${tableBodyCellMutedClass} text-right`}>
                         {p.stock}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className={tableBodyCellClass}>
                         <div className="flex justify-end gap-2">
                           <Link
                             href={`/dashboard/${tenantSlug}/productos/${p.id}`}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-border-soft/60"
                           >
                             <Pencil className="h-3.5 w-3.5" />
                             Editar
@@ -236,7 +235,7 @@ export default function ProductosPage() {
                             type="button"
                             onClick={() => openDeleteModal(p)}
                             disabled={deletingId === p.id}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-surface px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                             {deletingId === p.id ? "..." : "Eliminar"}
@@ -247,7 +246,7 @@ export default function ProductosPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </TableWrapper>
           </div>
         </>
       )}

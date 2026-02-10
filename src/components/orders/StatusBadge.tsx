@@ -11,7 +11,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_CLASSES: Record<string, string> = {
-  draft: "bg-zinc-100 text-zinc-700",
+  draft: "bg-border-soft text-muted-foreground",
   assigned: "bg-blue-100 text-blue-800",
   in_progress: "bg-amber-100 text-amber-800",
   completed: "bg-green-100 text-green-800",
@@ -26,7 +26,7 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ status }: StatusBadgeProps) {
   const label = STATUS_LABELS[status] ?? status;
-  const className = STATUS_CLASSES[status] ?? "bg-zinc-100 text-zinc-700";
+  const className = STATUS_CLASSES[status] ?? "bg-border-soft text-muted-foreground";
   return (
     <span
       className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${className}`}

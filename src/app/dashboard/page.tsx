@@ -5,6 +5,17 @@ import Link from "next/link";
 import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import {
+  TableWrapper,
+  tableHeaderRowClass,
+  tableHeaderCellClass,
+  tableHeaderCellRightClass,
+  tableBodyRowClass,
+  tableBodyCellClass,
+  tableBodyCellMutedClass,
+  tableBodyCellRightClass,
+} from "@/components/ui/TableWrapper";
 import { formatOrderDate } from "@/lib/formatDate";
 import {
   ClipboardList,
@@ -142,7 +153,7 @@ export default function DashboardPage() {
     return null;
   }
 
-  const recent = orders.slice(0, 8);
+  const recent = orders.slice(0, 5);
   const byStatus = orders.reduce<Record<string, number>>((acc, o) => {
     acc[o.status] = (acc[o.status] ?? 0) + 1;
     return acc;
@@ -164,15 +175,25 @@ export default function DashboardPage() {
   const maxUserTotal =
     userSales.length > 0 ? Math.max(...userSales.map((u) => u.total)) : 0;
 
+  const periodLabel =
+    period === "today"
+      ? "Hoy"
+      : period === "week"
+      ? "Últimos 7 días"
+      : period === "fortnight"
+      ? "Últimos 15 días"
+      : "Últimos 30 días";
+  const needsAttention = unassignedCount > 0 || activeOrders > 0;
+
   return (
-    <div className="space-y-6 pb-8 sm:space-y-8 sm:pb-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-8 pb-8 sm:pb-10">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             {activeTenant.name}
           </h1>
-          <p className="text-sm text-zinc-500 sm:text-base">
-            Resumen de ventas, catálogo y actividad.
+          <p className="mt-0.5 text-sm text-muted sm:text-base">
+            {periodLabel}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -183,7 +204,7 @@ export default function DashboardPage() {
                 e.target.value as "today" | "week" | "fortnight" | "month"
               )
             }
-            className="min-h-[44px] flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm font-medium text-zinc-700 shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-1 sm:min-h-0 sm:flex-none"
+            className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm font-medium text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none"
           >
             <option value="today">Hoy</option>
             <option value="week">Semana</option>
@@ -192,139 +213,137 @@ export default function DashboardPage() {
           </select>
           <Link
             href={`/dashboard/${activeTenant.slug}/ordenes/nueva`}
-            className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 active:bg-zinc-700 sm:min-h-0 sm:flex-none"
+            className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:opacity-90 active:opacity-95 sm:min-h-0 sm:flex-none"
           >
             Nueva Orden
           </Link>
         </div>
-      </div>
+      </header>
+
+      {needsAttention && (
+        <Link
+          href={`/dashboard/${activeTenant.slug}/ordenes`}
+          className="flex items-center gap-3 rounded-xl border border-border-soft bg-border-soft/50 px-4 py-3 transition-colors hover:bg-border-soft/70"
+        >
+          <div className="flex items-center gap-2">
+            {activeOrders > 0 && (
+              <span className="flex items-center gap-1.5 text-sm text-foreground">
+                <Clock className="h-4 w-4 text-amber-500" />
+                {activeOrders} en progreso
+              </span>
+            )}
+            {unassignedCount > 0 && (
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <UserPlus className="h-4 w-4" />
+                {unassignedCount} sin asignar
+              </span>
+            )}
+          </div>
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted" />
+        </Link>
+      )}
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-500">
-          Ventas
-        </h2>
-        <p className="mb-3 text-xs text-zinc-500">
-          Período:{" "}
-          {period === "today"
-            ? "Hoy"
-            : period === "week"
-            ? "Últimos 7 días"
-            : period === "fortnight"
-            ? "Últimos 15 días"
-            : "Últimos 30 días"}
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-3 flex items-baseline justify-between gap-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
+            Ventas
+          </h2>
+          <span className="text-xs text-muted">{periodLabel}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Link
             href={`/dashboard/${activeTenant.slug}/ordenes`}
-            className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-colors hover:border-zinc-300 hover:bg-zinc-50/50 sm:p-6"
+            className="rounded-xl border border-border bg-surface-raised p-4 transition-colors hover:bg-border-soft/40"
           >
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-500">
-                Ventas Totales
+              <p className="text-xs font-medium text-muted">
+                Total vendido
               </p>
-              <TrendingUp className="h-4 w-4 text-emerald-500" />
+              <TrendingUp className="h-4 w-4 text-accent" />
             </div>
-            <h3 className="mt-2 text-xl font-bold text-zinc-900 sm:text-2xl">
+            <p className="mt-1.5 text-2xl font-bold tabular-nums text-foreground">
               ${totalSold.toFixed(2)}
-            </h3>
-            <p className="mt-1 text-xs text-zinc-500">
-              Ver órdenes <ArrowRight className="inline h-3 w-3" />
+            </p>
+            <p className="mt-0.5 text-xs text-muted">
+              Cobrado · Ver órdenes <ArrowRight className="inline h-3 w-3" />
             </p>
           </Link>
           <Link
             href={`/dashboard/${activeTenant.slug}/ordenes?status=in_progress`}
-            className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-colors hover:border-zinc-300 hover:bg-zinc-50/50 sm:p-6"
+            className="rounded-xl border border-border bg-surface-raised p-4 transition-colors hover:bg-border-soft/40"
           >
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-500">
-                Órdenes Activas
-              </p>
+              <p className="text-xs font-medium text-muted">Activas</p>
               <Clock className="h-4 w-4 text-amber-500" />
             </div>
-            <h3 className="mt-2 text-xl font-bold text-zinc-900 sm:text-2xl">
+            <p className="mt-1.5 text-xl font-bold tabular-nums text-foreground">
               {activeOrders}
-            </h3>
-            <p className="mt-1 text-xs text-zinc-500">
-              {activeOrders === 0 ? "Ver órdenes" : "En progreso · Ver"}{" "}
-              <ArrowRight className="inline h-3 w-3" />
             </p>
+            <p className="mt-0.5 text-xs text-muted">En progreso</p>
           </Link>
           <Link
             href={`/dashboard/${activeTenant.slug}/ordenes?status=completed`}
-            className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-colors hover:border-zinc-300 hover:bg-zinc-50/50 sm:p-6"
+            className="rounded-xl border border-border bg-surface-raised p-4 transition-colors hover:bg-border-soft/40"
           >
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-500">Completadas</p>
-              <div className="h-2 w-2 rounded-full bg-emerald-500" />
+              <p className="text-xs font-medium text-muted">Completadas</p>
+              <div className="h-2 w-2 rounded-full bg-accent" />
             </div>
-            <h3 className="mt-2 text-xl font-bold text-zinc-900 sm:text-2xl">
+            <p className="mt-1.5 text-xl font-bold tabular-nums text-foreground">
               {byStatus.completed ?? 0}
-            </h3>
-            <p className="mt-1 text-xs text-zinc-500">
-              {(byStatus.completed ?? 0) === 0
-                ? "Ver órdenes"
-                : "Listas para cobro · Ver"}{" "}
-              <ArrowRight className="inline h-3 w-3" />
             </p>
+            <p className="mt-0.5 text-xs text-muted">Para cobro</p>
           </Link>
           <Link
             href={`/dashboard/${activeTenant.slug}/ordenes`}
-            className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-colors hover:border-zinc-300 hover:bg-zinc-50/50 sm:p-6"
+            className="rounded-xl border border-border bg-surface-raised p-4 transition-colors hover:bg-border-soft/40"
           >
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-500">Total Órdenes</p>
-              <ClipboardList className="h-4 w-4 text-zinc-400" />
+              <p className="text-xs font-medium text-muted">Total órdenes</p>
+              <ClipboardList className="h-4 w-4 text-muted" />
             </div>
-            <h3 className="mt-2 text-xl font-bold text-zinc-900 sm:text-2xl">
+            <p className="mt-1.5 text-xl font-bold tabular-nums text-foreground">
               {orders.length}
-            </h3>
-            <p className="mt-1 text-xs text-zinc-500">
-              En el período · Ver <ArrowRight className="inline h-3 w-3" />
             </p>
+            <p className="mt-0.5 text-xs text-muted">En el período</p>
           </Link>
         </div>
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-500">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">
           Catálogo
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4">
           <Link
             href={`/dashboard/${activeTenant.slug}/productos`}
-            className="flex items-center gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-colors hover:border-zinc-300 hover:bg-zinc-50/50 sm:p-6"
+            className="flex items-center gap-3 rounded-xl border border-border bg-surface-raised p-4 transition-colors hover:bg-border-soft/40"
           >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-600">
-              <ShoppingBag className="h-6 w-6" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-border-soft text-muted">
+              <ShoppingBag className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-zinc-900">Productos</p>
-              <p className="text-2xl font-bold text-zinc-900 sm:text-3xl">
+              <p className="text-xs font-medium text-muted">Productos</p>
+              <p className="text-lg font-bold tabular-nums text-foreground">
                 {catalogLoading ? "—" : catalogStats?.products_count ?? 0}
               </p>
-              <p className="text-xs text-zinc-500">
-                dados de alta en el catálogo
-              </p>
             </div>
-            <ArrowRight className="h-4 w-4 shrink-0 text-zinc-400" />
+            <ArrowRight className="h-4 w-4 shrink-0 text-muted" />
           </Link>
           <Link
             href={`/dashboard/${activeTenant.slug}/servicios`}
-            className="flex items-center gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-colors hover:border-zinc-300 hover:bg-zinc-50/50 sm:p-6"
+            className="flex items-center gap-3 rounded-xl border border-border bg-surface-raised p-4 transition-colors hover:bg-border-soft/40"
           >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
-              <Wrench className="h-6 w-6" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-border-soft text-accent">
+              <Wrench className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-zinc-900">Servicios</p>
-              <p className="text-2xl font-bold text-zinc-900 sm:text-3xl">
+              <p className="text-xs font-medium text-muted">Servicios</p>
+              <p className="text-lg font-bold tabular-nums text-foreground">
                 {catalogLoading ? "—" : catalogStats?.services_count ?? 0}
               </p>
-              <p className="text-xs text-zinc-500">
-                dados de alta en el catálogo
-              </p>
             </div>
-            <ArrowRight className="h-4 w-4 shrink-0 text-zinc-400" />
+            <ArrowRight className="h-4 w-4 shrink-0 text-muted" />
           </Link>
         </div>
       </section>
@@ -332,7 +351,7 @@ export default function DashboardPage() {
       {unassignedCount > 0 && (
         <Link
           href={`/dashboard/${activeTenant.slug}/ordenes`}
-          className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 transition-colors hover:bg-amber-100/80 sm:p-4"
+          className="flex items-center gap-3 rounded-xl border border-amber-200/80 bg-amber-50/80 p-4 text-amber-900 transition-colors hover:bg-amber-50 sm:p-4"
         >
           <UserPlus className="h-5 w-5 shrink-0 text-amber-600" />
           <div>
@@ -340,7 +359,7 @@ export default function DashboardPage() {
               {unassignedCount} orden{unassignedCount !== 1 ? "es" : ""} sin
               asignar
             </p>
-            <p className="text-sm text-amber-800">
+            <p className="text-sm text-amber-800/90">
               Asigna a un miembro del equipo para dar seguimiento.
             </p>
           </div>
@@ -350,223 +369,245 @@ export default function DashboardPage() {
 
       {userSales.length > 0 && (
         <section>
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-zinc-500">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted">
             <Trophy className="h-4 w-4 text-amber-500" />
             Ventas por usuario
           </h2>
-          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <table className="w-full text-left text-sm">
+          <TableWrapper>
+            <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-100 bg-zinc-50/80 text-xs font-medium uppercase tracking-wider text-zinc-500">
-                  <th className="px-4 py-3 sm:px-6">#</th>
-                  <th className="px-4 py-3 sm:px-6">Usuario</th>
-                  <th className="px-4 py-3 sm:px-6 text-right">Órdenes</th>
-                  <th className="px-4 py-3 sm:px-6 text-right">Total</th>
+                <tr className={tableHeaderRowClass}>
+                  <th className={tableHeaderCellClass}>#</th>
+                  <th className={tableHeaderCellClass}>Usuario</th>
+                  <th className={tableHeaderCellRightClass}>Órdenes</th>
+                  <th className={tableHeaderCellRightClass}>Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100">
+              <tbody>
                 {userSales.slice(0, 8).map((u, i) => (
                   <tr
                     key={u.id}
                     className={
                       i === 0
-                        ? "bg-amber-50/50 font-medium"
-                        : "bg-white hover:bg-zinc-50/50"
+                        ? "bg-amber-50/40 font-medium"
+                        : tableBodyRowClass
                     }
                   >
-                    <td className="px-4 py-3 sm:px-6">
+                    <td className={tableBodyCellClass}>
                       <span
                         className={
                           i === 0
-                            ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-200 text-xs font-bold text-amber-900"
-                            : "text-zinc-500"
+                            ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-200/80 text-xs font-bold text-amber-900"
+                            : "text-muted"
                         }
                       >
                         {i + 1}
                       </span>
                     </td>
-                    <td className="px-4 py-3 sm:px-6 text-zinc-900">
-                      {u.name}
-                    </td>
-                    <td className="px-4 py-3 sm:px-6 text-right text-zinc-600">
+                    <td className={tableBodyCellClass}>{u.name}</td>
+                    <td className={`${tableBodyCellMutedClass} text-right`}>
                       {u.count}
                     </td>
-                    <td className="px-4 py-3 sm:px-6 text-right font-semibold text-zinc-900">
+                    <td className={tableBodyCellRightClass}>
                       ${u.total.toFixed(2)}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {maxUserTotal > 0 && userSales.length > 1 && (
-              <div className="border-t border-zinc-100 px-4 py-2 text-xs text-zinc-500 sm:px-6">
+            {totalSold > 0 && userSales.length > 0 && (
+              <div className="border-t border-border-soft px-4 py-2 text-xs text-muted sm:px-6">
                 El líder del período es{" "}
-                <strong className="text-zinc-700">{userSales[0].name}</strong>{" "}
-                con {((userSales[0].total / maxUserTotal) * 100).toFixed(0)}%
+                <strong className="text-muted-foreground">{userSales[0].name}</strong>{" "}
+                con {((userSales[0].total / totalSold) * 100).toFixed(0)}%
                 del total.
               </div>
             )}
-          </div>
+          </TableWrapper>
         </section>
       )}
 
-      <section className="grid gap-6 sm:grid-cols-2">
-        <div>
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-zinc-500">
-            <ShoppingBag className="h-4 w-4" />
-            Lo más vendido: Productos
-          </h2>
-          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            {salesByItemLoading ? (
-              <div className="p-6 text-center text-sm text-zinc-500">
-                Cargando...
-              </div>
-            ) : salesByItem.products.length === 0 ? (
-              <div className="p-6 text-center text-sm text-zinc-500">
-                Sin ventas de productos en el período.
-              </div>
-            ) : (
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-100 bg-zinc-50/80 text-xs font-medium uppercase tracking-wider text-zinc-500">
-                    <th className="px-4 py-3 sm:px-6">Producto</th>
-                    <th className="px-4 py-3 sm:px-6 text-right">Cant.</th>
-                    <th className="px-4 py-3 sm:px-6 text-right">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100">
-                  {salesByItem.products.map((row, i) => (
-                    <tr
-                      key={row.id}
-                      className={
-                        i === 0 ? "bg-zinc-50/50" : "hover:bg-zinc-50/30"
-                      }
-                    >
-                      <td className="px-4 py-3 font-medium text-zinc-900 sm:px-6">
-                        {row.name}
-                      </td>
-                      <td className="px-4 py-3 text-right text-zinc-600 sm:px-6">
-                        {row.quantity}
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold text-zinc-900 sm:px-6">
-                        ${row.total.toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+      <section
+        className={
+          salesByItem.products.length > 0 && salesByItem.services.length > 0
+            ? "grid gap-4 lg:grid-cols-2"
+            : ""
+        }
+      >
+        {!salesByItemLoading &&
+        salesByItem.products.length === 0 &&
+        salesByItem.services.length === 0 ? (
+          <div className="rounded-xl border border-border bg-surface-raised px-4 py-3 text-center text-sm text-muted">
+            Sin ventas de productos ni servicios en el período.
           </div>
-        </div>
-        <div>
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-zinc-500">
-            <Wrench className="h-4 w-4" />
-            Lo más vendido: Servicios
-          </h2>
-          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            {salesByItemLoading ? (
-              <div className="p-6 text-center text-sm text-zinc-500">
-                Cargando...
-              </div>
-            ) : salesByItem.services.length === 0 ? (
-              <div className="p-6 text-center text-sm text-zinc-500">
-                Sin ventas de servicios en el período.
-              </div>
-            ) : (
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-100 bg-zinc-50/80 text-xs font-medium uppercase tracking-wider text-zinc-500">
-                    <th className="px-4 py-3 sm:px-6">Servicio</th>
-                    <th className="px-4 py-3 sm:px-6 text-right">Cant.</th>
-                    <th className="px-4 py-3 sm:px-6 text-right">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100">
-                  {salesByItem.services.map((row, i) => (
-                    <tr
-                      key={row.id}
-                      className={
-                        i === 0 ? "bg-teal-50/30" : "hover:bg-zinc-50/30"
-                      }
-                    >
-                      <td className="px-4 py-3 font-medium text-zinc-900 sm:px-6">
-                        {row.name}
-                      </td>
-                      <td className="px-4 py-3 text-right text-zinc-600 sm:px-6">
-                        {row.quantity}
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold text-zinc-900 sm:px-6">
-                        ${row.total.toFixed(2)}
-                      </td>
+        ) : (
+          <>
+        {(salesByItem.products.length > 0 || salesByItemLoading) && (
+          <div
+            className={
+              salesByItem.products.length === 0 &&
+              salesByItem.services.length > 0
+                ? "hidden"
+                : ""
+            }
+          >
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted">
+              <ShoppingBag className="h-4 w-4" />
+              Lo más vendido: Productos
+            </h2>
+            <TableWrapper>
+              {salesByItemLoading ? (
+                <LoadingBlock message="Cargando productos…" />
+              ) : salesByItem.products.length === 0 ? (
+                <div className="p-4 text-center text-sm text-muted">
+                  Sin ventas de productos en el período.
+                </div>
+              ) : (
+                <table className="min-w-full">
+                  <thead>
+                    <tr className={tableHeaderRowClass}>
+                      <th className={tableHeaderCellClass}>Producto</th>
+                      <th className={tableHeaderCellRightClass}>Cant.</th>
+                      <th className={tableHeaderCellRightClass}>Total</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  </thead>
+                  <tbody>
+                    {salesByItem.products.map((row, i) => (
+                      <tr
+                        key={row.id}
+                        className={
+                          i === 0 ? "bg-border-soft/60" : tableBodyRowClass
+                        }
+                      >
+                        <td className={tableBodyCellClass}>{row.name}</td>
+                        <td className={`${tableBodyCellMutedClass} text-right`}>
+                          {row.quantity}
+                        </td>
+                        <td className={tableBodyCellRightClass}>
+                          ${row.total.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </TableWrapper>
           </div>
-        </div>
+        )}
+        {(salesByItem.services.length > 0 || salesByItemLoading) && (
+          <div
+            className={
+              salesByItem.services.length === 0 &&
+              salesByItem.products.length > 0
+                ? "hidden"
+                : ""
+            }
+          >
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted">
+              <Wrench className="h-4 w-4" />
+              Lo más vendido: Servicios
+            </h2>
+            <TableWrapper>
+              {salesByItemLoading ? (
+                <LoadingBlock message="Cargando servicios…" />
+              ) : salesByItem.services.length === 0 ? (
+                <div className="p-4 text-center text-sm text-muted">
+                  Sin ventas de servicios en el período.
+                </div>
+              ) : (
+                <table className="min-w-full">
+                  <thead>
+                    <tr className={tableHeaderRowClass}>
+                      <th className={tableHeaderCellClass}>Servicio</th>
+                      <th className={tableHeaderCellRightClass}>Cant.</th>
+                      <th className={tableHeaderCellRightClass}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {salesByItem.services.map((row, i) => (
+                      <tr
+                        key={row.id}
+                        className={
+                          i === 0 ? "bg-border-soft/60" : tableBodyRowClass
+                        }
+                      >
+                        <td className={tableBodyCellClass}>{row.name}</td>
+                        <td className={`${tableBodyCellMutedClass} text-right`}>
+                          {row.quantity}
+                        </td>
+                        <td className={tableBodyCellRightClass}>
+                          ${row.total.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </TableWrapper>
+          </div>
+        )}
+          </>
+        )}
       </section>
 
       <section>
         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
             Actividad reciente
           </h2>
           <Link
             href={`/dashboard/${activeTenant.slug}/ordenes`}
-            className="inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-zinc-500 hover:text-zinc-900 sm:min-h-0"
+            className="inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-muted hover:text-foreground sm:min-h-0"
           >
             Ver todas <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <TableWrapper>
           {salesLoading ? (
-            <div className="p-8 text-center text-sm text-zinc-500">
-              Cargando actividad...
-            </div>
+            <LoadingBlock message="Cargando actividad…" />
           ) : recent.length === 0 ? (
-            <div className="p-8 text-center text-sm text-zinc-500">
+            <div className="p-6 text-center text-sm text-muted">
               No hay actividad reciente.
             </div>
           ) : (
             <>
-              <div className="hidden overflow-x-auto md:block">
-                <table className="w-full text-left">
+              <div className="hidden md:block">
+                <table className="min-w-full">
                   <thead>
-                    <tr className="bg-zinc-50/80 text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      <th className="px-4 py-3 sm:px-6">Fecha</th>
-                      <th className="px-4 py-3 sm:px-6">Cliente</th>
-                      <th className="px-4 py-3 sm:px-6">Contenido</th>
-                      <th className="px-4 py-3 sm:px-6">Asignado</th>
-                      <th className="px-4 py-3 sm:px-6">Estado</th>
-                      <th className="px-4 py-3 sm:px-6 text-right">Total</th>
+                    <tr className={tableHeaderRowClass}>
+                      <th className={tableHeaderCellClass}>Fecha</th>
+                      <th className={tableHeaderCellClass}>Cliente</th>
+                      <th className={tableHeaderCellClass}>Contenido</th>
+                      <th className={tableHeaderCellClass}>Asignado</th>
+                      <th className={tableHeaderCellClass}>Estado</th>
+                      <th className={tableHeaderCellRightClass}>Total</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-100">
+                  <tbody>
                     {recent.map((o) => {
                       const tipo = orderContentType(o);
                       return (
                         <tr
                           key={o.id}
-                          className="group transition-colors hover:bg-zinc-50/50"
+                          className={`group ${tableBodyRowClass}`}
                         >
-                          <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600 sm:px-6">
+                          <td className={`whitespace-nowrap ${tableBodyCellMutedClass}`}>
                             {formatOrderDate(o.created_at)}
                           </td>
-                          <td className="px-4 py-3 sm:px-6">
+                          <td className={tableBodyCellClass}>
                             <Link
                               href={`/dashboard/${activeTenant.slug}/ordenes/${o.id}`}
-                              className="text-sm font-medium text-zinc-900 group-hover:underline"
+                              className="font-medium text-foreground group-hover:underline"
                             >
                               {o.customer_name || "Sin nombre"}
                             </Link>
-                            <span className="ml-1 font-mono text-[10px] text-zinc-400">
+                            <span className="ml-1 font-mono text-[10px] text-muted">
                               {o.id.slice(0, 8)}
                             </span>
                           </td>
-                          <td className="px-4 py-3 sm:px-6">
+                          <td className={tableBodyCellClass}>
                             {tipo === "productos" && (
-                              <span className="inline-flex rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+                              <span className="inline-flex rounded-md bg-border-soft px-2 py-0.5 text-xs font-medium text-muted-foreground">
                                 Productos
                               </span>
                             )}
@@ -581,22 +622,22 @@ export default function DashboardPage() {
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-3 sm:px-6">
+                          <td className={tableBodyCellClass}>
                             {o.assigned_user ? (
-                              <span className="text-xs text-zinc-600">
+                              <span className="text-muted-foreground">
                                 {o.assigned_user.display_name ||
                                   o.assigned_user.email?.split("@")[0]}
                               </span>
                             ) : (
-                              <span className="text-xs italic text-zinc-400">
+                              <span className="italic text-muted">
                                 Pendiente
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-3 sm:px-6">
+                          <td className={tableBodyCellClass}>
                             <StatusBadge status={o.status} />
                           </td>
-                          <td className="px-4 py-3 text-right text-sm font-semibold text-zinc-900 sm:px-6">
+                          <td className={tableBodyCellRightClass}>
                             ${Number(o.total).toFixed(2)}
                           </td>
                         </tr>
@@ -606,24 +647,24 @@ export default function DashboardPage() {
                 </table>
               </div>
 
-              <div className="divide-y divide-zinc-100 md:hidden">
+              <div className="divide-y divide-border-soft md:hidden">
                 {recent.map((o) => {
                   const tipo = orderContentType(o);
                   return (
                     <Link
                       key={o.id}
                       href={`/dashboard/${activeTenant.slug}/ordenes/${o.id}`}
-                      className="block p-4 active:bg-zinc-50"
+                      className="block p-4 active:bg-border-soft/60"
                     >
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-muted">
                         {formatOrderDate(o.created_at)}
                       </p>
-                      <p className="mt-0.5 font-medium text-zinc-900">
+                      <p className="mt-0.5 font-medium text-foreground">
                         {o.customer_name || "Sin nombre"}
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         {tipo === "productos" && (
-                          <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-600">
+                          <span className="rounded bg-border-soft px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
                             Productos
                           </span>
                         )}
@@ -639,14 +680,14 @@ export default function DashboardPage() {
                         )}
                         <StatusBadge status={o.status} />
                         {o.assigned_user && (
-                          <span className="text-xs text-zinc-500">
+                          <span className="text-xs text-muted">
                             →{" "}
                             {o.assigned_user.display_name ||
                               o.assigned_user.email?.split("@")[0]}
                           </span>
                         )}
                       </div>
-                      <p className="mt-2 text-right text-sm font-semibold text-zinc-900">
+                      <p className="mt-2 text-right text-sm font-semibold text-foreground">
                         ${Number(o.total).toFixed(2)}
                       </p>
                     </Link>
@@ -655,7 +696,7 @@ export default function DashboardPage() {
               </div>
             </>
           )}
-        </div>
+        </TableWrapper>
       </section>
     </div>
   );

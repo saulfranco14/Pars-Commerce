@@ -47,10 +47,10 @@ export function MultiImageUpload({
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-zinc-700">
+      <label className="block text-sm font-medium text-muted-foreground">
         Imágenes del producto
       </label>
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-muted">
         Puedes agregar varias imágenes (máximo {max}). La primera se usa como
         principal.
       </p>
@@ -58,7 +58,7 @@ export function MultiImageUpload({
         {urls.map((url, i) => (
           <div
             key={`${url}-${i}`}
-            className="relative inline-block rounded-lg border border-zinc-200 bg-zinc-50"
+            className="relative inline-block rounded-lg border border-border bg-border-soft"
           >
             <img
               src={url}
@@ -78,7 +78,7 @@ export function MultiImageUpload({
           </div>
         ))}
         {urls.length < max && (
-          <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-50 text-zinc-500 hover:border-zinc-400 hover:bg-zinc-100 sm:h-24 sm:w-24">
+          <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-border-soft text-muted hover:border-border hover:bg-border-soft sm:h-24 sm:w-24">
             <input
               ref={inputRef}
               type="file"

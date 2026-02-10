@@ -5,6 +5,15 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import {
+  TableWrapper,
+  tableHeaderRowClass,
+  tableHeaderCellClass,
+  tableBodyRowClass,
+  tableBodyCellClass,
+  tableBodyCellMutedClass,
+} from "@/components/ui/TableWrapper";
 import type {
   SalesCommission,
   CommissionSummary,
@@ -338,7 +347,7 @@ export default function VentasPage() {
 
   if (!activeTenant) {
     return (
-      <div className="text-sm text-zinc-600">
+      <div className="text-sm text-muted-foreground">
         Selecciona un negocio para continuar.
       </div>
     );
@@ -347,19 +356,19 @@ export default function VentasPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold text-zinc-900 sm:text-2xl">
+        <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
           Ventas y Comisiones
         </h1>
       </div>
 
       {activeTab !== "pagos" && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50/80 p-4">
-          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-zinc-700 sm:flex-none">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-border-soft/80 p-4">
+          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
             Persona:
             <select
               value={userFilter}
               onChange={(e) => setUserFilter(e.target.value)}
-              className="min-h-[44px] flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 focus:ring-2 focus:ring-zinc-500 sm:min-h-0 sm:flex-none sm:py-1.5"
+              className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none sm:py-1.5"
             >
               <option value="">Todas</option>
               {teamMembers.map((m) => (
@@ -369,61 +378,61 @@ export default function VentasPage() {
               ))}
             </select>
           </label>
-          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-zinc-700 sm:flex-none">
+          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
             Estado:
             <select
               value={paidFilter}
               onChange={(e) => setPaidFilter(e.target.value)}
-              className="min-h-[44px] flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 focus:ring-2 focus:ring-zinc-500 sm:min-h-0 sm:flex-none sm:py-1.5"
+              className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none sm:py-1.5"
             >
               <option value="">Todas</option>
               <option value="false">Pendientes</option>
               <option value="true">Pagadas</option>
             </select>
           </label>
-          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-zinc-700 sm:flex-none">
+          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
             Desde:
             <input
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="min-h-[44px] flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 focus:ring-2 focus:ring-zinc-500 sm:min-h-0 sm:flex-none sm:py-1.5"
+              className="min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none sm:py-1.5"
             />
           </label>
-          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-zinc-700 sm:flex-none">
+          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
             Hasta:
             <input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="min-h-[44px] flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 focus:ring-2 focus:ring-zinc-500 sm:min-h-0 sm:flex-none sm:py-1.5"
+              className="min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none sm:py-1.5"
             />
           </label>
         </div>
       )}
 
       {activeTab === "pagos" && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50/80 p-4">
-          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-zinc-700 sm:flex-none">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-border-soft/80 p-4">
+          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
             Período:
             <select
               value={periodType}
               onChange={(e) =>
                 setPeriodType(e.target.value as "day" | "week" | "month")
               }
-              className="min-h-[44px] flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 focus:ring-2 focus:ring-zinc-500 sm:min-h-0 sm:flex-none sm:py-1.5"
+              className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none sm:py-1.5"
             >
               <option value="day">Día</option>
               <option value="week">Semana</option>
               <option value="month">Mes</option>
             </select>
           </label>
-          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-zinc-700 sm:flex-none">
+          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
             Persona:
             <select
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}
-              className="min-h-[44px] flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 focus:ring-2 focus:ring-zinc-500 sm:min-h-0 sm:flex-none sm:py-1.5"
+              className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none sm:py-1.5"
             >
               <option value="">Todas</option>
               {teamMembers.map((m) => (
@@ -433,12 +442,12 @@ export default function VentasPage() {
               ))}
             </select>
           </label>
-          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-zinc-700 sm:flex-none">
+          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
             Estado:
             <select
               value={paymentStatus}
               onChange={(e) => setPaymentStatus(e.target.value)}
-              className="min-h-[44px] flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 focus:ring-2 focus:ring-zinc-500 sm:min-h-0 sm:flex-none sm:py-1.5"
+              className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none sm:py-1.5"
             >
               <option value="">Todos</option>
               <option value="pending">Pendientes</option>
@@ -448,43 +457,43 @@ export default function VentasPage() {
         </div>
       )}
 
-      <div className="flex gap-2 border-b border-zinc-200">
+      <div className="flex gap-1 border-b border-border-soft">
         <button
           onClick={() => setActiveTab("resumen")}
-          className={`px-4 py-2 text-sm font-medium ${
+          className={`px-4 py-2.5 text-sm font-medium transition-colors ${
             activeTab === "resumen"
-              ? "border-b-2 border-zinc-900 text-zinc-900"
-              : "text-zinc-600 hover:text-zinc-900"
+              ? "border-b-2 border-accent text-foreground"
+              : "text-muted hover:text-foreground"
           }`}
         >
           Resumen
         </button>
         <button
           onClick={() => setActiveTab("por-persona")}
-          className={`px-4 py-2 text-sm font-medium ${
+          className={`px-4 py-2.5 text-sm font-medium transition-colors ${
             activeTab === "por-persona"
-              ? "border-b-2 border-zinc-900 text-zinc-900"
-              : "text-zinc-600 hover:text-zinc-900"
+              ? "border-b-2 border-accent text-foreground"
+              : "text-muted hover:text-foreground"
           }`}
         >
           Por persona
         </button>
         <button
           onClick={() => setActiveTab("por-orden")}
-          className={`px-4 py-2 text-sm font-medium ${
+          className={`px-4 py-2.5 text-sm font-medium transition-colors ${
             activeTab === "por-orden"
-              ? "border-b-2 border-zinc-900 text-zinc-900"
-              : "text-zinc-600 hover:text-zinc-900"
+              ? "border-b-2 border-accent text-foreground"
+              : "text-muted hover:text-foreground"
           }`}
         >
           Por orden
         </button>
         <button
           onClick={() => setActiveTab("pagos")}
-          className={`px-4 py-2 text-sm font-medium ${
+          className={`px-4 py-2.5 text-sm font-medium transition-colors ${
             activeTab === "pagos"
-              ? "border-b-2 border-zinc-900 text-zinc-900"
-              : "text-zinc-600 hover:text-zinc-900"
+              ? "border-b-2 border-accent text-foreground"
+              : "text-muted hover:text-foreground"
           }`}
         >
           Pagos
@@ -492,215 +501,174 @@ export default function VentasPage() {
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
       {loading ? (
-        <div className="text-center text-sm text-zinc-600">Cargando...</div>
+        <LoadingBlock message="Cargando ventas…" />
       ) : activeTab === "resumen" ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-zinc-600">Total vendido</p>
-            <p className="mt-2 text-2xl font-semibold text-zinc-900">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="rounded-xl border border-border bg-surface-raised p-4">
+            <p className="text-xs font-medium text-muted">Total vendido</p>
+            <p className="mt-1.5 text-xl font-bold tabular-nums text-foreground">
               ${summary.totalRevenue.toFixed(2)}
             </p>
           </div>
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-zinc-600">Costo total</p>
-            <p className="mt-2 text-2xl font-semibold text-zinc-900">
+          <div className="rounded-xl border border-border bg-surface-raised p-4">
+            <p className="text-xs font-medium text-muted">Costo total</p>
+            <p className="mt-1.5 text-xl font-bold tabular-nums text-foreground">
               ${summary.totalCost.toFixed(2)}
             </p>
           </div>
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-zinc-600">Ganancia bruta</p>
-            <p className="mt-2 text-2xl font-semibold text-green-600">
+          <div className="rounded-xl border border-border bg-surface-raised p-4">
+            <p className="text-xs font-medium text-muted">Ganancia bruta</p>
+            <p className="mt-1.5 text-xl font-bold tabular-nums text-accent">
               ${summary.grossProfit.toFixed(2)}
             </p>
           </div>
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-zinc-600">
+          <div className="rounded-xl border border-border bg-surface-raised p-4">
+            <p className="text-xs font-medium text-muted">
               Comisiones pendientes
             </p>
-            <p className="mt-2 text-2xl font-semibold text-orange-600">
+            <p className="mt-1.5 text-xl font-bold tabular-nums text-amber-700">
               ${summary.pendingCommission.toFixed(2)}
             </p>
           </div>
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-zinc-600">
+          <div className="rounded-xl border border-border bg-surface-raised p-4">
+            <p className="text-xs font-medium text-muted">
               Comisiones pagadas
             </p>
-            <p className="mt-2 text-2xl font-semibold text-zinc-900">
+            <p className="mt-1.5 text-xl font-bold tabular-nums text-foreground">
               ${summary.paidCommission.toFixed(2)}
             </p>
           </div>
         </div>
       ) : activeTab === "por-persona" ? (
-        <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-zinc-200 bg-zinc-50">
+        <TableWrapper>
+          <table className="w-full">
+            <thead>
+              <tr className={tableHeaderRowClass}>
+                <th className={tableHeaderCellClass}>Persona</th>
+                <th className={tableHeaderCellClass}>Productos</th>
+                <th className={tableHeaderCellClass}>Servicios</th>
+                <th className={tableHeaderCellClass}>Total vendido</th>
+                <th className={tableHeaderCellClass}>Ganancia bruta</th>
+                <th className={tableHeaderCellClass}>Comisión</th>
+                <th className={tableHeaderCellClass}>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {byPerson.length === 0 ? (
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Persona
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Productos
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Servicios
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Total vendido
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Ganancia bruta
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Comisión
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Estado
-                  </th>
+                  <td
+                    colSpan={7}
+                    className="px-4 py-8 text-center text-sm text-muted"
+                  >
+                    No hay datos de ventas
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {byPerson.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-4 py-8 text-center text-sm text-zinc-500"
-                    >
-                      No hay datos de ventas
+              ) : (
+                byPerson.map((p) => (
+                  <tr key={p.user_id} className={tableBodyRowClass}>
+                    <td className={tableBodyCellClass}>
+                      {p.display_name || p.email}
+                    </td>
+                    <td className={tableBodyCellMutedClass}>{p.products_sold}</td>
+                    <td className={tableBodyCellMutedClass}>{p.services_sold}</td>
+                    <td className={tableBodyCellClass}>
+                      ${p.total_revenue.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-accent">
+                      ${p.gross_profit.toFixed(2)}
+                    </td>
+                    <td className={tableBodyCellClass}>
+                      ${p.total_commission.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {p.pending_commission > 0 ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
+                          Pendiente: ${p.pending_commission.toFixed(2)}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-accent/10 px-2 py-1 text-xs font-medium text-accent">
+                          Pagada
+                        </span>
+                      )}
                     </td>
                   </tr>
-                ) : (
-                  byPerson.map((p) => (
-                    <tr key={p.user_id} className="hover:bg-zinc-50/50">
-                      <td className="px-4 py-3 text-sm text-zinc-900">
-                        {p.display_name || p.email}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-zinc-600">
-                        {p.products_sold}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-zinc-600">
-                        {p.services_sold}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-zinc-900">
-                        ${p.total_revenue.toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-green-600">
-                        ${p.gross_profit.toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-zinc-900">
-                        ${p.total_commission.toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {p.pending_commission > 0 ? (
-                          <span className="rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-700">
-                            Pendiente: ${p.pending_commission.toFixed(2)}
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
-                            Pagada
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                ))
+              )}
+            </tbody>
+          </table>
+        </TableWrapper>
       ) : activeTab === "por-orden" ? (
-        <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-zinc-200 bg-zinc-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Orden
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Fecha
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Persona
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Productos
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Servicios
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Total
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Ganancia
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Comisión
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Estado
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
+        <TableWrapper>
+          <table className="w-full">
+            <thead>
+              <tr className={tableHeaderRowClass}>
+                <th className={tableHeaderCellClass}>Orden</th>
+                <th className={tableHeaderCellClass}>Fecha</th>
+                <th className={tableHeaderCellClass}>Persona</th>
+                <th className={tableHeaderCellClass}>Productos</th>
+                <th className={tableHeaderCellClass}>Servicios</th>
+                <th className={tableHeaderCellClass}>Total</th>
+                <th className={tableHeaderCellClass}>Ganancia</th>
+                <th className={tableHeaderCellClass}>Comisión</th>
+                <th className={tableHeaderCellClass}>Estado</th>
+                <th className={tableHeaderCellClass}>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
                 {commissions.length === 0 ? (
                   <tr>
                     <td
                       colSpan={10}
-                      className="px-4 py-8 text-center text-sm text-zinc-500"
+                      className="px-4 py-8 text-center text-sm text-muted"
                     >
                       No hay comisiones registradas
                     </td>
                   </tr>
                 ) : (
                   commissions.map((c) => (
-                    <tr key={c.id} className="hover:bg-zinc-50/50">
-                      <td className="px-4 py-3 text-sm">
+                    <tr key={c.id} className={tableBodyRowClass}>
+                      <td className={tableBodyCellClass}>
                         <Link
                           href={`/dashboard/${tenantSlug}/ordenes/${c.order_id}`}
-                          className="text-zinc-900 hover:text-zinc-600"
+                          className="text-foreground hover:text-muted"
                         >
                           #{c.order_id.slice(0, 8)}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 text-sm text-zinc-600">
+                      <td className={tableBodyCellMutedClass}>
                         {new Date(c.created_at).toLocaleDateString()}
                       </td>
-                      <td className="px-4 py-3 text-sm text-zinc-900">
+                      <td className={tableBodyCellClass}>
                         {c.profiles?.display_name || c.profiles?.email}
                       </td>
-                      <td className="px-4 py-3 text-sm text-zinc-600">
+                      <td className={tableBodyCellMutedClass}>
                         {c.products_count}
                       </td>
-                      <td className="px-4 py-3 text-sm text-zinc-600">
+                      <td className={tableBodyCellMutedClass}>
                         {c.services_count}
                       </td>
-                      <td className="px-4 py-3 text-sm text-zinc-900">
+                      <td className={tableBodyCellClass}>
                         ${Number(c.total_revenue).toFixed(2)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-green-600">
+                      <td className="px-4 py-3 text-sm text-accent">
                         ${Number(c.gross_profit).toFixed(2)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-zinc-900">
+                      <td className={tableBodyCellClass}>
                         ${Number(c.commission_amount).toFixed(2)}
                       </td>
                       <td className="px-4 py-3 text-sm">
                         {c.is_paid ? (
-                          <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+                          <span className="rounded-full bg-accent/10 px-2 py-1 text-xs font-medium text-accent">
                             Pagada
                           </span>
                         ) : (
-                          <span className="rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-700">
+                          <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
                             Pendiente
                           </span>
                         )}
@@ -709,7 +677,7 @@ export default function VentasPage() {
                         {!c.is_paid && (
                           <button
                             onClick={() => setCommissionToPay(c)}
-                            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+                            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:bg-border-soft/60"
                           >
                             Marcar pagada
                           </button>
@@ -720,15 +688,14 @@ export default function VentasPage() {
                 )}
               </tbody>
             </table>
-          </div>
-        </div>
+        </TableWrapper>
       ) : (
         <div className="space-y-4">
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-zinc-900">
+          <div className="rounded-xl border border-border bg-surface-raised p-6">
+            <h3 className="text-lg font-semibold text-foreground">
               Generar Pago de Período
             </h3>
-            <p className="mt-1 text-sm text-zinc-600">
+            <p className="mt-1 text-sm text-muted">
               Selecciona una persona y genera un pago agrupando todas las
               comisiones pendientes del período actual
             </p>
@@ -747,23 +714,23 @@ export default function VentasPage() {
                 return (
                   <div
                     key={member.id}
-                    className="flex flex-1 min-w-[250px] items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 p-4"
+                    className="flex min-w-[250px] flex-1 items-center justify-between rounded-xl border border-border bg-border-soft/60 p-4"
                   >
                     <div>
-                      <p className="text-sm font-medium text-zinc-900">
+                      <p className="text-sm font-medium text-foreground">
                         {member.display_name || member.email}
                       </p>
-                      <p className="text-sm text-zinc-600">
+                      <p className="text-sm text-muted">
                         Pendiente: ${totalPending.toFixed(2)}
                       </p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-muted">
                         {pendingForUser.length} orden(es)
                       </p>
                     </div>
                     <button
                       onClick={() => handleGeneratePayment(member.id)}
                       disabled={actionLoading}
-                      className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+                      className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
                     >
                       Generar
                     </button>
@@ -778,96 +745,78 @@ export default function VentasPage() {
                   .reduce((sum, c) => sum + Number(c.commission_amount), 0);
                 return total === 0;
               }) && (
-                <p className="mt-4 text-sm text-zinc-500">
+                <p className="mt-4 text-sm text-muted">
                   No hay comisiones pendientes para generar pago.
                 </p>
               )}
           </div>
 
-          <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
-            <div className="border-b border-zinc-200 px-6 py-4">
-              <h3 className="text-lg font-semibold text-zinc-900">
-                Pagos Registrados
-              </h3>
-            </div>
-            <div className="overflow-x-auto">
+          <div>
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">
+              Pagos Registrados
+            </h3>
+            <TableWrapper>
               <table className="w-full">
-                <thead className="border-b border-zinc-200 bg-zinc-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                      Persona
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                      Período
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                      Órdenes
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                      Total vendido
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                      Ganancia
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                      Comisión
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                      Estado
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600">
-                      Acciones
-                    </th>
+                <thead>
+                  <tr className={tableHeaderRowClass}>
+                    <th className={tableHeaderCellClass}>Persona</th>
+                    <th className={tableHeaderCellClass}>Período</th>
+                    <th className={tableHeaderCellClass}>Órdenes</th>
+                    <th className={tableHeaderCellClass}>Total vendido</th>
+                    <th className={tableHeaderCellClass}>Ganancia</th>
+                    <th className={tableHeaderCellClass}>Comisión</th>
+                    <th className={tableHeaderCellClass}>Estado</th>
+                    <th className={tableHeaderCellClass}>Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100">
+                <tbody>
                   {payments.length === 0 ? (
                     <tr>
                       <td
                         colSpan={8}
-                        className="px-4 py-8 text-center text-sm text-zinc-500"
+                        className="px-4 py-8 text-center text-sm text-muted"
                       >
                         No hay pagos registrados
                       </td>
                     </tr>
                   ) : (
                     payments.map((p) => (
-                      <tr key={p.id} className="hover:bg-zinc-50/50">
-                        <td className="px-4 py-3 text-sm text-zinc-900">
+                      <tr key={p.id} className={tableBodyRowClass}>
+                        <td className={tableBodyCellClass}>
                           {p.profiles?.display_name || p.profiles?.email}
                         </td>
-                        <td className="px-4 py-3 text-sm text-zinc-600">
+                        <td className={tableBodyCellMutedClass}>
                           <div>
                             {new Date(p.period_start).toLocaleDateString()} -{" "}
                             {new Date(p.period_end).toLocaleDateString()}
                           </div>
-                          <div className="text-xs text-zinc-500 capitalize">
+                          <div className="text-xs text-muted capitalize">
                             {p.period_type === "day"
                               ? "Día"
                               : p.period_type === "week"
-                              ? "Semana"
-                              : "Mes"}
+                                ? "Semana"
+                                : "Mes"}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-zinc-600">
+                        <td className={tableBodyCellMutedClass}>
                           {p.total_orders}
                         </td>
-                        <td className="px-4 py-3 text-sm text-zinc-900">
+                        <td className={tableBodyCellClass}>
                           ${Number(p.total_revenue).toFixed(2)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-green-600">
+                        <td className="px-4 py-3 text-sm text-accent">
                           ${Number(p.gross_profit).toFixed(2)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-zinc-900">
+                        <td className={tableBodyCellClass}>
                           ${Number(p.commission_amount).toFixed(2)}
                         </td>
                         <td className="px-4 py-3 text-sm">
                           {p.payment_status === "paid" ? (
-                            <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+                            <span className="rounded-full bg-accent/10 px-2 py-1 text-xs font-medium text-accent">
                               Pagado
                             </span>
                           ) : (
-                            <span className="rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-700">
+                            <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
                               Pendiente
                             </span>
                           )}
@@ -881,13 +830,13 @@ export default function VentasPage() {
                                     setPaymentToEdit(p);
                                     setEditAmount(String(p.commission_amount));
                                   }}
-                                  className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+                                  className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:bg-border-soft/60"
                                 >
                                   Editar
                                 </button>
                                 <button
                                   onClick={() => setPaymentToPay(p)}
-                                  className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-800"
+                                  className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:opacity-90"
                                 >
                                   Pagar
                                 </button>
@@ -900,7 +849,7 @@ export default function VentasPage() {
                   )}
                 </tbody>
               </table>
-            </div>
+            </TableWrapper>
           </div>
         </div>
       )}
@@ -958,7 +907,7 @@ export default function VentasPage() {
             <div className="space-y-3">
               <p>Ajusta el monto de la comisión si es necesario:</p>
               <div>
-                <label className="block text-sm font-medium text-zinc-700">
+                <label className="block text-sm font-medium text-muted-foreground">
                   Monto
                 </label>
                 <input
@@ -966,7 +915,7 @@ export default function VentasPage() {
                   inputMode="decimal"
                   value={editAmount}
                   onChange={(e) => setEditAmount(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900"
+                  className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground"
                   placeholder="0.00"
                 />
               </div>

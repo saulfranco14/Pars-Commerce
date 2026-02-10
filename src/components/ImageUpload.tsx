@@ -46,14 +46,14 @@ export function ImageUpload({
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-zinc-700">
+      <label className="block text-sm font-medium text-muted-foreground">
         Imagen del producto
       </label>
       {displayUrl && (
         <img
           src={displayUrl}
           alt="Vista previa"
-          className="h-24 w-24 rounded border border-zinc-200 object-cover"
+          className="h-24 w-24 rounded border border-border object-cover"
         />
       )}
       <div className="flex items-center gap-2">
@@ -63,10 +63,10 @@ export function ImageUpload({
           accept="image/jpeg,image/png,image/gif,image/webp"
           onChange={handleFile}
           disabled={disabled || uploading}
-          className="block w-full text-sm text-zinc-500 file:mr-2 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
+          className="block w-full text-sm text-muted file:mr-2 file:rounded file:border-0 file:bg-border-soft file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-muted-foreground hover:file:bg-border"
         />
       </div>
-      {uploading && <p className="text-xs text-zinc-500">Subiendo imagen...</p>}
+      {uploading && <p className="text-xs text-muted">Subiendo imagen...</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );

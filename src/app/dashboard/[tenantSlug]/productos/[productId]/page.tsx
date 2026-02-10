@@ -163,11 +163,11 @@ export default function EditarProductoPage() {
 
   if (fetchError) {
     return (
-      <div className="text-sm text-zinc-600">
+      <div className="text-sm text-muted-foreground">
         {fetchError}{" "}
         <Link
           href={`/dashboard/${tenantSlug}/productos`}
-          className="text-zinc-900 underline"
+          className="text-foreground underline"
         >
           Volver a productos
         </Link>
@@ -181,14 +181,14 @@ export default function EditarProductoPage() {
 
   return (
     <div className="mx-auto flex max-w-4xl min-h-[calc(100vh-10rem)] flex-col gap-4">
-      <div className="shrink-0 border-b border-zinc-200 pb-4">
+      <div className="shrink-0 border-b border-border pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/productos`}
-          className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
+          className="text-sm font-medium text-muted-foreground hover:text-foreground"
         >
           ← Volver a productos
         </Link>
-        <h1 className="mt-1 text-xl font-semibold text-zinc-900 sm:text-2xl">
+        <h1 className="mt-1 text-xl font-semibold text-foreground sm:text-2xl">
           Editar producto
         </h1>
         <p className="mt-0.5 text-sm text-zinc-500">
@@ -196,7 +196,7 @@ export default function EditarProductoPage() {
         </p>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
         <form
           onSubmit={handleSubmit}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
@@ -223,7 +223,7 @@ export default function EditarProductoPage() {
                         type="text"
                         value={name}
                         onChange={handleNameChange}
-                        className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                        className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                         placeholder="Ej. Mesa 14x10"
                       />
                       {fieldErrors.name && (
@@ -244,7 +244,7 @@ export default function EditarProductoPage() {
                         type="text"
                         value={slug}
                         onChange={(e) => setSlug(e.target.value)}
-                        className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                        className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                         placeholder="mesa-14x10"
                       />
                       <p className="mt-1 text-xs text-zinc-500">
@@ -271,7 +271,7 @@ export default function EditarProductoPage() {
                       inputMode="decimal"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                       placeholder="0.00"
                     />
                     {fieldErrors.price && (
@@ -293,7 +293,7 @@ export default function EditarProductoPage() {
                       inputMode="decimal"
                       value={costPrice}
                       onChange={(e) => setCostPrice(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                       placeholder="0.00"
                     />
                     <p className="mt-1 text-xs text-zinc-500">
@@ -317,7 +317,7 @@ export default function EditarProductoPage() {
                       type="text"
                       value={sku}
                       onChange={(e) => setSku(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                       placeholder="Ej. MESA-001"
                     />
                     <p className="mt-1 text-xs text-zinc-500">
@@ -337,7 +337,7 @@ export default function EditarProductoPage() {
                       type="text"
                       value={unit}
                       onChange={(e) => setUnit(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                       placeholder="unit, kg, pza, hora..."
                     />
                     <p className="mt-1 text-xs text-zinc-500">
@@ -363,7 +363,7 @@ export default function EditarProductoPage() {
                       type="text"
                       value={theme}
                       onChange={(e) => setTheme(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                       placeholder="Ej. Mobiliario, Promociones"
                     />
                   </div>
@@ -380,7 +380,7 @@ export default function EditarProductoPage() {
                       inputMode="decimal"
                       value={commissionAmount}
                       onChange={(e) => setCommissionAmount(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                       placeholder="0.00"
                     />
                     <p className="mt-1 text-xs text-zinc-500">
@@ -407,7 +407,7 @@ export default function EditarProductoPage() {
                         min={0}
                         value={stock}
                         onChange={(e) => setStock(e.target.value)}
-                        className="mt-1 max-w-32 rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                        className="mt-1 max-w-32 rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                       />
                     </div>
                   )}
@@ -418,7 +418,7 @@ export default function EditarProductoPage() {
                         type="checkbox"
                         checked={trackStock}
                         onChange={(e) => setTrackStock(e.target.checked)}
-                        className="h-4 w-4 rounded border-zinc-300"
+                        className="h-4 w-4 rounded border-border"
                       />
                       <span className="text-sm text-zinc-700">
                         Controlar stock
@@ -429,7 +429,7 @@ export default function EditarProductoPage() {
                         type="checkbox"
                         checked={isPublic}
                         onChange={(e) => setIsPublic(e.target.checked)}
-                        className="h-4 w-4 rounded border-zinc-300"
+                        className="h-4 w-4 rounded border-border"
                       />
                       <span className="text-sm text-zinc-700">
                         Visible en sitio público
@@ -449,14 +449,14 @@ export default function EditarProductoPage() {
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       rows={2}
-                      className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                       placeholder="Descripción del producto"
                     />
                   </div>
                 </div>
               </div>
               {activeTenant && (
-                <div className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 md:w-72">
+                <div className="shrink-0 rounded-lg border border-border bg-border-soft/50 p-4 md:w-72">
                   <MultiImageUpload
                     tenantId={activeTenant.id}
                     productId={productId}
@@ -468,18 +468,18 @@ export default function EditarProductoPage() {
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-zinc-200 bg-white px-6 py-4 md:px-8">
+          <div className="shrink-0 border-t border-border bg-surface-raised px-6 py-4 md:px-8">
             <div className="flex flex-wrap gap-3">
               <button
                 type="submit"
                 disabled={loading}
-                className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+                className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
               >
                 {loading ? "Guardando..." : "Guardar"}
               </button>
               <Link
                 href={`/dashboard/${tenantSlug}/productos`}
-                className="rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-border-soft"
               >
                 Cancelar
               </Link>

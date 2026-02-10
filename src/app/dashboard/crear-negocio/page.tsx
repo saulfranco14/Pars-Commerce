@@ -50,8 +50,8 @@ export default function CrearNegocioPage() {
 
   return (
     <div className="mx-auto max-w-md">
-      <h1 className="text-2xl font-semibold text-zinc-900">Crear negocio</h1>
-      <p className="mt-1 text-sm text-zinc-500">
+      <h1 className="text-2xl font-semibold text-foreground">Crear negocio</h1>
+      <p className="mt-1 text-sm text-muted">
         Registra tu negocio para empezar a usar el dashboard.
       </p>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -63,7 +63,7 @@ export default function CrearNegocioPage() {
         <div>
           <label
             htmlFor="name"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-muted-foreground"
           >
             Nombre del negocio
           </label>
@@ -73,14 +73,14 @@ export default function CrearNegocioPage() {
             value={name}
             onChange={handleNameChange}
             required
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
+            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground"
             placeholder="Ej. Lavado Express"
           />
         </div>
         <div>
           <label
             htmlFor="slug"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-muted-foreground"
           >
             Slug (URL)
           </label>
@@ -89,10 +89,10 @@ export default function CrearNegocioPage() {
             type="text"
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
+            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground"
             placeholder="lavado-express"
           />
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-muted">
             Solo letras minúsculas, números y guiones. Se usará en la URL del
             sitio.
           </p>
@@ -100,7 +100,7 @@ export default function CrearNegocioPage() {
         <div>
           <label
             htmlFor="businessType"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-muted-foreground"
           >
             Tipo de negocio (opcional)
           </label>
@@ -108,7 +108,7 @@ export default function CrearNegocioPage() {
             id="businessType"
             value={businessType}
             onChange={(e) => setBusinessType(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
+            className="select-custom mt-1 block w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
           >
             <option value="">Seleccionar</option>
             <option value="ecommerce">Ecommerce</option>
@@ -121,13 +121,13 @@ export default function CrearNegocioPage() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
           >
             {loading ? "Creando..." : "Crear negocio"}
           </button>
           <Link
             href="/dashboard"
-            className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-border-soft/60"
           >
             Cancelar
           </Link>
