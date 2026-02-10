@@ -35,9 +35,10 @@ export async function GET(request: Request) {
   const userIds = [...new Set((memberships ?? []).map((m) => m.user_id))];
   const roleIds = [...new Set((memberships ?? []).map((m) => m.role_id))];
 
+  const admin = createAdminClient();
   const [profilesRes, rolesRes] = await Promise.all([
     userIds.length > 0
-      ? supabase
+      ? admin
           .from("profiles")
           .select("id, display_name, email")
           .in("id", userIds)
@@ -54,6 +55,35 @@ export async function GET(request: Request) {
     ])
   );
   const roleMap = new Map((rolesRes.data ?? []).map((r) => [r.id, r.name]));
+
+  const missingProfileIds = userIds.filter((uid) => {
+    const p = profileMap.get(uid);
+    return !p || (!p.display_name && !p.email);
+  });
+
+  if (missingProfileIds.length > 0) {
+    const { data: authData } = await admin.auth.admin.listUsers();
+    if (authData?.users) {
+      for (const uid of missingProfileIds) {
+        const authUser = authData.users.find((u) => u.id === uid);
+        if (authUser) {
+          const displayName =
+            (authUser.user_metadata?.display_name as string) ??
+            authUser.email?.split("@")[0] ??
+            "";
+          const email = authUser.email ?? "";
+          profileMap.set(uid, { display_name: displayName, email });
+
+          await admin
+            .from("profiles")
+            .upsert(
+              { id: uid, email, display_name: displayName },
+              { onConflict: "id" }
+            );
+        }
+      }
+    }
+  }
 
   const list = (memberships ?? []).map((m) => {
     const profile = profileMap.get(m.user_id) ?? null;
@@ -107,11 +137,12 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { tenant_id, role_id, user_id, email } = body as {
+  const { tenant_id, role_id, user_id, email, display_name } = body as {
     tenant_id: string;
     role_id: string;
     user_id?: string;
     email?: string;
+    display_name?: string;
   };
 
   if (!tenant_id || !role_id) {
@@ -127,9 +158,13 @@ export async function POST(request: Request) {
   }
 
   let targetUserId = user_id;
+  let tempPassword: string | null = null;
+  let invitedByEmail = false;
+
   if (!targetUserId && email) {
     const cleanEmail = email.trim().toLowerCase();
-    const { data: profile } = await supabase
+    const adminForSearch = createAdminClient();
+    const { data: profile } = await adminForSearch
       .from("profiles")
       .select("id")
       .eq("email", cleanEmail)
@@ -138,33 +173,86 @@ export async function POST(request: Request) {
     if (profile) {
       targetUserId = profile.id;
     } else {
-      // Auto-registro si no existe
-      const admin = createAdminClient();
-      const tempPassword = Math.random().toString(36).slice(-10);
+      const admin = adminForSearch;
+      const { data: authUsers, error: listError } =
+        await admin.auth.admin.listUsers();
 
-      const { data: authUser, error: signUpError } =
-        await admin.auth.admin.createUser({
-          email: cleanEmail,
-          password: tempPassword,
-          email_confirm: true,
-          user_metadata: {
-            display_name: cleanEmail.split("@")[0],
-          },
-        });
-
-      if (signUpError) {
+      if (listError) {
         return NextResponse.json(
-          { error: `Error al crear usuario: ${signUpError.message}` },
+          { error: `Error al buscar usuario: ${listError.message}` },
           { status: 500 }
         );
       }
 
-      targetUserId = authUser.user.id;
-
-      // Nota: En un entorno real aquí enviaríamos un email con tempPassword
-      console.log(
-        `Usuario creado: ${cleanEmail} con password: ${tempPassword}`
+      const authUser = authUsers.users.find(
+        (u) => u.email?.toLowerCase() === cleanEmail
       );
+
+      if (authUser) {
+        const resolvedName =
+          display_name?.trim() ||
+          (authUser.user_metadata?.display_name as string) ||
+          cleanEmail.split("@")[0];
+        const { error: profileError } = await admin.from("profiles").upsert(
+          {
+            id: authUser.id,
+            email: cleanEmail,
+            display_name: resolvedName,
+          },
+          { onConflict: "id" }
+        );
+
+        if (profileError) {
+          return NextResponse.json(
+            {
+              error: `El usuario existe pero no se pudo crear su perfil: ${profileError.message}`,
+            },
+            { status: 500 }
+          );
+        }
+
+        targetUserId = authUser.id;
+      } else {
+        const redirectTo =
+          process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+        // inviteUserByEmail sends the invite email; createUser(email_confirm: false) does not
+        const inviteDisplayName =
+          display_name?.trim() || cleanEmail.split("@")[0];
+        const { data: invitedUser, error: inviteError } =
+          await admin.auth.admin.inviteUserByEmail(cleanEmail, {
+            data: { display_name: inviteDisplayName },
+            redirectTo: `${redirectTo}/login`,
+          });
+
+        if (inviteError) {
+          return NextResponse.json(
+            { error: `Error al enviar invitación: ${inviteError.message}` },
+            { status: 500 }
+          );
+        }
+
+        targetUserId = invitedUser.user.id;
+
+        const { error: profileError } = await admin.from("profiles").upsert(
+          {
+            id: invitedUser.user.id,
+            email: cleanEmail,
+            display_name: inviteDisplayName,
+          },
+          { onConflict: "id" }
+        );
+
+        if (profileError) {
+          return NextResponse.json(
+            {
+              error: `Usuario invitado pero falló el perfil: ${profileError.message}`,
+            },
+            { status: 500 }
+          );
+        }
+
+        invitedByEmail = true;
+      }
     }
   }
 
@@ -205,7 +293,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(membership);
+  return NextResponse.json({
+    ...membership,
+    tempPassword,
+    invitedByEmail,
+  });
 }
 
 export async function PATCH(request: Request) {

@@ -1,9 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
+
+interface TeamMember {
+  id: string;
+  user_id: string;
+  display_name: string;
+  email: string;
+  role_name: string;
+}
 
 export default function NuevaOrdenPage() {
   const params = useParams();
@@ -14,8 +22,18 @@ export default function NuevaOrdenPage() {
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [assignedTo, setAssignedTo] = useState("");
+  const [team, setTeam] = useState<TeamMember[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!activeTenant?.id) return;
+    fetch(`/api/team?tenant_id=${encodeURIComponent(activeTenant.id)}`)
+      .then((res) => res.json())
+      .then((list: TeamMember[]) => setTeam(list ?? []))
+      .catch(() => setTeam([]));
+  }, [activeTenant?.id]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,6 +51,7 @@ export default function NuevaOrdenPage() {
         customer_name: customerName.trim() || undefined,
         customer_email: customerEmail.trim() || undefined,
         customer_phone: customerPhone.trim() || undefined,
+        assigned_to: assignedTo || undefined,
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -41,7 +60,7 @@ export default function NuevaOrdenPage() {
       setError(data.error || "Error al crear la orden");
       return;
     }
-    router.push(`/dashboard/${tenantSlug}/ordenes`);
+    router.push(`/dashboard/${tenantSlug}/ordenes/${data.id}`);
     router.refresh();
   }
 
@@ -138,6 +157,30 @@ export default function NuevaOrdenPage() {
               </div>
             </div>
           </div>
+
+          <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 md:p-5">
+            <h2 className="text-sm font-medium text-zinc-900">
+              Asignar a miembro del equipo{" "}
+              <span className="font-normal text-zinc-500">(opcional)</span>
+            </h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              Puedes asignar la orden a alguien de tu equipo ahora o hacerlo
+              después.
+            </p>
+            <select
+              value={assignedTo}
+              onChange={(e) => setAssignedTo(e.target.value)}
+              className="mt-3 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+            >
+              <option value="">Sin asignar</option>
+              {team.map((t) => (
+                <option key={t.user_id} value={t.user_id}>
+                  {t.display_name || t.email}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="mt-6 flex flex-wrap gap-3 border-t border-zinc-200 pt-6">
             <button
               type="submit"

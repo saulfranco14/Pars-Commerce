@@ -55,8 +55,7 @@ export default function DashboardLayout({
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
+    window.location.href = "/login";
   }
 
   if (!profile) {
@@ -68,13 +67,14 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-50">
+    <div className="flex h-screen max-h-screen overflow-hidden bg-zinc-50">
       <Sidebar
         tenantSlug={tenantSlug}
         mobileOpen={mobileMenuOpen}
         onMobileClose={() => setMobileMenuOpen(false)}
+        onSignOut={handleSignOut}
       />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 safe-area-inset-left">
           <button
             type="button"
@@ -84,16 +84,9 @@ export default function DashboardLayout({
           >
             <Menu className="h-6 w-6" />
           </button>
-          <div className="flex-1 md:hidden" />
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="min-h-[44px] rounded-lg px-3 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 md:min-h-0"
-          >
-            Salir
-          </button>
+          <div className="flex-1" />
         </header>
-        <main className="min-h-0 flex-1 px-4 py-4 sm:px-6 sm:py-6">
+        <main className="min-h-0 flex-1 overflow-auto px-4 py-4 sm:px-6 sm:py-6">
           {pathname === "/dashboard/crear-negocio" ||
           pathname === "/dashboard/perfil" ? (
             children

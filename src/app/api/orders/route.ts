@@ -243,11 +243,18 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { tenant_id, customer_name, customer_email, customer_phone } = body as {
+  const {
+    tenant_id,
+    customer_name,
+    customer_email,
+    customer_phone,
+    assigned_to,
+  } = body as {
     tenant_id: string;
     customer_name?: string;
     customer_email?: string;
     customer_phone?: string;
+    assigned_to?: string;
   };
 
   if (!tenant_id) {
@@ -257,16 +264,19 @@ export async function POST(request: Request) {
     );
   }
 
+  const initialStatus = assigned_to ? "assigned" : "draft";
+
   const { data: order, error } = await supabase
     .from("orders")
     .insert({
       tenant_id,
-      status: "draft",
+      status: initialStatus,
       subtotal: 0,
       discount: 0,
       total: 0,
       source: "dashboard",
       created_by: user.id,
+      assigned_to: assigned_to || null,
       customer_name: customer_name?.trim() || null,
       customer_email: customer_email?.trim() || null,
       customer_phone: customer_phone?.trim() || null,

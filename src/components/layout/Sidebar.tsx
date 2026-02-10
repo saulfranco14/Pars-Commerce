@@ -10,6 +10,7 @@ interface SidebarProps {
   tenantSlug: string | null;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  onSignOut?: () => void;
 }
 
 function NavLink({
@@ -50,19 +51,31 @@ function SidebarContent({
   onNavigate,
   showCloseButton,
   onClose,
+  onSignOut,
 }: {
   pathname: string;
   slug: string | null;
   base: string;
   hasTenant: boolean;
-  memberships: { id: string; tenant_id: string; tenant: { name: string } }[];
+  memberships: {
+    id: string;
+    tenant_id: string;
+    tenant: { name: string };
+    role?: { name: string };
+  }[];
   activeTenantId: string | null;
   setActiveTenantId: (id: string | null) => void;
   profile: { display_name: string | null; email: string | null } | null;
   onNavigate?: () => void;
   showCloseButton?: boolean;
   onClose?: () => void;
+  onSignOut?: () => void;
 }) {
+  const activeMembership = memberships.find(
+    (m) => m.tenant_id === activeTenantId
+  );
+  const userRole = activeMembership?.role?.name || "member";
+  const canAccessTeamAndSettings = userRole !== "member";
   return (
     <>
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-100 px-4">
@@ -85,7 +98,7 @@ function SidebarContent({
         )}
       </div>
       {memberships.length > 0 && (
-        <div className="border-b border-zinc-100 px-3 py-3">
+        <div className="shrink-0 border-b border-zinc-100 px-3 py-3">
           <select
             value={activeTenantId ?? ""}
             onChange={(e) => {
@@ -146,44 +159,62 @@ function SidebarContent({
             >
               Órdenes / Tickets
             </NavLink>
-            <NavLink
-              href={`${base}/ventas`}
-              active={
-                pathname === `${base}/ventas` ||
-                pathname.startsWith(`${base}/ventas/`)
-              }
-              onNavigate={onNavigate}
-            >
-              Ventas y Comisiones
-            </NavLink>
-            <NavLink
-              href={`${base}/equipo`}
-              active={
-                pathname === `${base}/equipo` ||
-                pathname.startsWith(`${base}/equipo/`)
-              }
-              onNavigate={onNavigate}
-            >
-              Equipo
-            </NavLink>
-            <NavLink
-              href={`${base}/configuracion`}
-              active={pathname === `${base}/configuracion`}
-              onNavigate={onNavigate}
-            >
-              Configuración
-            </NavLink>
+            {canAccessTeamAndSettings && (
+              <NavLink
+                href={`${base}/ventas`}
+                active={
+                  pathname === `${base}/ventas` ||
+                  pathname.startsWith(`${base}/ventas/`)
+                }
+                onNavigate={onNavigate}
+              >
+                Ventas y Comisiones
+              </NavLink>
+            )}
+            {canAccessTeamAndSettings && (
+              <NavLink
+                href={`${base}/equipo`}
+                active={
+                  pathname === `${base}/equipo` ||
+                  pathname.startsWith(`${base}/equipo/`)
+                }
+                onNavigate={onNavigate}
+              >
+                Equipo
+              </NavLink>
+            )}
+            {canAccessTeamAndSettings && (
+              <NavLink
+                href={`${base}/configuracion`}
+                active={pathname === `${base}/configuracion`}
+                onNavigate={onNavigate}
+              >
+                Configuración
+              </NavLink>
+            )}
           </>
         )}
       </nav>
-      <div className="border-t border-zinc-200 p-3">
+      <div className="shrink-0 space-y-2 border-t border-zinc-200 p-3">
         <Link
           href="/dashboard/perfil"
           onClick={onNavigate}
-          className="block min-h-[44px] rounded-lg px-3 py-3 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 active:bg-zinc-100 sm:min-h-0 sm:py-2"
+          className="block rounded-lg px-3 py-2 text-sm text-zinc-900 hover:bg-zinc-50"
         >
-          {profile?.display_name || profile?.email || "Mi perfil"}
+          <p className="font-medium">{profile?.display_name || "Usuario"}</p>
+          {profile?.email && (
+            <p className="truncate text-xs text-zinc-500">{profile.email}</p>
+          )}
         </Link>
+        {onSignOut && (
+          <button
+            type="button"
+            onClick={onSignOut}
+            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          >
+            Cerrar sesión
+          </button>
+        )}
       </div>
     </>
   );
@@ -193,6 +224,7 @@ export function Sidebar({
   tenantSlug,
   mobileOpen = false,
   onMobileClose,
+  onSignOut,
 }: SidebarProps) {
   const pathname = usePathname();
   const profile = useSessionStore((s) => s.profile);
@@ -207,7 +239,7 @@ export function Sidebar({
 
   return (
     <>
-      <aside className="hidden w-56 shrink-0 flex-col border-r border-zinc-200 bg-white md:flex">
+      <aside className="hidden h-screen max-h-screen w-56 shrink-0 flex-col overflow-hidden border-r border-zinc-200 bg-white md:flex">
         <SidebarContent
           pathname={pathname}
           slug={slug}
@@ -217,6 +249,7 @@ export function Sidebar({
           activeTenantId={activeTenantId}
           setActiveTenantId={setActiveTenantId}
           profile={profile}
+          onSignOut={onSignOut}
         />
       </aside>
       {mobileOpen && (
@@ -226,7 +259,7 @@ export function Sidebar({
             onClick={onMobileClose}
             aria-hidden
           />
-          <aside className="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r border-zinc-200 bg-white shadow-xl md:hidden">
+          <aside className="fixed inset-y-0 left-0 z-50 flex h-screen max-h-screen w-72 max-w-[85vw] flex-col overflow-hidden border-r border-zinc-200 bg-white shadow-xl md:hidden">
             <SidebarContent
               pathname={pathname}
               slug={slug}
@@ -239,6 +272,7 @@ export function Sidebar({
               onNavigate={onMobileClose}
               showCloseButton
               onClose={onMobileClose}
+              onSignOut={onSignOut}
             />
           </aside>
         </>

@@ -44,12 +44,12 @@ export async function GET(request: Request) {
       is_paid,
       paid_at,
       created_at,
-      profiles:user_id (
+      profiles!sales_commissions_user_id_fkey (
         id,
-        display_name,
-        email
+        email,
+        display_name
       ),
-      orders:order_id (
+      orders!sales_commissions_order_id_fkey (
         id,
         created_at,
         status
@@ -134,7 +134,34 @@ export async function PATCH(request: Request) {
     .from("sales_commissions")
     .update(updates)
     .eq("id", commission_id)
-    .select("id, is_paid, paid_at, commission_amount")
+    .select(
+      `
+      id,
+      order_id,
+      user_id,
+      total_items_sold,
+      products_count,
+      services_count,
+      total_revenue,
+      total_cost,
+      gross_profit,
+      commission_amount,
+      commission_config,
+      is_paid,
+      paid_at,
+      created_at,
+      profiles!sales_commissions_user_id_fkey (
+        id,
+        email,
+        display_name
+      ),
+      orders!sales_commissions_order_id_fkey (
+        id,
+        created_at,
+        status
+      )
+      `
+    )
     .single();
 
   if (error) {
