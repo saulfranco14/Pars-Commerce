@@ -1,10 +1,12 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { createClient } from "@/lib/supabase/client";
+import logo from "@/assets/logo.png";
 
 function parseHashParams() {
   if (typeof window === "undefined") return {};
@@ -105,22 +107,44 @@ function LoginForm() {
 
   if (inviteMode === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-background px-4">
+        <Image
+          src={logo}
+          alt="Pars"
+          width={140}
+          height={120}
+          className="h-auto w-[120px] sm:w-[140px]"
+          priority
+        />
         <LoadingBlock message="Cargando…" />
       </div>
     );
   }
 
   const inputClass =
-    "mt-1 block w-full rounded-xl border border-border bg-border-soft/80 px-3 py-2.5 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+    "mt-1 block w-full min-h-[44px] rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
   const errorClass =
-    "rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700";
+    "rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700";
+
+  const logoBlock = (
+    <div className="flex justify-center">
+      <Image
+        src={logo}
+        alt="Pars"
+        width={140}
+        height={120}
+        className="h-auto w-[120px] sm:w-[140px]"
+        priority
+      />
+    </div>
+  );
 
   if (inviteMode === true) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="w-full max-w-sm rounded-xl border border-border bg-surface-raised p-6 shadow-card">
-          <h1 className="text-xl font-semibold text-foreground">
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+        <div className="w-full max-w-sm rounded-xl border border-border bg-surface-raised p-6 shadow-card sm:p-8">
+          {logoBlock}
+          <h1 className="mt-6 text-xl font-semibold text-foreground">
             Establece tu contraseña
           </h1>
           <p className="mt-1 text-sm text-muted">
@@ -128,12 +152,14 @@ function LoginForm() {
           </p>
           <form onSubmit={handleSetPassword} className="mt-6 space-y-4">
             {setPasswordError && (
-              <div className={errorClass}>{setPasswordError}</div>
+              <div className={errorClass} role="alert">
+                {setPasswordError}
+              </div>
             )}
             <div>
               <label
                 htmlFor="invite-email"
-                className="block text-sm font-medium text-muted"
+                className="block text-sm font-medium text-muted-foreground"
               >
                 Email
               </label>
@@ -144,13 +170,14 @@ function LoginForm() {
                 value={email}
                 readOnly
                 autoComplete="off"
-                className={`${inputClass} text-muted`}
+                className={`${inputClass} bg-border-soft/80 text-muted`}
+                aria-readonly
               />
             </div>
             <div>
               <label
                 htmlFor="new-password"
-                className="block text-sm font-medium text-muted"
+                className="block text-sm font-medium text-muted-foreground"
               >
                 Nueva contraseña
               </label>
@@ -165,12 +192,13 @@ function LoginForm() {
                 className={inputClass}
                 autoComplete="new-password"
                 placeholder="Mínimo 6 caracteres"
+                aria-invalid={!!setPasswordError}
               />
             </div>
             <div>
               <label
                 htmlFor="new-password-confirm"
-                className="block text-sm font-medium text-muted"
+                className="block text-sm font-medium text-muted-foreground"
               >
                 Confirmar contraseña
               </label>
@@ -184,12 +212,13 @@ function LoginForm() {
                 minLength={6}
                 className={inputClass}
                 autoComplete="new-password"
+                aria-invalid={!!setPasswordError}
               />
             </div>
             <button
               type="submit"
               disabled={setPasswordLoading}
-              className="w-full rounded-xl bg-accent px-3 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
+              className="w-full min-h-[44px] rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
             >
               {setPasswordLoading ? "Guardando..." : "Guardar y entrar"}
             </button>
@@ -200,20 +229,25 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="w-full max-w-sm rounded-xl border border-border bg-surface-raised p-6 shadow-card">
-        <h1 className="text-xl font-semibold text-foreground">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+      <div className="w-full max-w-sm rounded-xl border border-border bg-surface-raised p-6 shadow-card sm:p-8">
+        {logoBlock}
+        <h1 className="mt-6 text-xl font-semibold text-foreground">
           Iniciar sesión
         </h1>
         <p className="mt-1 text-sm text-muted">
           Ingresa con tu email y contraseña
         </p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          {error && <div className={errorClass}>{error}</div>}
+          {error && (
+            <div className={errorClass} role="alert">
+              {error}
+            </div>
+          )}
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-muted"
+              className="block text-sm font-medium text-muted-foreground"
             >
               Email
             </label>
@@ -225,12 +259,13 @@ function LoginForm() {
               required
               className={inputClass}
               autoComplete="email"
+              aria-invalid={!!error}
             />
           </div>
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-muted"
+              className="block text-sm font-medium text-muted-foreground"
             >
               Contraseña
             </label>
@@ -242,21 +277,22 @@ function LoginForm() {
               required
               className={inputClass}
               autoComplete="current-password"
+              aria-invalid={!!error}
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-accent px-3 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
+            className="w-full min-h-[44px] rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
           >
             {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
-        <p className="mt-4 text-center text-sm text-muted">
+        <p className="mt-6 text-center text-sm text-muted">
           ¿No tienes cuenta?{" "}
           <Link
             href="/registro"
-            className="font-medium text-foreground underline hover:text-accent"
+            className="font-medium text-foreground underline hover:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 rounded"
           >
             Regístrate
           </Link>

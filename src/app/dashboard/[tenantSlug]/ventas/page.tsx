@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
@@ -14,23 +15,48 @@ import {
   tableBodyCellClass,
   tableBodyCellMutedClass,
 } from "@/components/ui/TableWrapper";
+import { swrFetcher } from "@/lib/swrFetcher";
 import type {
   SalesCommission,
   CommissionSummary,
   CommissionPayment,
 } from "@/types/sales";
-import { list as listTeam } from "@/services/teamService";
+import type { TeamMember } from "@/types/team";
 import {
-  list as listSalesCommissions,
   update as updateSalesCommission,
 } from "@/services/salesCommissionsService";
 import {
-  list as listCommissionPayments,
   create as createCommissionPayment,
   update as updateCommissionPayment,
 } from "@/services/commissionPaymentsService";
 
 type TabView = "resumen" | "por-persona" | "por-orden" | "pagos";
+
+function buildCommissionsKey(
+  tenantId: string,
+  userFilter: string,
+  paidFilter: string,
+  dateFrom: string,
+  dateTo: string
+): string {
+  const search = new URLSearchParams({ tenant_id: tenantId });
+  if (userFilter) search.set("user_id", userFilter);
+  if (paidFilter) search.set("is_paid", paidFilter);
+  if (dateFrom) search.set("date_from", dateFrom);
+  if (dateTo) search.set("date_to", dateTo);
+  return `/api/sales-commissions?${search}`;
+}
+
+function buildPaymentsKey(
+  tenantId: string,
+  selectedUser: string,
+  paymentStatus: string
+): string {
+  const search = new URLSearchParams({ tenant_id: tenantId });
+  if (selectedUser) search.set("user_id", selectedUser);
+  if (paymentStatus) search.set("status", paymentStatus);
+  return `/api/commission-payments?${search}`;
+}
 
 export default function VentasPage() {
   const params = useParams();
@@ -38,13 +64,7 @@ export default function VentasPage() {
   const activeTenant = useTenantStore((s) => s.activeTenant)();
 
   const [activeTab, setActiveTab] = useState<TabView>("resumen");
-  const [commissions, setCommissions] = useState<SalesCommission[]>([]);
-  const [payments, setPayments] = useState<CommissionPayment[]>([]);
-  const [teamMembers, setTeamMembers] = useState<
-    { id: string; display_name: string | null; email: string | null }[]
-  >([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const [userFilter, setUserFilter] = useState("");
   const [paidFilter, setPaidFilter] = useState("");
@@ -67,121 +87,79 @@ export default function VentasPage() {
   );
   const [editAmount, setEditAmount] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
-  useEffect(() => {
-    if (!activeTenant) return;
-    fetchTeamMembers();
-  }, [activeTenant?.id]);
+  const teamKey = activeTenant
+    ? `/api/team?tenant_id=${encodeURIComponent(activeTenant.id)}`
+    : null;
+  const { data: teamData, error: teamError } = useSWR<TeamMember[]>(
+    teamKey,
+    swrFetcher
+  );
+  const teamMembers = Array.isArray(teamData)
+    ? teamData.map((m) => ({
+        id: m.user_id,
+        display_name: m.display_name ?? null,
+        email: m.email ?? null,
+      }))
+    : [];
 
-  useEffect(() => {
-    if (!activeTenant) return;
-    if (activeTab === "pagos") {
-      setLoading(true);
-      setError(null);
-      Promise.all([
-        fetchPaymentsInternal(),
-        fetchPendingCommissionsInternal(),
-      ]).finally(() => setLoading(false));
-    } else {
-      fetchCommissions();
-    }
-  }, [
-    activeTenant?.id,
-    userFilter,
-    paidFilter,
-    dateFrom,
-    dateTo,
-    activeTab,
-    selectedUser,
-    paymentStatus,
-  ]);
+  const commissionsKey =
+    activeTenant && activeTab !== "pagos"
+      ? buildCommissionsKey(
+          activeTenant.id,
+          userFilter,
+          paidFilter,
+          dateFrom,
+          dateTo
+        )
+      : null;
+  const { data: commissionsData, error: commissionsError, isLoading: commissionsLoading, mutate: mutateCommissions } = useSWR<
+    SalesCommission[]
+  >(commissionsKey, swrFetcher, { fallbackData: [] });
+  const commissionsFromTab =
+    Array.isArray(commissionsData) ? commissionsData : [];
 
-  async function fetchPaymentsInternal() {
-    if (!activeTenant) return;
-    try {
-      const data = await listCommissionPayments({
-        tenant_id: activeTenant.id,
-        user_id: selectedUser || undefined,
-        status: paymentStatus || undefined,
-      });
-      setPayments(data);
-    } catch {
-      setPayments([]);
-    }
-  }
+  const pendingCommissionsKey =
+    activeTenant && activeTab === "pagos"
+      ? `/api/sales-commissions?tenant_id=${encodeURIComponent(activeTenant.id)}&is_paid=false`
+      : null;
+  const { data: pendingData, isLoading: pendingLoading, mutate: mutatePendingCommissions } = useSWR<
+    SalesCommission[]
+  >(pendingCommissionsKey, swrFetcher, { fallbackData: [] });
+  const pendingCommissions = Array.isArray(pendingData) ? pendingData : [];
 
-  async function fetchPendingCommissionsInternal() {
-    if (!activeTenant) return;
-    try {
-      const data = await listSalesCommissions({
-        tenant_id: activeTenant.id,
-        is_paid: "false",
-      });
-      setCommissions(data);
-    } catch {
-      setCommissions([]);
-    }
-  }
+  const paymentsKey =
+    activeTenant && activeTab === "pagos"
+      ? buildPaymentsKey(activeTenant.id, selectedUser, paymentStatus)
+      : null;
+  const { data: paymentsData, error: paymentsError, isLoading: paymentsLoading, mutate: mutatePayments } = useSWR<
+    CommissionPayment[]
+  >(paymentsKey, swrFetcher, { fallbackData: [] });
+  const payments = Array.isArray(paymentsData) ? paymentsData : [];
 
-  async function fetchTeamMembers() {
-    if (!activeTenant) return;
-    try {
-      const data = await listTeam(activeTenant.id);
-      setTeamMembers(
-        data.map((m) => ({
-          id: m.user_id,
-          display_name: m.display_name ?? null,
-          email: m.email ?? null,
-        }))
-      );
-    } catch {
-      setError("No se pudieron cargar los miembros del equipo");
-    }
-  }
-
-  async function fetchCommissions() {
-    if (!activeTenant) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await listSalesCommissions({
-        tenant_id: activeTenant.id,
-        user_id: userFilter || undefined,
-        is_paid: paidFilter || undefined,
-        date_from: dateFrom || undefined,
-        date_to: dateTo || undefined,
-      });
-      setCommissions(data);
-    } catch {
-      setError("No se pudieron cargar las comisiones");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function fetchPayments() {
-    if (!activeTenant) return;
-    setLoading(true);
-    setError(null);
-    try {
-      await fetchPaymentsInternal();
-      if (activeTab === "pagos") await fetchPendingCommissionsInternal();
-    } catch {
-      setError("No se pudieron cargar los pagos");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const commissions =
+    activeTab === "pagos" ? pendingCommissions : commissionsFromTab;
+  const loading =
+    activeTab !== "pagos"
+      ? commissionsLoading
+      : pendingLoading || paymentsLoading;
+  const error =
+    actionError ??
+    (teamError ? "No se pudieron cargar los miembros del equipo" : null) ??
+    (commissionsError ? "No se pudieron cargar las comisiones" : null) ??
+    (paymentsError ? "No se pudieron cargar los pagos" : null);
 
   async function handleMarkAsPaid() {
     if (!commissionToPay) return;
     setActionLoading(true);
+    setActionError(null);
     try {
       await updateSalesCommission(commissionToPay.id, { is_paid: true });
       setCommissionToPay(null);
-      fetchCommissions();
+      await Promise.all([mutateCommissions(), mutatePendingCommissions()]);
     } catch {
-      setError("No se pudo marcar la comisión como pagada");
+      setActionError("No se pudo marcar la comisión como pagada");
     } finally {
       setActionLoading(false);
     }
@@ -190,7 +168,7 @@ export default function VentasPage() {
   async function handleGeneratePayment(userId: string) {
     if (!activeTenant) return;
     setActionLoading(true);
-    setError(null);
+    setActionError(null);
 
     const now = new Date();
     let periodStart: Date;
@@ -242,9 +220,9 @@ export default function VentasPage() {
         period_start: periodStart.toISOString().split("T")[0],
         period_end: periodEnd.toISOString().split("T")[0],
       });
-      fetchPayments();
+      await Promise.all([mutatePayments(), mutatePendingCommissions()]);
     } catch {
-      setError("No se pudo generar el pago del período");
+      setActionError("No se pudo generar el pago del período");
     } finally {
       setActionLoading(false);
     }
@@ -253,12 +231,13 @@ export default function VentasPage() {
   async function handleMarkPaymentAsPaid() {
     if (!paymentToPay) return;
     setActionLoading(true);
+    setActionError(null);
     try {
       await updateCommissionPayment(paymentToPay.id, { payment_status: "paid" });
       setPaymentToPay(null);
-      fetchPayments();
+      await Promise.all([mutatePayments(), mutatePendingCommissions()]);
     } catch {
-      setError("No se pudo marcar el pago como pagado");
+      setActionError("No se pudo marcar el pago como pagado");
     } finally {
       setActionLoading(false);
     }
@@ -268,19 +247,20 @@ export default function VentasPage() {
     if (!paymentToEdit) return;
     const amount = parseFloat(editAmount);
     if (isNaN(amount) || amount < 0) {
-      setError("Monto inválido");
+      setActionError("Monto inválido");
       return;
     }
     setActionLoading(true);
+    setActionError(null);
     try {
       await updateCommissionPayment(paymentToEdit.id, {
         commission_amount: amount,
       });
       setPaymentToEdit(null);
       setEditAmount("");
-      fetchPayments();
+      await mutatePayments();
     } catch {
-      setError("No se pudo actualizar el monto");
+      setActionError("No se pudo actualizar el monto");
     } finally {
       setActionLoading(false);
     }
@@ -361,140 +341,201 @@ export default function VentasPage() {
         </h1>
       </div>
 
-      {activeTab !== "pagos" && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-border-soft/80 p-4">
-          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
-            Persona:
-            <select
-              value={userFilter}
-              onChange={(e) => setUserFilter(e.target.value)}
-              className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none sm:py-1.5"
-            >
-              <option value="">Todas</option>
-              {teamMembers.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.display_name || m.email}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
-            Estado:
-            <select
-              value={paidFilter}
-              onChange={(e) => setPaidFilter(e.target.value)}
-              className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none sm:py-1.5"
-            >
-              <option value="">Todas</option>
-              <option value="false">Pendientes</option>
-              <option value="true">Pagadas</option>
-            </select>
-          </label>
-          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
-            Desde:
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none sm:py-1.5"
-            />
-          </label>
-          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
-            Hasta:
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none sm:py-1.5"
-            />
-          </label>
-        </div>
-      )}
-
-      {activeTab === "pagos" && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-border-soft/80 p-4">
-          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
-            Período:
-            <select
-              value={periodType}
-              onChange={(e) =>
-                setPeriodType(e.target.value as "day" | "week" | "month")
-              }
-              className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none sm:py-1.5"
-            >
-              <option value="day">Día</option>
-              <option value="week">Semana</option>
-              <option value="month">Mes</option>
-            </select>
-          </label>
-          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
-            Persona:
-            <select
-              value={selectedUser}
-              onChange={(e) => setSelectedUser(e.target.value)}
-              className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none sm:py-1.5"
-            >
-              <option value="">Todas</option>
-              {teamMembers.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.display_name || m.email}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-1 min-w-[120px] items-center gap-1.5 text-sm text-muted-foreground sm:flex-none">
-            Estado:
-            <select
-              value={paymentStatus}
-              onChange={(e) => setPaymentStatus(e.target.value)}
-              className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none sm:py-1.5"
-            >
-              <option value="">Todos</option>
-              <option value="pending">Pendientes</option>
-              <option value="paid">Pagados</option>
-            </select>
-          </label>
-        </div>
-      )}
-
-      <div className="flex gap-1 border-b border-border-soft">
+      <div className="rounded-xl border border-border bg-border-soft/80 overflow-hidden">
         <button
+          type="button"
+          onClick={() => setFiltersOpen((o) => !o)}
+          className="flex min-h-[44px] w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium text-foreground hover:bg-border-soft/60"
+          aria-expanded={filtersOpen}
+          aria-controls="ventas-filters-content"
+          id="ventas-filters-trigger"
+        >
+          <span>Filtros</span>
+          <span
+            className={`shrink-0 text-muted transition-transform duration-200 ${filtersOpen ? "rotate-180" : ""}`}
+            aria-hidden
+          >
+            ▼
+          </span>
+        </button>
+        {filtersOpen && (
+          <div
+            id="ventas-filters-content"
+            role="region"
+            aria-labelledby="ventas-filters-trigger"
+            className="border-t border-border px-4 pb-4 pt-3"
+          >
+            {activeTab !== "pagos" ? (
+              <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+                <label className="flex w-full flex-col gap-1.5 sm:min-w-[120px] sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
+                  <span className="text-sm font-medium text-muted-foreground sm:shrink-0">Persona</span>
+                  <select
+                    value={userFilter}
+                    onChange={(e) => setUserFilter(e.target.value)}
+                    className="select-custom min-h-[44px] w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                  >
+                    <option value="">Todas</option>
+                    {teamMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.display_name || m.email}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex w-full flex-col gap-1.5 sm:min-w-[120px] sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
+                  <span className="text-sm font-medium text-muted-foreground sm:shrink-0">Estado</span>
+                  <select
+                    value={paidFilter}
+                    onChange={(e) => setPaidFilter(e.target.value)}
+                    className="select-custom min-h-[44px] w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                  >
+                    <option value="">Todas</option>
+                    <option value="false">Pendientes</option>
+                    <option value="true">Pagadas</option>
+                  </select>
+                </label>
+                <label className="flex w-full flex-col gap-1.5 sm:min-w-[120px] sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
+                  <span className="text-sm font-medium text-muted-foreground sm:shrink-0">Desde</span>
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="min-h-[44px] w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                  />
+                </label>
+                <label className="flex w-full flex-col gap-1.5 sm:min-w-[120px] sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
+                  <span className="text-sm font-medium text-muted-foreground sm:shrink-0">Hasta</span>
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="min-h-[44px] w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                  />
+                </label>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+                <label className="flex w-full flex-col gap-1.5 sm:min-w-[120px] sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
+                  <span className="text-sm font-medium text-muted-foreground sm:shrink-0">Período</span>
+                  <select
+                    value={periodType}
+                    onChange={(e) =>
+                      setPeriodType(e.target.value as "day" | "week" | "month")
+                    }
+                    className="select-custom min-h-[44px] w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                  >
+                    <option value="day">Día</option>
+                    <option value="week">Semana</option>
+                    <option value="month">Mes</option>
+                  </select>
+                </label>
+                <label className="flex w-full flex-col gap-1.5 sm:min-w-[120px] sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
+                  <span className="text-sm font-medium text-muted-foreground sm:shrink-0">Persona</span>
+                  <select
+                    value={selectedUser}
+                    onChange={(e) => setSelectedUser(e.target.value)}
+                    className="select-custom min-h-[44px] w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                  >
+                    <option value="">Todas</option>
+                    {teamMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.display_name || m.email}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex w-full flex-col gap-1.5 sm:min-w-[120px] sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
+                  <span className="text-sm font-medium text-muted-foreground sm:shrink-0">Estado</span>
+                  <select
+                    value={paymentStatus}
+                    onChange={(e) => setPaymentStatus(e.target.value)}
+                    className="select-custom min-h-[44px] w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                  >
+                    <option value="">Todos</option>
+                    <option value="pending">Pendientes</option>
+                    <option value="paid">Pagados</option>
+                  </select>
+                </label>
+              </div>
+            )}
+          </div>
+        )}
+        {!filtersOpen && (
+          <p className="border-t border-border px-4 py-2 text-xs text-muted" aria-hidden>
+            {activeTab !== "pagos"
+              ? `${userFilter ? (teamMembers.find((m) => m.id === userFilter)?.display_name || teamMembers.find((m) => m.id === userFilter)?.email || "—") : "Todas"} · ${paidFilter === "true" ? "Pagadas" : paidFilter === "false" ? "Pendientes" : "Todas"}${dateFrom || dateTo ? ` · ${dateFrom || "—"} a ${dateTo || "—"}` : ""}`
+              : `Período: ${periodType === "day" ? "Día" : periodType === "week" ? "Semana" : "Mes"} · ${selectedUser ? (teamMembers.find((m) => m.id === selectedUser)?.display_name || teamMembers.find((m) => m.id === selectedUser)?.email || "—") : "Todas"} · ${paymentStatus === "paid" ? "Pagados" : paymentStatus === "pending" ? "Pendientes" : "Todos"}`}
+          </p>
+        )}
+      </div>
+
+      <div className="md:hidden">
+        <label className="sr-only" htmlFor="ventas-tab-select">
+          Ver sección
+        </label>
+        <select
+          id="ventas-tab-select"
+          value={activeTab}
+          onChange={(e) => setActiveTab(e.target.value as TabView)}
+          className="select-custom min-h-[44px] w-full appearance-none rounded-xl border border-border bg-surface-raised px-4 py-2.5 text-sm font-medium text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+          aria-label="Seleccionar sección de ventas"
+        >
+          <option value="resumen">Resumen</option>
+          <option value="por-persona">Por persona</option>
+          <option value="por-orden">Por orden</option>
+          <option value="pagos">Pagos</option>
+        </select>
+      </div>
+      <div className="hidden gap-1 border-b border-border-soft md:flex">
+        <button
+          type="button"
           onClick={() => setActiveTab("resumen")}
-          className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+          className={`min-h-[44px] shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${
             activeTab === "resumen"
               ? "border-b-2 border-accent text-foreground"
-              : "text-muted hover:text-foreground"
+              : "text-muted hover:text-foreground active:text-foreground"
           }`}
+          aria-label="Ver resumen"
+          aria-pressed={activeTab === "resumen"}
         >
           Resumen
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab("por-persona")}
-          className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+          className={`min-h-[44px] shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${
             activeTab === "por-persona"
               ? "border-b-2 border-accent text-foreground"
-              : "text-muted hover:text-foreground"
+              : "text-muted hover:text-foreground active:text-foreground"
           }`}
+          aria-label="Por persona"
+          aria-pressed={activeTab === "por-persona"}
         >
           Por persona
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab("por-orden")}
-          className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+          className={`min-h-[44px] shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${
             activeTab === "por-orden"
               ? "border-b-2 border-accent text-foreground"
-              : "text-muted hover:text-foreground"
+              : "text-muted hover:text-foreground active:text-foreground"
           }`}
+          aria-label="Por orden"
+          aria-pressed={activeTab === "por-orden"}
         >
           Por orden
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab("pagos")}
-          className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+          className={`min-h-[44px] shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${
             activeTab === "pagos"
               ? "border-b-2 border-accent text-foreground"
-              : "text-muted hover:text-foreground"
+              : "text-muted hover:text-foreground active:text-foreground"
           }`}
+          aria-label="Pagos"
+          aria-pressed={activeTab === "pagos"}
         >
           Pagos
         </button>
@@ -509,7 +550,7 @@ export default function VentasPage() {
       {loading ? (
         <LoadingBlock message="Cargando ventas…" />
       ) : activeTab === "resumen" ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 sm:gap-4">
           <div className="rounded-xl border border-border bg-surface-raised p-4">
             <p className="text-xs font-medium text-muted">Total vendido</p>
             <p className="mt-1.5 text-xl font-bold tabular-nums text-foreground">
@@ -546,149 +587,278 @@ export default function VentasPage() {
           </div>
         </div>
       ) : activeTab === "por-persona" ? (
-        <TableWrapper>
-          <table className="w-full">
-            <thead>
-              <tr className={tableHeaderRowClass}>
-                <th className={tableHeaderCellClass}>Persona</th>
-                <th className={tableHeaderCellClass}>Productos</th>
-                <th className={tableHeaderCellClass}>Servicios</th>
-                <th className={tableHeaderCellClass}>Total vendido</th>
-                <th className={tableHeaderCellClass}>Ganancia bruta</th>
-                <th className={tableHeaderCellClass}>Comisión</th>
-                <th className={tableHeaderCellClass}>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {byPerson.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-8 text-center text-sm text-muted"
-                  >
-                    No hay datos de ventas
-                  </td>
-                </tr>
-              ) : (
-                byPerson.map((p) => (
-                  <tr key={p.user_id} className={tableBodyRowClass}>
-                    <td className={tableBodyCellClass}>
-                      {p.display_name || p.email}
-                    </td>
-                    <td className={tableBodyCellMutedClass}>{p.products_sold}</td>
-                    <td className={tableBodyCellMutedClass}>{p.services_sold}</td>
-                    <td className={tableBodyCellClass}>
+        <>
+          <div className="space-y-4 md:hidden">
+            {byPerson.length === 0 ? (
+              <div className="rounded-xl border border-border bg-surface-raised p-6 text-center">
+                <p className="text-sm text-muted">No hay datos de ventas</p>
+              </div>
+            ) : (
+              byPerson.map((p) => (
+                <div
+                  key={p.user_id}
+                  className="rounded-xl border border-border bg-surface-raised p-4"
+                >
+                  <p className="font-medium text-foreground">
+                    {p.display_name || p.email}
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    <span className="text-muted">Productos</span>
+                    <span className="text-right font-medium tabular-nums">
+                      {p.products_sold}
+                    </span>
+                    <span className="text-muted">Servicios</span>
+                    <span className="text-right font-medium tabular-nums">
+                      {p.services_sold}
+                    </span>
+                    <span className="text-muted">Total vendido</span>
+                    <span className="text-right font-medium tabular-nums">
                       ${p.total_revenue.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-accent">
+                    </span>
+                    <span className="text-muted">Ganancia bruta</span>
+                    <span className="text-right font-medium tabular-nums text-accent">
                       ${p.gross_profit.toFixed(2)}
-                    </td>
-                    <td className={tableBodyCellClass}>
+                    </span>
+                    <span className="text-muted">Comisión</span>
+                    <span className="text-right font-medium tabular-nums">
                       ${p.total_commission.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {p.pending_commission > 0 ? (
-                        <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
-                          Pendiente: ${p.pending_commission.toFixed(2)}
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-accent/10 px-2 py-1 text-xs font-medium text-accent">
-                          Pagada
-                        </span>
-                      )}
-                    </td>
+                    </span>
+                  </div>
+                  <div className="mt-3 border-t border-border-soft pt-3">
+                    {p.pending_commission > 0 ? (
+                      <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
+                        Pendiente: ${p.pending_commission.toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent">
+                        Pagada
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="hidden md:block">
+            <TableWrapper>
+              <table className="w-full">
+                <thead>
+                  <tr className={tableHeaderRowClass}>
+                    <th className={tableHeaderCellClass}>Persona</th>
+                    <th className={tableHeaderCellClass}>Productos</th>
+                    <th className={tableHeaderCellClass}>Servicios</th>
+                    <th className={tableHeaderCellClass}>Total vendido</th>
+                    <th className={tableHeaderCellClass}>Ganancia bruta</th>
+                    <th className={tableHeaderCellClass}>Comisión</th>
+                    <th className={tableHeaderCellClass}>Estado</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </TableWrapper>
-      ) : activeTab === "por-orden" ? (
-        <TableWrapper>
-          <table className="w-full">
-            <thead>
-              <tr className={tableHeaderRowClass}>
-                <th className={tableHeaderCellClass}>Orden</th>
-                <th className={tableHeaderCellClass}>Fecha</th>
-                <th className={tableHeaderCellClass}>Persona</th>
-                <th className={tableHeaderCellClass}>Productos</th>
-                <th className={tableHeaderCellClass}>Servicios</th>
-                <th className={tableHeaderCellClass}>Total</th>
-                <th className={tableHeaderCellClass}>Ganancia</th>
-                <th className={tableHeaderCellClass}>Comisión</th>
-                <th className={tableHeaderCellClass}>Estado</th>
-                <th className={tableHeaderCellClass}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-                {commissions.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={10}
-                      className="px-4 py-8 text-center text-sm text-muted"
-                    >
-                      No hay comisiones registradas
-                    </td>
-                  </tr>
-                ) : (
-                  commissions.map((c) => (
-                    <tr key={c.id} className={tableBodyRowClass}>
-                      <td className={tableBodyCellClass}>
-                        <Link
-                          href={`/dashboard/${tenantSlug}/ordenes/${c.order_id}`}
-                          className="text-foreground hover:text-muted"
-                        >
-                          #{c.order_id.slice(0, 8)}
-                        </Link>
-                      </td>
-                      <td className={tableBodyCellMutedClass}>
-                        {new Date(c.created_at).toLocaleDateString()}
-                      </td>
-                      <td className={tableBodyCellClass}>
-                        {c.profiles?.display_name || c.profiles?.email}
-                      </td>
-                      <td className={tableBodyCellMutedClass}>
-                        {c.products_count}
-                      </td>
-                      <td className={tableBodyCellMutedClass}>
-                        {c.services_count}
-                      </td>
-                      <td className={tableBodyCellClass}>
-                        ${Number(c.total_revenue).toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-accent">
-                        ${Number(c.gross_profit).toFixed(2)}
-                      </td>
-                      <td className={tableBodyCellClass}>
-                        ${Number(c.commission_amount).toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {c.is_paid ? (
-                          <span className="rounded-full bg-accent/10 px-2 py-1 text-xs font-medium text-accent">
-                            Pagada
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
-                            Pendiente
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {!c.is_paid && (
-                          <button
-                            onClick={() => setCommissionToPay(c)}
-                            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:bg-border-soft/60"
-                          >
-                            Marcar pagada
-                          </button>
-                        )}
+                </thead>
+                <tbody>
+                  {byPerson.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-4 py-8 text-center text-sm text-muted"
+                      >
+                        No hay datos de ventas
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-        </TableWrapper>
+                  ) : (
+                    byPerson.map((p) => (
+                      <tr key={p.user_id} className={tableBodyRowClass}>
+                        <td className={tableBodyCellClass}>
+                          {p.display_name || p.email}
+                        </td>
+                        <td className={tableBodyCellMutedClass}>
+                          {p.products_sold}
+                        </td>
+                        <td className={tableBodyCellMutedClass}>
+                          {p.services_sold}
+                        </td>
+                        <td className={tableBodyCellClass}>
+                          ${p.total_revenue.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-accent">
+                          ${p.gross_profit.toFixed(2)}
+                        </td>
+                        <td className={tableBodyCellClass}>
+                          ${p.total_commission.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {p.pending_commission > 0 ? (
+                            <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
+                              Pendiente: ${p.pending_commission.toFixed(2)}
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-accent/10 px-2 py-1 text-xs font-medium text-accent">
+                              Pagada
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </TableWrapper>
+          </div>
+        </>
+      ) : activeTab === "por-orden" ? (
+        <>
+          <div className="space-y-4 md:hidden">
+            {commissions.length === 0 ? (
+              <div className="rounded-xl border border-border bg-surface-raised p-6 text-center">
+                <p className="text-sm text-muted">
+                  No hay comisiones registradas
+                </p>
+              </div>
+            ) : (
+              commissions.map((c) => (
+                <div
+                  key={c.id}
+                  className="rounded-xl border border-border bg-surface-raised p-4"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <Link
+                      href={`/dashboard/${tenantSlug}/ordenes/${c.order_id}`}
+                      className="font-medium text-foreground hover:text-muted"
+                    >
+                      #{c.order_id.slice(0, 8)}
+                    </Link>
+                    {c.is_paid ? (
+                      <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent">
+                        Pagada
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
+                        Pendiente
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-sm text-muted">
+                    {new Date(c.created_at).toLocaleDateString()} ·{" "}
+                    {c.profiles?.display_name || c.profiles?.email}
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    <span className="text-muted">Productos / Servicios</span>
+                    <span className="text-right font-medium tabular-nums">
+                      {c.products_count} / {c.services_count}
+                    </span>
+                    <span className="text-muted">Total</span>
+                    <span className="text-right font-medium tabular-nums">
+                      ${Number(c.total_revenue).toFixed(2)}
+                    </span>
+                    <span className="text-muted">Ganancia</span>
+                    <span className="text-right font-medium tabular-nums text-accent">
+                      ${Number(c.gross_profit).toFixed(2)}
+                    </span>
+                    <span className="text-muted">Comisión</span>
+                    <span className="text-right font-medium tabular-nums">
+                      ${Number(c.commission_amount).toFixed(2)}
+                    </span>
+                  </div>
+                  {!c.is_paid && (
+                    <div className="mt-3 border-t border-border-soft pt-3">
+                      <button
+                        onClick={() => setCommissionToPay(c)}
+                        className="min-h-[44px] w-full rounded-xl border border-border px-4 text-sm font-medium text-muted hover:bg-border-soft/60"
+                      >
+                        Marcar pagada
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+          <div className="hidden md:block">
+            <TableWrapper>
+              <table className="w-full">
+                <thead>
+                  <tr className={tableHeaderRowClass}>
+                    <th className={tableHeaderCellClass}>Orden</th>
+                    <th className={tableHeaderCellClass}>Fecha</th>
+                    <th className={tableHeaderCellClass}>Persona</th>
+                    <th className={tableHeaderCellClass}>Productos</th>
+                    <th className={tableHeaderCellClass}>Servicios</th>
+                    <th className={tableHeaderCellClass}>Total</th>
+                    <th className={tableHeaderCellClass}>Ganancia</th>
+                    <th className={tableHeaderCellClass}>Comisión</th>
+                    <th className={tableHeaderCellClass}>Estado</th>
+                    <th className={tableHeaderCellClass}>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {commissions.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={10}
+                        className="px-4 py-8 text-center text-sm text-muted"
+                      >
+                        No hay comisiones registradas
+                      </td>
+                    </tr>
+                  ) : (
+                    commissions.map((c) => (
+                      <tr key={c.id} className={tableBodyRowClass}>
+                        <td className={tableBodyCellClass}>
+                          <Link
+                            href={`/dashboard/${tenantSlug}/ordenes/${c.order_id}`}
+                            className="text-foreground hover:text-muted"
+                          >
+                            #{c.order_id.slice(0, 8)}
+                          </Link>
+                        </td>
+                        <td className={tableBodyCellMutedClass}>
+                          {new Date(c.created_at).toLocaleDateString()}
+                        </td>
+                        <td className={tableBodyCellClass}>
+                          {c.profiles?.display_name || c.profiles?.email}
+                        </td>
+                        <td className={tableBodyCellMutedClass}>
+                          {c.products_count}
+                        </td>
+                        <td className={tableBodyCellMutedClass}>
+                          {c.services_count}
+                        </td>
+                        <td className={tableBodyCellClass}>
+                          ${Number(c.total_revenue).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-accent">
+                          ${Number(c.gross_profit).toFixed(2)}
+                        </td>
+                        <td className={tableBodyCellClass}>
+                          ${Number(c.commission_amount).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {c.is_paid ? (
+                            <span className="rounded-full bg-accent/10 px-2 py-1 text-xs font-medium text-accent">
+                              Pagada
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
+                              Pendiente
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {!c.is_paid && (
+                            <button
+                              onClick={() => setCommissionToPay(c)}
+                              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:bg-border-soft/60"
+                            >
+                              Marcar pagada
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </TableWrapper>
+          </div>
+        </>
       ) : (
         <div className="space-y-4">
           <div className="rounded-xl border border-border bg-surface-raised p-6">
@@ -730,7 +900,7 @@ export default function VentasPage() {
                     <button
                       onClick={() => handleGeneratePayment(member.id)}
                       disabled={actionLoading}
-                      className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
+                      className="min-h-[44px] shrink-0 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
                     >
                       Generar
                     </button>
@@ -755,101 +925,180 @@ export default function VentasPage() {
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">
               Pagos Registrados
             </h3>
-            <TableWrapper>
-              <table className="w-full">
-                <thead>
-                  <tr className={tableHeaderRowClass}>
-                    <th className={tableHeaderCellClass}>Persona</th>
-                    <th className={tableHeaderCellClass}>Período</th>
-                    <th className={tableHeaderCellClass}>Órdenes</th>
-                    <th className={tableHeaderCellClass}>Total vendido</th>
-                    <th className={tableHeaderCellClass}>Ganancia</th>
-                    <th className={tableHeaderCellClass}>Comisión</th>
-                    <th className={tableHeaderCellClass}>Estado</th>
-                    <th className={tableHeaderCellClass}>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {payments.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={8}
-                        className="px-4 py-8 text-center text-sm text-muted"
-                      >
-                        No hay pagos registrados
-                      </td>
+            <div className="space-y-4 md:hidden">
+              {payments.length === 0 ? (
+                <div className="rounded-xl border border-border bg-surface-raised p-6 text-center">
+                  <p className="text-sm text-muted">No hay pagos registrados</p>
+                </div>
+              ) : (
+                payments.map((p) => (
+                  <div
+                    key={p.id}
+                    className="rounded-xl border border-border bg-surface-raised p-4"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-medium text-foreground">
+                        {p.profiles?.display_name || p.profiles?.email}
+                      </p>
+                      {p.payment_status === "paid" ? (
+                        <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent">
+                          Pagado
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
+                          Pendiente
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm text-muted">
+                      {new Date(p.period_start).toLocaleDateString()} -{" "}
+                      {new Date(p.period_end).toLocaleDateString()}{" "}
+                      <span className="capitalize">
+                        {p.period_type === "day"
+                          ? "Día"
+                          : p.period_type === "week"
+                            ? "Semana"
+                            : "Mes"}
+                      </span>
+                    </p>
+                    <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                      <span className="text-muted">Órdenes</span>
+                      <span className="text-right font-medium tabular-nums">
+                        {p.total_orders}
+                      </span>
+                      <span className="text-muted">Total vendido</span>
+                      <span className="text-right font-medium tabular-nums">
+                        ${Number(p.total_revenue).toFixed(2)}
+                      </span>
+                      <span className="text-muted">Ganancia</span>
+                      <span className="text-right font-medium tabular-nums text-accent">
+                        ${Number(p.gross_profit).toFixed(2)}
+                      </span>
+                      <span className="text-muted">Comisión</span>
+                      <span className="text-right font-medium tabular-nums">
+                        ${Number(p.commission_amount).toFixed(2)}
+                      </span>
+                    </div>
+                    {p.payment_status === "pending" && (
+                      <div className="mt-3 flex gap-2 border-t border-border-soft pt-3">
+                        <button
+                          onClick={() => {
+                            setPaymentToEdit(p);
+                            setEditAmount(String(p.commission_amount));
+                          }}
+                          className="min-h-[44px] flex-1 rounded-xl border border-border px-4 text-sm font-medium text-muted hover:bg-border-soft/60"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => setPaymentToPay(p)}
+                          className="min-h-[44px] flex-1 rounded-xl bg-accent px-4 text-sm font-medium text-accent-foreground hover:opacity-90"
+                        >
+                          Pagar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="hidden md:block">
+              <TableWrapper>
+                <table className="w-full">
+                  <thead>
+                    <tr className={tableHeaderRowClass}>
+                      <th className={tableHeaderCellClass}>Persona</th>
+                      <th className={tableHeaderCellClass}>Período</th>
+                      <th className={tableHeaderCellClass}>Órdenes</th>
+                      <th className={tableHeaderCellClass}>Total vendido</th>
+                      <th className={tableHeaderCellClass}>Ganancia</th>
+                      <th className={tableHeaderCellClass}>Comisión</th>
+                      <th className={tableHeaderCellClass}>Estado</th>
+                      <th className={tableHeaderCellClass}>Acciones</th>
                     </tr>
-                  ) : (
-                    payments.map((p) => (
-                      <tr key={p.id} className={tableBodyRowClass}>
-                        <td className={tableBodyCellClass}>
-                          {p.profiles?.display_name || p.profiles?.email}
-                        </td>
-                        <td className={tableBodyCellMutedClass}>
-                          <div>
-                            {new Date(p.period_start).toLocaleDateString()} -{" "}
-                            {new Date(p.period_end).toLocaleDateString()}
-                          </div>
-                          <div className="text-xs text-muted capitalize">
-                            {p.period_type === "day"
-                              ? "Día"
-                              : p.period_type === "week"
-                                ? "Semana"
-                                : "Mes"}
-                          </div>
-                        </td>
-                        <td className={tableBodyCellMutedClass}>
-                          {p.total_orders}
-                        </td>
-                        <td className={tableBodyCellClass}>
-                          ${Number(p.total_revenue).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-accent">
-                          ${Number(p.gross_profit).toFixed(2)}
-                        </td>
-                        <td className={tableBodyCellClass}>
-                          ${Number(p.commission_amount).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                          {p.payment_status === "paid" ? (
-                            <span className="rounded-full bg-accent/10 px-2 py-1 text-xs font-medium text-accent">
-                              Pagado
-                            </span>
-                          ) : (
-                            <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
-                              Pendiente
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                          <div className="flex gap-2">
-                            {p.payment_status === "pending" && (
-                              <>
-                                <button
-                                  onClick={() => {
-                                    setPaymentToEdit(p);
-                                    setEditAmount(String(p.commission_amount));
-                                  }}
-                                  className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:bg-border-soft/60"
-                                >
-                                  Editar
-                                </button>
-                                <button
-                                  onClick={() => setPaymentToPay(p)}
-                                  className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:opacity-90"
-                                >
-                                  Pagar
-                                </button>
-                              </>
-                            )}
-                          </div>
+                  </thead>
+                  <tbody>
+                    {payments.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={8}
+                          className="px-4 py-8 text-center text-sm text-muted"
+                        >
+                          No hay pagos registrados
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </TableWrapper>
+                    ) : (
+                      payments.map((p) => (
+                        <tr key={p.id} className={tableBodyRowClass}>
+                          <td className={tableBodyCellClass}>
+                            {p.profiles?.display_name || p.profiles?.email}
+                          </td>
+                          <td className={tableBodyCellMutedClass}>
+                            <div>
+                              {new Date(p.period_start).toLocaleDateString()} -{" "}
+                              {new Date(p.period_end).toLocaleDateString()}
+                            </div>
+                            <div className="text-xs text-muted capitalize">
+                              {p.period_type === "day"
+                                ? "Día"
+                                : p.period_type === "week"
+                                  ? "Semana"
+                                  : "Mes"}
+                            </div>
+                          </td>
+                          <td className={tableBodyCellMutedClass}>
+                            {p.total_orders}
+                          </td>
+                          <td className={tableBodyCellClass}>
+                            ${Number(p.total_revenue).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-accent">
+                            ${Number(p.gross_profit).toFixed(2)}
+                          </td>
+                          <td className={tableBodyCellClass}>
+                            ${Number(p.commission_amount).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {p.payment_status === "paid" ? (
+                              <span className="rounded-full bg-accent/10 px-2 py-1 text-xs font-medium text-accent">
+                                Pagado
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
+                                Pendiente
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <div className="flex gap-2">
+                              {p.payment_status === "pending" && (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setPaymentToEdit(p);
+                                      setEditAmount(String(p.commission_amount));
+                                    }}
+                                    className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:bg-border-soft/60"
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    onClick={() => setPaymentToPay(p)}
+                                    className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:opacity-90"
+                                  >
+                                    Pagar
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </TableWrapper>
+            </div>
           </div>
         </div>
       )}

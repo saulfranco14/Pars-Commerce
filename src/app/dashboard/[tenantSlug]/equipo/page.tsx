@@ -96,18 +96,20 @@ export default function EquipoPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-foreground">Equipo</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
+          Equipo
+        </h1>
         <Link
           href={`/dashboard/${tenantSlug}/equipo/nuevo`}
-          className="rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 active:opacity-90 sm:min-h-0"
         >
           Agregar miembro
         </Link>
       </div>
 
       {error && (
-        <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -119,58 +121,111 @@ export default function EquipoPage() {
           skeletonRows={4}
         />
       ) : members.length === 0 ? (
-        <p className="text-sm text-muted">
-          No hay miembros. Agrega uno con &quot;Agregar miembro&quot;.
-        </p>
+        <div className="rounded-xl border border-border bg-surface-raised p-6 text-center">
+          <p className="text-sm text-muted">
+            No hay miembros. Agrega uno con &quot;Agregar miembro&quot;.
+          </p>
+        </div>
       ) : (
-        <TableWrapper>
-          <table className="min-w-full">
-            <thead>
-              <tr className={tableHeaderRowClass}>
-                <th className={tableHeaderCellClass}>Nombre</th>
-                <th className={tableHeaderCellClass}>Email</th>
-                <th className={tableHeaderCellClass}>Rol</th>
-                <th className={tableHeaderCellRightClass}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.map((m) => (
-                <tr key={m.id} className={tableBodyRowClass}>
-                  <td className={tableBodyCellClass}>
-                    {m.display_name || "—"}
-                  </td>
-                  <td className={tableBodyCellMutedClass}>{m.email || "—"}</td>
-                  <td className={tableBodyCellClass}>
-                    <select
-                      value={m.role_id}
-                      onChange={(e) => handleRoleChange(m.id, e.target.value)}
-                      disabled={updatingId === m.id || m.role_name === "owner"}
-                      className="select-custom rounded-xl border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50"
+        <>
+          <div className="space-y-4 md:hidden">
+            {members.map((m) => (
+              <div
+                key={m.id}
+                className="rounded-xl border border-border bg-surface-raised p-4"
+              >
+                <p className="font-medium text-foreground">
+                  {m.display_name || "—"}
+                </p>
+                <p className="mt-0.5 break-all text-sm text-muted">
+                  {m.email || "—"}
+                </p>
+                <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border-soft pt-4">
+                  <select
+                    value={m.role_id}
+                    onChange={(e) => handleRoleChange(m.id, e.target.value)}
+                    disabled={updatingId === m.id || m.role_name === "owner"}
+                    className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50"
+                    aria-label={`Rol de ${m.display_name || m.email}`}
+                  >
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name}
+                      </option>
+                    ))}
+                  </select>
+                  {m.role_name !== "owner" && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(m.id)}
+                      disabled={updatingId === m.id}
+                      className="min-h-[44px] rounded-xl border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 active:opacity-90"
+                      aria-label={`Quitar a ${m.display_name || m.email}`}
                     >
-                      {roles.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {m.role_name !== "owner" && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemove(m.id)}
-                        disabled={updatingId === m.id}
-                        className="text-sm text-red-600 hover:text-red-700 disabled:opacity-50"
-                      >
-                        {updatingId === m.id ? "..." : "Quitar"}
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </TableWrapper>
+                      {updatingId === m.id ? "..." : "Quitar"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden md:block">
+            <TableWrapper>
+              <table className="min-w-full">
+                <thead>
+                  <tr className={tableHeaderRowClass}>
+                    <th className={tableHeaderCellClass}>Nombre</th>
+                    <th className={tableHeaderCellClass}>Email</th>
+                    <th className={tableHeaderCellClass}>Rol</th>
+                    <th className={tableHeaderCellRightClass}>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.map((m) => (
+                    <tr key={m.id} className={tableBodyRowClass}>
+                      <td className={tableBodyCellClass}>
+                        {m.display_name || "—"}
+                      </td>
+                      <td className={tableBodyCellMutedClass}>
+                        {m.email || "—"}
+                      </td>
+                      <td className={tableBodyCellClass}>
+                        <select
+                          value={m.role_id}
+                          onChange={(e) =>
+                            handleRoleChange(m.id, e.target.value)
+                          }
+                          disabled={
+                            updatingId === m.id || m.role_name === "owner"
+                          }
+                          className="select-custom rounded-xl border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50"
+                        >
+                          {roles.map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {m.role_name !== "owner" && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemove(m.id)}
+                            disabled={updatingId === m.id}
+                            className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+                          >
+                            {updatingId === m.id ? "..." : "Quitar"}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableWrapper>
+          </div>
+        </>
       )}
     </div>
   );

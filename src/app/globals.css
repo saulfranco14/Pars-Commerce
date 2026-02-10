@@ -147,3 +147,15 @@ body {
   background-size: 1.25rem;
   padding-right: 2.5rem;
 }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  #ticket-print {
+    display: block !important;
+    visibility: visible !important;
+    background: #fff;
+    min-height: auto;
+  }
+}

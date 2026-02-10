@@ -17,6 +17,7 @@ import {
   tableBodyCellRightClass,
 } from "@/components/ui/TableWrapper";
 import { formatOrderDate } from "@/lib/formatDate";
+import { swrFetcher } from "@/lib/swrFetcher";
 import {
   ClipboardList,
   TrendingUp,
@@ -72,8 +73,6 @@ function getPeriodDates(period: string): { dateFrom: string; dateTo: string } {
   return { dateFrom: from.toISOString().slice(0, 10), dateTo: toStr };
 }
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
-
 function orderContentType(o: OrderRow): "productos" | "servicios" | "mixto" {
   const p = o.products_count ?? 0;
   const s = o.services_count ?? 0;
@@ -122,7 +121,7 @@ export default function DashboardPage() {
       : null;
   const { data: ordersData, isLoading: salesLoading } = useSWR<OrderRow[]>(
     ordersKey,
-    fetcher,
+    swrFetcher,
     { fallbackData: [] }
   );
   const orders = Array.isArray(ordersData) ? ordersData : [];
@@ -132,7 +131,7 @@ export default function DashboardPage() {
       ? `/api/dashboard-sales-by-item?tenant_id=${encodeURIComponent(activeTenant.id)}&date_from=${dateFrom}&date_to=${dateTo}`
       : null;
   const { data: salesByItemData, isLoading: salesByItemLoading } =
-    useSWR<SalesByItem>(salesByItemKey, fetcher, {
+    useSWR<SalesByItem>(salesByItemKey, swrFetcher, {
       fallbackData: { products: [], services: [] },
     });
   const salesByItem =
@@ -147,7 +146,7 @@ export default function DashboardPage() {
       ? `/api/dashboard-stats?tenant_id=${encodeURIComponent(activeTenant.id)}`
       : null;
   const { data: catalogStats, isLoading: catalogLoading } =
-    useSWR<CatalogStats | null>(statsKey, fetcher);
+    useSWR<CatalogStats | null>(statsKey, swrFetcher);
 
   if (!activeTenant) {
     return null;

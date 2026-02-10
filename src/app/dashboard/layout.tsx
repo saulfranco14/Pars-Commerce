@@ -54,14 +54,16 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen max-h-screen overflow-hidden bg-background">
-      <Sidebar
-        tenantSlug={tenantSlug}
-        mobileOpen={mobileMenuOpen}
-        onMobileClose={() => setMobileMenuOpen(false)}
-        onSignOut={handleSignOut}
-      />
+      <div className="no-print">
+        <Sidebar
+          tenantSlug={tenantSlug}
+          mobileOpen={mobileMenuOpen}
+          onMobileClose={() => setMobileMenuOpen(false)}
+          onSignOut={handleSignOut}
+        />
+      </div>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-soft bg-surface px-4 safe-area-inset-left">
+        <header className="no-print flex h-14 shrink-0 items-center justify-between border-b border-border-soft bg-surface px-4 safe-area-inset-left">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}

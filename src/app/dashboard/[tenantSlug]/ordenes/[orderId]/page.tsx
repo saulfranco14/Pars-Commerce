@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Printer, MessageCircle } from "lucide-react";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { AddItemModal } from "@/components/orders/AddItemModal";
@@ -47,6 +48,44 @@ interface TeamMemberOption {
   email: string;
 }
 
+function buildTicketText(
+  order: OrderDetail,
+  items: OrderItem[],
+  businessName: string
+): string {
+  const lines: string[] = [
+    `*${businessName}*`,
+    `Orden ${order.id.slice(0, 8)} · ${formatOrderDate(order.created_at)}`,
+    "",
+    order.customer_name || order.customer_email
+      ? `Cliente: ${order.customer_name || order.customer_email}`
+      : "",
+    order.customer_phone ? `Tel: ${order.customer_phone}` : "",
+    "",
+    "Items:",
+    ...items.map(
+      (i) =>
+        `• ${i.product?.name ?? "—"} x${i.quantity} $${Number(i.subtotal).toFixed(2)}`
+    ),
+    "",
+    `Subtotal: $${Number(order.subtotal).toFixed(2)}`,
+    ...(Number(order.discount) > 0
+      ? [`Descuento: -$${Number(order.discount).toFixed(2)}`]
+      : []),
+    `*Total: $${Number(order.total).toFixed(2)}*`,
+  ];
+  return lines.filter(Boolean).join("\n");
+}
+
+function getWhatsAppTicketUrl(
+  order: OrderDetail,
+  items: OrderItem[],
+  businessName: string
+): string {
+  const text = buildTicketText(order, items, businessName);
+  return `https://wa.me/?text=${encodeURIComponent(text)}`;
+}
+
 export default function OrdenDetallePage() {
   const params = useParams();
   const router = useRouter();
@@ -67,6 +106,7 @@ export default function OrdenDetallePage() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [cancelOrderOpen, setCancelOrderOpen] = useState(false);
   const [itemToRemove, setItemToRemove] = useState<OrderItem | null>(null);
+  const [ticketSectionOpen, setTicketSectionOpen] = useState(false);
 
   function fetchOrder() {
     return getOrder(orderId).then((data) => setOrder(data as OrderDetail));
@@ -222,9 +262,67 @@ export default function OrdenDetallePage() {
 
   const canEditItems = ["draft", "assigned"].includes(order.status);
   const items = order.items ?? [];
+  const businessName = activeTenant?.name ?? "Negocio";
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <>
+      <div
+        id="ticket-print"
+        className="hidden p-6"
+        aria-hidden
+      >
+        <div className="mx-auto max-w-sm font-sans text-foreground">
+          <p className="text-lg font-bold">{businessName}</p>
+          <p className="text-sm text-muted">
+            Orden {order.id.slice(0, 8)} · {formatOrderDate(order.created_at)}
+          </p>
+          {(order.customer_name || order.customer_email) && (
+            <p className="mt-2 text-sm">
+              Cliente: {order.customer_name || order.customer_email}
+            </p>
+          )}
+          {order.customer_phone && (
+            <p className="text-sm">Tel: {order.customer_phone}</p>
+          )}
+          <table className="mt-4 w-full table-fixed border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="py-2 text-left font-medium">Item</th>
+                <th className="w-12 py-2 text-right font-medium">Cant.</th>
+                <th className="w-20 py-2 text-right font-medium">P.unit</th>
+                <th className="w-20 py-2 text-right font-medium">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr key={item.id} className="border-b border-border-soft">
+                  <td className="py-2 text-left">{item.product?.name ?? "—"}</td>
+                  <td className="py-2 text-right">{item.quantity}</td>
+                  <td className="py-2 text-right">
+                    ${Number(item.unit_price).toFixed(2)}
+                  </td>
+                  <td className="py-2 text-right">
+                    ${Number(item.subtotal).toFixed(2)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-2 text-right text-sm">
+            Subtotal: ${Number(order.subtotal).toFixed(2)}
+          </p>
+          {Number(order.discount) > 0 && (
+            <p className="text-right text-sm">
+              Descuento: -${Number(order.discount).toFixed(2)}
+            </p>
+          )}
+          <p className="mt-1 border-t-2 border-foreground pt-2 text-right font-bold">
+            Total: ${Number(order.total).toFixed(2)}
+          </p>
+        </div>
+      </div>
+
+      <div className="no-print mx-auto max-w-4xl space-y-6 px-2 sm:px-0">
       <div className="shrink-0 border-b border-border pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/ordenes`}
@@ -397,8 +495,8 @@ export default function OrdenDetallePage() {
               No hay items. Agrega productos o servicios.
             </p>
           ) : (
-            <div className="overflow-hidden rounded-lg border border-border">
-              <table className="min-w-full divide-y divide-border">
+            <div className="w-full overflow-x-auto rounded-lg border border-border">
+              <table className="w-full min-w-full divide-y divide-border">
                 <thead className="bg-border-soft">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
@@ -490,6 +588,62 @@ export default function OrdenDetallePage() {
             </span>
           </div>
         </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-surface-raised overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setTicketSectionOpen((o) => !o)}
+          className="flex min-h-[44px] w-full items-center justify-between gap-2 px-4 py-3 text-left sm:px-5"
+          aria-expanded={ticketSectionOpen}
+          aria-controls="ticket-actions-content"
+          id="ticket-actions-trigger"
+        >
+          <div className="text-left">
+            <h2 className="text-sm font-semibold text-foreground">
+              Compartir o imprimir ticket
+            </h2>
+            <p className="mt-0.5 text-xs text-muted">
+              Envía por WhatsApp o imprímelo para el cliente.
+            </p>
+          </div>
+          <span
+            className={`shrink-0 text-muted transition-transform duration-200 ${ticketSectionOpen ? "rotate-180" : ""}`}
+            aria-hidden
+          >
+            ▼
+          </span>
+        </button>
+        {ticketSectionOpen && (
+          <div
+            id="ticket-actions-content"
+            role="region"
+            aria-labelledby="ticket-actions-trigger"
+            className="border-t border-border px-4 pb-4 pt-3 sm:px-5"
+          >
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border-soft/80 active:opacity-90"
+                aria-label="Imprimir ticket"
+              >
+                <Printer className="h-4 w-4 shrink-0" />
+                Imprimir ticket
+              </button>
+              <a
+                href={getWhatsAppTicketUrl(order, items, activeTenant?.name ?? "Negocio")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 active:opacity-90"
+                aria-label="Enviar ticket por WhatsApp"
+              >
+                <MessageCircle className="h-4 w-4 shrink-0" />
+                Enviar por WhatsApp
+              </a>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -615,6 +769,7 @@ export default function OrdenDetallePage() {
         confirmDanger
         loading={actionLoading}
       />
-    </div>
+      </div>
+    </>
   );
 }
