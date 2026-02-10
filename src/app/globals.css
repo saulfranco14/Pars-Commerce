@@ -8,6 +8,8 @@
   --surface-raised: #ffffff;
   --border: #e0e0e0;
   --border-soft: #f5f5f4;
+  --input-bg: var(--surface-raised);
+  --input-border: var(--border);
   --muted: #78716c;
   --muted-foreground: #57534e;
   --accent: var(--color-default);
@@ -44,25 +46,29 @@
   .text-default {
     color: var(--color-default);
   }
+  .input-form {
+    background-color: var(--input-bg);
+    border-color: var(--input-border);
+  }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-default: #f472b6;
-    --background: #1c1917;
-    --foreground: #fafaf9;
-    --surface: #292524;
-    --surface-raised: #44403c;
-    --border: #44403c;
-    --border-soft: #57534e;
-    --muted: #a8a29e;
-    --muted-foreground: #d6d3d1;
-    --accent: var(--color-default);
-    --accent-foreground: #1f1015;
-    --accent-hover: #ec4899;
-    --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.2);
-    --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.2), 0 2px 4px -2px rgb(0 0 0 / 0.15);
-  }
+html.dark {
+  --color-default: #f472b6;
+  --background: #1c1917;
+  --foreground: #fafaf9;
+  --surface: #292524;
+  --surface-raised: #44403c;
+  --border: #44403c;
+  --border-soft: #57534e;
+  --input-bg: #1c1917;
+  --input-border: #57534e;
+  --muted: #a8a29e;
+  --muted-foreground: #d6d3d1;
+  --accent: var(--color-default);
+  --accent-foreground: #1f1015;
+  --accent-hover: #ec4899;
+  --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.2);
+  --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.2), 0 2px 4px -2px rgb(0 0 0 / 0.15);
 }
 
 body {

@@ -198,7 +198,7 @@ export default function EditarServicioPage() {
                     <div>
                       <label
                         htmlFor="name"
-                        className="block text-sm font-medium text-zinc-700"
+                        className="block text-sm font-medium text-muted-foreground"
                       >
                         Nombre *
                       </label>
@@ -207,7 +207,7 @@ export default function EditarServicioPage() {
                         type="text"
                         value={name}
                         onChange={handleNameChange}
-                        className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                         placeholder="Ej. Lavado básico"
                       />
                       {fieldErrors.name && (
@@ -219,7 +219,7 @@ export default function EditarServicioPage() {
                     <div>
                       <label
                         htmlFor="slug"
-                        className="block text-sm font-medium text-zinc-700"
+                        className="block text-sm font-medium text-muted-foreground"
                       >
                         Slug (URL) *
                       </label>
@@ -228,10 +228,10 @@ export default function EditarServicioPage() {
                         type="text"
                         value={slug}
                         onChange={(e) => setSlug(e.target.value)}
-                        className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                         placeholder="lavado-basico"
                       />
-                      <p className="mt-1 text-xs text-muted">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         Minúsculas, números y guiones.
                       </p>
                       {fieldErrors.slug && (
@@ -245,7 +245,7 @@ export default function EditarServicioPage() {
                   <div>
                     <label
                       htmlFor="price"
-                      className="block text-sm font-medium text-zinc-700"
+                      className="block text-sm font-medium text-muted-foreground"
                     >
                       Precio de venta *
                     </label>
@@ -255,7 +255,7 @@ export default function EditarServicioPage() {
                       inputMode="decimal"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="0.00"
                     />
                     {fieldErrors.price && (
@@ -267,7 +267,7 @@ export default function EditarServicioPage() {
                   <div>
                     <label
                       htmlFor="cost_price"
-                      className="block text-sm font-medium text-zinc-700"
+                      className="block text-sm font-medium text-muted-foreground"
                     >
                       Costo del servicio *
                     </label>
@@ -277,10 +277,10 @@ export default function EditarServicioPage() {
                       inputMode="decimal"
                       value={costPrice}
                       onChange={(e) => setCostPrice(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="0.00"
                     />
-                    <p className="mt-1 text-xs text-muted">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Cuánto te cuesta este servicio (para calcular ganancias)
                     </p>
                     {fieldErrors.cost_price && (
@@ -292,7 +292,7 @@ export default function EditarServicioPage() {
                   <div>
                     <label
                       htmlFor="sku"
-                      className="block text-sm font-medium text-zinc-700"
+                      className="block text-sm font-medium text-muted-foreground"
                     >
                       SKU (opcional)
                     </label>
@@ -301,10 +301,10 @@ export default function EditarServicioPage() {
                       type="text"
                       value={sku}
                       onChange={(e) => setSku(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="Ej. SVC-001"
                     />
-                    <p className="mt-1 text-xs text-muted">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Código único en inventario.
                     </p>
                   </div>
@@ -312,7 +312,7 @@ export default function EditarServicioPage() {
                   <div>
                     <label
                       htmlFor="commission_amount"
-                      className="block text-sm font-medium text-zinc-700"
+                      className="block text-sm font-medium text-muted-foreground"
                     >
                       Comisión por unidad (opcional)
                     </label>
@@ -322,10 +322,10 @@ export default function EditarServicioPage() {
                       inputMode="decimal"
                       value={commissionAmount}
                       onChange={(e) => setCommissionAmount(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="0.00"
                     />
-                    <p className="mt-1 text-xs text-muted">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Comisión que se pagará por cada servicio realizado
                     </p>
                     {fieldErrors.commission_amount && (
@@ -343,7 +343,7 @@ export default function EditarServicioPage() {
                         onChange={(e) => setIsPublic(e.target.checked)}
                         className="h-4 w-4 rounded border-border"
                       />
-                      <span className="text-sm text-zinc-700">
+                      <span className="text-sm text-muted-foreground">
                         Visible en sitio público
                       </span>
                     </label>
@@ -352,7 +352,7 @@ export default function EditarServicioPage() {
                   <div className="md:col-span-2">
                     <label
                       htmlFor="description"
-                      className="block text-sm font-medium text-zinc-700"
+                      className="block text-sm font-medium text-muted-foreground"
                     >
                       Descripción (opcional)
                     </label>
@@ -361,7 +361,7 @@ export default function EditarServicioPage() {
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       rows={2}
-                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="Descripción del servicio"
                     />
                   </div>
@@ -391,7 +391,7 @@ export default function EditarServicioPage() {
               </button>
               <Link
                 href={`/dashboard/${tenantSlug}/servicios`}
-                className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-border-soft"
+                className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-border-soft"
               >
                 Cancelar
               </Link>

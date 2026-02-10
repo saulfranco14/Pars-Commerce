@@ -372,7 +372,7 @@ export default function VentasPage() {
                   <select
                     value={userFilter}
                     onChange={(e) => setUserFilter(e.target.value)}
-                    className="select-custom min-h-[44px] w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                    className="input-form select-custom min-h-[44px] w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
                   >
                     <option value="">Todas</option>
                     {teamMembers.map((m) => (
@@ -387,7 +387,7 @@ export default function VentasPage() {
                   <select
                     value={paidFilter}
                     onChange={(e) => setPaidFilter(e.target.value)}
-                    className="select-custom min-h-[44px] w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                    className="input-form select-custom min-h-[44px] w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
                   >
                     <option value="">Todas</option>
                     <option value="false">Pendientes</option>
@@ -400,7 +400,7 @@ export default function VentasPage() {
                     type="date"
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
-                    className="min-h-[44px] w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                    className="input-form min-h-[44px] w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
                   />
                 </label>
                 <label className="flex w-full flex-col gap-1.5 sm:min-w-[120px] sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
@@ -409,7 +409,7 @@ export default function VentasPage() {
                     type="date"
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
-                    className="min-h-[44px] w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                    className="input-form min-h-[44px] w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
                   />
                 </label>
               </div>
@@ -422,7 +422,7 @@ export default function VentasPage() {
                     onChange={(e) =>
                       setPeriodType(e.target.value as "day" | "week" | "month")
                     }
-                    className="select-custom min-h-[44px] w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                    className="input-form select-custom min-h-[44px] w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
                   >
                     <option value="day">Día</option>
                     <option value="week">Semana</option>
@@ -434,7 +434,7 @@ export default function VentasPage() {
                   <select
                     value={selectedUser}
                     onChange={(e) => setSelectedUser(e.target.value)}
-                    className="select-custom min-h-[44px] w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                    className="input-form select-custom min-h-[44px] w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
                   >
                     <option value="">Todas</option>
                     {teamMembers.map((m) => (
@@ -449,7 +449,7 @@ export default function VentasPage() {
                   <select
                     value={paymentStatus}
                     onChange={(e) => setPaymentStatus(e.target.value)}
-                    className="select-custom min-h-[44px] w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                    className="input-form select-custom min-h-[44px] w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
                   >
                     <option value="">Todos</option>
                     <option value="pending">Pendientes</option>
@@ -477,7 +477,7 @@ export default function VentasPage() {
           id="ventas-tab-select"
           value={activeTab}
           onChange={(e) => setActiveTab(e.target.value as TabView)}
-          className="select-custom min-h-[44px] w-full appearance-none rounded-xl border border-border bg-surface-raised px-4 py-2.5 text-sm font-medium text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+          className="input-form select-custom min-h-[44px] w-full appearance-none rounded-xl border px-4 py-2.5 text-sm font-medium text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
           aria-label="Seleccionar sección de ventas"
         >
           <option value="resumen">Resumen</option>
@@ -1164,7 +1164,7 @@ export default function VentasPage() {
                   inputMode="decimal"
                   value={editAmount}
                   onChange={(e) => setEditAmount(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground"
+                  className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                   placeholder="0.00"
                 />
               </div>

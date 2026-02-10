@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { createClient } from "@/lib/supabase/client";
 import logo from "@/assets/logo.png";
 
@@ -107,7 +108,10 @@ function LoginForm() {
 
   if (inviteMode === null) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-background px-4">
+      <div className="relative flex min-h-screen flex-col items-center justify-center gap-8 bg-background px-4">
+        <div className="absolute right-4 top-4">
+          <ThemeToggle />
+        </div>
         <Image
           src={logo}
           alt="Pars"
@@ -122,7 +126,7 @@ function LoginForm() {
   }
 
   const inputClass =
-    "mt-1 block w-full min-h-[44px] rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+    "input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
   const errorClass =
     "rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700";
 
@@ -141,7 +145,10 @@ function LoginForm() {
 
   if (inviteMode === true) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+      <div className="relative flex min-h-screen items-center justify-center bg-background px-4 py-8">
+        <div className="absolute right-4 top-4">
+          <ThemeToggle />
+        </div>
         <div className="w-full max-w-sm rounded-xl border border-border bg-surface-raised p-6 shadow-card sm:p-8">
           {logoBlock}
           <h1 className="mt-6 text-xl font-semibold text-foreground">
@@ -170,7 +177,7 @@ function LoginForm() {
                 value={email}
                 readOnly
                 autoComplete="off"
-                className={`${inputClass} bg-border-soft/80 text-muted`}
+                className={`${inputClass} text-muted`}
                 aria-readonly
               />
             </div>
@@ -229,7 +236,10 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+    <div className="relative flex min-h-screen items-center justify-center bg-background px-4 py-8">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-sm rounded-xl border border-border bg-surface-raised p-6 shadow-card sm:p-8">
         {logoBlock}
         <h1 className="mt-6 text-xl font-semibold text-foreground">

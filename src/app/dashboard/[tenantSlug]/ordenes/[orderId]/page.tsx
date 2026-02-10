@@ -385,7 +385,7 @@ export default function OrdenDetallePage() {
               type="text"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-accent focus:ring-1 focus:ring-accent"
+              className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               placeholder="Nombre del cliente"
             />
             <label className="mt-3 block text-xs font-medium text-muted-foreground">
@@ -395,7 +395,7 @@ export default function OrdenDetallePage() {
               type="email"
               value={customerEmail}
               onChange={(e) => setCustomerEmail(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-accent focus:ring-1 focus:ring-accent"
+              className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               placeholder="cliente@ejemplo.com"
             />
             <label className="mt-3 block text-xs font-medium text-muted-foreground">
@@ -405,7 +405,7 @@ export default function OrdenDetallePage() {
               type="tel"
               value={customerPhone}
               onChange={(e) => setCustomerPhone(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-accent focus:ring-1 focus:ring-accent"
+              className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               placeholder="555 123 4567"
             />
             <div className="mt-4 flex gap-2">
@@ -445,7 +445,7 @@ export default function OrdenDetallePage() {
             <select
               value={assignTo}
               onChange={(e) => setAssignTo(e.target.value)}
-              className="select-custom block w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+              className="input-form select-custom block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             >
               <option value="">Sin asignar</option>
               {team.map((t) => (

@@ -145,7 +145,7 @@ export default function EquipoPage() {
                     value={m.role_id}
                     onChange={(e) => handleRoleChange(m.id, e.target.value)}
                     disabled={updatingId === m.id || m.role_name === "owner"}
-                    className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50"
+                    className="input-form select-custom min-h-[44px] flex-1 rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50"
                     aria-label={`Rol de ${m.display_name || m.email}`}
                   >
                     {roles.map((r) => (
@@ -198,7 +198,7 @@ export default function EquipoPage() {
                           disabled={
                             updatingId === m.id || m.role_name === "owner"
                           }
-                          className="select-custom rounded-xl border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50"
+                          className="input-form select-custom min-h-[44px] rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50"
                         >
                           {roles.map((r) => (
                             <option key={r.id} value={r.id}>

@@ -66,7 +66,7 @@ export default function ConfiguracionPage() {
 
   if (!activeTenant) {
     return (
-      <div className="text-sm text-muted-foreground">
+      <div className="text-sm text-muted-foreground-foreground">
         Selecciona un negocio para continuar.
       </div>
     );
@@ -75,7 +75,7 @@ export default function ConfiguracionPage() {
   return (
     <div className="mx-auto max-w-md">
       <h1 className="text-2xl font-semibold text-foreground">Configuración</h1>
-      <p className="mt-1 text-sm text-muted">
+      <p className="mt-1 text-sm text-muted-foreground">
         Datos del negocio y sitio web. El nombre y la descripción se muestran en
         tu sitio público. El color del tema se aplica al sitio. Si habilitas la
         tienda pública, el catálogo y las secciones serán visibles en la URL de
@@ -92,13 +92,13 @@ export default function ConfiguracionPage() {
           >
             Ver mi sitio
           </a>
-          <p className="mt-1 text-xs text-muted">
+          <p className="mt-1 text-xs text-muted-foreground">
             Se abre en una nueva pestaña.
           </p>
         </div>
       )}
       {!publicStoreEnabled && (
-        <p className="mt-2 text-sm text-muted">
+        <p className="mt-2 text-sm text-muted-foreground">
           Habilita la tienda pública para ver el enlace a tu sitio.
         </p>
       )}
@@ -107,13 +107,13 @@ export default function ConfiguracionPage() {
         <h2 className="text-sm font-medium text-foreground">
           Secciones del sitio (hasta 5)
         </h2>
-        <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+        <ul className="mt-2 space-y-1 text-sm text-muted-foreground-foreground">
           {sitePages.length === 0 ? (
             <li>Cargando secciones...</li>
           ) : (
             sitePages.map((p) => (
               <li key={p.id}>
-                {p.title} <span className="text-muted">/ {p.slug}</span>
+                {p.title} <span className="text-muted-foreground">/ {p.slug}</span>
               </li>
             ))
           )}
@@ -134,7 +134,7 @@ export default function ConfiguracionPage() {
         <div>
           <label
             htmlFor="name"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-muted-foreground"
           >
             Nombre del negocio
           </label>
@@ -144,14 +144,14 @@ export default function ConfiguracionPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground"
+            className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             placeholder="Ej. Lavado express"
           />
         </div>
         <div>
           <label
             htmlFor="description"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-muted-foreground"
           >
             Descripción (opcional)
           </label>
@@ -160,14 +160,14 @@ export default function ConfiguracionPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground"
+            className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             placeholder="Breve descripción del negocio"
           />
         </div>
         <div>
           <label
             htmlFor="themeColor"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-muted-foreground"
           >
             Color del tema (opcional)
           </label>
@@ -183,7 +183,7 @@ export default function ConfiguracionPage() {
               type="text"
               value={themeColor}
               onChange={(e) => setThemeColor(e.target.value)}
-              className="block flex-1 rounded-md border border-border px-3 py-2 text-foreground"
+              className="input-form block flex-1 min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               placeholder="#18181b"
             />
           </div>
@@ -196,7 +196,7 @@ export default function ConfiguracionPage() {
             onChange={(e) => setPublicStoreEnabled(e.target.checked)}
             className="h-4 w-4 rounded border-border"
           />
-          <label htmlFor="publicStore" className="text-sm text-zinc-700">
+          <label htmlFor="publicStore" className="text-sm text-muted-foreground-foreground">
             Tienda pública habilitada (mostrar catálogo en sitio web)
           </label>
         </div>

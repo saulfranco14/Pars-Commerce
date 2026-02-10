@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { createClient } from "@/lib/supabase/client";
 
 export default function RegistroPage() {
@@ -39,7 +40,10 @@ export default function RegistroPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="relative flex min-h-screen items-center justify-center bg-background px-4 py-8">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-sm rounded-lg border border-border bg-surface-raised p-6 shadow-sm">
         <h1 className="text-xl font-semibold text-foreground">Crear cuenta</h1>
         <p className="mt-1 text-sm text-muted">
@@ -68,7 +72,7 @@ export default function RegistroPage() {
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               autoComplete="name"
             />
           </div>
@@ -85,7 +89,7 @@ export default function RegistroPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               autoComplete="email"
             />
           </div>
@@ -103,7 +107,7 @@ export default function RegistroPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               autoComplete="new-password"
             />
           </div>

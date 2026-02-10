@@ -214,7 +214,7 @@ export default function EditarProductoPage() {
                     <div>
                       <label
                         htmlFor="name"
-                        className="block text-sm font-medium text-zinc-700"
+                        className="block text-sm font-medium text-muted-foreground"
                       >
                         Nombre *
                       </label>
@@ -223,7 +223,7 @@ export default function EditarProductoPage() {
                         type="text"
                         value={name}
                         onChange={handleNameChange}
-                        className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                         placeholder="Ej. Mesa 14x10"
                       />
                       {fieldErrors.name && (
@@ -235,7 +235,7 @@ export default function EditarProductoPage() {
                     <div>
                       <label
                         htmlFor="slug"
-                        className="block text-sm font-medium text-zinc-700"
+                        className="block text-sm font-medium text-muted-foreground"
                       >
                         Slug (URL) *
                       </label>
@@ -244,7 +244,7 @@ export default function EditarProductoPage() {
                         type="text"
                         value={slug}
                         onChange={(e) => setSlug(e.target.value)}
-                        className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                         placeholder="mesa-14x10"
                       />
                       <p className="mt-1 text-xs text-zinc-500">
@@ -261,7 +261,7 @@ export default function EditarProductoPage() {
                   <div>
                     <label
                       htmlFor="price"
-                      className="block text-sm font-medium text-zinc-700"
+                      className="block text-sm font-medium text-muted-foreground"
                     >
                       Precio de venta *
                     </label>
@@ -271,7 +271,7 @@ export default function EditarProductoPage() {
                       inputMode="decimal"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="0.00"
                     />
                     {fieldErrors.price && (
@@ -283,7 +283,7 @@ export default function EditarProductoPage() {
                   <div>
                     <label
                       htmlFor="cost_price"
-                      className="block text-sm font-medium text-zinc-700"
+                      className="block text-sm font-medium text-muted-foreground"
                     >
                       Costo del producto *
                     </label>
@@ -293,7 +293,7 @@ export default function EditarProductoPage() {
                       inputMode="decimal"
                       value={costPrice}
                       onChange={(e) => setCostPrice(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="0.00"
                     />
                     <p className="mt-1 text-xs text-zinc-500">
@@ -308,7 +308,7 @@ export default function EditarProductoPage() {
                   <div>
                     <label
                       htmlFor="sku"
-                      className="block text-sm font-medium text-zinc-700"
+                      className="block text-sm font-medium text-muted-foreground"
                     >
                       SKU (opcional)
                     </label>
@@ -317,7 +317,7 @@ export default function EditarProductoPage() {
                       type="text"
                       value={sku}
                       onChange={(e) => setSku(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="Ej. MESA-001"
                     />
                     <p className="mt-1 text-xs text-zinc-500">
@@ -328,7 +328,7 @@ export default function EditarProductoPage() {
                   <div>
                     <label
                       htmlFor="unit"
-                      className="block text-sm font-medium text-zinc-700"
+                      className="block text-sm font-medium text-muted-foreground"
                     >
                       Unidad *
                     </label>
@@ -337,7 +337,7 @@ export default function EditarProductoPage() {
                       type="text"
                       value={unit}
                       onChange={(e) => setUnit(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="unit, kg, pza, hora..."
                     />
                     <p className="mt-1 text-xs text-zinc-500">
@@ -354,7 +354,7 @@ export default function EditarProductoPage() {
                   <div>
                     <label
                       htmlFor="theme"
-                      className="block text-sm font-medium text-zinc-700"
+                      className="block text-sm font-medium text-muted-foreground"
                     >
                       Tema o categoría (opcional)
                     </label>
@@ -363,14 +363,14 @@ export default function EditarProductoPage() {
                       type="text"
                       value={theme}
                       onChange={(e) => setTheme(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="Ej. Mobiliario, Promociones"
                     />
                   </div>
                   <div>
                     <label
                       htmlFor="commission_amount"
-                      className="block text-sm font-medium text-zinc-700"
+                      className="block text-sm font-medium text-muted-foreground"
                     >
                       Comisión por unidad (opcional)
                     </label>
@@ -380,7 +380,7 @@ export default function EditarProductoPage() {
                       inputMode="decimal"
                       value={commissionAmount}
                       onChange={(e) => setCommissionAmount(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="0.00"
                     />
                     <p className="mt-1 text-xs text-zinc-500">
@@ -397,7 +397,7 @@ export default function EditarProductoPage() {
                     <div className="md:col-span-2">
                       <label
                         htmlFor="stock"
-                        className="block text-sm font-medium text-zinc-700"
+                        className="block text-sm font-medium text-muted-foreground"
                       >
                         Stock
                       </label>
@@ -407,7 +407,7 @@ export default function EditarProductoPage() {
                         min={0}
                         value={stock}
                         onChange={(e) => setStock(e.target.value)}
-                        className="mt-1 max-w-32 rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                        className="input-form mt-1 max-w-32 min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       />
                     </div>
                   )}
@@ -420,7 +420,7 @@ export default function EditarProductoPage() {
                         onChange={(e) => setTrackStock(e.target.checked)}
                         className="h-4 w-4 rounded border-border"
                       />
-                      <span className="text-sm text-zinc-700">
+                      <span className="text-sm text-muted-foreground">
                         Controlar stock
                       </span>
                     </label>
@@ -431,7 +431,7 @@ export default function EditarProductoPage() {
                         onChange={(e) => setIsPublic(e.target.checked)}
                         className="h-4 w-4 rounded border-border"
                       />
-                      <span className="text-sm text-zinc-700">
+                      <span className="text-sm text-muted-foreground">
                         Visible en sitio público
                       </span>
                     </label>
@@ -440,7 +440,7 @@ export default function EditarProductoPage() {
                   <div className="md:col-span-2">
                     <label
                       htmlFor="description"
-                      className="block text-sm font-medium text-zinc-700"
+                      className="block text-sm font-medium text-muted-foreground"
                     >
                       Descripción (opcional)
                     </label>
@@ -449,7 +449,7 @@ export default function EditarProductoPage() {
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       rows={2}
-                      className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="Descripción del producto"
                     />
                   </div>
@@ -479,7 +479,7 @@ export default function EditarProductoPage() {
               </button>
               <Link
                 href={`/dashboard/${tenantSlug}/productos`}
-                className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-border-soft"
+                className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-border-soft"
               >
                 Cancelar
               </Link>

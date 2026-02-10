@@ -8,6 +8,7 @@ import { useAuthInitializer } from "@/hooks/useAuthInitializer";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Menu } from "lucide-react";
 
@@ -73,6 +74,7 @@ export default function DashboardLayout({
             <Menu className="h-6 w-6" />
           </button>
           <div className="flex-1" />
+          <ThemeToggle />
         </header>
         <main className="min-h-0 flex-1 overflow-auto px-4 py-4 sm:px-6 sm:py-6">
           {pathname === "/dashboard/crear-negocio" ||

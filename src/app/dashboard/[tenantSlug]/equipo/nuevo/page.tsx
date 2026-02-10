@@ -248,7 +248,7 @@ export default function NuevoMiembroPage() {
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground"
+            className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             placeholder="Nombre de la persona"
           />
         </div>
@@ -265,7 +265,7 @@ export default function NuevoMiembroPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground"
+            className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             placeholder="usuario@ejemplo.com"
           />
         </div>
@@ -280,7 +280,7 @@ export default function NuevoMiembroPage() {
             id="role"
             value={roleId}
             onChange={(e) => setRoleId(e.target.value)}
-            className="select-custom mt-1 block w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className="input-form select-custom mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
           >
             {roles.map((r) => (
               <option key={r.id} value={r.id}>

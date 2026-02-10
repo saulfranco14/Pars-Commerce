@@ -63,9 +63,9 @@ export default function NuevaOrdenPage() {
   }
 
   const inputClass =
-    "mt-1 block w-full rounded-xl border border-border bg-border-soft/80 px-3 py-2.5 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+    "input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
   const selectClass =
-    "select-custom mt-3 block w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+    "input-form select-custom mt-3 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
