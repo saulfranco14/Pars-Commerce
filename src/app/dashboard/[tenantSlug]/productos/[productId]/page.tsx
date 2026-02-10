@@ -176,7 +176,7 @@ export default function EditarProductoPage() {
   }
 
   if (!product) {
-    return <p className="text-sm text-zinc-500">Cargando...</p>;
+    return <p className="text-sm text-muted-foreground">Cargando...</p>;
   }
 
   return (
@@ -191,7 +191,7 @@ export default function EditarProductoPage() {
         <h1 className="mt-1 text-xl font-semibold text-foreground sm:text-2xl">
           Editar producto
         </h1>
-        <p className="mt-0.5 text-sm text-zinc-500">
+        <p className="mt-0.5 text-sm text-muted-foreground">
           Modifica los datos del producto
         </p>
       </div>
@@ -203,7 +203,7 @@ export default function EditarProductoPage() {
         >
           <div className="flex-1 overflow-y-auto p-6 md:p-8">
             {error && (
-              <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
                 {error}
               </div>
             )}
@@ -247,7 +247,7 @@ export default function EditarProductoPage() {
                         className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                         placeholder="mesa-14x10"
                       />
-                      <p className="mt-1 text-xs text-zinc-500">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         Minúsculas, números y guiones.
                       </p>
                       {fieldErrors.slug && (
@@ -296,7 +296,7 @@ export default function EditarProductoPage() {
                       className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="0.00"
                     />
-                    <p className="mt-1 text-xs text-zinc-500">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Cuánto te cuesta este producto (para calcular ganancias)
                     </p>
                     {fieldErrors.cost_price && (
@@ -320,7 +320,7 @@ export default function EditarProductoPage() {
                       className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="Ej. MESA-001"
                     />
-                    <p className="mt-1 text-xs text-zinc-500">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Código único en inventario.
                     </p>
                   </div>
@@ -340,7 +340,7 @@ export default function EditarProductoPage() {
                       className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="unit, kg, pza, hora..."
                     />
-                    <p className="mt-1 text-xs text-zinc-500">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Cómo se vende: &quot;unit&quot; = por pieza,
                       &quot;kg&quot; = por kilo, &quot;pza&quot; = pieza,
                       &quot;hora&quot; = por hora, etc.
@@ -383,7 +383,7 @@ export default function EditarProductoPage() {
                       className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="0.00"
                     />
-                    <p className="mt-1 text-xs text-zinc-500">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Comisión que se pagará por cada unidad vendida
                     </p>
                     {fieldErrors.commission_amount && (

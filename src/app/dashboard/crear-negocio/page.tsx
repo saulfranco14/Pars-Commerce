@@ -51,12 +51,12 @@ export default function CrearNegocioPage() {
   return (
     <div className="mx-auto max-w-md">
       <h1 className="text-2xl font-semibold text-foreground">Crear negocio</h1>
-      <p className="mt-1 text-sm text-muted">
+      <p className="mt-1 text-sm text-muted-foreground">
         Registra tu negocio para empezar a usar el dashboard.
       </p>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         {error && (
-          <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
             {error}
           </div>
         )}
@@ -73,7 +73,7 @@ export default function CrearNegocioPage() {
             value={name}
             onChange={handleNameChange}
             required
-            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground"
+            className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             placeholder="Ej. Lavado Express"
           />
         </div>
@@ -89,10 +89,10 @@ export default function CrearNegocioPage() {
             type="text"
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-foreground"
+            className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             placeholder="lavado-express"
           />
-          <p className="mt-1 text-xs text-muted">
+          <p className="mt-1 text-xs text-muted-foreground">
             Solo letras minúsculas, números y guiones. Se usará en la URL del
             sitio.
           </p>
@@ -108,7 +108,7 @@ export default function CrearNegocioPage() {
             id="businessType"
             value={businessType}
             onChange={(e) => setBusinessType(e.target.value)}
-            className="select-custom mt-1 block w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className="input-form select-custom mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
           >
             <option value="">Seleccionar</option>
             <option value="ecommerce">Ecommerce</option>

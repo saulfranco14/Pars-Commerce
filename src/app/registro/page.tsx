@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { createClient } from "@/lib/supabase/client";
 
 export default function RegistroPage() {
@@ -56,7 +57,7 @@ export default function RegistroPage() {
             </div>
           )}
           {message && (
-            <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
+            <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 alert-success">
               {message}
             </div>
           )}
@@ -93,24 +94,15 @@ export default function RegistroPage() {
               autoComplete="email"
             />
           </div>
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-muted-foreground"
-            >
-              Contraseña
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-              autoComplete="new-password"
-            />
-          </div>
+          <PasswordInput
+            id="password"
+            label="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+            autoComplete="new-password"
+          />
           <button
             type="submit"
             disabled={loading}

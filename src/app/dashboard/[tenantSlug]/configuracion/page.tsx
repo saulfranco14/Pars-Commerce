@@ -127,7 +127,7 @@ export default function ConfiguracionPage() {
           </div>
         )}
         {success && (
-          <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
+          <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 alert-success">
             Cambios guardados.
           </div>
         )}

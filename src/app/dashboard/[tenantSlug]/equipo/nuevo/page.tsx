@@ -95,7 +95,7 @@ export default function NuevoMiembroPage() {
   if (invitedByEmail) {
     return (
       <div className="mx-auto max-w-lg">
-        <div className="rounded-xl border border-green-200 bg-green-50 p-6 shadow-sm">
+        <div className="rounded-xl border border-green-200 bg-green-50 p-6 shadow-sm alert-success">
           <div className="mb-4 flex items-center gap-2">
             <svg
               className="h-6 w-6 text-green-600"
@@ -142,7 +142,7 @@ export default function NuevoMiembroPage() {
   if (tempPassword) {
     return (
       <div className="mx-auto max-w-lg">
-        <div className="rounded-xl border border-green-200 bg-green-50 p-6 shadow-sm">
+        <div className="rounded-xl border border-green-200 bg-green-50 p-6 shadow-sm alert-success">
           <div className="mb-4 flex items-center gap-2">
             <svg
               className="h-6 w-6 text-green-600"

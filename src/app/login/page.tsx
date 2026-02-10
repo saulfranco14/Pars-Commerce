@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { createClient } from "@/lib/supabase/client";
 import logo from "@/assets/logo.png";
@@ -128,7 +129,7 @@ function LoginForm() {
   const inputClass =
     "input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
   const errorClass =
-    "rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700";
+    "rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 alert-error";
 
   const logoBlock = (
     <div className="flex justify-center">
@@ -181,47 +182,31 @@ function LoginForm() {
                 aria-readonly
               />
             </div>
-            <div>
-              <label
-                htmlFor="new-password"
-                className="block text-sm font-medium text-muted-foreground"
-              >
-                Nueva contraseña
-              </label>
-              <input
-                id="new-password"
-                name="new-password"
-                type="password"
-                value={setPasswordNew}
-                onChange={(e) => setSetPasswordNew(e.target.value)}
-                required
-                minLength={6}
-                className={inputClass}
-                autoComplete="new-password"
-                placeholder="Mínimo 6 caracteres"
-                aria-invalid={!!setPasswordError}
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="new-password-confirm"
-                className="block text-sm font-medium text-muted-foreground"
-              >
-                Confirmar contraseña
-              </label>
-              <input
-                id="new-password-confirm"
-                name="new-password-confirm"
-                type="password"
-                value={setPasswordConfirm}
-                onChange={(e) => setSetPasswordConfirm(e.target.value)}
-                required
-                minLength={6}
-                className={inputClass}
-                autoComplete="new-password"
-                aria-invalid={!!setPasswordError}
-              />
-            </div>
+            <PasswordInput
+              id="new-password"
+              label="Nueva contraseña"
+              name="new-password"
+              value={setPasswordNew}
+              onChange={(e) => setSetPasswordNew(e.target.value)}
+              required
+              minLength={6}
+              inputClassName={inputClass}
+              autoComplete="new-password"
+              placeholder="Mínimo 6 caracteres"
+              aria-invalid={!!setPasswordError}
+            />
+            <PasswordInput
+              id="new-password-confirm"
+              label="Confirmar contraseña"
+              name="new-password-confirm"
+              value={setPasswordConfirm}
+              onChange={(e) => setSetPasswordConfirm(e.target.value)}
+              required
+              minLength={6}
+              inputClassName={inputClass}
+              autoComplete="new-password"
+              aria-invalid={!!setPasswordError}
+            />
             <button
               type="submit"
               disabled={setPasswordLoading}
@@ -272,24 +257,16 @@ function LoginForm() {
               aria-invalid={!!error}
             />
           </div>
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-muted-foreground"
-            >
-              Contraseña
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className={inputClass}
-              autoComplete="current-password"
-              aria-invalid={!!error}
-            />
-          </div>
+          <PasswordInput
+            id="password"
+            label="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            inputClassName={inputClass}
+            autoComplete="current-password"
+            aria-invalid={!!error}
+          />
           <button
             type="submit"
             disabled={loading}
