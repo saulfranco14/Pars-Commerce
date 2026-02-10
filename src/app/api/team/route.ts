@@ -158,7 +158,7 @@ export async function POST(request: Request) {
   }
 
   let targetUserId = user_id;
-  let tempPassword: string | null = null;
+  const tempPassword: string | null = null;
   let invitedByEmail = false;
 
   if (!targetUserId && email) {

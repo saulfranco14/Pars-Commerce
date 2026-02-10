@@ -252,7 +252,6 @@ export async function PATCH(request: Request) {
     is_public,
     image_url,
     image_urls,
-    theme,
     stock,
   } = body as {
     product_id: string;
