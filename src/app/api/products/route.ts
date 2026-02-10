@@ -149,7 +149,6 @@ export async function POST(request: Request) {
     is_public?: boolean;
     image_url?: string;
     image_urls?: string[];
-    theme?: string;
   };
 
   if (!tenant_id || !name || !slug || price == null || cost_price == null) {
