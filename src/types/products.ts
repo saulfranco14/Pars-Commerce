@@ -45,6 +45,7 @@ export interface CreateProductPayload {
   unit?: string;
   type?: string;
   track_stock?: boolean;
+  stock?: number;
   is_public?: boolean;
   image_url?: string;
   image_urls?: string[];

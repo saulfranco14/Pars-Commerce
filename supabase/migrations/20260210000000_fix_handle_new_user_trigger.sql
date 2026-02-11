@@ -1,3 +1,6 @@
+-- Fix handle_new_user function to remove non-existent 'role' column
+-- This was causing "Database error saving new user" during signup
+
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
@@ -17,20 +20,3 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
-UPDATE public.profiles
-SET
-    display_name = COALESCE(
-        NULLIF(display_name, ''),
-        (
-            SELECT COALESCE(
-                    au.raw_user_meta_data ->> 'display_name', split_part (au.email, '@', 1)
-                )
-            FROM auth.users au
-            WHERE
-                au.id = profiles.id
-        )
-    )
-WHERE
-    display_name IS NULL
-    OR display_name = '';

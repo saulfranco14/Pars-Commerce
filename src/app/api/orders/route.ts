@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         id, status, customer_name, customer_email, customer_phone,
         subtotal, discount, total, created_at, updated_at,
         created_by, assigned_to, completed_by, completed_at, paid_at,
-        payment_method,
+        payment_method, payment_link, mp_preference_id,
         assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email),
         items:order_items(id, quantity, unit_price, subtotal, product:products(id, name, type))
       `

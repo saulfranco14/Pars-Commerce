@@ -131,6 +131,7 @@ export async function POST(request: Request) {
     unit,
     type,
     track_stock,
+    stock,
     is_public,
     image_url,
     image_urls,
@@ -146,6 +147,7 @@ export async function POST(request: Request) {
     unit?: string;
     type?: string;
     track_stock?: boolean;
+    stock?: number;
     is_public?: boolean;
     image_url?: string;
     image_urls?: string[];
@@ -200,9 +202,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: productError.message }, { status: 500 });
   }
 
+  const initialQty =
+    typeof stock === "number" && stock >= 0 ? Math.floor(stock) : 0;
   const { error: invError } = await supabase.from("product_inventory").insert({
     product_id: product.id,
-    quantity: 0,
+    quantity: initialQty,
   });
 
   if (invError) {

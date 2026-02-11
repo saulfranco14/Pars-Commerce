@@ -407,7 +407,7 @@ export default function EditarProductoPage() {
                         min={0}
                         value={stock}
                         onChange={(e) => setStock(e.target.value)}
-                        className="input-form mt-1 max-w-32 min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        className="input-form mt-1 w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       />
                     </div>
                   )}
