@@ -5,7 +5,7 @@ import { ConfirmModal } from "@/components/ConfirmModal";
 import { useState } from "react";
 
 export function OrderActionButtons() {
-  const { order, actionLoading, handleStatusChange } = useOrder();
+  const { order, actionLoading, handleStatusChange, handleGeneratePaymentLink } = useOrder();
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
 
   if (!order) return null;
@@ -58,11 +58,11 @@ export function OrderActionButtons() {
           </button>
           <button
             type="button"
-            onClick={() => handleStatusChange("pending_payment")}
+            onClick={handleGeneratePaymentLink}
             disabled={actionLoading}
             className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
           >
-            Generar cobro (link de pago)
+            {actionLoading ? "Generando..." : "Generar cobro (MercadoPago)"}
           </button>
         </>
       )}

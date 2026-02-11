@@ -7,6 +7,7 @@ import { AssignmentCard } from "./components/AssignmentCard";
 import { OrderItemsTable } from "./components/OrderItemsTable";
 import { ReceiptActions } from "./components/ReceiptActions";
 import { OrderActionButtons } from "./components/OrderActionButtons";
+import { PaymentLinkCard } from "./components/PaymentLinkCard";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { ReceiptPreview } from "./components/ReceiptPreview";
 
@@ -58,6 +59,7 @@ function OrderDetailContent() {
 
           <CustomerCard />
           <OrderItemsTable />
+          <PaymentLinkCard />
           {isPaid && <ReceiptActions />}
 
           {/* Botones de cambio de estado al final como confirmación de flujo */}

@@ -6,6 +6,7 @@ import { useTenantStore } from "@/stores/useTenantStore";
 import { getById as getOrder, update as updateOrder } from "@/services/ordersService";
 import { list as listTeam } from "@/services/teamService";
 import { remove as removeOrderItem } from "@/services/orderItemsService";
+import { generatePaymentLink } from "@/services/mercadopagoService";
 import { OrderDetail, TeamMemberOption, OrderItem } from "../types";
 
 interface OrderContextType {
@@ -21,6 +22,7 @@ interface OrderContextType {
   handleAssign: (assignToId: string) => Promise<void>;
   handleSaveCustomer: (details: { name: string; email: string; phone: string }) => Promise<void>;
   handleRemoveItem: (itemId: string) => Promise<void>;
+  handleGeneratePaymentLink: () => Promise<void>;
   setError: (msg: string | null) => void;
 }
 
@@ -134,6 +136,20 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const handleGeneratePaymentLink = async () => {
+    if (!order) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      await generatePaymentLink(order.id);
+      await fetchOrder();
+    } catch (err: any) {
+      setError(err?.message || "Error al generar link de pago");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <OrderContext.Provider
       value={{
@@ -149,6 +165,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
         handleAssign,
         handleSaveCustomer,
         handleRemoveItem,
+        handleGeneratePaymentLink,
         setError,
       }}
     >

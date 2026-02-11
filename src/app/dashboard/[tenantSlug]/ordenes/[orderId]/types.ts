@@ -23,6 +23,8 @@ export interface OrderDetail {
     email: string | null;
   } | null;
   payment_method: string | null;
+  payment_link?: string | null;
+  mp_preference_id?: string | null;
   items: OrderItem[];
 }
 
