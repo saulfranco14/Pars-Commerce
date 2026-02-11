@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
 import { serviceFormSchema } from "@/lib/serviceValidation";
 import { create } from "@/services/productsService";
+import { listByTenant as listSubcatalogs } from "@/services/subcatalogsService";
+import type { Subcatalog } from "@/types/subcatalogs";
+import { SubcatalogSelect } from "@/components/forms/SubcatalogSelect";
 
 export default function NuevoServicioPage() {
   const params = useParams();
@@ -21,6 +24,8 @@ export default function NuevoServicioPage() {
   const [costPrice, setCostPrice] = useState("");
   const [commissionAmount, setCommissionAmount] = useState("");
   const [sku, setSku] = useState("");
+  const [subcatalogId, setSubcatalogId] = useState("");
+  const [subcatalogs, setSubcatalogs] = useState<Subcatalog[]>([]);
   const [isPublic, setIsPublic] = useState(true);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +39,11 @@ export default function NuevoServicioPage() {
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9-]/g, "");
   }
+
+  useEffect(() => {
+    if (!activeTenant?.id) return;
+    listSubcatalogs(activeTenant.id).then(setSubcatalogs).catch(() => setSubcatalogs([]));
+  }, [activeTenant?.id]);
 
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
@@ -109,6 +119,7 @@ export default function NuevoServicioPage() {
         cost_price: costPriceNum,
         commission_amount: commissionNum,
         sku: sku.trim() || undefined,
+        subcatalog_id: subcatalogId || null,
         unit: "service",
         is_public: isPublic,
         type: "service",
@@ -275,6 +286,27 @@ export default function NuevoServicioPage() {
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
                       Código único en inventario.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      id="subcatalog-label"
+                      htmlFor="subcatalog"
+                      className="block text-sm font-medium text-muted-foreground"
+                    >
+                      Subcatalog (opcional)
+                    </label>
+                    <div className="mt-1">
+                      <SubcatalogSelect
+                        id="subcatalog"
+                        subcatalogs={subcatalogs}
+                        value={subcatalogId}
+                        onChange={setSubcatalogId}
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Agrupa para buscar más rápido al agregar a órdenes.
                     </p>
                   </div>
 

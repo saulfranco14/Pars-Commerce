@@ -10,6 +10,8 @@ export interface ProductListItem {
   theme: string | null;
   stock: number;
   created_at: string;
+  subcatalog_id: string | null;
+  subcatalog?: { id: string; name: string };
 }
 
 export interface ProductDetail {
@@ -31,6 +33,8 @@ export interface ProductDetail {
   stock: number;
   created_at?: string;
   updated_at?: string;
+  subcatalog_id: string | null;
+  subcatalog?: { id: string; name: string };
 }
 
 export interface CreateProductPayload {
@@ -50,6 +54,7 @@ export interface CreateProductPayload {
   image_url?: string;
   image_urls?: string[];
   theme?: string;
+  subcatalog_id?: string | null;
 }
 
 export interface UpdateProductPayload {
@@ -68,6 +73,7 @@ export interface UpdateProductPayload {
   image_urls?: string[];
   theme?: string;
   stock?: number;
+  subcatalog_id?: string | null;
 }
 
 export interface ProductCreated {

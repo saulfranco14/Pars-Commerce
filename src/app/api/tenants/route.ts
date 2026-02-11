@@ -31,7 +31,44 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(memberships ?? []);
+  const list = memberships ?? [];
+  if (list.length === 0) return NextResponse.json([]);
+
+  const tenantIds = list.map((m) => (m as { tenant_id: string }).tenant_id);
+  const { data: addresses } = await supabase
+    .from("tenant_addresses")
+    .select("tenant_id, street, city, state, postal_code, country, phone")
+    .in("tenant_id", tenantIds);
+
+  const addressByTenant: Record<string, { street?: string; city?: string; state?: string; postal_code?: string; country?: string; phone?: string }> = {};
+  for (const a of addresses ?? []) {
+    const t = a as { tenant_id: string; street?: string; city?: string; state?: string; postal_code?: string; country?: string; phone?: string };
+    addressByTenant[t.tenant_id] = {
+      street: t.street ?? undefined,
+      city: t.city ?? undefined,
+      state: t.state ?? undefined,
+      postal_code: t.postal_code ?? undefined,
+      country: t.country ?? undefined,
+      phone: t.phone ?? undefined,
+    };
+  }
+
+  const withAddress = list.map((m) => {
+    const item = m as unknown as {
+      tenant_id: string;
+      tenant: Record<string, unknown>;
+    };
+    const tenantData = Array.isArray(item.tenant) ? item.tenant[0] : item.tenant;
+    return {
+      ...item,
+      tenant: {
+        ...(typeof tenantData === "object" && tenantData !== null ? tenantData : {}),
+        address: addressByTenant[item.tenant_id] ?? null,
+      },
+    };
+  });
+
+  return NextResponse.json(withAddress);
 }
 
 export async function POST(request: Request) {
@@ -117,14 +154,28 @@ export async function PATCH(request: Request) {
   }
 
   const body = await request.json();
-  const { tenant_id, name, description, theme_color, public_store_enabled } =
-    body as {
-      tenant_id: string;
-      name?: string;
-      description?: string;
-      theme_color?: string;
-      public_store_enabled?: boolean;
+  const {
+    tenant_id,
+    name,
+    description,
+    theme_color,
+    public_store_enabled,
+    address,
+  } = body as {
+    tenant_id: string;
+    name?: string;
+    description?: string;
+    theme_color?: string;
+    public_store_enabled?: boolean;
+    address?: {
+      street?: string;
+      city?: string;
+      state?: string;
+      postal_code?: string;
+      country?: string;
+      phone?: string;
     };
+  };
 
   if (!tenant_id) {
     return NextResponse.json(
@@ -177,6 +228,35 @@ export async function PATCH(request: Request) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (address !== undefined) {
+    const addrData = {
+      street: address.street?.trim() || null,
+      city: address.city?.trim() || null,
+      state: address.state?.trim() || null,
+      postal_code: address.postal_code?.trim() || null,
+      country: address.country?.trim() || null,
+      phone: address.phone?.trim() || null,
+      updated_at: new Date().toISOString(),
+    };
+    const { data: existing } = await admin
+      .from("tenant_addresses")
+      .select("id")
+      .eq("tenant_id", tenant_id)
+      .single();
+
+    if (existing) {
+      await admin
+        .from("tenant_addresses")
+        .update(addrData)
+        .eq("tenant_id", tenant_id);
+    } else {
+      await admin.from("tenant_addresses").insert({
+        tenant_id,
+        ...addrData,
+      });
+    }
   }
 
   return NextResponse.json(tenant);

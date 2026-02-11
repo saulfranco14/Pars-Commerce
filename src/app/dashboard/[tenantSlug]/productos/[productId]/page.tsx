@@ -8,6 +8,9 @@ import { MultiImageUpload } from "@/components/MultiImageUpload";
 import { productFormSchema } from "@/lib/productValidation";
 import type { ProductDetail } from "@/types/products";
 import { getById, update } from "@/services/productsService";
+import { listByTenant as listSubcatalogs } from "@/services/subcatalogsService";
+import type { Subcatalog } from "@/types/subcatalogs";
+import { SubcatalogSelect } from "@/components/forms/SubcatalogSelect";
 
 export default function EditarProductoPage() {
   const params = useParams();
@@ -26,6 +29,8 @@ export default function EditarProductoPage() {
   const [sku, setSku] = useState("");
   const [unit, setUnit] = useState("unit");
   const [theme, setTheme] = useState("");
+  const [subcatalogId, setSubcatalogId] = useState("");
+  const [subcatalogs, setSubcatalogs] = useState<Subcatalog[]>([]);
   const [trackStock, setTrackStock] = useState(true);
   const [isPublic, setIsPublic] = useState(true);
   const [stock, setStock] = useState("");
@@ -50,6 +55,7 @@ export default function EditarProductoPage() {
         setSku(data.sku ?? "");
         setUnit(data.unit ?? "unit");
         setTheme((data as { theme?: string }).theme ?? "");
+        setSubcatalogId((data as { subcatalog_id?: string | null }).subcatalog_id ?? "");
         setTrackStock(data.track_stock ?? true);
         setIsPublic(data.is_public ?? true);
         setStock(String(data.stock ?? 0));
@@ -60,6 +66,11 @@ export default function EditarProductoPage() {
       .catch(() => setFetchError("No se pudo cargar el producto"))
       .finally(() => setLoading(false));
   }, [productId]);
+
+  useEffect(() => {
+    if (!activeTenant?.id) return;
+    listSubcatalogs(activeTenant.id).then(setSubcatalogs).catch(() => setSubcatalogs([]));
+  }, [activeTenant?.id]);
 
   function deriveSlug(value: string) {
     return value
@@ -147,6 +158,7 @@ export default function EditarProductoPage() {
         sku: sku.trim() || undefined,
         unit: unit.trim() || "unit",
         theme: theme.trim() || undefined,
+        subcatalog_id: subcatalogId || null,
         track_stock: trackStock,
         is_public: isPublic,
         image_urls: imageUrls.length > 0 ? imageUrls : undefined,
@@ -366,6 +378,26 @@ export default function EditarProductoPage() {
                       className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="Ej. Mobiliario, Promociones"
                     />
+                  </div>
+                  <div>
+                    <label
+                      id="subcatalog-label"
+                      htmlFor="subcatalog"
+                      className="block text-sm font-medium text-muted-foreground"
+                    >
+                      Subcatalog (opcional)
+                    </label>
+                    <div className="mt-1">
+                      <SubcatalogSelect
+                        id="subcatalog"
+                        subcatalogs={subcatalogs}
+                        value={subcatalogId}
+                        onChange={setSubcatalogId}
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Agrupa para buscar más rápido al agregar a órdenes.
+                    </p>
                   </div>
                   <div>
                     <label

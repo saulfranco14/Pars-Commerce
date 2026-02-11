@@ -17,6 +17,15 @@ export interface Profile {
   updated_at: string;
 }
 
+export interface TenantAddress {
+  street?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
+  country?: string | null;
+  phone?: string | null;
+}
+
 export interface Tenant {
   id: string;
   name: string;
@@ -28,6 +37,7 @@ export interface Tenant {
   description: string | null;
   public_store_enabled: boolean;
   settings: Json | null;
+  address?: TenantAddress | null;
   created_at: string;
   updated_at: string;
 }

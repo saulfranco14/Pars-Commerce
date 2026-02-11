@@ -77,14 +77,14 @@ export default function ServiciosPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 px-2 sm:px-0">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
           Servicios
         </h1>
         <Link
           href={`/dashboard/${tenantSlug}/servicios/nuevo`}
-          className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 sm:min-h-0"
+          className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 sm:w-auto sm:min-h-0"
         >
           Nuevo servicio
         </Link>
@@ -123,7 +123,7 @@ export default function ServiciosPage() {
                 className="rounded-xl border border-border bg-surface-raised p-4"
               >
                 <div className="flex gap-3">
-                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-border-soft">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-border-soft sm:h-16 sm:w-16">
                     {s.image_url ? (
                       <img
                         src={s.image_url}
@@ -138,8 +138,17 @@ export default function ServiciosPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-foreground">{s.name}</p>
-                    {s.theme && (
-                      <p className="text-xs text-muted">Tema: {s.theme}</p>
+                    {(s.subcatalog || s.theme) && (
+                      <div className="mt-0.5 flex flex-wrap gap-1.5">
+                        {s.subcatalog && (
+                          <span className="inline-flex rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                            {s.subcatalog.name}
+                          </span>
+                        )}
+                        {s.theme && (
+                          <span className="text-xs text-muted">Tema: {s.theme}</span>
+                        )}
+                      </div>
                     )}
                     <p className="mt-1 text-base font-medium text-foreground">
                       ${Number(s.price).toFixed(2)}
@@ -149,7 +158,7 @@ export default function ServiciosPage() {
                     </p>
                   </div>
                 </div>
-                <div className="mt-4 flex gap-3 border-t border-border-soft pt-4">
+                <div className="mt-4 flex gap-2 border-t border-border-soft pt-4">
                   <Link
                     href={`/dashboard/${tenantSlug}/servicios/${s.id}`}
                     className="flex-1 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-border bg-surface py-2.5 text-sm font-medium text-muted-foreground hover:bg-border-soft/60 active:opacity-90"
@@ -202,11 +211,18 @@ export default function ServiciosPage() {
                           <span className="font-medium text-foreground">
                             {s.name}
                           </span>
-                          {s.theme && (
-                            <span className="text-xs text-muted">
-                              Tema: {s.theme}
-                            </span>
-                          )}
+                          <div className="flex flex-wrap gap-1.5">
+                            {s.subcatalog && (
+                              <span className="inline-flex rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                                {s.subcatalog.name}
+                              </span>
+                            )}
+                            {s.theme && (
+                              <span className="text-xs text-muted">
+                                Tema: {s.theme}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className={tableBodyCellMutedClass}>{s.sku ?? "—"}</td>

@@ -16,6 +16,7 @@ export async function GET(request: Request) {
   const tenantId = searchParams.get("tenant_id");
   const productId = searchParams.get("product_id");
   const type = searchParams.get("type");
+  const subcatalogId = searchParams.get("subcatalog_id");
 
   if (!tenantId && !productId) {
     return NextResponse.json(
@@ -28,9 +29,10 @@ export async function GET(request: Request) {
     const { data: product, error: prodError } = await supabase
       .from("products")
       .select(
-        "id, name, slug, sku, description, price, cost_price, commission_amount, unit, type, track_stock, is_public, image_url, created_at, updated_at"
+        "id, name, slug, sku, description, price, cost_price, commission_amount, unit, type, track_stock, is_public, image_url, created_at, updated_at, subcatalog_id, product_subcatalogs(id, name)"
       )
       .eq("id", productId)
+      .is("deleted_at", null)
       .single();
 
     if (prodError || !product) {
@@ -59,8 +61,10 @@ export async function GET(request: Request) {
       ? [product.image_url]
       : [];
 
+    const { product_subcatalogs: subcatalog, ...rest } = product;
     return NextResponse.json({
-      ...product,
+      ...rest,
+      subcatalog: subcatalog ?? undefined,
       stock: invRes.data?.quantity ?? 0,
       image_urls: imageUrls,
     });
@@ -70,13 +74,17 @@ export async function GET(request: Request) {
   let query = supabase
     .from("products")
     .select(
-      "id, name, slug, sku, description, price, cost_price, commission_amount, unit, type, track_stock, is_public, image_url, created_at"
+      "id, name, slug, sku, description, price, cost_price, commission_amount, unit, type, track_stock, is_public, image_url, created_at, subcatalog_id, product_subcatalogs(id, name)"
     )
     .eq("tenant_id", tid)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   if (type === "product" || type === "service") {
     query = query.eq("type", type);
+  }
+  if (subcatalogId) {
+    query = query.eq("subcatalog_id", subcatalogId);
   }
 
   const { data: products, error } = await query;
@@ -99,10 +107,14 @@ export async function GET(request: Request) {
     stockByProduct[inv.product_id] = inv.quantity;
   }
 
-  const withStock = list.map((p) => ({
-    ...p,
-    stock: stockByProduct[p.id] ?? 0,
-  }));
+  const withStock = list.map((p) => {
+    const { product_subcatalogs: subcatalog, ...rest } = p;
+    return {
+      ...rest,
+      subcatalog: subcatalog ?? undefined,
+      stock: stockByProduct[p.id] ?? 0,
+    };
+  });
 
   return NextResponse.json(withStock);
 }
@@ -135,6 +147,7 @@ export async function POST(request: Request) {
     is_public,
     image_url,
     image_urls,
+    subcatalog_id,
   } = body as {
     tenant_id: string;
     name: string;
@@ -151,6 +164,7 @@ export async function POST(request: Request) {
     is_public?: boolean;
     image_url?: string;
     image_urls?: string[];
+    subcatalog_id?: string | null;
   };
 
   if (!tenant_id || !name || !slug || price == null || cost_price == null) {
@@ -188,6 +202,7 @@ export async function POST(request: Request) {
       track_stock: track_stock ?? true,
       is_public: is_public ?? true,
       image_url: firstImage,
+      subcatalog_id: subcatalog_id ?? null,
     })
     .select("id, name, slug, price, created_at")
     .single();
@@ -256,6 +271,7 @@ export async function PATCH(request: Request) {
     image_url,
     image_urls,
     stock,
+    subcatalog_id,
   } = body as {
     product_id: string;
     name?: string;
@@ -272,6 +288,7 @@ export async function PATCH(request: Request) {
     image_url?: string;
     image_urls?: string[];
     stock?: number;
+    subcatalog_id?: string | null;
   };
 
   if (!product_id) {
@@ -305,6 +322,7 @@ export async function PATCH(request: Request) {
   if (track_stock !== undefined) updates.track_stock = track_stock;
   if (is_public !== undefined) updates.is_public = is_public;
   if (image_url !== undefined) updates.image_url = image_url?.trim() || null;
+  if (subcatalog_id !== undefined) updates.subcatalog_id = subcatalog_id ?? null;
 
   const urls = Array.isArray(image_urls)
     ? image_urls.filter((u) => typeof u === "string" && u.trim())
@@ -384,23 +402,9 @@ export async function DELETE(request: Request) {
     );
   }
 
-  const { data: inOrder } = await supabase
-    .from("order_items")
-    .select("id")
-    .eq("product_id", productId)
-    .limit(1)
-    .single();
-
-  if (inOrder) {
-    return NextResponse.json(
-      { error: "Product is used in orders and cannot be deleted" },
-      { status: 409 }
-    );
-  }
-
   const { error: delError } = await supabase
     .from("products")
-    .delete()
+    .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq("id", productId);
 
   if (delError) {

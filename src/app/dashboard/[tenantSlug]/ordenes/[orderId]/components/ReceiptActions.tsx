@@ -12,7 +12,7 @@ async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
 }
 
 export function ReceiptActions() {
-  const { order, businessName, setError } = useOrder();
+  const { order, businessName, businessAddress, setError } = useOrder();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -91,6 +91,7 @@ export function ReceiptActions() {
           order={order}
           businessName={businessName}
           items={order.items ?? []}
+          businessAddress={businessAddress}
         />
       </div>
 

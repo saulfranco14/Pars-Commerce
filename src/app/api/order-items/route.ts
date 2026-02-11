@@ -53,6 +53,7 @@ export async function POST(request: Request) {
     .select("id, price, track_stock, type")
     .eq("id", product_id)
     .eq("tenant_id", order.tenant_id)
+    .is("deleted_at", null)
     .single();
 
   if (productError || !product) {
