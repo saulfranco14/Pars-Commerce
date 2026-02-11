@@ -1,18 +1,19 @@
 "use client";
 
-import { useOrder } from "../hooks/useOrder";
-import { ConfirmModal } from "@/components/ConfirmModal";
 import { useState } from "react";
+import { useOrder } from "../hooks/useOrder";
+import { useTenantStore } from "@/stores/useTenantStore";
+import { ConfirmModal } from "@/components/ConfirmModal";
 
 export function OrderActionButtons() {
   const { order, actionLoading, handleStatusChange, handleGeneratePaymentLink } = useOrder();
+  const activeRole = useTenantStore((s) => s.activeRole)();
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
 
   if (!order) return null;
 
-  const showCancel = ["draft", "assigned", "in_progress"].includes(
-    order.status,
-  );
+  const isOwner = activeRole?.name === "owner";
+  const showCancel = isOwner && ["draft", "assigned", "in_progress", "paid"].includes(order.status);
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -95,7 +96,7 @@ export function OrderActionButtons() {
           setCancelModalOpen(false);
         }}
         title="Cancelar orden"
-        message="¿Estás seguro de que deseas cancelar esta orden? Esta acción no se puede deshacer."
+        message="¿Estás seguro de que deseas cancelar esta orden? Esta acción no se puede deshacer y la orden no podrá recuperarse."
         confirmLabel="Sí, cancelar"
         confirmDanger={true}
         loading={actionLoading}

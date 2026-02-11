@@ -249,7 +249,7 @@ export default function OrdenesPage() {
                           )}
                         </td>
                         <td className={tableBodyCellClass}>
-                          <StatusBadge status={o.status} />
+                          <StatusBadge status={o.status} cancelledFrom={o.cancelled_from} />
                         </td>
                         <td className={tableBodyCellRightClass}>
                           ${Number(o.total).toFixed(2)}
@@ -302,7 +302,7 @@ export default function OrdenesPage() {
                             Mixto
                           </span>
                         )}
-                        <StatusBadge status={o.status} />
+                        <StatusBadge status={o.status} cancelledFrom={o.cancelled_from} />
                         {o.assigned_user && (
                           <span className="text-xs text-muted">
                             →{" "}

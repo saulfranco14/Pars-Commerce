@@ -22,10 +22,15 @@ const STATUS_CLASSES: Record<string, string> = {
 
 interface StatusBadgeProps {
   status: string;
+  cancelledFrom?: string | null;
 }
 
-export function StatusBadge({ status }: StatusBadgeProps) {
-  const label = STATUS_LABELS[status] ?? status;
+export function StatusBadge({ status, cancelledFrom }: StatusBadgeProps) {
+  const baseLabel = STATUS_LABELS[status] ?? status;
+  const fromLabel = cancelledFrom ? STATUS_LABELS[cancelledFrom] ?? cancelledFrom : null;
+  const label = status === "cancelled" && fromLabel
+    ? `${baseLabel} (era ${fromLabel})`
+    : baseLabel;
   const className = STATUS_CLASSES[status] ?? "bg-border-soft text-muted-foreground";
   return (
     <span

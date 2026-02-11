@@ -1,6 +1,7 @@
 export interface OrderListItem {
   id: string;
   status: string;
+  cancelled_from?: string | null;
   customer_name: string | null;
   customer_email: string | null;
   total: number;

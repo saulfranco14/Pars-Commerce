@@ -9,6 +9,7 @@ export interface OrderItem {
 export interface OrderDetail {
   id: string;
   status: string;
+  cancelled_from?: string | null;
   customer_name: string | null;
   customer_email: string | null;
   customer_phone: string | null;

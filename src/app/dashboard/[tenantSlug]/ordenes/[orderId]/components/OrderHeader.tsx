@@ -22,7 +22,7 @@ export function OrderHeader() {
         <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
           Orden {order.id.slice(0, 8)}
         </h1>
-        <StatusBadge status={order.status} />
+        <StatusBadge status={order.status} cancelledFrom={order.cancelled_from} />
         {order.assigned_user && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-border-soft px-3 py-1 text-sm text-muted-foreground">
             <span className="h-2 w-2 rounded-full bg-green-500" />

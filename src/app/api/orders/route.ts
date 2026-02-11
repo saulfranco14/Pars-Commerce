@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
       .from("orders")
       .select(
         `
-        id, status, customer_name, customer_email, customer_phone,
+        id, status, cancelled_from, customer_name, customer_email, customer_phone,
         subtotal, discount, total, created_at, updated_at,
         created_by, assigned_to, completed_by, completed_at, paid_at,
         payment_method, payment_link, mp_preference_id,
@@ -55,7 +56,7 @@ export async function GET(request: Request) {
     .from("orders")
     .select(
       `
-      id, status, customer_name, customer_email, total, created_at, assigned_to,
+      id, status, cancelled_from, customer_name, customer_email, total, created_at, assigned_to,
       assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email)
       `
     )
@@ -131,7 +132,7 @@ const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   in_progress: ["completed", "cancelled"],
   completed: ["pending_payment", "paid"],
   pending_payment: ["paid"],
-  paid: [],
+  paid: ["cancelled"],
   cancelled: [],
 };
 
@@ -174,7 +175,7 @@ export async function PATCH(request: Request) {
 
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("id, status")
+    .select("id, status, tenant_id")
     .eq("id", order_id)
     .single();
 
@@ -183,6 +184,33 @@ export async function PATCH(request: Request) {
       { error: fetchError?.message ?? "Order not found" },
       { status: 404 }
     );
+  }
+
+  if (status === "cancelled") {
+    const admin = createAdminClient();
+    const { data: m } = await admin
+      .from("tenant_memberships")
+      .select("role_id")
+      .eq("user_id", user.id)
+      .eq("tenant_id", order.tenant_id)
+      .single();
+    if (!m) {
+      return NextResponse.json(
+        { error: "Solo el propietario del negocio puede cancelar órdenes" },
+        { status: 403 }
+      );
+    }
+    const { data: role } = await admin
+      .from("tenant_roles")
+      .select("name")
+      .eq("id", m.role_id)
+      .single();
+    if (role?.name !== "owner") {
+      return NextResponse.json(
+        { error: "Solo el propietario del negocio puede cancelar órdenes" },
+        { status: 403 }
+      );
+    }
   }
 
   const updates: Record<string, unknown> = {
@@ -198,6 +226,9 @@ export async function PATCH(request: Request) {
       );
     }
     updates.status = status;
+    if (status === "cancelled") {
+      updates.cancelled_from = order.status;
+    }
     if (status === "paid") {
       updates.paid_at = new Date().toISOString();
     }
