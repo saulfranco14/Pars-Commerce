@@ -24,6 +24,7 @@ export default function NuevoProductoPage() {
   const [unit, setUnit] = useState("unit");
   const [theme, setTheme] = useState("");
   const [trackStock, setTrackStock] = useState(true);
+  const [stock, setStock] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -103,6 +104,12 @@ export default function NuevoProductoPage() {
       return;
     }
 
+    const stockNum = stock.trim() === "" ? undefined : parseInt(stock, 10);
+    if (stockNum !== undefined && (Number.isNaN(stockNum) || stockNum < 0)) {
+      setFieldErrors({ stock: "Stock debe ser un número mayor o igual a 0" });
+      return;
+    }
+
     setLoading(true);
     try {
       await create({
@@ -117,6 +124,7 @@ export default function NuevoProductoPage() {
         unit: unit.trim() || "unit",
         theme: theme.trim() || undefined,
         track_stock: trackStock,
+        stock: trackStock && stockNum !== undefined ? stockNum : undefined,
         is_public: isPublic,
         image_urls: imageUrls.length > 0 ? imageUrls : undefined,
       });
@@ -350,6 +358,30 @@ export default function NuevoProductoPage() {
                       </p>
                     )}
                   </div>
+
+                  {trackStock && (
+                    <div className="md:col-span-2">
+                      <label
+                        htmlFor="stock"
+                        className="block text-sm font-medium text-muted-foreground"
+                      >
+                        Stock inicial
+                      </label>
+                      <input
+                        id="stock"
+                        type="number"
+                        min={0}
+                        value={stock}
+                        onChange={(e) => setStock(e.target.value)}
+                        className="input-form mt-1 w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      />
+                      {fieldErrors.stock && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {fieldErrors.stock}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   <div className="flex flex-wrap gap-6 md:col-span-2">
                     <label className="flex cursor-pointer items-center gap-2">
