@@ -2,7 +2,7 @@
 
 import type { TenantAddress } from "@/types/database";
 import { OrderDetail, OrderItem } from "../types";
-import { formatOrderDate } from "@/lib/formatDate";
+import { formatOrderDateFull } from "@/lib/formatDate";
 
 interface ReceiptPreviewProps {
   order: OrderDetail;
@@ -27,7 +27,7 @@ export function ReceiptPreview({ order, businessName, items, businessAddress }: 
     <div className="mx-auto max-w-sm font-sans text-foreground">
       <p className="text-lg font-bold">{businessName}</p>
       <p className="text-sm text-muted">
-        Orden {order.id.slice(0, 8)} · {formatOrderDate(order.created_at)}
+        Orden {order.id.slice(0, 8)} · {formatOrderDateFull(order.created_at)}
       </p>
       {(order.customer_name || order.customer_email) && (
         <p className="mt-2 text-sm">

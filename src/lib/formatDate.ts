@@ -1,3 +1,15 @@
+export function formatOrderDateFull(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString("es-MX", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
 export function formatOrderDate(iso: string): string {
   const d = new Date(iso);
   const now = new Date();

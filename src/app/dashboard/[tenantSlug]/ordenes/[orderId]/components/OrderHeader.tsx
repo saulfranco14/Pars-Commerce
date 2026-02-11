@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { StatusBadge } from "@/components/orders/StatusBadge";
-import { formatOrderDate } from "@/lib/formatDate";
+import { formatOrderDateFull } from "@/lib/formatDate";
 import { useOrder } from "../hooks/useOrder";
 
 export function OrderHeader() {
@@ -32,7 +32,7 @@ export function OrderHeader() {
         )}
       </div>
       <p className="mt-1 text-sm text-muted">
-        Creada: {formatOrderDate(order.created_at)}
+        Creada: {formatOrderDateFull(order.created_at)}
       </p>
     </div>
   );
