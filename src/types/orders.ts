@@ -31,4 +31,5 @@ export interface UpdateOrderPayload {
   customer_name?: string | null;
   customer_email?: string | null;
   customer_phone?: string | null;
+  discount?: number;
 }

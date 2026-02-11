@@ -156,6 +156,7 @@ export async function PATCH(request: Request) {
     customer_name,
     customer_email,
     customer_phone,
+    discount,
   } = body as {
     order_id: string;
     status?: string;
@@ -164,6 +165,7 @@ export async function PATCH(request: Request) {
     customer_name?: string | null;
     customer_email?: string | null;
     customer_phone?: string | null;
+    discount?: number;
   };
 
   if (!order_id) {
@@ -175,7 +177,7 @@ export async function PATCH(request: Request) {
 
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("id, status, tenant_id")
+    .select("id, status, tenant_id, subtotal")
     .eq("id", order_id)
     .single();
 
@@ -248,11 +250,31 @@ export async function PATCH(request: Request) {
   if (customer_phone !== undefined)
     updates.customer_phone = customer_phone?.trim() || null;
 
+  const editableStatuses = ["draft", "assigned", "in_progress"];
+  if (discount !== undefined) {
+    if (!editableStatuses.includes(order.status)) {
+      return NextResponse.json(
+        { error: "Solo se puede editar descuento en órdenes en edición" },
+        { status: 409 }
+      );
+    }
+    const discountVal = Math.max(0, Number(discount));
+    const subtotalVal = Number(order.subtotal);
+    if (discountVal > subtotalVal) {
+      return NextResponse.json(
+        { error: "El descuento no puede ser mayor al subtotal" },
+        { status: 400 }
+      );
+    }
+    updates.discount = discountVal;
+    updates.total = Math.max(0, subtotalVal - discountVal);
+  }
+
   const { data: updated, error } = await supabase
     .from("orders")
     .update(updates)
     .eq("id", order_id)
-    .select("id, status, assigned_to, paid_at")
+    .select("id, status, assigned_to, paid_at, subtotal, discount, total")
     .single();
 
   if (error) {

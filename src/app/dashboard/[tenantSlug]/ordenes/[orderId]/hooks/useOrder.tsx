@@ -23,6 +23,7 @@ interface OrderContextType {
   handleSaveCustomer: (details: { name: string; email: string; phone: string }) => Promise<void>;
   handleRemoveItem: (itemId: string) => Promise<void>;
   handleGeneratePaymentLink: () => Promise<void>;
+  handleSaveDiscount: (amount: number) => Promise<void>;
   setError: (msg: string | null) => void;
 }
 
@@ -150,6 +151,20 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const handleSaveDiscount = async (amount: number) => {
+    if (!order) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      await updateOrder(order.id, { discount: amount });
+      await fetchOrder();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al guardar descuento");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <OrderContext.Provider
       value={{
@@ -166,6 +181,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
         handleSaveCustomer,
         handleRemoveItem,
         handleGeneratePaymentLink,
+        handleSaveDiscount,
         setError,
       }}
     >

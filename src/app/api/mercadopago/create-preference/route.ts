@@ -53,32 +53,34 @@ export async function POST(request: Request) {
     );
   }
 
-  // Build items for MercadoPago preference
-  const items = ((order.items as unknown[]) ?? []).map((item: unknown) => {
-    const i = item as {
-      quantity: number;
-      unit_price: number;
-      product: { id: string; name: string } | null;
-    };
-    return {
-      id: i.product?.id ?? "unknown",
-      title: i.product?.name ?? "Producto",
-      quantity: i.quantity,
-      unit_price: Number(i.unit_price),
-      currency_id: "MXN",
-    };
-  });
+  const orderDiscount = Number(order.discount);
+  const orderTotal = Number(order.total);
+  const orderItems = (order.items as unknown[]) ?? [];
+  const hasDiscount = orderDiscount > 0;
 
-  // If no items, use a single item with the total
-  if (items.length === 0) {
-    items.push({
-      id: order.id,
-      title: `Orden #${order.id.slice(0, 8)}`,
-      quantity: 1,
-      unit_price: Number(order.total),
-      currency_id: "MXN",
-    });
-  }
+  const items: { id: string; title: string; quantity: number; unit_price: number; currency_id: string }[] =
+    hasDiscount || orderItems.length === 0
+      ? [{
+          id: order.id,
+          title: `Orden #${order.id.slice(0, 8)}`,
+          quantity: 1,
+          unit_price: orderTotal,
+          currency_id: "MXN",
+        }]
+      : orderItems.map((item: unknown) => {
+          const i = item as {
+            quantity: number;
+            unit_price: number;
+            product: { id: string; name: string } | null;
+          };
+          return {
+            id: i.product?.id ?? "unknown",
+            title: i.product?.name ?? "Producto",
+            quantity: i.quantity,
+            unit_price: Number(i.unit_price),
+            currency_id: "MXN",
+          };
+        });
 
   // Determine callback base URL
   const origin =
