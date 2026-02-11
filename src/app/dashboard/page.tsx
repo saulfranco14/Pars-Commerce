@@ -32,6 +32,7 @@ import {
 interface OrderRow {
   id: string;
   status: string;
+  cancelled_from?: string | null;
   customer_name: string | null;
   total: number;
   created_at: string;
@@ -634,7 +635,7 @@ export default function DashboardPage() {
                             )}
                           </td>
                           <td className={tableBodyCellClass}>
-                            <StatusBadge status={o.status} />
+                            <StatusBadge status={o.status} cancelledFrom={o.cancelled_from} />
                           </td>
                           <td className={tableBodyCellRightClass}>
                             ${Number(o.total).toFixed(2)}
@@ -677,7 +678,7 @@ export default function DashboardPage() {
                             Mixto
                           </span>
                         )}
-                        <StatusBadge status={o.status} />
+                        <StatusBadge status={o.status} cancelledFrom={o.cancelled_from} />
                         {o.assigned_user && (
                           <span className="text-xs text-muted">
                             →{" "}

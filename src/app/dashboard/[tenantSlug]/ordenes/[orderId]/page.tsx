@@ -12,7 +12,7 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { ReceiptPreview } from "./components/ReceiptPreview";
 
 function OrderDetailContent() {
-  const { order, loading, error, tenantSlug, businessName } = useOrder();
+  const { order, loading, error, tenantSlug, businessName, businessAddress } = useOrder();
 
   if (loading) {
     return <LoadingBlock message="Cargando orden…" />;
@@ -41,6 +41,7 @@ function OrderDetailContent() {
           order={order}
           businessName={businessName}
           items={order.items ?? []}
+          businessAddress={businessAddress}
         />
       </div>
 

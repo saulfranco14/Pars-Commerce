@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
 import { productFormSchema } from "@/lib/productValidation";
 import { create } from "@/services/productsService";
+import { listByTenant as listSubcatalogs } from "@/services/subcatalogsService";
+import type { Subcatalog } from "@/types/subcatalogs";
+import { SubcatalogSelect } from "@/components/forms/SubcatalogSelect";
 
 export default function NuevoProductoPage() {
   const params = useParams();
@@ -23,6 +26,8 @@ export default function NuevoProductoPage() {
   const [sku, setSku] = useState("");
   const [unit, setUnit] = useState("unit");
   const [theme, setTheme] = useState("");
+  const [subcatalogId, setSubcatalogId] = useState("");
+  const [subcatalogs, setSubcatalogs] = useState<Subcatalog[]>([]);
   const [trackStock, setTrackStock] = useState(true);
   const [stock, setStock] = useState("");
   const [isPublic, setIsPublic] = useState(true);
@@ -38,6 +43,11 @@ export default function NuevoProductoPage() {
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9-]/g, "");
   }
+
+  useEffect(() => {
+    if (!activeTenant?.id) return;
+    listSubcatalogs(activeTenant.id).then(setSubcatalogs).catch(() => setSubcatalogs([]));
+  }, [activeTenant?.id]);
 
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
@@ -123,6 +133,7 @@ export default function NuevoProductoPage() {
         sku: sku.trim() || undefined,
         unit: unit.trim() || "unit",
         theme: theme.trim() || undefined,
+        subcatalog_id: subcatalogId || null,
         track_stock: trackStock,
         stock: trackStock && stockNum !== undefined ? stockNum : undefined,
         is_public: isPublic,
@@ -332,6 +343,26 @@ export default function NuevoProductoPage() {
                       className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="Ej. Mobiliario, Promociones"
                     />
+                  </div>
+                  <div>
+                    <label
+                      id="subcatalog-label"
+                      htmlFor="subcatalog"
+                      className="block text-sm font-medium text-muted-foreground"
+                    >
+                      Subcatalog (opcional)
+                    </label>
+                    <div className="mt-1">
+                      <SubcatalogSelect
+                        id="subcatalog"
+                        subcatalogs={subcatalogs}
+                        value={subcatalogId}
+                        onChange={setSubcatalogId}
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Agrupa para buscar más rápido al agregar a órdenes.
+                    </p>
                   </div>
                   <div>
                     <label

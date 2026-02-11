@@ -1,5 +1,6 @@
 "use client";
 
+import type { TenantAddress } from "@/types/database";
 import { OrderDetail, OrderItem } from "../types";
 import { formatOrderDate } from "@/lib/formatDate";
 
@@ -7,9 +8,21 @@ interface ReceiptPreviewProps {
   order: OrderDetail;
   businessName: string;
   items: OrderItem[];
+  businessAddress?: TenantAddress | null;
 }
 
-export function ReceiptPreview({ order, businessName, items }: ReceiptPreviewProps) {
+function formatAddressLine(addr: TenantAddress): string[] {
+  const lines: string[] = [];
+  if (addr.street) lines.push(addr.street);
+  const cityState = [addr.city, addr.state].filter(Boolean).join(", ");
+  if (cityState) lines.push(cityState);
+  const postalCountry = [addr.postal_code, addr.country].filter(Boolean).join(", ");
+  if (postalCountry) lines.push(postalCountry);
+  if (addr.phone) lines.push(`Tel: ${addr.phone}`);
+  return lines;
+}
+
+export function ReceiptPreview({ order, businessName, items, businessAddress }: ReceiptPreviewProps) {
   return (
     <div className="mx-auto max-w-sm font-sans text-foreground">
       <p className="text-lg font-bold">{businessName}</p>
@@ -59,6 +72,13 @@ export function ReceiptPreview({ order, businessName, items }: ReceiptPreviewPro
       <p className="mt-1 border-t-2 border-foreground pt-2 text-right font-bold">
         Total: ${Number(order.total).toFixed(2)}
       </p>
+      {businessAddress && formatAddressLine(businessAddress).length > 0 && (
+        <div className="mt-4 pt-4 border-t border-border text-xs text-muted space-y-0.5">
+          {formatAddressLine(businessAddress).map((line, i) => (
+            <p key={i}>{line}</p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

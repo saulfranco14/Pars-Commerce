@@ -8,6 +8,9 @@ import { MultiImageUpload } from "@/components/MultiImageUpload";
 import { serviceFormSchema } from "@/lib/serviceValidation";
 import type { ProductDetail } from "@/types/products";
 import { getById, update } from "@/services/productsService";
+import { listByTenant as listSubcatalogs } from "@/services/subcatalogsService";
+import type { Subcatalog } from "@/types/subcatalogs";
+import { SubcatalogSelect } from "@/components/forms/SubcatalogSelect";
 
 export default function EditarServicioPage() {
   const params = useParams();
@@ -24,6 +27,8 @@ export default function EditarServicioPage() {
   const [costPrice, setCostPrice] = useState("");
   const [commissionAmount, setCommissionAmount] = useState("");
   const [sku, setSku] = useState("");
+  const [subcatalogId, setSubcatalogId] = useState("");
+  const [subcatalogs, setSubcatalogs] = useState<Subcatalog[]>([]);
   const [isPublic, setIsPublic] = useState(true);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +49,7 @@ export default function EditarServicioPage() {
         setCostPrice(String(data.cost_price ?? ""));
         setCommissionAmount(String(data.commission_amount ?? ""));
         setSku(data.sku ?? "");
+        setSubcatalogId((data as { subcatalog_id?: string | null }).subcatalog_id ?? "");
         setIsPublic(data.is_public ?? true);
         setImageUrls(
           data.image_urls ?? (data.image_url ? [data.image_url] : [])
@@ -52,6 +58,11 @@ export default function EditarServicioPage() {
       .catch(() => setFetchError("No se pudo cargar el servicio"))
       .finally(() => setLoading(false));
   }, [serviceId]);
+
+  useEffect(() => {
+    if (!activeTenant?.id) return;
+    listSubcatalogs(activeTenant.id).then(setSubcatalogs).catch(() => setSubcatalogs([]));
+  }, [activeTenant?.id]);
 
   function deriveSlug(value: string) {
     return value
@@ -130,6 +141,7 @@ export default function EditarServicioPage() {
         cost_price: costPriceNum,
         commission_amount: commissionNum,
         sku: sku.trim() || undefined,
+        subcatalog_id: subcatalogId || null,
         unit: "service",
         is_public: isPublic,
         type: "service",
@@ -306,6 +318,27 @@ export default function EditarServicioPage() {
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
                       Código único en inventario.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      id="subcatalog-label"
+                      htmlFor="subcatalog"
+                      className="block text-sm font-medium text-muted-foreground"
+                    >
+                      Subcatalog (opcional)
+                    </label>
+                    <div className="mt-1">
+                      <SubcatalogSelect
+                        id="subcatalog"
+                        subcatalogs={subcatalogs}
+                        value={subcatalogId}
+                        onChange={setSubcatalogId}
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Agrupa para buscar más rápido al agregar a órdenes.
                     </p>
                   </div>
 

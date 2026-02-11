@@ -77,17 +77,25 @@ export default function ProductosPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 px-2 sm:px-0">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
           Productos
         </h1>
-        <Link
-          href={`/dashboard/${tenantSlug}/productos/nuevo`}
-          className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 sm:min-h-0"
-        >
-          Nuevo producto
-        </Link>
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
+          <Link
+            href={`/dashboard/${tenantSlug}/productos/subcatalogos`}
+            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-border-soft/60 sm:w-auto sm:min-h-0"
+          >
+            Subcatalogos
+          </Link>
+          <Link
+            href={`/dashboard/${tenantSlug}/productos/nuevo`}
+            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 sm:w-auto sm:min-h-0"
+          >
+            Nuevo producto
+          </Link>
+        </div>
       </div>
 
       {error && (
@@ -123,7 +131,7 @@ export default function ProductosPage() {
                 className="rounded-xl border border-border bg-surface-raised p-4"
               >
                 <div className="flex gap-3">
-                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-border-soft">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-border-soft sm:h-16 sm:w-16">
                     {p.image_url ? (
                       <img
                         src={p.image_url}
@@ -138,8 +146,17 @@ export default function ProductosPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-foreground">{p.name}</p>
-                    {p.theme && (
-                      <p className="text-xs text-muted">Tema: {p.theme}</p>
+                    {(p.subcatalog || p.theme) && (
+                      <div className="mt-0.5 flex flex-wrap gap-1.5">
+                        {p.subcatalog && (
+                          <span className="inline-flex rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                            {p.subcatalog.name}
+                          </span>
+                        )}
+                        {p.theme && (
+                          <span className="text-xs text-muted">Tema: {p.theme}</span>
+                        )}
+                      </div>
                     )}
                     <p className="mt-1 text-base font-medium text-foreground">
                       ${Number(p.price).toFixed(2)}
@@ -152,7 +169,7 @@ export default function ProductosPage() {
                     </p>
                   </div>
                 </div>
-                <div className="mt-4 flex gap-3 border-t border-border-soft pt-4">
+                <div className="mt-4 flex gap-2 border-t border-border-soft pt-4">
                   <Link
                     href={`/dashboard/${tenantSlug}/productos/${p.id}`}
                     className="flex-1 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-border bg-surface py-2.5 text-sm font-medium text-muted-foreground hover:bg-border-soft/60 active:opacity-90"
@@ -207,11 +224,18 @@ export default function ProductosPage() {
                           <span className="font-medium text-foreground">
                             {p.name}
                           </span>
-                          {p.theme && (
-                            <span className="text-xs text-muted">
-                              Tema: {p.theme}
-                            </span>
-                          )}
+                          <div className="flex flex-wrap gap-1.5">
+                            {p.subcatalog && (
+                              <span className="inline-flex rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                                {p.subcatalog.name}
+                              </span>
+                            )}
+                            {p.theme && (
+                              <span className="text-xs text-muted">
+                                Tema: {p.theme}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className={tableBodyCellMutedClass}>{p.sku ?? "—"}</td>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import type { ProductListItem } from "@/types/products";
 import { listByTenant } from "@/services/productsService";
 import { create as createOrderItem } from "@/services/orderItemsService";
+import { ProductSearchCombobox } from "./ProductSearchCombobox";
 
 interface AddItemModalProps {
   tenantId: string;
@@ -72,19 +73,15 @@ export function AddItemModal({
             <label className="block text-sm font-medium text-muted-foreground">
               Producto / Servicio
             </label>
-            <select
-              value={productId}
-              onChange={(e) => setProductId(e.target.value)}
-              required
-              className="select-custom mt-1 block w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-            >
-              <option value="">Seleccionar</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} — ${Number(p.price).toFixed(2)}
-                </option>
-              ))}
-            </select>
+            <div className="mt-1">
+              <ProductSearchCombobox
+                products={products}
+                value={productId}
+                onChange={setProductId}
+                placeholder="Buscar por nombre o subcatalog..."
+                disabled={loading}
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground">

@@ -7,6 +7,7 @@ import { getById as getOrder, update as updateOrder } from "@/services/ordersSer
 import { list as listTeam } from "@/services/teamService";
 import { remove as removeOrderItem } from "@/services/orderItemsService";
 import { generatePaymentLink } from "@/services/mercadopagoService";
+import type { TenantAddress } from "@/types/database";
 import { OrderDetail, TeamMemberOption } from "../types";
 
 interface OrderContextType {
@@ -17,12 +18,14 @@ interface OrderContextType {
   error: string | null;
   tenantSlug: string;
   businessName: string;
+  businessAddress: TenantAddress | null;
   fetchOrder: () => Promise<void>;
   handleStatusChange: (newStatus: string) => Promise<void>;
   handleAssign: (assignToId: string) => Promise<void>;
   handleSaveCustomer: (details: { name: string; email: string; phone: string }) => Promise<void>;
   handleRemoveItem: (itemId: string) => Promise<void>;
   handleGeneratePaymentLink: () => Promise<void>;
+  handleSaveDiscount: (amount: number) => Promise<void>;
   setError: (msg: string | null) => void;
 }
 
@@ -34,6 +37,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
   const businessName = activeTenant?.name ?? "Negocio";
+  const businessAddress = activeTenant?.address ?? null;
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [team, setTeam] = useState<TeamMemberOption[]>([]);
@@ -150,6 +154,20 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const handleSaveDiscount = async (amount: number) => {
+    if (!order) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      await updateOrder(order.id, { discount: amount });
+      await fetchOrder();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al guardar descuento");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <OrderContext.Provider
       value={{
@@ -160,12 +178,14 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
         error,
         tenantSlug,
         businessName,
+        businessAddress,
         fetchOrder,
         handleStatusChange,
         handleAssign,
         handleSaveCustomer,
         handleRemoveItem,
         handleGeneratePaymentLink,
+        handleSaveDiscount,
         setError,
       }}
     >

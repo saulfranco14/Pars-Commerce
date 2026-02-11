@@ -120,6 +120,7 @@ export async function POST(request: Request) {
     .eq("tenant_id", tenant_id)
     .eq("user_id", user_id)
     .eq("is_paid", false)
+    .is("voided_at", null)
     .gte("created_at", period_start)
     .lte("created_at", periodEndInclusive);
 
@@ -220,6 +221,7 @@ export async function PATCH(request: Request) {
           })
           .eq("tenant_id", payment.tenant_id)
           .eq("user_id", payment.user_id)
+          .is("voided_at", null)
           .gte("created_at", payment.period_start)
           .lte("created_at", periodEndInclusive);
       }

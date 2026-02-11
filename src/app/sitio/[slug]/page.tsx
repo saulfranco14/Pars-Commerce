@@ -31,6 +31,7 @@ export default async function SitioPublicoPage({ params }: PageProps) {
       .select("id, name, slug, description, price, image_url, type")
       .eq("tenant_id", tenant.id)
       .eq("is_public", true)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false }),
   ]);
 

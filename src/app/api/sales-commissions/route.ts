@@ -57,6 +57,7 @@ export async function GET(request: Request) {
       `
     )
     .eq("tenant_id", tenantId)
+    .is("voided_at", null)
     .order("created_at", { ascending: false });
 
   if (userId) {

@@ -18,6 +18,12 @@ export default function ConfiguracionPage() {
   const [description, setDescription] = useState("");
   const [themeColor, setThemeColor] = useState("");
   const [publicStoreEnabled, setPublicStoreEnabled] = useState(false);
+  const [addressStreet, setAddressStreet] = useState("");
+  const [addressCity, setAddressCity] = useState("");
+  const [addressState, setAddressState] = useState("");
+  const [addressPostalCode, setAddressPostalCode] = useState("");
+  const [addressCountry, setAddressCountry] = useState("");
+  const [addressPhone, setAddressPhone] = useState("");
   const [sitePages, setSitePages] = useState<SitePage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -29,6 +35,13 @@ export default function ConfiguracionPage() {
     setDescription(activeTenant.description ?? "");
     setThemeColor(activeTenant.theme_color ?? "");
     setPublicStoreEnabled(activeTenant.public_store_enabled ?? false);
+    const addr = activeTenant.address;
+    setAddressStreet(addr?.street ?? "");
+    setAddressCity(addr?.city ?? "");
+    setAddressState(addr?.state ?? "");
+    setAddressPostalCode(addr?.postal_code ?? "");
+    setAddressCountry(addr?.country ?? "");
+    setAddressPhone(addr?.phone ?? "");
   }, [activeTenant?.id]);
 
   useEffect(() => {
@@ -53,6 +66,14 @@ export default function ConfiguracionPage() {
         description: description.trim() || undefined,
         theme_color: themeColor.trim() || undefined,
         public_store_enabled: publicStoreEnabled,
+        address: {
+          street: addressStreet.trim() || undefined,
+          city: addressCity.trim() || undefined,
+          state: addressState.trim() || undefined,
+          postal_code: addressPostalCode.trim() || undefined,
+          country: addressCountry.trim() || undefined,
+          phone: addressPhone.trim() || undefined,
+        },
       });
       setSuccess(true);
       const list = (await listTenants()) as MembershipItem[];
@@ -200,6 +221,96 @@ export default function ConfiguracionPage() {
             Tienda pública habilitada (mostrar catálogo en sitio web)
           </label>
         </div>
+
+        <div className="rounded-lg border border-border bg-stone-50/30 p-4 space-y-4">
+          <h2 className="text-sm font-medium text-foreground">Dirección del negocio</h2>
+          <p className="text-xs text-muted-foreground">
+            Se muestra en el ticket al imprimir.
+          </p>
+          <div>
+            <label htmlFor="addressStreet" className="block text-xs font-medium text-muted-foreground">
+              Calle y número
+            </label>
+            <input
+              id="addressStreet"
+              type="text"
+              value={addressStreet}
+              onChange={(e) => setAddressStreet(e.target.value)}
+              className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
+              placeholder="Av. Principal 123"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="addressCity" className="block text-xs font-medium text-muted-foreground">
+                Ciudad
+              </label>
+              <input
+                id="addressCity"
+                type="text"
+                value={addressCity}
+                onChange={(e) => setAddressCity(e.target.value)}
+                className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
+                placeholder="CDMX"
+              />
+            </div>
+            <div>
+              <label htmlFor="addressState" className="block text-xs font-medium text-muted-foreground">
+                Estado/Región
+              </label>
+              <input
+                id="addressState"
+                type="text"
+                value={addressState}
+                onChange={(e) => setAddressState(e.target.value)}
+                className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
+                placeholder="CDMX"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="addressPostalCode" className="block text-xs font-medium text-muted-foreground">
+                Código postal
+              </label>
+              <input
+                id="addressPostalCode"
+                type="text"
+                value={addressPostalCode}
+                onChange={(e) => setAddressPostalCode(e.target.value)}
+                className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
+                placeholder="06000"
+              />
+            </div>
+            <div>
+              <label htmlFor="addressCountry" className="block text-xs font-medium text-muted-foreground">
+                País
+              </label>
+              <input
+                id="addressCountry"
+                type="text"
+                value={addressCountry}
+                onChange={(e) => setAddressCountry(e.target.value)}
+                className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
+                placeholder="México"
+              />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="addressPhone" className="block text-xs font-medium text-muted-foreground">
+              Teléfono del negocio
+            </label>
+            <input
+              id="addressPhone"
+              type="text"
+              value={addressPhone}
+              onChange={(e) => setAddressPhone(e.target.value)}
+              className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
+              placeholder="555-0000"
+            />
+          </div>
+        </div>
+
         <div>
           <button
             type="submit"
