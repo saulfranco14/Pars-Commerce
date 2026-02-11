@@ -7,7 +7,7 @@ import { getById as getOrder, update as updateOrder } from "@/services/ordersSer
 import { list as listTeam } from "@/services/teamService";
 import { remove as removeOrderItem } from "@/services/orderItemsService";
 import { generatePaymentLink } from "@/services/mercadopagoService";
-import { OrderDetail, TeamMemberOption, OrderItem } from "../types";
+import { OrderDetail, TeamMemberOption } from "../types";
 
 interface OrderContextType {
   order: OrderDetail | null;
@@ -75,8 +75,8 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     try {
       await updateOrder(order.id, { status: newStatus });
       await fetchOrder();
-    } catch (err: any) {
-      setError(err?.message || "Error al cambiar el estado");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al cambiar el estado");
     } finally {
       setActionLoading(false);
     }
@@ -98,8 +98,8 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
 
       await updateOrder(order.id, payload);
       await fetchOrder();
-    } catch (err: any) {
-      setError(err?.message || "Error al asignar");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al asignar");
     } finally {
       setActionLoading(false);
     }
@@ -116,8 +116,8 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
         customer_phone: details.phone.trim() || null,
       });
       await fetchOrder();
-    } catch (err: any) {
-      setError(err?.message || "Error al guardar cliente");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al guardar cliente");
     } finally {
       setActionLoading(false);
     }
@@ -129,8 +129,8 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     try {
       await removeOrderItem(itemId);
       await fetchOrder();
-    } catch (err: any) {
-      setError(err?.message || "Error al quitar item");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al quitar item");
     } finally {
       setActionLoading(false);
     }
@@ -143,8 +143,8 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     try {
       await generatePaymentLink(order.id);
       await fetchOrder();
-    } catch (err: any) {
-      setError(err?.message || "Error al generar link de pago");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al generar link de pago");
     } finally {
       setActionLoading(false);
     }
