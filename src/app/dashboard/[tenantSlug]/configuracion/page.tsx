@@ -6,6 +6,7 @@ import { useTenantStore } from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
 import type { SitePage } from "@/types/tenantSitePages";
 import { list as listSitePages } from "@/services/tenantSitePagesService";
+import { SiteContentForm } from "./SiteContentForm";
 import { update as updateTenant, list as listTenants } from "@/services/tenantsService";
 
 export default function ConfiguracionPage() {
@@ -140,6 +141,14 @@ export default function ConfiguracionPage() {
           )}
         </ul>
       </div>
+
+      {publicStoreEnabled && (
+        <SiteContentForm
+          tenantId={activeTenant.id}
+          tenantSlug={tenantSlug}
+          sitePages={sitePages}
+        />
+      )}
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         {error && (
