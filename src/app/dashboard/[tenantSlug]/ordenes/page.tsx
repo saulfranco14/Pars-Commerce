@@ -265,9 +265,13 @@ export default function OrdenesPage() {
             </TableWrapper>
           </div>
 
-          <div className="space-y-3 md:hidden">
+          <div className="space-y-2.5 md:hidden">
             {orders.map((o) => {
               const tipo = orderContentType(o);
+              const clientLabel = o.customer_name || o.customer_email || "—";
+              const assignedLabel = o.assigned_user
+                ? o.assigned_user.display_name || o.assigned_user.email?.split("@")[0]
+                : null;
               return (
                 <button
                   key={o.id}
@@ -275,46 +279,73 @@ export default function OrdenesPage() {
                   onClick={() =>
                     router.push(`/dashboard/${tenantSlug}/ordenes/${o.id}`)
                   }
-                  className="w-full min-h-[72px] rounded-xl border border-border bg-surface-raised p-4 text-left active:bg-border-soft/80"
-                  aria-label={`Ver orden ${o.customer_name || o.customer_email || o.id.slice(0, 8)}`}
+                  className="group w-full rounded-2xl border border-border bg-surface-raised text-left shadow-sm transition-all active:scale-[0.985] active:shadow-none"
+                  aria-label={`Ver orden de ${clientLabel}`}
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  {/* Header row: cliente + total + chevron */}
+                  <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+                    {/* Avatar inicial */}
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/15 text-sm font-semibold text-accent">
+                      {clientLabel.charAt(0).toUpperCase()}
+                    </span>
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-foreground">
-                        {o.customer_name || o.customer_email || "—"}
+                      <p className="truncate font-semibold text-foreground leading-tight">
+                        {clientLabel}
                       </p>
-                      <p className="mt-0.5 text-sm text-muted">
+                      <p className="mt-0.5 text-xs text-muted">
                         {formatOrderDate(o.created_at)}
                       </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        {tipo === "productos" && (
-                          <span className="rounded bg-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-                            Productos
-                          </span>
-                        )}
-                        {tipo === "servicios" && (
-                          <span className="rounded bg-teal-100 px-1.5 py-0.5 text-xs font-medium text-teal-800">
-                            Servicios
-                          </span>
-                        )}
-                        {tipo === "mixto" && (
-                          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800">
-                            Mixto
-                          </span>
-                        )}
-                        <StatusBadge status={o.status} cancelledFrom={o.cancelled_from} />
-                        {o.assigned_user && (
-                          <span className="text-xs text-muted">
-                            →{" "}
-                            {o.assigned_user.display_name ||
-                              o.assigned_user.email?.split("@")[0]}
-                          </span>
-                        )}
-                      </div>
                     </div>
-                    <span className="shrink-0 text-base font-semibold text-foreground">
-                      ${Number(o.total).toFixed(2)}
-                    </span>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className="text-base font-bold text-foreground tabular-nums">
+                        ${Number(o.total).toFixed(2)}
+                      </span>
+                      <svg
+                        className="h-4 w-4 text-muted transition-transform group-active:translate-x-0.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        aria-hidden
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="mx-4 border-t border-border/60" />
+
+                  {/* Footer row: badges + asignado */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <StatusBadge status={o.status} cancelledFrom={o.cancelled_from} />
+                      {tipo === "productos" && (
+                        <span className="rounded-full bg-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                          Productos
+                        </span>
+                      )}
+                      {tipo === "servicios" && (
+                        <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-700">
+                          Servicios
+                        </span>
+                      )}
+                      {tipo === "mixto" && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                          Mixto
+                        </span>
+                      )}
+                    </div>
+                    {assignedLabel ? (
+                      <span className="flex items-center gap-1 text-xs text-muted">
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        {assignedLabel}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted italic">Sin asignar</span>
+                    )}
                   </div>
                 </button>
               );
