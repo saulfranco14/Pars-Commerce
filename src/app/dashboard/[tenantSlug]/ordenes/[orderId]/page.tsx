@@ -60,7 +60,7 @@ function OrderDetailContent() {
             {error}
           </div>
         )}
-        <div className="mt-4 flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+        <div className="mt-4 flex min-h-0 min-w-0 flex-1 flex-col gap-2">
           <div className="order-1 min-h-0 min-w-0 flex-1 md:order-3">
             <OrderItemsTable />
           </div>
@@ -70,11 +70,11 @@ function OrderDetailContent() {
           <div className="order-3 min-w-0 shrink-0 md:order-2">
             <CustomerCard />
           </div>
-          <div className="order-4 min-w-0 shrink-0">
+          <div className="order-4 min-w-0 shrink-0 md:order-4">
             <PaymentLinkCard />
           </div>
           {isPaid && (
-            <div className="order-5 min-w-0 shrink-0">
+            <div className="order-5 min-w-0 shrink-0 md:order-5">
               <ReceiptActions />
             </div>
           )}

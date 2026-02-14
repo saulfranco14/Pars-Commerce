@@ -8,6 +8,7 @@ export function CustomerCard() {
   const { order, actionLoading, handleSaveCustomer } = useOrder();
   const [editing, setEditing] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -117,27 +118,53 @@ export function CustomerCard() {
     </div>
   );
 
+  const desktopSummary = (
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex min-w-0 items-center gap-2">
+        <User className="h-4 w-4 shrink-0 text-muted" />
+        <span className="text-sm font-semibold text-foreground">Cliente</span>
+        <span className="truncate text-sm text-muted">{customerSummary}</span>
+      </div>
+      {canEdit && !desktopOpen && (
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); setDesktopOpen(true); setEditing(true); }}
+          className="shrink-0 rounded px-2 py-1 text-sm font-medium text-accent hover:bg-accent/10"
+        >
+          Editar
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-surface-raised text-left shadow-sm">
-      <div className="hidden md:block">
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-muted" />
-            <h2 className="text-sm font-semibold text-foreground">Información del Cliente</h2>
+      <details
+        open={desktopOpen}
+        onToggle={(e) => setDesktopOpen((e.target as HTMLDetailsElement).open)}
+        className="group hidden md:block [&>summary::-webkit-details-marker]:hidden"
+      >
+        <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-2 px-4 py-2">
+          {desktopSummary}
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="border-t border-border/50 px-4 py-3">
+          <div className="flex items-center justify-between pb-2">
+            <h2 className="text-xs font-semibold text-muted uppercase tracking-wider">Información del Cliente</h2>
+            {canEdit && !editing && (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="inline-flex min-h-[36px] min-w-[36px] cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-accent hover:bg-accent/10"
+              >
+                <Pencil className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                Editar
+              </button>
+            )}
           </div>
-          {canEdit && !editing && (
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-accent transition-colors duration-200 hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-            >
-              <Pencil className="h-3.5 w-3.5 shrink-0" aria-hidden />
-              Editar
-            </button>
-          )}
+          {customerContent()}
         </div>
-        {customerContent()}
-      </div>
+      </details>
       <details
         open={mobileOpen}
         onToggle={(e) => setMobileOpen((e.target as HTMLDetailsElement).open)}
@@ -164,7 +191,7 @@ export function CustomerCard() {
           )}
           <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
         </summary>
-        <div className="border-t border-border">
+        <div className="border-t border-border/50">
           <div className="flex items-center justify-between px-3 py-1.5">
             <h2 className="text-xs font-semibold text-foreground">Datos del cliente</h2>
             {canEdit && !editing && (
