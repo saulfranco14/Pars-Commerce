@@ -31,7 +31,7 @@ export function OrderItemsTable() {
   const items = order?.items ?? [];
   const totalWholesaleSavings = items.reduce(
     (sum, i) => sum + Number(i.wholesale_savings ?? 0),
-    0
+    0,
   );
 
   useEffect(() => {
@@ -53,8 +53,8 @@ export function OrderItemsTable() {
   if (!order) return null;
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised text-left shadow-sm">
-      <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
+    <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised text-left shadow-sm">
+      <div className="flex shrink-0 items-center justify-between border-b border-border p-3">
         <h2 className="text-base font-semibold text-foreground">
           Items de la orden
         </h2>
@@ -70,9 +70,9 @@ export function OrderItemsTable() {
         )}
       </div>
 
-      <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain md:max-h-[300px]">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-contain md:max-h-[300px]">
         {items.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted">
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-4 text-center text-sm text-muted">
             No hay items. Agrega productos o servicios.
           </div>
         ) : (
@@ -81,7 +81,7 @@ export function OrderItemsTable() {
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex flex-col gap-2 p-4 hover:bg-border-soft/20"
+                  className="flex flex-col gap-2 p-3 hover:bg-border-soft/20"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0 flex flex-wrap items-center gap-1.5">
@@ -210,8 +210,8 @@ export function OrderItemsTable() {
         )}
       </div>
 
-      <div className="shrink-0 border-t border-border bg-background/20 p-4">
-        <div className="flex flex-col items-end gap-1.5 w-full sm:max-w-[260px] sm:ml-auto">
+      <div className="shrink-0 border-t border-border bg-background/20 p-3">
+        <div className="flex flex-col items-end gap-1 w-full sm:max-w-[260px] sm:ml-auto">
           <div className="flex justify-between items-center w-full text-sm py-1">
             <span className="text-muted-foreground">Subtotal</span>
             <span className="tabular-nums font-medium text-foreground">
@@ -221,7 +221,9 @@ export function OrderItemsTable() {
 
           {totalWholesaleSavings > 0 && (
             <div className="flex justify-between items-center w-full text-sm py-1">
-              <span className="text-teal-700 font-medium">Ahorro por mayoreo</span>
+              <span className="text-teal-700 font-medium">
+                Ahorro por mayoreo
+              </span>
               <span className="tabular-nums font-medium text-teal-700">
                 ${totalWholesaleSavings.toFixed(2)}
               </span>
@@ -256,7 +258,7 @@ export function OrderItemsTable() {
             </div>
           )}
 
-          <div className="flex justify-between items-center w-full pt-2 mt-0.5 border-t border-border/80">
+          <div className="flex justify-between items-center w-full pt-1.5 mt-0 border-t border-border/80">
             <span className="font-semibold text-foreground">Total</span>
             <span className="text-lg font-bold tabular-nums text-foreground">
               ${Number(order.total).toFixed(2)}
@@ -265,7 +267,7 @@ export function OrderItemsTable() {
         </div>
       </div>
 
-      <div className="shrink-0 border-t border-border p-4">
+      <div className="shrink-0 border-t border-border p-3">
         <OrderActionButtons embedded />
       </div>
 

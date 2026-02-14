@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useOrder } from "../hooks/useOrder";
 import { useTenantStore } from "@/stores/useTenantStore";
-import { UserPlus, UserCheck, Check } from "lucide-react";
+import { UserPlus, UserCheck, Check, ChevronDown } from "lucide-react";
 
 export function AssignmentCard() {
   const { order, team, actionLoading, assignmentSuccess, handleAssign } =
@@ -110,46 +110,67 @@ export function AssignmentCard() {
     );
   }
 
-  return (
-    <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-surface-raised p-4 shadow-sm">
-      <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted/60 text-muted-foreground">
-            <UserPlus className="h-4 w-4" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-foreground">
-              Asignación de equipo
-            </h3>
-            <p className="text-xs text-muted">
-              Selecciona quién se encargará de este pedido
-            </p>
-          </div>
+  const assignContent = (compact?: boolean) => (
+    <div className={`flex min-w-0 flex-col ${compact ? "gap-2" : "gap-4"} sm:flex-row sm:items-center sm:justify-between sm:gap-4`}>
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted/60 text-muted-foreground">
+          <UserPlus className="h-4 w-4" />
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <select
-            value={assignTo}
-            onChange={(e) => setAssignTo(e.target.value)}
-            className="select-custom min-h-[44px] w-full min-w-0 max-w-full rounded-lg border border-border bg-border-soft/50 px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:w-auto"
-          >
-            <option value="">Seleccionar...</option>
-            {team.map((t) => (
-              <option key={t.user_id} value={t.user_id}>
-                {t.display_name || t.email}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={() => handleAssign(assignTo)}
-            disabled={actionLoading || !assignTo}
-            className="inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            <UserPlus className="h-4 w-4 shrink-0" aria-hidden />
-            {actionLoading ? "Asignando…" : "Asignar"}
-          </button>
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">
+            Asignación de equipo
+          </h3>
+          <p className="text-xs text-muted">
+            Selecciona quién se encargará de este pedido
+          </p>
         </div>
       </div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <select
+          value={assignTo}
+          onChange={(e) => setAssignTo(e.target.value)}
+          className="select-custom min-h-[44px] w-full min-w-0 max-w-full rounded-lg border border-border bg-border-soft/50 px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:w-auto"
+        >
+          <option value="">Seleccionar...</option>
+          {team.map((t) => (
+            <option key={t.user_id} value={t.user_id}>
+              {t.display_name || t.email}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => handleAssign(assignTo)}
+          disabled={actionLoading || !assignTo}
+          className="inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          <UserPlus className="h-4 w-4 shrink-0" aria-hidden />
+          {actionLoading ? "Asignando…" : "Asignar"}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
+      <div className="hidden p-4 md:block">
+        {assignContent()}
+      </div>
+      <details className="group border-t-0 md:hidden [&>summary::-webkit-details-marker]:hidden">
+        <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-2 px-3 py-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <UserPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Asignación</span>
+            <span className="truncate text-sm text-muted">
+              {assignTo ? team.find((t) => t.user_id === assignTo)?.display_name ?? "Seleccionado" : "Sin asignar"}
+            </span>
+          </div>
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="border-t border-border px-3 py-2">
+          {assignContent(true)}
+        </div>
+      </details>
     </div>
   );
 }

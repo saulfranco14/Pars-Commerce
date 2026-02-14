@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useOrder } from "../hooks/useOrder";
-import { User, Mail, Phone, X, Check, Pencil } from "lucide-react";
+import { User, Mail, Phone, X, Check, Pencil, ChevronDown } from "lucide-react";
 
 export function CustomerCard() {
   const { order, actionLoading, handleSaveCustomer } = useOrder();
   const [editing, setEditing] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -35,26 +36,10 @@ export function CustomerCard() {
     setPhone(order.customer_phone ?? "");
   };
 
-  return (
-    <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-surface-raised text-left shadow-sm">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <div className="flex items-center gap-2">
-          <User className="h-4 w-4 text-muted" />
-          <h2 className="text-sm font-semibold text-foreground">Información del Cliente</h2>
-        </div>
-        {canEdit && !editing && (
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-accent transition-colors duration-200 hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-          >
-            <Pencil className="h-3.5 w-3.5 shrink-0" aria-hidden />
-            Editar
-          </button>
-        )}
-      </div>
+  const customerSummary = order.customer_name || order.customer_email || order.customer_phone || "—";
 
-      <div className="p-4">
+  const customerContent = (compact?: boolean) => (
+    <div className={compact ? "p-3" : "p-4"}>
         {!editing ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -129,7 +114,73 @@ export function CustomerCard() {
             </div>
           </div>
         )}
+    </div>
+  );
+
+  return (
+    <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-surface-raised text-left shadow-sm">
+      <div className="hidden md:block">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-muted" />
+            <h2 className="text-sm font-semibold text-foreground">Información del Cliente</h2>
+          </div>
+          {canEdit && !editing && (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-accent transition-colors duration-200 hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            >
+              <Pencil className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              Editar
+            </button>
+          )}
+        </div>
+        {customerContent()}
       </div>
+      <details
+        open={mobileOpen}
+        onToggle={(e) => setMobileOpen((e.target as HTMLDetailsElement).open)}
+        className="group border-t-0 md:hidden [&>summary::-webkit-details-marker]:hidden"
+      >
+        <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-2 px-3 py-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <User className="h-4 w-4 shrink-0 text-muted" />
+            <span className="text-sm font-medium text-foreground">Cliente</span>
+            <span className="truncate text-sm text-muted">
+              {typeof customerSummary === "string" && customerSummary.length > 25
+                ? `${customerSummary.slice(0, 25)}…`
+                : customerSummary}
+            </span>
+          </div>
+          {canEdit && !mobileOpen && (
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); setMobileOpen(true); setEditing(true); }}
+              className="shrink-0 rounded px-2 py-1 text-sm font-medium text-accent hover:bg-accent/10"
+            >
+              Editar
+            </button>
+          )}
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="border-t border-border">
+          <div className="flex items-center justify-between px-3 py-1.5">
+            <h2 className="text-xs font-semibold text-foreground">Datos del cliente</h2>
+            {canEdit && !editing && (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-accent"
+              >
+                <Pencil className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                Editar
+              </button>
+            )}
+          </div>
+          {customerContent(true)}
+        </div>
+      </details>
     </div>
   );
 }
