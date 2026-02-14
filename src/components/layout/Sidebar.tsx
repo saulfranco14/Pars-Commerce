@@ -72,7 +72,7 @@ function SidebarContent({
   onSignOut?: () => void;
 }) {
   const activeMembership = memberships.find(
-    (m) => m.tenant_id === activeTenantId
+    (m) => m.tenant_id === activeTenantId,
   );
   const userRole = activeMembership?.role?.name || "member";
   const canAccessTeamAndSettings = userRole !== "member";
@@ -158,16 +158,6 @@ function SidebarContent({
               onNavigate={onNavigate}
             >
               Órdenes / Tickets
-            </NavLink>
-            <NavLink
-              href={`${base}/promociones`}
-              active={
-                pathname === `${base}/promociones` ||
-                pathname.startsWith(`${base}/promociones/`)
-              }
-              onNavigate={onNavigate}
-            >
-              Promociones
             </NavLink>
             {canAccessTeamAndSettings && (
               <NavLink

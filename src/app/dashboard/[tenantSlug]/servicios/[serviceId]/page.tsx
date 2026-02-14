@@ -49,10 +49,12 @@ export default function EditarServicioPage() {
         setCostPrice(String(data.cost_price ?? ""));
         setCommissionAmount(String(data.commission_amount ?? ""));
         setSku(data.sku ?? "");
-        setSubcatalogId((data as { subcatalog_id?: string | null }).subcatalog_id ?? "");
+        setSubcatalogId(
+          (data as { subcatalog_id?: string | null }).subcatalog_id ?? "",
+        );
         setIsPublic(data.is_public ?? true);
         setImageUrls(
-          data.image_urls ?? (data.image_url ? [data.image_url] : [])
+          data.image_urls ?? (data.image_url ? [data.image_url] : []),
         );
       })
       .catch(() => setFetchError("No se pudo cargar el servicio"))
@@ -61,7 +63,9 @@ export default function EditarServicioPage() {
 
   useEffect(() => {
     if (!activeTenant?.id) return;
-    listSubcatalogs(activeTenant.id).then(setSubcatalogs).catch(() => setSubcatalogs([]));
+    listSubcatalogs(activeTenant.id)
+      .then(setSubcatalogs)
+      .catch(() => setSubcatalogs([]));
   }, [activeTenant?.id]);
 
   function deriveSlug(value: string) {
@@ -94,7 +98,7 @@ export default function EditarServicioPage() {
           cost_price: Number.isNaN(costPriceNum) ? undefined : costPriceNum,
           sku: sku.trim() || undefined,
         },
-        { abortEarly: false }
+        { abortEarly: false },
       );
     } catch (err) {
       if (err instanceof Error && "inner" in err) {
@@ -176,7 +180,7 @@ export default function EditarServicioPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-4xl min-h-[calc(100vh-10rem)] flex-col gap-4">
+    <div className="lg:mx-auto flex min-h-0 max-w-5xl flex-1 flex-col overflow-hidden gap-4">
       <div className="shrink-0 border-b border-border pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/servicios`}
@@ -195,7 +199,7 @@ export default function EditarServicioPage() {
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
         <form
           onSubmit={handleSubmit}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden gap-4"
         >
           <div className="flex-1 overflow-y-auto p-6 md:p-8">
             {error && (

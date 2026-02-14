@@ -73,7 +73,7 @@ export function ReceiptActions() {
         />
       </div>
 
-      <div className="rounded-xl border border-border bg-surface-raised overflow-hidden">
+      <div className="rounded-xl border border-border bg-surface-raised shadow-sm overflow-hidden">
         <button
           type="button"
           onClick={() => setOpen(!open)}

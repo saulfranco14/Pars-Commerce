@@ -57,15 +57,26 @@ export default function EditarProductoPage() {
         setSku(data.sku ?? "");
         setUnit(data.unit ?? "unit");
         setTheme((data as { theme?: string }).theme ?? "");
-        setSubcatalogId((data as { subcatalog_id?: string | null }).subcatalog_id ?? "");
-        const pd = data as { wholesale_min_quantity?: number | null; wholesale_price?: number | null };
-        setWholesaleMinQuantity(pd.wholesale_min_quantity != null ? String(pd.wholesale_min_quantity) : "");
-        setWholesalePrice(pd.wholesale_price != null ? String(pd.wholesale_price) : "");
+        setSubcatalogId(
+          (data as { subcatalog_id?: string | null }).subcatalog_id ?? "",
+        );
+        const pd = data as {
+          wholesale_min_quantity?: number | null;
+          wholesale_price?: number | null;
+        };
+        setWholesaleMinQuantity(
+          pd.wholesale_min_quantity != null
+            ? String(pd.wholesale_min_quantity)
+            : "",
+        );
+        setWholesalePrice(
+          pd.wholesale_price != null ? String(pd.wholesale_price) : "",
+        );
         setTrackStock(data.track_stock ?? true);
         setIsPublic(data.is_public ?? true);
         setStock(String(data.stock ?? 0));
         setImageUrls(
-          data.image_urls ?? (data.image_url ? [data.image_url] : [])
+          data.image_urls ?? (data.image_url ? [data.image_url] : []),
         );
       })
       .catch(() => setFetchError("No se pudo cargar el producto"))
@@ -74,7 +85,9 @@ export default function EditarProductoPage() {
 
   useEffect(() => {
     if (!activeTenant?.id) return;
-    listSubcatalogs(activeTenant.id).then(setSubcatalogs).catch(() => setSubcatalogs([]));
+    listSubcatalogs(activeTenant.id)
+      .then(setSubcatalogs)
+      .catch(() => setSubcatalogs([]));
   }, [activeTenant?.id]);
 
   function deriveSlug(value: string) {
@@ -109,7 +122,7 @@ export default function EditarProductoPage() {
           unit: unit.trim() || "unit",
           theme: theme.trim() || undefined,
         },
-        { abortEarly: false }
+        { abortEarly: false },
       );
     } catch (err) {
       if (err instanceof Error && "inner" in err) {
@@ -155,7 +168,8 @@ export default function EditarProductoPage() {
     const hasWholesalePrice = wholesalePrice.trim() !== "";
     if (hasWholesaleMin !== hasWholesalePrice) {
       setFieldErrors({
-        wholesale: "Cantidad mínima y precio mayoreo deben ir juntos o ambos vacíos",
+        wholesale:
+          "Cantidad mínima y precio mayoreo deben ir juntos o ambos vacíos",
       });
       return;
     }
@@ -165,11 +179,15 @@ export default function EditarProductoPage() {
       wholesaleMinNum = parseInt(wholesaleMinQuantity, 10);
       wholesalePriceNum = parseFloat(wholesalePrice.replace(",", "."));
       if (Number.isNaN(wholesaleMinNum) || wholesaleMinNum < 1) {
-        setFieldErrors({ wholesale: "Cantidad mínima debe ser mayor o igual a 1" });
+        setFieldErrors({
+          wholesale: "Cantidad mínima debe ser mayor o igual a 1",
+        });
         return;
       }
       if (Number.isNaN(wholesalePriceNum) || wholesalePriceNum < 0) {
-        setFieldErrors({ wholesale: "Precio mayoreo debe ser mayor o igual a 0" });
+        setFieldErrors({
+          wholesale: "Precio mayoreo debe ser mayor o igual a 0",
+        });
         return;
       }
     }
@@ -191,7 +209,9 @@ export default function EditarProductoPage() {
         is_public: isPublic,
         image_urls: imageUrls.length > 0 ? imageUrls : undefined,
         stock: stockNum,
-        wholesale_min_quantity: hasWholesaleMin ? (wholesaleMinNum as number) : null,
+        wholesale_min_quantity: hasWholesaleMin
+          ? (wholesaleMinNum as number)
+          : null,
         wholesale_price: hasWholesaleMin ? (wholesalePriceNum as number) : null,
       });
       router.push(`/dashboard/${tenantSlug}/productos`);
@@ -222,7 +242,7 @@ export default function EditarProductoPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-4xl min-h-[calc(100vh-10rem)] flex-col gap-4">
+    <div className="mx-auto flex min-h-0 max-w-4xl flex-1 flex-col overflow-hidden gap-4">
       <div className="shrink-0 border-b border-border pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/productos`}
@@ -241,7 +261,7 @@ export default function EditarProductoPage() {
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
         <form
           onSubmit={handleSubmit}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+          className="flex gap-4 min-h-0 flex-1 flex-col overflow-hidden"
         >
           <div className="flex-1 overflow-y-auto p-6 md:p-8">
             {error && (
@@ -472,7 +492,9 @@ export default function EditarProductoPage() {
                           type="number"
                           min={1}
                           value={wholesaleMinQuantity}
-                          onChange={(e) => setWholesaleMinQuantity(e.target.value)}
+                          onChange={(e) =>
+                            setWholesaleMinQuantity(e.target.value)
+                          }
                           className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                           placeholder="Ej. 10"
                         />

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
+import { ArrowLeft, Plus, X, AlertTriangle } from "lucide-react";
 import type { TenantRoleOption } from "@/services/tenantRolesService";
 import { list as listTenantRoles } from "@/services/tenantRolesService";
 import { addMember } from "@/services/teamService";
@@ -94,7 +95,7 @@ export default function NuevoMiembroPage() {
 
   if (invitedByEmail) {
     return (
-      <div className="mx-auto max-w-lg">
+      <div className="mx-auto flex min-h-0 max-w-lg flex-1 flex-col overflow-auto">
         <div className="rounded-xl border border-green-200 bg-green-50 p-6 shadow-sm alert-success">
           <div className="mb-4 flex items-center gap-2">
             <svg
@@ -125,15 +126,13 @@ export default function NuevoMiembroPage() {
               reenviar desde Supabase Dashboard → Authentication → Users.
             </p>
           </div>
-          <button
-            onClick={() => {
-              router.push(`/dashboard/${tenantSlug}/equipo`);
-              router.refresh();
-            }}
-            className="mt-6 w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
+          <Link
+            href={`/dashboard/${tenantSlug}/equipo`}
+            className="mt-6 inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
+            <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
             Volver a equipo
-          </button>
+          </Link>
         </div>
       </div>
     );
@@ -141,7 +140,7 @@ export default function NuevoMiembroPage() {
 
   if (tempPassword) {
     return (
-      <div className="mx-auto max-w-lg">
+      <div className="mx-auto flex min-h-0 max-w-lg flex-1 flex-col overflow-auto">
         <div className="rounded-xl border border-green-200 bg-green-50 p-6 shadow-sm alert-success">
           <div className="mb-4 flex items-center gap-2">
             <svg
@@ -176,15 +175,16 @@ export default function NuevoMiembroPage() {
               <button
                 type="button"
                 onClick={handleCopyPassword}
-                className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-green-700"
+                className="min-h-[44px] cursor-pointer rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
               >
                 {copied ? "✓ Copiado" : "Copiar"}
               </button>
             </div>
           </div>
-          <div className="mt-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3">
-            <p className="text-xs font-medium text-yellow-800">
-              ⚠️ Importante:
+          <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3">
+            <p className="flex items-center gap-2 text-xs font-medium text-yellow-800">
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+              Importante:
             </p>
             <ul className="mt-2 space-y-1 text-xs text-yellow-700">
               <li>
@@ -201,54 +201,59 @@ export default function NuevoMiembroPage() {
               <li>• Puede cambiar su contraseña desde su perfil</li>
             </ul>
           </div>
-          <button
-            onClick={() => {
-              router.push(`/dashboard/${tenantSlug}/equipo`);
-              router.refresh();
-            }}
-            className="mt-6 w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
+          <Link
+            href={`/dashboard/${tenantSlug}/equipo`}
+            className="mt-6 inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
+            <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
             Volver a equipo
-          </button>
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-md">
-      <div className="mb-4">
+    <div className="mx-auto flex min-h-0 max-w-4xl flex-1 flex-col overflow-hidden">
+      <div className="shrink-0 pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/equipo`}
-          className="text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
-          ← Volver a equipo
+          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+          Volver a equipo
         </Link>
+        <h1 className="mt-1 text-xl font-semibold text-foreground sm:text-2xl">
+          Agregar miembro
+        </h1>
+        <p className="mt-0.5 text-sm text-muted">
+          Si el usuario no existe, se le enviará una invitación por correo para
+          que establezca su contraseña y se agregue al equipo.
+        </p>
       </div>
-      <h1 className="text-2xl font-semibold text-foreground">Agregar miembro</h1>
-      <p className="mt-1 text-sm text-muted">
-        Si el usuario no existe, se le enviará una invitación por correo para
-        que establezca su contraseña y se agregará al equipo.
-      </p>
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        {error && (
-          <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-        <div>
-          <label
-            htmlFor="displayName"
-            className="block text-sm font-medium text-muted-foreground"
-          >
-            Nombre <span className="font-normal text-muted">(opcional)</span>
-          </label>
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+            {error && (
+              <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
+                {error}
+              </div>
+            )}
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="displayName"
+                  className="block text-sm font-medium text-muted-foreground"
+                >
+                  Nombre <span className="font-normal text-muted">(opcional)</span>
+                </label>
           <input
             id="displayName"
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
             placeholder="Nombre de la persona"
           />
         </div>
@@ -265,7 +270,7 @@ export default function NuevoMiembroPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
             placeholder="usuario@ejemplo.com"
           />
         </div>
@@ -280,7 +285,7 @@ export default function NuevoMiembroPage() {
             id="role"
             value={roleId}
             onChange={(e) => setRoleId(e.target.value)}
-            className="input-form select-custom mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className="input-form select-custom mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-sm text-foreground transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
           >
             {roles.map((r) => (
               <option key={r.id} value={r.id}>
@@ -296,22 +301,29 @@ export default function NuevoMiembroPage() {
             </p>
           )}
         </div>
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
-          >
-            {loading ? "Agregando..." : "Agregar"}
-          </button>
-          <Link
-            href={`/dashboard/${tenantSlug}/equipo`}
-            className="rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-border-soft"
-          >
-            Cancelar
-          </Link>
-        </div>
-      </form>
+            </div>
+          </div>
+          <div className="shrink-0 border-t border-border bg-surface-raised px-4 py-4 sm:px-6 md:px-8">
+            <div className="flex gap-3">
+              <Link
+                href={`/dashboard/${tenantSlug}/equipo`}
+                className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+              >
+                <X className="h-4 w-4 shrink-0" aria-hidden />
+                Cancelar
+              </Link>
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                <Plus className="h-4 w-4 shrink-0" aria-hidden />
+                {loading ? "Agregando…" : "Agregar"}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

@@ -36,7 +36,7 @@ export function CustomerCard() {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden text-left">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-surface-raised text-left shadow-sm">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-muted" />

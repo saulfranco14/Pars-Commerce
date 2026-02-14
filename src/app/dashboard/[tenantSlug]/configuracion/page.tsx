@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Check } from "lucide-react";
 import { useTenantStore } from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
 import type { SitePage } from "@/types/tenantSitePages";
@@ -102,14 +104,37 @@ export default function ConfiguracionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md">
-      <h1 className="text-2xl font-semibold text-foreground">Configuración</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Datos del negocio y sitio web. El nombre y la descripción se muestran en
-        tu sitio público. El color del tema se aplica al sitio. Si habilitas la
-        tienda pública, el catálogo y las secciones serán visibles en la URL de
-        tu sitio.
-      </p>
+    <div className="mx-auto flex min-h-0 max-w-4xl flex-1 flex-col overflow-hidden">
+      <div className="shrink-0 pb-4">
+        <Link
+          href={`/dashboard/${tenantSlug}`}
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+        >
+          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+          Volver al inicio
+        </Link>
+        <h1 className="mt-1 text-xl font-semibold text-foreground sm:text-2xl">
+          Configuración
+        </h1>
+        <p className="mt-0.5 text-sm text-muted">
+          Datos del negocio y sitio web. El nombre y la descripción se muestran
+          en tu sitio público.
+        </p>
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+            {error && (
+              <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="mb-6 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 alert-success">
+                Cambios guardados.
+              </div>
+            )}
 
       {publicStoreEnabled && (
         <div className="mt-4 rounded-lg border border-border bg-border-soft p-3">
@@ -157,17 +182,7 @@ export default function ConfiguracionPage() {
         />
       )}
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        {error && (
-          <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 alert-success">
-            Cambios guardados.
-          </div>
-        )}
+      <div className="mt-6 space-y-4">
         <div>
           <label
             htmlFor="name"
@@ -342,17 +357,21 @@ export default function ConfiguracionPage() {
             />
           </div>
         </div>
+      </div>
 
-        <div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
-          >
-            {loading ? "Guardando..." : "Guardar"}
-          </button>
-        </div>
-      </form>
+          </div>
+          <div className="flex shrink-0 justify-end border-t border-border bg-surface-raised px-4 py-4 sm:px-6 md:px-8">
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <Check className="h-4 w-4 shrink-0" aria-hidden />
+              {loading ? "Guardando…" : "Guardar"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

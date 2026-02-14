@@ -52,7 +52,7 @@ export function AssignmentCard() {
 
   if (isPaid && isOwner) {
     return (
-      <div className="rounded-xl border border-border-soft bg-surface-raised p-4">
+      <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-surface-raised p-4 shadow-sm">
         {assignmentSuccess && (
           <div
             className="mb-4 flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700"
@@ -62,13 +62,13 @@ export function AssignmentCard() {
             Asignación actualizada
           </div>
         )}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">{infoBlock}</div>
-          <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
             <select
               value={assignTo}
               onChange={(e) => setAssignTo(e.target.value)}
-              className="select-custom min-h-[44px] w-full min-w-[180px] rounded-lg border border-border bg-border-soft/50 px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:w-auto"
+              className="select-custom min-h-[44px] w-full min-w-0 max-w-full rounded-lg border border-border bg-border-soft/50 px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:w-auto"
             >
               <option value="">Cambiar a...</option>
               {team.map((t) => (
@@ -96,7 +96,7 @@ export function AssignmentCard() {
 
   if (isPaid) {
     return (
-      <div className="rounded-xl border border-border-soft bg-surface-raised p-4">
+      <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-surface-raised p-4 shadow-sm">
         {infoBlock}
       </div>
     );
@@ -104,16 +104,16 @@ export function AssignmentCard() {
 
   if (isAssigned) {
     return (
-      <div className="rounded-xl border border-border-soft bg-surface-raised p-4">
+      <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-surface-raised p-4 shadow-sm">
         {infoBlock}
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-border-soft bg-surface-raised p-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-surface-raised p-4 shadow-sm">
+      <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted/60 text-muted-foreground">
             <UserPlus className="h-4 w-4" />
           </div>
@@ -130,7 +130,7 @@ export function AssignmentCard() {
           <select
             value={assignTo}
             onChange={(e) => setAssignTo(e.target.value)}
-            className="select-custom min-h-[44px] w-full min-w-[180px] rounded-lg border border-border bg-border-soft/50 px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:w-auto"
+            className="select-custom min-h-[44px] w-full min-w-0 max-w-full rounded-lg border border-border bg-border-soft/50 px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:w-auto"
           >
             <option value="">Seleccionar...</option>
             {team.map((t) => (

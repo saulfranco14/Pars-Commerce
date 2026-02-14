@@ -19,14 +19,15 @@ import {
 import { formatOrderDate } from "@/lib/formatDate";
 import { swrFetcher } from "@/lib/swrFetcher";
 import {
-  ClipboardList,
-  TrendingUp,
-  Clock,
   ArrowRight,
-  Trophy,
+  ClipboardList,
+  Clock,
+  Plus,
   ShoppingBag,
-  Wrench,
+  TrendingUp,
+  Trophy,
   UserPlus,
+  Wrench,
 } from "lucide-react";
 import { OrderCardMobile } from "@/components/orders/OrderCardMobile";
 
@@ -189,7 +190,8 @@ export default function DashboardPage() {
   const needsAttention = unassignedCount > 0 || activeOrders > 0;
 
   return (
-    <div className="space-y-8 pb-8 sm:pb-10">
+    <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+      <div className="space-y-8 pb-8 sm:pb-10">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
@@ -216,8 +218,9 @@ export default function DashboardPage() {
           </select>
           <Link
             href={`/dashboard/${activeTenant.slug}/ordenes/nueva`}
-            className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:opacity-90 active:opacity-95 sm:min-h-0 sm:flex-none"
+            className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:min-h-0 sm:flex-none"
           >
+            <Plus className="h-4 w-4 shrink-0" aria-hidden />
             Nueva Orden
           </Link>
         </div>
@@ -226,7 +229,7 @@ export default function DashboardPage() {
       {needsAttention && (
         <Link
           href={`/dashboard/${activeTenant.slug}/ordenes`}
-          className="flex items-center gap-3 rounded-xl border border-border-soft bg-border-soft/50 px-4 py-3 transition-colors hover:bg-border-soft/70"
+          className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-soft bg-border-soft/50 px-4 py-3 transition-colors duration-200 hover:bg-border-soft/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
         >
           <div className="flex items-center gap-2">
             {activeOrders > 0 && (
@@ -256,7 +259,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Link
             href={`/dashboard/${activeTenant.slug}/ordenes`}
-            className="rounded-xl border border-border bg-surface-raised p-4 transition-colors hover:bg-border-soft/40"
+            className="block cursor-pointer rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
           >
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium text-muted">
@@ -273,7 +276,7 @@ export default function DashboardPage() {
           </Link>
           <Link
             href={`/dashboard/${activeTenant.slug}/ordenes?status=in_progress`}
-            className="rounded-xl border border-border bg-surface-raised p-4 transition-colors hover:bg-border-soft/40"
+            className="block cursor-pointer rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
           >
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium text-muted">Activas</p>
@@ -286,7 +289,7 @@ export default function DashboardPage() {
           </Link>
           <Link
             href={`/dashboard/${activeTenant.slug}/ordenes?status=completed`}
-            className="rounded-xl border border-border bg-surface-raised p-4 transition-colors hover:bg-border-soft/40"
+            className="block cursor-pointer rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
           >
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium text-muted">Completadas</p>
@@ -299,7 +302,7 @@ export default function DashboardPage() {
           </Link>
           <Link
             href={`/dashboard/${activeTenant.slug}/ordenes`}
-            className="rounded-xl border border-border bg-surface-raised p-4 transition-colors hover:bg-border-soft/40"
+            className="block cursor-pointer rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
           >
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium text-muted">Total órdenes</p>
@@ -320,7 +323,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4">
           <Link
             href={`/dashboard/${activeTenant.slug}/productos`}
-            className="flex items-center gap-3 rounded-xl border border-border bg-surface-raised p-4 transition-colors hover:bg-border-soft/40"
+            className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-border-soft text-muted">
               <ShoppingBag className="h-5 w-5" />
@@ -335,7 +338,7 @@ export default function DashboardPage() {
           </Link>
           <Link
             href={`/dashboard/${activeTenant.slug}/servicios`}
-            className="flex items-center gap-3 rounded-xl border border-border bg-surface-raised p-4 transition-colors hover:bg-border-soft/40"
+            className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-border-soft text-accent">
               <Wrench className="h-5 w-5" />
@@ -354,7 +357,7 @@ export default function DashboardPage() {
       {unassignedCount > 0 && (
         <Link
           href={`/dashboard/${activeTenant.slug}/ordenes`}
-          className="flex items-center gap-3 rounded-xl border border-amber-200/80 bg-amber-50/80 p-4 text-amber-900 transition-colors hover:bg-amber-50 sm:p-4"
+          className="flex cursor-pointer items-center gap-3 rounded-xl border border-amber-200/80 bg-amber-50/80 p-4 text-amber-900 transition-colors duration-200 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 sm:p-4"
         >
           <UserPlus className="h-5 w-5 shrink-0 text-amber-600" />
           <div>
@@ -665,6 +668,7 @@ export default function DashboardPage() {
           </>
         )}
       </section>
+      </div>
     </div>
   );
 }

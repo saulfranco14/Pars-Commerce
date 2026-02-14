@@ -330,7 +330,8 @@ export default function VentasPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+      <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
           Ventas y Comisiones
@@ -538,6 +539,7 @@ export default function VentasPage() {
         confirmDanger={false}
         loading={actionLoading}
       />
+      </div>
     </div>
   );
 }

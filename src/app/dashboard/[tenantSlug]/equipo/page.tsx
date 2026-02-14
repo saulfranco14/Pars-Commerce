@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { useTenantStore } from "@/stores/useTenantStore";
 import type { TeamMember } from "@/types/team";
 import type { TenantRoleOption } from "@/services/tenantRolesService";
@@ -95,15 +96,17 @@ export default function EquipoPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+      <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
           Equipo
         </h1>
         <Link
           href={`/dashboard/${tenantSlug}/equipo/nuevo`}
-          className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 active:opacity-90 sm:min-h-0"
+          className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:min-h-0"
         >
+          <Plus className="h-4 w-4 shrink-0" aria-hidden />
           Agregar miembro
         </Link>
       </div>
@@ -227,6 +230,7 @@ export default function EquipoPage() {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }

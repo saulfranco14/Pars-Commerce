@@ -7,6 +7,7 @@ import { ConfirmModal } from "@/components/ConfirmModal";
 import { OrderItem } from "../types";
 import { Plus } from "lucide-react";
 import { AddItemModal } from "@/components/orders/AddItemModal";
+import { OrderActionButtons } from "./OrderActionButtons";
 
 export function OrderItemsTable() {
   const {
@@ -52,8 +53,8 @@ export function OrderItemsTable() {
   if (!order) return null;
 
   return (
-    <div className="rounded-xl border border-border bg-surface-raised shadow-sm overflow-hidden text-left">
-      <div className="flex items-center justify-between border-b border-border p-4">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised text-left shadow-sm">
+      <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
         <h2 className="text-base font-semibold text-foreground">
           Items de la orden
         </h2>
@@ -69,7 +70,7 @@ export function OrderItemsTable() {
         )}
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain md:max-h-[300px]">
         {items.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted">
             No hay items. Agrega productos o servicios.
@@ -209,7 +210,7 @@ export function OrderItemsTable() {
         )}
       </div>
 
-      <div className="border-t border-border bg-background/20 p-4">
+      <div className="shrink-0 border-t border-border bg-background/20 p-4">
         <div className="flex flex-col items-end gap-1.5 w-full sm:max-w-[260px] sm:ml-auto">
           <div className="flex justify-between items-center w-full text-sm py-1">
             <span className="text-muted-foreground">Subtotal</span>
@@ -262,6 +263,10 @@ export function OrderItemsTable() {
             </span>
           </div>
         </div>
+      </div>
+
+      <div className="shrink-0 border-t border-border p-4">
+        <OrderActionButtons embedded />
       </div>
 
       {activeTenant && (
