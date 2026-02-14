@@ -10,10 +10,12 @@ import { apiFetch } from "@/services/apiFetch";
 
 export async function listByTenant(
   tenantId: string,
-  opts?: { type?: "product" | "service" }
+  opts?: { type?: "product" | "service"; subcatalogId?: string; q?: string }
 ): Promise<ProductListItem[]> {
   const params = new URLSearchParams({ tenant_id: tenantId });
   if (opts?.type) params.set("type", opts.type);
+  if (opts?.subcatalogId) params.set("subcatalog_id", opts.subcatalogId);
+  if (opts?.q && opts.q.trim().length >= 2) params.set("q", opts.q.trim());
   const data = await apiFetch(`/api/products?${params}`);
   return Array.isArray(data) ? (data as ProductListItem[]) : [];
 }

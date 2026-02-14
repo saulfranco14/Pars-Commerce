@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   if (!tenantId && !promotionId) {
     return NextResponse.json(
       { error: "tenant_id or promotion_id is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -35,15 +35,17 @@ export async function GET(request: Request) {
     if (error || !promotion) {
       return NextResponse.json(
         { error: error?.message ?? "Promotion not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
     return NextResponse.json(promotion);
   }
 
-  let query = supabase
+  const query = supabase
     .from("promotions")
-    .select("id, name, type, value, min_amount, product_ids, valid_from, valid_until, created_at")
+    .select(
+      "id, name, type, value, min_amount, product_ids, valid_from, valid_until, created_at",
+    )
     .eq("tenant_id", tenantId as string)
     .order("created_at", { ascending: false });
 
@@ -95,19 +97,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { tenant_id, name, type, value, min_amount, product_ids, valid_from, valid_until } = body;
+  const {
+    tenant_id,
+    name,
+    type,
+    value,
+    min_amount,
+    product_ids,
+    valid_from,
+    valid_until,
+  } = body;
 
   if (!tenant_id || !name || !type || value == null || value < 0) {
     return NextResponse.json(
       { error: "tenant_id, name, type and value (>= 0) are required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (!["percentage", "fixed_amount"].includes(type)) {
     return NextResponse.json(
       { error: "type must be percentage or fixed_amount" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -189,7 +200,7 @@ export async function PATCH(request: Request) {
   if (!promotion_id) {
     return NextResponse.json(
       { error: "promotion_id is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -233,10 +244,14 @@ export async function PATCH(request: Request) {
   if (updates.name !== undefined) updateData.name = updates.name.trim();
   if (updates.type !== undefined) updateData.type = updates.type;
   if (updates.value !== undefined) updateData.value = updates.value;
-  if (updates.min_amount !== undefined) updateData.min_amount = updates.min_amount;
-  if (updates.product_ids !== undefined) updateData.product_ids = updates.product_ids;
-  if (updates.valid_from !== undefined) updateData.valid_from = updates.valid_from;
-  if (updates.valid_until !== undefined) updateData.valid_until = updates.valid_until;
+  if (updates.min_amount !== undefined)
+    updateData.min_amount = updates.min_amount;
+  if (updates.product_ids !== undefined)
+    updateData.product_ids = updates.product_ids;
+  if (updates.valid_from !== undefined)
+    updateData.valid_from = updates.valid_from;
+  if (updates.valid_until !== undefined)
+    updateData.valid_until = updates.valid_until;
 
   const { data: updated, error } = await admin
     .from("promotions")
@@ -269,7 +284,7 @@ export async function DELETE(request: Request) {
   if (!promotionId) {
     return NextResponse.json(
       { error: "promotion_id is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -307,7 +322,10 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { error } = await admin.from("promotions").delete().eq("id", promotionId);
+  const { error } = await admin
+    .from("promotions")
+    .delete()
+    .eq("id", promotionId);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -35,9 +35,11 @@ interface OrderRow {
   status: string;
   cancelled_from?: string | null;
   customer_name: string | null;
+  customer_email: string | null;
   total: number;
   created_at: string;
   assigned_to: string | null;
+  payment_method?: string | null;
   assigned_user?: {
     id: string;
     display_name: string | null;

@@ -17,6 +17,7 @@ export async function GET(request: Request) {
   const productId = searchParams.get("product_id");
   const type = searchParams.get("type");
   const subcatalogId = searchParams.get("subcatalog_id");
+  const q = searchParams.get("q")?.trim();
 
   if (!tenantId && !productId) {
     return NextResponse.json(
@@ -85,6 +86,9 @@ export async function GET(request: Request) {
   }
   if (subcatalogId) {
     query = query.eq("subcatalog_id", subcatalogId);
+  }
+  if (q && q.length >= 2) {
+    query = query.ilike("name", `%${q}%`).limit(100);
   }
 
   const { data: products, error } = await query;
@@ -178,8 +182,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const hasWholesaleMin = wholesale_min_quantity != null && wholesale_min_quantity !== "";
-  const hasWholesalePrice = wholesale_price != null && wholesale_price !== "";
+  const hasWholesaleMin =
+    wholesale_min_quantity != null &&
+    String(wholesale_min_quantity).trim() !== "";
+  const hasWholesalePrice =
+    wholesale_price != null && String(wholesale_price).trim() !== "";
   if (hasWholesaleMin !== hasWholesalePrice) {
     return NextResponse.json(
       { error: "wholesale_min_quantity and wholesale_price must be both set or both empty" },
@@ -187,7 +194,7 @@ export async function POST(request: Request) {
     );
   }
   if (hasWholesaleMin) {
-    const wmq = Number(wholesale_min_quantity);
+    const wmq = Math.floor(Number(wholesale_min_quantity));
     const wp = Number(wholesale_price);
     if (Number.isNaN(wmq) || wmq < 1 || Number.isNaN(wp) || wp < 0) {
       return NextResponse.json(
@@ -226,7 +233,7 @@ export async function POST(request: Request) {
       is_public: is_public ?? true,
       image_url: firstImage,
       subcatalog_id: subcatalog_id ?? null,
-      wholesale_min_quantity: hasWholesaleMin ? Number(wholesale_min_quantity) : null,
+      wholesale_min_quantity: hasWholesaleMin ? Math.floor(Number(wholesale_min_quantity)) : null,
       wholesale_price: hasWholesaleMin ? Number(wholesale_price) : null,
     })
     .select("id, name, slug, price, created_at")
@@ -353,8 +360,11 @@ export async function PATCH(request: Request) {
   if (image_url !== undefined) updates.image_url = image_url?.trim() || null;
   if (subcatalog_id !== undefined) updates.subcatalog_id = subcatalog_id ?? null;
 
-  const hasWholesaleMin = wholesale_min_quantity != null && wholesale_min_quantity !== "";
-  const hasWholesalePrice = wholesale_price != null && wholesale_price !== "";
+  const hasWholesaleMin =
+    wholesale_min_quantity != null &&
+    String(wholesale_min_quantity).trim() !== "";
+  const hasWholesalePrice =
+    wholesale_price != null && String(wholesale_price).trim() !== "";
   if (wholesale_min_quantity !== undefined && wholesale_price !== undefined) {
     if (hasWholesaleMin !== hasWholesalePrice) {
       return NextResponse.json(
@@ -363,7 +373,7 @@ export async function PATCH(request: Request) {
       );
     }
     if (hasWholesaleMin) {
-      const wmq = Number(wholesale_min_quantity);
+      const wmq = Math.floor(Number(wholesale_min_quantity));
       const wp = Number(wholesale_price);
       if (Number.isNaN(wmq) || wmq < 1 || Number.isNaN(wp) || wp < 0) {
         return NextResponse.json(
@@ -372,7 +382,7 @@ export async function PATCH(request: Request) {
         );
       }
     }
-    updates.wholesale_min_quantity = hasWholesaleMin ? Number(wholesale_min_quantity) : null;
+    updates.wholesale_min_quantity = hasWholesaleMin ? Math.floor(Number(wholesale_min_quantity)) : null;
     updates.wholesale_price = hasWholesaleMin ? Number(wholesale_price) : null;
   }
 

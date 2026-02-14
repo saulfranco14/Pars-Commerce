@@ -137,13 +137,18 @@ export async function POST(request: Request) {
     });
   }
 
-  const mpItems = cartItems.map((item: { product: { id: string; name: string } | null; quantity: number; price_snapshot: number }) => ({
-    id: item.product?.id ?? "unknown",
-    title: (item.product as { name: string })?.name ?? "Producto",
-    quantity: item.quantity,
-    unit_price: Number(item.price_snapshot),
-    currency_id: "MXN",
-  }));
+  const mpItems = cartItems.map((item) => {
+    const product = Array.isArray(item.product)
+      ? item.product[0]
+      : item.product;
+    return {
+      id: product?.id ?? item.product_id ?? "unknown",
+      title: product?.name ?? "Producto",
+      quantity: item.quantity,
+      unit_price: Number(item.price_snapshot),
+      currency_id: "MXN",
+    };
+  });
 
   const origin =
     request.headers.get("origin") ??

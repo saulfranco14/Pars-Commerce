@@ -256,11 +256,11 @@ export default function PromocionesPage() {
       )}
 
       <ConfirmModal
-        open={!!promotionToDelete}
+        isOpen={!!promotionToDelete}
+        onClose={() => setPromotionToDelete(null)}
         title="Eliminar promoción"
         message={`¿Eliminar la promoción "${promotionToDelete?.name}"?`}
         onConfirm={handleDeleteConfirm}
-        onCancel={() => setPromotionToDelete(null)}
         loading={!!deletingId}
       />
     </div>
