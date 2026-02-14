@@ -1,13 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
+import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
-import { getById as getOrder, update as updateOrder } from "@/services/ordersService";
-import { list as listTeam } from "@/services/teamService";
+import { update as updateOrder } from "@/services/ordersService";
 import { remove as removeOrderItem } from "@/services/orderItemsService";
 import { generatePaymentLink } from "@/services/mercadopagoService";
+import { swrFetcher } from "@/lib/swrFetcher";
 import type { TenantAddress } from "@/types/database";
+import type { TeamMember } from "@/types/team";
 import { OrderDetail, TeamMemberOption } from "../types";
 
 interface OrderContextType {
@@ -35,6 +37,15 @@ interface OrderContextType {
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
+function mapToTeamOptions(list: TeamMember[] | undefined): TeamMemberOption[] {
+  if (!Array.isArray(list)) return [];
+  return list.map((m) => ({
+    user_id: m.user_id,
+    display_name: m.display_name,
+    email: m.email,
+  }));
+}
+
 export function OrderProvider({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const orderId = params.orderId as string;
@@ -43,45 +54,39 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
   const businessName = activeTenant?.name ?? "Negocio";
   const businessAddress = activeTenant?.address ?? null;
 
-  const [order, setOrder] = useState<OrderDetail | null>(null);
-  const [team, setTeam] = useState<TeamMemberOption[]>([]);
-  const [loading, setLoading] = useState(true);
+  const orderKey = orderId
+    ? `/api/orders?order_id=${encodeURIComponent(orderId)}`
+    : null;
+  const teamKey = activeTenant?.id
+    ? `/api/team?tenant_id=${encodeURIComponent(activeTenant.id)}`
+    : null;
+
+  const { data: orderData, error: orderError, isLoading, mutate } = useSWR<
+    OrderDetail | null
+  >(orderKey, swrFetcher);
+
+  const { data: teamData } = useSWR<TeamMember[]>(teamKey, swrFetcher);
+
+  const order = orderData ?? null;
+  const team = useMemo(() => mapToTeamOptions(teamData), [teamData]);
+
   const [actionLoading, setActionLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [manualError, setManualError] = useState<string | null>(null);
   const [assignmentSuccess, setAssignmentSuccess] = useState(false);
 
-  const fetchOrder = useCallback(async () => {
-    try {
-      const data = await getOrder(orderId);
-      setOrder(data as OrderDetail);
-    } catch (err) {
-      console.error(err);
-      setError("No se pudo cargar la orden");
-    }
-  }, [orderId]);
+  const loading = isLoading;
+  const error =
+    manualError ?? (orderError ? "No se pudo cargar la orden" : null);
 
-  useEffect(() => {
-    if (!orderId) return;
-    setLoading(true);
-    fetchOrder().finally(() => setLoading(false));
-  }, [orderId, fetchOrder]);
+  const setError = (msg: string | null) => setManualError(msg);
+
+  const fetchOrder = () => mutate();
 
   useEffect(() => {
     if (!assignmentSuccess) return;
     const t = setTimeout(() => setAssignmentSuccess(false), 3000);
     return () => clearTimeout(t);
   }, [assignmentSuccess]);
-
-  useEffect(() => {
-    if (!activeTenant?.id) return;
-    listTeam(activeTenant.id)
-      .then((list) => setTeam(list.map((m) => ({ 
-        user_id: m.user_id, 
-        display_name: m.display_name, 
-        email: m.email 
-      }))))
-      .catch(() => setTeam([]));
-  }, [activeTenant?.id]);
 
   const handleStatusChange = async (newStatus: string) => {
     if (!order) return;
