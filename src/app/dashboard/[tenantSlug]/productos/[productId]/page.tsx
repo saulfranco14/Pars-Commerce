@@ -31,6 +31,8 @@ export default function EditarProductoPage() {
   const [theme, setTheme] = useState("");
   const [subcatalogId, setSubcatalogId] = useState("");
   const [subcatalogs, setSubcatalogs] = useState<Subcatalog[]>([]);
+  const [wholesaleMinQuantity, setWholesaleMinQuantity] = useState("");
+  const [wholesalePrice, setWholesalePrice] = useState("");
   const [trackStock, setTrackStock] = useState(true);
   const [isPublic, setIsPublic] = useState(true);
   const [stock, setStock] = useState("");
@@ -56,6 +58,9 @@ export default function EditarProductoPage() {
         setUnit(data.unit ?? "unit");
         setTheme((data as { theme?: string }).theme ?? "");
         setSubcatalogId((data as { subcatalog_id?: string | null }).subcatalog_id ?? "");
+        const pd = data as { wholesale_min_quantity?: number | null; wholesale_price?: number | null };
+        setWholesaleMinQuantity(pd.wholesale_min_quantity != null ? String(pd.wholesale_min_quantity) : "");
+        setWholesalePrice(pd.wholesale_price != null ? String(pd.wholesale_price) : "");
         setTrackStock(data.track_stock ?? true);
         setIsPublic(data.is_public ?? true);
         setStock(String(data.stock ?? 0));
@@ -146,6 +151,29 @@ export default function EditarProductoPage() {
       return;
     }
 
+    const hasWholesaleMin = wholesaleMinQuantity.trim() !== "";
+    const hasWholesalePrice = wholesalePrice.trim() !== "";
+    if (hasWholesaleMin !== hasWholesalePrice) {
+      setFieldErrors({
+        wholesale: "Cantidad mínima y precio mayoreo deben ir juntos o ambos vacíos",
+      });
+      return;
+    }
+    let wholesaleMinNum: number | undefined;
+    let wholesalePriceNum: number | undefined;
+    if (hasWholesaleMin) {
+      wholesaleMinNum = parseInt(wholesaleMinQuantity, 10);
+      wholesalePriceNum = parseFloat(wholesalePrice.replace(",", "."));
+      if (Number.isNaN(wholesaleMinNum) || wholesaleMinNum < 1) {
+        setFieldErrors({ wholesale: "Cantidad mínima debe ser mayor o igual a 1" });
+        return;
+      }
+      if (Number.isNaN(wholesalePriceNum) || wholesalePriceNum < 0) {
+        setFieldErrors({ wholesale: "Precio mayoreo debe ser mayor o igual a 0" });
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       await update(productId, {
@@ -163,6 +191,8 @@ export default function EditarProductoPage() {
         is_public: isPublic,
         image_urls: imageUrls.length > 0 ? imageUrls : undefined,
         stock: stockNum,
+        wholesale_min_quantity: hasWholesaleMin ? (wholesaleMinNum as number) : null,
+        wholesale_price: hasWholesaleMin ? (wholesalePriceNum as number) : null,
       });
       router.push(`/dashboard/${tenantSlug}/productos`);
       router.refresh();
@@ -424,6 +454,56 @@ export default function EditarProductoPage() {
                       </p>
                     )}
                   </div>
+
+                  <details className="md:col-span-2 rounded-lg border border-border overflow-hidden">
+                    <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground bg-border-soft/30">
+                      Mayoreo (opcional)
+                    </summary>
+                    <div className="px-4 py-4 grid grid-cols-1 gap-6 md:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor="wholesale_min"
+                          className="block text-sm font-medium text-muted-foreground"
+                        >
+                          Cantidad mínima para mayoreo
+                        </label>
+                        <input
+                          id="wholesale_min"
+                          type="number"
+                          min={1}
+                          value={wholesaleMinQuantity}
+                          onChange={(e) => setWholesaleMinQuantity(e.target.value)}
+                          className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                          placeholder="Ej. 10"
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Si uno tiene valor, el otro es requerido
+                        </p>
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="wholesale_price"
+                          className="block text-sm font-medium text-muted-foreground"
+                        >
+                          Precio mayoreo por unidad
+                        </label>
+                        <input
+                          id="wholesale_price"
+                          type="text"
+                          inputMode="decimal"
+                          value={wholesalePrice}
+                          onChange={(e) => setWholesalePrice(e.target.value)}
+                          className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+                    {fieldErrors.wholesale && (
+                      <p className="px-4 pb-4 text-sm text-red-600">
+                        {fieldErrors.wholesale}
+                      </p>
+                    )}
+                  </details>
 
                   {product.type === "product" && (
                     <div className="md:col-span-2">

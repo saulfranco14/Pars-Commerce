@@ -16,12 +16,16 @@ interface OrderContextType {
   loading: boolean;
   actionLoading: boolean;
   error: string | null;
+  assignmentSuccess: boolean;
   tenantSlug: string;
   businessName: string;
   businessAddress: TenantAddress | null;
   fetchOrder: () => Promise<void>;
   handleStatusChange: (newStatus: string) => Promise<void>;
   handleAssign: (assignToId: string) => Promise<void>;
+  handleAssignAndMarkPaid: (assignToId: string, paymentMethod?: string) => Promise<void>;
+  handleMarkAsPaidWithMethod: (paymentMethod: string) => Promise<void>;
+  handleExpressToPayment: () => Promise<boolean>;
   handleSaveCustomer: (details: { name: string; email: string; phone: string }) => Promise<void>;
   handleRemoveItem: (itemId: string) => Promise<void>;
   handleGeneratePaymentLink: () => Promise<void>;
@@ -44,6 +48,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [assignmentSuccess, setAssignmentSuccess] = useState(false);
 
   const fetchOrder = useCallback(async () => {
     try {
@@ -60,6 +65,12 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     fetchOrder().finally(() => setLoading(false));
   }, [orderId, fetchOrder]);
+
+  useEffect(() => {
+    if (!assignmentSuccess) return;
+    const t = setTimeout(() => setAssignmentSuccess(false), 3000);
+    return () => clearTimeout(t);
+  }, [assignmentSuccess]);
 
   useEffect(() => {
     if (!activeTenant?.id) return;
@@ -90,20 +101,84 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     if (!order) return;
     setActionLoading(true);
     setError(null);
+    setAssignmentSuccess(false);
     try {
       const payload: { assigned_to: string | null; status?: string } = {
         assigned_to: assignToId || null,
       };
-      
-      // Solo transicionamos a 'assigned' si estaba en 'draft'
+
       if (order.status === "draft" && assignToId) {
         payload.status = "assigned";
       }
 
       await updateOrder(order.id, payload);
       await fetchOrder();
+      setAssignmentSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al asignar");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAssignAndMarkPaid = async (assignToId: string, paymentMethod?: string) => {
+    if (!order) return;
+    setActionLoading(true);
+    setError(null);
+    setAssignmentSuccess(false);
+    try {
+      await updateOrder(order.id, {
+        assigned_to: assignToId,
+        status: "paid",
+        payment_method: paymentMethod?.trim() || null,
+      });
+      await fetchOrder();
+      setAssignmentSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al asignar y cobrar");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleMarkAsPaidWithMethod = async (paymentMethod: string) => {
+    if (!order) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      await updateOrder(order.id, {
+        status: "paid",
+        payment_method: paymentMethod.trim() || null,
+      });
+      await fetchOrder();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al confirmar cobro");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleExpressToPayment = async (): Promise<boolean> => {
+    if (!order) return false;
+    setActionLoading(true);
+    setError(null);
+    try {
+      let currentStatus = order.status;
+      const orderId = order.id;
+      if (currentStatus === "draft" || currentStatus === "assigned") {
+        await updateOrder(orderId, { status: "in_progress" });
+        await fetchOrder();
+        currentStatus = "in_progress";
+      }
+      if (currentStatus === "in_progress") {
+        await updateOrder(orderId, { status: "completed" });
+        await fetchOrder();
+        currentStatus = "completed";
+      }
+      return currentStatus === "completed";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al ir al cobro");
+      return false;
     } finally {
       setActionLoading(false);
     }
@@ -176,12 +251,16 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
         loading,
         actionLoading,
         error,
+        assignmentSuccess,
         tenantSlug,
         businessName,
         businessAddress,
         fetchOrder,
         handleStatusChange,
         handleAssign,
+        handleAssignAndMarkPaid,
+        handleMarkAsPaidWithMethod,
+        handleExpressToPayment,
         handleSaveCustomer,
         handleRemoveItem,
         handleGeneratePaymentLink,

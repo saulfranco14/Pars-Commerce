@@ -5,6 +5,7 @@ import type { ProductListItem } from "@/types/products";
 import { listByTenant } from "@/services/productsService";
 import { create as createOrderItem } from "@/services/orderItemsService";
 import { ProductSearchCombobox } from "./ProductSearchCombobox";
+import { Plus, X } from "lucide-react";
 
 interface AddItemModalProps {
   tenantId: string;
@@ -39,7 +40,14 @@ export function AddItemModal({
 
   const selected = products.find((p) => p.id === productId);
   const unitPrice = selected ? Number(selected.price) : 0;
-  const subtotal = unitPrice * quantity;
+  const effectiveUnitPrice =
+    selected?.wholesale_min_quantity != null &&
+    selected?.wholesale_price != null &&
+    quantity >= selected.wholesale_min_quantity
+      ? Number(selected.wholesale_price)
+      : unitPrice;
+  const isWholesale = selected != null && effectiveUnitPrice !== unitPrice;
+  const subtotal = effectiveUnitPrice * quantity;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,7 +55,11 @@ export function AddItemModal({
     setError(null);
     setLoading(true);
     try {
-      await createOrderItem({ order_id: orderId, product_id: productId, quantity });
+      await createOrderItem({
+        order_id: orderId,
+        product_id: productId,
+        quantity,
+      });
       onAdded();
       onClose();
     } catch (err) {
@@ -60,8 +72,8 @@ export function AddItemModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-sm rounded-lg bg-surface-raised p-4 shadow-lg">
+    <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-sm rounded-xl border border-border bg-surface-raised p-6 shadow-lg">
         <h3 className="text-lg font-semibold text-foreground">Agregar item</h3>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           {error && (
@@ -98,22 +110,36 @@ export function AddItemModal({
           {selected && (
             <p className="text-sm text-muted-foreground">
               Subtotal: ${subtotal.toFixed(2)}
+              {isWholesale && (
+                <span className="ml-1.5 inline-block rounded bg-teal-100 px-1.5 py-0.5 text-xs font-medium text-teal-800">
+                  Mayoreo
+                </span>
+              )}
             </p>
           )}
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={loading || !productId}
-              className="rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
-            >
-              {loading ? "Agregando..." : "Agregar"}
-            </button>
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-border px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-border-soft/60"
+              disabled={loading}
+              className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
+              <X className="h-4 w-4 shrink-0" aria-hidden />
               Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !productId}
+              className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {loading ? (
+                "Agregando..."
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 shrink-0" aria-hidden />
+                  Agregar
+                </>
+              )}
             </button>
           </div>
         </form>

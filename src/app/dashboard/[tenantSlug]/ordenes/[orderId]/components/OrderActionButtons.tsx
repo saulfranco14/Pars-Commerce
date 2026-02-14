@@ -4,46 +4,132 @@ import { useState } from "react";
 import { useOrder } from "../hooks/useOrder";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { AssignBeforePaidModal } from "./AssignBeforePaidModal";
+import { ConfirmPaymentModal } from "./ConfirmPaymentModal";
+import {
+  Zap,
+  PlayCircle,
+  CheckCircle,
+  DollarSign,
+  Smartphone,
+  X,
+} from "lucide-react";
+
+function isExpressOrderEnabled(settings: unknown): boolean {
+  if (!settings || typeof settings !== "object") return false;
+  const s = settings as Record<string, unknown>;
+  return s.express_order_enabled === true || s.express_orders === true;
+}
 
 export function OrderActionButtons() {
-  const { order, actionLoading, handleStatusChange, handleGeneratePaymentLink } = useOrder();
+  const {
+    order,
+    team,
+    actionLoading,
+    handleStatusChange,
+    handleAssignAndMarkPaid,
+    handleMarkAsPaidWithMethod,
+    handleGeneratePaymentLink,
+    handleExpressToPayment,
+  } = useOrder();
+  const activeTenant = useTenantStore((s) => s.activeTenant)();
   const activeRole = useTenantStore((s) => s.activeRole)();
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [assignBeforePaidModalOpen, setAssignBeforePaidModalOpen] =
+    useState(false);
+  const [confirmPaymentModalOpen, setConfirmPaymentModalOpen] = useState(false);
 
   if (!order) return null;
 
+  const items = order.items ?? [];
+  const hasNoItems = items.length === 0;
+  const canStartOrComplete = !hasNoItems;
+  const expressEnabled = isExpressOrderEnabled(activeTenant?.settings);
+  const isEditableStatus = ["draft", "assigned", "in_progress"].includes(
+    order.status
+  );
+  const showExpressButton =
+    expressEnabled && isEditableStatus && canStartOrComplete;
   const isOwner = activeRole?.name === "owner";
   const showCancel = isOwner && ["draft", "assigned", "in_progress", "paid"].includes(order.status);
+  const needsAssignBeforePaid =
+    !order.assigned_to &&
+    (order.status === "completed" || order.status === "pending_payment");
+
+  async function handleExpressClick() {
+    if (!order) return;
+    const wasUnassigned = !order.assigned_to;
+    const ok = await handleExpressToPayment();
+    if (ok) {
+      if (wasUnassigned) {
+        setAssignBeforePaidModalOpen(true);
+      } else {
+        setConfirmPaymentModalOpen(true);
+      }
+    }
+  }
+
+  function handlePayClick() {
+    if (needsAssignBeforePaid) {
+      setAssignBeforePaidModalOpen(true);
+    } else {
+      setConfirmPaymentModalOpen(true);
+    }
+  }
+
+  const btnBase =
+    "inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70";
+  const btnPrimary = `${btnBase} bg-accent text-accent-foreground hover:bg-accent/90 focus-visible:ring-accent`;
+  const btnSuccess = `${btnBase} bg-emerald-600 text-white hover:bg-emerald-500 focus-visible:ring-emerald-500`;
+  const btnBlue = `${btnBase} bg-blue-600 text-white hover:bg-blue-500 focus-visible:ring-blue-500`;
+  const btnDestructive = `${btnBase} border border-red-300 bg-surface text-red-700 hover:bg-red-50 focus-visible:ring-red-500/50`;
 
   return (
-    <div className="flex flex-wrap gap-2">
-      {order.status === "draft" && (
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+      {showExpressButton && (
+        <button
+          type="button"
+          onClick={handleExpressClick}
+          disabled={actionLoading}
+          className={`w-full sm:w-auto ${btnSuccess}`}
+        >
+          <Zap className="h-4 w-4 shrink-0" aria-hidden />
+          Ir al cobro
+        </button>
+      )}
+      {!showExpressButton && order.status === "draft" && (
         <button
           type="button"
           onClick={() => handleStatusChange("in_progress")}
-          disabled={actionLoading}
-          className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
+          disabled={actionLoading || !canStartOrComplete}
+          className={`w-full sm:w-auto ${btnPrimary}`}
+          title={hasNoItems ? "Agrega al menos un item para iniciar" : undefined}
         >
+          <PlayCircle className="h-4 w-4 shrink-0" aria-hidden />
           Iniciar sin asignar
         </button>
       )}
-      {order.status === "assigned" && (
+      {!showExpressButton && order.status === "assigned" && (
         <button
           type="button"
           onClick={() => handleStatusChange("in_progress")}
-          disabled={actionLoading}
-          className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
+          disabled={actionLoading || !canStartOrComplete}
+          className={`w-full sm:w-auto ${btnPrimary}`}
+          title={hasNoItems ? "Agrega al menos un item para iniciar" : undefined}
         >
+          <PlayCircle className="h-4 w-4 shrink-0" aria-hidden />
           Iniciar trabajo
         </button>
       )}
-      {order.status === "in_progress" && (
+      {!showExpressButton && order.status === "in_progress" && (
         <button
           type="button"
           onClick={() => handleStatusChange("completed")}
-          disabled={actionLoading}
-          className="rounded-lg bg-green-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-600 disabled:opacity-50"
+          disabled={actionLoading || !canStartOrComplete}
+          className={`w-full sm:w-auto ${btnSuccess}`}
+          title={hasNoItems ? "La orden debe tener items para completar" : undefined}
         >
+          <CheckCircle className="h-4 w-4 shrink-0" aria-hidden />
           Marcar completado
         </button>
       )}
@@ -51,29 +137,32 @@ export function OrderActionButtons() {
         <>
           <button
             type="button"
-            onClick={() => handleStatusChange("paid")}
+            onClick={handlePayClick}
             disabled={actionLoading}
-            className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+            className={`w-full sm:w-auto sm:min-w-0 ${btnSuccess}`}
           >
+            <DollarSign className="h-4 w-4 shrink-0" aria-hidden />
             Cobro directo
           </button>
           <button
             type="button"
             onClick={handleGeneratePaymentLink}
             disabled={actionLoading}
-            className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+            className={`w-full sm:w-auto sm:min-w-0 ${btnBlue}`}
           >
-            {actionLoading ? "Generando..." : "Generar cobro (MercadoPago)"}
+            <Smartphone className="h-4 w-4 shrink-0" aria-hidden />
+            {actionLoading ? "Generando…" : "Generar cobro (MercadoPago)"}
           </button>
         </>
       )}
       {order.status === "pending_payment" && (
         <button
           type="button"
-          onClick={() => handleStatusChange("paid")}
+          onClick={handlePayClick}
           disabled={actionLoading}
-          className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+          className={`w-full sm:w-auto ${btnSuccess}`}
         >
+          <DollarSign className="h-4 w-4 shrink-0" aria-hidden />
           Marcar como pagado
         </button>
       )}
@@ -82,8 +171,9 @@ export function OrderActionButtons() {
           type="button"
           onClick={() => setCancelModalOpen(true)}
           disabled={actionLoading}
-          className="rounded-lg border border-red-300 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+          className={`w-full sm:w-auto ${btnDestructive}`}
         >
+          <X className="h-4 w-4 shrink-0" aria-hidden />
           Cancelar orden
         </button>
       )}
@@ -99,6 +189,28 @@ export function OrderActionButtons() {
         message="¿Estás seguro de que deseas cancelar esta orden? Esta acción no se puede deshacer y la orden no podrá recuperarse."
         confirmLabel="Sí, cancelar"
         confirmDanger={true}
+        loading={actionLoading}
+      />
+
+      <AssignBeforePaidModal
+        isOpen={assignBeforePaidModalOpen}
+        onClose={() => setAssignBeforePaidModalOpen(false)}
+        onConfirm={async (assignToId, paymentMethod) => {
+          await handleAssignAndMarkPaid(assignToId, paymentMethod);
+          setAssignBeforePaidModalOpen(false);
+        }}
+        team={team}
+        loading={actionLoading}
+      />
+
+      <ConfirmPaymentModal
+        isOpen={confirmPaymentModalOpen}
+        onClose={() => setConfirmPaymentModalOpen(false)}
+        onConfirm={async (paymentMethod) => {
+          await handleMarkAsPaidWithMethod(paymentMethod);
+          setConfirmPaymentModalOpen(false);
+        }}
+        total={Number(order.total)}
         loading={actionLoading}
       />
     </div>

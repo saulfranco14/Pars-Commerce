@@ -19,6 +19,7 @@ export default function ConfiguracionPage() {
   const [description, setDescription] = useState("");
   const [themeColor, setThemeColor] = useState("");
   const [publicStoreEnabled, setPublicStoreEnabled] = useState(false);
+  const [expressOrderEnabled, setExpressOrderEnabled] = useState(false);
   const [addressStreet, setAddressStreet] = useState("");
   const [addressCity, setAddressCity] = useState("");
   const [addressState, setAddressState] = useState("");
@@ -36,6 +37,8 @@ export default function ConfiguracionPage() {
     setDescription(activeTenant.description ?? "");
     setThemeColor(activeTenant.theme_color ?? "");
     setPublicStoreEnabled(activeTenant.public_store_enabled ?? false);
+    const st = activeTenant.settings as Record<string, unknown> | null | undefined;
+    setExpressOrderEnabled(st?.express_order_enabled === true);
     const addr = activeTenant.address;
     setAddressStreet(addr?.street ?? "");
     setAddressCity(addr?.city ?? "");
@@ -67,6 +70,10 @@ export default function ConfiguracionPage() {
         description: description.trim() || undefined,
         theme_color: themeColor.trim() || undefined,
         public_store_enabled: publicStoreEnabled,
+        settings: {
+          ...((activeTenant.settings as Record<string, unknown>) ?? {}),
+          express_order_enabled: expressOrderEnabled,
+        },
         address: {
           street: addressStreet.trim() || undefined,
           city: addressCity.trim() || undefined,
@@ -229,6 +236,22 @@ export default function ConfiguracionPage() {
           <label htmlFor="publicStore" className="text-sm text-muted-foreground-foreground">
             Tienda pública habilitada (mostrar catálogo en sitio web)
           </label>
+        </div>
+
+        <div className="rounded-lg border border-border bg-border-soft/60 p-4">
+          <h2 className="text-sm font-semibold text-foreground">Flujo de órdenes</h2>
+          <div className="mt-3 flex items-start gap-2">
+            <input
+              id="expressOrder"
+              type="checkbox"
+              checked={expressOrderEnabled}
+              onChange={(e) => setExpressOrderEnabled(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border"
+            />
+            <label htmlFor="expressOrder" className="text-sm text-muted-foreground">
+              Orden Express. Permite crear el pedido y pagar de inmediato, ideal para cobros rápidos sin asignación ni seguimiento.
+            </label>
+          </div>
         </div>
 
         <div className="rounded-lg border border-border bg-stone-50/30 p-4 space-y-4">

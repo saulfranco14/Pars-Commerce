@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useOrder } from "../hooks/useOrder";
-import { User, Mail, Phone, Edit2, X, Check } from "lucide-react";
+import { User, Mail, Phone, X, Check } from "lucide-react";
 
 export function CustomerCard() {
   const { order, actionLoading, handleSaveCustomer } = useOrder();
@@ -37,7 +37,7 @@ export function CustomerCard() {
 
   return (
     <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden text-left">
-      <div className="flex items-center justify-between border-b border-border bg-stone-50/30 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-muted" />
           <h2 className="text-sm font-semibold text-foreground">Información del Cliente</h2>
@@ -63,15 +63,15 @@ export function CustomerCard() {
             <div>
               <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Email</span>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <Mail className="h-3 w-3 text-stone-400" />
-                <p className="text-sm text-stone-600">{order.customer_email || "—"}</p>
+                <Mail className="h-3 w-3 text-muted-foreground/60" />
+                <p className="text-sm text-muted-foreground">{order.customer_email || "—"}</p>
               </div>
             </div>
             <div>
               <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Teléfono</span>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <Phone className="h-3 w-3 text-stone-400" />
-                <p className="text-sm text-stone-600">{order.customer_phone || "—"}</p>
+                <Phone className="h-3 w-3 text-muted-foreground/60" />
+                <p className="text-sm text-muted-foreground">{order.customer_phone || "—"}</p>
               </div>
             </div>
           </div>
@@ -106,22 +106,24 @@ export function CustomerCard() {
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex gap-3">
               <button
                 type="button"
                 onClick={onCancel}
                 disabled={actionLoading}
-                className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
+                <X className="h-4 w-4 shrink-0" aria-hidden />
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={onSave}
                 disabled={actionLoading}
-                className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:opacity-90"
+                className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Guardar cambios
+                <Check className="h-4 w-4 shrink-0" aria-hidden />
+                {actionLoading ? "Guardando…" : "Guardar cambios"}
               </button>
             </div>
           </div>

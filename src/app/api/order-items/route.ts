@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
   const { data: product, error: productError } = await supabase
     .from("products")
-    .select("id, price, track_stock, type")
+    .select("id, price, track_stock, type, wholesale_min_quantity, wholesale_price")
     .eq("id", product_id)
     .eq("tenant_id", order.tenant_id)
     .is("deleted_at", null)
@@ -62,6 +62,20 @@ export async function POST(request: Request) {
       { status: 404 }
     );
   }
+
+  const wholesaleMin = product.wholesale_min_quantity != null ? Number(product.wholesale_min_quantity) : null;
+  const wholesalePrice = product.wholesale_price != null ? Number(product.wholesale_price) : null;
+  const appliesWholesale =
+    wholesaleMin != null &&
+    wholesalePrice != null &&
+    qty >= wholesaleMin;
+
+  const retailPrice = Number(product.price);
+  const unitPrice = appliesWholesale ? wholesalePrice : retailPrice;
+  const isWholesale = appliesWholesale;
+  const wholesaleSavings = isWholesale
+    ? (retailPrice - (wholesalePrice ?? 0)) * qty
+    : 0;
 
   if (product.track_stock && product.type === "product") {
     const { data: inventory } = await supabase
@@ -79,7 +93,6 @@ export async function POST(request: Request) {
     }
   }
 
-  const unitPrice = Number(product.price);
   const subtotal = unitPrice * qty;
 
   const { data: item, error: insertError } = await supabase
@@ -90,8 +103,10 @@ export async function POST(request: Request) {
       quantity: qty,
       unit_price: unitPrice,
       subtotal,
+      is_wholesale: isWholesale,
+      wholesale_savings: wholesaleSavings,
     })
-    .select("id, quantity, unit_price, subtotal")
+    .select("id, quantity, unit_price, subtotal, is_wholesale, wholesale_savings")
     .single();
 
   if (insertError) {

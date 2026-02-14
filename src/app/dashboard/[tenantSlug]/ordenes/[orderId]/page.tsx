@@ -12,7 +12,8 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { ReceiptPreview } from "./components/ReceiptPreview";
 
 function OrderDetailContent() {
-  const { order, loading, error, tenantSlug, businessName, businessAddress } = useOrder();
+  const { order, loading, error, tenantSlug, businessName, businessAddress } =
+    useOrder();
 
   if (loading) {
     return <LoadingBlock message="Cargando orden…" />;
@@ -45,7 +46,7 @@ function OrderDetailContent() {
         />
       </div>
 
-      <div className="no-print mx-auto max-w-4xl space-y-6 px-2 sm:px-0 py-6">
+      <div className="no-print mx-auto max-w-4xl space-y-6 px-2 sm:px-0 pb-6">
         <OrderHeader />
 
         {error && (
@@ -55,18 +56,12 @@ function OrderDetailContent() {
         )}
 
         <div className="flex flex-col gap-6">
-          {/* El control de la orden (Asignación) ahora es prioritario y está arriba */}
           <AssignmentCard />
-
           <CustomerCard />
           <OrderItemsTable />
           <PaymentLinkCard />
           {isPaid && <ReceiptActions />}
-
-          {/* Botones de cambio de estado al final como confirmación de flujo */}
-          <div className="pt-2">
-            <OrderActionButtons />
-          </div>
+          <OrderActionButtons />
         </div>
       </div>
     </>

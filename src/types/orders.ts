@@ -7,6 +7,7 @@ export interface OrderListItem {
   total: number;
   created_at: string;
   assigned_to: string | null;
+  payment_method?: string | null;
   assigned_user?: {
     id: string;
     display_name: string | null;
