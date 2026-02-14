@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useOrder } from "../hooks/useOrder";
-import { User, Mail, Phone, X, Check } from "lucide-react";
+import { User, Mail, Phone, X, Check, Pencil } from "lucide-react";
 
 export function CustomerCard() {
   const { order, actionLoading, handleSaveCustomer } = useOrder();
@@ -46,8 +46,9 @@ export function CustomerCard() {
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="text-xs font-medium text-accent hover:underline"
+            className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-accent transition-colors duration-200 hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
+            <Pencil className="h-3.5 w-3.5 shrink-0" aria-hidden />
             Editar
           </button>
         )}

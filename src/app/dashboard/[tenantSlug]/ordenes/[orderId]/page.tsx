@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { OrderProvider, useOrder } from "./hooks/useOrder";
 import { OrderHeader } from "./components/OrderHeader";
 import { CustomerCard } from "./components/CustomerCard";
@@ -23,9 +25,13 @@ function OrderDetailContent() {
     return (
       <div className="text-sm text-muted-foreground p-6">
         {error}{" "}
-        <a href={`/dashboard/${tenantSlug}/ordenes`} className="underline">
+        <Link
+          href={`/dashboard/${tenantSlug}/ordenes`}
+          className="inline-flex items-center gap-2 font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded"
+        >
+          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver a órdenes
-        </a>
+        </Link>
       </div>
     );
   }

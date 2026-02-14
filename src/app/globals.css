@@ -64,6 +64,23 @@ html.dark .alert-success {
   color: rgb(220 252 231);
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  @supports (height: 100dvh) {
+    .dashboard-root {
+      height: 100dvh !important;
+      max-height: 100dvh !important;
+    }
+  }
+  .dashboard-main {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 html.dark {
   --color-default: #f472b6;
   --background: #1c1917;

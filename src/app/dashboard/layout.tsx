@@ -54,7 +54,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen max-h-screen overflow-hidden bg-background">
+    <div className="dashboard-root flex h-screen max-h-screen overflow-hidden bg-background">
       <div className="no-print">
         <Sidebar
           tenantSlug={tenantSlug}
@@ -76,7 +76,7 @@ export default function DashboardLayout({
           <div className="flex-1" />
           <ThemeToggle />
         </header>
-        <main className="min-h-0 flex-1 overflow-auto px-4 py-4 sm:px-6 sm:py-6">
+        <main className="dashboard-main min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-6">
           {pathname === "/dashboard/crear-negocio" ||
           pathname === "/dashboard/perfil" ? (
             children

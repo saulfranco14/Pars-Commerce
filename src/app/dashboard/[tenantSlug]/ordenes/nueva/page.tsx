@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTenantStore } from "@/stores/useTenantStore";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import type { TeamMember } from "@/types/team";
 import { list as listTeam } from "@/services/teamService";
 import { create as createOrder } from "@/services/ordersService";
@@ -72,9 +73,10 @@ export default function NuevaOrdenPage() {
       <div className="shrink-0 border-b border-border-soft pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/ordenes`}
-          className="text-sm font-medium text-muted hover:text-foreground"
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
-          ← Volver a órdenes
+          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+          Volver a órdenes
         </Link>
         <h1 className="mt-1 text-xl font-semibold text-foreground sm:text-2xl">
           Nueva orden
@@ -86,7 +88,7 @@ export default function NuevaOrdenPage() {
       </div>
 
       <div className="rounded-xl border border-border bg-surface-raised shadow-card">
-        <form onSubmit={handleSubmit} className="p-6 md:p-8">
+        <form onSubmit={handleSubmit} className="p-4 md:p-8">
           {error && (
             <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
               {error}
@@ -176,20 +178,22 @@ export default function NuevaOrdenPage() {
             </select>
           </section>
 
-          <div className="mt-6 flex flex-col gap-3 border-t border-border-soft pt-6 sm:flex-row sm:flex-wrap">
+          <div className="mt-6 flex gap-3 border-t border-border-soft pt-6">
+            <Link
+              href={`/dashboard/${tenantSlug}/ordenes`}
+              className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+            >
+              <X className="h-4 w-4 shrink-0" aria-hidden />
+              Cancelar
+            </Link>
             <button
               type="submit"
               disabled={loading}
-              className="min-h-[44px] w-full cursor-pointer rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+              className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {loading ? "Creando..." : "Crear orden"}
+              <Plus className="h-4 w-4 shrink-0" aria-hidden />
+              {loading ? "Creando…" : "Crear orden"}
             </button>
-            <Link
-              href={`/dashboard/${tenantSlug}/ordenes`}
-              className="min-h-[44px] w-full inline-flex items-center justify-center rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-border-soft/60 focus:outline-none focus:ring-2 focus:ring-accent/20 sm:w-auto"
-            >
-              Cancelar
-            </Link>
           </div>
         </form>
       </div>
