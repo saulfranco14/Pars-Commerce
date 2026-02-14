@@ -1,15 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Printer, Download, Copy, Check } from "lucide-react";
-import { toPng } from "html-to-image";
+import { Printer, Download, Copy, Check, ChevronDown } from "lucide-react";
+import { captureReceiptAsPng, downloadReceiptBlob } from "@/lib/receiptExport";
 import { useOrder } from "../hooks/useOrder";
 import { ReceiptPreview } from "./ReceiptPreview";
-
-async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
-  const res = await fetch(dataUrl);
-  return await res.blob();
-}
 
 export function ReceiptActions() {
   const { order, businessName, businessAddress, setError } = useOrder();
@@ -26,23 +21,10 @@ export function ReceiptActions() {
       const el = previewRef.current;
       if (!el) return;
 
-      toPng(el, {
-        backgroundColor: "#ffffff",
-        pixelRatio: 3,
-        cacheBust: true,
-        style: { visibility: "visible", opacity: "1" },
-      })
-        .then(async (dataUrl) => {
-          if (!dataUrl || dataUrl.length < 500) throw new Error("Imagen inválida");
-
-          const blob = await dataUrlToBlob(dataUrl);
-          const fileName = `recibo-${order.id.slice(0, 8)}.png`;
-
+      captureReceiptAsPng(el)
+        .then(async (blob) => {
           if (exportMode === "download") {
-            const a = document.createElement("a");
-            a.href = dataUrl;
-            a.download = fileName;
-            a.click();
+            downloadReceiptBlob(blob, order.id);
           } else if (exportMode === "copy") {
             try {
               const item = new ClipboardItem({ "image/png": blob });
@@ -51,11 +33,7 @@ export function ReceiptActions() {
               setTimeout(() => setCopied(false), 2000);
             } catch (err) {
               console.error(err);
-              // Fallback download
-              const a = document.createElement("a");
-              a.href = dataUrl;
-              a.download = fileName;
-              a.click();
+              downloadReceiptBlob(blob, order.id);
             }
           }
         })
@@ -109,13 +87,10 @@ export function ReceiptActions() {
               Descarga, copia o imprime el recibo de la orden.
             </p>
           </div>
-          <span
-            className={`shrink-0 text-muted transition-transform duration-200 ${
-              open ? "rotate-180" : ""
-            }`}
-          >
-            ▼
-          </span>
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+            aria-hidden
+          />
         </button>
         {open && (
           <div className="border-t border-border px-4 pb-4 pt-3 sm:px-5">

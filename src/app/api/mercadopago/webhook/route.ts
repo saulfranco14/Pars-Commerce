@@ -33,15 +33,50 @@ export async function POST(request: Request) {
     const supabase = createAdminClient();
 
     if (mpStatus === "approved") {
-      // Update order to paid
+      const { data: order } = await supabase
+        .from("orders")
+        .select("id, assigned_to, created_by, tenant_id")
+        .eq("id", orderId)
+        .in("status", ["pending_payment", "completed"])
+        .single();
+
+      let assignTo: string | null = order?.assigned_to ?? null;
+      if (!assignTo && order) {
+        assignTo = order.created_by ?? null;
+        if (!assignTo) {
+          const { data: ownerRole } = await supabase
+            .from("tenant_roles")
+            .select("id")
+            .eq("tenant_id", order.tenant_id)
+            .eq("name", "owner")
+            .limit(1)
+            .single();
+          if (ownerRole) {
+            const { data: ownerMembership } = await supabase
+              .from("tenant_memberships")
+              .select("user_id")
+              .eq("tenant_id", order.tenant_id)
+              .eq("role_id", ownerRole.id)
+              .limit(1)
+              .single();
+            assignTo = ownerMembership?.user_id ?? null;
+          }
+        }
+      }
+
+      const updatePayload: Record<string, string | null> = {
+        status: "paid",
+        paid_at: new Date().toISOString(),
+        payment_method: "mercadopago",
+        updated_at: new Date().toISOString(),
+      };
+      if (assignTo) {
+        updatePayload.assigned_to = assignTo;
+      }
+
       await supabase
         .from("orders")
-        .update({
-          status: "paid",
-          paid_at: new Date().toISOString(),
-          payment_method: "mercadopago",
-          updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq("id", orderId)
         .in("status", ["pending_payment", "completed"]);
 

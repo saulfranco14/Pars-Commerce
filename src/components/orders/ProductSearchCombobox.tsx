@@ -9,6 +9,10 @@ interface ProductSearchComboboxProps {
   onChange: (productId: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  searchMode?: "client" | "server";
+  onQueryChange?: (query: string) => void;
+  isSearching?: boolean;
+  emptyHint?: string;
 }
 
 function normalizeForSearch(s: string): string {
@@ -24,6 +28,10 @@ export function ProductSearchCombobox({
   onChange,
   placeholder = "Buscar producto o servicio...",
   disabled = false,
+  searchMode = "client",
+  onQueryChange,
+  isSearching = false,
+  emptyHint,
 }: ProductSearchComboboxProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -38,15 +46,25 @@ export function ProductSearchCombobox({
     : query;
 
   const normalizedQuery = normalizeForSearch(query);
-  const filtered = normalizedQuery.trim()
-    ? products.filter((p) => {
-        const matchName = normalizeForSearch(p.name).includes(normalizedQuery);
-        const matchSubcatalog = p.subcatalog
-          ? normalizeForSearch(p.subcatalog.name).includes(normalizedQuery)
-          : false;
-        return matchName || matchSubcatalog;
-      })
-    : products;
+  const isServerMode = searchMode === "server" && onQueryChange;
+
+  const filtered = isServerMode
+    ? products
+    : normalizedQuery.trim()
+      ? products.filter((p) => {
+          const matchName = normalizeForSearch(p.name).includes(
+            normalizedQuery,
+          );
+          const matchSubcatalog = p.subcatalog
+            ? normalizeForSearch(p.subcatalog.name).includes(normalizedQuery)
+            : false;
+          return matchName || matchSubcatalog;
+        })
+      : products;
+
+  useEffect(() => {
+    if (isServerMode) onQueryChange(query);
+  }, [query, isServerMode, onQueryChange]);
 
   useEffect(() => {
     if (!isOpen) setHighlightIndex(0);
@@ -54,7 +72,10 @@ export function ProductSearchCombobox({
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
@@ -114,8 +135,18 @@ export function ProductSearchCombobox({
           className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-border bg-surface-raised py-1 shadow-lg"
           role="listbox"
         >
-          {filtered.length === 0 ? (
-            <li className="px-3 py-2 text-sm text-muted">Sin resultados</li>
+          {isSearching ? (
+            <li className="flex min-h-[44px] cursor-default items-center gap-2 px-3 py-2.5 text-sm text-muted">
+              <span
+                className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent"
+                aria-hidden
+              />
+              Buscando...
+            </li>
+          ) : filtered.length === 0 ? (
+            <li className="min-h-[44px] px-3 py-2.5 text-sm text-muted">
+              {emptyHint ?? "Sin resultados"}
+            </li>
           ) : (
             filtered.map((p, i) => (
               <li
@@ -130,16 +161,9 @@ export function ProductSearchCombobox({
                     : "text-foreground hover:bg-border-soft/60"
                 }`}
               >
-                {p.subcatalog ? (
-                  <span>
-                    <span className="text-muted">[{p.subcatalog.name}]</span>{" "}
-                    {p.name} — ${Number(p.price).toFixed(2)}
-                  </span>
-                ) : (
-                  <span>
-                    {p.name} — ${Number(p.price).toFixed(2)}
-                  </span>
-                )}
+                <span>
+                  {p.name} — ${Number(p.price).toFixed(2)}
+                </span>
               </li>
             ))
           )}

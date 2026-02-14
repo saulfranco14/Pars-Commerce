@@ -159,6 +159,16 @@ function SidebarContent({
             >
               Órdenes / Tickets
             </NavLink>
+            <NavLink
+              href={`${base}/promociones`}
+              active={
+                pathname === `${base}/promociones` ||
+                pathname.startsWith(`${base}/promociones/`)
+              }
+              onNavigate={onNavigate}
+            >
+              Promociones
+            </NavLink>
             {canAccessTeamAndSettings && (
               <NavLink
                 href={`${base}/ventas`}

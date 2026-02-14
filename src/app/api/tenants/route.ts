@@ -21,7 +21,7 @@ export async function GET() {
       tenant_id,
       role_id,
       accepted_at,
-      tenant:tenants(id, name, slug, business_type, logo_url, theme_color, description, public_store_enabled),
+      tenant:tenants(id, name, slug, business_type, logo_url, theme_color, description, public_store_enabled, settings),
       role:tenant_roles(id, name, permissions)
     `
     )
@@ -161,6 +161,7 @@ export async function PATCH(request: Request) {
     theme_color,
     public_store_enabled,
     address,
+    settings: settingsPayload,
   } = body as {
     tenant_id: string;
     name?: string;
@@ -175,6 +176,7 @@ export async function PATCH(request: Request) {
       country?: string;
       phone?: string;
     };
+    settings?: Record<string, unknown>;
   };
 
   if (!tenant_id) {
@@ -219,11 +221,21 @@ export async function PATCH(request: Request) {
   if (public_store_enabled !== undefined)
     updates.public_store_enabled = public_store_enabled;
 
+  if (settingsPayload !== undefined) {
+    const { data: existingTenant } = await admin
+      .from("tenants")
+      .select("settings")
+      .eq("id", tenant_id)
+      .single();
+    const current = (existingTenant?.settings as Record<string, unknown>) ?? {};
+    updates.settings = { ...current, ...settingsPayload };
+  }
+
   const { data: tenant, error } = await admin
     .from("tenants")
     .update(updates)
     .eq("id", tenant_id)
-    .select("id, name, slug, description, theme_color, public_store_enabled")
+    .select("id, name, slug, description, theme_color, public_store_enabled, settings")
     .single();
 
   if (error) {

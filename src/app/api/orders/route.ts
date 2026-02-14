@@ -30,7 +30,7 @@ export async function GET(request: Request) {
         created_by, assigned_to, completed_by, completed_at, paid_at,
         payment_method, payment_link, mp_preference_id,
         assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email),
-        items:order_items(id, quantity, unit_price, subtotal, product:products(id, name, type))
+        items:order_items(id, quantity, unit_price, subtotal, is_wholesale, wholesale_savings, product:products(id, name, type, image_url))
       `
       )
       .eq("id", orderId)
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
     .from("orders")
     .select(
       `
-      id, status, cancelled_from, customer_name, customer_email, total, created_at, assigned_to,
+      id, status, cancelled_from, customer_name, customer_email, total, created_at, assigned_to, payment_method,
       assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email)
       `
     )
@@ -188,8 +188,9 @@ export async function PATCH(request: Request) {
     );
   }
 
+  const admin = createAdminClient();
+
   if (status === "cancelled") {
-    const admin = createAdminClient();
     const { data: m } = await admin
       .from("tenant_memberships")
       .select("role_id")
@@ -215,6 +216,38 @@ export async function PATCH(request: Request) {
     }
   }
 
+  if (assigned_to !== undefined && order.status === "paid") {
+    const { data: m } = await admin
+      .from("tenant_memberships")
+      .select("role_id")
+      .eq("user_id", user.id)
+      .eq("tenant_id", order.tenant_id)
+      .single();
+    if (!m) {
+      return NextResponse.json(
+        {
+          error:
+            "Solo el propietario del negocio puede cambiar la asignación en órdenes pagadas",
+        },
+        { status: 403 }
+      );
+    }
+    const { data: role } = await admin
+      .from("tenant_roles")
+      .select("name")
+      .eq("id", m.role_id)
+      .single();
+    if (role?.name !== "owner") {
+      return NextResponse.json(
+        {
+          error:
+            "Solo el propietario del negocio puede cambiar la asignación en órdenes pagadas",
+        },
+        { status: 403 }
+      );
+    }
+  }
+
   const updates: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
@@ -226,6 +259,18 @@ export async function PATCH(request: Request) {
         { error: `Cannot transition from ${order.status} to ${status}` },
         { status: 409 }
       );
+    }
+    if (status === "in_progress" || status === "completed") {
+      const { count } = await supabase
+        .from("order_items")
+        .select("id", { count: "exact", head: true })
+        .eq("order_id", order_id);
+      if ((count ?? 0) === 0) {
+        return NextResponse.json(
+          { error: "La orden debe tener al menos un item para iniciar o completar" },
+          { status: 400 }
+        );
+      }
     }
     updates.status = status;
     if (status === "cancelled") {

@@ -12,6 +12,8 @@ export interface ProductListItem {
   created_at: string;
   subcatalog_id: string | null;
   subcatalog?: { id: string; name: string };
+  wholesale_min_quantity?: number | null;
+  wholesale_price?: number | null;
 }
 
 export interface ProductDetail {
@@ -35,6 +37,8 @@ export interface ProductDetail {
   updated_at?: string;
   subcatalog_id: string | null;
   subcatalog?: { id: string; name: string };
+  wholesale_min_quantity?: number | null;
+  wholesale_price?: number | null;
 }
 
 export interface CreateProductPayload {
@@ -55,6 +59,8 @@ export interface CreateProductPayload {
   image_urls?: string[];
   theme?: string;
   subcatalog_id?: string | null;
+  wholesale_min_quantity?: number | null;
+  wholesale_price?: number | null;
 }
 
 export interface UpdateProductPayload {
@@ -74,6 +80,8 @@ export interface UpdateProductPayload {
   theme?: string;
   stock?: number;
   subcatalog_id?: string | null;
+  wholesale_min_quantity?: number | null;
+  wholesale_price?: number | null;
 }
 
 export interface ProductCreated {

@@ -3,7 +3,9 @@ export interface OrderItem {
   quantity: number;
   unit_price: number;
   subtotal: number;
-  product: { id: string; name: string; type: string } | null;
+  is_wholesale?: boolean;
+  wholesale_savings?: number;
+  product: { id: string; name: string; type: string; image_url?: string | null } | null;
 }
 
 export interface OrderDetail {

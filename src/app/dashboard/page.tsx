@@ -28,15 +28,18 @@ import {
   Wrench,
   UserPlus,
 } from "lucide-react";
+import { OrderCardMobile } from "@/components/orders/OrderCardMobile";
 
 interface OrderRow {
   id: string;
   status: string;
   cancelled_from?: string | null;
   customer_name: string | null;
+  customer_email: string | null;
   total: number;
   created_at: string;
   assigned_to: string | null;
+  payment_method?: string | null;
   assigned_user?: {
     id: string;
     display_name: string | null;
@@ -562,15 +565,15 @@ export default function DashboardPage() {
             Ver todas <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        <TableWrapper>
-          {salesLoading ? (
-            <LoadingBlock message="Cargando actividad…" />
-          ) : recent.length === 0 ? (
-            <div className="p-6 text-center text-sm text-muted">
-              No hay actividad reciente.
-            </div>
-          ) : (
-            <>
+        {salesLoading ? (
+          <LoadingBlock message="Cargando actividad…" />
+        ) : recent.length === 0 ? (
+          <div className="rounded-xl border border-border bg-surface-raised p-6 text-center text-sm text-muted">
+            No hay actividad reciente.
+          </div>
+        ) : (
+          <>
+            <TableWrapper>
               <div className="hidden md:block">
                 <table className="min-w-full">
                   <thead>
@@ -646,57 +649,21 @@ export default function DashboardPage() {
                   </tbody>
                 </table>
               </div>
+            </TableWrapper>
 
-              <div className="divide-y divide-border-soft md:hidden">
-                {recent.map((o) => {
-                  const tipo = orderContentType(o);
-                  return (
-                    <Link
-                      key={o.id}
-                      href={`/dashboard/${activeTenant.slug}/ordenes/${o.id}`}
-                      className="block p-4 active:bg-border-soft/60"
-                    >
-                      <p className="text-xs text-muted">
-                        {formatOrderDate(o.created_at)}
-                      </p>
-                      <p className="mt-0.5 font-medium text-foreground">
-                        {o.customer_name || "Sin nombre"}
-                      </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        {tipo === "productos" && (
-                          <span className="rounded bg-border-soft px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-                            Productos
-                          </span>
-                        )}
-                        {tipo === "servicios" && (
-                          <span className="rounded bg-teal-50 px-1.5 py-0.5 text-xs font-medium text-teal-700">
-                            Servicios
-                          </span>
-                        )}
-                        {tipo === "mixto" && (
-                          <span className="rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-700">
-                            Mixto
-                          </span>
-                        )}
-                        <StatusBadge status={o.status} cancelledFrom={o.cancelled_from} />
-                        {o.assigned_user && (
-                          <span className="text-xs text-muted">
-                            →{" "}
-                            {o.assigned_user.display_name ||
-                              o.assigned_user.email?.split("@")[0]}
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-2 text-right text-sm font-semibold text-foreground">
-                        ${Number(o.total).toFixed(2)}
-                      </p>
-                    </Link>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </TableWrapper>
+            <div className="space-y-3 md:hidden">
+              {recent.map((o) => (
+                <OrderCardMobile
+                  key={o.id}
+                  order={o}
+                  tenantSlug={activeTenant.slug}
+                  businessName={activeTenant.name ?? "Negocio"}
+                  businessAddress={activeTenant.address ?? null}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </section>
     </div>
   );

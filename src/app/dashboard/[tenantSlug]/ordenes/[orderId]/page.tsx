@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { OrderProvider, useOrder } from "./hooks/useOrder";
 import { OrderHeader } from "./components/OrderHeader";
 import { CustomerCard } from "./components/CustomerCard";
@@ -12,7 +14,8 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { ReceiptPreview } from "./components/ReceiptPreview";
 
 function OrderDetailContent() {
-  const { order, loading, error, tenantSlug, businessName, businessAddress } = useOrder();
+  const { order, loading, error, tenantSlug, businessName, businessAddress } =
+    useOrder();
 
   if (loading) {
     return <LoadingBlock message="Cargando orden…" />;
@@ -22,9 +25,13 @@ function OrderDetailContent() {
     return (
       <div className="text-sm text-muted-foreground p-6">
         {error}{" "}
-        <a href={`/dashboard/${tenantSlug}/ordenes`} className="underline">
+        <Link
+          href={`/dashboard/${tenantSlug}/ordenes`}
+          className="inline-flex items-center gap-2 font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded"
+        >
+          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver a órdenes
-        </a>
+        </Link>
       </div>
     );
   }
@@ -45,7 +52,7 @@ function OrderDetailContent() {
         />
       </div>
 
-      <div className="no-print mx-auto max-w-4xl space-y-6 px-2 sm:px-0 py-6">
+      <div className="no-print mx-auto max-w-4xl space-y-6 px-2 sm:px-0 pb-6">
         <OrderHeader />
 
         {error && (
@@ -55,18 +62,12 @@ function OrderDetailContent() {
         )}
 
         <div className="flex flex-col gap-6">
-          {/* El control de la orden (Asignación) ahora es prioritario y está arriba */}
           <AssignmentCard />
-
           <CustomerCard />
           <OrderItemsTable />
           <PaymentLinkCard />
           {isPaid && <ReceiptActions />}
-
-          {/* Botones de cambio de estado al final como confirmación de flujo */}
-          <div className="pt-2">
-            <OrderActionButtons />
-          </div>
+          <OrderActionButtons />
         </div>
       </div>
     </>

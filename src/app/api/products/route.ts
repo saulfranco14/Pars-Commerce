@@ -17,6 +17,7 @@ export async function GET(request: Request) {
   const productId = searchParams.get("product_id");
   const type = searchParams.get("type");
   const subcatalogId = searchParams.get("subcatalog_id");
+  const q = searchParams.get("q")?.trim();
 
   if (!tenantId && !productId) {
     return NextResponse.json(
@@ -29,7 +30,7 @@ export async function GET(request: Request) {
     const { data: product, error: prodError } = await supabase
       .from("products")
       .select(
-        "id, name, slug, sku, description, price, cost_price, commission_amount, unit, type, track_stock, is_public, image_url, created_at, updated_at, subcatalog_id, product_subcatalogs(id, name)"
+        "id, name, slug, sku, description, price, cost_price, commission_amount, unit, type, track_stock, is_public, image_url, created_at, updated_at, subcatalog_id, wholesale_min_quantity, wholesale_price, product_subcatalogs(id, name)"
       )
       .eq("id", productId)
       .is("deleted_at", null)
@@ -74,7 +75,7 @@ export async function GET(request: Request) {
   let query = supabase
     .from("products")
     .select(
-      "id, name, slug, sku, description, price, cost_price, commission_amount, unit, type, track_stock, is_public, image_url, created_at, subcatalog_id, product_subcatalogs(id, name)"
+      "id, name, slug, sku, description, price, cost_price, commission_amount, unit, type, track_stock, is_public, image_url, created_at, subcatalog_id, wholesale_min_quantity, wholesale_price, product_subcatalogs(id, name)"
     )
     .eq("tenant_id", tid)
     .is("deleted_at", null)
@@ -85,6 +86,9 @@ export async function GET(request: Request) {
   }
   if (subcatalogId) {
     query = query.eq("subcatalog_id", subcatalogId);
+  }
+  if (q && q.length >= 2) {
+    query = query.ilike("name", `%${q}%`).limit(100);
   }
 
   const { data: products, error } = await query;
@@ -148,6 +152,8 @@ export async function POST(request: Request) {
     image_url,
     image_urls,
     subcatalog_id,
+    wholesale_min_quantity,
+    wholesale_price,
   } = body as {
     tenant_id: string;
     name: string;
@@ -165,6 +171,8 @@ export async function POST(request: Request) {
     image_url?: string;
     image_urls?: string[];
     subcatalog_id?: string | null;
+    wholesale_min_quantity?: number | null;
+    wholesale_price?: number | null;
   };
 
   if (!tenant_id || !name || !slug || price == null || cost_price == null) {
@@ -172,6 +180,28 @@ export async function POST(request: Request) {
       { error: "tenant_id, name, slug, price and cost_price are required" },
       { status: 400 }
     );
+  }
+
+  const hasWholesaleMin =
+    wholesale_min_quantity != null &&
+    String(wholesale_min_quantity).trim() !== "";
+  const hasWholesalePrice =
+    wholesale_price != null && String(wholesale_price).trim() !== "";
+  if (hasWholesaleMin !== hasWholesalePrice) {
+    return NextResponse.json(
+      { error: "wholesale_min_quantity and wholesale_price must be both set or both empty" },
+      { status: 400 }
+    );
+  }
+  if (hasWholesaleMin) {
+    const wmq = Math.floor(Number(wholesale_min_quantity));
+    const wp = Number(wholesale_price);
+    if (Number.isNaN(wmq) || wmq < 1 || Number.isNaN(wp) || wp < 0) {
+      return NextResponse.json(
+        { error: "wholesale_min_quantity must be >= 1, wholesale_price must be >= 0" },
+        { status: 400 }
+      );
+    }
   }
 
   const normalizedSlug = slug
@@ -203,6 +233,8 @@ export async function POST(request: Request) {
       is_public: is_public ?? true,
       image_url: firstImage,
       subcatalog_id: subcatalog_id ?? null,
+      wholesale_min_quantity: hasWholesaleMin ? Math.floor(Number(wholesale_min_quantity)) : null,
+      wholesale_price: hasWholesaleMin ? Number(wholesale_price) : null,
     })
     .select("id, name, slug, price, created_at")
     .single();
@@ -272,6 +304,8 @@ export async function PATCH(request: Request) {
     image_urls,
     stock,
     subcatalog_id,
+    wholesale_min_quantity,
+    wholesale_price,
   } = body as {
     product_id: string;
     name?: string;
@@ -289,6 +323,8 @@ export async function PATCH(request: Request) {
     image_urls?: string[];
     stock?: number;
     subcatalog_id?: string | null;
+    wholesale_min_quantity?: number | null;
+    wholesale_price?: number | null;
   };
 
   if (!product_id) {
@@ -323,6 +359,32 @@ export async function PATCH(request: Request) {
   if (is_public !== undefined) updates.is_public = is_public;
   if (image_url !== undefined) updates.image_url = image_url?.trim() || null;
   if (subcatalog_id !== undefined) updates.subcatalog_id = subcatalog_id ?? null;
+
+  const hasWholesaleMin =
+    wholesale_min_quantity != null &&
+    String(wholesale_min_quantity).trim() !== "";
+  const hasWholesalePrice =
+    wholesale_price != null && String(wholesale_price).trim() !== "";
+  if (wholesale_min_quantity !== undefined && wholesale_price !== undefined) {
+    if (hasWholesaleMin !== hasWholesalePrice) {
+      return NextResponse.json(
+        { error: "wholesale_min_quantity and wholesale_price must be both set or both empty" },
+        { status: 400 }
+      );
+    }
+    if (hasWholesaleMin) {
+      const wmq = Math.floor(Number(wholesale_min_quantity));
+      const wp = Number(wholesale_price);
+      if (Number.isNaN(wmq) || wmq < 1 || Number.isNaN(wp) || wp < 0) {
+        return NextResponse.json(
+          { error: "wholesale_min_quantity must be >= 1, wholesale_price must be >= 0" },
+          { status: 400 }
+        );
+      }
+    }
+    updates.wholesale_min_quantity = hasWholesaleMin ? Math.floor(Number(wholesale_min_quantity)) : null;
+    updates.wholesale_price = hasWholesaleMin ? Number(wholesale_price) : null;
+  }
 
   const urls = Array.isArray(image_urls)
     ? image_urls.filter((u) => typeof u === "string" && u.trim())
