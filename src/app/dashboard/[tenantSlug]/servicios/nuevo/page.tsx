@@ -1,16 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { serviceFormSchema } from "@/lib/serviceValidation";
 import { create } from "@/services/productsService";
-import { listByTenant as listSubcatalogs } from "@/services/subcatalogsService";
+import { swrFetcher } from "@/lib/swrFetcher";
 import type { Subcatalog } from "@/types/subcatalogs";
 import { SubcatalogSelect } from "@/components/forms/SubcatalogSelect";
+
+const subcatalogsKey = (tenantId: string) =>
+  `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
 
 export default function NuevoServicioPage() {
   const params = useParams();
@@ -26,12 +30,21 @@ export default function NuevoServicioPage() {
   const [commissionAmount, setCommissionAmount] = useState("");
   const [sku, setSku] = useState("");
   const [subcatalogId, setSubcatalogId] = useState("");
-  const [subcatalogs, setSubcatalogs] = useState<Subcatalog[]>([]);
   const [isPublic, setIsPublic] = useState(true);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  const subcatalogsKeyValue = activeTenant
+    ? subcatalogsKey(activeTenant.id)
+    : null;
+  const { data: subcatalogsData } = useSWR<Subcatalog[]>(
+    subcatalogsKeyValue,
+    swrFetcher,
+    { fallbackData: [] },
+  );
+  const subcatalogs = Array.isArray(subcatalogsData) ? subcatalogsData : [];
 
   function deriveSlug(value: string) {
     return value
@@ -40,13 +53,6 @@ export default function NuevoServicioPage() {
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9-]/g, "");
   }
-
-  useEffect(() => {
-    if (!activeTenant?.id) return;
-    listSubcatalogs(activeTenant.id)
-      .then(setSubcatalogs)
-      .catch(() => setSubcatalogs([]));
-  }, [activeTenant?.id]);
 
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import useSWR from "swr";
 import { Plus } from "lucide-react";
 import { useTenantStore } from "@/stores/useTenantStore";
 import type { TeamMember } from "@/types/team";
@@ -17,55 +18,48 @@ import {
   tableBodyCellClass,
   tableBodyCellMutedClass,
 } from "@/components/ui/TableWrapper";
-import { list as listTeam, updateRole, remove as removeMember } from "@/services/teamService";
-import { list as listTenantRoles } from "@/services/tenantRolesService";
+import { updateRole, remove as removeMember } from "@/services/teamService";
+import { swrFetcher } from "@/lib/swrFetcher";
+
+const teamKey = (tenantId: string) =>
+  `/api/team?tenant_id=${encodeURIComponent(tenantId)}`;
+const tenantRolesKey = (tenantId: string) =>
+  `/api/tenant-roles?tenant_id=${encodeURIComponent(tenantId)}`;
 
 export default function EquipoPage() {
   const params = useParams();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
-  const [members, setMembers] = useState<TeamMember[]>([]);
-  const [roles, setRoles] = useState<TenantRoleOption[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [roleUpdates, setRoleUpdates] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    if (!activeTenant) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    Promise.all([
-      listTeam(activeTenant.id),
-      listTenantRoles(activeTenant.id),
-    ])
-      .then(([membersList, rolesList]) => {
-        setMembers(membersList);
-        setRoles(rolesList);
-      })
-      .catch(() => setError("No se pudo cargar el equipo"))
-      .finally(() => setLoading(false));
-  }, [activeTenant?.id]);
+  const teamKeyValue = activeTenant ? teamKey(activeTenant.id) : null;
+  const rolesKeyValue = activeTenant ? tenantRolesKey(activeTenant.id) : null;
+
+  const {
+    data: membersData,
+    error: teamError,
+    isLoading: loading,
+    mutate: mutateTeam,
+  } = useSWR<TeamMember[]>(teamKeyValue, swrFetcher, { fallbackData: [] });
+
+  const { data: rolesData } = useSWR<TenantRoleOption[]>(
+    rolesKeyValue,
+    swrFetcher,
+    { fallbackData: [] },
+  );
+
+  const members = Array.isArray(membersData) ? membersData : [];
+  const roles = Array.isArray(rolesData) ? rolesData : [];
+
+  const displayError = error ?? (teamError ? "No se pudo cargar el equipo" : null);
 
   async function handleRoleChange(membershipId: string, roleId: string) {
     setUpdatingId(membershipId);
     setError(null);
     try {
       await updateRole(membershipId, roleId);
-      setMembers((prev) =>
-        prev.map((m) =>
-          m.id === membershipId
-            ? {
-                ...m,
-                role_id: roleId,
-                role_name: roles.find((r) => r.id === roleId)?.name ?? "",
-              }
-            : m
-        )
-      );
+      await mutateTeam();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
     } finally {
@@ -79,7 +73,7 @@ export default function EquipoPage() {
     setError(null);
     try {
       await removeMember(membershipId);
-      setMembers((prev) => prev.filter((m) => m.id !== membershipId));
+      await mutateTeam();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
     } finally {
@@ -111,9 +105,9 @@ export default function EquipoPage() {
         </Link>
       </div>
 
-      {error && (
+      {displayError && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
-          {error}
+          {displayError}
         </div>
       )}
 

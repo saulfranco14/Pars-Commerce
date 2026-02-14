@@ -1,16 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
 import { productFormSchema } from "@/lib/productValidation";
 import type { ProductDetail } from "@/types/products";
-import { getById, update } from "@/services/productsService";
-import { listByTenant as listSubcatalogs } from "@/services/subcatalogsService";
+import { update } from "@/services/productsService";
+import { swrFetcher } from "@/lib/swrFetcher";
 import type { Subcatalog } from "@/types/subcatalogs";
 import { SubcatalogSelect } from "@/components/forms/SubcatalogSelect";
+
+const productKey = (id: string) =>
+  `/api/products?product_id=${encodeURIComponent(id)}`;
+const subcatalogsKey = (tenantId: string) =>
+  `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
 
 export default function EditarProductoPage() {
   const params = useParams();
@@ -19,7 +25,25 @@ export default function EditarProductoPage() {
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
 
-  const [product, setProduct] = useState<ProductDetail | null>(null);
+  const productKeyValue = productId ? productKey(productId) : null;
+  const subcatalogsKeyValue = activeTenant
+    ? subcatalogsKey(activeTenant.id)
+    : null;
+
+  const { data: productData, error: productError, isLoading, mutate } = useSWR<
+    ProductDetail | null
+  >(productKeyValue, swrFetcher);
+
+  const { data: subcatalogsData } = useSWR<Subcatalog[]>(
+    subcatalogsKeyValue,
+    swrFetcher,
+    { fallbackData: [] },
+  );
+
+  const product = productData ?? null;
+  const subcatalogs = Array.isArray(subcatalogsData) ? subcatalogsData : [];
+  const fetchError = productError ? "No se pudo cargar el producto" : null;
+
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
@@ -30,7 +54,6 @@ export default function EditarProductoPage() {
   const [unit, setUnit] = useState("unit");
   const [theme, setTheme] = useState("");
   const [subcatalogId, setSubcatalogId] = useState("");
-  const [subcatalogs, setSubcatalogs] = useState<Subcatalog[]>([]);
   const [wholesaleMinQuantity, setWholesaleMinQuantity] = useState("");
   const [wholesalePrice, setWholesalePrice] = useState("");
   const [trackStock, setTrackStock] = useState(true);
@@ -40,55 +63,46 @@ export default function EditarProductoPage() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  const syncedProductIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!productId) return;
-    setLoading(true);
-    getById(productId)
-      .then((data) => {
-        setProduct(data);
-        setName(data.name ?? "");
-        setSlug(data.slug ?? "");
-        setDescription(data.description ?? "");
-        setPrice(String(data.price ?? ""));
-        setCostPrice(String(data.cost_price ?? ""));
-        setCommissionAmount(String(data.commission_amount ?? ""));
-        setSku(data.sku ?? "");
-        setUnit(data.unit ?? "unit");
-        setTheme((data as { theme?: string }).theme ?? "");
-        setSubcatalogId(
-          (data as { subcatalog_id?: string | null }).subcatalog_id ?? "",
-        );
-        const pd = data as {
-          wholesale_min_quantity?: number | null;
-          wholesale_price?: number | null;
-        };
-        setWholesaleMinQuantity(
-          pd.wholesale_min_quantity != null
-            ? String(pd.wholesale_min_quantity)
-            : "",
-        );
-        setWholesalePrice(
-          pd.wholesale_price != null ? String(pd.wholesale_price) : "",
-        );
-        setTrackStock(data.track_stock ?? true);
-        setIsPublic(data.is_public ?? true);
-        setStock(String(data.stock ?? 0));
-        setImageUrls(
-          data.image_urls ?? (data.image_url ? [data.image_url] : []),
-        );
-      })
-      .catch(() => setFetchError("No se pudo cargar el producto"))
-      .finally(() => setLoading(false));
+    if (!product || syncedProductIdRef.current === product.id) return;
+    syncedProductIdRef.current = product.id;
+    setName(product.name ?? "");
+    setSlug(product.slug ?? "");
+    setDescription(product.description ?? "");
+    setPrice(String(product.price ?? ""));
+    setCostPrice(String(product.cost_price ?? ""));
+    setCommissionAmount(String(product.commission_amount ?? ""));
+    setSku(product.sku ?? "");
+    setUnit(product.unit ?? "unit");
+    setTheme((product as { theme?: string }).theme ?? "");
+    setSubcatalogId(
+      (product as { subcatalog_id?: string | null }).subcatalog_id ?? "",
+    );
+    const pd = product as {
+      wholesale_min_quantity?: number | null;
+      wholesale_price?: number | null;
+    };
+    setWholesaleMinQuantity(
+      pd.wholesale_min_quantity != null ? String(pd.wholesale_min_quantity) : "",
+    );
+    setWholesalePrice(
+      pd.wholesale_price != null ? String(pd.wholesale_price) : "",
+    );
+    setTrackStock(product.track_stock ?? true);
+    setIsPublic(product.is_public ?? true);
+    setStock(String(product.stock ?? 0));
+    setImageUrls(
+      product.image_urls ?? (product.image_url ? [product.image_url] : []),
+    );
+  }, [product]);
+
+  useEffect(() => {
+    if (productId && syncedProductIdRef.current !== productId) {
+      syncedProductIdRef.current = null;
+    }
   }, [productId]);
-
-  useEffect(() => {
-    if (!activeTenant?.id) return;
-    listSubcatalogs(activeTenant.id)
-      .then(setSubcatalogs)
-      .catch(() => setSubcatalogs([]));
-  }, [activeTenant?.id]);
 
   function deriveSlug(value: string) {
     return value
@@ -214,6 +228,7 @@ export default function EditarProductoPage() {
           : null,
         wholesale_price: hasWholesaleMin ? (wholesalePriceNum as number) : null,
       });
+      await mutate();
       router.push(`/dashboard/${tenantSlug}/productos`);
       router.refresh();
     } catch (e) {
@@ -237,7 +252,7 @@ export default function EditarProductoPage() {
     );
   }
 
-  if (!product) {
+  if (isLoading || !product) {
     return <p className="text-sm text-muted-foreground">Cargando...</p>;
   }
 

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import useSWR from "swr";
 import { Printer, Download } from "lucide-react";
 import { exportReceiptAsPng } from "@/lib/receiptExport";
-import { getById } from "@/services/ordersService";
 import { ReceiptPreview } from "@/app/dashboard/[tenantSlug]/ordenes/[orderId]/components/ReceiptPreview";
 import type { OrderDetail } from "@/app/dashboard/[tenantSlug]/ordenes/[orderId]/types";
 import type { TenantAddress } from "@/types/database";
+import { swrFetcher } from "@/lib/swrFetcher";
 
 interface TicketDownloadActionsProps {
   orderId: string;
@@ -15,51 +16,43 @@ interface TicketDownloadActionsProps {
   variant?: "compact" | "full";
 }
 
+const orderKey = (id: string) =>
+  `/api/orders?order_id=${encodeURIComponent(id)}`;
+
 export function TicketDownloadActions({
   orderId,
   businessName,
   businessAddress,
   variant = "compact",
 }: TicketDownloadActionsProps) {
-  const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exportMode, setExportMode] = useState<"download" | "print" | null>(
     null,
   );
+  const [shouldFetch, setShouldFetch] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
-  const fetchOrder = async (): Promise<OrderDetail | null> => {
-    if (order) return order;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getById(orderId);
-      const ord = data as OrderDetail;
-      setOrder(ord);
-      return ord;
-    } catch (err) {
-      setError("No se pudo cargar la orden");
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchKey = shouldFetch && orderId ? orderKey(orderId) : null;
+  const { data: orderData, error: swrError, isLoading: swrLoading } = useSWR<
+    OrderDetail | null
+  >(fetchKey, swrFetcher);
+  const order = orderData ?? null;
 
-  const handleDownload = async (e: React.MouseEvent) => {
+  useEffect(() => {
+    if (swrError) setError("No se pudo cargar la orden");
+  }, [swrError]);
+
+  const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const ord = order ?? (await fetchOrder());
-    if (!ord) return;
-    setOrder(ord);
+    setShouldFetch(true);
     setExportMode("download");
     setLoading(true);
   };
 
-  const handlePrint = async (e: React.MouseEvent) => {
+  const handlePrint = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const ord = order ?? (await fetchOrder());
-    if (!ord) return;
-    setOrder(ord);
+    setShouldFetch(true);
     setExportMode("print");
     setLoading(true);
   };
@@ -136,14 +129,18 @@ export function TicketDownloadActions({
       <button
         type="button"
         onClick={handleDownload}
-        disabled={loading}
+        disabled={loading || (shouldFetch && swrLoading)}
         className={isCompact ? btnClass : btnClassFull}
         aria-label="Descargar ticket"
       >
         <Download className="h-4 w-4 shrink-0" />
         {!isCompact && (
           <span>
-            {loading && exportMode === "download" ? "Generando…" : "Descargar"}
+            {loading && exportMode === "download"
+              ? "Generando…"
+              : shouldFetch && swrLoading
+                ? "Cargando…"
+                : "Descargar"}
           </span>
         )}
       </button>
@@ -151,7 +148,7 @@ export function TicketDownloadActions({
       <button
         type="button"
         onClick={handlePrint}
-        disabled={loading}
+        disabled={loading || (shouldFetch && swrLoading)}
         className={isCompact ? btnClass : btnClassFull}
         aria-label="Imprimir ticket"
       >

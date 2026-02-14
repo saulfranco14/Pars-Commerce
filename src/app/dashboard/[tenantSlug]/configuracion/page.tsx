@@ -3,13 +3,17 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import useSWR from "swr";
 import { ArrowLeft, Check } from "lucide-react";
 import { useTenantStore } from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
 import type { SitePage } from "@/types/tenantSitePages";
-import { list as listSitePages } from "@/services/tenantSitePagesService";
 import { SiteContentForm } from "./SiteContentForm";
 import { update as updateTenant, list as listTenants } from "@/services/tenantsService";
+import { swrFetcher } from "@/lib/swrFetcher";
+
+const sitePagesKey = (tenantId: string) =>
+  `/api/tenant-site-pages?tenant_id=${encodeURIComponent(tenantId)}`;
 
 export default function ConfiguracionPage() {
   const params = useParams();
@@ -28,10 +32,19 @@ export default function ConfiguracionPage() {
   const [addressPostalCode, setAddressPostalCode] = useState("");
   const [addressCountry, setAddressCountry] = useState("");
   const [addressPhone, setAddressPhone] = useState("");
-  const [sitePages, setSitePages] = useState<SitePage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const sitePagesKeyValue = activeTenant
+    ? sitePagesKey(activeTenant.id)
+    : null;
+  const { data: sitePagesData, mutate: mutateSitePages } = useSWR<SitePage[]>(
+    sitePagesKeyValue,
+    swrFetcher,
+    { fallbackData: [] },
+  );
+  const sitePages = Array.isArray(sitePagesData) ? sitePagesData : [];
 
   useEffect(() => {
     if (!activeTenant) return;
@@ -48,13 +61,6 @@ export default function ConfiguracionPage() {
     setAddressPostalCode(addr?.postal_code ?? "");
     setAddressCountry(addr?.country ?? "");
     setAddressPhone(addr?.phone ?? "");
-  }, [activeTenant?.id]);
-
-  useEffect(() => {
-    if (!activeTenant?.id) return;
-    listSitePages(activeTenant.id)
-      .then(setSitePages)
-      .catch(() => setSitePages([]));
   }, [activeTenant?.id]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -179,6 +185,7 @@ export default function ConfiguracionPage() {
           tenantId={activeTenant.id}
           tenantSlug={tenantSlug}
           sitePages={sitePages}
+          onContentSaved={() => mutateSitePages()}
         />
       )}
 

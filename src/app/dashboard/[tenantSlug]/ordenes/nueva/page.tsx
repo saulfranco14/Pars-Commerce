@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import type { TeamMember } from "@/types/team";
-import { list as listTeam } from "@/services/teamService";
 import { create as createOrder } from "@/services/ordersService";
+import { swrFetcher } from "@/lib/swrFetcher";
+
+const teamKey = (tenantId: string) =>
+  `/api/team?tenant_id=${encodeURIComponent(tenantId)}`;
 
 export default function NuevaOrdenPage() {
   const params = useParams();
@@ -15,20 +19,18 @@ export default function NuevaOrdenPage() {
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
 
+  const teamKeyValue = activeTenant ? teamKey(activeTenant.id) : null;
+  const { data: teamData } = useSWR<TeamMember[]>(teamKeyValue, swrFetcher, {
+    fallbackData: [],
+  });
+  const team = Array.isArray(teamData) ? teamData : [];
+
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
-  const [team, setTeam] = useState<TeamMember[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!activeTenant?.id) return;
-    listTeam(activeTenant.id)
-      .then(setTeam)
-      .catch(() => setTeam([]));
-  }, [activeTenant?.id]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

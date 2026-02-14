@@ -1,16 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
 import { serviceFormSchema } from "@/lib/serviceValidation";
 import type { ProductDetail } from "@/types/products";
-import { getById, update } from "@/services/productsService";
-import { listByTenant as listSubcatalogs } from "@/services/subcatalogsService";
+import { update } from "@/services/productsService";
+import { swrFetcher } from "@/lib/swrFetcher";
 import type { Subcatalog } from "@/types/subcatalogs";
 import { SubcatalogSelect } from "@/components/forms/SubcatalogSelect";
+
+const productKey = (id: string) =>
+  `/api/products?product_id=${encodeURIComponent(id)}`;
+const subcatalogsKey = (tenantId: string) =>
+  `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
 
 export default function EditarServicioPage() {
   const params = useParams();
@@ -19,7 +25,25 @@ export default function EditarServicioPage() {
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
 
-  const [service, setService] = useState<ProductDetail | null>(null);
+  const productKeyValue = serviceId ? productKey(serviceId) : null;
+  const subcatalogsKeyValue = activeTenant
+    ? subcatalogsKey(activeTenant.id)
+    : null;
+
+  const { data: serviceData, error: serviceError, isLoading, mutate } = useSWR<
+    ProductDetail | null
+  >(productKeyValue, swrFetcher);
+
+  const { data: subcatalogsData } = useSWR<Subcatalog[]>(
+    subcatalogsKeyValue,
+    swrFetcher,
+    { fallbackData: [] },
+  );
+
+  const service = serviceData ?? null;
+  const subcatalogs = Array.isArray(subcatalogsData) ? subcatalogsData : [];
+  const fetchError = serviceError ? "No se pudo cargar el servicio" : null;
+
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
@@ -28,45 +52,37 @@ export default function EditarServicioPage() {
   const [commissionAmount, setCommissionAmount] = useState("");
   const [sku, setSku] = useState("");
   const [subcatalogId, setSubcatalogId] = useState("");
-  const [subcatalogs, setSubcatalogs] = useState<Subcatalog[]>([]);
   const [isPublic, setIsPublic] = useState(true);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  const syncedServiceIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!serviceId) return;
-    setLoading(true);
-    getById(serviceId)
-      .then((data) => {
-        setService(data);
-        setName(data.name ?? "");
-        setSlug(data.slug ?? "");
-        setDescription(data.description ?? "");
-        setPrice(String(data.price ?? ""));
-        setCostPrice(String(data.cost_price ?? ""));
-        setCommissionAmount(String(data.commission_amount ?? ""));
-        setSku(data.sku ?? "");
-        setSubcatalogId(
-          (data as { subcatalog_id?: string | null }).subcatalog_id ?? "",
-        );
-        setIsPublic(data.is_public ?? true);
-        setImageUrls(
-          data.image_urls ?? (data.image_url ? [data.image_url] : []),
-        );
-      })
-      .catch(() => setFetchError("No se pudo cargar el servicio"))
-      .finally(() => setLoading(false));
+    if (!service || syncedServiceIdRef.current === service.id) return;
+    syncedServiceIdRef.current = service.id;
+    setName(service.name ?? "");
+    setSlug(service.slug ?? "");
+    setDescription(service.description ?? "");
+    setPrice(String(service.price ?? ""));
+    setCostPrice(String(service.cost_price ?? ""));
+    setCommissionAmount(String(service.commission_amount ?? ""));
+    setSku(service.sku ?? "");
+    setSubcatalogId(
+      (service as { subcatalog_id?: string | null }).subcatalog_id ?? "",
+    );
+    setIsPublic(service.is_public ?? true);
+    setImageUrls(
+      service.image_urls ?? (service.image_url ? [service.image_url] : []),
+    );
+  }, [service]);
+
+  useEffect(() => {
+    if (serviceId && syncedServiceIdRef.current !== serviceId) {
+      syncedServiceIdRef.current = null;
+    }
   }, [serviceId]);
-
-  useEffect(() => {
-    if (!activeTenant?.id) return;
-    listSubcatalogs(activeTenant.id)
-      .then(setSubcatalogs)
-      .catch(() => setSubcatalogs([]));
-  }, [activeTenant?.id]);
 
   function deriveSlug(value: string) {
     return value
@@ -152,6 +168,7 @@ export default function EditarServicioPage() {
         track_stock: false,
         image_urls: imageUrls.length > 0 ? imageUrls : undefined,
       });
+      await mutate();
       router.push(`/dashboard/${tenantSlug}/servicios`);
       router.refresh();
     } catch (e) {
@@ -175,7 +192,7 @@ export default function EditarServicioPage() {
     );
   }
 
-  if (!service) {
+  if (isLoading || !service) {
     return <p className="text-sm text-muted">Cargando...</p>;
   }
 

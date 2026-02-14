@@ -13,6 +13,7 @@ interface SiteContentFormProps {
   tenantId: string;
   tenantSlug: string;
   sitePages: SitePage[];
+  onContentSaved?: () => void;
 }
 
 function getPageContent(page: SitePage | undefined): SitePageContent {
@@ -24,6 +25,7 @@ export function SiteContentForm({
   tenantId,
   tenantSlug,
   sitePages,
+  onContentSaved,
 }: SiteContentFormProps) {
   const [expanded, setExpanded] = useState<SectionSlug | null>(null);
   const [inicio, setInicio] = useState<SitePageContent>({});
@@ -48,6 +50,7 @@ export function SiteContentForm({
     setLoading(slug);
     try {
       await updateContent(tenantId, slug, content);
+      onContentSaved?.();
       setSuccess(`Contenido de ${slug} guardado.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al guardar");
