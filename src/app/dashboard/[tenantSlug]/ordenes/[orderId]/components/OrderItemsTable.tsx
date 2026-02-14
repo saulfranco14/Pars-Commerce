@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useOrder } from "../hooks/useOrder";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { OrderItem } from "../types";
-import { Plus } from "lucide-react";
+import { Plus, Tag } from "lucide-react";
 import { AddItemModal } from "@/components/orders/AddItemModal";
 import { OrderActionButtons } from "./OrderActionButtons";
+import { DiscountModal } from "./DiscountModal";
 
 export function OrderItemsTable() {
   const {
@@ -20,7 +21,7 @@ export function OrderItemsTable() {
   const activeTenant = useTenantStore((s) => s.activeTenant)();
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [itemToRemove, setItemToRemove] = useState<OrderItem | null>(null);
-  const [discountInput, setDiscountInput] = useState("");
+  const [discountModalOpen, setDiscountModalOpen] = useState(false);
 
   const canAddRemoveItems = order
     ? ["draft", "assigned"].includes(order.status)
@@ -33,22 +34,6 @@ export function OrderItemsTable() {
     (sum, i) => sum + Number(i.wholesale_savings ?? 0),
     0,
   );
-
-  useEffect(() => {
-    if (order) {
-      setDiscountInput(String(Number(order.discount)));
-    }
-  }, [order?.discount]);
-
-  const applyDiscount = () => {
-    if (!order) return;
-    const val = parseFloat(discountInput);
-    if (!Number.isNaN(val) && val >= 0) {
-      handleSaveDiscount(val);
-    } else {
-      setDiscountInput(String(Number(order.discount)));
-    }
-  };
 
   if (!order) return null;
 
@@ -230,31 +215,38 @@ export function OrderItemsTable() {
             </div>
           )}
 
-          {(canEditDiscount || Number(order.discount) > 0) && (
+          {canEditDiscount && Number(order.discount) === 0 && (
             <div className="flex justify-between items-center w-full text-sm py-1">
               <span className="text-muted-foreground">Descuento</span>
-              {canEditDiscount ? (
-                <div className="flex items-center rounded-lg border border-border bg-white px-2.5 py-1 transition-[border-color,box-shadow] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15">
-                  <span className="pr-1 text-muted-foreground text-sm">$</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max={Number(order.subtotal)}
-                    step="0.01"
-                    value={discountInput}
-                    onChange={(e) => setDiscountInput(e.target.value)}
-                    onBlur={applyDiscount}
-                    onKeyDown={(e) => e.key === "Enter" && applyDiscount()}
-                    disabled={actionLoading}
-                    placeholder="0.00"
-                    className="w-20 py-1 text-right text-sm tabular-nums bg-transparent outline-none placeholder:text-muted-foreground/50 disabled:opacity-50"
-                  />
-                </div>
-              ) : (
-                <span className="tabular-nums font-medium text-foreground">
-                  -${Number(order.discount).toFixed(2)}
-                </span>
-              )}
+              <button
+                type="button"
+                onClick={() => setDiscountModalOpen(true)}
+                className="inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-border px-2.5 py-1 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:border-accent hover:text-accent"
+              >
+                <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                Agregar
+              </button>
+            </div>
+          )}
+          {canEditDiscount && Number(order.discount) > 0 && (
+            <div className="flex justify-between items-center w-full text-sm py-1">
+              <span className="text-muted-foreground">Descuento</span>
+              <button
+                type="button"
+                onClick={() => setDiscountModalOpen(true)}
+                className="inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-sm font-medium text-red-600 transition-colors duration-200 hover:bg-red-50"
+              >
+                <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                -${Number(order.discount).toFixed(2)}
+              </button>
+            </div>
+          )}
+          {!canEditDiscount && Number(order.discount) > 0 && (
+            <div className="flex justify-between items-center w-full text-sm py-1">
+              <span className="text-muted-foreground">Descuento</span>
+              <span className="tabular-nums font-medium text-foreground">
+                -${Number(order.discount).toFixed(2)}
+              </span>
             </div>
           )}
 
@@ -280,6 +272,22 @@ export function OrderItemsTable() {
           onAdded={() => fetchOrder()}
         />
       )}
+
+      <DiscountModal
+        isOpen={discountModalOpen}
+        onClose={() => setDiscountModalOpen(false)}
+        onApply={async (amount) => {
+          await handleSaveDiscount(amount);
+          setDiscountModalOpen(false);
+        }}
+        onRemove={async () => {
+          await handleSaveDiscount(0);
+          setDiscountModalOpen(false);
+        }}
+        subtotal={Number(order.subtotal)}
+        currentDiscount={Number(order.discount)}
+        loading={actionLoading}
+      />
 
       <ConfirmModal
         isOpen={!!itemToRemove}
