@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getMexicoDateBounds } from "@/lib/dateBounds";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -56,7 +57,7 @@ export async function GET(request: Request) {
     .from("orders")
     .select(
       `
-      id, status, cancelled_from, customer_name, customer_email, total, created_at, assigned_to, payment_method,
+      id, status, cancelled_from, customer_name, customer_email, total, created_at, paid_at, assigned_to, payment_method,
       assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email)
       `
     )
@@ -67,10 +68,12 @@ export async function GET(request: Request) {
     query = query.eq("status", status.trim());
   }
   if (dateFrom?.trim()) {
-    query = query.gte("created_at", dateFrom.trim());
+    const { startUTC } = getMexicoDateBounds(dateFrom.trim());
+    query = query.gte("created_at", startUTC);
   }
   if (dateTo?.trim()) {
-    query = query.lte("created_at", dateTo.trim() + "T23:59:59.999Z");
+    const { endUTC } = getMexicoDateBounds(dateTo.trim());
+    query = query.lte("created_at", endUTC);
   }
 
   const { data: orders, error } = await query;

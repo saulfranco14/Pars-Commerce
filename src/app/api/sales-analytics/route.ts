@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getMexicoDateBounds, toMexicoDateStr, getCurrentMonthBoundsMexico } from "@/lib/dateBounds";
 import { NextResponse } from "next/server";
 
 export interface SalesByPaymentMethod {
@@ -30,16 +31,36 @@ export interface ProductsVsServices {
   services_count: number;
 }
 
+export interface SalesByDayItem {
+  date: string;
+  total_revenue: number;
+  order_count: number;
+}
+
+export interface TopProductItem {
+  id: string;
+  name: string;
+  total: number;
+  quantity: number;
+}
+
 export interface SalesAnalyticsResponse {
   byPaymentMethod: SalesByPaymentMethod;
   byWeek: SalesByWeekItem[];
+  byDay: SalesByDayItem[];
   byPerson: SalesByPersonItem[];
   productsVsServices: ProductsVsServices;
+  topProducts: TopProductItem[];
   totalRevenue: number;
   totalCost: number;
   grossProfit: number;
+  monthlyTotalRevenue: number;
+  monthlyTotalCost: number;
+  monthlyGrossProfit: number;
   salesObjective: number | null;
   monthlyRent: number;
+  dateFrom: string | null;
+  dateTo: string | null;
 }
 
 const PAYMENT_METHODS = ["efectivo", "transferencia", "tarjeta", "mercadopago"];
@@ -88,10 +109,12 @@ export async function GET(request: Request) {
     .eq("status", "paid");
 
   if (fromDate) {
-    ordersQuery = ordersQuery.gte("paid_at", fromDate);
+    const { startUTC } = getMexicoDateBounds(fromDate);
+    ordersQuery = ordersQuery.gte("paid_at", startUTC);
   }
   if (toDate) {
-    ordersQuery = ordersQuery.lte("paid_at", toDate + "T23:59:59.999Z");
+    const { endUTC } = getMexicoDateBounds(toDate);
+    ordersQuery = ordersQuery.lte("paid_at", endUTC);
   }
 
   const { data: orders, error: ordersError } = await ordersQuery;
@@ -111,6 +134,7 @@ export async function GET(request: Request) {
   };
 
   const weekMap = new Map<string, { total: number; count: number }>();
+  const dayMap = new Map<string, { total: number; count: number }>();
 
   let totalRevenue = 0;
 
@@ -127,13 +151,22 @@ export async function GET(request: Request) {
       byPaymentMethod.other += total;
     }
 
-    const createdAt = new Date(o.created_at);
-    const d = new Date(createdAt);
-    d.setHours(0, 0, 0, 0);
-    const dayOfWeek = d.getDay();
+    const paidAt = o.paid_at ?? o.created_at;
+    const dayKey = toMexicoDateStr(paidAt);
+    const dayExisting = dayMap.get(dayKey);
+    if (dayExisting) {
+      dayExisting.total += total;
+      dayExisting.count += 1;
+    } else {
+      dayMap.set(dayKey, { total, count: 1 });
+    }
+
+    const [y, m, day] = dayKey.split("-").map(Number);
+    const d = new Date(Date.UTC(y, m - 1, day, 12, 0, 0, 0));
+    const dayOfWeek = d.getUTCDay();
     const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    d.setDate(d.getDate() - diff);
-    const weekKey = d.toISOString().split("T")[0];
+    d.setUTCDate(d.getUTCDate() - diff);
+    const weekKey = d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
     const existing = weekMap.get(weekKey);
     if (existing) {
       existing.total += total;
@@ -141,6 +174,38 @@ export async function GET(request: Request) {
     } else {
       weekMap.set(weekKey, { total, count: 1 });
     }
+  }
+
+  const minTs = paidOrders.length > 0
+    ? Math.min(...paidOrders.map((o) => new Date(o.paid_at ?? o.created_at).getTime()))
+    : null;
+  const maxTs = paidOrders.length > 0
+    ? Math.max(...paidOrders.map((o) => new Date(o.paid_at ?? o.created_at).getTime()))
+    : null;
+  const effectiveFrom = fromDate || (minTs != null ? toMexicoDateStr(new Date(minTs).toISOString()) : null);
+  const effectiveTo = toDate || (maxTs != null ? toMexicoDateStr(new Date(maxTs).toISOString()) : null);
+
+  const byDay: SalesByDayItem[] = [];
+  if (effectiveFrom && effectiveTo) {
+    const start = new Date(effectiveFrom);
+    const end = new Date(effectiveTo);
+    const maxDays = 90;
+    let dayCount = 0;
+    for (let d = new Date(start); d <= end && dayCount < maxDays; d.setDate(d.getDate() + 1), dayCount++) {
+      const key = d.toISOString().split("T")[0];
+      const val = dayMap.get(key);
+      byDay.push({
+        date: key,
+        total_revenue: val?.total ?? 0,
+        order_count: val?.count ?? 0,
+      });
+    }
+  } else {
+    byDay.push(
+      ...Array.from(dayMap.entries())
+        .map(([date, v]) => ({ date, total_revenue: v.total, order_count: v.count }))
+        .sort((a, b) => a.date.localeCompare(b.date))
+    );
   }
 
   const byWeek: SalesByWeekItem[] = Array.from(weekMap.entries())
@@ -168,10 +233,12 @@ export async function GET(request: Request) {
     .is("voided_at", null);
 
   if (fromDate) {
-    commissionsQuery = commissionsQuery.gte("created_at", fromDate);
+    const { startUTC: commStart } = getMexicoDateBounds(fromDate);
+    commissionsQuery = commissionsQuery.gte("created_at", commStart);
   }
   if (toDate) {
-    commissionsQuery = commissionsQuery.lte("created_at", toDate + "T23:59:59.999Z");
+    const { endUTC: commEnd } = getMexicoDateBounds(toDate);
+    commissionsQuery = commissionsQuery.lte("created_at", commEnd);
   }
 
   const { data: commissions, error: commissionsError } = await commissionsQuery;
@@ -215,18 +282,23 @@ export async function GET(request: Request) {
   }
 
   let totalCost = 0;
+  const topProductsMap = new Map<
+    string,
+    { name: string; total: number; quantity: number }
+  >();
   const orderIds = paidOrders.map((o) => o.id);
   if (orderIds.length > 0) {
     const { data: items } = await supabase
       .from("order_items")
-      .select("order_id, quantity, unit_price, subtotal, product:products(type, cost_price)")
+      .select("order_id, quantity, unit_price, subtotal, product_id, product:products(id, name, type, cost_price)")
       .in("order_id", orderIds);
 
     for (const it of items ?? []) {
       const item = it as {
+        product_id: string;
         quantity: number;
         subtotal: number;
-        product: { type: string; cost_price: number } | { type: string; cost_price: number }[];
+        product: { id: string; name: string; type: string; cost_price: number } | { id: string; name: string; type: string; cost_price: number }[];
       };
       const subtotal = Number(item.subtotal) || 0;
       const prod = Array.isArray(item.product) ? item.product[0] : item.product;
@@ -238,9 +310,25 @@ export async function GET(request: Request) {
         services_revenue += subtotal;
       } else {
         products_revenue += subtotal;
+        const pid = item.product_id || prod?.id;
+        const pname = prod?.name ?? "Sin nombre";
+        if (pid) {
+          const existing = topProductsMap.get(pid);
+          if (existing) {
+            existing.total += subtotal;
+            existing.quantity += qty;
+          } else {
+            topProductsMap.set(pid, { name: pname, total: subtotal, quantity: qty });
+          }
+        }
       }
     }
   }
+
+  const topProducts: TopProductItem[] = Array.from(topProductsMap.entries())
+    .map(([id, v]) => ({ id, name: v.name, total: v.total, quantity: v.quantity }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 10);
 
   const grossProfit = totalRevenue - totalCost;
 
@@ -253,6 +341,41 @@ export async function GET(request: Request) {
       commission_amount: v.commission_amount,
     })
   );
+
+  const { from: monthFrom, to: monthTo } = getCurrentMonthBoundsMexico();
+  const { startUTC: monthStart } = getMexicoDateBounds(monthFrom);
+  const { endUTC: monthEnd } = getMexicoDateBounds(monthTo);
+
+  const { data: monthlyOrders } = await supabase
+    .from("orders")
+    .select("id, total, paid_at")
+    .eq("tenant_id", tenantId)
+    .eq("status", "paid")
+    .gte("paid_at", monthStart)
+    .lte("paid_at", monthEnd);
+
+  let monthlyTotalRevenue = 0;
+  const monthlyOrderIds: string[] = [];
+  for (const o of monthlyOrders ?? []) {
+    monthlyTotalRevenue += Number(o.total) || 0;
+    monthlyOrderIds.push(o.id);
+  }
+
+  let monthlyTotalCost = 0;
+  if (monthlyOrderIds.length > 0) {
+    const { data: monthlyItems } = await supabase
+      .from("order_items")
+      .select("quantity, unit_price, subtotal, product:products(cost_price, type)")
+      .in("order_id", monthlyOrderIds);
+    for (const it of monthlyItems ?? []) {
+      const item = it as { quantity: number; subtotal: number; product: { cost_price: number; type: string } | { cost_price: number; type: string }[] };
+      const prod = Array.isArray(item.product) ? item.product[0] : item.product;
+      const costPrice = Number(prod?.cost_price ?? 0) || 0;
+      const qty = Number(item.quantity) || 0;
+      monthlyTotalCost += costPrice * qty;
+    }
+  }
+  const monthlyGrossProfit = monthlyTotalRevenue - monthlyTotalCost;
 
   let salesObjective: number | null = null;
   let monthlyRent = 0;
@@ -274,6 +397,7 @@ export async function GET(request: Request) {
   const response: SalesAnalyticsResponse = {
     byPaymentMethod,
     byWeek,
+    byDay,
     byPerson,
     productsVsServices: {
       products_revenue,
@@ -281,11 +405,17 @@ export async function GET(request: Request) {
       products_count,
       services_count,
     },
+    topProducts,
     totalRevenue,
     totalCost,
     grossProfit,
+    monthlyTotalRevenue,
+    monthlyTotalCost,
+    monthlyGrossProfit,
     salesObjective,
     monthlyRent,
+    dateFrom: fromDate,
+    dateTo: toDate,
   };
 
   return NextResponse.json(response);

@@ -19,6 +19,7 @@ export interface OrderDetail {
   discount: number;
   total: number;
   created_at: string;
+  paid_at: string | null;
   assigned_to: string | null;
   assigned_user?: {
     id: string;
