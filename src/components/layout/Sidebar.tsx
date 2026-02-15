@@ -184,13 +184,22 @@ function SidebarContent({
               </NavLink>
             )}
             {canAccessTeamAndSettings && (
-              <NavLink
-                href={`${base}/configuracion`}
-                active={pathname === `${base}/configuracion`}
-                onNavigate={onNavigate}
-              >
-                Configuración
-              </NavLink>
+              <>
+                <NavLink
+                  href={`${base}/sitio-web`}
+                  active={pathname === `${base}/sitio-web`}
+                  onNavigate={onNavigate}
+                >
+                  Sitio web
+                </NavLink>
+                <NavLink
+                  href={`${base}/configuracion`}
+                  active={pathname === `${base}/configuracion`}
+                  onNavigate={onNavigate}
+                >
+                  Configuración
+                </NavLink>
+              </>
             )}
           </>
         )}

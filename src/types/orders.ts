@@ -6,6 +6,7 @@ export interface OrderListItem {
   customer_email: string | null;
   total: number;
   created_at: string;
+  paid_at: string | null;
   assigned_to: string | null;
   payment_method?: string | null;
   assigned_user?: {

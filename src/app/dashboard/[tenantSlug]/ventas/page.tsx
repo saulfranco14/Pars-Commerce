@@ -462,6 +462,8 @@ export default function VentasPage() {
           summary={summary}
           analytics={analyticsData ?? null}
           analyticsLoading={analyticsLoading}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
         />
       ) : activeTab === "por-persona" ? (
         <VentasPorPersona byPerson={byPerson} />

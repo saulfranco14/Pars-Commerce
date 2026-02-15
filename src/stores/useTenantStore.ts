@@ -12,8 +12,10 @@ export interface MembershipItem {
 
 interface TenantState {
   memberships: MembershipItem[];
+  tenantsLoaded: boolean;
   activeTenantId: string | null;
   setMemberships: (memberships: MembershipItem[]) => void;
+  setTenantsLoaded: (loaded: boolean) => void;
   setActiveTenantId: (id: string | null) => void;
   activeTenant: () => Tenant | null;
   activeRole: () => TenantRole | null;
@@ -22,8 +24,10 @@ interface TenantState {
 
 export const useTenantStore = create<TenantState>((set, get) => ({
   memberships: [],
+  tenantsLoaded: false,
   activeTenantId: null,
   setMemberships: (memberships) => set({ memberships }),
+  setTenantsLoaded: (tenantsLoaded) => set({ tenantsLoaded }),
   setActiveTenantId: (activeTenantId) => set({ activeTenantId }),
   activeTenant: () => {
     const { memberships, activeTenantId } = get();
@@ -39,5 +43,5 @@ export const useTenantStore = create<TenantState>((set, get) => ({
       memberships.find((m) => m.tenant_id === activeTenantId)?.role ?? null
     );
   },
-  clear: () => set({ memberships: [], activeTenantId: null }),
+  clear: () => set({ memberships: [], tenantsLoaded: false, activeTenantId: null }),
 }));

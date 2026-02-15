@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getMexicoDateBounds } from "@/lib/dateBounds";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -72,11 +73,13 @@ export async function GET(request: Request) {
   }
 
   if (dateFrom) {
-    query = query.gte("created_at", dateFrom);
+    const { startUTC } = getMexicoDateBounds(dateFrom);
+    query = query.gte("created_at", startUTC);
   }
 
   if (dateTo) {
-    query = query.lte("created_at", dateTo);
+    const { endUTC } = getMexicoDateBounds(dateTo);
+    query = query.lte("created_at", endUTC);
   }
 
   const { data: commissions, error } = await query;

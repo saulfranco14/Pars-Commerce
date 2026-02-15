@@ -44,9 +44,12 @@ export function OrderHeader() {
           </span>
         )}
       </div>
-      <p className="mt-1.5 text-xs text-muted-foreground/70 tabular-nums">
-        {formatOrderDateFull(order.created_at)}
-      </p>
+      <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground/70 tabular-nums">
+        <span>Creada: {formatOrderDateFull(order.created_at)}</span>
+        {isPaid && order.paid_at && (
+          <span>Pagada: {formatOrderDateFull(order.paid_at)}</span>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { Tag, Percent, DollarSign, Clock, Gift } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -22,20 +25,36 @@ export default async function PromocionesPage({ params }: PageProps) {
 
   const { data: promotions } = await supabase
     .from("promotions")
-    .select("id, name, type, value, min_amount, valid_until")
+    .select("id, name, type, value, min_amount, valid_from, valid_until, product_ids")
     .eq("tenant_id", tenant.id)
     .order("created_at", { ascending: false });
 
   const now = new Date();
   const active = (promotions ?? []).filter((p) => {
-    if (p.valid_until) {
-      const until = new Date(p.valid_until);
-      if (until < now) return false;
-    }
+    const from = p.valid_from ? new Date(p.valid_from) : null;
+    const until = p.valid_until ? new Date(p.valid_until) : null;
+    if (from && from > now) return false;
+    if (until && until < now) return false;
     return true;
   });
 
   const accentColor = tenant.theme_color?.trim() || "#6366f1";
+
+  const allProductIds = active.flatMap((p) => (p.product_ids ?? []) as string[]).filter(Boolean);
+  const uniqueProductIds = [...new Set(allProductIds)];
+
+  const productsMap: Record<string, { id: string; name: string; slug: string | null }> = {};
+  if (uniqueProductIds.length > 0) {
+    const { data: products } = await supabase
+      .from("products")
+      .select("id, name, slug")
+      .in("id", uniqueProductIds)
+      .eq("is_public", true)
+      .is("deleted_at", null);
+    for (const prod of products ?? []) {
+      productsMap[prod.id] = { id: prod.id, name: prod.name, slug: prod.slug };
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -126,6 +145,25 @@ export default async function PromocionesPage({ params }: PageProps) {
                         </span>
                       )}
                     </div>
+
+                    {p.product_ids && Array.isArray(p.product_ids) && p.product_ids.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        {(p.product_ids as string[]).map((pid) => {
+                          const prod = productsMap[pid];
+                          if (!prod) return null;
+                          return (
+                            <Link
+                              key={pid}
+                              href={`/sitio/${slug}/productos/${prod.slug || pid}`}
+                              className="inline-flex cursor-pointer items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors hover:opacity-90"
+                              style={{ borderColor: accentColor, color: accentColor }}
+                            >
+                              {prod.name}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

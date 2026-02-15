@@ -15,6 +15,7 @@ export function useAuthInitializer() {
   const setProfile = useSessionStore((s) => s.setProfile);
   const clearProfile = useSessionStore((s) => s.clear);
   const setMemberships = useTenantStore((s) => s.setMemberships);
+  const setTenantsLoaded = useTenantStore((s) => s.setTenantsLoaded);
   const setActiveTenantId = useTenantStore((s) => s.setActiveTenantId);
   const clearTenant = useTenantStore((s) => s.clear);
   const lastUserIdRef = useRef<string | null>(null);
@@ -42,8 +43,15 @@ export function useAuthInitializer() {
         const profile = await getProfile();
         if (profile) setProfile(profile as Parameters<typeof setProfile>[0]);
 
-        const list = (await listTenants()) as MembershipItem[];
-        setMemberships(list);
+        let list: MembershipItem[] = [];
+        try {
+          list = (await listTenants()) as MembershipItem[];
+          setMemberships(list);
+        } catch {
+          setMemberships([]);
+        } finally {
+          setTenantsLoaded(true);
+        }
         if (list.length > 0) {
           const stored =
             typeof window !== "undefined"
@@ -84,6 +92,7 @@ export function useAuthInitializer() {
     setProfile,
     clearProfile,
     setMemberships,
+    setTenantsLoaded,
     setActiveTenantId,
     clearTenant,
   ]);

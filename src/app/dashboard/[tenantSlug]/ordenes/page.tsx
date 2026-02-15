@@ -9,6 +9,7 @@ import { useTenantStore } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { OrderCardMobile } from "@/components/orders/OrderCardMobile";
 import { TicketDownloadActions } from "@/components/orders/TicketDownloadActions";
+import { FilterTabs } from "@/components/ui/FilterTabs";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import {
   TableWrapper,
@@ -20,7 +21,8 @@ import {
   tableBodyCellMutedClass,
   tableBodyCellRightClass,
 } from "@/components/ui/TableWrapper";
-import { formatOrderDate } from "@/lib/formatDate";
+import { formatOrderDate, formatOrderDateFull } from "@/lib/formatDate";
+import { DATE_MIN, getTodayStr, clampDate } from "@/lib/dateValidation";
 import { formatPaymentMethod } from "@/lib/formatPaymentMethod";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { OrderListItem } from "@/types/orders";
@@ -75,6 +77,27 @@ export default function OrdenesPage() {
 
   const hasDateFilter = Boolean(dateFrom || dateTo);
 
+  function setQuickDate(range: "hoy" | "ayer" | "7dias") {
+    const today = new Date();
+    const todayStr = getTodayStr();
+    if (range === "hoy") {
+      setDateFrom(todayStr);
+      setDateTo(todayStr);
+    } else if (range === "ayer") {
+      const ayer = new Date(today);
+      ayer.setDate(ayer.getDate() - 1);
+      const ayerStr = clampDate(ayer.toISOString().slice(0, 10));
+      setDateFrom(ayerStr);
+      setDateTo(ayerStr);
+    } else {
+      const desde = new Date(today);
+      desde.setDate(desde.getDate() - 6);
+      setDateFrom(clampDate(desde.toISOString().slice(0, 10)));
+      setDateTo(todayStr);
+    }
+    setDateFiltersOpen(false);
+  }
+
   const ordersKey = buildOrdersKey(
     activeTenant?.id,
     statusFilter,
@@ -116,37 +139,12 @@ export default function OrdenesPage() {
 
         {/* ── Status tabs ── */}
         <div className="space-y-2">
-          <div className="relative">
-            <div
-              className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 from-background to-transparent"
-              aria-hidden
-            />
-            <div
-              className="flex gap-1 overflow-x-auto pb-0.5 scrollbar-hide"
-              role="tablist"
-              aria-label="Filtrar por estado"
-            >
-              {STATUS_TABS.map((tab) => {
-                const isActive = statusFilter === tab.value;
-                return (
-                  <button
-                    key={tab.value}
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    onClick={() => setStatusFilter(tab.value)}
-                    className={`inline-flex shrink-0 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 ${
-                      isActive
-                        ? "bg-foreground text-background"
-                        : "text-muted-foreground hover:bg-border-soft hover:text-foreground"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <FilterTabs
+            tabs={STATUS_TABS}
+            activeValue={statusFilter}
+            onTabChange={setStatusFilter}
+            ariaLabel="Filtrar por estado"
+          />
 
           {/* ── Date filter row ── */}
           <div className="flex items-center gap-2">
@@ -181,29 +179,62 @@ export default function OrdenesPage() {
           </div>
 
           {dateFiltersOpen && (
-            <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface-raised p-3 sm:flex-row">
-              <label className="flex flex-1 flex-col gap-1">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Desde
-                </span>
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="input-form min-h-[40px] w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                />
-              </label>
-              <label className="flex flex-1 flex-col gap-1">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Hasta
-                </span>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="input-form min-h-[40px] w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                />
-              </label>
+            <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface-raised p-3">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setQuickDate("hoy")}
+                  className={`min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                    dateFrom && dateTo && dateFrom === dateTo && dateFrom === getTodayStr()
+                      ? "bg-accent/15 text-accent ring-1 ring-accent/30"
+                      : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
+                  }`}
+                >
+                  Hoy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickDate("ayer")}
+                  className="min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
+                >
+                  Ayer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickDate("7dias")}
+                  className="min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
+                >
+                  7 días
+                </button>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <label className="flex flex-1 flex-col gap-1">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Desde
+                  </span>
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    min={DATE_MIN}
+                    max={getTodayStr()}
+                    onChange={(e) => setDateFrom(clampDate(e.target.value))}
+                    className="input-form min-h-[40px] w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                  />
+                </label>
+                <label className="flex flex-1 flex-col gap-1">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Hasta
+                  </span>
+                  <input
+                    type="date"
+                    value={dateTo}
+                    min={DATE_MIN}
+                    max={getTodayStr()}
+                    onChange={(e) => setDateTo(clampDate(e.target.value))}
+                    className="input-form min-h-[40px] w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                  />
+                </label>
+              </div>
             </div>
           )}
         </div>
@@ -226,8 +257,10 @@ export default function OrdenesPage() {
         ) : orders.length === 0 ? (
           <div className="rounded-xl border border-border bg-surface-raised p-8 text-center">
             <p className="text-sm text-muted">
-              No hay órdenes{statusFilter ? " con este estado" : ""}. Crea una
-              con &quot;Nueva orden&quot;.
+              {hasDateFilter && dateFrom === dateTo && dateFrom === getTodayStr()
+                ? "No hay órdenes para hoy."
+                : `No hay órdenes${statusFilter ? " con este estado" : ""}${hasDateFilter ? " en las fechas seleccionadas" : ""}.`}{" "}
+              Crea una con &quot;Nueva orden&quot;.
             </p>
             <Link
               href={`/dashboard/${tenantSlug}/ordenes/nueva`}
@@ -244,7 +277,7 @@ export default function OrdenesPage() {
                 <table className="min-w-full">
                   <thead>
                     <tr className={tableHeaderRowClass}>
-                      <th className={tableHeaderCellClass}>Fecha</th>
+                      <th className={tableHeaderCellClass}>Creada</th>
                       <th className={tableHeaderCellClass}>Cliente</th>
                       <th className={tableHeaderCellClass}>Contenido</th>
                       <th className={tableHeaderCellClass}>Asignado</th>
@@ -311,10 +344,19 @@ export default function OrdenesPage() {
                             )}
                           </td>
                           <td className={tableBodyCellClass}>
-                            <StatusBadge
-                              status={o.status}
-                              cancelledFrom={o.cancelled_from}
-                            />
+                            <div className="flex w-fit flex-col items-start gap-1">
+                              <StatusBadge
+                                status={o.status}
+                                cancelledFrom={o.cancelled_from}
+                              />
+                              {(o.status === "paid" ||
+                                o.status === "completed") &&
+                                o.paid_at && (
+                                  <span className="text-[11px] tabular-nums text-muted-foreground/70">
+                                    {formatOrderDateFull(o.paid_at)}
+                                  </span>
+                                )}
+                            </div>
                           </td>
                           <td className={tableBodyCellMutedClass}>
                             {(o.status === "paid" ||

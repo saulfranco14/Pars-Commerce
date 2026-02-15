@@ -188,14 +188,17 @@ export function OrderCardMobile({
               </div>
             </div>
 
-            {/* Date — solo, tertiary */}
-            <time
-              dateTime={order.created_at}
-              title={formatOrderDateFull(order.created_at)}
-              className="shrink-0 pt-0.5 text-xs tabular-nums text-muted-foreground/70"
-            >
-              {formatOrderDate(order.created_at)}
-            </time>
+            {/* Dates — creation and payment */}
+            <div className="flex shrink-0 flex-col items-end gap-0.5 pt-0.5 text-xs tabular-nums text-muted-foreground/70">
+              <time dateTime={order.created_at} title={formatOrderDateFull(order.created_at)}>
+                Creada: {formatOrderDate(order.created_at)}
+              </time>
+              {isPaid && order.paid_at && (
+                <time dateTime={order.paid_at} title={formatOrderDateFull(order.paid_at)}>
+                  Pagada: {formatOrderDate(order.paid_at)}
+                </time>
+              )}
+            </div>
           </div>
         </div>
       </div>

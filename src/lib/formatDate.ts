@@ -1,3 +1,5 @@
+const MEXICO_TZ = "America/Mexico_City";
+
 export function formatOrderDateFull(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString("es-MX", {
@@ -7,6 +9,7 @@ export function formatOrderDateFull(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
+    timeZone: MEXICO_TZ,
   });
 }
 

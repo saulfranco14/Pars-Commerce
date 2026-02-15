@@ -31,6 +31,12 @@ export interface TenantSalesConfig {
   monthly_sales_objective: number;
 }
 
+export interface TenantSocialLinks {
+  instagram?: string;
+  facebook?: string;
+  twitter?: string;
+}
+
 export interface Tenant {
   id: string;
   name: string;
@@ -42,6 +48,8 @@ export interface Tenant {
   description: string | null;
   public_store_enabled: boolean;
   settings: Json | null;
+  whatsapp_phone?: string | null;
+  social_links?: TenantSocialLinks | null;
   address?: TenantAddress | null;
   sales_config?: TenantSalesConfig | null;
   created_at: string;

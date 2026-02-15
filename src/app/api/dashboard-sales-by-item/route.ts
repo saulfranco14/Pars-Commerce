@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getMexicoDateBounds } from "@/lib/dateBounds";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -34,15 +35,16 @@ export async function GET(request: Request) {
   if (!to) {
     to = new Date().toISOString().slice(0, 10);
   }
-  const toEnd = to + "T23:59:59.999Z";
+  const { startUTC } = getMexicoDateBounds(from);
+  const { endUTC } = getMexicoDateBounds(to);
 
   const { data: orders, error: ordersError } = await supabase
     .from("orders")
     .select("id")
     .eq("tenant_id", tenantId)
     .in("status", ["paid", "completed"])
-    .gte("created_at", from)
-    .lte("created_at", toEnd);
+    .gte("created_at", startUTC)
+    .lte("created_at", endUTC);
 
   if (ordersError) {
     return NextResponse.json({ error: ordersError.message }, { status: 500 });

@@ -20,20 +20,19 @@ interface VentasResumenProps {
   summary: SummaryData;
   analytics: SalesAnalyticsResponse | null;
   analyticsLoading: boolean;
+  dateFrom: string;
+  dateTo: string;
 }
 
-function formatWeekLabel(weekStart: string) {
-  const d = new Date(weekStart);
-  return d.toLocaleDateString("es-MX", { day: "2-digit", month: "short" });
-}
-
-export function VentasResumen({ summary, analytics, analyticsLoading }: VentasResumenProps) {
-  const trendData =
-    analytics?.byWeek.map((d) => ({
-      date: d.week_start,
-      label: formatWeekLabel(d.week_start),
-      total_revenue: d.total_revenue,
-    })) ?? [];
+export function VentasResumen({
+  summary,
+  analytics,
+  analyticsLoading,
+  dateFrom,
+  dateTo,
+}: VentasResumenProps) {
+  const dateFromVal = (dateFrom || analytics?.dateFrom) ?? null;
+  const dateToVal = (dateTo || analytics?.dateTo) ?? null;
 
   return (
     <div className="space-y-6">
@@ -82,18 +81,45 @@ export function VentasResumen({ summary, analytics, analyticsLoading }: VentasRe
 
       <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
         <SalesObjectiveChart
-          totalRevenue={summary.totalRevenue}
-          totalCost={summary.totalCost}
-          grossProfit={summary.grossProfit}
+          totalRevenue={analytics?.monthlyTotalRevenue ?? 0}
+          totalCost={analytics?.monthlyTotalCost ?? 0}
+          grossProfit={analytics?.monthlyGrossProfit ?? 0}
           salesObjective={analytics?.salesObjective ?? null}
           monthlyRent={analytics?.monthlyRent ?? 0}
           loading={analyticsLoading}
         />
-        <SalesByWeekChart data={analytics?.byWeek ?? []} loading={analyticsLoading} />
-        <SalesByPaymentMethodChart data={analytics?.byPaymentMethod ?? { efectivo: 0, transferencia: 0, tarjeta: 0, mercadopago: 0, other: 0 }} loading={analyticsLoading} />
-        <SalesTrendChart data={trendData} loading={analyticsLoading} />
-        <CommissionsByPersonChart data={analytics?.byPerson ?? []} loading={analyticsLoading} />
-        <ProductsVsServicesChart data={analytics?.productsVsServices ?? { products_revenue: 0, services_revenue: 0, products_count: 0, services_count: 0 }} loading={analyticsLoading} />
+        <SalesByWeekChart
+          byWeek={analytics?.byWeek ?? []}
+          byDay={analytics?.byDay ?? []}
+          dateFrom={dateFromVal}
+          dateTo={dateToVal}
+          loading={analyticsLoading}
+        />
+        <SalesByPaymentMethodChart
+          data={analytics?.byPaymentMethod ?? { efectivo: 0, transferencia: 0, tarjeta: 0, mercadopago: 0, other: 0 }}
+          dateFrom={dateFromVal}
+          dateTo={dateToVal}
+          loading={analyticsLoading}
+        />
+        <SalesTrendChart
+          data={analytics?.byDay ?? []}
+          dateFrom={dateFromVal}
+          dateTo={dateToVal}
+          loading={analyticsLoading}
+        />
+        <CommissionsByPersonChart
+          data={analytics?.byPerson ?? []}
+          dateFrom={dateFromVal}
+          dateTo={dateToVal}
+          loading={analyticsLoading}
+        />
+        <ProductsVsServicesChart
+          data={analytics?.productsVsServices ?? { products_revenue: 0, services_revenue: 0, products_count: 0, services_count: 0 }}
+          topProducts={analytics?.topProducts ?? []}
+          dateFrom={dateFromVal}
+          dateTo={dateToVal}
+          loading={analyticsLoading}
+        />
       </div>
     </div>
   );

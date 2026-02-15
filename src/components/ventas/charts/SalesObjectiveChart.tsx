@@ -37,7 +37,7 @@ export function SalesObjectiveChart({
 
   return (
     <div className="rounded-xl border border-border bg-surface-raised p-3 sm:p-4">
-      <h3 className="text-sm font-medium text-foreground">Objetivo vs realizado</h3>
+      <h3 className="text-sm font-medium text-foreground">Objetivo vs realizado (mes actual)</h3>
 
       <div className="mt-3 space-y-3">
         {hasObjective && (
@@ -95,7 +95,7 @@ export function SalesObjectiveChart({
             <p className="text-2xl font-bold tabular-nums text-foreground">
               ${totalRevenue.toFixed(2)}
             </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">Total vendido en el período</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Total vendido del mes</p>
           </div>
         )}
       </div>
