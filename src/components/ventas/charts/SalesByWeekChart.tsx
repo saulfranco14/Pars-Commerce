@@ -52,7 +52,7 @@ export function SalesByWeekChart({ data, loading }: SalesByWeekChartProps) {
             <XAxis dataKey="label" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
             <Tooltip
-              formatter={(v: number) => [`$${v.toFixed(2)}`, "Ventas"]}
+              formatter={(v) => [`$${Number(v ?? 0).toFixed(2)}`, "Ventas"]}
               labelFormatter={(_, payload) => payload[0]?.payload?.label ?? ""}
             />
             <Bar dataKey="total_revenue" fill="#ec4899" radius={[4, 4, 0, 0]} />

@@ -48,7 +48,7 @@ export function ProductsVsServicesChart({ data, loading }: ProductsVsServicesCha
             <XAxis dataKey="name" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
             <Tooltip
-              formatter={(v: number, name: string) => [`$${v.toFixed(2)}`, name]}
+              formatter={(v, name) => [`$${Number(v ?? 0).toFixed(2)}`, name]}
               content={({ active, payload }) => {
                 if (!active || !payload?.[0]) return null;
                 const d = payload[0].payload as { name: string; revenue: number; count: number };

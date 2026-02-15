@@ -54,7 +54,7 @@ export function CommissionsByPersonChart({ data, loading }: CommissionsByPersonC
             <CartesianGrid strokeDasharray="3 3" className="stroke-border-soft" />
             <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
             <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} />
-            <Tooltip formatter={(v: number) => [`$${v.toFixed(2)}`, "Comisión"]} />
+            <Tooltip formatter={(v) => [`$${Number(v ?? 0).toFixed(2)}`, "Comisión"]} />
             <Bar dataKey="commission_amount" fill="hsl(25 95% 53%)" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>

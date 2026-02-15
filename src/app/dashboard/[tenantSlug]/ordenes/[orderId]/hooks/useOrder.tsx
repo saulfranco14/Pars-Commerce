@@ -80,7 +80,9 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
 
   const setError = (msg: string | null) => setManualError(msg);
 
-  const fetchOrder = () => mutate();
+  const fetchOrder = async () => {
+    await mutate();
+  };
 
   useEffect(() => {
     if (!assignmentSuccess) return;

@@ -46,7 +46,7 @@ export function SalesTrendChart({ data, loading }: SalesTrendChartProps) {
             <CartesianGrid strokeDasharray="3 3" className="stroke-border-soft" />
             <XAxis dataKey="label" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
-            <Tooltip formatter={(v: number) => [`$${v.toFixed(2)}`, "Ventas"]} />
+            <Tooltip formatter={(v) => [`$${Number(v ?? 0).toFixed(2)}`, "Ventas"]} />
             <Line
               type="monotone"
               dataKey="total_revenue"

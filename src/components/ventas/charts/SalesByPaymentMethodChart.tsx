@@ -69,7 +69,7 @@ export function SalesByPaymentMethodChart({ data, loading }: SalesByPaymentMetho
                 <Cell key={i} fill={COLORS[i % COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip formatter={(v: number) => `$${v.toFixed(2)}`} />
+            <Tooltip formatter={(v) => `$${Number(v ?? 0).toFixed(2)}`} />
             <Legend
               layout="horizontal"
               wrapperStyle={{ paddingTop: "8px" }}
