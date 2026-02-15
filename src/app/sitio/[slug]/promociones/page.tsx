@@ -43,7 +43,7 @@ export default async function PromocionesPage({ params }: PageProps) {
   const allProductIds = active.flatMap((p) => (p.product_ids ?? []) as string[]).filter(Boolean);
   const uniqueProductIds = [...new Set(allProductIds)];
 
-  let productsMap: Record<string, { id: string; name: string; slug: string | null }> = {};
+  const productsMap: Record<string, { id: string; name: string; slug: string | null }> = {};
   if (uniqueProductIds.length > 0) {
     const { data: products } = await supabase
       .from("products")

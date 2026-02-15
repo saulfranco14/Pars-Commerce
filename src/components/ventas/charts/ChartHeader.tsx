@@ -11,8 +11,9 @@ function formatDateRange(dateFrom: string | null, dateTo: string | null): string
   if (!dateFrom && !dateTo) return "Todos los datos disponibles";
   if (dateFrom && !dateTo) return `Desde el ${formatDate(dateFrom)}`;
   if (!dateFrom && dateTo) return `Hasta el ${formatDate(dateTo)}`;
-  if (dateFrom === dateTo) return formatDate(dateFrom);
-  return `${formatDate(dateFrom)} al ${formatDate(dateTo)}`;
+  if (dateFrom && dateTo && dateFrom === dateTo) return formatDate(dateFrom);
+  if (dateFrom && dateTo) return `${formatDate(dateFrom)} al ${formatDate(dateTo)}`;
+  return "Todos los datos disponibles";
 }
 
 function formatDate(iso: string): string {

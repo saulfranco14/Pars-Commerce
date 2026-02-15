@@ -55,7 +55,7 @@ export async function GET(request: Request) {
   const allProductIds = active.flatMap((p) => p.product_ids ?? []).filter(Boolean);
   const uniqueIds = [...new Set(allProductIds)];
 
-  let productsMap: Record<string, { id: string; name: string; slug: string | null }> = {};
+  const productsMap: Record<string, { id: string; name: string; slug: string | null }> = {};
   if (uniqueIds.length > 0) {
     const { data: products } = await supabase
       .from("products")

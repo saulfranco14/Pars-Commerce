@@ -19,12 +19,12 @@ export function SiteContentInicioTab({ content, onChange, onSave, loading }: Pro
 
   function setCards(updater: (prev: (SitePageCard | null)[]) => (SitePageCard | null)[]) {
     const next = updater(cards);
-    onChange({ ...content, cards: next });
+    onChange({ ...content, cards: next.map((c) => c ?? {}) });
   }
 
   function setPurchaseProcess(updater: (prev: (SitePagePurchaseStep | null)[]) => (SitePagePurchaseStep | null)[]) {
     const next = updater(purchaseProcess);
-    onChange({ ...content, purchase_process: next });
+    onChange({ ...content, purchase_process: next.map((s) => s ?? {}) });
   }
 
   function setFaqItems(updater: (prev: SitePageFaqItem[]) => SitePageFaqItem[]) {
