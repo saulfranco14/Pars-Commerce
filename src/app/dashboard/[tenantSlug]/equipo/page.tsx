@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import useSWR from "swr";
+import { Plus } from "lucide-react";
 import { useTenantStore } from "@/stores/useTenantStore";
 import type { TeamMember } from "@/types/team";
 import type { TenantRoleOption } from "@/services/tenantRolesService";
@@ -16,55 +18,48 @@ import {
   tableBodyCellClass,
   tableBodyCellMutedClass,
 } from "@/components/ui/TableWrapper";
-import { list as listTeam, updateRole, remove as removeMember } from "@/services/teamService";
-import { list as listTenantRoles } from "@/services/tenantRolesService";
+import { updateRole, remove as removeMember } from "@/services/teamService";
+import { swrFetcher } from "@/lib/swrFetcher";
+
+const teamKey = (tenantId: string) =>
+  `/api/team?tenant_id=${encodeURIComponent(tenantId)}`;
+const tenantRolesKey = (tenantId: string) =>
+  `/api/tenant-roles?tenant_id=${encodeURIComponent(tenantId)}`;
 
 export default function EquipoPage() {
   const params = useParams();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
-  const [members, setMembers] = useState<TeamMember[]>([]);
-  const [roles, setRoles] = useState<TenantRoleOption[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [roleUpdates, setRoleUpdates] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    if (!activeTenant) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    Promise.all([
-      listTeam(activeTenant.id),
-      listTenantRoles(activeTenant.id),
-    ])
-      .then(([membersList, rolesList]) => {
-        setMembers(membersList);
-        setRoles(rolesList);
-      })
-      .catch(() => setError("No se pudo cargar el equipo"))
-      .finally(() => setLoading(false));
-  }, [activeTenant?.id]);
+  const teamKeyValue = activeTenant ? teamKey(activeTenant.id) : null;
+  const rolesKeyValue = activeTenant ? tenantRolesKey(activeTenant.id) : null;
+
+  const {
+    data: membersData,
+    error: teamError,
+    isLoading: loading,
+    mutate: mutateTeam,
+  } = useSWR<TeamMember[]>(teamKeyValue, swrFetcher, { fallbackData: [] });
+
+  const { data: rolesData } = useSWR<TenantRoleOption[]>(
+    rolesKeyValue,
+    swrFetcher,
+    { fallbackData: [] },
+  );
+
+  const members = Array.isArray(membersData) ? membersData : [];
+  const roles = Array.isArray(rolesData) ? rolesData : [];
+
+  const displayError = error ?? (teamError ? "No se pudo cargar el equipo" : null);
 
   async function handleRoleChange(membershipId: string, roleId: string) {
     setUpdatingId(membershipId);
     setError(null);
     try {
       await updateRole(membershipId, roleId);
-      setMembers((prev) =>
-        prev.map((m) =>
-          m.id === membershipId
-            ? {
-                ...m,
-                role_id: roleId,
-                role_name: roles.find((r) => r.id === roleId)?.name ?? "",
-              }
-            : m
-        )
-      );
+      await mutateTeam();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
     } finally {
@@ -78,7 +73,7 @@ export default function EquipoPage() {
     setError(null);
     try {
       await removeMember(membershipId);
-      setMembers((prev) => prev.filter((m) => m.id !== membershipId));
+      await mutateTeam();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
     } finally {
@@ -95,22 +90,24 @@ export default function EquipoPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+      <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
           Equipo
         </h1>
         <Link
           href={`/dashboard/${tenantSlug}/equipo/nuevo`}
-          className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 active:opacity-90 sm:min-h-0"
+          className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:min-h-0"
         >
+          <Plus className="h-4 w-4 shrink-0" aria-hidden />
           Agregar miembro
         </Link>
       </div>
 
-      {error && (
+      {displayError && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
-          {error}
+          {displayError}
         </div>
       )}
 
@@ -227,6 +224,7 @@ export default function EquipoPage() {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }

@@ -73,11 +73,11 @@ export function ReceiptActions() {
         />
       </div>
 
-      <div className="rounded-xl border border-border bg-surface-raised overflow-hidden">
+      <div className="rounded-xl border border-border bg-surface-raised shadow-sm overflow-hidden">
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className="flex min-h-[44px] w-full items-center justify-between gap-2 px-4 py-3 text-left sm:px-5"
+          className="flex min-h-[44px] w-full items-center justify-between gap-2 px-4 py-2 text-left sm:px-5 sm:py-3"
         >
           <div className="text-left">
             <h2 className="text-sm font-semibold text-foreground">
@@ -93,7 +93,7 @@ export function ReceiptActions() {
           />
         </button>
         {open && (
-          <div className="border-t border-border px-4 pb-4 pt-3 sm:px-5">
+          <div className="border-t border-border/50 px-4 pb-4 pt-3 sm:px-5">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
                 type="button"

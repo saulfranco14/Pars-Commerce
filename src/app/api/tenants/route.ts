@@ -40,6 +40,11 @@ export async function GET() {
     .select("tenant_id, street, city, state, postal_code, country, phone")
     .in("tenant_id", tenantIds);
 
+  const { data: salesConfigs } = await supabase
+    .from("tenant_sales_config")
+    .select("tenant_id, monthly_rent, monthly_sales_objective")
+    .in("tenant_id", tenantIds);
+
   const addressByTenant: Record<string, { street?: string; city?: string; state?: string; postal_code?: string; country?: string; phone?: string }> = {};
   for (const a of addresses ?? []) {
     const t = a as { tenant_id: string; street?: string; city?: string; state?: string; postal_code?: string; country?: string; phone?: string };
@@ -50,6 +55,15 @@ export async function GET() {
       postal_code: t.postal_code ?? undefined,
       country: t.country ?? undefined,
       phone: t.phone ?? undefined,
+    };
+  }
+
+  const salesConfigByTenant: Record<string, { monthly_rent: number; monthly_sales_objective: number }> = {};
+  for (const s of salesConfigs ?? []) {
+    const row = s as { tenant_id: string; monthly_rent: number; monthly_sales_objective: number };
+    salesConfigByTenant[row.tenant_id] = {
+      monthly_rent: Number(row.monthly_rent) || 0,
+      monthly_sales_objective: Number(row.monthly_sales_objective) || 0,
     };
   }
 
@@ -64,6 +78,7 @@ export async function GET() {
       tenant: {
         ...(typeof tenantData === "object" && tenantData !== null ? tenantData : {}),
         address: addressByTenant[item.tenant_id] ?? null,
+        sales_config: salesConfigByTenant[item.tenant_id] ?? null,
       },
     };
   });
@@ -162,6 +177,8 @@ export async function PATCH(request: Request) {
     public_store_enabled,
     address,
     settings: settingsPayload,
+    monthly_rent,
+    monthly_sales_objective,
   } = body as {
     tenant_id: string;
     name?: string;
@@ -177,6 +194,8 @@ export async function PATCH(request: Request) {
       phone?: string;
     };
     settings?: Record<string, unknown>;
+    monthly_rent?: number;
+    monthly_sales_objective?: number;
   };
 
   if (!tenant_id) {
@@ -267,6 +286,32 @@ export async function PATCH(request: Request) {
       await admin.from("tenant_addresses").insert({
         tenant_id,
         ...addrData,
+      });
+    }
+  }
+
+  if (monthly_rent !== undefined || monthly_sales_objective !== undefined) {
+    const { data: existingConfig } = await admin
+      .from("tenant_sales_config")
+      .select("tenant_id, monthly_rent, monthly_sales_objective")
+      .eq("tenant_id", tenant_id)
+      .single();
+
+    const now = new Date().toISOString();
+    const newRent = monthly_rent !== undefined ? Math.max(0, Number(monthly_rent)) : (existingConfig ? Number((existingConfig as { monthly_rent: number }).monthly_rent) : 0);
+    const newObjective = monthly_sales_objective !== undefined ? Math.max(0, Number(monthly_sales_objective)) : (existingConfig ? Number((existingConfig as { monthly_sales_objective: number }).monthly_sales_objective) : 0);
+
+    if (existingConfig) {
+      await admin
+        .from("tenant_sales_config")
+        .update({ monthly_rent: newRent, monthly_sales_objective: newObjective, updated_at: now })
+        .eq("tenant_id", tenant_id);
+    } else {
+      await admin.from("tenant_sales_config").insert({
+        tenant_id,
+        monthly_rent: newRent,
+        monthly_sales_objective: newObjective,
+        updated_at: now,
       });
     }
   }

@@ -8,7 +8,6 @@ import { CustomerCard } from "./components/CustomerCard";
 import { AssignmentCard } from "./components/AssignmentCard";
 import { OrderItemsTable } from "./components/OrderItemsTable";
 import { ReceiptActions } from "./components/ReceiptActions";
-import { OrderActionButtons } from "./components/OrderActionButtons";
 import { PaymentLinkCard } from "./components/PaymentLinkCard";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { ReceiptPreview } from "./components/ReceiptPreview";
@@ -52,22 +51,33 @@ function OrderDetailContent() {
         />
       </div>
 
-      <div className="no-print mx-auto max-w-4xl space-y-6 px-2 sm:px-0 pb-6">
-        <OrderHeader />
-
+      <div className="no-print flex min-h-0 min-w-0 h-full w-full max-w-5xl mx-auto flex-1 flex-col overflow-x-hidden overflow-y-auto pb-0 lg:pb-6 sm:max-w-5xl">
+        <div className="shrink-0">
+          <OrderHeader />
+        </div>
         {error && (
-          <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mt-4 shrink-0 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
-
-        <div className="flex flex-col gap-6">
-          <AssignmentCard />
-          <CustomerCard />
-          <OrderItemsTable />
-          <PaymentLinkCard />
-          {isPaid && <ReceiptActions />}
-          <OrderActionButtons />
+        <div className="mt-4 flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+          <div className="order-1 min-h-0 min-w-0 flex-1 md:order-3">
+            <OrderItemsTable />
+          </div>
+          <div className="order-2 min-w-0 shrink-0 md:order-1">
+            <AssignmentCard />
+          </div>
+          <div className="order-3 min-w-0 shrink-0 md:order-2">
+            <CustomerCard />
+          </div>
+          <div className="order-4 min-w-0 shrink-0 md:order-4">
+            <PaymentLinkCard />
+          </div>
+          {isPaid && (
+            <div className="order-5 min-w-0 shrink-0 md:order-5">
+              <ReceiptActions />
+            </div>
+          )}
         </div>
       </div>
     </>

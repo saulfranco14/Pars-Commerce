@@ -1,16 +1,30 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import useSWR from "swr";
 import type { ProductListItem } from "@/types/products";
 import type { Subcatalog } from "@/types/subcatalogs";
-import { listByTenant } from "@/services/productsService";
-import { listByTenant as listSubcatalogs } from "@/services/subcatalogsService";
 import { create as createOrderItem } from "@/services/orderItemsService";
 import { ProductSearchCombobox } from "./ProductSearchCombobox";
+import { swrFetcher } from "@/lib/swrFetcher";
 import { Plus, X } from "lucide-react";
 
 const DEBOUNCE_MS = 300;
 const SERVER_SEARCH_MIN_CHARS = 2;
+
+const subcatalogsKey = (tid: string) =>
+  `/api/subcatalogs?tenant_id=${encodeURIComponent(tid)}`;
+const productsKey = (
+  tid: string,
+  subcatalogId?: string,
+  q?: string
+): string | null => {
+  if (!tid) return null;
+  const params = new URLSearchParams({ tenant_id: tid });
+  if (subcatalogId) params.set("subcatalog_id", subcatalogId);
+  if (q && q.trim().length >= SERVER_SEARCH_MIN_CHARS) params.set("q", q.trim());
+  return `/api/products?${params}`;
+};
 
 interface AddItemModalProps {
   tenantId: string;
@@ -27,35 +41,45 @@ export function AddItemModal({
   onClose,
   onAdded,
 }: AddItemModalProps) {
-  const [subcatalogs, setSubcatalogs] = useState<Subcatalog[]>([]);
   const [subcatalogId, setSubcatalogId] = useState("");
-  const [products, setProducts] = useState<ProductListItem[]>([]);
   const [productId, setProductId] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [searching, setSearching] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const subcatalogsKeyValue = tenantId ? subcatalogsKey(tenantId) : null;
+  const { data: subcatalogsData } = useSWR<Subcatalog[]>(
+    subcatalogsKeyValue,
+    swrFetcher,
+    { fallbackData: [] },
+  );
+  const subcatalogs = Array.isArray(subcatalogsData) ? subcatalogsData : [];
   const hasSubcatalogs = subcatalogs.length > 0;
   const useServerSearch = hasSubcatalogs && !subcatalogId;
 
-  const fetchProducts = useCallback(
-    (opts?: { subcatalogId?: string; q?: string }) => {
-      if (!tenantId) return;
-      const q = opts?.q?.trim();
-      const shouldSearch = q && q.length >= SERVER_SEARCH_MIN_CHARS;
-      if (shouldSearch) setSearching(true);
-      listByTenant(tenantId, {
-        subcatalogId: opts?.subcatalogId,
-        q: shouldSearch ? q : undefined,
-      })
-        .then(setProducts)
-        .catch(() => setProducts([]))
-        .finally(() => setSearching(false));
-    },
-    [tenantId]
-  );
+  const productsKeyValue =
+    tenantId && !useServerSearch
+      ? productsKey(tenantId, subcatalogId || undefined)
+      : useServerSearch && debouncedQuery.trim().length >= SERVER_SEARCH_MIN_CHARS
+        ? productsKey(tenantId, undefined, debouncedQuery)
+        : null;
+
+  const {
+    data: productsData,
+    isLoading: searching,
+  } = useSWR<ProductListItem[]>(productsKeyValue, swrFetcher, {
+    fallbackData: [],
+    revalidateOnFocus: false,
+  });
+
+  const products =
+    useServerSearch && debouncedQuery.trim().length < SERVER_SEARCH_MIN_CHARS
+      ? []
+      : Array.isArray(productsData)
+        ? productsData
+        : [];
 
   const handleQueryChange = useCallback(
     (query: string) => {
@@ -63,39 +87,20 @@ export function AddItemModal({
       if (!useServerSearch) return;
       debounceRef.current = setTimeout(() => {
         debounceRef.current = null;
-        if (query.trim().length >= SERVER_SEARCH_MIN_CHARS) {
-          fetchProducts({ subcatalogId: undefined, q: query });
-        } else {
-          setProducts((prev) => {
-            if (productId) {
-              const sel = prev.find((p) => p.id === productId);
-              if (sel) return [sel];
-            }
-            return [];
-          });
-        }
+        setDebouncedQuery(query);
       }, DEBOUNCE_MS);
     },
-    [useServerSearch, fetchProducts, productId]
+    [useServerSearch]
   );
 
   useEffect(() => {
-    if (!isOpen || !tenantId) return;
+    if (!isOpen) return;
     setError(null);
     setProductId("");
     setQuantity(1);
     setSubcatalogId("");
-    listSubcatalogs(tenantId).then(setSubcatalogs).catch(() => setSubcatalogs([]));
+    setDebouncedQuery("");
   }, [isOpen, tenantId]);
-
-  useEffect(() => {
-    if (!isOpen || !tenantId) return;
-    if (useServerSearch) {
-      setProducts([]);
-    } else {
-      fetchProducts({ subcatalogId: subcatalogId || undefined });
-    }
-  }, [isOpen, tenantId, subcatalogId, useServerSearch, fetchProducts]);
 
   useEffect(() => {
     setProductId("");

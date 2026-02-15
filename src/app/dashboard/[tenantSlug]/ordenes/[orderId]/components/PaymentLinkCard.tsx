@@ -33,7 +33,7 @@ export function PaymentLinkCard() {
 
   return (
     <div
-      className={`rounded-xl border p-5 ${
+      className={`rounded-xl border p-5 shadow-sm ${
         isPaid
           ? "border-emerald-500/30 bg-emerald-950/20"
           : "border-blue-500/30 bg-blue-950/20"

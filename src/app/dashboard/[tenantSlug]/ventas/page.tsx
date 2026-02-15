@@ -17,6 +17,7 @@ import type {
   CommissionSummary,
   CommissionPayment,
 } from "@/types/sales";
+import type { SalesAnalyticsResponse } from "@/app/api/sales-analytics/route";
 import type { TeamMember } from "@/types/team";
 import {
   update as updateSalesCommission,
@@ -41,6 +42,14 @@ function buildCommissionsKey(
   if (dateFrom) search.set("date_from", dateFrom);
   if (dateTo) search.set("date_to", dateTo);
   return `/api/sales-commissions?${search}`;
+}
+
+function buildAnalyticsKey(tenantId: string, dateFrom: string, dateTo: string): string | null {
+  if (!tenantId) return null;
+  const search = new URLSearchParams({ tenant_id: tenantId });
+  if (dateFrom) search.set("date_from", dateFrom);
+  if (dateTo) search.set("date_to", dateTo);
+  return `/api/sales-analytics?${search}`;
 }
 
 function buildPaymentsKey(
@@ -133,6 +142,15 @@ export default function VentasPage() {
     CommissionPayment[]
   >(paymentsKey, swrFetcher, { fallbackData: [] });
   const payments = Array.isArray(paymentsData) ? paymentsData : [];
+
+  const analyticsKey =
+    activeTenant && activeTab === "resumen"
+      ? buildAnalyticsKey(activeTenant.id, dateFrom, dateTo)
+      : null;
+  const { data: analyticsData, isLoading: analyticsLoading } = useSWR<SalesAnalyticsResponse>(
+    analyticsKey,
+    swrFetcher
+  );
 
   const commissions =
     activeTab === "pagos" ? pendingCommissions : commissionsFromTab;
@@ -330,7 +348,8 @@ export default function VentasPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+      <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
           Ventas y Comisiones
@@ -439,7 +458,11 @@ export default function VentasPage() {
       {loading ? (
         <LoadingBlock message="Cargando ventas…" />
       ) : activeTab === "resumen" ? (
-        <VentasResumen summary={summary} />
+        <VentasResumen
+          summary={summary}
+          analytics={analyticsData ?? null}
+          analyticsLoading={analyticsLoading}
+        />
       ) : activeTab === "por-persona" ? (
         <VentasPorPersona byPerson={byPerson} />
       ) : activeTab === "por-orden" ? (
@@ -538,6 +561,7 @@ export default function VentasPage() {
         confirmDanger={false}
         loading={actionLoading}
       />
+      </div>
     </div>
   );
 }

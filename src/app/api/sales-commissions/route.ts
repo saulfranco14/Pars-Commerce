@@ -52,7 +52,8 @@ export async function GET(request: Request) {
       orders!sales_commissions_order_id_fkey (
         id,
         created_at,
-        status
+        status,
+        payment_method
       )
       `
     )
@@ -159,7 +160,8 @@ export async function PATCH(request: Request) {
       orders!sales_commissions_order_id_fkey (
         id,
         created_at,
-        status
+        status,
+        payment_method
       )
       `
     )

@@ -125,7 +125,8 @@ export default function SubcatalogosPage() {
   }
 
   return (
-    <div className="space-y-4 px-2 sm:px-0">
+    <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+      <div className="space-y-4 px-2 sm:px-0">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <Link
@@ -353,6 +354,7 @@ export default function SubcatalogosPage() {
         confirmDanger
         loading={deletingId !== null}
       />
+      </div>
     </div>
   );
 }

@@ -30,10 +30,7 @@ export default function SiteCartBadge({ tenantId }: SiteCartBadgeProps) {
   if (count <= 0) return null;
 
   return (
-    <span
-      className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-accent-foreground"
-      aria-label={`${count} items en el carrito`}
-    >
+    <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
       {count > 99 ? "99+" : count}
     </span>
   );

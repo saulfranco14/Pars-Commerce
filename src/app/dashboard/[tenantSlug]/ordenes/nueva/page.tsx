@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import type { TeamMember } from "@/types/team";
-import { list as listTeam } from "@/services/teamService";
 import { create as createOrder } from "@/services/ordersService";
+import { swrFetcher } from "@/lib/swrFetcher";
+
+const teamKey = (tenantId: string) =>
+  `/api/team?tenant_id=${encodeURIComponent(tenantId)}`;
 
 export default function NuevaOrdenPage() {
   const params = useParams();
@@ -15,20 +19,18 @@ export default function NuevaOrdenPage() {
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
 
+  const teamKeyValue = activeTenant ? teamKey(activeTenant.id) : null;
+  const { data: teamData } = useSWR<TeamMember[]>(teamKeyValue, swrFetcher, {
+    fallbackData: [],
+  });
+  const team = Array.isArray(teamData) ? teamData : [];
+
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
-  const [team, setTeam] = useState<TeamMember[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!activeTenant?.id) return;
-    listTeam(activeTenant.id)
-      .then(setTeam)
-      .catch(() => setTeam([]));
-  }, [activeTenant?.id]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,16 +66,17 @@ export default function NuevaOrdenPage() {
   }
 
   const inputClass =
-    "input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+    "input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20";
   const selectClass =
-    "input-form select-custom mt-3 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+    "input-form select-custom mt-3 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-sm text-foreground transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20";
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
+    <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+      <div className="mx-auto max-w-2xl space-y-4">
       <div className="shrink-0 border-b border-border-soft pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/ordenes`}
-          className="inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex items-center gap-2 rounded-lg text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver a órdenes
@@ -90,7 +93,7 @@ export default function NuevaOrdenPage() {
       <div className="rounded-xl border border-border bg-surface-raised shadow-card">
         <form onSubmit={handleSubmit} className="p-4 md:p-8">
           {error && (
-            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
+            <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
               {error}
             </div>
           )}
@@ -107,7 +110,7 @@ export default function NuevaOrdenPage() {
               <div>
                 <label
                   htmlFor="customerName"
-                  className="block text-sm font-medium text-muted"
+                  className="block text-sm font-medium text-muted-foreground"
                 >
                   Nombre
                 </label>
@@ -123,7 +126,7 @@ export default function NuevaOrdenPage() {
               <div>
                 <label
                   htmlFor="customerEmail"
-                  className="block text-sm font-medium text-muted"
+                  className="block text-sm font-medium text-muted-foreground"
                 >
                   Email
                 </label>
@@ -139,7 +142,7 @@ export default function NuevaOrdenPage() {
               <div>
                 <label
                   htmlFor="customerPhone"
-                  className="block text-sm font-medium text-muted"
+                  className="block text-sm font-medium text-muted-foreground"
                 >
                   Teléfono
                 </label>
@@ -178,10 +181,10 @@ export default function NuevaOrdenPage() {
             </select>
           </section>
 
-          <div className="mt-6 flex gap-3 border-t border-border-soft pt-6">
+          <div className="mt-6 flex gap-3 border-t border-border pt-6">
             <Link
               href={`/dashboard/${tenantSlug}/ordenes`}
-              className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+              className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
             >
               <X className="h-4 w-4 shrink-0" aria-hidden />
               Cancelar
@@ -189,13 +192,14 @@ export default function NuevaOrdenPage() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <Plus className="h-4 w-4 shrink-0" aria-hidden />
               {loading ? "Creando…" : "Crear orden"}
             </button>
           </div>
         </form>
+      </div>
       </div>
     </div>
   );

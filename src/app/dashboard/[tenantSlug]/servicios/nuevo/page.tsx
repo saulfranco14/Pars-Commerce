@@ -1,15 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import { serviceFormSchema } from "@/lib/serviceValidation";
 import { create } from "@/services/productsService";
-import { listByTenant as listSubcatalogs } from "@/services/subcatalogsService";
+import { swrFetcher } from "@/lib/swrFetcher";
 import type { Subcatalog } from "@/types/subcatalogs";
 import { SubcatalogSelect } from "@/components/forms/SubcatalogSelect";
+
+const subcatalogsKey = (tenantId: string) =>
+  `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
 
 export default function NuevoServicioPage() {
   const params = useParams();
@@ -25,12 +30,21 @@ export default function NuevoServicioPage() {
   const [commissionAmount, setCommissionAmount] = useState("");
   const [sku, setSku] = useState("");
   const [subcatalogId, setSubcatalogId] = useState("");
-  const [subcatalogs, setSubcatalogs] = useState<Subcatalog[]>([]);
   const [isPublic, setIsPublic] = useState(true);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  const subcatalogsKeyValue = activeTenant
+    ? subcatalogsKey(activeTenant.id)
+    : null;
+  const { data: subcatalogsData } = useSWR<Subcatalog[]>(
+    subcatalogsKeyValue,
+    swrFetcher,
+    { fallbackData: [] },
+  );
+  const subcatalogs = Array.isArray(subcatalogsData) ? subcatalogsData : [];
 
   function deriveSlug(value: string) {
     return value
@@ -39,11 +53,6 @@ export default function NuevoServicioPage() {
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9-]/g, "");
   }
-
-  useEffect(() => {
-    if (!activeTenant?.id) return;
-    listSubcatalogs(activeTenant.id).then(setSubcatalogs).catch(() => setSubcatalogs([]));
-  }, [activeTenant?.id]);
 
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
@@ -67,7 +76,7 @@ export default function NuevoServicioPage() {
           cost_price: Number.isNaN(costPriceNum) ? undefined : costPriceNum,
           sku: sku.trim() || undefined,
         },
-        { abortEarly: false }
+        { abortEarly: false },
       );
     } catch (err) {
       if (err instanceof Error && "inner" in err) {
@@ -144,13 +153,14 @@ export default function NuevoServicioPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-4xl min-h-[calc(100vh-10rem)] flex-col gap-4">
-      <div className="shrink-0 border-b border-border pb-4">
+    <div className="lg:mx-auto flex min-h-0 max-w-5xl flex-1 flex-col overflow-hidden">
+      <div className="shrink-0 pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/servicios`}
-          className="text-sm font-medium text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
-          ← Volver a servicios
+          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+          Volver a servicios
         </Link>
         <h1 className="mt-1 text-xl font-semibold text-foreground sm:text-2xl">
           Nuevo servicio
@@ -160,20 +170,20 @@ export default function NuevoServicioPage() {
         </p>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
-        <form
-          onSubmit={handleSubmit}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden"
-        >
-          <div className="flex-1 overflow-y-auto p-6 md:p-8">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden gap-4 rounded-xl border border-border bg-surface-raised shadow-sm">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
             {error && (
               <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
                 {error}
               </div>
             )}
-            <div className="flex flex-col gap-8 md:flex-row md:items-start">
+            <div className="flex flex-col gap-3 sm:gap-6 md:flex-row md:items-start">
               <div className="min-w-0 flex-1">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
+                  <h3 className="md:col-span-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Información básica
+                  </h3>
                   <div className="space-y-4 md:col-span-2 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
                     <div>
                       <label
@@ -187,7 +197,7 @@ export default function NuevoServicioPage() {
                         type="text"
                         value={name}
                         onChange={handleNameChange}
-                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                         placeholder="Ej. Lavado básico"
                       />
                       {fieldErrors.name && (
@@ -208,7 +218,7 @@ export default function NuevoServicioPage() {
                         type="text"
                         value={slug}
                         onChange={(e) => setSlug(e.target.value)}
-                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                         placeholder="lavado-basico"
                       />
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -222,6 +232,9 @@ export default function NuevoServicioPage() {
                     </div>
                   </div>
 
+                  <h3 className="md:col-span-2 pt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Precios
+                  </h3>
                   <div>
                     <label
                       htmlFor="price"
@@ -235,7 +248,7 @@ export default function NuevoServicioPage() {
                       inputMode="decimal"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                       placeholder="0.00"
                     />
                     {fieldErrors.price && (
@@ -257,7 +270,7 @@ export default function NuevoServicioPage() {
                       inputMode="decimal"
                       value={costPrice}
                       onChange={(e) => setCostPrice(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                       placeholder="0.00"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -269,6 +282,10 @@ export default function NuevoServicioPage() {
                       </p>
                     )}
                   </div>
+
+                  <h3 className="md:col-span-2 pt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Categoría
+                  </h3>
                   <div>
                     <label
                       htmlFor="sku"
@@ -281,7 +298,7 @@ export default function NuevoServicioPage() {
                       type="text"
                       value={sku}
                       onChange={(e) => setSku(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                       placeholder="Ej. SVC-001"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -323,7 +340,7 @@ export default function NuevoServicioPage() {
                       inputMode="decimal"
                       value={commissionAmount}
                       onChange={(e) => setCommissionAmount(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                       placeholder="0.00"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -336,13 +353,16 @@ export default function NuevoServicioPage() {
                     )}
                   </div>
 
+                  <h3 className="md:col-span-2 pt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Configuración
+                  </h3>
                   <div className="flex flex-wrap gap-6 md:col-span-2">
-                    <label className="flex cursor-pointer items-center gap-2">
+                    <label className="flex min-h-[44px] cursor-pointer items-center gap-2">
                       <input
                         type="checkbox"
                         checked={isPublic}
                         onChange={(e) => setIsPublic(e.target.checked)}
-                        className="h-4 w-4 rounded border-border"
+                        className="h-4 w-4 rounded border-border focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
                       />
                       <span className="text-sm text-muted-foreground">
                         Visible en sitio público
@@ -362,13 +382,13 @@ export default function NuevoServicioPage() {
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       rows={2}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                       placeholder="Descripción del servicio"
                     />
                   </div>
                 </div>
               </div>
-              <div className="shrink-0 rounded-lg border border-border bg-border-soft/50 p-4 md:w-72">
+              <div className="shrink-0 rounded-xl border border-border bg-surface p-5 md:w-80 lg:w-80">
                 <MultiImageUpload
                   tenantId={activeTenant.id}
                   urls={imageUrls}
@@ -378,21 +398,23 @@ export default function NuevoServicioPage() {
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-border bg-surface-raised px-6 py-4 md:px-8">
-            <div className="flex flex-wrap gap-3">
+          <div className="shrink-0 border-t border-border bg-surface-raised px-4 py-4 sm:px-6 md:px-8">
+            <div className="flex flex-1 gap-3">
+              <Link
+                href={`/dashboard/${tenantSlug}/servicios`}
+                className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+              >
+                <X className="h-4 w-4 shrink-0" aria-hidden />
+                Cancelar
+              </Link>
               <button
                 type="submit"
                 disabled={loading}
-                className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
+                className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {loading ? "Creando..." : "Crear servicio"}
+                <Plus className="h-4 w-4 shrink-0" aria-hidden />
+                {loading ? "Creando…" : "Crear servicio"}
               </button>
-              <Link
-                href={`/dashboard/${tenantSlug}/servicios`}
-                className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-border-soft"
-              >
-                Cancelar
-              </Link>
             </div>
           </div>
         </form>
