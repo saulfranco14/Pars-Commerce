@@ -26,6 +26,11 @@ export interface TenantAddress {
   phone?: string | null;
 }
 
+export interface TenantSalesConfig {
+  monthly_rent: number;
+  monthly_sales_objective: number;
+}
+
 export interface Tenant {
   id: string;
   name: string;
@@ -38,6 +43,7 @@ export interface Tenant {
   public_store_enabled: boolean;
   settings: Json | null;
   address?: TenantAddress | null;
+  sales_config?: TenantSalesConfig | null;
   created_at: string;
   updated_at: string;
 }

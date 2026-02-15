@@ -22,6 +22,7 @@ export interface SalesCommission {
     id: string;
     created_at: string;
     status: string;
+    payment_method: string | null;
   };
 }
 

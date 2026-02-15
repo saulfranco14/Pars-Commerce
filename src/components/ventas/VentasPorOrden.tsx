@@ -9,6 +9,7 @@ import {
   tableBodyCellClass,
   tableBodyCellMutedClass,
 } from "@/components/ui/TableWrapper";
+import { formatPaymentMethod } from "@/lib/formatPaymentMethod";
 import type { SalesCommission } from "@/types/sales";
 
 interface VentasPorOrdenProps {
@@ -58,6 +59,11 @@ export function VentasPorOrden({
                 {new Date(c.created_at).toLocaleDateString()} ·{" "}
                 {c.profiles?.display_name || c.profiles?.email}
               </p>
+              {c.orders?.payment_method && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Método: {formatPaymentMethod(c.orders.payment_method)}
+                </p>
+              )}
               <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                 <span className="text-muted-foreground">Productos / Servicios</span>
                 <span className="text-right font-medium tabular-nums">
@@ -98,6 +104,7 @@ export function VentasPorOrden({
                 <th className={tableHeaderCellClass}>Orden</th>
                 <th className={tableHeaderCellClass}>Fecha</th>
                 <th className={tableHeaderCellClass}>Persona</th>
+                <th className={tableHeaderCellClass}>Método pago</th>
                 <th className={tableHeaderCellClass}>Productos</th>
                 <th className={tableHeaderCellClass}>Servicios</th>
                 <th className={tableHeaderCellClass}>Total</th>
@@ -111,7 +118,7 @@ export function VentasPorOrden({
               {commissions.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={11}
                     className="px-4 py-8 text-center text-sm text-muted-foreground"
                   >
                     No hay comisiones registradas
@@ -133,6 +140,11 @@ export function VentasPorOrden({
                     </td>
                     <td className={tableBodyCellClass}>
                       {c.profiles?.display_name || c.profiles?.email}
+                    </td>
+                    <td className={tableBodyCellMutedClass}>
+                      {c.orders?.payment_method
+                        ? formatPaymentMethod(c.orders.payment_method)
+                        : "—"}
                     </td>
                     <td className={tableBodyCellMutedClass}>
                       {c.products_count}

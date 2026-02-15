@@ -32,6 +32,8 @@ export default function ConfiguracionPage() {
   const [addressPostalCode, setAddressPostalCode] = useState("");
   const [addressCountry, setAddressCountry] = useState("");
   const [addressPhone, setAddressPhone] = useState("");
+  const [monthlyRent, setMonthlyRent] = useState("");
+  const [monthlySalesObjective, setMonthlySalesObjective] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -61,6 +63,9 @@ export default function ConfiguracionPage() {
     setAddressPostalCode(addr?.postal_code ?? "");
     setAddressCountry(addr?.country ?? "");
     setAddressPhone(addr?.phone ?? "");
+    const sc = activeTenant.sales_config;
+    setMonthlyRent(sc?.monthly_rent != null ? String(sc.monthly_rent) : "");
+    setMonthlySalesObjective(sc?.monthly_sales_objective != null ? String(sc.monthly_sales_objective) : "");
   }, [activeTenant?.id]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -90,6 +95,14 @@ export default function ConfiguracionPage() {
           country: addressCountry.trim() || undefined,
           phone: addressPhone.trim() || undefined,
         },
+        monthly_rent: (() => {
+          const n = parseFloat(monthlyRent);
+          return monthlyRent !== "" && !Number.isNaN(n) ? n : undefined;
+        })(),
+        monthly_sales_objective: (() => {
+          const n = parseFloat(monthlySalesObjective);
+          return monthlySalesObjective !== "" && !Number.isNaN(n) ? n : undefined;
+        })(),
       });
       setSuccess(true);
       const list = (await listTenants()) as MembershipItem[];
@@ -273,6 +286,47 @@ export default function ConfiguracionPage() {
             <label htmlFor="expressOrder" className="text-sm text-muted-foreground">
               Orden Express. Permite crear el pedido y pagar de inmediato, ideal para cobros rápidos sin asignación ni seguimiento.
             </label>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-stone-50/30 p-4 space-y-4">
+          <h2 className="text-sm font-medium text-foreground">Finanzas del negocio</h2>
+          <p className="text-xs text-muted-foreground">
+            Renta y objetivo de ventas para el dashboard.
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="monthlyRent" className="block text-xs font-medium text-muted-foreground">
+                Renta mensual
+              </label>
+              <input
+                id="monthlyRent"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.01"
+                value={monthlyRent}
+                onChange={(e) => setMonthlyRent(e.target.value)}
+                className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label htmlFor="monthlySalesObjective" className="block text-xs font-medium text-muted-foreground">
+                Objetivo de ventas mensual
+              </label>
+              <input
+                id="monthlySalesObjective"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.01"
+                value={monthlySalesObjective}
+                onChange={(e) => setMonthlySalesObjective(e.target.value)}
+                className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
+                placeholder="0.00"
+              />
+            </div>
           </div>
         </div>
 
