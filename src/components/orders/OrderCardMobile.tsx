@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/orders/StatusBadge";
 import { TicketDownloadActions } from "@/components/orders/TicketDownloadActions";
 import { formatOrderDate, formatOrderDateFull } from "@/lib/formatDate";
 import { getPaymentMethodConfig } from "@/lib/formatPaymentMethod";
+import { getSourceConfig } from "@/lib/formatSource";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { OrderListItem } from "@/types/orders";
 import type { OrderDetail } from "@/app/dashboard/[tenantSlug]/ordenes/[orderId]/types";
@@ -19,6 +20,7 @@ const STATUS_BORDER: Record<string, string> = {
   in_progress: "border-l-amber-500",
   completed: "border-l-green-500",
   pending_payment: "border-l-orange-500",
+  pending_pickup: "border-l-violet-500",
   paid: "border-l-emerald-500",
   cancelled: "border-l-red-400",
 };
@@ -29,6 +31,7 @@ const PRICE_COLOR: Record<string, string> = {
   in_progress: "text-amber-600",
   completed: "text-emerald-600",
   pending_payment: "text-orange-600",
+  pending_pickup: "text-violet-600",
   paid: "text-emerald-600",
   cancelled: "text-muted-foreground/60 line-through decoration-red-400",
 };
@@ -134,12 +137,28 @@ export function OrderCardMobile({
                   —
                 </span>
               )}
-              {paymentConfig && PaymentIcon && (
-                <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
-                  <PaymentIcon className={`h-3 w-3 shrink-0 ${paymentConfig.iconClass ?? ""}`} aria-hidden />
-                  {paymentConfig.label}
-                </span>
-              )}
+              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 mt-0.5">
+                {paymentConfig && PaymentIcon && (
+                  <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <PaymentIcon className={`h-3 w-3 shrink-0 ${paymentConfig.iconClass ?? ""}`} aria-hidden />
+                    {paymentConfig.label}
+                  </span>
+                )}
+                {order.source && paymentConfig && (
+                  <span className="text-muted-foreground/50">·</span>
+                )}
+                {order.source && (() => {
+                  const src = getSourceConfig(order.source);
+                  if (!src) return null;
+                  const Icon = src.icon;
+                  return (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                      <Icon className={`h-3 w-3 shrink-0 ${src.iconClass ?? ""}`} aria-hidden />
+                      {src.label}
+                    </span>
+                  );
+                })()}
+              </div>
             </div>
             <div className="flex flex-col items-end gap-1.5 pt-0.5">
               <StatusBadge status={order.status} cancelledFrom={order.cancelled_from} />
@@ -296,7 +315,7 @@ export function OrderCardMobile({
       </div>
 
       {/* ── Receipt footer ── */}
-      {isPaid && (
+      {(isPaid || order.status === "pending_pickup") && (
         <div
           className="flex min-h-[52px] items-center justify-between gap-3 border-t border-border/40 bg-background/20 pl-4 pr-3 py-2"
           onClick={(e) => e.stopPropagation()}

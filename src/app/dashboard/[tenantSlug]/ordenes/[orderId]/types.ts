@@ -12,6 +12,7 @@ export interface OrderDetail {
   id: string;
   status: string;
   cancelled_from?: string | null;
+  source?: "dashboard" | "public_store" | null;
   customer_name: string | null;
   customer_email: string | null;
   customer_phone: string | null;

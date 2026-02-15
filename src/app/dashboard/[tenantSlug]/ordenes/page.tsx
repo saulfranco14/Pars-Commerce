@@ -24,6 +24,7 @@ import {
 import { formatOrderDate, formatOrderDateFull } from "@/lib/formatDate";
 import { DATE_MIN, getTodayStr, clampDate } from "@/lib/dateValidation";
 import { formatPaymentMethod } from "@/lib/formatPaymentMethod";
+import { getSourceConfig } from "@/lib/formatSource";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { OrderListItem } from "@/types/orders";
 
@@ -57,6 +58,7 @@ const STATUS_TABS: { value: string; label: string }[] = [
   { value: "assigned", label: "Asignada" },
   { value: "in_progress", label: "En progreso" },
   { value: "pending_payment", label: "Pago pendiente" },
+  { value: "pending_pickup", label: "Pendiente recoger" },
   { value: "paid", label: "Pagada" },
   { value: "completed", label: "Completada" },
   { value: "cancelled", label: "Cancelada" },
@@ -280,6 +282,7 @@ export default function OrdenesPage() {
                       <th className={tableHeaderCellClass}>Creada</th>
                       <th className={tableHeaderCellClass}>Cliente</th>
                       <th className={tableHeaderCellClass}>Contenido</th>
+                      <th className={tableHeaderCellClass}>Origen</th>
                       <th className={tableHeaderCellClass}>Asignado</th>
                       <th className={tableHeaderCellClass}>Estado</th>
                       <th className={tableHeaderCellClass}>Pago</th>
@@ -332,6 +335,21 @@ export default function OrdenesPage() {
                             )}
                           </td>
                           <td className={tableBodyCellClass}>
+                            {o.source ? (() => {
+                              const src = getSourceConfig(o.source);
+                              if (!src) return <span className="text-muted-foreground">—</span>;
+                              const Icon = src.icon;
+                              return (
+                                <span className="inline-flex items-center gap-1 rounded bg-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+                                  <Icon className={`h-3 w-3 shrink-0 ${src.iconClass ?? ""}`} aria-hidden />
+                                  {src.label}
+                                </span>
+                              );
+                            })() : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                          <td className={tableBodyCellClass}>
                             {o.assigned_user ? (
                               <span className="text-muted-foreground">
                                 {o.assigned_user.display_name ||
@@ -372,7 +390,8 @@ export default function OrdenesPage() {
                             onClick={(e) => e.stopPropagation()}
                           >
                             {(o.status === "paid" ||
-                              o.status === "completed") && (
+                              o.status === "completed" ||
+                              o.status === "pending_pickup") && (
                               <TicketDownloadActions
                                 orderId={o.id}
                                 businessName={activeTenant?.name ?? "Negocio"}

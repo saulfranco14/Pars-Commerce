@@ -25,7 +25,7 @@ export function AssignmentCard() {
   const isAssigned = !!order.assigned_to;
   const isPaid = order.status === "paid";
   const isOwner = activeRole?.name === "owner";
-  const showAssignment = ["draft", "assigned", "in_progress", "paid"].includes(
+  const showAssignment = ["draft", "assigned", "in_progress", "pending_pickup", "paid"].includes(
     order.status
   );
 

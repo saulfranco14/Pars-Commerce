@@ -1,27 +1,43 @@
 import { apiFetch } from "@/services/apiFetch";
 
+export type PromotionType = "percentage" | "fixed_amount" | "bundle_price" | "fixed_price" | "event_badge";
+
 export interface Promotion {
   id: string;
   tenant_id: string;
   name: string;
-  type: string;
+  slug: string | null;
+  type: PromotionType;
   value: number;
   min_amount: number | null;
   product_ids: string[] | null;
   valid_from: string | null;
   valid_until: string | null;
+  image_url: string | null;
+  description: string | null;
+  badge_label: string | null;
+  subcatalog_ids: string[] | null;
+  quantity: number | null;
+  bundle_product_ids: string[] | null;
   created_at: string;
 }
 
 export interface CreatePromotionPayload {
   tenant_id: string;
   name: string;
-  type: "percentage" | "fixed_amount";
+  type: PromotionType;
   value: number;
   min_amount?: number;
   product_ids?: string[];
   valid_from?: string;
   valid_until?: string;
+  slug?: string;
+  image_url?: string;
+  description?: string;
+  badge_label?: string;
+  subcatalog_ids?: string[];
+  quantity?: number;
+  bundle_product_ids?: string[];
 }
 
 export async function list(

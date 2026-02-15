@@ -5,17 +5,23 @@ import { useState, useRef } from "react";
 interface ImageUploadProps {
   tenantId: string;
   productId?: string;
+  promotionId?: string;
+  variant?: "product" | "promotion";
   currentUrl: string | null;
   onUploaded: (url: string) => void;
   disabled?: boolean;
+  label?: string;
 }
 
 export function ImageUpload({
   tenantId,
   productId,
+  promotionId,
+  variant = "product",
   currentUrl,
   onUploaded,
   disabled,
+  label = "Imagen del producto",
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,13 +33,15 @@ export function ImageUpload({
     setError(null);
     setUploading(true);
     try {
-      const { uploadProductImage } = await import("@/lib/supabase/storage");
-      const url = await uploadProductImage(
-        file,
-        tenantId,
-        productId || undefined
-      );
-      onUploaded(url);
+      if (variant === "promotion") {
+        const { uploadPromotionImage } = await import("@/lib/supabase/storage");
+        const url = await uploadPromotionImage(file, tenantId, promotionId || undefined);
+        onUploaded(url);
+      } else {
+        const { uploadProductImage } = await import("@/lib/supabase/storage");
+        const url = await uploadProductImage(file, tenantId, productId || undefined);
+        onUploaded(url);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al subir la imagen");
     } finally {
@@ -47,7 +55,7 @@ export function ImageUpload({
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-muted-foreground">
-        Imagen del producto
+        {label}
       </label>
       {displayUrl && (
         <img

@@ -10,6 +10,11 @@ export interface SalesByPaymentMethod {
   other: number;
 }
 
+export interface SalesBySource {
+  dashboard: number;
+  public_store: number;
+}
+
 export interface SalesByWeekItem {
   week_start: string;
   total_revenue: number;
@@ -46,6 +51,7 @@ export interface TopProductItem {
 
 export interface SalesAnalyticsResponse {
   byPaymentMethod: SalesByPaymentMethod;
+  bySource: SalesBySource;
   byWeek: SalesByWeekItem[];
   byDay: SalesByDayItem[];
   byPerson: SalesByPersonItem[];
@@ -104,7 +110,7 @@ export async function GET(request: Request) {
 
   let ordersQuery = supabase
     .from("orders")
-    .select("id, total, payment_method, created_at, paid_at")
+    .select("id, total, payment_method, source, created_at, paid_at")
     .eq("tenant_id", tenantId)
     .eq("status", "paid");
 
@@ -133,6 +139,11 @@ export async function GET(request: Request) {
     other: 0,
   };
 
+  const bySource: SalesBySource = {
+    dashboard: 0,
+    public_store: 0,
+  };
+
   const weekMap = new Map<string, { total: number; count: number }>();
   const dayMap = new Map<string, { total: number; count: number }>();
 
@@ -149,6 +160,13 @@ export async function GET(request: Request) {
       byPaymentMethod.other += total;
     } else {
       byPaymentMethod.other += total;
+    }
+
+    const src = ((o as { source?: string }).source || "dashboard").toLowerCase().trim();
+    if (src === "public_store") {
+      bySource.public_store += total;
+    } else {
+      bySource.dashboard += total;
     }
 
     const paidAt = o.paid_at ?? o.created_at;
@@ -396,6 +414,7 @@ export async function GET(request: Request) {
 
   const response: SalesAnalyticsResponse = {
     byPaymentMethod,
+    bySource,
     byWeek,
     byDay,
     byPerson,
