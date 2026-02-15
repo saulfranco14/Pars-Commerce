@@ -22,6 +22,7 @@ export default function DashboardLayout({
   useAuthInitializer();
   const profile = useSessionStore((s) => s.profile);
   const memberships = useTenantStore((s) => s.memberships);
+  const tenantsLoaded = useTenantStore((s) => s.tenantsLoaded);
   const activeTenantId = useTenantStore((s) => s.activeTenantId);
   const setActiveTenantId = useTenantStore((s) => s.setActiveTenantId);
   const activeTenant = useTenantStore((s) => s.activeTenant)();
@@ -81,6 +82,8 @@ export default function DashboardLayout({
             {pathname === "/dashboard/crear-negocio" ||
             pathname === "/dashboard/perfil" ? (
               children
+            ) : !tenantsLoaded ? (
+              <LoadingBlock message="Cargando negocios…" />
             ) : memberships.length === 0 ? (
             <div className="rounded-xl border border-border bg-surface-raised p-6 text-center">
               <h2 className="text-lg font-semibold text-foreground">

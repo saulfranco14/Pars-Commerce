@@ -78,7 +78,7 @@ export async function GET(request: Request) {
     valid_from: p.valid_from,
     valid_until: p.valid_until,
     product_ids: p.product_ids ?? [],
-    products: (p.product_ids ?? []).map((id) => productsMap[id]).filter(Boolean),
+    products: (p.product_ids ?? []).map((id: string) => productsMap[id]).filter(Boolean),
   }));
 
   return NextResponse.json(promotions);
