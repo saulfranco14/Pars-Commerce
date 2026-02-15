@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Store } from "lucide-react";
+import CartBadge from "./CartBadge";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -69,6 +70,11 @@ export default async function SitioLayout({ children, params }: LayoutProps) {
                 {p.title}
               </Link>
             ))}
+            <CartBadge
+              tenantId={tenant.id}
+              sitioSlug={slug}
+              accentColor={accentColor}
+            />
           </nav>
         </div>
       </header>

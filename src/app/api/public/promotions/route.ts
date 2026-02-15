@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 
   const { data: rawPromotions, error } = await supabase
     .from("promotions")
-    .select("id, name, type, value, min_amount, product_ids, valid_from, valid_until")
+    .select("id, name, slug, type, value, min_amount, product_ids, valid_from, valid_until, image_url, description, badge_label, subcatalog_ids, quantity, bundle_product_ids")
     .eq("tenant_id", tenantId)
     .order("created_at", { ascending: false });
 
@@ -52,34 +52,65 @@ export async function GET(request: Request) {
     return true;
   });
 
-  const allProductIds = active.flatMap((p) => p.product_ids ?? []).filter(Boolean);
+  const allProductIds = active.flatMap((p) => {
+    const ids = p.product_ids ?? [];
+    const bundleIds = p.bundle_product_ids ?? [];
+    return [...ids, ...bundleIds];
+  }).filter(Boolean);
   const uniqueIds = [...new Set(allProductIds)];
 
-  const productsMap: Record<string, { id: string; name: string; slug: string | null }> = {};
+  const productsMap: Record<string, { id: string; name: string; slug: string | null; image_url: string | null }> = {};
   if (uniqueIds.length > 0) {
     const { data: products } = await supabase
       .from("products")
-      .select("id, name, slug")
+      .select("id, name, slug, image_url")
       .in("id", uniqueIds)
       .eq("is_public", true)
       .is("deleted_at", null);
 
     for (const prod of products ?? []) {
-      productsMap[prod.id] = { id: prod.id, name: prod.name, slug: prod.slug };
+      productsMap[prod.id] = { id: prod.id, name: prod.name, slug: prod.slug, image_url: prod.image_url };
     }
   }
 
-  const promotions = active.map((p) => ({
-    id: p.id,
-    name: p.name,
-    type: p.type,
-    value: p.value,
-    min_amount: p.min_amount,
-    valid_from: p.valid_from,
-    valid_until: p.valid_until,
-    product_ids: p.product_ids ?? [],
-    products: (p.product_ids ?? []).map((id: string) => productsMap[id]).filter(Boolean),
-  }));
+  const promoIds = active.map((p) => p.id);
+  const { data: promoImages } = promoIds.length > 0
+    ? await supabase
+        .from("promotion_images")
+        .select("promotion_id, url, position")
+        .in("promotion_id", promoIds)
+        .order("position", { ascending: true })
+    : { data: [] as { promotion_id: string; url: string; position: number }[] };
+
+  const imagesByPromo: Record<string, string[]> = {};
+  for (const img of promoImages ?? []) {
+    if (!imagesByPromo[img.promotion_id]) imagesByPromo[img.promotion_id] = [];
+    imagesByPromo[img.promotion_id].push(img.url);
+  }
+
+  const promotions = active.map((p) => {
+    const productIds = [...(p.product_ids ?? []), ...(p.bundle_product_ids ?? [])].filter(Boolean);
+    const uniqueProductIds = [...new Set(productIds)];
+    return {
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      type: p.type,
+      value: p.value,
+      min_amount: p.min_amount,
+      valid_from: p.valid_from,
+      valid_until: p.valid_until,
+      image_url: p.image_url,
+      description: p.description,
+      badge_label: p.badge_label,
+      subcatalog_ids: p.subcatalog_ids ?? [],
+      quantity: p.quantity,
+      bundle_product_ids: p.bundle_product_ids ?? [],
+      product_ids: p.product_ids ?? [],
+      image_urls: imagesByPromo[p.id] ?? [],
+      products: uniqueProductIds.map((id: string) => productsMap[id]).filter(Boolean),
+    };
+  });
 
   return NextResponse.json(promotions);
 }

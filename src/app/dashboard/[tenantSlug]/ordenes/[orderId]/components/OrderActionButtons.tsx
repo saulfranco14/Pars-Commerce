@@ -57,10 +57,10 @@ export function OrderActionButtons({ embedded }: OrderActionButtonsProps = {}) {
   const isOwner = activeRole?.name === "owner";
   const showCancel =
     isOwner &&
-    ["draft", "assigned", "in_progress", "paid"].includes(order.status);
+    ["draft", "assigned", "in_progress", "pending_pickup", "paid"].includes(order.status);
   const needsAssignBeforePaid =
     !order.assigned_to &&
-    (order.status === "completed" || order.status === "pending_payment");
+    (order.status === "completed" || order.status === "pending_payment" || order.status === "pending_pickup");
 
   async function handleExpressClick() {
     if (!order) return;
@@ -185,7 +185,7 @@ export function OrderActionButtons({ embedded }: OrderActionButtonsProps = {}) {
             </button>
           </>
         )}
-        {order.status === "pending_payment" && (
+        {(order.status === "pending_payment" || order.status === "pending_pickup") && (
           <button
             type="button"
             onClick={handlePayClick}
@@ -193,7 +193,7 @@ export function OrderActionButtons({ embedded }: OrderActionButtonsProps = {}) {
             className={`w-full min-w-0 shrink-0 sm:w-auto ${btnSuccess}`}
           >
             <DollarSign className="h-4 w-4 shrink-0" aria-hidden />
-            Marcar como pagado
+            {order.status === "pending_pickup" ? "Marcar como cobrado (recogió)" : "Marcar como pagado"}
           </button>
         )}
       </div>

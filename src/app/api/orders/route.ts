@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       .from("orders")
       .select(
         `
-        id, status, cancelled_from, customer_name, customer_email, customer_phone,
+        id, status, cancelled_from, source, customer_name, customer_email, customer_phone,
         subtotal, discount, total, created_at, updated_at,
         created_by, assigned_to, completed_by, completed_at, paid_at,
         payment_method, payment_link, mp_preference_id,
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
     .from("orders")
     .select(
       `
-      id, status, cancelled_from, customer_name, customer_email, total, created_at, paid_at, assigned_to, payment_method,
+      id, status, cancelled_from, source, customer_name, customer_email, total, created_at, paid_at, assigned_to, payment_method,
       assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email)
       `
     )
@@ -135,6 +135,7 @@ const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   in_progress: ["completed", "cancelled"],
   completed: ["pending_payment", "paid"],
   pending_payment: ["paid"],
+  pending_pickup: ["paid", "cancelled"],
   paid: ["cancelled"],
   cancelled: [],
 };

@@ -42,6 +42,7 @@ export async function GET(request: Request) {
       product_id,
       quantity,
       price_snapshot,
+      promotion_id,
       product:products(id, name, slug, image_url)
     `)
     .eq("cart_id", cart.id)
@@ -76,18 +77,18 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { tenant_id?: string; product_id?: string; quantity?: number };
+  let body: { tenant_id?: string; product_id?: string; promotion_id?: string; quantity?: number };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { tenant_id, product_id, quantity = 1 } = body;
+  const { tenant_id, product_id, promotion_id, quantity = 1 } = body;
 
-  if (!tenant_id || !product_id || quantity < 1) {
+  if (!tenant_id) {
     return NextResponse.json(
-      { error: "tenant_id, product_id and quantity (>= 1) are required" },
+      { error: "tenant_id is required" },
       { status: 400 }
     );
   }
@@ -102,21 +103,6 @@ export async function POST(request: Request) {
   if (!tenant) {
     return NextResponse.json(
       { error: "Tenant not found or public store disabled" },
-      { status: 404 }
-    );
-  }
-
-  const { data: product, error: productError } = await supabase
-    .from("products")
-    .select("id, price")
-    .eq("id", product_id)
-    .eq("tenant_id", tenant_id)
-    .eq("is_public", true)
-    .single();
-
-  if (productError || !product) {
-    return NextResponse.json(
-      { error: "Product not found or not public" },
       { status: 404 }
     );
   }
@@ -148,6 +134,32 @@ export async function POST(request: Request) {
     cartId = newCart!.id;
   }
 
+  if (promotion_id) {
+    return handleAddPromotion(supabase, tenant_id, promotion_id, cartId, fingerprint);
+  }
+
+  if (!product_id || quantity < 1) {
+    return NextResponse.json(
+      { error: "product_id and quantity (>= 1) are required when not adding promotion" },
+      { status: 400 }
+    );
+  }
+
+  const { data: product, error: productError } = await supabase
+    .from("products")
+    .select("id, price")
+    .eq("id", product_id)
+    .eq("tenant_id", tenant_id)
+    .eq("is_public", true)
+    .single();
+
+  if (productError || !product) {
+    return NextResponse.json(
+      { error: "Product not found or not public" },
+      { status: 404 }
+    );
+  }
+
   const price = Number(product.price);
 
   const { error: upsertError } = await supabase
@@ -167,6 +179,101 @@ export async function POST(request: Request) {
 
   if (upsertError) {
     return NextResponse.json({ error: upsertError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true, cart_id: cartId });
+}
+
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
+async function handleAddPromotion(
+  supabase: SupabaseClient,
+  tenantId: string,
+  promotionId: string,
+  cartId: string,
+  _fingerprint: string
+): Promise<NextResponse> {
+  const { data: promotion, error: promoError } = await supabase
+    .from("promotions")
+    .select("id, type, value, quantity, product_ids, bundle_product_ids")
+    .eq("id", promotionId)
+    .eq("tenant_id", tenantId)
+    .single();
+
+  if (promoError || !promotion) {
+    return NextResponse.json(
+      { error: "Promotion not found" },
+      { status: 404 }
+    );
+  }
+
+  const productIds = [
+    ...(promotion.product_ids ?? []),
+    ...(promotion.bundle_product_ids ?? []),
+  ].filter(Boolean) as string[];
+  const uniqueIds = [...new Set(productIds)];
+
+  if (uniqueIds.length === 0) {
+    return NextResponse.json(
+      { error: "Promotion has no products" },
+      { status: 400 }
+    );
+  }
+
+  const { data: products } = await supabase
+    .from("products")
+    .select("id, price")
+    .in("id", uniqueIds)
+    .eq("tenant_id", tenantId)
+    .eq("is_public", true);
+
+  const productsMap = new Map(
+    (products ?? []).map((p: { id: string; price: number }) => [p.id, Number(p.price)])
+  );
+  const promoValue = Number(promotion.value);
+  const promoQty = Number(promotion.quantity ?? 1);
+
+  const isBundle = promotion.type === "bundle_price";
+  const bundleTotalUnits = isBundle && uniqueIds.length === 1 ? promoQty : uniqueIds.length;
+
+  for (const pid of uniqueIds) {
+    const basePrice: number = productsMap.get(pid) ?? 0;
+    let finalPrice: number;
+
+    switch (promotion.type) {
+      case "percentage":
+        finalPrice = basePrice * (1 - promoValue / 100);
+        break;
+      case "fixed_amount":
+        finalPrice = Math.max(0, basePrice - promoValue);
+        break;
+      case "bundle_price":
+        finalPrice = promoValue / bundleTotalUnits;
+        break;
+      case "fixed_price":
+        finalPrice = promoValue;
+        break;
+      default:
+        finalPrice = basePrice;
+    }
+
+    const qty = isBundle ? (uniqueIds.length === 1 ? promoQty : 1) : 1;
+    const { error: upsertErr } = await supabase
+      .from("public_cart_items")
+      .upsert(
+        {
+          cart_id: cartId,
+          product_id: pid,
+          quantity: qty,
+          price_snapshot: Math.round(finalPrice * 100) / 100,
+          promotion_id: promotionId,
+        },
+        { onConflict: "cart_id,product_id", ignoreDuplicates: false }
+      );
+
+    if (upsertErr) {
+      return NextResponse.json({ error: upsertErr.message }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ success: true, cart_id: cartId });

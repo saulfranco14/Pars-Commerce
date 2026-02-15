@@ -1,5 +1,4 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { preferenceClient } from "@/lib/mercadopago";
 import { NextResponse } from "next/server";
 
 const FINGERPRINT_HEADER = "x-fingerprint-id";
@@ -31,8 +30,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { tenant_id, cart_id, customer_name, customer_email, customer_phone } =
-    body;
+  const { tenant_id, cart_id, customer_name, customer_email, customer_phone } = body;
 
   if (!tenant_id || !cart_id) {
     return NextResponse.json(
@@ -41,9 +39,9 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!customer_name?.trim() || !customer_email?.trim()) {
+  if (!customer_name?.trim() || !customer_email?.trim() || !customer_phone?.trim()) {
     return NextResponse.json(
-      { error: "customer_name and customer_email are required" },
+      { error: "customer_name, customer_email and customer_phone are required" },
       { status: 400 }
     );
   }
@@ -78,7 +76,7 @@ export async function POST(request: Request) {
 
   const { data: cartItems } = await admin
     .from("public_cart_items")
-    .select("product_id, quantity, price_snapshot, product:products(id, name)")
+    .select("product_id, quantity, price_snapshot, promotion_id")
     .eq("cart_id", cart_id);
 
   if (!cartItems || cartItems.length === 0) {
@@ -98,14 +96,14 @@ export async function POST(request: Request) {
     .from("orders")
     .insert({
       tenant_id,
-      status: "pending_payment",
+      status: "pending_pickup",
       subtotal,
       discount: 0,
       total: totalAmount,
       source: "public_store",
       customer_name: customer_name.trim(),
       customer_email: customer_email.trim(),
-      customer_phone: customer_phone?.trim() || null,
+      customer_phone: customer_phone.trim(),
     })
     .select("id")
     .single();
@@ -126,92 +124,23 @@ export async function POST(request: Request) {
       product_id: item.product_id,
       quantity: qty,
       unit_price: unitPrice,
-      total_price: totalPrice,
       subtotal: totalPrice,
-      status: "pending",
+      promotion_id: item.promotion_id ?? null,
     });
   }
 
-  const mpItems = cartItems.map((item) => {
-    const product = Array.isArray(item.product)
-      ? item.product[0]
-      : item.product;
-    return {
-      id: product?.id ?? item.product_id ?? "unknown",
-      title: product?.name ?? "Producto",
-      quantity: item.quantity,
-      unit_price: Number(item.price_snapshot),
-      currency_id: "MXN",
-    };
-  });
+  await admin.from("public_cart_items").delete().eq("cart_id", cart_id);
 
-  const origin =
-    request.headers.get("origin") ??
-    request.headers.get("referer")?.replace(/\/[^/]*$/, "") ??
-    "http://localhost:3000";
-
-  const slugRes = await admin
+  const { data: slugRes } = await admin
     .from("tenants")
     .select("slug")
     .eq("id", tenant_id)
     .single();
-  const slug = (slugRes.data as { slug: string } | null)?.slug ?? "";
-
-  let preferenceRes;
-  try {
-    preferenceRes = await preferenceClient.create({
-    body: {
-      items: mpItems,
-      external_reference: order.id,
-      back_urls: {
-        success: `${origin}/sitio/${slug}/confirmacion?status=success&order_id=${order.id}`,
-        failure: `${origin}/sitio/${slug}/confirmacion?status=failure&order_id=${order.id}`,
-        pending: `${origin}/sitio/${slug}/confirmacion?status=pending&order_id=${order.id}`,
-      },
-      auto_return: "approved",
-      notification_url: `${origin}/api/mercadopago/webhook`,
-      payer: { email: customer_email.trim() },
-    },
-  });
-  } catch (err) {
-    console.error("MercadoPago preference error:", err);
-    return NextResponse.json(
-      { error: "Error al generar link de pago" },
-      { status: 500 }
-    );
-  }
-
-  const paymentLink = preferenceRes.init_point ?? preferenceRes.sandbox_init_point;
-
-  if (!paymentLink) {
-    return NextResponse.json(
-      { error: "MercadoPago no devolvió link de pago" },
-      { status: 502 }
-    );
-  }
-
-  await admin
-    .from("orders")
-    .update({
-      payment_link: paymentLink,
-      mp_preference_id: preferenceRes.id,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", order.id);
-
-  await admin.from("payments").insert({
-    order_id: order.id,
-    provider: "mercadopago",
-    external_id: preferenceRes.id,
-    status: "pending",
-    amount: totalAmount,
-    metadata: { preference_id: preferenceRes.id, init_point: paymentLink },
-  });
-
-  await admin.from("public_cart_items").delete().eq("cart_id", cart_id);
+  const slug = (slugRes as { slug: string } | null)?.slug ?? "";
 
   return NextResponse.json({
-    payment_link: paymentLink,
+    success: true,
     order_id: order.id,
+    redirect_url: `/sitio/${slug}/confirmacion?order_id=${order.id}`,
   });
 }

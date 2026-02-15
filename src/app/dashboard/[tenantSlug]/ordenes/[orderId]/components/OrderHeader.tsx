@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { formatOrderDateFull } from "@/lib/formatDate";
 import { getPaymentMethodConfig } from "@/lib/formatPaymentMethod";
+import { getSourceConfig } from "@/lib/formatSource";
 import { useOrder } from "../hooks/useOrder";
 
 export function OrderHeader() {
@@ -29,6 +30,17 @@ export function OrderHeader() {
         <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
           Orden {order.id.slice(0, 8)}
         </h1>
+        {order.source && (() => {
+          const src = getSourceConfig(order.source);
+          if (!src) return null;
+          const Icon = src.icon;
+          return (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-border-soft px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+              <Icon className={`h-3.5 w-3.5 shrink-0 ${src.iconClass ?? ""}`} aria-hidden />
+              {src.label}
+            </span>
+          );
+        })()}
         <StatusBadge status={order.status} cancelledFrom={order.cancelled_from} />
         {order.assigned_user && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-border-soft px-2.5 py-0.5 text-xs font-medium text-muted-foreground">

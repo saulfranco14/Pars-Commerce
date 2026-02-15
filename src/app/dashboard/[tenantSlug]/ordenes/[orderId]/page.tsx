@@ -38,6 +38,7 @@ function OrderDetailContent() {
   if (!order) return null;
 
   const isPaid = order.status === "paid" || order.status === "completed";
+  const showTicket = isPaid || order.status === "pending_pickup";
 
   return (
     <>
@@ -73,7 +74,7 @@ function OrderDetailContent() {
           <div className="order-4 min-w-0 shrink-0 md:order-4">
             <PaymentLinkCard />
           </div>
-          {isPaid && (
+          {showTicket && (
             <div className="order-5 min-w-0 shrink-0 md:order-5">
               <ReceiptActions />
             </div>

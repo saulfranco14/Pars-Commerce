@@ -2,6 +2,7 @@
 
 import type { SalesAnalyticsResponse } from "@/app/api/sales-analytics/route";
 import { SalesByPaymentMethodChart } from "@/components/ventas/charts/SalesByPaymentMethodChart";
+import { SalesBySourceChart } from "@/components/ventas/charts/SalesBySourceChart";
 import { SalesByWeekChart } from "@/components/ventas/charts/SalesByWeekChart";
 import { SalesObjectiveChart } from "@/components/ventas/charts/SalesObjectiveChart";
 import { SalesTrendChart } from "@/components/ventas/charts/SalesTrendChart";
@@ -97,6 +98,12 @@ export function VentasResumen({
         />
         <SalesByPaymentMethodChart
           data={analytics?.byPaymentMethod ?? { efectivo: 0, transferencia: 0, tarjeta: 0, mercadopago: 0, other: 0 }}
+          dateFrom={dateFromVal}
+          dateTo={dateToVal}
+          loading={analyticsLoading}
+        />
+        <SalesBySourceChart
+          data={analytics?.bySource ?? { dashboard: 0, public_store: 0 }}
           dateFrom={dateFromVal}
           dateTo={dateToVal}
           loading={analyticsLoading}

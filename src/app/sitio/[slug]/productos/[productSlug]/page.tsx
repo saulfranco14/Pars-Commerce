@@ -2,7 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MessageCircle, Package } from "lucide-react";
+import { ArrowLeft, Package } from "lucide-react";
+import ProductDetailActions from "./ProductDetailActions";
 
 interface PageProps {
   params: Promise<{ slug: string; productSlug: string }>;
@@ -108,22 +109,13 @@ export default async function ProductoDetallePage({ params }: PageProps) {
             </div>
           )}
 
-          {waHref ? (
-            <a
-              href={waHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-6 flex cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 text-base font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg disabled:opacity-50"
-              style={{ backgroundColor: accentColor }}
-            >
-              <MessageCircle className="h-5 w-5" />
-              Consultar por WhatsApp
-            </a>
-          ) : (
-            <p className="mt-6 text-center text-sm text-gray-500">
-              Configura WhatsApp en el dashboard para habilitar consultas.
-            </p>
-          )}
+          <ProductDetailActions
+            productId={product.id}
+            tenantId={tenant.id}
+            sitioSlug={slug}
+            accentColor={accentColor}
+            waHref={waHref}
+          />
         </div>
       </div>
     </div>

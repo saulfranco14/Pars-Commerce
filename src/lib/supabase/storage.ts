@@ -26,3 +26,28 @@ export async function uploadProductImage(
   } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return publicUrl;
 }
+
+export async function uploadPromotionImage(
+  file: File,
+  tenantId: string,
+  promotionId?: string
+): Promise<string> {
+  const supabase = createClient();
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const safeExt = ["jpeg", "jpg", "png", "gif", "webp"].includes(ext)
+    ? ext
+    : "jpg";
+  const id = promotionId || crypto.randomUUID();
+  const path = `${tenantId}/promotions/${id}.${safeExt}`;
+
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, file, { upsert: true });
+
+  if (error) throw error;
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return publicUrl;
+}

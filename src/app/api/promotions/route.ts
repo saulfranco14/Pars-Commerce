@@ -44,7 +44,7 @@ export async function GET(request: Request) {
   const query = supabase
     .from("promotions")
     .select(
-      "id, name, type, value, min_amount, product_ids, valid_from, valid_until, created_at",
+      "id, name, slug, type, value, min_amount, product_ids, valid_from, valid_until, image_url, description, badge_label, subcatalog_ids, quantity, bundle_product_ids, created_at",
     )
     .eq("tenant_id", tenantId as string)
     .order("created_at", { ascending: false });
@@ -84,12 +84,19 @@ export async function POST(request: Request) {
   let body: {
     tenant_id?: string;
     name?: string;
+    slug?: string;
     type?: string;
     value?: number;
     min_amount?: number;
     product_ids?: string[];
     valid_from?: string;
     valid_until?: string;
+    image_url?: string;
+    description?: string;
+    badge_label?: string;
+    subcatalog_ids?: string[];
+    quantity?: number;
+    bundle_product_ids?: string[];
   };
   try {
     body = await request.json();
@@ -100,12 +107,19 @@ export async function POST(request: Request) {
   const {
     tenant_id,
     name,
+    slug,
     type,
     value,
     min_amount,
     product_ids,
     valid_from,
     valid_until,
+    image_url,
+    description,
+    badge_label,
+    subcatalog_ids,
+    quantity,
+    bundle_product_ids,
   } = body;
 
   if (!tenant_id || !name || !type || value == null || value < 0) {
@@ -115,12 +129,15 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!["percentage", "fixed_amount"].includes(type)) {
+  const validTypes = ["percentage", "fixed_amount", "bundle_price", "fixed_price", "event_badge"];
+  if (!validTypes.includes(type)) {
     return NextResponse.json(
-      { error: "type must be percentage or fixed_amount" },
+      { error: "type must be one of: percentage, fixed_amount, bundle_price, fixed_price, event_badge" },
       { status: 400 },
     );
   }
+
+  const derivedSlug = (slug?.trim() || name.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")) || null;
 
   const admin = createAdminClient();
   const { data: membership } = await admin
@@ -151,12 +168,19 @@ export async function POST(request: Request) {
     .insert({
       tenant_id,
       name: name.trim(),
+      slug: derivedSlug || undefined,
       type,
       value,
       min_amount: min_amount ?? null,
       product_ids: product_ids?.length ? product_ids : null,
       valid_from: valid_from || null,
       valid_until: valid_until || null,
+      image_url: image_url?.trim() || null,
+      description: description?.trim() || null,
+      badge_label: badge_label?.trim() || null,
+      subcatalog_ids: subcatalog_ids?.length ? subcatalog_ids : null,
+      quantity: quantity ?? null,
+      bundle_product_ids: bundle_product_ids?.length ? bundle_product_ids : null,
     })
     .select()
     .single();
@@ -182,12 +206,19 @@ export async function PATCH(request: Request) {
   let body: {
     promotion_id?: string;
     name?: string;
+    slug?: string | null;
     type?: string;
     value?: number;
     min_amount?: number;
     product_ids?: string[] | null;
     valid_from?: string | null;
     valid_until?: string | null;
+    image_url?: string | null;
+    description?: string | null;
+    badge_label?: string | null;
+    subcatalog_ids?: string[] | null;
+    quantity?: number | null;
+    bundle_product_ids?: string[] | null;
   };
   try {
     body = await request.json();
@@ -242,6 +273,7 @@ export async function PATCH(request: Request) {
     updated_at: new Date().toISOString(),
   };
   if (updates.name !== undefined) updateData.name = updates.name.trim();
+  if (updates.slug !== undefined) updateData.slug = updates.slug?.trim() || null;
   if (updates.type !== undefined) updateData.type = updates.type;
   if (updates.value !== undefined) updateData.value = updates.value;
   if (updates.min_amount !== undefined)
@@ -252,6 +284,18 @@ export async function PATCH(request: Request) {
     updateData.valid_from = updates.valid_from;
   if (updates.valid_until !== undefined)
     updateData.valid_until = updates.valid_until;
+  if (updates.image_url !== undefined)
+    updateData.image_url = updates.image_url?.trim() || null;
+  if (updates.description !== undefined)
+    updateData.description = updates.description?.trim() || null;
+  if (updates.badge_label !== undefined)
+    updateData.badge_label = updates.badge_label?.trim() || null;
+  if (updates.subcatalog_ids !== undefined)
+    updateData.subcatalog_ids = updates.subcatalog_ids;
+  if (updates.quantity !== undefined)
+    updateData.quantity = updates.quantity;
+  if (updates.bundle_product_ids !== undefined)
+    updateData.bundle_product_ids = updates.bundle_product_ids;
 
   const { data: updated, error } = await admin
     .from("promotions")

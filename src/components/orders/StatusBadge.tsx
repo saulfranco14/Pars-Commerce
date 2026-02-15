@@ -5,6 +5,7 @@ import {
   Clock,
   FileText,
   Loader2,
+  Package,
   UserCheck,
   XCircle,
 } from "lucide-react";
@@ -15,6 +16,7 @@ const STATUS_LABELS: Record<string, string> = {
   in_progress: "En progreso",
   completed: "Completada",
   pending_payment: "Pago pendiente",
+  pending_pickup: "Pendiente recoger",
   paid: "Pagada",
   cancelled: "Cancelada",
 };
@@ -25,6 +27,7 @@ const STATUS_CLASSES: Record<string, string> = {
   in_progress: "bg-amber-100 text-amber-800",
   completed: "bg-green-100 text-green-800",
   pending_payment: "bg-orange-100 text-orange-800",
+  pending_pickup: "bg-violet-100 text-violet-800",
   paid: "bg-emerald-100 text-emerald-800",
   cancelled: "bg-red-100 text-red-800",
 };
@@ -38,6 +41,7 @@ const STATUS_ICONS: Record<
   in_progress: Loader2,
   completed: CheckCircle,
   pending_payment: Clock,
+  pending_pickup: Package,
   paid: CheckCircle,
   cancelled: XCircle,
 };

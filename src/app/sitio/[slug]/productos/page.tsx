@@ -120,6 +120,7 @@ export default async function ProductosPage({ params, searchParams }: PageProps)
             <ProductCard
               key={item.id}
               product={item}
+              tenantId={tenant.id}
               sitioSlug={slug}
               accentColor={accentColor}
               whatsappPhone={tenant.whatsapp_phone ?? null}
