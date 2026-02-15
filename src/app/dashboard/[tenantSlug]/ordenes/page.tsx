@@ -9,6 +9,7 @@ import { useTenantStore } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { OrderCardMobile } from "@/components/orders/OrderCardMobile";
 import { TicketDownloadActions } from "@/components/orders/TicketDownloadActions";
+import { FilterTabs } from "@/components/ui/FilterTabs";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import {
   TableWrapper,
@@ -116,37 +117,12 @@ export default function OrdenesPage() {
 
         {/* ── Status tabs ── */}
         <div className="space-y-2">
-          <div className="relative">
-            <div
-              className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 from-background to-transparent"
-              aria-hidden
-            />
-            <div
-              className="flex gap-1 overflow-x-auto pb-0.5 scrollbar-hide"
-              role="tablist"
-              aria-label="Filtrar por estado"
-            >
-              {STATUS_TABS.map((tab) => {
-                const isActive = statusFilter === tab.value;
-                return (
-                  <button
-                    key={tab.value}
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    onClick={() => setStatusFilter(tab.value)}
-                    className={`inline-flex shrink-0 items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 ${
-                      isActive
-                        ? "bg-foreground text-background"
-                        : "text-muted-foreground hover:bg-border-soft hover:text-foreground"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <FilterTabs
+            tabs={STATUS_TABS}
+            activeValue={statusFilter}
+            onTabChange={setStatusFilter}
+            ariaLabel="Filtrar por estado"
+          />
 
           {/* ── Date filter row ── */}
           <div className="flex items-center gap-2">

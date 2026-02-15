@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { FolderTree, Pencil, Plus, Trash2 } from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { FilterTabs } from "@/components/ui/FilterTabs";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import {
   TableWrapper,
@@ -20,21 +21,62 @@ import {
 } from "@/components/ui/TableWrapper";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { ProductListItem } from "@/types/products";
+import type { Subcatalog } from "@/types/subcatalogs";
 import { remove } from "@/services/productsService";
 
-const productsKey = (tenantId: string) =>
-  `/api/products?tenant_id=${encodeURIComponent(tenantId)}&type=product`;
+const subcatalogsKey = (tenantId: string) =>
+  `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
+
+function buildProductsKey(
+  tenantId: string,
+  subcatalogId: string,
+): string | null {
+  if (!tenantId) return null;
+  const params = new URLSearchParams({
+    tenant_id: tenantId,
+    type: "product",
+  });
+  if (subcatalogId) {
+    params.set("subcatalog_id", subcatalogId);
+  }
+  return `/api/products?${params}`;
+}
+
+function buildSubcatalogTabs(subcatalogs: Subcatalog[]) {
+  const tabs = [{ value: "", label: "Todos" }];
+  for (const sc of subcatalogs) {
+    tabs.push({ value: sc.id, label: sc.name });
+  }
+  return tabs;
+}
 
 export default function ProductosPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const [subcatalogFilter, setSubcatalogFilter] = useState(
+    () => searchParams.get("subcatalog_id") ?? "",
+  );
+
+  const subcatalogsKeyValue = activeTenant
+    ? subcatalogsKey(activeTenant.id)
+    : null;
+  const { data: subcatalogsData } = useSWR<Subcatalog[]>(
+    subcatalogsKeyValue,
+    swrFetcher,
+    { fallbackData: [] },
+  );
+  const subcatalogs = Array.isArray(subcatalogsData) ? subcatalogsData : [];
+  const productTabs = buildSubcatalogTabs(subcatalogs);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [productToDelete, setProductToDelete] =
     useState<ProductListItem | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const key = activeTenant ? productsKey(activeTenant.id) : null;
+  const key = activeTenant
+    ? buildProductsKey(activeTenant.id, subcatalogFilter)
+    : null;
   const {
     data: productsData,
     error: swrError,
@@ -108,6 +150,15 @@ export default function ProductosPage() {
             {error}
           </div>
         )}
+
+        <div className="space-y-2">
+          <FilterTabs
+            tabs={productTabs}
+            activeValue={subcatalogFilter}
+            onTabChange={setSubcatalogFilter}
+            ariaLabel="Filtrar por subcatalog"
+          />
+        </div>
       </div>
 
       <div className="flex gap-4 min-h-0 flex-1 flex-col overflow-hidden">
@@ -120,7 +171,8 @@ export default function ProductosPage() {
         ) : products.length === 0 ? (
           <div className="rounded-xl border border-border bg-surface-raised p-8 text-center">
             <p className="text-sm text-muted">
-              No hay productos. Crea uno con &quot;Nuevo producto&quot;.
+              No hay productos{subcatalogFilter ? " en este subcatálogo" : ""}.
+              Crea uno con &quot;Nuevo producto&quot;.
             </p>
             <Link
               href={`/dashboard/${tenantSlug}/productos/nuevo`}

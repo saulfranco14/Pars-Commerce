@@ -21,7 +21,7 @@ export async function GET() {
       tenant_id,
       role_id,
       accepted_at,
-      tenant:tenants(id, name, slug, business_type, logo_url, theme_color, description, public_store_enabled, settings),
+      tenant:tenants(id, name, slug, business_type, logo_url, theme_color, description, public_store_enabled, settings, whatsapp_phone, social_links),
       role:tenant_roles(id, name, permissions)
     `
     )
@@ -179,6 +179,8 @@ export async function PATCH(request: Request) {
     settings: settingsPayload,
     monthly_rent,
     monthly_sales_objective,
+    whatsapp_phone,
+    social_links,
   } = body as {
     tenant_id: string;
     name?: string;
@@ -196,6 +198,8 @@ export async function PATCH(request: Request) {
     settings?: Record<string, unknown>;
     monthly_rent?: number;
     monthly_sales_objective?: number;
+    whatsapp_phone?: string;
+    social_links?: { instagram?: string; facebook?: string; twitter?: string };
   };
 
   if (!tenant_id) {
@@ -239,6 +243,10 @@ export async function PATCH(request: Request) {
     updates.theme_color = theme_color?.trim() || null;
   if (public_store_enabled !== undefined)
     updates.public_store_enabled = public_store_enabled;
+  if (whatsapp_phone !== undefined)
+    updates.whatsapp_phone = whatsapp_phone?.trim() ?? null;
+  if (social_links !== undefined)
+    updates.social_links = social_links && typeof social_links === "object" ? social_links : {};
 
   if (settingsPayload !== undefined) {
     const { data: existingTenant } = await admin
@@ -254,7 +262,7 @@ export async function PATCH(request: Request) {
     .from("tenants")
     .update(updates)
     .eq("id", tenant_id)
-    .select("id, name, slug, description, theme_color, public_store_enabled, settings")
+    .select("id, name, slug, description, theme_color, public_store_enabled, settings, whatsapp_phone, social_links")
     .single();
 
   if (error) {

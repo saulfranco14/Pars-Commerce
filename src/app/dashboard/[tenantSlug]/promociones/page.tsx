@@ -8,13 +8,21 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { Promotion, CreatePromotionPayload } from "@/services/promotionsService";
 import {
-  list as listPromotions,
   create as createPromotion,
   remove as removePromotion,
 } from "@/services/promotionsService";
 
 const promotionsKey = (tenantId: string) =>
   `/api/promotions?tenant_id=${encodeURIComponent(tenantId)}`;
+
+const productsKey = (tenantId: string) =>
+  `/api/products?tenant_id=${encodeURIComponent(tenantId)}`;
+
+interface ProductItem {
+  id: string;
+  name: string;
+  slug: string | null;
+}
 
 export default function PromocionesPage() {
   const activeTenant = useTenantStore((s) => s.activeTenant)();
@@ -29,8 +37,12 @@ export default function PromocionesPage() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [promotionToDelete, setPromotionToDelete] = useState<Promotion | null>(null);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
 
   const key = activeTenant ? promotionsKey(activeTenant.id) : null;
+  const productsKeyValue = activeTenant ? productsKey(activeTenant.id) : null;
+  const { data: productsData } = useSWR<ProductItem[]>(productsKeyValue, swrFetcher, { fallbackData: [] });
+  const products = Array.isArray(productsData) ? productsData : [];
   const { data: promotionsData, error: swrError, isLoading, mutate } = useSWR<Promotion[]>(
     key,
     swrFetcher,
@@ -53,6 +65,7 @@ export default function PromocionesPage() {
       if (minAmount.trim()) payload.min_amount = parseFloat(minAmount);
       if (validFrom.trim()) payload.valid_from = validFrom;
       if (validUntil.trim()) payload.valid_until = validUntil;
+      if (selectedProductIds.length > 0) payload.product_ids = selectedProductIds;
 
       await createPromotion(payload);
       setName("");
@@ -60,6 +73,7 @@ export default function PromocionesPage() {
       setMinAmount("");
       setValidFrom("");
       setValidUntil("");
+      setSelectedProductIds([]);
       setShowForm(false);
       await mutate();
     } catch (e) {
@@ -95,6 +109,12 @@ export default function PromocionesPage() {
       ? ` Válida hasta ${new Date(p.valid_until).toLocaleDateString("es-MX")}.`
       : "";
     return `${desc}.${min}${until}`;
+  }
+
+  function isExpired(p: Promotion): boolean {
+    if (!p.valid_until) return false;
+    const until = new Date(p.valid_until);
+    return until < new Date();
   }
 
   if (!activeTenant) {
@@ -190,6 +210,40 @@ export default function PromocionesPage() {
               placeholder="0"
             />
           </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground">
+              Productos aplicables (opcional)
+            </label>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Deja vacío para aplicar a todos. Selecciona para limitar la promoción a productos específicos.
+            </p>
+            <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-border p-2 space-y-1">
+              {products.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Sin productos</p>
+              ) : (
+                products.map((prod) => (
+                  <label
+                    key={prod.id}
+                    className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-border-soft"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedProductIds.includes(prod.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedProductIds((prev) => [...prev, prod.id]);
+                        } else {
+                          setSelectedProductIds((prev) => prev.filter((id) => id !== prod.id));
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm">{prod.name}</span>
+                  </label>
+                ))
+              )}
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-muted-foreground">
@@ -235,13 +289,30 @@ export default function PromocionesPage() {
           {promotions.map((p) => (
             <li
               key={p.id}
-              className="flex items-start justify-between gap-4 rounded-lg border border-border bg-surface-raised p-4"
+              className={`flex items-start justify-between gap-4 rounded-lg border border-border bg-surface-raised p-4 ${isExpired(p) ? "opacity-75" : ""}`}
             >
               <div>
-                <p className="font-medium text-foreground">{p.name}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-medium text-foreground">{p.name}</p>
+                  {isExpired(p) && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                      Expirada
+                    </span>
+                  )}
+                </div>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {formatPromotion(p)}
                 </p>
+                {isExpired(p) && (
+                  <p className="mt-1 text-xs text-amber-600">
+                    Esta promoción ya expiró y no se mostrará en tu sitio.
+                  </p>
+                )}
+                {p.product_ids && p.product_ids.length > 0 && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {p.product_ids.length} producto{p.product_ids.length !== 1 ? "s" : ""} aplicable{p.product_ids.length !== 1 ? "s" : ""}
+                  </p>
+                )}
               </div>
               <button
                 type="button"
