@@ -40,8 +40,12 @@ export function CommissionsByPersonChart({ data, loading }: CommissionsByPersonC
   return (
     <div className="rounded-xl border border-border bg-surface-raised p-4">
       <h3 className="text-sm font-medium text-foreground">Comisiones por persona</h3>
-      <div className="mt-2 h-[200px] w-full sm:h-[220px]">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="mt-2 h-[200px] w-full sm:h-[220px]" style={{ minHeight: 200 }}>
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          initialDimension={{ width: 400, height: 200 }}
+        >
           <BarChart
             data={chartData}
             layout="vertical"

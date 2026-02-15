@@ -36,8 +36,12 @@ export function SalesTrendChart({ data, loading }: SalesTrendChartProps) {
   return (
     <div className="rounded-xl border border-border bg-surface-raised p-4">
       <h3 className="text-sm font-medium text-foreground">Tendencia de ventas</h3>
-      <div className="mt-2 h-[200px] w-full sm:h-[220px]">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="mt-2 h-[200px] w-full sm:h-[220px]" style={{ minHeight: 200 }}>
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          initialDimension={{ width: 400, height: 200 }}
+        >
           <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border-soft" />
             <XAxis dataKey="label" tick={{ fontSize: 11 }} />

@@ -48,8 +48,12 @@ export function SalesByPaymentMethodChart({ data, loading }: SalesByPaymentMetho
   return (
     <div className="rounded-xl border border-border bg-surface-raised p-3 sm:p-4">
       <h3 className="text-sm font-medium text-foreground">Ventas por método de pago</h3>
-      <div className="mt-2 h-[200px] w-full sm:h-[220px]">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="mt-2 h-[200px] w-full sm:h-[220px]" style={{ minHeight: 200 }}>
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          initialDimension={{ width: 400, height: 200 }}
+        >
           <PieChart>
             <Pie
               data={entries}
