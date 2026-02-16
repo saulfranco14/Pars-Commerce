@@ -188,7 +188,7 @@ export default function RegistroPage() {
           aria-hidden
         />
         <div className="relative w-full max-w-sm pb-8 sm:pb-0">
-          <div className="mb-6 lg:mb-8">{logoBlock}</div>
+          <div className="mb-6 lg:hidden">{logoBlock}</div>
           <div className="rounded-2xl border border-border bg-surface p-6  sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
             <h1 className="text-xl font-bold text-foreground sm:text-2xl">
               Crear cuenta
