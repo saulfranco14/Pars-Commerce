@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MessageCircle, Package, ShoppingCart } from "lucide-react";
 import { addItem } from "@/services/publicCartService";
+import { dispatchCartUpdated } from "@/lib/cartEvents";
 import { useFingerprint } from "@/hooks/useFingerprint";
 
 interface ProductCardProps {
@@ -52,6 +53,7 @@ export default function ProductCard({
     setLoading(true);
     try {
       await addItem(tenantId, product.id, 1, fingerprint);
+      dispatchCartUpdated();
       router.push(`/sitio/${sitioSlug}/carrito`);
     } finally {
       setLoading(false);

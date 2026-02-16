@@ -65,11 +65,14 @@ export default function DashboardLayout({
         />
       </div>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="no-print flex h-14 shrink-0 items-center justify-between border-b border-border-soft bg-surface px-4 safe-area-inset-left">
+        <header
+          className="no-print relative z-30 flex h-14 shrink-0 items-center justify-between border-b border-border-soft bg-surface px-4"
+          style={{ paddingLeft: "max(1rem, env(safe-area-inset-left, 1rem))" }}
+        >
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-muted hover:bg-border-soft hover:text-foreground md:hidden"
+            className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg bg-border-soft/70 text-foreground hover:bg-border-soft md:hidden"
             aria-label="Abrir menú"
           >
             <Menu className="h-6 w-6" />

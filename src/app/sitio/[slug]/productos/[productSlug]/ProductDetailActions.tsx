@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MessageCircle, ShoppingCart } from "lucide-react";
 import { addItem } from "@/services/publicCartService";
+import { dispatchCartUpdated } from "@/lib/cartEvents";
 import { useFingerprint } from "@/hooks/useFingerprint";
 
 interface ProductDetailActionsProps {
@@ -30,6 +31,7 @@ export default function ProductDetailActions({
     setLoading(true);
     try {
       await addItem(tenantId, productId, 1, fingerprint);
+      dispatchCartUpdated();
       router.push(`/sitio/${sitioSlug}/carrito`);
     } finally {
       setLoading(false);

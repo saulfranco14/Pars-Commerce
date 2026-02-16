@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Tag, ShoppingCart } from "lucide-react";
 import { addPromotion } from "@/services/publicCartService";
+import { dispatchCartUpdated } from "@/lib/cartEvents";
 import { useFingerprint } from "@/hooks/useFingerprint";
 
 interface PromotionCardProps {
@@ -56,6 +57,7 @@ export default function PromotionCard({
     setLoading(true);
     try {
       await addPromotion(tenantId, promotion.id, fingerprint);
+      dispatchCartUpdated();
       router.push(`/sitio/${sitioSlug}/carrito`);
     } finally {
       setLoading(false);
