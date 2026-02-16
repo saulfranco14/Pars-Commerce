@@ -4,10 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, X } from "lucide-react";
-import { create as createTenant } from "@/services/tenantsService";
+import { create as createTenant, list as listTenants } from "@/services/tenantsService";
+import { useTenantStore, type MembershipItem } from "@/stores/useTenantStore";
 
 export default function CrearNegocioPage() {
   const router = useRouter();
+  const setMemberships = useTenantStore((s) => s.setMemberships);
+  const setActiveTenantId = useTenantStore((s) => s.setActiveTenantId);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [businessType, setBusinessType] = useState("");
@@ -35,13 +38,18 @@ export default function CrearNegocioPage() {
     setError(null);
     setLoading(true);
     try {
-      await createTenant({
+      const tenant = (await createTenant({
         name: name.trim(),
         slug: slug.trim() || deriveSlug(name),
         business_type: businessType.trim() || undefined,
-      });
+      })) as { id: string };
+      const list = (await listTenants()) as MembershipItem[];
+      setMemberships(list);
+      setActiveTenantId(tenant.id);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("pars_activeTenantId", tenant.id);
+      }
       router.push("/dashboard");
-      router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al crear el negocio");
     } finally {
