@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/sendgrid";
 import { confirmationEmailTemplate } from "@/lib/email/templates";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAppUrl } from "@/lib/env/appUrl";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login`;
+    const redirectUrl = `${getAppUrl()}/login`;
     const supabase = createAdminClient();
 
     const { data, error } = await supabase.auth.admin.generateLink({
