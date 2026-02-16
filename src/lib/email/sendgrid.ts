@@ -30,8 +30,9 @@ export async function sendEmail({
     });
 
     return { success: true };
-  } catch (error: any) {
-    console.error("SendGrid error:", error.response?.body || error);
-    throw new Error(error.message || "Error al enviar el correo");
+  } catch (error: unknown) {
+    const err = error as { response?: { body?: unknown }; message?: string };
+    console.error("SendGrid error:", err.response?.body ?? error);
+    throw new Error(err.message ?? "Error al enviar el correo");
   }
 }
