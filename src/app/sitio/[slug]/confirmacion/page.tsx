@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle, ArrowLeft, MapPin, Phone } from "lucide-react";
+import { ClearCartOnConfirm } from "./ClearCartOnConfirm";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -73,6 +74,7 @@ export default async function ConfirmacionPage({ params, searchParams }: PagePro
 
   return (
     <div className="space-y-6">
+      <ClearCartOnConfirm />
       <div className="rounded-2xl bg-white p-8 shadow-sm">
         <div className="flex items-center justify-center">
           <div
@@ -113,17 +115,17 @@ export default async function ConfirmacionPage({ params, searchParams }: PagePro
           )}
         </div>
 
-        <div className="mt-8 flex justify-center gap-4">
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
           <Link
             href={`/sitio/${slug}/productos`}
-            className="inline-flex items-center gap-2 rounded-xl px-6 py-3 font-medium text-white"
+            className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
             style={{ backgroundColor: accentColor }}
           >
             Seguir comprando
           </Link>
           <Link
             href={`/sitio/${slug}/inicio`}
-            className="inline-flex items-center gap-2 rounded-xl border-2 px-6 py-3 font-medium"
+            className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-6 py-4 font-semibold transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
             style={{ borderColor: accentColor, color: accentColor }}
           >
             <ArrowLeft className="h-4 w-4" />

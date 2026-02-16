@@ -25,18 +25,16 @@ export default async function CarritoPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <div
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-white"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
           style={{ backgroundColor: accentColor }}
         >
-          <ShoppingCart className="h-5 w-5" />
+          <ShoppingCart className="h-6 w-6" aria-hidden />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Carrito</h1>
-          <p className="text-sm text-gray-500">
-            Revisa tu pedido y finaliza
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Carrito</h1>
+          <p className="mt-0.5 text-sm text-gray-500">Revisa tu pedido y finaliza</p>
         </div>
       </div>
       <CarritoContent

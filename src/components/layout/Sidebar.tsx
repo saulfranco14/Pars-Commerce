@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { X } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 interface SidebarProps {
   tenantSlug: string | null;
@@ -82,9 +84,16 @@ function SidebarContent({
         <Link
           href="/dashboard"
           onClick={onNavigate}
-          className="font-semibold text-foreground"
+          className="flex items-center gap-2 font-semibold text-foreground"
         >
-          Pars Commerce
+          <Image
+            src={logo}
+            alt="Pars Commerce"
+            width={32}
+            height={32}
+            className="h-8 w-8 shrink-0"
+          />
+          <span>Pars Commerce</span>
         </Link>
         {showCloseButton && onClose && (
           <button

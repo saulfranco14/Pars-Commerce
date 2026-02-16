@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShoppingCart } from "lucide-react";
 import { addPromotion } from "@/services/publicCartService";
+import { dispatchCartUpdated } from "@/lib/cartEvents";
 import { useFingerprint } from "@/hooks/useFingerprint";
 
 interface PromotionDetailActionsProps {
@@ -32,6 +33,7 @@ export default function PromotionDetailActions({
     setError(null);
     try {
       await addPromotion(tenantId, promotionId, fingerprint);
+      dispatchCartUpdated();
       router.push(`/sitio/${sitioSlug}/carrito`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al agregar");
