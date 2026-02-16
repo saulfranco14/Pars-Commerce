@@ -12,10 +12,10 @@ import {
   Check,
   ArrowRight,
   Sparkles,
+  Mail,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PasswordInput } from "@/components/ui/PasswordInput";
-import { createClient } from "@/lib/supabase/client";
 import { registroSchema } from "@/lib/registroValidation";
 import logo from "@/assets/logo.png";
 
@@ -112,6 +112,45 @@ function BrandPanel() {
   );
 }
 
+function SuccessMessage({
+  email,
+  onClose,
+}: {
+  email: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 text-center">
+      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
+        <Mail className="h-8 w-8 text-emerald-500" aria-hidden />
+      </div>
+      <h2 className="text-2xl font-bold text-foreground">¡Registro exitoso!</h2>
+      <p className="mt-2 text-muted-foreground">
+        Hemos enviado un correo de confirmación a:
+      </p>
+      <p className="mt-1 font-semibold text-foreground break-all">{email}</p>
+      <p className="mt-4 text-sm text-muted-foreground">
+        Revisa tu bandeja de entrada y haz clic en el enlace para activar tu
+        cuenta.
+      </p>
+      <div className="mt-6 space-y-3">
+        <Link
+          href="/login"
+          className="block w-full rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
+        >
+          Ir al login
+        </Link>
+        <button
+          onClick={onClose}
+          className="block w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-surface-raised"
+        >
+          Registrar otra cuenta
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function RegistroPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -119,13 +158,15 @@ export default function RegistroPage() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setFieldErrors({});
-    setMessage(null);
+
+    // Validación
     try {
       await registroSchema.validate({ email, password }, { abortEarly: false });
     } catch (err) {
@@ -139,21 +180,35 @@ export default function RegistroPage() {
       }
       throw err;
     }
+
     setLoading(true);
-    const supabase = createClient();
-    const { error: signUpError } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-    });
-    setLoading(false);
-    if (signUpError) {
-      setError(signUpError.message);
-      return;
+
+    try {
+      const response = await fetch("/api/auth/send-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "Error al enviar el correo de confirmación",
+        );
+      }
+
+      setRegisteredEmail(email.trim());
+      setSuccess(true);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error("Error desconocido");
+      console.error("Error en registro:", error);
+      setError(error.message || "Error al registrar usuario. Intenta de nuevo.");
+    } finally {
+      setLoading(false);
     }
-    setMessage(
-      "Revisa tu email para confirmar la cuenta (si está configurado). Puedes iniciar sesión.",
-    );
-    router.refresh();
   }
 
   const logoBlock = (
@@ -170,6 +225,42 @@ export default function RegistroPage() {
     </div>
   );
 
+  // Mostrar mensaje de éxito
+  if (success) {
+    return (
+      <div className="flex min-h-screen flex-col lg:flex-row">
+        <BrandPanel />
+        <div className="relative flex min-h-dvh flex-1 flex-col items-center justify-center bg-background px-4 py-6 sm:py-8">
+          <div className="absolute right-4 top-4 z-20">
+            <ThemeToggle />
+          </div>
+          <div
+            className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04] lg:hidden"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
+              backgroundSize: "24px 24px",
+            }}
+            aria-hidden
+          />
+          <div className="relative w-full max-w-md pb-8 sm:pb-0">
+            <div className="mb-6 lg:hidden">{logoBlock}</div>
+            <SuccessMessage
+              email={registeredEmail}
+              onClose={() => {
+                setSuccess(false);
+                setEmail("");
+                setPassword("");
+                setRegisteredEmail("");
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Formulario de registro
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
       <BrandPanel />
@@ -189,7 +280,7 @@ export default function RegistroPage() {
         />
         <div className="relative w-full max-w-sm pb-8 sm:pb-0">
           <div className="mb-6 lg:hidden">{logoBlock}</div>
-          <div className="rounded-2xl border border-border bg-surface p-6  sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
+          <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
             <h1 className="text-xl font-bold text-foreground sm:text-2xl">
               Crear cuenta
             </h1>
@@ -208,14 +299,6 @@ export default function RegistroPage() {
                   role="alert"
                 >
                   {error}
-                </div>
-              )}
-              {message && (
-                <div
-                  className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 alert-success"
-                  role="status"
-                >
-                  {message}
                 </div>
               )}
               <div>

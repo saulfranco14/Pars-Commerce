@@ -1,4 +1,10 @@
-import { BarChart3, Palette, ClipboardList, ShoppingBag, CreditCard } from "lucide-react";
+import {
+  BarChart3,
+  Palette,
+  ClipboardList,
+  ShoppingBag,
+  CreditCard,
+} from "lucide-react";
 
 function BentoCell({
   children,
@@ -54,7 +60,13 @@ function MiniColorSwatches() {
   return (
     <div className="space-y-3">
       <div className="flex gap-2">
-        {["bg-rose-400", "bg-amber-400", "bg-emerald-400", "bg-blue-400", "bg-violet-400"].map((c) => (
+        {[
+          "bg-rose-400",
+          "bg-amber-400",
+          "bg-emerald-400",
+          "bg-blue-400",
+          "bg-violet-400",
+        ].map((c) => (
           <div key={c} className={`h-8 flex-1 rounded-lg ${c}`} aria-hidden />
         ))}
       </div>
@@ -72,7 +84,12 @@ function MiniColorSwatches() {
 
 function MiniOrderList() {
   const orders = [
-    { id: "#001", status: "bg-emerald-500", label: "Completado", amount: "$450" },
+    {
+      id: "#001",
+      status: "bg-emerald-500",
+      label: "Completado",
+      amount: "$450",
+    },
     { id: "#002", status: "bg-amber-500", label: "En proceso", amount: "$120" },
     { id: "#003", status: "bg-blue-500", label: "Pendiente", amount: "$89" },
   ];
@@ -88,7 +105,9 @@ function MiniOrderList() {
             <span className="text-xs font-medium text-foreground">{o.id}</span>
             <span className="text-xs text-muted-foreground">{o.label}</span>
           </div>
-          <span className="text-xs font-semibold text-foreground">{o.amount}</span>
+          <span className="text-xs font-semibold text-foreground">
+            {o.amount}
+          </span>
         </div>
       ))}
     </div>
@@ -98,7 +117,7 @@ function MiniOrderList() {
 function MiniProductCard() {
   return (
     <div className="space-y-3">
-      <div className="aspect-[4/3] rounded-lg bg-gradient-to-br from-accent/10 to-accent/5 flex items-center justify-center">
+      <div className="rounded-lg from-accent/10 to-accent/5 flex items-center justify-center">
         <ShoppingBag className="h-8 w-8 text-accent/40" aria-hidden />
       </div>
       <div>
@@ -115,13 +134,19 @@ function MiniCheckout() {
     <div className="flex gap-4">
       <div className="flex-1 space-y-2">
         <div className="h-8 rounded-lg border border-border bg-background px-3 flex items-center">
-          <span className="text-[10px] text-muted-foreground">nombre@email.com</span>
+          <span className="text-[10px] text-muted-foreground">
+            nombre@email.com
+          </span>
         </div>
         <div className="h-8 rounded-lg border border-border bg-background px-3 flex items-center">
-          <span className="text-[10px] text-muted-foreground">**** **** **** 4242</span>
+          <span className="text-[10px] text-muted-foreground">
+            **** **** **** 4242
+          </span>
         </div>
         <div className="h-8 rounded-lg bg-accent flex items-center justify-center">
-          <span className="text-[10px] font-semibold text-accent-foreground">Pagar $569.00</span>
+          <span className="text-[10px] font-semibold text-accent-foreground">
+            Pagar $569.00
+          </span>
         </div>
       </div>
       <div className="hidden w-32 space-y-1.5 sm:block">
@@ -147,7 +172,10 @@ export function LandingBentoShowcase() {
     <section className="border-t border-border bg-surface/50 py-16 sm:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-accent" aria-hidden />
+          <div
+            className="mx-auto mb-4 h-1 w-10 rounded-full bg-accent"
+            aria-hidden
+          />
           <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Una plataforma, todo tu negocio
           </h2>
