@@ -64,6 +64,11 @@ html.dark .alert-success {
   color: rgb(220 252 231);
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 60px;
+}
+
 html,
 body {
   overflow-x: hidden;

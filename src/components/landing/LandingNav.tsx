@@ -17,7 +17,7 @@ export function LandingNav() {
 
   return (
     <header
-      className={`sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md transition-shadow duration-200 ${
+      className={`fixed top-0 left-0 right-0 z-40 border-b bg-background/80 backdrop-blur-md transition-shadow duration-200 ${
         scrolled
           ? "border-border shadow-soft"
           : "border-transparent"

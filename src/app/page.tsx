@@ -11,8 +11,10 @@ import { LandingFooter } from "@/components/landing/LandingFooter";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background scroll-smooth">
+    <div className="min-h-screen bg-background">
       <LandingNav />
+      {/* Spacer for fixed nav */}
+      <div className="h-[52px]" aria-hidden />
       <main>
         <LandingHero />
         <LandingLogos />

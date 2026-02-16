@@ -109,7 +109,7 @@ export function LandingHero() {
           <div className="mx-auto max-w-2xl text-center lg:mx-0 lg:text-left">
             <div className="animate-fade-in-up inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3.5 py-1.5 text-sm font-medium text-accent">
               <Package className="h-3.5 w-3.5" aria-hidden />
-              Plataforma B2B para comercios
+              Plataforma para comercios
             </div>
 
             <h1 className="animate-fade-in-up animation-delay-100 mt-6 text-4xl font-bold tracking-tight leading-[1.1] text-foreground sm:text-5xl md:text-6xl">
