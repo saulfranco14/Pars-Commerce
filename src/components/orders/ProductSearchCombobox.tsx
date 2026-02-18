@@ -136,7 +136,7 @@ export function ProductSearchCombobox({
           role="listbox"
         >
           {isSearching ? (
-            <li className="flex min-h-[44px] cursor-default items-center gap-2 px-3 py-2.5 text-sm text-muted">
+            <li className="flex min-h-(--touch-target,44px) cursor-default items-center gap-2 px-3 py-2.5 text-sm text-muted">
               <span
                 className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent"
                 aria-hidden
@@ -144,7 +144,7 @@ export function ProductSearchCombobox({
               Buscando...
             </li>
           ) : filtered.length === 0 ? (
-            <li className="min-h-[44px] px-3 py-2.5 text-sm text-muted">
+            <li className="min-h-(--touch-target,44px) px-3 py-2.5 text-sm text-muted">
               {emptyHint ?? "Sin resultados"}
             </li>
           ) : (

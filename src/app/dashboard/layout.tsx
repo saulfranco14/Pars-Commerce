@@ -8,9 +8,9 @@ import { useAuthInitializer } from "@/hooks/useAuthInitializer";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
-import { Menu } from "lucide-react";
 import { btnPrimary } from "@/components/ui/buttonClasses";
 
 export default function DashboardLayout({
@@ -70,18 +70,16 @@ export default function DashboardLayout({
           className="no-print sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border-soft bg-surface px-4"
           style={{ paddingLeft: "max(1rem, env(safe-area-inset-left, 1rem))" }}
         >
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg bg-border-soft/70 text-foreground hover:bg-border-soft md:hidden"
-            aria-label="Abrir menú"
+          <Link
+            href="/dashboard"
+            className="font-semibold text-foreground md:hidden"
           >
-            <Menu className="h-6 w-6" />
-          </button>
+            Pars Commerce
+          </Link>
           <div className="flex-1" />
           <ThemeToggle />
         </header>
-        <main className="dashboard-main flex-1 px-4 py-4 sm:px-6 sm:py-6">
+        <main className="dashboard-main flex-1 px-4 py-4 pb-24 sm:px-6 sm:py-6 md:pb-6">
           {pathname === "/dashboard/crear-negocio" ||
           pathname === "/dashboard/perfil" ? (
             children
@@ -113,6 +111,15 @@ export default function DashboardLayout({
           )}
         </main>
       </div>
+      {pathname !== "/dashboard/crear-negocio" &&
+        pathname !== "/dashboard/perfil" &&
+        tenantsLoaded &&
+        memberships.length > 0 && (
+          <BottomNav
+            onMoreClick={() => setMobileMenuOpen(true)}
+            ordersBadgeCount={0}
+          />
+        )}
     </div>
   );
 }

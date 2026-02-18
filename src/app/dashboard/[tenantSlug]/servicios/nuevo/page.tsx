@@ -13,6 +13,7 @@ import { swrFetcher } from "@/lib/swrFetcher";
 import type { Subcatalog } from "@/types/subcatalogs";
 import { SubcatalogSelect } from "@/components/forms/SubcatalogSelect";
 import { btnPrimaryFlex, btnSecondaryFlex } from "@/components/ui/buttonClasses";
+import { inputForm } from "@/components/ui/inputClasses";
 
 const subcatalogsKey = (tenantId: string) =>
   `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
@@ -198,7 +199,7 @@ export default function NuevoServicioPage() {
                         type="text"
                         value={name}
                         onChange={handleNameChange}
-                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                        className={inputForm}
                         placeholder="Ej. Lavado básico"
                       />
                       {fieldErrors.name && (
@@ -219,7 +220,7 @@ export default function NuevoServicioPage() {
                         type="text"
                         value={slug}
                         onChange={(e) => setSlug(e.target.value)}
-                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                        className={inputForm}
                         placeholder="lavado-basico"
                       />
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -249,7 +250,7 @@ export default function NuevoServicioPage() {
                       inputMode="decimal"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                      className={inputForm}
                       placeholder="0.00"
                     />
                     {fieldErrors.price && (
@@ -271,7 +272,7 @@ export default function NuevoServicioPage() {
                       inputMode="decimal"
                       value={costPrice}
                       onChange={(e) => setCostPrice(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                      className={inputForm}
                       placeholder="0.00"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -299,7 +300,7 @@ export default function NuevoServicioPage() {
                       type="text"
                       value={sku}
                       onChange={(e) => setSku(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                      className={inputForm}
                       placeholder="Ej. SVC-001"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -341,7 +342,7 @@ export default function NuevoServicioPage() {
                       inputMode="decimal"
                       value={commissionAmount}
                       onChange={(e) => setCommissionAmount(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                      className={inputForm}
                       placeholder="0.00"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -358,7 +359,7 @@ export default function NuevoServicioPage() {
                     Configuración
                   </h3>
                   <div className="flex flex-wrap gap-6 md:col-span-2">
-                    <label className="flex min-h-[44px] cursor-pointer items-center gap-2">
+                    <label className="flex min-h-(--touch-target,44px) cursor-pointer items-center gap-2">
                       <input
                         type="checkbox"
                         checked={isPublic}
@@ -383,7 +384,7 @@ export default function NuevoServicioPage() {
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       rows={2}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                      className={inputForm}
                       placeholder="Descripción del servicio"
                     />
                   </div>
@@ -400,12 +401,19 @@ export default function NuevoServicioPage() {
           </div>
 
           <div className="border-t border-border bg-surface-raised px-4 py-4 sm:px-6 md:px-8">
-            <div className="flex flex-1 gap-3">
-              <Link href={`/dashboard/${tenantSlug}/servicios`} className={btnSecondaryFlex}>
+            <div className="flex flex-col gap-3 md:flex-row md:flex-1">
+              <Link
+                href={`/dashboard/${tenantSlug}/servicios`}
+                className={`${btnSecondaryFlex} w-full md:w-auto justify-center`}
+              >
                 <X className="h-4 w-4 shrink-0" aria-hidden />
                 Cancelar
               </Link>
-              <button type="submit" disabled={loading} className={btnPrimaryFlex}>
+              <button
+                type="submit"
+                disabled={loading}
+                className={`${btnPrimaryFlex} w-full md:w-auto justify-center`}
+              >
                 <Plus className="h-4 w-4 shrink-0" aria-hidden />
                 {loading ? "Creando…" : "Crear servicio"}
               </button>

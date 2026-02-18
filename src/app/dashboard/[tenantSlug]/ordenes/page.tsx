@@ -5,6 +5,8 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import { Plus, SlidersHorizontal, X } from "lucide-react";
+import { FAB } from "@/components/ui/FAB";
+import { OrdersFilterSheet } from "@/components/orders/OrdersFilterSheet";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { OrderCardMobile } from "@/components/orders/OrderCardMobile";
@@ -78,6 +80,7 @@ export default function OrdenesPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [dateFiltersOpen, setDateFiltersOpen] = useState(false);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
   const hasDateFilter = Boolean(dateFrom || dateTo);
 
@@ -134,19 +137,44 @@ export default function OrdenesPage() {
       <div className="shrink-0 space-y-4">
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
-            Órdenes / Tickets
-          </h1>
+          <div className="flex flex-1 items-center justify-between gap-2">
+            <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
+              Órdenes / Tickets
+            </h1>
+            <button
+              type="button"
+              onClick={() => setFilterSheetOpen(true)}
+              className={`inline-flex min-h-(--touch-target,44px) min-w-(--touch-target,44px) items-center justify-center gap-1.5 rounded-lg text-sm font-medium transition-colors md:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                hasDateFilter || statusFilter
+                  ? "bg-accent/15 text-accent hover:bg-accent/20"
+                  : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
+              }`}
+              aria-label="Filtrar órdenes"
+            >
+              <SlidersHorizontal className="h-5 w-5 shrink-0" aria-hidden />
+            </button>
+          </div>
           <Link
             href={`/dashboard/${tenantSlug}/ordenes/nueva`}
-            className="inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:w-auto"
+            className="hidden min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:w-auto md:inline-flex"
           >
             <Plus className="h-4 w-4 shrink-0" aria-hidden />
             Nueva orden
           </Link>
         </div>
 
-        {/* ── Status tabs ── */}
+        <OrdersFilterSheet
+          isOpen={filterSheetOpen}
+          onClose={() => setFilterSheetOpen(false)}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onDateFromChange={setDateFrom}
+          onDateToChange={setDateTo}
+          onQuickDate={setQuickDate}
+          onApply={() => setFilterSheetOpen(false)}
+        />
+
+        {/* ── Status tabs: horizontal scroll en móvil, flex-wrap en desktop ── */}
         <div className="space-y-2">
           <FilterTabs
             tabs={STATUS_TABS}
@@ -155,7 +183,8 @@ export default function OrdenesPage() {
             ariaLabel="Filtrar por estado"
           />
 
-          {/* ── Date filter row ── */}
+        {/* ── Date filter (solo desktop) ── */}
+        <div className="hidden md:block">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -246,6 +275,7 @@ export default function OrdenesPage() {
               </div>
             </div>
           )}
+        </div>
         </div>
 
         {/* ── Error ── */}
@@ -438,6 +468,13 @@ export default function OrdenesPage() {
           </>
         )}
       </div>
+
+      <FAB
+        href={`/dashboard/${tenantSlug}/ordenes/nueva`}
+        aria-label="Nueva orden"
+      >
+        <Plus className="h-6 w-6 shrink-0" aria-hidden />
+      </FAB>
     </div>
   );
 }

@@ -259,7 +259,7 @@ export function OrderItemsTable() {
         </div>
       </div>
 
-      <div className="shrink-0 border-t border-border p-3">
+      <div className="shrink-0 hidden border-t border-border p-3 md:block">
         <OrderActionButtons embedded />
       </div>
 

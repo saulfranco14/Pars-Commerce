@@ -617,12 +617,19 @@ export default function NuevoProductoPage() {
           </div>
 
           <div className="border-t border-border bg-surface-raised px-4 py-4 sm:px-6 md:px-8">
-            <div className="flex flex-1 gap-3">
-              <Link href={`/dashboard/${tenantSlug}/productos`} className={btnSecondaryFlex}>
+            <div className="flex flex-col gap-3 md:flex-row md:flex-1">
+              <Link
+                href={`/dashboard/${tenantSlug}/productos`}
+                className={`${btnSecondaryFlex} w-full min-h-(--touch-target,44px) md:w-auto justify-center`}
+              >
                 <X className="h-4 w-4 shrink-0" aria-hidden />
                 Cancelar
               </Link>
-              <button type="submit" disabled={loading} className={btnPrimaryFlex}>
+              <button
+                type="submit"
+                disabled={loading}
+                className={`${btnPrimaryFlex} w-full min-h-(--touch-target,44px) md:w-auto justify-center`}
+              >
                 <Plus className="h-4 w-4 shrink-0" aria-hidden />
                 {loading ? "Creando…" : "Crear producto"}
               </button>
