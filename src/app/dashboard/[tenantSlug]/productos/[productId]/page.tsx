@@ -6,6 +6,8 @@ import Link from "next/link";
 import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
+import { X, Check } from "lucide-react";
+import { btnPrimaryFlex, btnSecondaryFlex } from "@/components/ui/buttonClasses";
 import { productFormSchema } from "@/lib/productValidation";
 import type { ProductDetail } from "@/types/products";
 import { update } from "@/services/productsService";
@@ -257,8 +259,8 @@ export default function EditarProductoPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-0 max-w-4xl flex-1 flex-col overflow-hidden gap-4">
-      <div className="shrink-0 border-b border-border pb-4">
+    <div className="mx-auto max-w-4xl space-y-4">
+      <div className="border-b border-border pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/productos`}
           className="text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -273,12 +275,9 @@ export default function EditarProductoPage() {
         </p>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
-        <form
-          onSubmit={handleSubmit}
-          className="flex gap-4 min-h-0 flex-1 flex-col overflow-hidden"
-        >
-          <div className="flex-1 overflow-y-auto p-6 md:p-8">
+      <div className="rounded-xl border border-border bg-surface-raised shadow-sm">
+        <form onSubmit={handleSubmit}>
+          <div className="p-6 md:p-8">
             {error && (
               <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
                 {error}
@@ -617,21 +616,16 @@ export default function EditarProductoPage() {
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-border bg-surface-raised px-6 py-4 md:px-8">
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="submit"
-                disabled={loading}
-                className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
-              >
-                {loading ? "Guardando..." : "Guardar"}
-              </button>
-              <Link
-                href={`/dashboard/${tenantSlug}/productos`}
-                className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-border-soft"
-              >
+          <div className="border-t border-border bg-surface-raised px-4 py-4 sm:px-6 md:px-8">
+            <div className="flex flex-1 gap-3">
+              <Link href={`/dashboard/${tenantSlug}/productos`} className={btnSecondaryFlex}>
+                <X className="h-4 w-4 shrink-0" aria-hidden />
                 Cancelar
               </Link>
+              <button type="submit" disabled={loading} className={btnPrimaryFlex}>
+                <Check className="h-4 w-4 shrink-0" aria-hidden />
+                {loading ? "Guardando…" : "Guardar"}
+              </button>
             </div>
           </div>
         </form>
