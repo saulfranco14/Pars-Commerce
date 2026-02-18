@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { OrderProvider, useOrder } from "./hooks/useOrder";
@@ -40,20 +41,30 @@ function OrderDetailContent() {
 
   const isPaid = order.status === "paid" || order.status === "completed";
   const showTicket = isPaid || order.status === "pending_pickup";
+  const printContainer =
+    typeof document !== "undefined" ? document.getElementById("ticket-print-portal") : null;
 
   return (
     <>
-      {/* Contenedor específico para impresión física - Visible solo al imprimir */}
-      <div id="ticket-print" className="hidden" aria-hidden="true">
-        <ReceiptPreview
-          order={order}
-          businessName={businessName}
-          items={order.items ?? []}
-          businessAddress={businessAddress}
-          ticketOptions={ticketOptions}
-          logoUrl={logoUrl}
-        />
-      </div>
+      {printContainer &&
+        createPortal(
+          <div
+            id="ticket-print"
+            className="receipt-ticket-wrapper"
+            aria-hidden="true"
+            style={{ color: "#171717", backgroundColor: "#ffffff" }}
+          >
+            <ReceiptPreview
+              order={order}
+              businessName={businessName}
+              items={order.items ?? []}
+              businessAddress={businessAddress}
+              ticketOptions={ticketOptions}
+              logoUrl={logoUrl}
+            />
+          </div>,
+          printContainer
+        )}
 
       <div className="no-print flex min-h-0 min-w-0 h-full w-full max-w-5xl mx-auto flex-1 flex-col overflow-x-hidden overflow-y-auto pb-40 lg:pb-6 sm:max-w-5xl md:pb-0">
         <div className="shrink-0">

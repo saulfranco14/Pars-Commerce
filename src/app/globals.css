@@ -234,12 +234,19 @@ body {
   padding-right: 2.5rem;
 }
 
+#ticket-print-portal {
+  display: none;
+}
+
 @media print {
   .no-print {
     display: none !important;
   }
   body {
     background: #fff;
+  }
+  #ticket-print-portal {
+    display: block !important;
   }
   #ticket-print {
     display: block !important;

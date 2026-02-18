@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import useSWR from "swr";
 import { Printer, Download, Share2 } from "lucide-react";
 import { exportReceiptAsPng } from "@/lib/receiptExport";
@@ -136,6 +137,10 @@ export function TicketDownloadActions({
   const btnClassFull =
     "inline-flex min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft/80 focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-50";
 
+  const showPreview =
+    order &&
+    (exportMode === "download" || exportMode === "print" || exportMode === "share");
+
   return (
     <div
       className="flex items-center gap-2"
@@ -143,30 +148,52 @@ export function TicketDownloadActions({
       role="group"
       aria-label="Compartir, descargar o imprimir ticket"
     >
-      {order &&
-        (exportMode === "download" ||
-          exportMode === "print" ||
-          exportMode === "share") && (
-        <div
-          ref={previewRef}
-          id={exportMode === "print" ? "ticket-print" : undefined}
-          className={
-            loading
-              ? "fixed left-0 top-0 z-[-9999] w-[400px] bg-white p-6 opacity-100"
-              : "absolute -left-[9999px] -top-[9999px] w-[400px] bg-white p-6 opacity-0 pointer-events-none"
-          }
-          style={{ color: "#171717", backgroundColor: "#ffffff" }}
-          aria-hidden
-        >
-          <ReceiptPreview
-            order={order}
-            businessName={businessName}
-            items={order.items ?? []}
-            businessAddress={businessAddress}
-            ticketOptions={ticketOptions}
-            logoUrl={logoUrl ?? null}
-          />
-        </div>
+      {showPreview && (
+        <>
+          <div
+            ref={previewRef}
+            className={
+              loading
+                ? "fixed left-0 top-0 z-[-9999] w-[400px] bg-white p-6 opacity-100"
+                : "absolute -left-[9999px] -top-[9999px] w-[400px] bg-white p-6 opacity-0 pointer-events-none"
+            }
+            style={{ color: "#171717", backgroundColor: "#ffffff" }}
+            aria-hidden
+          >
+            <ReceiptPreview
+              order={order}
+              businessName={businessName}
+              items={order.items ?? []}
+              businessAddress={businessAddress}
+              ticketOptions={ticketOptions}
+              logoUrl={logoUrl ?? null}
+            />
+          </div>
+          {exportMode === "print" &&
+            typeof document !== "undefined" &&
+            (() => {
+              const container = document.getElementById("ticket-print-portal");
+              return container
+                ? createPortal(
+                    <div
+                      id="ticket-print"
+                      className="receipt-ticket-wrapper"
+                      style={{ color: "#171717", backgroundColor: "#ffffff" }}
+                    >
+                      <ReceiptPreview
+                        order={order}
+                        businessName={businessName}
+                        items={order.items ?? []}
+                        businessAddress={businessAddress}
+                        ticketOptions={ticketOptions}
+                        logoUrl={logoUrl ?? null}
+                      />
+                    </div>,
+                    container
+                  )
+                : null;
+            })()}
+        </>
       )}
 
       {error && (

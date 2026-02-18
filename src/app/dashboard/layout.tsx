@@ -56,7 +56,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="dashboard-root flex min-h-screen bg-background">
+    <div className="dashboard-root no-print flex min-h-screen bg-background">
       <div className="no-print md:fixed md:left-0 md:top-0 md:z-20 md:h-screen md:w-56">
         <Sidebar
           tenantSlug={tenantSlug}
