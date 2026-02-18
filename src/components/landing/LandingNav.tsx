@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import logo from "@/assets/logo.png";
 
 export function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
@@ -32,11 +31,11 @@ export function LandingNav() {
           className="flex items-center gap-2 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
         >
           <Image
-            src={logo}
-            alt=""
+            src="/android-chrome-192x192.png"
+            alt="Pars Commerce"
             width={28}
             height={28}
-            className="h-7 w-7"
+            className="h-7 w-7 rounded-lg"
           />
           <span className="text-lg font-semibold text-foreground">
             Pars Commerce
