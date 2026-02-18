@@ -7,12 +7,16 @@ import { exportReceiptAsPng } from "@/lib/receiptExport";
 import { ReceiptPreview } from "@/app/dashboard/[tenantSlug]/ordenes/[orderId]/components/ReceiptPreview";
 import type { OrderDetail } from "@/app/dashboard/[tenantSlug]/ordenes/[orderId]/types";
 import type { TenantAddress } from "@/types/database";
+import type { TicketSettings } from "@/types/ticketSettings";
+import { mergeTicketSettings } from "@/types/ticketSettings";
 import { swrFetcher } from "@/lib/swrFetcher";
 
 interface TicketDownloadActionsProps {
   orderId: string;
   businessName: string;
   businessAddress: TenantAddress | null;
+  ticketOptions?: TicketSettings | null;
+  logoUrl?: string | null;
   variant?: "compact" | "full";
 }
 
@@ -23,8 +27,11 @@ export function TicketDownloadActions({
   orderId,
   businessName,
   businessAddress,
+  ticketOptions: ticketOptionsProp,
+  logoUrl,
   variant = "compact",
 }: TicketDownloadActionsProps) {
+  const ticketOptions = mergeTicketSettings(ticketOptionsProp);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exportMode, setExportMode] = useState<"download" | "print" | null>(
@@ -116,6 +123,8 @@ export function TicketDownloadActions({
             businessName={businessName}
             items={order.items ?? []}
             businessAddress={businessAddress}
+            ticketOptions={ticketOptions}
+            logoUrl={logoUrl ?? null}
           />
         </div>
       )}

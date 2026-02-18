@@ -22,6 +22,8 @@ import {
   tableBodyCellRightClass,
 } from "@/components/ui/TableWrapper";
 import { formatOrderDate, formatOrderDateFull } from "@/lib/formatDate";
+import { mergeTicketSettings } from "@/types/ticketSettings";
+import type { TicketSettings } from "@/types/ticketSettings";
 import { DATE_MIN, getTodayStr, clampDate } from "@/lib/dateValidation";
 import { formatPaymentMethod } from "@/lib/formatPaymentMethod";
 import { getSourceConfig } from "@/lib/formatSource";
@@ -121,6 +123,11 @@ export default function OrdenesPage() {
       </div>
     );
   }
+
+  const ticketOptions = mergeTicketSettings(
+    (activeTenant.settings as Record<string, unknown>)?.ticket as TicketSettings | undefined
+  );
+  const logoUrl = activeTenant.logo_url ?? null;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden gap-4">
@@ -396,6 +403,8 @@ export default function OrdenesPage() {
                                 orderId={o.id}
                                 businessName={activeTenant?.name ?? "Negocio"}
                                 businessAddress={activeTenant?.address ?? null}
+                                ticketOptions={ticketOptions}
+                                logoUrl={logoUrl}
                                 variant="compact"
                               />
                             )}
@@ -420,6 +429,8 @@ export default function OrdenesPage() {
                     tenantSlug={tenantSlug}
                     businessName={activeTenant?.name ?? "Negocio"}
                     businessAddress={activeTenant?.address ?? null}
+                    ticketOptions={ticketOptions}
+                    logoUrl={logoUrl}
                   />
                 ))}
               </div>

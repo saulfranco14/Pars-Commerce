@@ -7,7 +7,7 @@ import { useOrder } from "../hooks/useOrder";
 import { ReceiptPreview } from "./ReceiptPreview";
 
 export function ReceiptActions() {
-  const { order, businessName, businessAddress, setError } = useOrder();
+  const { order, businessName, businessAddress, ticketOptions, logoUrl, setError } = useOrder();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -70,6 +70,8 @@ export function ReceiptActions() {
           businessName={businessName}
           items={order.items ?? []}
           businessAddress={businessAddress}
+          ticketOptions={ticketOptions}
+          logoUrl={logoUrl}
         />
       </div>
 
