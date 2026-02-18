@@ -55,8 +55,8 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="dashboard-root flex h-screen max-h-screen overflow-hidden bg-background">
-      <div className="no-print">
+    <div className="dashboard-root flex min-h-screen bg-background">
+      <div className="no-print md:fixed md:left-0 md:top-0 md:z-20 md:h-screen md:w-56">
         <Sidebar
           tenantSlug={tenantSlug}
           mobileOpen={mobileMenuOpen}
@@ -64,9 +64,9 @@ export default function DashboardLayout({
           onSignOut={handleSignOut}
         />
       </div>
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col md:ml-56">
         <header
-          className="no-print relative z-30 flex h-14 shrink-0 items-center justify-between border-b border-border-soft bg-surface px-4"
+          className="no-print sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border-soft bg-surface px-4"
           style={{ paddingLeft: "max(1rem, env(safe-area-inset-left, 1rem))" }}
         >
           <button
@@ -80,7 +80,7 @@ export default function DashboardLayout({
           <div className="flex-1" />
           <ThemeToggle />
         </header>
-        <main className="dashboard-main flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
+        <main className="dashboard-main flex-1 px-4 py-4 sm:px-6 sm:py-6">
           {pathname === "/dashboard/crear-negocio" ||
           pathname === "/dashboard/perfil" ? (
             children

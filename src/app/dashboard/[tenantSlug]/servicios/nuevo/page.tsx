@@ -153,7 +153,7 @@ export default function NuevoServicioPage() {
   }
 
   return (
-    <div className="lg:mx-auto flex min-h-0 max-w-5xl flex-1 flex-col overflow-hidden">
+    <div className="mx-auto max-w-5xl">
       <div className="shrink-0 pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/servicios`}
@@ -170,9 +170,9 @@ export default function NuevoServicioPage() {
         </p>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden gap-4 rounded-xl border border-border bg-surface-raised shadow-sm">
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+      <div className="rounded-xl border border-border bg-surface-raised shadow-sm">
+        <form onSubmit={handleSubmit}>
+          <div className="p-4 sm:p-6 md:p-8">
             {error && (
               <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
                 {error}

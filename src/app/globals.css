@@ -69,19 +69,18 @@ html {
   scroll-padding-top: 60px;
 }
 
-html,
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+@supports not (overflow: clip) {
+  body {
+    overflow-x: hidden;
+  }
 }
 
 @media (max-width: 768px) {
-  @supports (height: 100dvh) {
-    .dashboard-root {
-      height: 100dvh !important;
-      max-height: 100dvh !important;
-    }
-  }
-  .dashboard-main {
+  html {
     -webkit-overflow-scrolling: touch;
   }
 }

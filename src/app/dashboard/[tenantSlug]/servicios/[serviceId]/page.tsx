@@ -197,8 +197,8 @@ export default function EditarServicioPage() {
   }
 
   return (
-    <div className="lg:mx-auto flex min-h-0 max-w-5xl flex-1 flex-col overflow-hidden gap-4">
-      <div className="shrink-0 border-b border-border pb-4">
+    <div className="mx-auto max-w-5xl space-y-4">
+      <div className="border-b border-border pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/servicios`}
           className="text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -213,12 +213,9 @@ export default function EditarServicioPage() {
         </p>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
-        <form
-          onSubmit={handleSubmit}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden gap-4"
-        >
-          <div className="flex-1 overflow-y-auto p-6 md:p-8">
+      <div className="rounded-xl border border-border bg-surface-raised shadow-sm">
+        <form onSubmit={handleSubmit}>
+          <div className="p-6 md:p-8">
             {error && (
               <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
                 {error}
@@ -434,7 +431,7 @@ export default function EditarServicioPage() {
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-border bg-surface-raised px-6 py-4 md:px-8">
+          <div className="border-t border-border bg-surface-raised px-6 py-4 md:px-8">
             <div className="flex flex-wrap gap-3">
               <button
                 type="submit"
