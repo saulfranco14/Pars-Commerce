@@ -5,8 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore } from "@/stores/useTenantStore";
-import { X } from "lucide-react";
-import logo from "@/assets/logo.png";
+import { X, Download } from "lucide-react";
+import { usePwaInstall } from "@/hooks/usePwaInstall";
 
 interface SidebarProps {
   tenantSlug: string | null;
@@ -41,20 +41,7 @@ function NavLink({
   );
 }
 
-function SidebarContent({
-  pathname,
-  slug,
-  base,
-  hasTenant,
-  memberships,
-  activeTenantId,
-  setActiveTenantId,
-  profile,
-  onNavigate,
-  showCloseButton,
-  onClose,
-  onSignOut,
-}: {
+interface SidebarContentProps {
   pathname: string;
   slug: string | null;
   base: string;
@@ -72,7 +59,26 @@ function SidebarContent({
   showCloseButton?: boolean;
   onClose?: () => void;
   onSignOut?: () => void;
-}) {
+  isPwaInstallable?: boolean;
+  onPwaInstall?: () => void;
+}
+
+function SidebarContent(props: SidebarContentProps) {
+  const {
+    pathname,
+    base,
+    hasTenant,
+    memberships,
+    activeTenantId,
+    setActiveTenantId,
+    profile,
+    onNavigate,
+    showCloseButton,
+    onClose,
+    onSignOut,
+    isPwaInstallable,
+    onPwaInstall,
+  } = props;
   const activeMembership = memberships.find(
     (m) => m.tenant_id === activeTenantId,
   );
@@ -87,11 +93,11 @@ function SidebarContent({
           className="flex items-center gap-2 font-semibold text-foreground"
         >
           <Image
-            src={logo}
+            src="/android-chrome-192x192.png"
             alt="Pars Commerce"
             width={32}
             height={32}
-            className="h-8 w-8 shrink-0"
+            className="h-8 w-8 shrink-0 rounded-lg"
           />
           <span>Pars Commerce</span>
         </Link>
@@ -213,7 +219,29 @@ function SidebarContent({
           </>
         )}
       </nav>
-      <div className="shrink-0 space-y-2 border-t border-border-soft p-3">
+      <div
+        className="shrink-0 space-y-2 border-t border-border-soft p-3"
+        style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+      >
+        {isPwaInstallable && onPwaInstall && (
+          <button
+            type="button"
+            onClick={onPwaInstall}
+            className="flex w-full min-h-[44px] items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:bg-accent-hover"
+          >
+            <Download className="h-5 w-5" />
+            Instalar app
+          </button>
+        )}
+        {onSignOut && (
+          <button
+            type="button"
+            onClick={onSignOut}
+            className="w-full min-h-[44px] rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-border-soft/60"
+          >
+            Cerrar sesión
+          </button>
+        )}
         <Link
           href="/dashboard/perfil"
           onClick={onNavigate}
@@ -224,15 +252,6 @@ function SidebarContent({
             <p className="truncate text-xs text-muted">{profile.email}</p>
           )}
         </Link>
-        {onSignOut && (
-          <button
-            type="button"
-            onClick={onSignOut}
-            className="w-full min-h-[44px] rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-border-soft/60"
-          >
-            Cerrar sesión
-          </button>
-        )}
       </div>
     </>
   );
@@ -250,24 +269,31 @@ export function Sidebar({
   const activeTenantId = useTenantStore((s) => s.activeTenantId);
   const setActiveTenantId = useTenantStore((s) => s.setActiveTenantId);
   const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const { isInstallable, install } = usePwaInstall();
 
   const slug = tenantSlug ?? activeTenant?.slug ?? null;
   const base = slug ? `/dashboard/${slug}` : "/dashboard";
   const hasTenant = !!slug;
 
+  const sidebarContentProps = {
+    pathname,
+    slug,
+    base,
+    hasTenant,
+    memberships,
+    activeTenantId,
+    setActiveTenantId,
+    profile,
+    onSignOut,
+    isPwaInstallable: isInstallable,
+    onPwaInstall: install,
+  };
+
   return (
     <>
-      <aside className="hidden h-screen max-h-screen w-56 shrink-0 flex-col overflow-hidden border-r border-border-soft bg-surface md:flex">
+      <aside className="hidden h-screen max-h-screen w-56 shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-border-soft bg-surface md:flex">
         <SidebarContent
-          pathname={pathname}
-          slug={slug}
-          base={base}
-          hasTenant={hasTenant}
-          memberships={memberships}
-          activeTenantId={activeTenantId}
-          setActiveTenantId={setActiveTenantId}
-          profile={profile}
-          onSignOut={onSignOut}
+          {...sidebarContentProps}
         />
       </aside>
       {mobileOpen && (
@@ -277,20 +303,12 @@ export function Sidebar({
             onClick={onMobileClose}
             aria-hidden
           />
-          <aside className="fixed inset-y-0 left-0 z-50 flex h-screen max-h-screen w-72 max-w-[85vw] flex-col overflow-hidden border-r border-border-soft bg-surface shadow-xl md:hidden">
+          <aside className="fixed inset-y-0 left-0 z-50 flex h-screen max-h-screen w-72 max-w-[85vw] flex-col overflow-y-auto overflow-x-hidden border-r border-border-soft bg-surface shadow-xl md:hidden">
             <SidebarContent
-              pathname={pathname}
-              slug={slug}
-              base={base}
-              hasTenant={hasTenant}
-              memberships={memberships}
-              activeTenantId={activeTenantId}
-              setActiveTenantId={setActiveTenantId}
-              profile={profile}
+              {...sidebarContentProps}
               onNavigate={onMobileClose}
               showCloseButton
               onClose={onMobileClose}
-              onSignOut={onSignOut}
             />
           </aside>
         </>
