@@ -224,10 +224,23 @@ body {
   .no-print {
     display: none !important;
   }
+  body {
+    background: #fff;
+  }
   #ticket-print {
     display: block !important;
     visibility: visible !important;
     background: #fff;
     min-height: auto;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    margin: 0;
+    padding: 12px;
+    box-sizing: border-box;
+  }
+  .receipt-ticket {
+    width: 100% !important;
+    max-width: 100% !important;
+    break-inside: avoid;
   }
 }

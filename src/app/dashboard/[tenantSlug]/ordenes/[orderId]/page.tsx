@@ -13,7 +13,7 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { ReceiptPreview } from "./components/ReceiptPreview";
 
 function OrderDetailContent() {
-  const { order, loading, error, tenantSlug, businessName, businessAddress } =
+  const { order, loading, error, tenantSlug, businessName, businessAddress, ticketOptions, logoUrl } =
     useOrder();
 
   if (loading) {
@@ -49,6 +49,8 @@ function OrderDetailContent() {
           businessName={businessName}
           items={order.items ?? []}
           businessAddress={businessAddress}
+          ticketOptions={ticketOptions}
+          logoUrl={logoUrl}
         />
       </div>
 

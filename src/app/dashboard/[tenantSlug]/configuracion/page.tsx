@@ -10,6 +10,10 @@ import {
   update as updateTenant,
   list as listTenants,
 } from "@/services/tenantsService";
+import {
+  type TicketSettings,
+  mergeTicketSettings,
+} from "@/types/ticketSettings";
 
 export default function ConfiguracionPage() {
   const params = useParams();
@@ -28,6 +32,17 @@ export default function ConfiguracionPage() {
   const [addressPhone, setAddressPhone] = useState("");
   const [monthlyRent, setMonthlyRent] = useState("");
   const [monthlySalesObjective, setMonthlySalesObjective] = useState("");
+  const [ticketShowLogo, setTicketShowLogo] = useState(false);
+  const [ticketShowBusinessAddress, setTicketShowBusinessAddress] = useState(true);
+  const [ticketShowCustomerInfo, setTicketShowCustomerInfo] = useState(true);
+  const [ticketShowOrderId, setTicketShowOrderId] = useState(true);
+  const [ticketShowDate, setTicketShowDate] = useState(true);
+  const [ticketShowItems, setTicketShowItems] = useState(true);
+  const [ticketShowSubtotal, setTicketShowSubtotal] = useState(true);
+  const [ticketShowDiscount, setTicketShowDiscount] = useState(true);
+  const [ticketShowWholesaleSavings, setTicketShowWholesaleSavings] = useState(true);
+  const [ticketShowPaymentMethod, setTicketShowPaymentMethod] = useState(true);
+  const [ticketFooterMessage, setTicketFooterMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -41,6 +56,18 @@ export default function ConfiguracionPage() {
       | null
       | undefined;
     setExpressOrderEnabled(st?.express_order_enabled === true);
+    const ticket = mergeTicketSettings(st?.ticket as TicketSettings | undefined);
+    setTicketShowLogo(ticket.showLogo ?? false);
+    setTicketShowBusinessAddress(ticket.showBusinessAddress ?? true);
+    setTicketShowCustomerInfo(ticket.showCustomerInfo ?? true);
+    setTicketShowOrderId(ticket.showOrderId ?? true);
+    setTicketShowDate(ticket.showDate ?? true);
+    setTicketShowItems(ticket.showItems ?? true);
+    setTicketShowSubtotal(ticket.showSubtotal ?? true);
+    setTicketShowDiscount(ticket.showDiscount ?? true);
+    setTicketShowWholesaleSavings(ticket.showWholesaleSavings ?? true);
+    setTicketShowPaymentMethod(ticket.showPaymentMethod ?? true);
+    setTicketFooterMessage(ticket.footerMessage ?? "");
     const addr = activeTenant.address;
     setAddressStreet(addr?.street ?? "");
     setAddressCity(addr?.city ?? "");
@@ -73,6 +100,19 @@ export default function ConfiguracionPage() {
         settings: {
           ...((activeTenant.settings as Record<string, unknown>) ?? {}),
           express_order_enabled: expressOrderEnabled,
+          ticket: {
+            showLogo: ticketShowLogo,
+            showBusinessAddress: ticketShowBusinessAddress,
+            showCustomerInfo: ticketShowCustomerInfo,
+            showOrderId: ticketShowOrderId,
+            showDate: ticketShowDate,
+            showItems: ticketShowItems,
+            showSubtotal: ticketShowSubtotal,
+            showDiscount: ticketShowDiscount,
+            showWholesaleSavings: ticketShowWholesaleSavings,
+            showPaymentMethod: ticketShowPaymentMethod,
+            footerMessage: ticketFooterMessage.trim() || undefined,
+          },
         },
         address: {
           street: addressStreet.trim() || undefined,
@@ -197,6 +237,123 @@ export default function ConfiguracionPage() {
                     Orden Express. Permite crear el pedido y pagar de inmediato,
                     ideal para cobros rápidos sin asignación ni seguimiento.
                   </label>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-border bg-border-soft/60 p-4 space-y-4">
+                <h2 className="text-sm font-semibold text-foreground">
+                  Ticket / Recibo
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Configura qué se muestra al imprimir o descargar el ticket.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={ticketShowLogo}
+                      onChange={(e) => setTicketShowLogo(e.target.checked)}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm text-muted-foreground">Mostrar logo</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={ticketShowBusinessAddress}
+                      onChange={(e) => setTicketShowBusinessAddress(e.target.checked)}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm text-muted-foreground">Mostrar dirección del negocio</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={ticketShowCustomerInfo}
+                      onChange={(e) => setTicketShowCustomerInfo(e.target.checked)}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm text-muted-foreground">Mostrar datos del cliente</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={ticketShowOrderId}
+                      onChange={(e) => setTicketShowOrderId(e.target.checked)}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm text-muted-foreground">Mostrar número de orden</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={ticketShowDate}
+                      onChange={(e) => setTicketShowDate(e.target.checked)}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm text-muted-foreground">Mostrar fecha y hora</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={ticketShowItems}
+                      onChange={(e) => setTicketShowItems(e.target.checked)}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm text-muted-foreground">Mostrar lista de productos</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={ticketShowSubtotal}
+                      onChange={(e) => setTicketShowSubtotal(e.target.checked)}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm text-muted-foreground">Mostrar subtotal</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={ticketShowDiscount}
+                      onChange={(e) => setTicketShowDiscount(e.target.checked)}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm text-muted-foreground">Mostrar descuento</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={ticketShowWholesaleSavings}
+                      onChange={(e) => setTicketShowWholesaleSavings(e.target.checked)}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm text-muted-foreground">Mostrar ahorro mayoreo</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={ticketShowPaymentMethod}
+                      onChange={(e) => setTicketShowPaymentMethod(e.target.checked)}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm text-muted-foreground">Mostrar forma de pago</span>
+                  </label>
+                </div>
+                <div>
+                  <label
+                    htmlFor="ticketFooterMessage"
+                    className="block text-xs font-medium text-muted-foreground"
+                  >
+                    Mensaje de pie (opcional)
+                  </label>
+                  <input
+                    id="ticketFooterMessage"
+                    type="text"
+                    value={ticketFooterMessage}
+                    onChange={(e) => setTicketFooterMessage(e.target.value)}
+                    className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
+                    placeholder="Ej. Gracias por tu compra"
+                  />
                 </div>
               </div>
 

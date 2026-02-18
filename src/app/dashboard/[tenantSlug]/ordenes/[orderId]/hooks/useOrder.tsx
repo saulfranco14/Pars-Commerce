@@ -10,6 +10,8 @@ import { generatePaymentLink } from "@/services/mercadopagoService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { TenantAddress } from "@/types/database";
 import type { TeamMember } from "@/types/team";
+import type { TicketSettings } from "@/types/ticketSettings";
+import { mergeTicketSettings } from "@/types/ticketSettings";
 import { OrderDetail, TeamMemberOption } from "../types";
 
 interface OrderContextType {
@@ -22,6 +24,8 @@ interface OrderContextType {
   tenantSlug: string;
   businessName: string;
   businessAddress: TenantAddress | null;
+  ticketOptions: TicketSettings;
+  logoUrl: string | null;
   fetchOrder: () => Promise<void>;
   handleStatusChange: (newStatus: string) => Promise<void>;
   handleAssign: (assignToId: string) => Promise<void>;
@@ -53,6 +57,10 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
   const activeTenant = useTenantStore((s) => s.activeTenant)();
   const businessName = activeTenant?.name ?? "Negocio";
   const businessAddress = activeTenant?.address ?? null;
+  const ticketOptions = mergeTicketSettings(
+    (activeTenant?.settings as Record<string, unknown>)?.ticket as TicketSettings | undefined
+  );
+  const logoUrl = activeTenant?.logo_url ?? null;
 
   const orderKey = orderId
     ? `/api/orders?order_id=${encodeURIComponent(orderId)}`
@@ -262,6 +270,8 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
         tenantSlug,
         businessName,
         businessAddress,
+        ticketOptions,
+        logoUrl,
         fetchOrder,
         handleStatusChange,
         handleAssign,
