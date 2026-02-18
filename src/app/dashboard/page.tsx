@@ -18,6 +18,9 @@ import {
 } from "@/components/ui/TableWrapper";
 import { formatOrderDate } from "@/lib/formatDate";
 import { swrFetcher } from "@/lib/swrFetcher";
+import { mergeTicketSettings } from "@/types/ticketSettings";
+import type { TicketSettings } from "@/types/ticketSettings";
+import type { OrderListItem } from "@/types/orders";
 import {
   ArrowRight,
   ClipboardList,
@@ -157,6 +160,11 @@ export default function DashboardPage() {
   if (!activeTenant) {
     return null;
   }
+
+  const ticketOptions = mergeTicketSettings(
+    (activeTenant.settings as Record<string, unknown>)?.ticket as TicketSettings | undefined
+  );
+  const logoUrl = activeTenant.logo_url ?? null;
 
   const recent = orders.slice(0, 5);
   const byStatus = orders.reduce<Record<string, number>>((acc, o) => {
@@ -659,10 +667,12 @@ export default function DashboardPage() {
               {recent.map((o) => (
                 <OrderCardMobile
                   key={o.id}
-                  order={o}
+                  order={o as OrderListItem}
                   tenantSlug={activeTenant.slug}
                   businessName={activeTenant.name ?? "Negocio"}
                   businessAddress={activeTenant.address ?? null}
+                  ticketOptions={ticketOptions}
+                  logoUrl={logoUrl}
                 />
               ))}
             </div>
