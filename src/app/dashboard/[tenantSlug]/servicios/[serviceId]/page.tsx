@@ -6,6 +6,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
+import { btnPrimary, btnSecondary } from "@/components/ui/buttonClasses";
 import { serviceFormSchema } from "@/lib/serviceValidation";
 import type { ProductDetail } from "@/types/products";
 import { update } from "@/services/productsService";
@@ -433,17 +434,10 @@ export default function EditarServicioPage() {
 
           <div className="border-t border-border bg-surface-raised px-6 py-4 md:px-8">
             <div className="flex flex-wrap gap-3">
-              <button
-                type="submit"
-                disabled={loading}
-                className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
-              >
+              <button type="submit" disabled={loading} className={btnPrimary}>
                 {loading ? "Guardando..." : "Guardar"}
               </button>
-              <Link
-                href={`/dashboard/${tenantSlug}/servicios`}
-                className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-border-soft"
-              >
+              <Link href={`/dashboard/${tenantSlug}/servicios`} className={btnSecondary}>
                 Cancelar
               </Link>
             </div>

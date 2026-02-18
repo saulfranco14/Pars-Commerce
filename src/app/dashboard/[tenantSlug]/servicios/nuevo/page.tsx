@@ -12,6 +12,7 @@ import { create } from "@/services/productsService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { Subcatalog } from "@/types/subcatalogs";
 import { SubcatalogSelect } from "@/components/forms/SubcatalogSelect";
+import { btnPrimaryFlex, btnSecondaryFlex } from "@/components/ui/buttonClasses";
 
 const subcatalogsKey = (tenantId: string) =>
   `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
@@ -398,20 +399,13 @@ export default function NuevoServicioPage() {
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-border bg-surface-raised px-4 py-4 sm:px-6 md:px-8">
+          <div className="border-t border-border bg-surface-raised px-4 py-4 sm:px-6 md:px-8">
             <div className="flex flex-1 gap-3">
-              <Link
-                href={`/dashboard/${tenantSlug}/servicios`}
-                className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
-              >
+              <Link href={`/dashboard/${tenantSlug}/servicios`} className={btnSecondaryFlex}>
                 <X className="h-4 w-4 shrink-0" aria-hidden />
                 Cancelar
               </Link>
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-              >
+              <button type="submit" disabled={loading} className={btnPrimaryFlex}>
                 <Plus className="h-4 w-4 shrink-0" aria-hidden />
                 {loading ? "Creando…" : "Crear servicio"}
               </button>

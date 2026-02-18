@@ -11,6 +11,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Menu } from "lucide-react";
+import { btnPrimary } from "@/components/ui/buttonClasses";
 
 export default function DashboardLayout({
   children,
@@ -96,7 +97,7 @@ export default function DashboardLayout({
               </p>
               <Link
                 href="/dashboard/crear-negocio"
-                className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
+                className={`mt-4 ${btnPrimary}`}
               >
                 Crear negocio
               </Link>

@@ -21,6 +21,14 @@ import {
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { ProductListItem } from "@/types/products";
 import { remove } from "@/services/productsService";
+import {
+  btnPrimary,
+  btnPrimaryHeader,
+  btnSecondaryFlex,
+  btnDanger,
+  btnSecondarySmall,
+  btnDangerSmall,
+} from "@/components/ui/buttonClasses";
 
 const servicesKey = (tenantId: string) =>
   `/api/products?tenant_id=${encodeURIComponent(tenantId)}&type=service`;
@@ -87,7 +95,7 @@ export default function ServiciosPage() {
           </h1>
           <Link
             href={`/dashboard/${tenantSlug}/servicios/nuevo`}
-            className="inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:w-auto"
+            className={btnPrimaryHeader}
           >
             <Plus className="h-4 w-4 shrink-0" aria-hidden />
             Nuevo servicio
@@ -115,7 +123,7 @@ export default function ServiciosPage() {
             </p>
             <Link
               href={`/dashboard/${tenantSlug}/servicios/nuevo`}
-              className="mt-4 inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className={`mt-4 ${btnPrimary}`}
             >
               <Plus className="h-4 w-4 shrink-0" aria-hidden />
               Crear primer servicio
@@ -170,7 +178,7 @@ export default function ServiciosPage() {
                     <div className="mt-4 flex gap-2 border-t border-border-soft pt-4">
                       <Link
                         href={`/dashboard/${tenantSlug}/servicios/${s.id}`}
-                        className="flex-1 inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-border py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+                        className={`flex-1 ${btnSecondaryFlex}`}
                       >
                         <Pencil className="h-4 w-4 shrink-0" aria-hidden />
                         Editar
@@ -179,7 +187,7 @@ export default function ServiciosPage() {
                         type="button"
                         onClick={() => openDeleteModal(s)}
                         disabled={deletingId === s.id}
-                        className="flex-1 inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-red-200 py-2.5 text-sm font-medium text-red-600 transition-colors duration-200 hover:bg-red-50 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+                        className={`flex-1 ${btnDanger}`}
                         aria-label={`Eliminar ${s.name}`}
                       >
                         <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
@@ -244,7 +252,7 @@ export default function ServiciosPage() {
                           <div className="flex justify-end gap-2">
                             <Link
                               href={`/dashboard/${tenantSlug}/servicios/${s.id}`}
-                              className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+                              className={btnSecondarySmall}
                             >
                               <Pencil
                                 className="h-3.5 w-3.5 shrink-0"
@@ -256,7 +264,7 @@ export default function ServiciosPage() {
                               type="button"
                               onClick={() => openDeleteModal(s)}
                               disabled={deletingId === s.id}
-                              className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors duration-200 hover:bg-red-50 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+                              className={btnDangerSmall}
                               aria-label={`Eliminar ${s.name}`}
                             >
                               <Trash2
