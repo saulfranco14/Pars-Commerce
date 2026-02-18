@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { PwaRegister } from "@/components/PwaRegister";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -56,7 +55,6 @@ export default function RootLayout({
             __html: `(function(){var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark');})();`,
           }}
         />
-        <PwaRegister />
         {children}
       </body>
     </html>
