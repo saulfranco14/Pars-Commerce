@@ -64,7 +64,7 @@ export default function DashboardLayout({
           onSignOut={handleSignOut}
         />
       </div>
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header
           className="no-print relative z-30 flex h-14 shrink-0 items-center justify-between border-b border-border-soft bg-surface px-4"
           style={{ paddingLeft: "max(1rem, env(safe-area-inset-left, 1rem))" }}
@@ -80,14 +80,13 @@ export default function DashboardLayout({
           <div className="flex-1" />
           <ThemeToggle />
         </header>
-        <main className="dashboard-main flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-4 sm:px-6 sm:py-6">
-          <div className="flex min-h-0 h-full flex-1 flex-col overflow-hidden">
-            {pathname === "/dashboard/crear-negocio" ||
-            pathname === "/dashboard/perfil" ? (
-              children
-            ) : !tenantsLoaded ? (
-              <LoadingBlock message="Cargando negocios…" />
-            ) : memberships.length === 0 ? (
+        <main className="dashboard-main flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
+          {pathname === "/dashboard/crear-negocio" ||
+          pathname === "/dashboard/perfil" ? (
+            children
+          ) : !tenantsLoaded ? (
+            <LoadingBlock message="Cargando negocios…" />
+          ) : memberships.length === 0 ? (
             <div className="rounded-xl border border-border bg-surface-raised p-6 text-center">
               <h2 className="text-lg font-semibold text-foreground">
                 Sin negocios
@@ -111,7 +110,6 @@ export default function DashboardLayout({
           ) : (
             <div className="text-sm text-muted">Cargando negocio...</div>
           )}
-          </div>
         </main>
       </div>
     </div>

@@ -121,8 +121,8 @@ export default function ProductosPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden gap-4">
-      <div className="shrink-0 space-y-4  sm:px-0">
+    <div className="flex flex-col gap-4">
+      <div className="space-y-4 sm:px-0">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
             Productos
@@ -161,7 +161,7 @@ export default function ProductosPage() {
         </div>
       </div>
 
-      <div className="flex gap-4 min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex flex-col gap-4">
         {isLoading ? (
           <LoadingBlock
             variant="skeleton"
@@ -184,13 +184,12 @@ export default function ProductosPage() {
           </div>
         ) : (
           <>
-            <div className="min-h-0 flex-1 overflow-y-auto md:hidden">
-              <div className="space-y-4">
-                {products.map((p) => (
-                  <div
-                    key={p.id}
-                    className="rounded-xl border border-border bg-surface-raised p-4"
-                  >
+            <div className="space-y-4 md:hidden">
+              {products.map((p) => (
+                <div
+                  key={p.id}
+                  className="rounded-xl border border-border bg-surface-raised p-4"
+                >
                     <div className="flex gap-3">
                       <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-border-soft sm:h-16 sm:w-16">
                         {p.image_url ? (
@@ -253,10 +252,9 @@ export default function ProductosPage() {
                     </div>
                   </div>
                 ))}
-              </div>
             </div>
-            <div className="hidden min-h-0 flex-1 flex-col overflow-hidden md:flex">
-              <TableWrapper scrollable>
+            <div className="hidden md:block">
+              <TableWrapper>
                 <table className="min-w-full">
                   <thead>
                     <tr className={tableHeaderRowClass}>

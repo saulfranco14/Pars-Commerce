@@ -79,8 +79,8 @@ export default function ServiciosPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden gap-4">
-      <div className="shrink-0 space-y-4 sm:px-0">
+    <div className="flex flex-col gap-4">
+      <div className="space-y-4 sm:px-0">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
             Servicios
@@ -101,7 +101,7 @@ export default function ServiciosPage() {
         )}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden gap-4">
+      <div className="flex flex-col gap-4">
         {isLoading ? (
           <LoadingBlock
             variant="skeleton"
@@ -123,13 +123,12 @@ export default function ServiciosPage() {
           </div>
         ) : (
           <>
-            <div className="min-h-0 flex-1 overflow-y-auto md:hidden">
-              <div className="space-y-4">
-                {services.map((s) => (
-                  <div
-                    key={s.id}
-                    className="rounded-xl border border-border bg-surface-raised p-4"
-                  >
+            <div className="space-y-4 md:hidden">
+              {services.map((s) => (
+                <div
+                  key={s.id}
+                  className="rounded-xl border border-border bg-surface-raised p-4"
+                >
                     <div className="flex gap-3">
                       <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-border-soft sm:h-16 sm:w-16">
                         {s.image_url ? (
@@ -189,10 +188,9 @@ export default function ServiciosPage() {
                     </div>
                   </div>
                 ))}
-              </div>
             </div>
-            <div className="hidden min-h-0 flex-1 flex-col overflow-hidden py-2 lg:py-3 md:flex">
-              <TableWrapper scrollable>
+            <div className="hidden py-2 md:block lg:py-3">
+              <TableWrapper>
                 <table className="min-w-full">
                   <thead>
                     <tr className={tableHeaderRowClass}>
