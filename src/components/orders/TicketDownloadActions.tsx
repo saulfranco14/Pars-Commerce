@@ -136,10 +136,6 @@ export function TicketDownloadActions({
   const btnClassFull =
     "inline-flex min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft/80 focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-50";
 
-  const canShare =
-    typeof navigator !== "undefined" &&
-    "share" in navigator;
-
   return (
     <div
       className="flex items-center gap-2"
@@ -179,26 +175,24 @@ export function TicketDownloadActions({
         </span>
       )}
 
-      {canShare && (
-        <button
-          type="button"
-          onClick={handleShare}
-          disabled={loading || (shouldFetch && swrLoading)}
-          className={isCompact ? btnClass : btnClassFull}
-          aria-label="Compartir ticket"
-        >
-          <Share2 className="h-4 w-4 shrink-0" />
-          {!isCompact && (
-            <span>
-              {loading && exportMode === "share"
-                ? "Preparando…"
-                : shouldFetch && swrLoading
-                  ? "Cargando…"
-                  : "Compartir"}
-            </span>
-          )}
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={handleShare}
+        disabled={loading || (shouldFetch && swrLoading)}
+        className={isCompact ? btnClass : btnClassFull}
+        aria-label="Compartir ticket"
+      >
+        <Share2 className="h-4 w-4 shrink-0" />
+        {!isCompact && (
+          <span>
+            {loading && exportMode === "share"
+              ? "Preparando…"
+              : shouldFetch && swrLoading
+                ? "Cargando…"
+                : "Compartir"}
+          </span>
+        )}
+      </button>
 
       <button
         type="button"

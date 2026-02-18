@@ -47,6 +47,7 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
   --color-accent-foreground: var(--accent-foreground);
   --color-default: var(--color-default);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
