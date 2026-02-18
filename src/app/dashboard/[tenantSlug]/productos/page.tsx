@@ -23,6 +23,15 @@ import { swrFetcher } from "@/lib/swrFetcher";
 import type { ProductListItem } from "@/types/products";
 import type { Subcatalog } from "@/types/subcatalogs";
 import { remove } from "@/services/productsService";
+import {
+  btnPrimary,
+  btnPrimaryHeader,
+  btnSecondaryHeader,
+  btnSecondaryFlex,
+  btnDanger,
+  btnSecondarySmall,
+  btnDangerSmall,
+} from "@/components/ui/buttonClasses";
 
 const subcatalogsKey = (tenantId: string) =>
   `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
@@ -121,8 +130,8 @@ export default function ProductosPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden gap-4">
-      <div className="shrink-0 space-y-4  sm:px-0">
+    <div className="flex flex-col gap-4">
+      <div className="space-y-4 sm:px-0">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
             Productos
@@ -130,14 +139,14 @@ export default function ProductosPage() {
           <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
             <Link
               href={`/dashboard/${tenantSlug}/productos/subcatalogos`}
-              className="inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 sm:w-auto"
+              className={btnSecondaryHeader}
             >
               <FolderTree className="h-4 w-4 shrink-0" aria-hidden />
               Subcatalogos
             </Link>
             <Link
               href={`/dashboard/${tenantSlug}/productos/nuevo`}
-              className="inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:w-auto"
+              className={btnPrimaryHeader}
             >
               <Plus className="h-4 w-4 shrink-0" aria-hidden />
               Nuevo producto
@@ -161,7 +170,7 @@ export default function ProductosPage() {
         </div>
       </div>
 
-      <div className="flex gap-4 min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex flex-col gap-4">
         {isLoading ? (
           <LoadingBlock
             variant="skeleton"
@@ -176,7 +185,7 @@ export default function ProductosPage() {
             </p>
             <Link
               href={`/dashboard/${tenantSlug}/productos/nuevo`}
-              className="mt-4 inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className={`mt-4 ${btnPrimary}`}
             >
               <Plus className="h-4 w-4 shrink-0" aria-hidden />
               Crear primer producto
@@ -184,13 +193,12 @@ export default function ProductosPage() {
           </div>
         ) : (
           <>
-            <div className="min-h-0 flex-1 overflow-y-auto md:hidden">
-              <div className="space-y-4">
-                {products.map((p) => (
-                  <div
-                    key={p.id}
-                    className="rounded-xl border border-border bg-surface-raised p-4"
-                  >
+            <div className="space-y-4 md:hidden">
+              {products.map((p) => (
+                <div
+                  key={p.id}
+                  className="rounded-xl border border-border bg-surface-raised p-4"
+                >
                     <div className="flex gap-3">
                       <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-border-soft sm:h-16 sm:w-16">
                         {p.image_url ? (
@@ -235,7 +243,7 @@ export default function ProductosPage() {
                     <div className="mt-4 flex gap-2 border-t border-border-soft pt-4">
                       <Link
                         href={`/dashboard/${tenantSlug}/productos/${p.id}`}
-                        className="flex-1 inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-border py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+                        className={`flex-1 ${btnSecondaryFlex}`}
                       >
                         <Pencil className="h-4 w-4 shrink-0" aria-hidden />
                         Editar
@@ -244,7 +252,7 @@ export default function ProductosPage() {
                         type="button"
                         onClick={() => openDeleteModal(p)}
                         disabled={deletingId === p.id}
-                        className="flex-1 inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-red-200 py-2.5 text-sm font-medium text-red-600 transition-colors duration-200 hover:bg-red-50 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+                        className={`flex-1 ${btnDanger}`}
                         aria-label={`Eliminar ${p.name}`}
                       >
                         <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
@@ -253,10 +261,9 @@ export default function ProductosPage() {
                     </div>
                   </div>
                 ))}
-              </div>
             </div>
-            <div className="hidden min-h-0 flex-1 flex-col overflow-hidden md:flex">
-              <TableWrapper scrollable>
+            <div className="hidden md:block">
+              <TableWrapper>
                 <table className="min-w-full">
                   <thead>
                     <tr className={tableHeaderRowClass}>
@@ -318,7 +325,7 @@ export default function ProductosPage() {
                           <div className="flex justify-end gap-2">
                             <Link
                               href={`/dashboard/${tenantSlug}/productos/${p.id}`}
-                              className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+                              className={btnSecondarySmall}
                             >
                               <Pencil
                                 className="h-3.5 w-3.5 shrink-0"
@@ -330,7 +337,7 @@ export default function ProductosPage() {
                               type="button"
                               onClick={() => openDeleteModal(p)}
                               disabled={deletingId === p.id}
-                              className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors duration-200 hover:bg-red-50 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+                              className={btnDangerSmall}
                               aria-label={`Eliminar ${p.name}`}
                             >
                               <Trash2
