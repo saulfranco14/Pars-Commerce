@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { OrderProvider, useOrder } from "./hooks/useOrder";
@@ -7,6 +8,7 @@ import { OrderHeader } from "./components/OrderHeader";
 import { CustomerCard } from "./components/CustomerCard";
 import { AssignmentCard } from "./components/AssignmentCard";
 import { OrderItemsTable } from "./components/OrderItemsTable";
+import { OrderActionButtons } from "./components/OrderActionButtons";
 import { ReceiptActions } from "./components/ReceiptActions";
 import { PaymentLinkCard } from "./components/PaymentLinkCard";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
@@ -39,22 +41,32 @@ function OrderDetailContent() {
 
   const isPaid = order.status === "paid" || order.status === "completed";
   const showTicket = isPaid || order.status === "pending_pickup";
+  const printContainer =
+    typeof document !== "undefined" ? document.getElementById("ticket-print-portal") : null;
 
   return (
     <>
-      {/* Contenedor específico para impresión física - Visible solo al imprimir */}
-      <div id="ticket-print" className="hidden" aria-hidden="true">
-        <ReceiptPreview
-          order={order}
-          businessName={businessName}
-          items={order.items ?? []}
-          businessAddress={businessAddress}
-          ticketOptions={ticketOptions}
-          logoUrl={logoUrl}
-        />
-      </div>
+      {printContainer &&
+        createPortal(
+          <div
+            id="ticket-print"
+            className="receipt-ticket-wrapper"
+            aria-hidden="true"
+            style={{ color: "#171717", backgroundColor: "#ffffff" }}
+          >
+            <ReceiptPreview
+              order={order}
+              businessName={businessName}
+              items={order.items ?? []}
+              businessAddress={businessAddress}
+              ticketOptions={ticketOptions}
+              logoUrl={logoUrl}
+            />
+          </div>,
+          printContainer
+        )}
 
-      <div className="no-print flex min-h-0 min-w-0 h-full w-full max-w-5xl mx-auto flex-1 flex-col overflow-x-hidden overflow-y-auto pb-0 lg:pb-6 sm:max-w-5xl">
+      <div className="no-print flex min-h-0 min-w-0 h-full w-full max-w-5xl mx-auto flex-1 flex-col overflow-x-hidden overflow-y-auto pb-40 lg:pb-6 sm:max-w-5xl md:pb-0">
         <div className="shrink-0">
           <OrderHeader />
         </div>
@@ -82,6 +94,15 @@ function OrderDetailContent() {
             </div>
           )}
         </div>
+      </div>
+
+      <div
+        className="no-print fixed left-0 right-0 bottom-0 z-40 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:hidden"
+        style={{
+          paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
+        }}
+      >
+        <OrderActionButtons embedded fixedBar />
       </div>
     </>
   );

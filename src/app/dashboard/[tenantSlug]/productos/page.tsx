@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
@@ -62,11 +62,26 @@ function buildSubcatalogTabs(subcatalogs: Subcatalog[]) {
 export default function ProductosPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
   const [subcatalogFilter, setSubcatalogFilter] = useState(
     () => searchParams.get("subcatalog_id") ?? "",
   );
+
+  useEffect(() => {
+    const urlValue = searchParams.get("subcatalog_id") ?? "";
+    if (urlValue !== subcatalogFilter) {
+      setSubcatalogFilter(urlValue);
+    }
+  }, [searchParams]);
+
+  function handleSubcatalogChange(value: string) {
+    setSubcatalogFilter(value);
+    const path = `/dashboard/${tenantSlug}/productos`;
+    const query = value ? `?subcatalog_id=${encodeURIComponent(value)}` : "";
+    router.replace(path + query, { scroll: false });
+  }
 
   const subcatalogsKeyValue = activeTenant
     ? subcatalogsKey(activeTenant.id)
@@ -164,7 +179,7 @@ export default function ProductosPage() {
           <FilterTabs
             tabs={productTabs}
             activeValue={subcatalogFilter}
-            onTabChange={setSubcatalogFilter}
+            onTabChange={handleSubcatalogChange}
             ariaLabel="Filtrar por subcatalog"
           />
         </div>

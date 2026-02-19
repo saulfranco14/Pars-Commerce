@@ -8,10 +8,11 @@ import { useAuthInitializer } from "@/hooks/useAuthInitializer";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
-import { Menu } from "lucide-react";
 import { btnPrimary } from "@/components/ui/buttonClasses";
+import { isFocusRoute } from "@/lib/focusRoutes";
 
 export default function DashboardLayout({
   children,
@@ -56,7 +57,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="dashboard-root flex min-h-screen bg-background">
+    <div className="dashboard-root no-print flex min-h-screen bg-background">
       <div className="no-print md:fixed md:left-0 md:top-0 md:z-20 md:h-screen md:w-56">
         <Sidebar
           tenantSlug={tenantSlug}
@@ -70,18 +71,20 @@ export default function DashboardLayout({
           className="no-print sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border-soft bg-surface px-4"
           style={{ paddingLeft: "max(1rem, env(safe-area-inset-left, 1rem))" }}
         >
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg bg-border-soft/70 text-foreground hover:bg-border-soft md:hidden"
-            aria-label="Abrir menú"
+          <Link
+            href="/dashboard"
+            className="font-semibold text-foreground md:hidden"
           >
-            <Menu className="h-6 w-6" />
-          </button>
+            Pars Commerce
+          </Link>
           <div className="flex-1" />
           <ThemeToggle />
         </header>
-        <main className="dashboard-main flex-1 px-4 py-4 sm:px-6 sm:py-6">
+        <main
+          className={`dashboard-main flex-1 px-4 py-4 sm:px-6 sm:py-6 md:pb-6 ${
+            isFocusRoute(pathname) ? "pb-6" : "pb-24"
+          }`}
+        >
           {pathname === "/dashboard/crear-negocio" ||
           pathname === "/dashboard/perfil" ? (
             children
@@ -113,6 +116,14 @@ export default function DashboardLayout({
           )}
         </main>
       </div>
+      {!isFocusRoute(pathname) &&
+        tenantsLoaded &&
+        memberships.length > 0 && (
+          <BottomNav
+            onMoreClick={() => setMobileMenuOpen(true)}
+            ordersBadgeCount={0}
+          />
+        )}
     </div>
   );
 }
