@@ -14,6 +14,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { btnPrimary } from "@/components/ui/buttonClasses";
 import { isFocusRoute } from "@/lib/focusRoutes";
+import { OnboardingOverlay } from "@/components/onboarding/OnboardingOverlay";
 
 export default function DashboardLayout({
   children,
@@ -143,6 +144,9 @@ export default function DashboardLayout({
             ordersBadgeCount={0}
           />
         )}
+
+      {/* Onboarding — shown once to new users, feels native on mobile & desktop */}
+      <OnboardingOverlay />
     </div>
   );
 }
