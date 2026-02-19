@@ -328,7 +328,7 @@ export function AddItemModal({
   return (
     <>
       <div
-        className="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 p-4 md:flex"
+        className="fixed inset-0 z-100 hidden items-center justify-center bg-black/60 p-4 md:flex"
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
         <div

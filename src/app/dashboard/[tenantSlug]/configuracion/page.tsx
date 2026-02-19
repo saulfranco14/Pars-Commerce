@@ -14,12 +14,28 @@ import {
   type TicketSettings,
   mergeTicketSettings,
 } from "@/types/ticketSettings";
+import { FilterTabs } from "@/components/ui/FilterTabs";
+import { FormSaveBar } from "@/components/layout/FormSaveBar";
+import { ConfigNegocioSection } from "./components/ConfigNegocioSection";
+import { ConfigTicketSection } from "./components/ConfigTicketSection";
+import { ConfigFinanzasSection } from "./components/ConfigFinanzasSection";
+import { ConfigDireccionSection } from "./components/ConfigDireccionSection";
+
+const CONFIG_TABS = [
+  { value: "negocio", label: "Negocio" },
+  { value: "ticket", label: "Ticket" },
+  { value: "finanzas", label: "Finanzas" },
+  { value: "direccion", label: "Dirección" },
+] as const;
+
+type ConfigTab = (typeof CONFIG_TABS)[number]["value"];
 
 export default function ConfiguracionPage() {
   const params = useParams();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
   const setMemberships = useTenantStore((s) => s.setMemberships);
+  const [activeTab, setActiveTab] = useState<ConfigTab>("negocio");
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -150,7 +166,7 @@ export default function ConfiguracionPage() {
 
   if (!activeTenant) {
     return (
-      <div className="text-sm text-muted-foreground-foreground">
+      <div className="text-sm text-muted-foreground">
         Selecciona un negocio para continuar.
       </div>
     );
@@ -158,407 +174,119 @@ export default function ConfiguracionPage() {
 
   return (
     <div className="mx-auto flex min-h-0 max-w-4xl flex-1 flex-col overflow-hidden">
-      <div className="shrink-0 pb-4">
+      <div className="shrink-0 space-y-4 pb-4">
         <Link
-          href={`/dashboard`}
-          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          href="/dashboard"
+          className="inline-flex min-h-(--touch-target,44px) items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver al inicio
         </Link>
-        <h1 className="mt-1 text-xl font-semibold text-foreground sm:text-2xl">
-          Configuración
-        </h1>
-        <p className="mt-0.5 text-sm text-muted">
-          Datos del negocio, dirección y finanzas. Para tienda pública, redes y
-          contenido del sitio web, usa Sitio web.
-        </p>
+        <div>
+          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
+            Configuración
+          </h1>
+          <p className="mt-0.5 text-sm text-muted">
+            Datos del negocio, dirección y finanzas. Para tienda pública, redes
+            y contenido del sitio web, usa Sitio web.
+          </p>
+        </div>
+        <FilterTabs
+          tabs={CONFIG_TABS}
+          activeValue={activeTab}
+          onTabChange={(v) => setActiveTab(v as ConfigTab)}
+          ariaLabel="Secciones de configuración"
+        />
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-6 md:pt-0">
+        <form
+          onSubmit={handleSubmit}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden md:pb-0 mb-4"
+        >
+          <div className="flex-1 overflow-y-auto overscroll-contain p-4 pb-8 sm:p-6 sm:pb-8">
             {error && (
-              <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
+              <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
                 {error}
               </div>
             )}
             {success && (
-              <div className="my-6 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 alert-success">
+              <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 alert-success">
                 Cambios guardados.
               </div>
             )}
 
-            <div className="mt-6 space-y-4">
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-muted-foreground"
-                >
-                  Nombre del negocio
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  placeholder="Ej. Lavado express"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-muted-foreground"
-                >
-                  Descripción (opcional)
-                </label>
-                <textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={3}
-                  className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  placeholder="Breve descripción del negocio"
-                />
-              </div>
-              <div className="rounded-lg border border-border bg-border-soft/60 p-4">
-                <h2 className="text-sm font-semibold text-foreground">
-                  Flujo de órdenes
-                </h2>
-                <div className="mt-3 flex items-start gap-2">
-                  <input
-                    id="expressOrder"
-                    type="checkbox"
-                    checked={expressOrderEnabled}
-                    onChange={(e) => setExpressOrderEnabled(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-border"
-                  />
-                  <label
-                    htmlFor="expressOrder"
-                    className="text-sm text-muted-foreground"
-                  >
-                    Orden Express. Permite crear el pedido y pagar de inmediato,
-                    ideal para cobros rápidos sin asignación ni seguimiento.
-                  </label>
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-border bg-border-soft/60 p-4 space-y-4">
-                <h2 className="text-sm font-semibold text-foreground">
-                  Ticket / Recibo
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Configura qué se muestra al imprimir o descargar el ticket.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={ticketShowLogo}
-                      onChange={(e) => setTicketShowLogo(e.target.checked)}
-                      className="h-4 w-4 rounded border-border"
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Mostrar logo
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={ticketShowBusinessAddress}
-                      onChange={(e) =>
-                        setTicketShowBusinessAddress(e.target.checked)
-                      }
-                      className="h-4 w-4 rounded border-border"
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Mostrar dirección del negocio
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={ticketShowCustomerInfo}
-                      onChange={(e) =>
-                        setTicketShowCustomerInfo(e.target.checked)
-                      }
-                      className="h-4 w-4 rounded border-border"
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Mostrar datos del cliente
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={ticketShowOrderId}
-                      onChange={(e) => setTicketShowOrderId(e.target.checked)}
-                      className="h-4 w-4 rounded border-border"
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Mostrar número de orden
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={ticketShowDate}
-                      onChange={(e) => setTicketShowDate(e.target.checked)}
-                      className="h-4 w-4 rounded border-border"
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Mostrar fecha y hora
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={ticketShowItems}
-                      onChange={(e) => setTicketShowItems(e.target.checked)}
-                      className="h-4 w-4 rounded border-border"
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Mostrar lista de productos
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={ticketShowSubtotal}
-                      onChange={(e) => setTicketShowSubtotal(e.target.checked)}
-                      className="h-4 w-4 rounded border-border"
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Mostrar subtotal
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={ticketShowDiscount}
-                      onChange={(e) => setTicketShowDiscount(e.target.checked)}
-                      className="h-4 w-4 rounded border-border"
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Mostrar descuento
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={ticketShowWholesaleSavings}
-                      onChange={(e) =>
-                        setTicketShowWholesaleSavings(e.target.checked)
-                      }
-                      className="h-4 w-4 rounded border-border"
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Mostrar ahorro mayoreo
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={ticketShowPaymentMethod}
-                      onChange={(e) =>
-                        setTicketShowPaymentMethod(e.target.checked)
-                      }
-                      className="h-4 w-4 rounded border-border"
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Mostrar forma de pago
-                    </span>
-                  </label>
-                </div>
-                <div>
-                  <label
-                    htmlFor="ticketFooterMessage"
-                    className="block text-xs font-medium text-muted-foreground"
-                  >
-                    Mensaje de pie (opcional)
-                  </label>
-                  <input
-                    id="ticketFooterMessage"
-                    type="text"
-                    value={ticketFooterMessage}
-                    onChange={(e) => setTicketFooterMessage(e.target.value)}
-                    className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
-                    placeholder="Ej. Gracias por tu compra"
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-border bg-stone-50/30 p-4 space-y-4">
-                <h2 className="text-sm font-medium text-foreground">
-                  Finanzas del negocio
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Renta y objetivo de ventas para el dashboard.
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      htmlFor="monthlyRent"
-                      className="block text-xs font-medium text-muted-foreground"
-                    >
-                      Renta mensual
-                    </label>
-                    <input
-                      id="monthlyRent"
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="0.01"
-                      value={monthlyRent}
-                      onChange={(e) => setMonthlyRent(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="monthlySalesObjective"
-                      className="block text-xs font-medium text-muted-foreground"
-                    >
-                      Objetivo de ventas mensual
-                    </label>
-                    <input
-                      id="monthlySalesObjective"
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="0.01"
-                      value={monthlySalesObjective}
-                      onChange={(e) => setMonthlySalesObjective(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-border bg-stone-50/30 p-4 space-y-4">
-                <h2 className="text-sm font-medium text-foreground">
-                  Dirección del negocio
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Se muestra en el ticket al imprimir.
-                </p>
-                <div>
-                  <label
-                    htmlFor="addressStreet"
-                    className="block text-xs font-medium text-muted-foreground"
-                  >
-                    Calle y número
-                  </label>
-                  <input
-                    id="addressStreet"
-                    type="text"
-                    value={addressStreet}
-                    onChange={(e) => setAddressStreet(e.target.value)}
-                    className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
-                    placeholder="Av. Principal 123"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      htmlFor="addressCity"
-                      className="block text-xs font-medium text-muted-foreground"
-                    >
-                      Ciudad
-                    </label>
-                    <input
-                      id="addressCity"
-                      type="text"
-                      value={addressCity}
-                      onChange={(e) => setAddressCity(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
-                      placeholder="CDMX"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="addressState"
-                      className="block text-xs font-medium text-muted-foreground"
-                    >
-                      Estado/Región
-                    </label>
-                    <input
-                      id="addressState"
-                      type="text"
-                      value={addressState}
-                      onChange={(e) => setAddressState(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
-                      placeholder="CDMX"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      htmlFor="addressPostalCode"
-                      className="block text-xs font-medium text-muted-foreground"
-                    >
-                      Código postal
-                    </label>
-                    <input
-                      id="addressPostalCode"
-                      type="text"
-                      value={addressPostalCode}
-                      onChange={(e) => setAddressPostalCode(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
-                      placeholder="06000"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="addressCountry"
-                      className="block text-xs font-medium text-muted-foreground"
-                    >
-                      País
-                    </label>
-                    <input
-                      id="addressCountry"
-                      type="text"
-                      value={addressCountry}
-                      onChange={(e) => setAddressCountry(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
-                      placeholder="México"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label
-                    htmlFor="addressPhone"
-                    className="block text-xs font-medium text-muted-foreground"
-                  >
-                    Teléfono del negocio
-                  </label>
-                  <input
-                    id="addressPhone"
-                    type="text"
-                    value={addressPhone}
-                    onChange={(e) => setAddressPhone(e.target.value)}
-                    className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm text-foreground"
-                    placeholder="555-0000"
-                  />
-                </div>
-              </div>
-            </div>
+            {activeTab === "negocio" && (
+              <ConfigNegocioSection
+                name={name}
+                onNameChange={setName}
+                description={description}
+                onDescriptionChange={setDescription}
+                expressOrderEnabled={expressOrderEnabled}
+                onExpressOrderChange={setExpressOrderEnabled}
+              />
+            )}
+            {activeTab === "ticket" && (
+              <ConfigTicketSection
+                showLogo={ticketShowLogo}
+                onShowLogoChange={setTicketShowLogo}
+                showBusinessAddress={ticketShowBusinessAddress}
+                onShowBusinessAddressChange={setTicketShowBusinessAddress}
+                showCustomerInfo={ticketShowCustomerInfo}
+                onShowCustomerInfoChange={setTicketShowCustomerInfo}
+                showOrderId={ticketShowOrderId}
+                onShowOrderIdChange={setTicketShowOrderId}
+                showDate={ticketShowDate}
+                onShowDateChange={setTicketShowDate}
+                showItems={ticketShowItems}
+                onShowItemsChange={setTicketShowItems}
+                showSubtotal={ticketShowSubtotal}
+                onShowSubtotalChange={setTicketShowSubtotal}
+                showDiscount={ticketShowDiscount}
+                onShowDiscountChange={setTicketShowDiscount}
+                showWholesaleSavings={ticketShowWholesaleSavings}
+                onShowWholesaleSavingsChange={setTicketShowWholesaleSavings}
+                showPaymentMethod={ticketShowPaymentMethod}
+                onShowPaymentMethodChange={setTicketShowPaymentMethod}
+                footerMessage={ticketFooterMessage}
+                onFooterMessageChange={setTicketFooterMessage}
+              />
+            )}
+            {activeTab === "finanzas" && (
+              <ConfigFinanzasSection
+                monthlyRent={monthlyRent}
+                onMonthlyRentChange={setMonthlyRent}
+                monthlySalesObjective={monthlySalesObjective}
+                onMonthlySalesObjectiveChange={setMonthlySalesObjective}
+              />
+            )}
+            {activeTab === "direccion" && (
+              <ConfigDireccionSection
+                street={addressStreet}
+                onStreetChange={setAddressStreet}
+                city={addressCity}
+                onCityChange={setAddressCity}
+                state={addressState}
+                onStateChange={setAddressState}
+                postalCode={addressPostalCode}
+                onPostalCodeChange={setAddressPostalCode}
+                country={addressCountry}
+                onCountryChange={setAddressCountry}
+                phone={addressPhone}
+                onPhoneChange={setAddressPhone}
+              />
+            )}
           </div>
-          <div className="flex shrink-0 justify-end border-t border-border bg-surface-raised px-4 py-4 sm:px-6 md:px-8">
+          <FormSaveBar>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex w-full min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto"
+              className="inline-flex w-full min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto md:min-w-[140px]"
             >
               <Check className="h-4 w-4 shrink-0" aria-hidden />
               {loading ? "Guardando…" : "Guardar"}
             </button>
-          </div>
+          </FormSaveBar>
         </form>
       </div>
     </div>

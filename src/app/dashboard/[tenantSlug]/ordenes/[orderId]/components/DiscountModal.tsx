@@ -50,8 +50,7 @@ export function DiscountModal({
   const numericValue = parseFloat(inputValue) || 0;
   const calculatedDiscount =
     discountType === "percentage"
-      ? Math.round(((subtotal * Math.min(numericValue, 100)) / 100) * 100) /
-        100
+      ? Math.round(((subtotal * Math.min(numericValue, 100)) / 100) * 100) / 100
       : Math.min(numericValue, subtotal);
   const newTotal = Math.max(subtotal - calculatedDiscount, 0);
   const isValid =
@@ -69,7 +68,7 @@ export function DiscountModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="discount-modal-title"
@@ -181,7 +180,9 @@ export function DiscountModal({
               </span>
             </div>
             <div className="mt-1.5 flex items-center justify-between border-t border-border/80 pt-1.5">
-              <span className="text-sm font-semibold text-foreground">Nuevo total</span>
+              <span className="text-sm font-semibold text-foreground">
+                Nuevo total
+              </span>
               <span className="text-sm font-bold tabular-nums text-foreground">
                 ${newTotal.toFixed(2)}
               </span>
