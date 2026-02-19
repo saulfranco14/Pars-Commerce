@@ -128,7 +128,9 @@ export default function OrdenesPage() {
   }
 
   const ticketOptions = mergeTicketSettings(
-    (activeTenant.settings as Record<string, unknown>)?.ticket as TicketSettings | undefined
+    (activeTenant.settings as Record<string, unknown>)?.ticket as
+      | TicketSettings
+      | undefined,
   );
   const logoUrl = activeTenant.logo_url ?? null;
 
@@ -175,7 +177,7 @@ export default function OrdenesPage() {
         />
 
         {/* ── Status tabs: horizontal scroll en móvil, flex-wrap en desktop ── */}
-        <div className="space-y-2">
+        <div>
           <FilterTabs
             tabs={STATUS_TABS}
             activeValue={statusFilter}
@@ -183,99 +185,105 @@ export default function OrdenesPage() {
             ariaLabel="Filtrar por estado"
           />
 
-        {/* ── Date filter (solo desktop) ── */}
-        <div className="hidden md:block">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setDateFiltersOpen((o) => !o)}
-              className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                hasDateFilter
-                  ? "bg-accent/15 text-accent hover:bg-accent/20"
-                  : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
-              }`}
-              aria-expanded={dateFiltersOpen}
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" aria-hidden />
-              {hasDateFilter
-                ? `Fechas: ${dateFrom || "—"} a ${dateTo || "—"}`
-                : "Filtrar por fecha"}
-            </button>
-            {hasDateFilter && (
+          {/* ── Date filter (solo desktop) ── */}
+          <div className="hidden md:block">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setDateFrom("");
-                  setDateTo("");
-                }}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                aria-label="Limpiar fechas"
+                onClick={() => setDateFiltersOpen((o) => !o)}
+                className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                  hasDateFilter
+                    ? "bg-accent/15 text-accent hover:bg-accent/20"
+                    : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
+                }`}
+                aria-expanded={dateFiltersOpen}
               >
-                <X className="h-3.5 w-3.5" aria-hidden />
+                <SlidersHorizontal
+                  className="h-3.5 w-3.5 shrink-0"
+                  aria-hidden
+                />
+                {hasDateFilter
+                  ? `Fechas: ${dateFrom || "—"} a ${dateTo || "—"}`
+                  : "Filtrar por fecha"}
               </button>
+              {hasDateFilter && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDateFrom("");
+                    setDateTo("");
+                  }}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  aria-label="Limpiar fechas"
+                >
+                  <X className="h-3.5 w-3.5" aria-hidden />
+                </button>
+              )}
+            </div>
+
+            {dateFiltersOpen && (
+              <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface-raised p-3">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuickDate("hoy")}
+                    className={`min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                      dateFrom &&
+                      dateTo &&
+                      dateFrom === dateTo &&
+                      dateFrom === getTodayStr()
+                        ? "bg-accent/15 text-accent ring-1 ring-accent/30"
+                        : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
+                    }`}
+                  >
+                    Hoy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuickDate("ayer")}
+                    className="min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
+                  >
+                    Ayer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuickDate("7dias")}
+                    className="min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
+                  >
+                    7 días
+                  </button>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <label className="flex flex-1 flex-col gap-1">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Desde
+                    </span>
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      min={DATE_MIN}
+                      max={getTodayStr()}
+                      onChange={(e) => setDateFrom(clampDate(e.target.value))}
+                      className="input-form min-h-[40px] w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                    />
+                  </label>
+                  <label className="flex flex-1 flex-col gap-1">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Hasta
+                    </span>
+                    <input
+                      type="date"
+                      value={dateTo}
+                      min={DATE_MIN}
+                      max={getTodayStr()}
+                      onChange={(e) => setDateTo(clampDate(e.target.value))}
+                      className="input-form min-h-[40px] w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                    />
+                  </label>
+                </div>
+              </div>
             )}
           </div>
-
-          {dateFiltersOpen && (
-            <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface-raised p-3">
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setQuickDate("hoy")}
-                  className={`min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                    dateFrom && dateTo && dateFrom === dateTo && dateFrom === getTodayStr()
-                      ? "bg-accent/15 text-accent ring-1 ring-accent/30"
-                      : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
-                  }`}
-                >
-                  Hoy
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickDate("ayer")}
-                  className="min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
-                >
-                  Ayer
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickDate("7dias")}
-                  className="min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
-                >
-                  7 días
-                </button>
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <label className="flex flex-1 flex-col gap-1">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Desde
-                  </span>
-                  <input
-                    type="date"
-                    value={dateFrom}
-                    min={DATE_MIN}
-                    max={getTodayStr()}
-                    onChange={(e) => setDateFrom(clampDate(e.target.value))}
-                    className="input-form min-h-[40px] w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  />
-                </label>
-                <label className="flex flex-1 flex-col gap-1">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Hasta
-                  </span>
-                  <input
-                    type="date"
-                    value={dateTo}
-                    min={DATE_MIN}
-                    max={getTodayStr()}
-                    onChange={(e) => setDateTo(clampDate(e.target.value))}
-                    className="input-form min-h-[40px] w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  />
-                </label>
-              </div>
-            </div>
-          )}
-        </div>
         </div>
 
         {/* ── Error ── */}
@@ -296,7 +304,9 @@ export default function OrdenesPage() {
         ) : orders.length === 0 ? (
           <div className="rounded-xl border border-border bg-surface-raised p-8 text-center">
             <p className="text-sm text-muted">
-              {hasDateFilter && dateFrom === dateTo && dateFrom === getTodayStr()
+              {hasDateFilter &&
+              dateFrom === dateTo &&
+              dateFrom === getTodayStr()
                 ? "No hay órdenes para hoy."
                 : `No hay órdenes${statusFilter ? " con este estado" : ""}${hasDateFilter ? " en las fechas seleccionadas" : ""}.`}{" "}
               Crea una con &quot;Nueva orden&quot;.
@@ -372,17 +382,27 @@ export default function OrdenesPage() {
                             )}
                           </td>
                           <td className={tableBodyCellClass}>
-                            {o.source ? (() => {
-                              const src = getSourceConfig(o.source);
-                              if (!src) return <span className="text-muted-foreground">—</span>;
-                              const Icon = src.icon;
-                              return (
-                                <span className="inline-flex items-center gap-1 rounded bg-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-                                  <Icon className={`h-3 w-3 shrink-0 ${src.iconClass ?? ""}`} aria-hidden />
-                                  {src.label}
-                                </span>
-                              );
-                            })() : (
+                            {o.source ? (
+                              (() => {
+                                const src = getSourceConfig(o.source);
+                                if (!src)
+                                  return (
+                                    <span className="text-muted-foreground">
+                                      —
+                                    </span>
+                                  );
+                                const Icon = src.icon;
+                                return (
+                                  <span className="inline-flex items-center gap-1 rounded bg-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+                                    <Icon
+                                      className={`h-3 w-3 shrink-0 ${src.iconClass ?? ""}`}
+                                      aria-hidden
+                                    />
+                                    {src.label}
+                                  </span>
+                                );
+                              })()
+                            ) : (
                               <span className="text-muted-foreground">—</span>
                             )}
                           </td>

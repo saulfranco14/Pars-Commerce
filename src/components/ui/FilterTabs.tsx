@@ -21,10 +21,6 @@ export function FilterTabs({
   return (
     <div className="relative">
       <div
-        className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 bg-linear-to-l from-transparent to-background"
-        aria-hidden
-      />
-      <div
         className="flex gap-1 overflow-x-auto pb-0.5 scrollbar-hide"
         role="tablist"
         aria-label={ariaLabel}

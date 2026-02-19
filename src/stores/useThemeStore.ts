@@ -6,8 +6,12 @@ export type Theme = "light" | "dark";
 
 function getStoredTheme(): Theme {
   if (typeof window === "undefined") return "light";
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === "dark" || stored === "light") return stored;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === "dark" || stored === "light") return stored;
+  } catch {
+    /* incognito, quota, disabled */
+  }
   return "light";
 }
 
@@ -19,7 +23,11 @@ function applyTheme(theme: Theme) {
   } else {
     root.classList.remove("dark");
   }
-  localStorage.setItem(STORAGE_KEY, theme);
+  try {
+    localStorage.setItem(STORAGE_KEY, theme);
+  } catch {
+    /* incognito, quota, disabled */
+  }
 }
 
 interface ThemeState {
