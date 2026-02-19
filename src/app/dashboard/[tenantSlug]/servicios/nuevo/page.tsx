@@ -2,17 +2,16 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
+import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
 import { serviceFormSchema } from "@/lib/serviceValidation";
 import { create } from "@/services/productsService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { Subcatalog } from "@/types/subcatalogs";
 import { SubcatalogSelect } from "@/components/forms/SubcatalogSelect";
-import { btnPrimaryFlex, btnSecondaryFlex } from "@/components/ui/buttonClasses";
 import { inputForm } from "@/components/ui/inputClasses";
 
 const subcatalogsKey = (tenantId: string) =>
@@ -154,33 +153,23 @@ export default function NuevoServicioPage() {
     );
   }
 
-  return (
-    <div className="mx-auto max-w-5xl">
-      <div className="shrink-0 pb-4">
-        <Link
-          href={`/dashboard/${tenantSlug}/servicios`}
-          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
-        >
-          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
-          Volver a servicios
-        </Link>
-        <h1 className="mt-1 text-xl font-semibold text-foreground sm:text-2xl">
-          Nuevo servicio
-        </h1>
-        <p className="mt-0.5 text-sm text-muted">
-          Catálogo de {activeTenant.name}
-        </p>
-      </div>
+  const serviciosHref = `/dashboard/${tenantSlug}/servicios`;
 
-      <div className="rounded-xl border border-border bg-surface-raised shadow-sm">
-        <form onSubmit={handleSubmit}>
-          <div className="p-4 sm:p-6 md:p-8">
-            {error && (
-              <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
-                {error}
-              </div>
-            )}
-            <div className="flex flex-col gap-3 sm:gap-6 md:flex-row md:items-start">
+  return (
+    <CreateEditPageLayout
+      title="Nuevo servicio"
+      backHref={serviciosHref}
+      description={`Catálogo de ${activeTenant.name}`}
+      cancelHref={serviciosHref}
+      createLabel="Crear servicio"
+      loading={loading}
+      loadingLabel="Creando…"
+      createIcon={<Plus className="h-4 w-4 shrink-0" aria-hidden />}
+      error={error}
+      onSubmit={handleSubmit}
+    >
+      <div className="rounded-xl border border-border bg-surface-raised p-4 shadow-sm sm:p-6 md:p-8">
+        <div className="flex flex-col gap-3 sm:gap-6 md:flex-row md:items-start">
               <div className="min-w-0 flex-1">
                 <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
                   <h3 className="md:col-span-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -390,7 +379,7 @@ export default function NuevoServicioPage() {
                   </div>
                 </div>
               </div>
-              <div className="shrink-0 rounded-xl border border-border bg-surface p-5 md:w-80 lg:w-80">
+              <div className="shrink-0 rounded-xl border border-border bg-surface p-5 md:w-80">
                 <MultiImageUpload
                   tenantId={activeTenant.id}
                   urls={imageUrls}
@@ -399,28 +388,6 @@ export default function NuevoServicioPage() {
               </div>
             </div>
           </div>
-
-          <div className="border-t border-border bg-surface-raised px-4 py-4 sm:px-6 md:px-8">
-            <div className="flex flex-col gap-3 md:flex-row md:flex-1">
-              <Link
-                href={`/dashboard/${tenantSlug}/servicios`}
-                className={`${btnSecondaryFlex} w-full md:w-auto justify-center`}
-              >
-                <X className="h-4 w-4 shrink-0" aria-hidden />
-                Cancelar
-              </Link>
-              <button
-                type="submit"
-                disabled={loading}
-                className={`${btnPrimaryFlex} w-full md:w-auto justify-center`}
-              >
-                <Plus className="h-4 w-4 shrink-0" aria-hidden />
-                {loading ? "Creando…" : "Crear servicio"}
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
+    </CreateEditPageLayout>
   );
 }

@@ -6,8 +6,7 @@ import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { ChevronDown } from "lucide-react";
 import { MemberPickerSheet } from "@/components/orders/MemberPickerSheet";
-import { CreateEditHeader } from "@/components/layout/CreateEditHeader";
-import { CreateCancelActions } from "@/components/layout/CreateCancelActions";
+import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
 import { inputForm, inputFormSelect, inputFormTrigger } from "@/components/ui/inputClasses";
 import type { TeamMember } from "@/types/team";
 import { create as createOrder } from "@/services/ordersService";
@@ -79,27 +78,23 @@ export default function NuevaOrdenPage() {
   const ordersHref = `/dashboard/${tenantSlug}/ordenes`;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-auto">
-      <div className="mx-auto w-full max-w-2xl flex-1 flex flex-col px-1 md:px-0">
-        <CreateEditHeader
-          title="Nueva orden"
-          backHref={ordersHref}
-        />
-        <p className="mb-4 text-sm leading-relaxed text-muted">
+    <CreateEditPageLayout
+      title="Nueva orden"
+      backHref={ordersHref}
+      description={
+        <>
           Crea un ticket en {activeTenant.name}. Podrás agregar productos y
           cliente después.
-        </p>
-
-        <form
-          onSubmit={handleSubmit}
-          className="flex min-h-0 flex-1 flex-col gap-0 pb-40 md:pb-0"
-        >
-          {error && (
-            <div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
-              {error}
-            </div>
-          )}
-          <section className="rounded-lg border border-border bg-surface p-4 sm:p-5">
+        </>
+      }
+      cancelHref={ordersHref}
+      createLabel="Crear orden"
+      loading={loading}
+      loadingLabel="Creando…"
+      error={error}
+      onSubmit={handleSubmit}
+    >
+      <section className="rounded-lg border border-border bg-surface p-4 sm:p-5">
             <h2 className="text-base font-semibold text-foreground">
               Datos del cliente{" "}
               <span className="font-normal text-muted">(opcional)</span>
@@ -196,17 +191,6 @@ export default function NuevaOrdenPage() {
               team={team}
             />
           </section>
-
-          <div className="mt-6 flex flex-col gap-3 pt-6 md:flex-row md:gap-3">
-            <CreateCancelActions
-              createLabel="Crear orden"
-              cancelHref={ordersHref}
-              loading={loading}
-              loadingLabel="Creando…"
-            />
-          </div>
-        </form>
-      </div>
-    </div>
+    </CreateEditPageLayout>
   );
 }
