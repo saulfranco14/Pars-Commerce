@@ -177,7 +177,7 @@ export default function ConfiguracionPage() {
       <div className="shrink-0 space-y-4 pb-4">
         <Link
           href="/dashboard"
-          className="inline-flex min-h-(--touch-target,44px) items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver al inicio
@@ -202,7 +202,7 @@ export default function ConfiguracionPage() {
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
         <form
           onSubmit={handleSubmit}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden md:pb-0 mb-4"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden md:pb-0"
         >
           <div className="flex-1 overflow-y-auto overscroll-contain p-4 pb-8 sm:p-6 sm:pb-8">
             {error && (
@@ -277,7 +277,7 @@ export default function ConfiguracionPage() {
               />
             )}
           </div>
-          <FormSaveBar>
+          <FormSaveBar align="end">
             <button
               type="submit"
               disabled={loading}

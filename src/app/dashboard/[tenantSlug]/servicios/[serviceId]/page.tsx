@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft, X, Check } from "lucide-react";
 import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
-import { btnPrimary, btnSecondary } from "@/components/ui/buttonClasses";
+import { btnPrimaryFlex, btnSecondaryFlex } from "@/components/ui/buttonClasses";
 import { serviceFormSchema } from "@/lib/serviceValidation";
 import type { ProductDetail } from "@/types/products";
 import { update } from "@/services/productsService";
@@ -181,12 +182,13 @@ export default function EditarServicioPage() {
 
   if (fetchError) {
     return (
-      <div className="text-sm text-muted-foreground">
+      <div className="text-sm text-muted-foreground p-6">
         {fetchError}{" "}
         <Link
           href={`/dashboard/${tenantSlug}/servicios`}
-          className="text-foreground underline"
+          className="inline-flex min-h-[44px] items-center gap-2 font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
+          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver a servicios
         </Link>
       </div>
@@ -199,24 +201,25 @@ export default function EditarServicioPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-4">
-      <div className="border-b border-border pb-4">
+      <div className="shrink-0 border-b border-border pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/servicios`}
-          className="text-sm font-medium text-muted-foreground hover:text-foreground"
+          className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
-          ← Volver a servicios
+          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+          Volver a servicios
         </Link>
-        <h1 className="mt-1 text-xl font-semibold text-foreground sm:text-2xl">
+        <h1 className="mt-3 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
           Editar servicio
         </h1>
-        <p className="mt-0.5 text-sm text-muted">
+        <p className="mt-0.5 text-sm text-muted-foreground">
           Modifica los datos del servicio
         </p>
       </div>
 
       <div className="rounded-xl border border-border bg-surface-raised shadow-sm">
-        <form onSubmit={handleSubmit}>
-          <div className="p-6 md:p-8">
+        <form onSubmit={handleSubmit} className="flex flex-col">
+          <div className="flex-1 overflow-y-auto p-6 pb-40 md:pb-8 md:p-8">
             {error && (
               <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
                 {error}
@@ -432,15 +435,25 @@ export default function EditarServicioPage() {
             </div>
           </div>
 
-          <div className="border-t border-border bg-surface-raised px-6 py-4 md:px-8">
-            <div className="flex flex-wrap gap-3">
-              <button type="submit" disabled={loading} className={btnPrimary}>
-                {loading ? "Guardando..." : "Guardar"}
-              </button>
-              <Link href={`/dashboard/${tenantSlug}/servicios`} className={btnSecondary}>
-                Cancelar
-              </Link>
-            </div>
+          <div
+            className="fixed bottom-0 left-0 right-0 z-40 flex shrink-0 flex-col gap-3 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:static md:flex-row-reverse md:rounded-none md:gap-3 md:shadow-none md:px-8 md:py-4"
+            style={{ paddingBottom: "max(1rem, calc(1rem + env(safe-area-inset-bottom)))" }}
+          >
+            <Link
+              href={`/dashboard/${tenantSlug}/servicios`}
+              className={`${btnSecondaryFlex} w-full md:w-auto md:flex-none`}
+            >
+              <X className="h-4 w-4 shrink-0" aria-hidden />
+              Cancelar
+            </Link>
+            <button
+              type="submit"
+              disabled={loading}
+              className={`${btnPrimaryFlex} w-full md:w-auto md:flex-none`}
+            >
+              <Check className="h-4 w-4 shrink-0" aria-hidden />
+              {loading ? "Guardando…" : "Guardar"}
+            </button>
           </div>
         </form>
       </div>

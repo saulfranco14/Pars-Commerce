@@ -226,6 +226,7 @@ export default function NuevoMiembroPage() {
     <CreateEditPageLayout
       title="Agregar miembro"
       backHref={equipoHref}
+      backLabel="Volver a equipo"
       description="Si el usuario no existe, se le enviará una invitación por correo para que establezca su contraseña y se agregue al equipo."
       cancelHref={equipoHref}
       createLabel="Agregar"

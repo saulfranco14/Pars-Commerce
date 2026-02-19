@@ -6,6 +6,7 @@ import { CreateCancelActions } from "@/components/layout/CreateCancelActions";
 interface CreateEditPageLayoutProps {
   title: string;
   backHref: string;
+  backLabel?: string;
   description: React.ReactNode;
   cancelHref: string;
   createLabel: string;
@@ -26,6 +27,7 @@ const maxWidthClass = {
 export function CreateEditPageLayout({
   title,
   backHref,
+  backLabel,
   description,
   cancelHref,
   createLabel,
@@ -42,8 +44,8 @@ export function CreateEditPageLayout({
       <div
         className={`mx-auto w-full flex-1 flex flex-col px-1 md:px-0 mb-4 ${maxWidthClass[maxWidth]}`}
       >
-        <CreateEditHeader title={title} backHref={backHref} />
-        <p className="mb-4 text-sm leading-relaxed text-muted">{description}</p>
+        <CreateEditHeader title={title} backHref={backHref} backLabel={backLabel} />
+        <p className="mt-2 mb-4 text-sm leading-relaxed text-muted">{description}</p>
 
         <form
           onSubmit={onSubmit}

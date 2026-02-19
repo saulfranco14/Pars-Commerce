@@ -16,7 +16,7 @@ interface ConfigDireccionSectionProps {
 }
 
 const inputClass =
-  "input-form mt-1 block w-full min-h-(--touch-target,44px) rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+  "input-form mt-1 block w-full min-h-11 rounded-xl border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
 const labelClass = "block text-sm font-medium text-muted-foreground";
 
 export function ConfigDireccionSection({
@@ -34,8 +34,8 @@ export function ConfigDireccionSection({
   onPhoneChange,
 }: ConfigDireccionSectionProps) {
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground leading-snug">
         Se muestra en el ticket al imprimir.
       </p>
       <div>
@@ -51,7 +51,7 @@ export function ConfigDireccionSection({
           placeholder="Av. Principal 123"
         />
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-3">
         <div>
           <label htmlFor="config-address-city" className={labelClass}>
             Ciudad
@@ -78,8 +78,6 @@ export function ConfigDireccionSection({
             placeholder="CDMX"
           />
         </div>
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="config-address-postal" className={labelClass}>
             Código postal

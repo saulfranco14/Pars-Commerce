@@ -28,7 +28,7 @@ function OrderDetailContent() {
         {error}{" "}
         <Link
           href={`/dashboard/${tenantSlug}/ordenes`}
-          className="inline-flex items-center gap-2 font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded"
+          className="inline-flex min-h-[44px] items-center gap-2 font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver a órdenes

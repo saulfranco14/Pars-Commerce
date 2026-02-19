@@ -159,6 +159,7 @@ export default function NuevoServicioPage() {
     <CreateEditPageLayout
       title="Nuevo servicio"
       backHref={serviciosHref}
+      backLabel="Volver a servicios"
       description={`Catálogo de ${activeTenant.name}`}
       cancelHref={serviciosHref}
       createLabel="Crear servicio"

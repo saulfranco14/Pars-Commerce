@@ -26,9 +26,7 @@ interface ConfigTicketSectionProps {
 }
 
 const checkboxItemClass =
-  "flex min-h-(--touch-target,44px) cursor-pointer items-center gap-3 rounded-lg px-3 py-2 -mx-1 hover:bg-border-soft/40";
-const inputClass =
-  "input-form mt-1 block w-full min-h-(--touch-target,44px) rounded-lg border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+  "flex min-h-10 cursor-pointer items-center gap-2.5 rounded-lg py-2 pr-2 pl-2 hover:bg-border-soft/40";
 
 function CheckItem({
   checked,
@@ -45,20 +43,20 @@ function CheckItem({
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-5 w-5 shrink-0 rounded border-border accent-accent"
+        className="h-4 w-4 shrink-0 rounded border-border accent-accent mt-0.5"
       />
-      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-sm text-muted-foreground leading-tight">{label}</span>
     </label>
   );
 }
 
 export function ConfigTicketSection(props: ConfigTicketSectionProps) {
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground leading-snug">
         Configura qué se muestra al imprimir o descargar el ticket.
       </p>
-      <div className="space-y-1 -mx-1">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
         <CheckItem
           checked={props.showLogo}
           onChange={props.onShowLogoChange}
@@ -110,7 +108,7 @@ export function ConfigTicketSection(props: ConfigTicketSectionProps) {
           label="Mostrar forma de pago"
         />
       </div>
-      <div>
+      <div className="pt-1">
         <label
           htmlFor="config-ticket-footer"
           className="block text-sm font-medium text-muted-foreground"
@@ -122,7 +120,7 @@ export function ConfigTicketSection(props: ConfigTicketSectionProps) {
           type="text"
           value={props.footerMessage}
           onChange={(e) => props.onFooterMessageChange(e.target.value)}
-          className={inputClass}
+          className="input-form mt-1 block w-full min-h-10 rounded-lg border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
           placeholder="Ej. Gracias por tu compra"
         />
       </div>
