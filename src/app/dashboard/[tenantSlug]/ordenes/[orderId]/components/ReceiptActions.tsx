@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Printer, Download, Copy, Check, ChevronDown } from "lucide-react";
+import { Printer, Download, Copy, Check, ChevronDown, Share2 } from "lucide-react";
 import { captureReceiptAsPng, downloadReceiptBlob } from "@/lib/receiptExport";
 import { useOrder } from "../hooks/useOrder";
 import { ReceiptPreview } from "./ReceiptPreview";
 
 export function ReceiptActions() {
-  const { order, businessName, businessAddress, setError } = useOrder();
+  const { order, businessName, businessAddress, ticketOptions, logoUrl, setError } = useOrder();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [exportMode, setExportMode] = useState<"download" | "copy" | null>(null);
+  const [exportMode, setExportMode] = useState<"download" | "copy" | "share" | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,6 +34,19 @@ export function ReceiptActions() {
             } catch (err) {
               console.error(err);
               downloadReceiptBlob(blob, order.id);
+            }
+          } else if (exportMode === "share") {
+            try {
+              const file = new File([blob], `recibo-${order.id}.png`, { type: "image/png" });
+              if (navigator.canShare?.({ files: [file] })) {
+                await navigator.share({ title: `Recibo ${order.id}`, files: [file] });
+              } else {
+                downloadReceiptBlob(blob, order.id);
+              }
+            } catch (err) {
+              if ((err as Error).name !== "AbortError") {
+                downloadReceiptBlob(blob, order.id);
+              }
             }
           }
         })
@@ -70,6 +83,8 @@ export function ReceiptActions() {
           businessName={businessName}
           items={order.items ?? []}
           businessAddress={businessAddress}
+          ticketOptions={ticketOptions}
+          logoUrl={logoUrl}
         />
       </div>
 
@@ -94,7 +109,20 @@ export function ReceiptActions() {
         </button>
         {open && (
           <div className="border-t border-border/50 px-4 pb-4 pt-3 sm:px-5">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setExportMode("share");
+                  setLoading(true);
+                }}
+                disabled={loading}
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border-soft/80 disabled:opacity-50 transition-colors"
+              >
+                <Share2 className="h-4 w-4" />
+                {loading && exportMode === "share" ? "Preparando…" : "Compartir"}
+              </button>
+
               <button
                 type="button"
                 onClick={() => window.print()}

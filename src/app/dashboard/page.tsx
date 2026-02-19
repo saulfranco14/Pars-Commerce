@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
+import { btnPrimary } from "@/components/ui/buttonClasses";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
@@ -18,6 +19,9 @@ import {
 } from "@/components/ui/TableWrapper";
 import { formatOrderDate } from "@/lib/formatDate";
 import { swrFetcher } from "@/lib/swrFetcher";
+import { mergeTicketSettings } from "@/types/ticketSettings";
+import type { TicketSettings } from "@/types/ticketSettings";
+import type { OrderListItem } from "@/types/orders";
 import {
   ArrowRight,
   ClipboardList,
@@ -158,6 +162,11 @@ export default function DashboardPage() {
     return null;
   }
 
+  const ticketOptions = mergeTicketSettings(
+    (activeTenant.settings as Record<string, unknown>)?.ticket as TicketSettings | undefined
+  );
+  const logoUrl = activeTenant.logo_url ?? null;
+
   const recent = orders.slice(0, 5);
   const byStatus = orders.reduce<Record<string, number>>((acc, o) => {
     acc[o.status] = (acc[o.status] ?? 0) + 1;
@@ -219,7 +228,7 @@ export default function DashboardPage() {
           </select>
           <Link
             href={`/dashboard/${activeTenant.slug}/ordenes/nueva`}
-            className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:min-h-0 sm:flex-none"
+            className={`${btnPrimary} flex-1 sm:flex-none`}
           >
             <Plus className="h-4 w-4 shrink-0" aria-hidden />
             Nueva Orden
@@ -659,10 +668,12 @@ export default function DashboardPage() {
               {recent.map((o) => (
                 <OrderCardMobile
                   key={o.id}
-                  order={o}
+                  order={o as OrderListItem}
                   tenantSlug={activeTenant.slug}
                   businessName={activeTenant.name ?? "Negocio"}
                   businessAddress={activeTenant.address ?? null}
+                  ticketOptions={ticketOptions}
+                  logoUrl={logoUrl}
                 />
               ))}
             </div>

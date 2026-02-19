@@ -8,6 +8,8 @@ import { create as createOrderItem } from "@/services/orderItemsService";
 import { ProductSearchCombobox } from "./ProductSearchCombobox";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { Plus, X } from "lucide-react";
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import { TouchStepper } from "@/components/ui/TouchStepper";
 
 const DEBOUNCE_MS = 300;
 const SERVER_SEARCH_MIN_CHARS = 2;
@@ -155,15 +157,12 @@ export function AddItemModal({
   if (!isOpen) return null;
 
   const selectClass =
-    "mt-1 block w-full min-h-[44px] rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50 appearance-none bg-[url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2378716c%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E')] bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10";
+    "input-form mt-1 block w-full min-h-(--input-height,44px) rounded-lg px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30 disabled:opacity-50 appearance-none bg-[url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2378716c%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E')] bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10";
 
-  return (
-    <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-sm rounded-xl border border-border bg-surface-raised p-6 shadow-lg">
-        <h3 className="text-lg font-semibold text-foreground">Agregar item</h3>
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+  const formContent = (
+    <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {error}
             </div>
           )}
@@ -231,19 +230,32 @@ export function AddItemModal({
           </div>
           <div>
             <label
-              htmlFor="add-item-quantity"
+              id="add-item-quantity-label"
               className="block text-sm font-medium text-muted-foreground"
             >
               Cantidad
             </label>
-            <input
-              id="add-item-quantity"
-              type="number"
-              min={1}
-              value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 1)}
-              className="mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-            />
+            <div className="mt-2 md:mt-1">
+              <div className="md:hidden" aria-labelledby="add-item-quantity-label">
+                <TouchStepper
+                  value={quantity}
+                  onChange={setQuantity}
+                  min={1}
+                  disabled={loading}
+                />
+              </div>
+              <input
+                id="add-item-quantity"
+                type="number"
+                min={1}
+                value={quantity}
+                onChange={(e) =>
+                  setQuantity(parseInt(e.target.value, 10) || 1)
+                }
+                className="input-form hidden md:block md:mt-1 md:w-full md:min-h-(--input-height,44px) md:rounded-lg md:px-3 md:py-2.5 md:text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30"
+                aria-labelledby="add-item-quantity-label"
+              />
+            </div>
           </div>
           {selected && (
             <p className="text-sm text-muted-foreground">
@@ -255,12 +267,12 @@ export function AddItemModal({
               )}
             </p>
           )}
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 md:flex-row">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-(--touch-target,44px) flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <X className="h-4 w-4 shrink-0" aria-hidden />
               Cancelar
@@ -268,20 +280,38 @@ export function AddItemModal({
             <button
               type="submit"
               disabled={loading || !productId}
-              className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex min-h-(--touch-target,44px) w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-70 md:flex-1"
             >
               {loading ? (
                 "Agregando..."
               ) : (
                 <>
                   <Plus className="h-4 w-4 shrink-0" aria-hidden />
-                  Agregar
+                  Agregar al ticket
                 </>
               )}
             </button>
           </div>
         </form>
+  );
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 p-4 md:flex"
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+        <div
+          className="w-full max-w-sm rounded-xl border border-border bg-surface-raised p-6 shadow-lg"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h3 className="text-lg font-semibold text-foreground">Agregar item</h3>
+          <div className="mt-4">{formContent}</div>
+        </div>
       </div>
-    </div>
+      <BottomSheet isOpen={isOpen} onClose={onClose} title="Agregar item">
+        {formContent}
+      </BottomSheet>
+    </>
   );
 }

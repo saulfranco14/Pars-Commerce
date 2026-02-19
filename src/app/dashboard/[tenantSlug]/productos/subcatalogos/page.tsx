@@ -23,6 +23,7 @@ import {
   update,
   remove,
 } from "@/services/subcatalogsService";
+import { btnPrimary, btnPrimaryFlex, btnSecondary, btnIconSecondary, btnIconDanger, btnSecondarySmall, btnDangerSmall } from "@/components/ui/buttonClasses";
 
 const subcatalogsKey = (tenantId: string) =>
   `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
@@ -165,7 +166,7 @@ export default function SubcatalogosPage() {
           <button
             type="submit"
             disabled={loading || !newName.trim()}
-            className="min-h-[44px] shrink-0 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50 sm:w-auto"
+            className={`${btnPrimary} shrink-0 sm:w-auto`}
           >
             {loading ? "Creando..." : "Crear"}
           </button>
@@ -210,14 +211,14 @@ export default function SubcatalogosPage() {
                       <button
                         type="submit"
                         disabled={loading}
-                        className="flex-1 min-h-[44px] rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
+                        className={btnPrimaryFlex}
                       >
                         Guardar
                       </button>
                       <button
                         type="button"
                         onClick={cancelEdit}
-                        className="min-h-[44px] rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted hover:bg-border-soft/60"
+                        className={btnSecondary}
                       >
                         Cancelar
                       </button>
@@ -235,7 +236,7 @@ export default function SubcatalogosPage() {
                           type="button"
                           onClick={() => startEdit(s)}
                           disabled={loading}
-                          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-border bg-surface text-muted hover:bg-border-soft/60 disabled:opacity-50"
+                          className={btnIconSecondary}
                           aria-label={`Editar ${s.name}`}
                         >
                           <Pencil className="h-4 w-4" />
@@ -244,7 +245,7 @@ export default function SubcatalogosPage() {
                           type="button"
                           onClick={() => openDeleteModal(s)}
                           disabled={deletingId === s.id}
-                          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-red-200 bg-surface text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          className={btnIconDanger}
                           aria-label={`Eliminar ${s.name}`}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -314,7 +315,7 @@ export default function SubcatalogosPage() {
                               type="button"
                               onClick={() => startEdit(s)}
                               disabled={loading}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted hover:bg-border-soft/60 disabled:opacity-50"
+                              className={btnSecondarySmall}
                             >
                               <Pencil className="h-3.5 w-3.5" />
                               Editar
@@ -323,7 +324,7 @@ export default function SubcatalogosPage() {
                               type="button"
                               onClick={() => openDeleteModal(s)}
                               disabled={deletingId === s.id}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                              className={btnDangerSmall}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                               {deletingId === s.id ? "..." : "Eliminar"}

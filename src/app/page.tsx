@@ -7,13 +7,13 @@ import { LandingBentoShowcase } from "@/components/landing/LandingBentoShowcase"
 import { LandingShowflow } from "@/components/landing/LandingShowflow";
 import { LandingPricing } from "@/components/landing/LandingPricing";
 import { LandingFaq } from "@/components/landing/LandingFaq";
+import { LandingCta } from "@/components/landing/LandingCta";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <LandingNav />
-      {/* Spacer for fixed nav */}
       <div className="h-[52px]" aria-hidden />
       <main>
         <LandingHero />
@@ -24,6 +24,7 @@ export default function Home() {
         <LandingShowflow />
         <LandingPricing />
         <LandingFaq />
+        <LandingCta />
       </main>
       <LandingFooter />
     </div>

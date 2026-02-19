@@ -1,5 +1,16 @@
 import type { NextConfig } from "next";
+import withSerwistInit from "@serwist/next";
 
-const nextConfig: NextConfig = {};
+const withSerwist = withSerwistInit({
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+  additionalPrecacheEntries: [{ url: "/offline", revision: "offline-v1" }],
+});
 
-export default nextConfig;
+const nextConfig: NextConfig = {
+  experimental: {
+    optimizePackageImports: ["lucide-react", "recharts"],
+  },
+};
+
+export default withSerwist(nextConfig);

@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
-import logo from "@/assets/logo.png";
 
 export function LandingFooter() {
   return (
@@ -67,11 +66,11 @@ export function LandingFooter() {
             <div className="sm:col-span-2">
               <div className="flex items-center gap-2">
                 <Image
-                  src={logo}
-                  alt=""
+                  src="/android-chrome-192x192.png"
+                  alt="Pars Commerce"
                   width={24}
                   height={24}
-                  className="h-6 w-6"
+                  className="h-6 w-6 rounded-lg"
                 />
                 <span className="font-semibold text-foreground">
                   Pars Commerce

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/TableWrapper";
 import { updateRole, remove as removeMember } from "@/services/teamService";
 import { swrFetcher } from "@/lib/swrFetcher";
+import { btnPrimaryHeader, btnDanger } from "@/components/ui/buttonClasses";
 
 const teamKey = (tenantId: string) =>
   `/api/team?tenant_id=${encodeURIComponent(tenantId)}`;
@@ -98,7 +99,7 @@ export default function EquipoPage() {
         </h1>
         <Link
           href={`/dashboard/${tenantSlug}/equipo/nuevo`}
-          className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:min-h-0"
+          className={btnPrimaryHeader}
         >
           <Plus className="h-4 w-4 shrink-0" aria-hidden />
           Agregar miembro
@@ -156,7 +157,7 @@ export default function EquipoPage() {
                       type="button"
                       onClick={() => handleRemove(m.id)}
                       disabled={updatingId === m.id}
-                      className="min-h-[44px] rounded-xl border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 active:opacity-90"
+                      className={btnDanger}
                       aria-label={`Quitar a ${m.display_name || m.email}`}
                     >
                       {updatingId === m.id ? "..." : "Quitar"}
@@ -210,7 +211,8 @@ export default function EquipoPage() {
                             type="button"
                             onClick={() => handleRemove(m.id)}
                             disabled={updatingId === m.id}
-                            className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+                            className={btnDanger}
+                            aria-label={`Quitar a ${m.display_name || m.email}`}
                           >
                             {updatingId === m.id ? "..." : "Quitar"}
                           </button>

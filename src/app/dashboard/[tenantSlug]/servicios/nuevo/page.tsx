@@ -2,16 +2,17 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
+import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
 import { serviceFormSchema } from "@/lib/serviceValidation";
 import { create } from "@/services/productsService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { Subcatalog } from "@/types/subcatalogs";
 import { SubcatalogSelect } from "@/components/forms/SubcatalogSelect";
+import { inputForm } from "@/components/ui/inputClasses";
 
 const subcatalogsKey = (tenantId: string) =>
   `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
@@ -152,33 +153,24 @@ export default function NuevoServicioPage() {
     );
   }
 
-  return (
-    <div className="lg:mx-auto flex min-h-0 max-w-5xl flex-1 flex-col overflow-hidden">
-      <div className="shrink-0 pb-4">
-        <Link
-          href={`/dashboard/${tenantSlug}/servicios`}
-          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
-        >
-          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
-          Volver a servicios
-        </Link>
-        <h1 className="mt-1 text-xl font-semibold text-foreground sm:text-2xl">
-          Nuevo servicio
-        </h1>
-        <p className="mt-0.5 text-sm text-muted">
-          Catálogo de {activeTenant.name}
-        </p>
-      </div>
+  const serviciosHref = `/dashboard/${tenantSlug}/servicios`;
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden gap-4 rounded-xl border border-border bg-surface-raised shadow-sm">
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
-            {error && (
-              <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
-                {error}
-              </div>
-            )}
-            <div className="flex flex-col gap-3 sm:gap-6 md:flex-row md:items-start">
+  return (
+    <CreateEditPageLayout
+      title="Nuevo servicio"
+      backHref={serviciosHref}
+      description={`Catálogo de ${activeTenant.name}`}
+      cancelHref={serviciosHref}
+      createLabel="Crear servicio"
+      maxWidth="wide"
+      loading={loading}
+      loadingLabel="Creando…"
+      createIcon={<Plus className="h-4 w-4 shrink-0" aria-hidden />}
+      error={error}
+      onSubmit={handleSubmit}
+    >
+      <div className="p-4 sm:p-6 md:p-8">
+        <div className="flex flex-col gap-3 sm:gap-6 md:flex-row md:items-start">
               <div className="min-w-0 flex-1">
                 <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
                   <h3 className="md:col-span-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -197,7 +189,7 @@ export default function NuevoServicioPage() {
                         type="text"
                         value={name}
                         onChange={handleNameChange}
-                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                        className={inputForm}
                         placeholder="Ej. Lavado básico"
                       />
                       {fieldErrors.name && (
@@ -218,7 +210,7 @@ export default function NuevoServicioPage() {
                         type="text"
                         value={slug}
                         onChange={(e) => setSlug(e.target.value)}
-                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                        className={inputForm}
                         placeholder="lavado-basico"
                       />
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -248,7 +240,7 @@ export default function NuevoServicioPage() {
                       inputMode="decimal"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                      className={inputForm}
                       placeholder="0.00"
                     />
                     {fieldErrors.price && (
@@ -270,7 +262,7 @@ export default function NuevoServicioPage() {
                       inputMode="decimal"
                       value={costPrice}
                       onChange={(e) => setCostPrice(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                      className={inputForm}
                       placeholder="0.00"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -298,7 +290,7 @@ export default function NuevoServicioPage() {
                       type="text"
                       value={sku}
                       onChange={(e) => setSku(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                      className={inputForm}
                       placeholder="Ej. SVC-001"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -340,7 +332,7 @@ export default function NuevoServicioPage() {
                       inputMode="decimal"
                       value={commissionAmount}
                       onChange={(e) => setCommissionAmount(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                      className={inputForm}
                       placeholder="0.00"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -357,7 +349,7 @@ export default function NuevoServicioPage() {
                     Configuración
                   </h3>
                   <div className="flex flex-wrap gap-6 md:col-span-2">
-                    <label className="flex min-h-[44px] cursor-pointer items-center gap-2">
+                    <label className="flex min-h-(--touch-target,44px) cursor-pointer items-center gap-2">
                       <input
                         type="checkbox"
                         checked={isPublic}
@@ -382,13 +374,13 @@ export default function NuevoServicioPage() {
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       rows={2}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                      className={inputForm}
                       placeholder="Descripción del servicio"
                     />
                   </div>
                 </div>
               </div>
-              <div className="shrink-0 rounded-xl border border-border bg-surface p-5 md:w-80 lg:w-80">
+              <div className="shrink-0 rounded-xl border border-border bg-surface p-5 md:w-80">
                 <MultiImageUpload
                   tenantId={activeTenant.id}
                   urls={imageUrls}
@@ -397,28 +389,6 @@ export default function NuevoServicioPage() {
               </div>
             </div>
           </div>
-
-          <div className="shrink-0 border-t border-border bg-surface-raised px-4 py-4 sm:px-6 md:px-8">
-            <div className="flex flex-1 gap-3">
-              <Link
-                href={`/dashboard/${tenantSlug}/servicios`}
-                className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
-              >
-                <X className="h-4 w-4 shrink-0" aria-hidden />
-                Cancelar
-              </Link>
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                <Plus className="h-4 w-4 shrink-0" aria-hidden />
-                {loading ? "Creando…" : "Crear servicio"}
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
+    </CreateEditPageLayout>
   );
 }

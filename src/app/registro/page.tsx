@@ -17,7 +17,6 @@ import {
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { registroSchema } from "@/lib/registroValidation";
-import logo from "@/assets/logo.png";
 
 const BENEFITS = [
   { icon: Zap, text: "Crea tu tienda en 2 minutos" },
@@ -50,7 +49,7 @@ function BrandPanel() {
       <div className="relative z-10 max-w-sm px-8">
         <div className="flex items-center gap-3 mb-8">
           <Image
-            src={logo}
+            src="/android-chrome-192x192.png"
             alt=""
             width={40}
             height={40}
@@ -214,7 +213,7 @@ export default function RegistroPage() {
   const logoBlock = (
     <div className="flex items-center gap-2.5">
       <Image
-        src={logo}
+        src="/android-chrome-192x192.png"
         alt=""
         width={32}
         height={32}

@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { MemberPickerSheet } from "@/components/orders/MemberPickerSheet";
+import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
+import { inputForm, inputFormSelect, inputFormTrigger } from "@/components/ui/inputClasses";
 import type { TeamMember } from "@/types/team";
 import { create as createOrder } from "@/services/ordersService";
 import { swrFetcher } from "@/lib/swrFetcher";
@@ -29,6 +31,7 @@ export default function NuevaOrdenPage() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
+  const [memberPickerOpen, setMemberPickerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -65,48 +68,41 @@ export default function NuevaOrdenPage() {
     );
   }
 
-  const inputClass =
-    "input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20";
-  const selectClass =
-    "input-form select-custom mt-3 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-sm text-foreground transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20";
+  const assignedLabel =
+    assignedTo && team.find((t) => t.user_id === assignedTo)
+      ? team.find((t) => t.user_id === assignedTo)?.display_name ||
+        team.find((t) => t.user_id === assignedTo)?.email ||
+        "Sin asignar"
+      : "Sin asignar";
+
+  const ordersHref = `/dashboard/${tenantSlug}/ordenes`;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-auto">
-      <div className="mx-auto max-w-2xl space-y-4">
-      <div className="shrink-0 border-b border-border-soft pb-4">
-        <Link
-          href={`/dashboard/${tenantSlug}/ordenes`}
-          className="inline-flex items-center gap-2 rounded-lg text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-        >
-          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
-          Volver a órdenes
-        </Link>
-        <h1 className="mt-1 text-xl font-semibold text-foreground sm:text-2xl">
-          Nueva orden
-        </h1>
-        <p className="mt-0.5 text-sm text-muted">
+    <CreateEditPageLayout
+      title="Nueva orden"
+      backHref={ordersHref}
+      description={
+        <>
           Crea un ticket en {activeTenant.name}. Podrás agregar productos y
           cliente después.
-        </p>
-      </div>
-
-      <div className="rounded-xl border border-border bg-surface-raised shadow-card">
-        <form onSubmit={handleSubmit} className="p-4 md:p-8">
-          {error && (
-            <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
-              {error}
-            </div>
-          )}
-          <section className="rounded-xl border border-border bg-border-soft/60 p-4 md:p-5">
-            <h2 className="text-sm font-semibold text-foreground">
+        </>
+      }
+      cancelHref={ordersHref}
+      createLabel="Crear orden"
+      loading={loading}
+      loadingLabel="Creando…"
+      error={error}
+      onSubmit={handleSubmit}
+    >
+      <section className="rounded-lg bg-surface p-4 sm:p-5">
+            <h2 className="text-base font-semibold text-foreground">
               Datos del cliente{" "}
               <span className="font-normal text-muted">(opcional)</span>
             </h2>
-            <p className="mt-1 text-xs text-muted">
-              Puedes dejarlos vacíos y agregar o editar el cliente después desde
-              la orden.
+            <p className="mt-1.5 text-sm text-muted">
+              Déjalos vacíos y agrega o edita el cliente después desde la orden.
             </p>
-            <div className="mt-4 grid grid-cols-1 gap-4">
+            <div className="mt-5 grid grid-cols-1 gap-4 sm:gap-4 md:grid-cols-2 md:gap-4">
               <div>
                 <label
                   htmlFor="customerName"
@@ -117,9 +113,10 @@ export default function NuevaOrdenPage() {
                 <input
                   id="customerName"
                   type="text"
+                  inputMode="text"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className={inputClass}
+                  className={inputForm}
                   placeholder="Nombre del cliente"
                 />
               </div>
@@ -135,7 +132,7 @@ export default function NuevaOrdenPage() {
                   type="email"
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
-                  className={inputClass}
+                  className={inputForm}
                   placeholder="cliente@ejemplo.com"
                 />
               </div>
@@ -151,26 +148,33 @@ export default function NuevaOrdenPage() {
                   type="tel"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
-                  className={inputClass}
+                  className={inputForm}
                   placeholder="555 123 4567"
                 />
               </div>
             </div>
           </section>
 
-          <section className="mt-4 rounded-xl border border-border bg-border-soft/60 p-4 md:p-5">
-            <h2 className="text-sm font-semibold text-foreground">
-              Asignar a miembro del equipo{" "}
+          <section className="mt-4 rounded-xl bg-surface p-4 sm:p-5">
+            <h2 className="text-base font-semibold text-foreground">
+              Asignar a miembro{" "}
               <span className="font-normal text-muted">(opcional)</span>
             </h2>
-            <p className="mt-1 text-xs text-muted">
-              Puedes asignar la orden a alguien de tu equipo ahora o hacerlo
-              después.
+            <p className="mt-1.5 text-sm text-muted">
+              Asigna ahora o hazlo después desde la orden.
             </p>
+            <button
+              type="button"
+              onClick={() => setMemberPickerOpen(true)}
+              className={`mt-3 w-full md:hidden ${inputFormTrigger}`}
+            >
+              <span>{assignedLabel}</span>
+              <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
+            </button>
             <select
               value={assignedTo}
               onChange={(e) => setAssignedTo(e.target.value)}
-              className={selectClass}
+              className={`${inputFormSelect} hidden md:block`}
             >
               <option value="">Sin asignar</option>
               {team.map((t) => (
@@ -179,28 +183,14 @@ export default function NuevaOrdenPage() {
                 </option>
               ))}
             </select>
+            <MemberPickerSheet
+              isOpen={memberPickerOpen}
+              onClose={() => setMemberPickerOpen(false)}
+              value={assignedTo}
+              onChange={setAssignedTo}
+              team={team}
+            />
           </section>
-
-          <div className="mt-6 flex gap-3 border-t border-border pt-6">
-            <Link
-              href={`/dashboard/${tenantSlug}/ordenes`}
-              className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
-            >
-              <X className="h-4 w-4 shrink-0" aria-hidden />
-              Cancelar
-            </Link>
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              <Plus className="h-4 w-4 shrink-0" aria-hidden />
-              {loading ? "Creando…" : "Crear orden"}
-            </button>
-          </div>
-        </form>
-      </div>
-      </div>
-    </div>
+    </CreateEditPageLayout>
   );
 }

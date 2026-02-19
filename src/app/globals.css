@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 :root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0);
+  --safe-area-inset-right: env(safe-area-inset-right, 0);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0);
+  --safe-area-inset-left: env(safe-area-inset-left, 0);
   --color-default: #ec4899;
   --background: #faf9f7;
   --foreground: #292524;
@@ -19,6 +23,18 @@
   --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
   --radius: 0.75rem;
   --radius-sm: 0.5rem;
+  --touch-target: 48px;
+  --input-height: 48px;
+  --spacing-touch: 8px;
+  --container-px: 16px;
+}
+
+@media (min-width: 769px) {
+  :root {
+    --touch-target: 44px;
+    --input-height: 44px;
+    --container-px: 24px;
+  }
 }
 
 @theme inline {
@@ -31,6 +47,7 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
   --color-accent-foreground: var(--accent-foreground);
   --color-default: var(--color-default);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
@@ -47,8 +64,9 @@
     color: var(--color-default);
   }
   .input-form {
-    background-color: var(--input-bg);
-    border-color: var(--input-border);
+    background-color: var(--surface);
+    border: 1px solid var(--input-border);
+    border-radius: 0.5rem;
   }
 }
 
@@ -69,19 +87,18 @@ html {
   scroll-padding-top: 60px;
 }
 
-html,
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+@supports not (overflow: clip) {
+  body {
+    overflow-x: hidden;
+  }
 }
 
 @media (max-width: 768px) {
-  @supports (height: 100dvh) {
-    .dashboard-root {
-      height: 100dvh !important;
-      max-height: 100dvh !important;
-    }
-  }
-  .dashboard-main {
+  html {
     -webkit-overflow-scrolling: touch;
   }
 }
@@ -217,14 +234,34 @@ body {
   padding-right: 2.5rem;
 }
 
+#ticket-print-portal {
+  display: none;
+}
+
 @media print {
   .no-print {
     display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  #ticket-print-portal {
+    display: block !important;
   }
   #ticket-print {
     display: block !important;
     visibility: visible !important;
     background: #fff;
     min-height: auto;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    margin: 0;
+    padding: 12px;
+    box-sizing: border-box;
+  }
+  .receipt-ticket {
+    width: 100% !important;
+    max-width: 100% !important;
+    break-inside: avoid;
   }
 }

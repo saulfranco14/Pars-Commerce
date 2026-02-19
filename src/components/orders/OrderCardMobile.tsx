@@ -13,6 +13,7 @@ import { swrFetcher } from "@/lib/swrFetcher";
 import type { OrderListItem } from "@/types/orders";
 import type { OrderDetail } from "@/app/dashboard/[tenantSlug]/ordenes/[orderId]/types";
 import type { TenantAddress } from "@/types/database";
+import type { TicketSettings } from "@/types/ticketSettings";
 
 const STATUS_BORDER: Record<string, string> = {
   draft: "border-l-slate-400",
@@ -48,6 +49,8 @@ interface OrderCardMobileProps {
   tenantSlug: string;
   businessName: string;
   businessAddress: TenantAddress | null;
+  ticketOptions?: TicketSettings | null;
+  logoUrl?: string | null;
 }
 
 export function OrderCardMobile({
@@ -55,6 +58,8 @@ export function OrderCardMobile({
   tenantSlug,
   businessName,
   businessAddress,
+  ticketOptions,
+  logoUrl,
 }: OrderCardMobileProps) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
@@ -328,6 +333,8 @@ export function OrderCardMobile({
             orderId={order.id}
             businessName={businessName}
             businessAddress={businessAddress}
+            ticketOptions={ticketOptions}
+            logoUrl={logoUrl}
             variant="compact"
           />
         </div>

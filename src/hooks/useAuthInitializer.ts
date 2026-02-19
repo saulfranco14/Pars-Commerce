@@ -53,10 +53,14 @@ export function useAuthInitializer() {
           setTenantsLoaded(true);
         }
         if (list.length > 0) {
-          const stored =
-            typeof window !== "undefined"
-              ? localStorage.getItem("pars_activeTenantId")
-              : null;
+          let stored: string | null = null;
+          if (typeof window !== "undefined") {
+            try {
+              stored = localStorage.getItem("pars_activeTenantId");
+            } catch {
+              /* incognito, quota, disabled */
+            }
+          }
           if (stored && list.some((m) => m.tenant_id === stored)) {
             setActiveTenantId(stored);
           } else if (list.length === 1) {

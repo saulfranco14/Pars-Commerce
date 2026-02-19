@@ -17,6 +17,10 @@
 /.next/
 /out/
 
+# Serwist PWA
+public/sw*
+public/swe-worker*
+
 # production
 /build
 
@@ -32,6 +36,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+
+# secrets / sensitive data
+twilio/
 
 # vercel
 .vercel

@@ -8,9 +8,11 @@ import { useAuthInitializer } from "@/hooks/useAuthInitializer";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
-import { Menu } from "lucide-react";
+import { btnPrimary } from "@/components/ui/buttonClasses";
+import { isFocusRoute } from "@/lib/focusRoutes";
 
 export default function DashboardLayout({
   children,
@@ -55,8 +57,8 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="dashboard-root flex h-screen max-h-screen overflow-hidden bg-background">
-      <div className="no-print">
+    <div className="dashboard-root no-print flex min-h-screen bg-background">
+      <div className="no-print md:fixed md:left-0 md:top-0 md:z-20 md:h-screen md:w-56">
         <Sidebar
           tenantSlug={tenantSlug}
           mobileOpen={mobileMenuOpen}
@@ -64,30 +66,31 @@ export default function DashboardLayout({
           onSignOut={handleSignOut}
         />
       </div>
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col md:ml-56">
         <header
-          className="no-print relative z-30 flex h-14 shrink-0 items-center justify-between border-b border-border-soft bg-surface px-4"
+          className="no-print sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border-soft bg-surface px-4"
           style={{ paddingLeft: "max(1rem, env(safe-area-inset-left, 1rem))" }}
         >
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg bg-border-soft/70 text-foreground hover:bg-border-soft md:hidden"
-            aria-label="Abrir menú"
+          <Link
+            href="/dashboard"
+            className="font-semibold text-foreground md:hidden"
           >
-            <Menu className="h-6 w-6" />
-          </button>
+            Pars Commerce
+          </Link>
           <div className="flex-1" />
           <ThemeToggle />
         </header>
-        <main className="dashboard-main flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-4 sm:px-6 sm:py-6">
-          <div className="flex min-h-0 h-full flex-1 flex-col overflow-hidden">
-            {pathname === "/dashboard/crear-negocio" ||
-            pathname === "/dashboard/perfil" ? (
-              children
-            ) : !tenantsLoaded ? (
-              <LoadingBlock message="Cargando negocios…" />
-            ) : memberships.length === 0 ? (
+        <main
+          className={`dashboard-main flex-1 px-4 py-4 sm:px-6 sm:py-6 md:pb-6 ${
+            isFocusRoute(pathname) ? "pb-6" : "pb-24"
+          }`}
+        >
+          {pathname === "/dashboard/crear-negocio" ||
+          pathname === "/dashboard/perfil" ? (
+            children
+          ) : !tenantsLoaded ? (
+            <LoadingBlock message="Cargando negocios…" />
+          ) : memberships.length === 0 ? (
             <div className="rounded-xl border border-border bg-surface-raised p-6 text-center">
               <h2 className="text-lg font-semibold text-foreground">
                 Sin negocios
@@ -97,7 +100,7 @@ export default function DashboardLayout({
               </p>
               <Link
                 href="/dashboard/crear-negocio"
-                className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
+                className={`mt-4 ${btnPrimary}`}
               >
                 Crear negocio
               </Link>
@@ -111,9 +114,16 @@ export default function DashboardLayout({
           ) : (
             <div className="text-sm text-muted">Cargando negocio...</div>
           )}
-          </div>
         </main>
       </div>
+      {!isFocusRoute(pathname) &&
+        tenantsLoaded &&
+        memberships.length > 0 && (
+          <BottomNav
+            onMoreClick={() => setMobileMenuOpen(true)}
+            ordersBadgeCount={0}
+          />
+        )}
     </div>
   );
 }

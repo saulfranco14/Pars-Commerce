@@ -47,7 +47,11 @@ export default function CrearNegocioPage() {
       setMemberships(list);
       setActiveTenantId(tenant.id);
       if (typeof window !== "undefined") {
-        localStorage.setItem("pars_activeTenantId", tenant.id);
+        try {
+          localStorage.setItem("pars_activeTenantId", tenant.id);
+        } catch {
+          /* incognito, quota, disabled */
+        }
       }
       router.push("/dashboard");
     } catch (e) {

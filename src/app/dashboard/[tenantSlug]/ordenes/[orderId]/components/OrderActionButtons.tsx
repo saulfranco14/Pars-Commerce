@@ -23,9 +23,13 @@ function isExpressOrderEnabled(settings: unknown): boolean {
 
 type OrderActionButtonsProps = {
   embedded?: boolean;
+  fixedBar?: boolean;
 };
 
-export function OrderActionButtons({ embedded }: OrderActionButtonsProps = {}) {
+export function OrderActionButtons({
+  embedded,
+  fixedBar,
+}: OrderActionButtonsProps = {}) {
   const {
     order,
     team,
@@ -84,19 +88,23 @@ export function OrderActionButtons({ embedded }: OrderActionButtonsProps = {}) {
   }
 
   const btnBase =
-    "inline-flex min-h-[44px] min-w-0 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70";
+    "inline-flex min-h-[48px] min-w-0 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 active:scale-[0.98]";
   const btnPrimary = `${btnBase} bg-accent text-accent-foreground hover:bg-accent/90 focus-visible:ring-accent`;
-  const btnSuccess = `${btnBase} bg-emerald-600 text-white hover:bg-emerald-500 focus-visible:ring-emerald-500`;
+  const btnSuccess = `${btnBase} bg-emerald-600 text-white shadow-sm hover:bg-emerald-500 focus-visible:ring-emerald-500`;
   const btnBlue = `${btnBase} bg-blue-600 text-white hover:bg-blue-500 focus-visible:ring-blue-500`;
-  const btnDestructive = `${btnBase} border border-red-300 bg-surface text-red-700 hover:bg-red-50 focus-visible:ring-red-500/50`;
+  const btnDestructive = `${btnBase} border border-red-200 bg-surface text-red-600 hover:bg-red-50 focus-visible:ring-red-500/50`;
 
   const wrapperClass = embedded
-    ? "w-full min-w-0 max-w-full overflow-hidden pt-4"
+    ? "w-full min-w-0 max-w-full overflow-hidden"
     : "w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-surface-raised p-4 shadow-sm";
+
+  const flexClass = fixedBar
+    ? "flex w-full min-w-0 max-w-full flex-col gap-3 overflow-hidden"
+    : "flex w-full min-w-0 max-w-full flex-col-reverse gap-3 overflow-hidden sm:flex-row sm:flex-wrap sm:justify-end";
 
   return (
     <div className={wrapperClass}>
-      <div className="flex w-full min-w-0 max-w-full flex-col-reverse gap-3 overflow-hidden sm:flex-row sm:flex-wrap sm:justify-end">
+      <div className={flexClass}>
         {showExpressButton && (
           <button
             type="button"
