@@ -23,6 +23,18 @@
   --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
   --radius: 0.75rem;
   --radius-sm: 0.5rem;
+  --touch-target: 48px;
+  --input-height: 48px;
+  --spacing-touch: 8px;
+  --container-px: 16px;
+}
+
+@media (min-width: 769px) {
+  :root {
+    --touch-target: 44px;
+    --input-height: 44px;
+    --container-px: 24px;
+  }
 }
 
 @theme inline {
@@ -35,6 +47,7 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
   --color-accent-foreground: var(--accent-foreground);
   --color-default: var(--color-default);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
@@ -51,8 +64,9 @@
     color: var(--color-default);
   }
   .input-form {
-    background-color: var(--input-bg);
-    border-color: var(--input-border);
+    background-color: var(--surface);
+    border: 1px solid var(--input-border);
+    border-radius: 0.5rem;
   }
 }
 
@@ -220,12 +234,19 @@ body {
   padding-right: 2.5rem;
 }
 
+#ticket-print-portal {
+  display: none;
+}
+
 @media print {
   .no-print {
     display: none !important;
   }
   body {
     background: #fff;
+  }
+  #ticket-print-portal {
+    display: block !important;
   }
   #ticket-print {
     display: block !important;

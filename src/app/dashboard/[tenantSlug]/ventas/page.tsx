@@ -1,16 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { VentasFilters } from "@/components/ventas/VentasFilters";
-import { VentasResumen } from "@/components/ventas/VentasResumen";
 import { VentasPorPersona } from "@/components/ventas/VentasPorPersona";
 import { VentasPorOrden } from "@/components/ventas/VentasPorOrden";
 import { VentasPagosTab } from "@/components/ventas/VentasPagosTab";
+
+const VentasResumen = dynamic(
+  () =>
+    import("@/components/ventas/VentasResumen").then((m) => ({
+      default: m.VentasResumen,
+    })),
+  { ssr: false, loading: () => <LoadingBlock message="Cargando resumen…" /> }
+);
 import { swrFetcher } from "@/lib/swrFetcher";
 import type {
   SalesCommission,

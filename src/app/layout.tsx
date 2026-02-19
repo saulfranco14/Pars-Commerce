@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { PwaRegister } from "@/components/PwaRegister";
+import { SwrProvider } from "@/components/providers/SwrProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -53,11 +53,13 @@ export default function RootLayout({
       >
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark');})();`,
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark');}catch(e){}})();`,
           }}
         />
-        <PwaRegister />
-        {children}
+        <SwrProvider>
+          {children}
+          <div id="ticket-print-portal" aria-hidden="true" />
+        </SwrProvider>
       </body>
     </html>
   );
