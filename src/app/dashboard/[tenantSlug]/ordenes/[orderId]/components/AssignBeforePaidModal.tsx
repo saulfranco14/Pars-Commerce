@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { UserPlus, Banknote, Building2, CreditCard, Smartphone, Check, X, DollarSign } from "lucide-react";
+import { UserPlus, Banknote, Building2, CreditCard, Smartphone, Check, DollarSign } from "lucide-react";
 import type { TeamMemberOption } from "../types";
 
 const PAYMENT_METHODS = [
@@ -59,16 +59,23 @@ export function AssignBeforePaidModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-[100] flex flex-col justify-end md:items-center md:justify-center bg-black/60 p-0 md:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="assign-before-paid-title"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-xl border border-border-soft bg-surface-raised p-6 shadow-lg"
+        className="w-full max-h-[92vh] max-w-md flex flex-col overflow-hidden rounded-t-2xl border-t border-border-soft bg-surface-raised shadow-lg md:max-h-none md:rounded-xl md:border"
         onClick={(e) => e.stopPropagation()}
+        style={{
+          paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+        }}
       >
+        <div className="flex shrink-0 justify-center pt-3 md:hidden">
+          <div className="h-1 w-12 rounded-full bg-muted-foreground/30" aria-hidden />
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-4 pt-2 md:pt-6">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-600">
             <UserPlus className="h-5 w-5" />
@@ -87,7 +94,7 @@ export function AssignBeforePaidModal({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <form id="assign-before-paid-form" onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
             <label
               htmlFor="assign-select"
@@ -135,10 +142,10 @@ export function AssignBeforePaidModal({
                     key={id}
                     type="button"
                     onClick={() => setPaymentMethod(id)}
-                    className={`relative flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
+                    className={`relative flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
                       isSelected
                         ? "border-accent bg-accent/5"
-                        : "border-border bg-surface hover:bg-border-soft/50"
+                        : "border-border bg-surface hover:bg-border-soft/50 active:bg-border-soft"
                     }`}
                   >
                     {isSelected && (
@@ -156,26 +163,28 @@ export function AssignBeforePaidModal({
             </div>
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <X className="h-4 w-4 shrink-0" aria-hidden />
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading || !assignTo}
-              className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              <DollarSign className="h-4 w-4 shrink-0" aria-hidden />
-              {loading ? "Guardando…" : "Asignar y cobrar"}
-            </button>
-          </div>
         </form>
+        </div>
+
+        <div className="shrink-0 flex flex-col-reverse gap-2 px-4 pt-2 pb-4 md:flex-row md:gap-3 md:px-6 md:pt-4 md:pb-6 md:border-t md:border-border-soft">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-base font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 md:max-w-[140px] md:border md:border-border"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="assign-before-paid-form"
+            disabled={loading || !assignTo}
+            className="flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-base font-semibold text-accent-foreground shadow-sm transition-all duration-200 hover:bg-accent/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100"
+          >
+            <DollarSign className="h-5 w-5 shrink-0" aria-hidden />
+            {loading ? "Guardando…" : "Asignar y cobrar"}
+          </button>
+        </div>
       </div>
     </div>
   );
