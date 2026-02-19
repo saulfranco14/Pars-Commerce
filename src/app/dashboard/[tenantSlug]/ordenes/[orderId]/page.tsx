@@ -97,9 +97,9 @@ function OrderDetailContent() {
       </div>
 
       <div
-        className="no-print fixed left-0 right-0 z-40 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 pb-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:hidden"
+        className="no-print fixed left-0 right-0 bottom-0 z-40 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:hidden"
         style={{
-          bottom: "max(5rem, calc(5rem + env(safe-area-inset-bottom)))",
+          paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
         }}
       >
         <OrderActionButtons embedded fixedBar />

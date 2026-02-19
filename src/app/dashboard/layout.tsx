@@ -12,6 +12,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { btnPrimary } from "@/components/ui/buttonClasses";
+import { isFocusRoute } from "@/lib/focusRoutes";
 
 export default function DashboardLayout({
   children,
@@ -79,7 +80,11 @@ export default function DashboardLayout({
           <div className="flex-1" />
           <ThemeToggle />
         </header>
-        <main className="dashboard-main flex-1 px-4 py-4 pb-24 sm:px-6 sm:py-6 md:pb-6">
+        <main
+          className={`dashboard-main flex-1 px-4 py-4 sm:px-6 sm:py-6 md:pb-6 ${
+            isFocusRoute(pathname) ? "pb-6" : "pb-24"
+          }`}
+        >
           {pathname === "/dashboard/crear-negocio" ||
           pathname === "/dashboard/perfil" ? (
             children
@@ -111,8 +116,7 @@ export default function DashboardLayout({
           )}
         </main>
       </div>
-      {pathname !== "/dashboard/crear-negocio" &&
-        pathname !== "/dashboard/perfil" &&
+      {!isFocusRoute(pathname) &&
         tenantsLoaded &&
         memberships.length > 0 && (
           <BottomNav

@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
-import { ArrowLeft, ChevronDown, Plus, X } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { MemberPickerSheet } from "@/components/orders/MemberPickerSheet";
+import { CreateEditHeader } from "@/components/layout/CreateEditHeader";
+import { CreateCancelActions } from "@/components/layout/CreateCancelActions";
 import { inputForm, inputFormSelect, inputFormTrigger } from "@/components/ui/inputClasses";
-import { btnPrimaryFlex, btnSecondaryFlex } from "@/components/ui/buttonClasses";
 import type { TeamMember } from "@/types/team";
 import { create as createOrder } from "@/services/ordersService";
 import { swrFetcher } from "@/lib/swrFetcher";
@@ -76,29 +76,23 @@ export default function NuevaOrdenPage() {
         "Sin asignar"
       : "Sin asignar";
 
+  const ordersHref = `/dashboard/${tenantSlug}/ordenes`;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto">
       <div className="mx-auto w-full max-w-2xl flex-1 flex flex-col px-1 md:px-0">
-        <div className="shrink-0 space-y-3 pb-5">
-          <Link
-            href={`/dashboard/${tenantSlug}/ordenes`}
-            className="inline-flex min-h-(--touch-target,44px) min-w-(--touch-target,44px) -ml-1 items-center gap-2 rounded-lg text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-          >
-            <ArrowLeft className="h-5 w-5 shrink-0" aria-hidden />
-            Volver a órdenes
-          </Link>
-          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
-            Nueva orden
-          </h1>
-          <p className="text-sm leading-relaxed text-muted">
-            Crea un ticket en {activeTenant.name}. Podrás agregar productos y
-            cliente después.
-          </p>
-        </div>
+        <CreateEditHeader
+          title="Nueva orden"
+          backHref={ordersHref}
+        />
+        <p className="mb-4 text-sm leading-relaxed text-muted">
+          Crea un ticket en {activeTenant.name}. Podrás agregar productos y
+          cliente después.
+        </p>
 
         <form
           onSubmit={handleSubmit}
-          className="flex min-h-0 flex-1 flex-col gap-0"
+          className="flex min-h-0 flex-1 flex-col gap-0 pb-40 md:pb-0"
         >
           {error && (
             <div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
@@ -203,22 +197,13 @@ export default function NuevaOrdenPage() {
             />
           </section>
 
-          <div className="mt-6 flex flex-col gap-3 border-t border-border pb-6 pt-6 md:flex-row md:gap-3">
-            <button
-              type="submit"
-              disabled={loading}
-              className={`${btnPrimaryFlex} order-first w-full md:order-0 md:flex-1`}
-            >
-              <Plus className="h-4 w-4 shrink-0" aria-hidden />
-              {loading ? "Creando…" : "Crear orden"}
-            </button>
-            <Link
-              href={`/dashboard/${tenantSlug}/ordenes`}
-              className={`${btnSecondaryFlex} w-full md:flex-1`}
-            >
-              <X className="h-4 w-4 shrink-0" aria-hidden />
-              Cancelar
-            </Link>
+          <div className="mt-6 flex flex-col gap-3 pt-6 md:flex-row md:gap-3">
+            <CreateCancelActions
+              createLabel="Crear orden"
+              cancelHref={ordersHref}
+              loading={loading}
+              loadingLabel="Creando…"
+            />
           </div>
         </form>
       </div>
