@@ -42,6 +42,23 @@ export default function DashboardLayout({
     setMobileMenuOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!tenantSlug || memberships.length === 0) return;
+    const match = memberships.find(
+      (m) => (m.tenant as { slug?: string })?.slug === tenantSlug,
+    );
+    if (match && match.tenant_id !== activeTenantId) {
+      setActiveTenantId(match.tenant_id);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("pars_activeTenantId", match.tenant_id);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  }, [tenantSlug, memberships, activeTenantId, setActiveTenantId]);
+
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();

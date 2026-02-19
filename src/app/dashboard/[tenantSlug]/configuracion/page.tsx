@@ -33,14 +33,16 @@ export default function ConfiguracionPage() {
   const [monthlyRent, setMonthlyRent] = useState("");
   const [monthlySalesObjective, setMonthlySalesObjective] = useState("");
   const [ticketShowLogo, setTicketShowLogo] = useState(false);
-  const [ticketShowBusinessAddress, setTicketShowBusinessAddress] = useState(true);
+  const [ticketShowBusinessAddress, setTicketShowBusinessAddress] =
+    useState(true);
   const [ticketShowCustomerInfo, setTicketShowCustomerInfo] = useState(true);
   const [ticketShowOrderId, setTicketShowOrderId] = useState(true);
   const [ticketShowDate, setTicketShowDate] = useState(true);
   const [ticketShowItems, setTicketShowItems] = useState(true);
   const [ticketShowSubtotal, setTicketShowSubtotal] = useState(true);
   const [ticketShowDiscount, setTicketShowDiscount] = useState(true);
-  const [ticketShowWholesaleSavings, setTicketShowWholesaleSavings] = useState(true);
+  const [ticketShowWholesaleSavings, setTicketShowWholesaleSavings] =
+    useState(true);
   const [ticketShowPaymentMethod, setTicketShowPaymentMethod] = useState(true);
   const [ticketFooterMessage, setTicketFooterMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +58,9 @@ export default function ConfiguracionPage() {
       | null
       | undefined;
     setExpressOrderEnabled(st?.express_order_enabled === true);
-    const ticket = mergeTicketSettings(st?.ticket as TicketSettings | undefined);
+    const ticket = mergeTicketSettings(
+      st?.ticket as TicketSettings | undefined,
+    );
     setTicketShowLogo(ticket.showLogo ?? false);
     setTicketShowBusinessAddress(ticket.showBusinessAddress ?? true);
     setTicketShowCustomerInfo(ticket.showCustomerInfo ?? true);
@@ -100,6 +104,7 @@ export default function ConfiguracionPage() {
         settings: {
           ...((activeTenant.settings as Record<string, unknown>) ?? {}),
           express_order_enabled: expressOrderEnabled,
+          express_orders: expressOrderEnabled,
           ticket: {
             showLogo: ticketShowLogo,
             showBusinessAddress: ticketShowBusinessAddress,
@@ -179,7 +184,7 @@ export default function ConfiguracionPage() {
               </div>
             )}
             {success && (
-              <div className="mb-6 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 alert-success">
+              <div className="my-6 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 alert-success">
                 Cambios guardados.
               </div>
             )}
@@ -255,25 +260,35 @@ export default function ConfiguracionPage() {
                       onChange={(e) => setTicketShowLogo(e.target.checked)}
                       className="h-4 w-4 rounded border-border"
                     />
-                    <span className="text-sm text-muted-foreground">Mostrar logo</span>
+                    <span className="text-sm text-muted-foreground">
+                      Mostrar logo
+                    </span>
                   </label>
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       checked={ticketShowBusinessAddress}
-                      onChange={(e) => setTicketShowBusinessAddress(e.target.checked)}
+                      onChange={(e) =>
+                        setTicketShowBusinessAddress(e.target.checked)
+                      }
                       className="h-4 w-4 rounded border-border"
                     />
-                    <span className="text-sm text-muted-foreground">Mostrar dirección del negocio</span>
+                    <span className="text-sm text-muted-foreground">
+                      Mostrar dirección del negocio
+                    </span>
                   </label>
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       checked={ticketShowCustomerInfo}
-                      onChange={(e) => setTicketShowCustomerInfo(e.target.checked)}
+                      onChange={(e) =>
+                        setTicketShowCustomerInfo(e.target.checked)
+                      }
                       className="h-4 w-4 rounded border-border"
                     />
-                    <span className="text-sm text-muted-foreground">Mostrar datos del cliente</span>
+                    <span className="text-sm text-muted-foreground">
+                      Mostrar datos del cliente
+                    </span>
                   </label>
                   <label className="flex items-center gap-2">
                     <input
@@ -282,7 +297,9 @@ export default function ConfiguracionPage() {
                       onChange={(e) => setTicketShowOrderId(e.target.checked)}
                       className="h-4 w-4 rounded border-border"
                     />
-                    <span className="text-sm text-muted-foreground">Mostrar número de orden</span>
+                    <span className="text-sm text-muted-foreground">
+                      Mostrar número de orden
+                    </span>
                   </label>
                   <label className="flex items-center gap-2">
                     <input
@@ -291,7 +308,9 @@ export default function ConfiguracionPage() {
                       onChange={(e) => setTicketShowDate(e.target.checked)}
                       className="h-4 w-4 rounded border-border"
                     />
-                    <span className="text-sm text-muted-foreground">Mostrar fecha y hora</span>
+                    <span className="text-sm text-muted-foreground">
+                      Mostrar fecha y hora
+                    </span>
                   </label>
                   <label className="flex items-center gap-2">
                     <input
@@ -300,7 +319,9 @@ export default function ConfiguracionPage() {
                       onChange={(e) => setTicketShowItems(e.target.checked)}
                       className="h-4 w-4 rounded border-border"
                     />
-                    <span className="text-sm text-muted-foreground">Mostrar lista de productos</span>
+                    <span className="text-sm text-muted-foreground">
+                      Mostrar lista de productos
+                    </span>
                   </label>
                   <label className="flex items-center gap-2">
                     <input
@@ -309,7 +330,9 @@ export default function ConfiguracionPage() {
                       onChange={(e) => setTicketShowSubtotal(e.target.checked)}
                       className="h-4 w-4 rounded border-border"
                     />
-                    <span className="text-sm text-muted-foreground">Mostrar subtotal</span>
+                    <span className="text-sm text-muted-foreground">
+                      Mostrar subtotal
+                    </span>
                   </label>
                   <label className="flex items-center gap-2">
                     <input
@@ -318,25 +341,35 @@ export default function ConfiguracionPage() {
                       onChange={(e) => setTicketShowDiscount(e.target.checked)}
                       className="h-4 w-4 rounded border-border"
                     />
-                    <span className="text-sm text-muted-foreground">Mostrar descuento</span>
+                    <span className="text-sm text-muted-foreground">
+                      Mostrar descuento
+                    </span>
                   </label>
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       checked={ticketShowWholesaleSavings}
-                      onChange={(e) => setTicketShowWholesaleSavings(e.target.checked)}
+                      onChange={(e) =>
+                        setTicketShowWholesaleSavings(e.target.checked)
+                      }
                       className="h-4 w-4 rounded border-border"
                     />
-                    <span className="text-sm text-muted-foreground">Mostrar ahorro mayoreo</span>
+                    <span className="text-sm text-muted-foreground">
+                      Mostrar ahorro mayoreo
+                    </span>
                   </label>
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       checked={ticketShowPaymentMethod}
-                      onChange={(e) => setTicketShowPaymentMethod(e.target.checked)}
+                      onChange={(e) =>
+                        setTicketShowPaymentMethod(e.target.checked)
+                      }
                       className="h-4 w-4 rounded border-border"
                     />
-                    <span className="text-sm text-muted-foreground">Mostrar forma de pago</span>
+                    <span className="text-sm text-muted-foreground">
+                      Mostrar forma de pago
+                    </span>
                   </label>
                 </div>
                 <div>
