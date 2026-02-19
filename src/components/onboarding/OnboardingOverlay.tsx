@@ -32,7 +32,7 @@ function WelcomeMockup() {
   return (
     <div className="relative mx-auto h-52 w-72">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full bg-gradient-to-br from-pink-400 to-orange-300 opacity-20 blur-3xl" />
+        <div className="h-40 w-40 rounded-full bg-linear-to-br from-pink-400 to-orange-300 opacity-20 blur-3xl" />
       </div>
 
       {/* Revenue card – main focus */}
@@ -125,13 +125,13 @@ function ProductosMockup() {
   return (
     <div className="relative mx-auto h-52 w-72">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full bg-gradient-to-br from-orange-300 to-yellow-300 opacity-20 blur-3xl" />
+        <div className="h-40 w-40 rounded-full bg-linear-to-br from-orange-300 to-yellow-300 opacity-20 blur-3xl" />
       </div>
 
       {/* Product grid card */}
       <MiniCard
         className="absolute"
-        style={{ top: 4, left: 14, right: 14, transform: "rotate(-1deg)" }}
+        style={{ top: -30, left: 14, right: 14, transform: "rotate(-1deg)" }}
       >
         <div className="p-2.5">
           <div className="mb-2 flex items-center justify-between">
@@ -231,7 +231,7 @@ function ServiciosMockup() {
   return (
     <div className="relative mx-auto h-52 w-72">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full bg-gradient-to-br from-violet-400 to-indigo-300 opacity-20 blur-3xl" />
+        <div className="h-40 w-40 rounded-full bg-linear-to-br from-violet-400 to-indigo-300 opacity-20 blur-3xl" />
       </div>
 
       <MiniCard
@@ -261,7 +261,7 @@ function ServiciosMockup() {
                 style={{ background: "#faf9f7", border: "1px solid #ede9e4" }}
               >
                 <div
-                  className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
                   style={{ background: s.bg }}
                 >
                   <div
@@ -281,7 +281,7 @@ function ServiciosMockup() {
                   </p>
                 </div>
                 <p
-                  className="text-[9px] font-bold flex-shrink-0"
+                  className="text-[9px] font-bold shrink-0"
                   style={{ color: "#ec4899" }}
                 >
                   {s.price}
@@ -343,7 +343,7 @@ function OrdenesMockup() {
   return (
     <div className="relative mx-auto h-52 w-72">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full bg-gradient-to-br from-sky-300 to-blue-400 opacity-20 blur-3xl" />
+        <div className="h-40 w-40 rounded-full bg-linear-to-br from-sky-300 to-blue-400 opacity-20 blur-3xl" />
       </div>
 
       {/* Stacked order cards */}
@@ -421,7 +421,7 @@ function VentasMockup() {
   return (
     <div className="relative mx-auto h-52 w-72">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full bg-gradient-to-br from-emerald-300 to-cyan-400 opacity-20 blur-3xl" />
+        <div className="h-40 w-40 rounded-full bg-linear-to-br from-emerald-300 to-cyan-400 opacity-20 blur-3xl" />
       </div>
 
       {/* Revenue card */}
@@ -541,7 +541,7 @@ function EquipoMockup() {
   return (
     <div className="relative mx-auto h-52 w-72">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full bg-gradient-to-br from-rose-400 to-fuchsia-400 opacity-20 blur-3xl" />
+        <div className="h-40 w-40 rounded-full bg-linear-to-br from-rose-400 to-fuchsia-400 opacity-20 blur-3xl" />
       </div>
 
       <MiniCard
@@ -571,7 +571,7 @@ function EquipoMockup() {
                 style={{ background: "#faf9f7", border: "1px solid #ede9e4" }}
               >
                 <div
-                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
                   style={{ background: m.bg }}
                 >
                   <span className="text-[8px] font-bold text-white">
@@ -614,7 +614,7 @@ function SitioMockup() {
   return (
     <div className="relative mx-auto h-52 w-72">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full bg-gradient-to-br from-blue-400 to-violet-400 opacity-20 blur-3xl" />
+        <div className="h-40 w-40 rounded-full bg-linear-to-br from-blue-400 to-violet-400 opacity-20 blur-3xl" />
       </div>
 
       {/* Browser card */}
@@ -738,7 +738,7 @@ function FinishMockup() {
   return (
     <div className="relative mx-auto h-52 w-72">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full bg-gradient-to-br from-pink-400 to-rose-400 opacity-20 blur-3xl" />
+        <div className="h-40 w-40 rounded-full bg-linear-to-br from-pink-400 to-rose-400 opacity-20 blur-3xl" />
       </div>
 
       <MiniCard
@@ -952,7 +952,7 @@ export function OnboardingOverlay() {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex select-none flex-col overflow-hidden bg-background"
+      className="fixed inset-0 z-9999 flex select-none flex-col overflow-hidden bg-background"
       role="dialog"
       aria-modal="true"
       aria-label="Tutorial de Pars Commerce"
