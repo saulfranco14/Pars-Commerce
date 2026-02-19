@@ -206,13 +206,14 @@ export default function NuevoProductoPage() {
       description={`Catálogo de ${activeTenant.name}`}
       cancelHref={productosHref}
       createLabel="Crear producto"
+      maxWidth="wide"
       loading={loading}
       loadingLabel="Creando…"
       createIcon={<Plus className="h-4 w-4 shrink-0" aria-hidden />}
       error={error}
       onSubmit={handleSubmit}
     >
-      <div className="rounded-xl border border-border bg-surface-raised p-4 shadow-sm sm:p-6 md:p-8">
+      <div className="p-4 sm:p-6 md:p-8">
         <div className="flex flex-col gap-3 sm:gap-6 md:flex-row md:items-start">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-col gap-8">

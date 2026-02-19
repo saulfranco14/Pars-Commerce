@@ -229,7 +229,7 @@ export default function NuevoMiembroPage() {
       error={error}
       onSubmit={handleSubmit}
     >
-      <section className="rounded-xl border border-border bg-surface-raised p-4 sm:p-6 md:p-8">
+      <section className="rounded-xl bg-surface p-4 sm:p-6 md:p-8">
         <div className="space-y-4">
               <div>
                 <label

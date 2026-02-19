@@ -15,8 +15,8 @@ interface CreateCancelActionsProps {
 }
 
 const barClass =
-  "flex flex-col gap-3 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:flex-row md:rounded-none md:gap-3";
-const fixedBarClass = `fixed bottom-0 left-0 right-0 z-40 ${barClass}`;
+  "flex flex-col gap-3 rounded-t-2xl bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:flex-row md:flex-row-reverse md:rounded-none md:gap-3 md:shadow-none";
+const fixedBarClass = `fixed bottom-0 left-0 right-0 z-40 md:static md:left-auto md:right-auto md:bottom-auto ${barClass}`;
 
 export function CreateCancelActions({
   createLabel,
@@ -40,14 +40,14 @@ export function CreateCancelActions({
       <button
         type="submit"
         disabled={loading || disabled}
-        className={`${btnPrimaryFlex} w-full md:w-auto md:flex-1`}
+        className={`${btnPrimaryFlex} w-full md:w-auto md:flex-none`}
       >
         {CreateIcon}
         {loading ? loadingLabel : createLabel}
       </button>
       <Link
         href={cancelHref}
-        className={`${btnSecondaryFlex} w-full md:w-auto md:flex-1`}
+        className={`${btnSecondaryFlex} w-full md:w-auto md:flex-none`}
       >
         {CancelIcon}
         Cancelar

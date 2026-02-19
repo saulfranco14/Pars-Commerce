@@ -94,7 +94,7 @@ export default function NuevaOrdenPage() {
       error={error}
       onSubmit={handleSubmit}
     >
-      <section className="rounded-lg border border-border bg-surface p-4 sm:p-5">
+      <section className="rounded-lg bg-surface p-4 sm:p-5">
             <h2 className="text-base font-semibold text-foreground">
               Datos del cliente{" "}
               <span className="font-normal text-muted">(opcional)</span>
@@ -155,7 +155,7 @@ export default function NuevaOrdenPage() {
             </div>
           </section>
 
-          <section className="mt-4 rounded-xl border border-border bg-surface p-4 sm:p-5">
+          <section className="mt-4 rounded-xl bg-surface p-4 sm:p-5">
             <h2 className="text-base font-semibold text-foreground">
               Asignar a miembro{" "}
               <span className="font-normal text-muted">(opcional)</span>
