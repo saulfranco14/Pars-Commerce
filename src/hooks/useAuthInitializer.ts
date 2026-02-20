@@ -4,100 +4,57 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useSessionStore } from "@/stores/useSessionStore";
-import { useTenantStore, type MembershipItem } from "@/stores/useTenantStore";
-import { get as getProfile } from "@/services/profileService";
-import { list as listTenants } from "@/services/tenantsService";
-
-let authLoadInProgress = false;
+import { useTenantStore } from "@/stores/useTenantStore";
 
 export function useAuthInitializer() {
   const router = useRouter();
-  const setProfile = useSessionStore((s) => s.setProfile);
+  const setAuthUserId = useSessionStore((s) => s.setAuthUserId);
   const clearProfile = useSessionStore((s) => s.clear);
-  const setMemberships = useTenantStore((s) => s.setMemberships);
-  const setTenantsLoaded = useTenantStore((s) => s.setTenantsLoaded);
-  const setActiveTenantId = useTenantStore((s) => s.setActiveTenantId);
   const clearTenant = useTenantStore((s) => s.clear);
+  const setTenantsLoaded = useTenantStore((s) => s.setTenantsLoaded);
   const lastUserIdRef = useRef<string | null>(null);
-  const loadingRef = useRef(false);
 
   useEffect(() => {
     const supabase = createClient();
 
-    const loadUser = async () => {
-      if (loadingRef.current || authLoadInProgress) return;
-      loadingRef.current = true;
-      authLoadInProgress = true;
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
-          lastUserIdRef.current = null;
-          clearProfile();
-          clearTenant();
-          router.replace("/login?next=/dashboard");
-          return;
-        }
+    const syncAuthState = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-        const profile = await getProfile();
-        if (profile) setProfile(profile as Parameters<typeof setProfile>[0]);
-
-        let list: MembershipItem[] = [];
-        try {
-          list = (await listTenants()) as MembershipItem[];
-          setMemberships(list);
-        } catch {
-          setMemberships([]);
-        } finally {
-          setTenantsLoaded(true);
-        }
-        if (list.length > 0) {
-          let stored: string | null = null;
-          if (typeof window !== "undefined") {
-            try {
-              stored = localStorage.getItem("pars_activeTenantId");
-            } catch {
-              /* incognito, quota, disabled */
-            }
-          }
-          if (stored && list.some((m) => m.tenant_id === stored)) {
-            setActiveTenantId(stored);
-          } else if (list.length === 1) {
-            setActiveTenantId(list[0].tenant_id);
-          }
-        }
-        lastUserIdRef.current = user.id;
-      } finally {
-        loadingRef.current = false;
-        authLoadInProgress = false;
+      if (!user) {
+        lastUserIdRef.current = null;
+        setAuthUserId(null);
+        clearProfile();
+        clearTenant();
+        setTenantsLoaded(false);
+        router.replace("/login?next=/dashboard");
+        return;
       }
+
+      if (lastUserIdRef.current === user.id) return;
+      lastUserIdRef.current = user.id;
+      setAuthUserId(user.id);
     };
 
-    loadUser();
+    syncAuthState();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         lastUserIdRef.current = null;
+        setAuthUserId(null);
         clearProfile();
         clearTenant();
+        setTenantsLoaded(false);
         return;
       }
-      if (loadingRef.current || authLoadInProgress) return;
       if (lastUserIdRef.current === session.user?.id) return;
-      loadUser();
+      lastUserIdRef.current = session.user?.id ?? null;
+      setAuthUserId(session.user?.id ?? null);
     });
 
     return () => subscription.unsubscribe();
-  }, [
-    router,
-    setProfile,
-    clearProfile,
-    setMemberships,
-    setTenantsLoaded,
-    setActiveTenantId,
-    clearTenant,
-  ]);
+  }, [router, setAuthUserId, clearProfile, clearTenant, setTenantsLoaded]);
 }

@@ -326,20 +326,26 @@ function LoginForm() {
           <div className="absolute right-4 top-4 z-10">
             <ThemeToggle />
           </div>
-          <div className="w-full max-w-[400px]">
-            {/* Mobile header */}
-            <div className="mb-6 flex items-center gap-3 lg:hidden">
-              <Image
-                src="/android-chrome-192x192.png"
-                alt=""
-                width={32}
-                height={32}
-                className="h-8 w-8"
-                priority
-              />
-              <span className="text-lg font-bold text-foreground">
+          <div className="w-full max-w-[400px] animate-auth-enter">
+            {/* Mobile branded header */}
+            <div className="mb-8 flex flex-col items-center lg:hidden">
+              <div className="relative mb-3">
+                <div
+                  className="absolute inset-0 scale-150 rounded-3xl bg-accent opacity-25 blur-2xl"
+                  aria-hidden
+                />
+                <Image
+                  src="/android-chrome-192x192.png"
+                  alt=""
+                  width={64}
+                  height={64}
+                  className="relative h-16 w-16 rounded-2xl"
+                  priority
+                />
+              </div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
                 Pars Commerce
-              </span>
+              </p>
             </div>
 
             <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
@@ -524,7 +530,7 @@ function LoginForm() {
                 <button
                   type="submit"
                   disabled={setPasswordLoading}
-                  className="group w-full min-h-[48px] rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
+                  className="group w-full min-h-[48px] rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
                 >
                   {setPasswordLoading ? "Guardando..." : "Guardar y entrar"}
                   {!setPasswordLoading && (
@@ -560,20 +566,26 @@ function LoginForm() {
           }}
           aria-hidden
         />
-        <div className="relative w-full max-w-[400px]">
-          {/* Mobile header */}
-          <div className="mb-6 flex items-center gap-3 lg:hidden">
-            <Image
-              src="/android-chrome-192x192.png"
-              alt=""
-              width={32}
-              height={32}
-              className="h-8 w-8"
-              priority
-            />
-            <span className="text-lg font-bold text-foreground">
+        <div className="relative w-full max-w-[400px] animate-auth-enter">
+          {/* Mobile branded header */}
+          <div className="mb-8 flex flex-col items-center lg:hidden">
+            <div className="relative mb-3">
+              <div
+                className="absolute inset-0 scale-150 rounded-3xl bg-accent opacity-25 blur-2xl"
+                aria-hidden
+              />
+              <Image
+                src="/android-chrome-192x192.png"
+                alt=""
+                width={64}
+                height={64}
+                className="relative h-16 w-16 rounded-2xl"
+                priority
+              />
+            </div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
               Pars Commerce
-            </span>
+            </p>
           </div>
 
           {/* Card */}
@@ -643,7 +655,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group w-full min-h-[48px] rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
+                className="group w-full min-h-[48px] rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
               >
                 {loading ? "Entrando..." : "Entrar"}
                 {!loading && (

@@ -1,13 +1,41 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Banknote, Building2, CreditCard, Smartphone, Check, X, DollarSign } from "lucide-react";
+import {
+  Banknote,
+  Building2,
+  CreditCard,
+  Smartphone,
+  Check,
+  X,
+  DollarSign,
+} from "lucide-react";
 
 const PAYMENT_METHODS = [
-  { id: "efectivo", label: "EFECTIVO", icon: Banknote, colorClass: "text-emerald-600" },
-  { id: "transferencia", label: "TRANSFERENCIA", icon: Building2, colorClass: "text-violet-600" },
-  { id: "tarjeta", label: "TARJETA", icon: CreditCard, colorClass: "text-blue-600" },
-  { id: "mercadopago", label: "MERCADO PAGO", icon: Smartphone, colorClass: "text-blue-600" },
+  {
+    id: "efectivo",
+    label: "EFECTIVO",
+    icon: Banknote,
+    colorClass: "text-emerald-600",
+  },
+  {
+    id: "transferencia",
+    label: "TRANSFERENCIA",
+    icon: Building2,
+    colorClass: "text-violet-600",
+  },
+  {
+    id: "tarjeta",
+    label: "TARJETA",
+    icon: CreditCard,
+    colorClass: "text-blue-600",
+  },
+  {
+    id: "mercadopago",
+    label: "MERCADO PAGO",
+    icon: Smartphone,
+    colorClass: "text-blue-600",
+  },
 ] as const;
 
 type PaymentMethodId = (typeof PAYMENT_METHODS)[number]["id"];
@@ -44,7 +72,7 @@ export function ConfirmPaymentModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-payment-title"
@@ -71,9 +99,7 @@ export function ConfirmPaymentModal({
             <X className="h-5 w-5" aria-hidden />
           </button>
         </div>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Total a cobrar
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">Total a cobrar</p>
         <p className="text-2xl font-bold text-foreground">
           ${Number(total).toFixed(2)}
         </p>
@@ -103,7 +129,10 @@ export function ConfirmPaymentModal({
                       <Check className="h-4 w-4" />
                     </span>
                   )}
-                  <Icon className={`h-6 w-6 shrink-0 ${colorClass}`} aria-hidden />
+                  <Icon
+                    className={`h-6 w-6 shrink-0 ${colorClass}`}
+                    aria-hidden
+                  />
                   <span
                     className={`text-xs font-medium ${
                       isSelected ? "text-accent" : "text-muted-foreground"

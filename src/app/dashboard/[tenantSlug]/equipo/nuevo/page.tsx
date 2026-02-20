@@ -3,12 +3,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { ArrowLeft, Plus, AlertTriangle } from "lucide-react";
 import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
 import type { TenantRoleOption } from "@/services/tenantRolesService";
-import { list as listTenantRoles } from "@/services/tenantRolesService";
+import { swrFetcher } from "@/lib/swrFetcher";
 import { addMember } from "@/services/teamService";
+
+const tenantRolesKey = (tenantId: string) =>
+  `/api/tenant-roles?tenant_id=${encodeURIComponent(tenantId)}`;
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
   owner:
@@ -26,23 +30,25 @@ export default function NuevoMiembroPage() {
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [roleId, setRoleId] = useState("");
-  const [roles, setRoles] = useState<TenantRoleOption[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const rolesKeyValue = activeTenant ? tenantRolesKey(activeTenant.id) : null;
+  const { data: rolesData } = useSWR<TenantRoleOption[]>(
+    rolesKeyValue,
+    swrFetcher,
+    { fallbackData: [] },
+  );
+  const roles = Array.isArray(rolesData)
+    ? rolesData.filter((r) => r.name !== "owner")
+    : [];
   const [loading, setLoading] = useState(false);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [invitedByEmail, setInvitedByEmail] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!activeTenant?.id) return;
-    listTenantRoles(activeTenant.id)
-      .then((list) => {
-        const assignable = list.filter((r) => r.name !== "owner");
-        setRoles(assignable);
-        if (assignable.length && !roleId) setRoleId(assignable[0].id);
-      })
-      .catch(() => setRoles([]));
-  }, [activeTenant?.id]);
+    if (roles.length > 0 && !roleId) setRoleId(roles[0].id);
+  }, [roles, roleId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -220,6 +226,7 @@ export default function NuevoMiembroPage() {
     <CreateEditPageLayout
       title="Agregar miembro"
       backHref={equipoHref}
+      backLabel="Volver a equipo"
       description="Si el usuario no existe, se le enviará una invitación por correo para que establezca su contraseña y se agregue al equipo."
       cancelHref={equipoHref}
       createLabel="Agregar"

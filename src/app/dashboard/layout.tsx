@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthInitializer } from "@/hooks/useAuthInitializer";
+import { useAuthProfileAndTenants } from "@/hooks/useAuthProfileAndTenants";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -13,6 +14,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { btnPrimary } from "@/components/ui/buttonClasses";
 import { isFocusRoute } from "@/lib/focusRoutes";
+import { OnboardingOverlay } from "@/components/onboarding/OnboardingOverlay";
 
 export default function DashboardLayout({
   children,
@@ -22,6 +24,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   useAuthInitializer();
+  useAuthProfileAndTenants();
   const profile = useSessionStore((s) => s.profile);
   const memberships = useTenantStore((s) => s.memberships);
   const tenantsLoaded = useTenantStore((s) => s.tenantsLoaded);
@@ -41,6 +44,23 @@ export default function DashboardLayout({
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!tenantSlug || memberships.length === 0) return;
+    const match = memberships.find(
+      (m) => (m.tenant as { slug?: string })?.slug === tenantSlug,
+    );
+    if (match && match.tenant_id !== activeTenantId) {
+      setActiveTenantId(match.tenant_id);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("pars_activeTenantId", match.tenant_id);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  }, [tenantSlug, memberships, activeTenantId, setActiveTenantId]);
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -124,6 +144,9 @@ export default function DashboardLayout({
             ordersBadgeCount={0}
           />
         )}
+
+      {/* Onboarding — shown once to new users, feels native on mobile & desktop */}
+      <OnboardingOverlay />
     </div>
   );
 }

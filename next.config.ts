@@ -10,6 +10,7 @@ const withSerwist = withSerwistInit({
 const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts"],
+    viewTransition: true,
   },
 };
 

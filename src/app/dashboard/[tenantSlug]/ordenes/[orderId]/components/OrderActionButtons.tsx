@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useOrder } from "../hooks/useOrder";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -18,7 +18,9 @@ import {
 function isExpressOrderEnabled(settings: unknown): boolean {
   if (!settings || typeof settings !== "object") return false;
   const s = settings as Record<string, unknown>;
-  return s.express_order_enabled === true || s.express_orders === true;
+  if (s.express_order_enabled !== undefined)
+    return s.express_order_enabled === true;
+  return s.express_orders === true;
 }
 
 type OrderActionButtonsProps = {
@@ -58,13 +60,17 @@ export function OrderActionButtons({
   );
   const showExpressButton =
     expressEnabled && isEditableStatus && canStartOrComplete;
+
   const isOwner = activeRole?.name === "owner";
   const showCancel =
     isOwner &&
-    ["draft", "assigned", "in_progress", "pending_pickup", "paid"].includes(order.status);
+    ["draft", "assigned", "in_progress", "pending_pickup", "paid"].includes(
+      order.status,
+    );
   const needsAssignBeforePaid =
-    !order.assigned_to &&
-    (order.status === "completed" || order.status === "pending_payment" || order.status === "pending_pickup");
+    order.status === "completed" ||
+    order.status === "pending_payment" ||
+    order.status === "pending_pickup";
 
   async function handleExpressClick() {
     if (!order) return;
@@ -193,7 +199,8 @@ export function OrderActionButtons({
             </button>
           </>
         )}
-        {(order.status === "pending_payment" || order.status === "pending_pickup") && (
+        {(order.status === "pending_payment" ||
+          order.status === "pending_pickup") && (
           <button
             type="button"
             onClick={handlePayClick}
@@ -201,7 +208,9 @@ export function OrderActionButtons({
             className={`w-full min-w-0 shrink-0 sm:w-auto ${btnSuccess}`}
           >
             <DollarSign className="h-4 w-4 shrink-0" aria-hidden />
-            {order.status === "pending_pickup" ? "Marcar como cobrado (recogió)" : "Marcar como pagado"}
+            {order.status === "pending_pickup"
+              ? "Marcar como cobrado (recogió)"
+              : "Marcar como pagado"}
           </button>
         )}
       </div>
