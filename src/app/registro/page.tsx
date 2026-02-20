@@ -211,16 +211,24 @@ export default function RegistroPage() {
   }
 
   const logoBlock = (
-    <div className="flex items-center gap-2.5">
-      <Image
-        src="/android-chrome-192x192.png"
-        alt=""
-        width={32}
-        height={32}
-        className="h-8 w-8"
-        priority
-      />
-      <span className="text-lg font-bold text-foreground">Pars Commerce</span>
+    <div className="flex flex-col items-center">
+      <div className="relative mb-3">
+        <div
+          className="absolute inset-0 scale-150 rounded-3xl bg-accent opacity-25 blur-2xl"
+          aria-hidden
+        />
+        <Image
+          src="/android-chrome-192x192.png"
+          alt=""
+          width={64}
+          height={64}
+          className="relative h-16 w-16 rounded-2xl"
+          priority
+        />
+      </div>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
+        Pars Commerce
+      </p>
     </div>
   );
 
@@ -242,8 +250,8 @@ export default function RegistroPage() {
             }}
             aria-hidden
           />
-          <div className="relative w-full max-w-md pb-8 sm:pb-0">
-            <div className="mb-6 lg:hidden">{logoBlock}</div>
+          <div className="relative w-full max-w-md animate-auth-enter pb-8 sm:pb-0">
+            <div className="mb-8 lg:hidden">{logoBlock}</div>
             <SuccessMessage
               email={registeredEmail}
               onClose={() => {
@@ -277,8 +285,8 @@ export default function RegistroPage() {
           }}
           aria-hidden
         />
-        <div className="relative w-full max-w-sm pb-8 sm:pb-0">
-          <div className="mb-6 lg:hidden">{logoBlock}</div>
+        <div className="relative w-full max-w-sm animate-auth-enter pb-8 sm:pb-0">
+          <div className="mb-8 lg:hidden">{logoBlock}</div>
           <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
             <h1 className="text-xl font-bold text-foreground sm:text-2xl">
               Crear cuenta
@@ -356,7 +364,7 @@ export default function RegistroPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group w-full min-h-[48px] rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
+                className="group w-full min-h-[48px] rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
               >
                 {loading ? "Creando cuenta..." : "Crear cuenta gratis"}
                 {!loading && (

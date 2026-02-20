@@ -5,7 +5,7 @@ import { swrFetcher } from "@/lib/swrFetcher";
 
 const swrOptions = {
   fetcher: swrFetcher,
-  dedupingInterval: 5000,
+  dedupingInterval: 10000,
   revalidateOnFocus: false,
   revalidateIfStale: true,
 };

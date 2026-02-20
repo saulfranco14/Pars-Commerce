@@ -203,6 +203,7 @@ export default function NuevoProductoPage() {
     <CreateEditPageLayout
       title="Nuevo producto"
       backHref={productosHref}
+      backLabel="Volver a productos"
       description={`Catálogo de ${activeTenant.name}`}
       cancelHref={productosHref}
       createLabel="Crear producto"

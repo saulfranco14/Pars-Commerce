@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check } from "lucide-react";
+import { FormSaveBar } from "@/components/layout/FormSaveBar";
 import { useSessionStore } from "@/stores/useSessionStore";
 import type { Profile } from "@/types/database";
 import { update as updateProfile } from "@/services/profileService";
 
 export default function PerfilPage() {
+  const formId = useId();
   const profile = useSessionStore((s) => s.profile);
   const setProfile = useSessionStore((s) => s.setProfile);
 
@@ -53,25 +55,29 @@ export default function PerfilPage() {
 
   return (
     <div className="w-full mx-auto flex min-h-0 max-w-5xl flex-1 flex-col overflow-hidden">
-      <div className="shrink-0 pb-6">
+      <div className="shrink-0 border-b border-border pb-4">
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-2 text-base font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
-          <ArrowLeft className="h-5 w-5 shrink-0" aria-hidden />
+          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver al inicio
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-foreground sm:text-3xl">
+        <h1 className="mt-3 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
           Mi perfil
         </h1>
-        <p className="mt-1 text-base text-muted">
+        <p className="mt-0.5 text-sm text-muted-foreground">
           Edita tu nombre y datos de contacto.
         </p>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="flex-1 overflow-y-auto p-6 sm:p-8 md:p-10">
+        <form
+          id={formId}
+          onSubmit={handleSubmit}
+          className="flex min-h-0 flex-1 flex-col pb-24 md:pb-0"
+        >
+          <div className="flex-1 overflow-y-auto overscroll-contain p-6 pb-8 sm:p-8 sm:pb-8 md:p-10 md:pb-8">
             {error && (
               <div className="mb-6 rounded-xl bg-red-50 px-5 py-4 text-base text-red-700 alert-error">
                 {error}
@@ -136,16 +142,17 @@ export default function PerfilPage() {
               </div>
             </div>
           </div>
-          <div className="flex shrink-0 justify-end border-t border-border bg-surface-raised px-6 py-5 sm:px-8 md:px-10">
+          <FormSaveBar>
             <button
               type="submit"
+              form={formId}
               disabled={loading}
-              className="inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-base font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex w-full min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-base font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto md:min-w-[140px]"
             >
               <Check className="h-5 w-5 shrink-0" aria-hidden />
               {loading ? "Guardando…" : "Guardar"}
             </button>
-          </div>
+          </FormSaveBar>
         </form>
       </div>
     </div>

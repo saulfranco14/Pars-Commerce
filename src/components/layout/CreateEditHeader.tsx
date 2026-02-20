@@ -6,44 +6,47 @@ import { ArrowLeft, X } from "lucide-react";
 interface CreateEditHeaderProps {
   title: string;
   backHref: string;
+  backLabel?: string;
   onBack?: () => void;
   variant?: "arrow" | "close";
 }
 
-const btnClass =
-  "flex min-h-(--touch-target,44px) min-w-(--touch-target,44px) shrink-0 items-center justify-center rounded-full bg-border-soft text-muted-foreground transition-colors hover:bg-border hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2";
+const linkClass =
+  "inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg";
 
 export function CreateEditHeader({
   title,
   backHref,
+  backLabel = "Volver",
   onBack,
   variant = "arrow",
 }: CreateEditHeaderProps) {
   const Icon = variant === "close" ? X : ArrowLeft;
+  const label = variant === "close" ? "Cerrar" : backLabel;
   const content = (
     <>
-      <Icon className="h-5 w-5 shrink-0" aria-hidden />
-      <span className="sr-only">{variant === "close" ? "Cerrar" : "Volver"}</span>
+      <Icon className="h-4 w-4 shrink-0" aria-hidden />
+      {label}
     </>
   );
 
   return (
-    <header className="flex shrink-0 items-center gap-3 pb-4">
+    <header className="shrink-0 border-b border-border pb-4">
       {onBack ? (
         <button
           type="button"
           onClick={onBack}
-          className={btnClass}
-          aria-label={variant === "close" ? "Cerrar" : "Volver"}
+          className={linkClass}
+          aria-label={label}
         >
           {content}
         </button>
       ) : (
-        <Link href={backHref} className={btnClass} aria-label={variant === "close" ? "Cerrar" : "Volver"}>
+        <Link href={backHref} className={linkClass} aria-label={label}>
           {content}
         </Link>
       )}
-      <h1 className="min-w-0 flex-1 truncate text-lg font-semibold text-foreground sm:text-xl">
+      <h1 className="mt-3 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
         {title}
       </h1>
     </header>

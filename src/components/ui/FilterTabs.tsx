@@ -6,7 +6,7 @@ export interface FilterTabItem {
 }
 
 interface FilterTabsProps {
-  tabs: FilterTabItem[];
+  tabs: readonly FilterTabItem[];
   activeValue: string;
   onTabChange: (value: string) => void;
   ariaLabel: string;
