@@ -16,15 +16,6 @@ import { btnPrimary } from "@/components/ui/buttonClasses";
 import { isFocusRoute } from "@/lib/focusRoutes";
 import { OnboardingOverlay } from "@/components/onboarding/OnboardingOverlay";
 
-/**
- * Wraps page content with a native-feeling enter animation.
- * Using `key` at the call site forces a remount on each navigation,
- * which re-triggers the CSS animation — same pattern used by native apps.
- */
-function PageTransition({ children }: { children: React.ReactNode }) {
-  return <div className="animate-page-enter">{children}</div>;
-}
-
 export default function DashboardLayout({
   children,
 }: {
@@ -116,7 +107,7 @@ export default function DashboardLayout({
         >
           {pathname === "/dashboard/crear-negocio" ||
           pathname === "/dashboard/perfil" ? (
-            <PageTransition key={pathname}>{children}</PageTransition>
+            children
           ) : !tenantsLoaded ? (
             <LoadingBlock message="Cargando negocios…" />
           ) : memberships.length === 0 ? (
@@ -139,7 +130,7 @@ export default function DashboardLayout({
               Selecciona un negocio en el menú.
             </div>
           ) : activeTenant ? (
-            <PageTransition key={pathname}>{children}</PageTransition>
+            children
           ) : (
             <div className="text-sm text-muted">Cargando negocio...</div>
           )}
