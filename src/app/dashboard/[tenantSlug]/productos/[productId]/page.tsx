@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
@@ -21,6 +22,9 @@ const subcatalogsKey = (tenantId: string) =>
   `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
 
 export default function EditarProductoPage() {
+  const formId = useId();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const params = useParams();
   const router = useRouter();
   const productId = params.productId as string;
@@ -278,7 +282,7 @@ export default function EditarProductoPage() {
       </div>
 
       <div className="rounded-xl border border-border bg-surface-raised shadow-sm">
-        <form onSubmit={handleSubmit} className="flex flex-col">
+        <form id={formId} onSubmit={handleSubmit} className="flex flex-col">
           <div className="flex-1 overflow-y-auto p-6 pb-40 md:pb-8 md:p-8">
             {error && (
               <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
@@ -618,13 +622,36 @@ export default function EditarProductoPage() {
             </div>
           </div>
 
-          <div
-            className="fixed bottom-0 left-0 right-0 z-40 flex shrink-0 flex-col gap-3 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:static md:flex-row-reverse md:rounded-none md:gap-3 md:shadow-none md:px-8 md:py-4"
-            style={{ paddingBottom: "max(1rem, calc(1rem + env(safe-area-inset-bottom)))" }}
-          >
+          {/* Mobile: portal at body to bypass ancestor transform */}
+          {mounted && createPortal(
+            <div
+              className="fixed bottom-0 left-0 right-0 z-9998 flex shrink-0 flex-col gap-3 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:hidden"
+              style={{ paddingBottom: "max(1rem, calc(1rem + env(safe-area-inset-bottom)))", paddingLeft: "max(1rem, env(safe-area-inset-left, 1rem))", paddingRight: "max(1rem, env(safe-area-inset-right, 1rem))" }}
+            >
+              <Link
+                href={`/dashboard/${tenantSlug}/productos`}
+                className={`${btnSecondaryFlex} w-full`}
+              >
+                <X className="h-4 w-4 shrink-0" aria-hidden />
+                Cancelar
+              </Link>
+              <button
+                type="submit"
+                form={formId}
+                disabled={loading}
+                className={`${btnPrimaryFlex} w-full`}
+              >
+                <Check className="h-4 w-4 shrink-0" aria-hidden />
+                {loading ? "Guardando…" : "Guardar"}
+              </button>
+            </div>,
+            document.body
+          )}
+          {/* Desktop: inline inside form */}
+          <div className="hidden md:flex md:flex-row-reverse md:gap-3 md:px-8 md:py-4">
             <Link
               href={`/dashboard/${tenantSlug}/productos`}
-              className={`${btnSecondaryFlex} w-full md:w-auto md:flex-none`}
+              className={`${btnSecondaryFlex} md:w-auto md:flex-none`}
             >
               <X className="h-4 w-4 shrink-0" aria-hidden />
               Cancelar
@@ -632,7 +659,7 @@ export default function EditarProductoPage() {
             <button
               type="submit"
               disabled={loading}
-              className={`${btnPrimaryFlex} w-full md:w-auto md:flex-none`}
+              className={`${btnPrimaryFlex} md:w-auto md:flex-none`}
             >
               <Check className="h-4 w-4 shrink-0" aria-hidden />
               {loading ? "Guardando…" : "Guardar"}

@@ -60,9 +60,11 @@
   .bg-default {
     background-color: var(--color-default);
   }
+
   .text-default {
     color: var(--color-default);
   }
+
   .input-form {
     background-color: var(--surface);
     border: 1px solid var(--input-border);
@@ -184,8 +186,15 @@ body {
 }
 
 @keyframes loading-pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.7; }
+
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .animate-loading-pulse {
@@ -202,6 +211,7 @@ body {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -212,13 +222,73 @@ body {
   animation: fade-in-up 0.6s ease-out both;
 }
 
-.animation-delay-100 { animation-delay: 100ms; }
-.animation-delay-200 { animation-delay: 200ms; }
-.animation-delay-300 { animation-delay: 300ms; }
-.animation-delay-400 { animation-delay: 400ms; }
+.animation-delay-100 {
+  animation-delay: 100ms;
+}
+
+.animation-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animation-delay-300 {
+  animation-delay: 300ms;
+}
+
+.animation-delay-400 {
+  animation-delay: 400ms;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in-up {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Native page transitions ─────────────────────────────────── */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: page-enter 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* ── Auth pages (login / registro) ──────────────────────────── */
+@keyframes auth-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-auth-enter {
+  animation: auth-slide-up 320ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* ── Input focus glow ────────────────────────────────────────── */
+.input-form {
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .animate-page-enter,
+  .animate-auth-enter {
     animation: none;
     opacity: 1;
     transform: none;
@@ -242,12 +312,15 @@ body {
   .no-print {
     display: none !important;
   }
+
   body {
     background: #fff;
   }
+
   #ticket-print-portal {
     display: block !important;
   }
+
   #ticket-print {
     display: block !important;
     visibility: visible !important;
@@ -259,6 +332,7 @@ body {
     padding: 12px;
     box-sizing: border-box;
   }
+
   .receipt-ticket {
     width: 100% !important;
     max-width: 100% !important;

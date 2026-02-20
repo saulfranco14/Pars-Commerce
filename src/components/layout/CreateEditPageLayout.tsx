@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { CreateEditHeader } from "@/components/layout/CreateEditHeader";
 import { CreateCancelActions } from "@/components/layout/CreateCancelActions";
 
@@ -39,6 +40,8 @@ export function CreateEditPageLayout({
   onSubmit,
   children,
 }: CreateEditPageLayoutProps) {
+  const formId = useId();
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto">
       <div
@@ -48,6 +51,7 @@ export function CreateEditPageLayout({
         <p className="mt-2 mb-4 text-sm leading-relaxed text-muted">{description}</p>
 
         <form
+          id={formId}
           onSubmit={onSubmit}
           className="flex min-h-0 flex-1 flex-col gap-0 pb-40 md:pb-0"
         >
@@ -58,15 +62,14 @@ export function CreateEditPageLayout({
           )}
           <div className="overflow-hidden rounded-xl bg-surface shadow-md">
             {children}
-            <div className="flex flex-col gap-3 px-4 pb-4 pt-6 md:flex-row md:items-center md:justify-end md:gap-3 md:px-6 md:pb-6">
-              <CreateCancelActions
-                createLabel={createLabel}
-                cancelHref={cancelHref}
-                loading={loading}
-                loadingLabel={loadingLabel}
-                createIcon={createIcon}
-              />
-            </div>
+            <CreateCancelActions
+              createLabel={createLabel}
+              cancelHref={cancelHref}
+              loading={loading}
+              loadingLabel={loadingLabel}
+              createIcon={createIcon}
+              formId={formId}
+            />
           </div>
         </form>
       </div>

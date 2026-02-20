@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -17,6 +18,8 @@ import { ReceiptPreview } from "./components/ReceiptPreview";
 function OrderDetailContent() {
   const { order, loading, error, tenantSlug, businessName, businessAddress, ticketOptions, logoUrl } =
     useOrder();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   if (loading) {
     return <LoadingBlock message="Cargando orden…" />;
@@ -96,14 +99,18 @@ function OrderDetailContent() {
         </div>
       </div>
 
-      <div
-        className="no-print fixed left-0 right-0 bottom-0 z-40 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:hidden"
-        style={{
-          paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
-        }}
-      >
-        <OrderActionButtons embedded fixedBar />
-      </div>
+      {mounted &&
+        createPortal(
+          <div
+            className="no-print fixed left-0 right-0 bottom-0 z-9998 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:hidden"
+            style={{
+              paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
+            }}
+          >
+            <OrderActionButtons embedded fixedBar />
+          </div>,
+          document.body
+        )}
     </>
   );
 }

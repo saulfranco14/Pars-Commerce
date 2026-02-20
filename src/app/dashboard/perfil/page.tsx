@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check } from "lucide-react";
 import { FormSaveBar } from "@/components/layout/FormSaveBar";
@@ -9,6 +9,7 @@ import type { Profile } from "@/types/database";
 import { update as updateProfile } from "@/services/profileService";
 
 export default function PerfilPage() {
+  const formId = useId();
   const profile = useSessionStore((s) => s.profile);
   const setProfile = useSessionStore((s) => s.setProfile);
 
@@ -72,6 +73,7 @@ export default function PerfilPage() {
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
         <form
+          id={formId}
           onSubmit={handleSubmit}
           className="flex min-h-0 flex-1 flex-col pb-24 md:pb-0"
         >
@@ -143,6 +145,7 @@ export default function PerfilPage() {
           <FormSaveBar>
             <button
               type="submit"
+              form={formId}
               disabled={loading}
               className="inline-flex w-full min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-base font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto md:min-w-[140px]"
             >

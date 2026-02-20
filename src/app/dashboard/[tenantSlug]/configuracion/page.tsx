@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Check } from "lucide-react";
@@ -31,6 +31,7 @@ const CONFIG_TABS = [
 type ConfigTab = (typeof CONFIG_TABS)[number]["value"];
 
 export default function ConfiguracionPage() {
+  const formId = useId();
   const params = useParams();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useTenantStore((s) => s.activeTenant)();
@@ -201,6 +202,7 @@ export default function ConfiguracionPage() {
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
         <form
+          id={formId}
           onSubmit={handleSubmit}
           className="flex min-h-0 flex-1 flex-col overflow-hidden md:pb-0"
         >
@@ -280,6 +282,7 @@ export default function ConfiguracionPage() {
           <FormSaveBar align="end">
             <button
               type="submit"
+              form={formId}
               disabled={loading}
               className="inline-flex w-full min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto md:min-w-[140px]"
             >
