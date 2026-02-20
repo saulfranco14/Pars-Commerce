@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface BottomSheetProps {
   isOpen: boolean;
@@ -15,6 +16,12 @@ export function BottomSheet({
   title,
   children,
 }: BottomSheetProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (!isOpen) return;
     function handleEscape(e: KeyboardEvent) {
@@ -35,11 +42,11 @@ export function BottomSheet({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex flex-col justify-end md:hidden"
+      className="fixed inset-0 z-100 flex flex-col justify-end md:hidden"
       aria-modal="true"
       aria-labelledby={title ? "bottom-sheet-title" : undefined}
     >
@@ -48,12 +55,7 @@ export function BottomSheet({
         onClick={onClose}
         aria-hidden
       />
-      <div
-        className="relative z-10 flex max-h-[92vh] flex-col overflow-hidden rounded-t-xl border-t border-border bg-surface shadow-lg"
-        style={{
-          paddingBottom: "max(2rem, env(safe-area-inset-bottom))",
-        }}
-      >
+      <div className="relative z-10 flex max-h-[92vh] flex-col overflow-hidden rounded-t-xl border-t border-border bg-surface shadow-lg">
         <div className="flex shrink-0 flex-col items-center gap-3 py-3">
           <div
             className="h-1 w-10 rounded-full bg-muted-foreground/30"
@@ -72,6 +74,7 @@ export function BottomSheet({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

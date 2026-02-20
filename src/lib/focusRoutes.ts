@@ -21,6 +21,7 @@ export function isFocusRoute(pathname: string): boolean {
     return fourth !== undefined && fourth !== "";
   }
   if (third === "equipo" && fourth === "nuevo") return true;
+  if (third === "configuracion" || third === "sitio-web") return true;
 
   return false;
 }

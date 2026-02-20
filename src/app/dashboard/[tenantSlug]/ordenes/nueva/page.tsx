@@ -81,6 +81,7 @@ export default function NuevaOrdenPage() {
     <CreateEditPageLayout
       title="Nueva orden"
       backHref={ordersHref}
+      backLabel="Volver a órdenes"
       description={
         <>
           Crea un ticket en {activeTenant.name}. Podrás agregar productos y

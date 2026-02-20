@@ -51,7 +51,7 @@ export function ReceiptPreview({
   return (
     <div className="receipt-ticket mx-auto w-[302px] max-w-full font-sans text-foreground print:w-[302px] print:max-w-[302px]">
       {showLogo && (
-        <div className="mb-3 flex justify-center">
+        <div className="mb-5 flex justify-center">
           <img
             src={logoUrl}
             alt=""
@@ -61,52 +61,61 @@ export function ReceiptPreview({
           />
         </div>
       )}
-      <h1 className="text-xl font-bold tracking-tight text-foreground">
+      <h1 className="text-xl font-bold tracking-tight text-foreground text-center">
         {businessName}
       </h1>
       {(shouldShow(opts.showOrderId) || shouldShow(opts.showDate)) && (
-        <p className="mt-1 text-xs text-muted">
+        <p className="mt-2 text-xs text-muted">
           {opts.showOrderId !== false && `Orden ${order.id.slice(0, 8)}`}
           {opts.showOrderId !== false && opts.showDate !== false && " · "}
           {opts.showDate !== false && formatOrderDateFull(order.created_at)}
         </p>
       )}
-      {shouldShow(opts.showCustomerInfo) && (order.customer_name || order.customer_email) && (
-        <p className="mt-3 text-sm text-foreground">
-          Cliente: {order.customer_name || order.customer_email}
-        </p>
-      )}
-      {shouldShow(opts.showCustomerInfo) && order.customer_phone && (
-        <p className="text-sm text-foreground">Tel: {order.customer_phone}</p>
+      {shouldShow(opts.showCustomerInfo) && (order.customer_name || order.customer_email || order.customer_phone) && (
+        <div className="mt-4 space-y-1">
+          {(order.customer_name || order.customer_email) && (
+            <p className="text-sm text-foreground">
+              <span className="font-medium text-muted-foreground">Cliente:</span> {order.customer_name || order.customer_email}
+            </p>
+          )}
+          {order.customer_phone && (
+            <p className="text-sm text-foreground">
+              <span className="font-medium text-muted-foreground">Tel:</span> {order.customer_phone}
+            </p>
+          )}
+        </div>
       )}
       {shouldShow(opts.showItems) && (
         <>
-          <div className="my-3 h-px bg-border" />
-          <table className="w-full table-fixed border-collapse text-sm">
+          <div className="my-5 h-px bg-border" />
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Productos
+          </p>
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border">
-                <th className="py-1.5 text-left text-xs font-medium">Item</th>
-                <th className="w-10 py-1.5 text-right text-xs font-medium">Cant.</th>
-                <th className="w-14 py-1.5 text-right text-xs font-medium">P.unit</th>
-                <th className="w-14 py-1.5 text-right text-xs font-medium">Subtotal</th>
+              <tr className="border-b-2 border-foreground">
+                <th className="pb-2 pt-1 text-left text-xs font-semibold">Item</th>
+                <th className="w-12 pb-2 pt-1 pr-2 text-right text-xs font-semibold">Cant.</th>
+                <th className="w-16 pb-2 pt-1 pr-2 text-right text-xs font-semibold">P. unit.</th>
+                <th className="w-16 pb-2 pt-1 text-right text-xs font-semibold">Subtotal</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-border/60">
-                  <td className="py-1.5 text-left">
+                  <td className="py-2.5 pr-2 text-left leading-snug">
                     {item.product?.name ?? "—"}
                     {item.is_wholesale && (
-                      <span className="ml-1 text-[10px] font-medium text-teal-600">
+                      <span className="ml-1 block text-[10px] font-medium text-teal-600">
                         (Mayoreo{Number(item.wholesale_savings ?? 0) > 0 ? `, ahorro $${Number(item.wholesale_savings).toFixed(2)}` : ""})
                       </span>
                     )}
                   </td>
-                  <td className="py-1.5 text-right">{item.quantity}</td>
-                  <td className="py-1.5 text-right">
+                  <td className="py-2.5 pr-2 text-right tabular-nums">{item.quantity}</td>
+                  <td className="py-2.5 pr-2 text-right tabular-nums">
                     ${Number(item.unit_price).toFixed(2)}
                   </td>
-                  <td className="py-1.5 text-right">
+                  <td className="py-2.5 text-right tabular-nums font-medium">
                     ${Number(item.subtotal).toFixed(2)}
                   </td>
                 </tr>
@@ -115,37 +124,59 @@ export function ReceiptPreview({
           </table>
         </>
       )}
-      <div className="mt-3 space-y-0.5">
-        {shouldShow(opts.showSubtotal) && (
-          <p className="text-right text-sm">Subtotal: ${Number(order.subtotal).toFixed(2)}</p>
-        )}
-        {shouldShow(opts.showWholesaleSavings) && totalWholesaleSavings > 0 && (
-          <p className="text-right text-sm text-teal-700">
-            Ahorro por mayoreo: ${totalWholesaleSavings.toFixed(2)}
-          </p>
-        )}
-        {shouldShow(opts.showDiscount) && Number(order.discount) > 0 && (
-          <p className="text-right text-sm">Descuento: -${Number(order.discount).toFixed(2)}</p>
-        )}
+      <div className="mt-5">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Resumen
+        </p>
+        <div className="space-y-1.5">
+          {shouldShow(opts.showSubtotal) && (
+            <p className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Subtotal:</span>
+              <span className="tabular-nums">${Number(order.subtotal).toFixed(2)}</span>
+            </p>
+          )}
+          {shouldShow(opts.showWholesaleSavings) && totalWholesaleSavings > 0 && (
+            <p className="flex justify-between text-sm text-teal-700">
+              <span>Ahorro por mayoreo:</span>
+              <span className="tabular-nums">${totalWholesaleSavings.toFixed(2)}</span>
+            </p>
+          )}
+          {shouldShow(opts.showDiscount) && Number(order.discount) > 0 && (
+            <p className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Descuento:</span>
+              <span className="tabular-nums">-${Number(order.discount).toFixed(2)}</span>
+            </p>
+          )}
+        </div>
       </div>
-      <div className="mt-2 border-t-2 border-foreground pt-2">
-        <p className="text-right text-base font-bold">Total: ${Number(order.total).toFixed(2)}</p>
+      <div className="mt-4 border-t-2 border-foreground pt-4">
+        <p className="flex justify-between text-base font-bold">
+          <span>Total</span>
+          <span className="tabular-nums">${Number(order.total).toFixed(2)}</span>
+        </p>
       </div>
       {shouldShow(opts.showPaymentMethod) && order.payment_method && (
-        <p className="mt-2 flex items-center justify-end gap-1.5 text-right text-sm">
+        <div className="mt-4 flex items-center justify-center gap-2 rounded border border-border px-3 py-2 print:border-border">
           {PaymentIcon && <PaymentIcon className="h-4 w-4 shrink-0" aria-hidden />}
-          <span>Forma de pago: {formatPaymentMethod(order.payment_method)}</span>
-        </p>
+          <span className="text-sm">
+            <span className="font-medium text-muted-foreground">Forma de pago:</span> {formatPaymentMethod(order.payment_method)}
+          </span>
+        </div>
       )}
       {showAddress && (
-        <div className="mt-4 pt-4 border-t border-border text-xs text-muted space-y-0.5">
-          {formatAddressLine(businessAddress).map((line, i) => (
-            <p key={i}>{line}</p>
-          ))}
+        <div className="mt-6 pt-5 border-t border-border">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Ubicación
+          </p>
+          <div className="space-y-1 text-xs text-muted">
+            {formatAddressLine(businessAddress).map((line, i) => (
+              <p key={i}>{line}</p>
+            ))}
+          </div>
         </div>
       )}
       {opts.footerMessage && (
-        <p className="mt-4 pt-3 border-t border-border/60 text-center text-xs text-muted">
+        <p className="mt-6 pt-4 border-t border-border/60 text-center text-xs text-muted leading-relaxed">
           {opts.footerMessage}
         </p>
       )}
