@@ -38,7 +38,7 @@ export function FormSaveBar({ children, align = "center" }: FormSaveBarProps) {
       {mounted &&
         createPortal(
           <div
-            className={`fixed bottom-0 left-0 right-0 z-9998 ${barBase} ${justifyClass} md:hidden`}
+            className={`fixed bottom-0 left-0 right-0 z-40 ${barBase} ${justifyClass} md:hidden`}
             style={safePadding}
           >
             <div className={innerClass}>{children}</div>

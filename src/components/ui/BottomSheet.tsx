@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface BottomSheetProps {
   isOpen: boolean;
@@ -15,6 +16,12 @@ export function BottomSheet({
   title,
   children,
 }: BottomSheetProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (!isOpen) return;
     function handleEscape(e: KeyboardEvent) {
@@ -35,11 +42,11 @@ export function BottomSheet({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex flex-col justify-end md:hidden"
+      className="fixed inset-0 z-100 flex flex-col justify-end md:hidden"
       aria-modal="true"
       aria-labelledby={title ? "bottom-sheet-title" : undefined}
     >
@@ -72,6 +79,7 @@ export function BottomSheet({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

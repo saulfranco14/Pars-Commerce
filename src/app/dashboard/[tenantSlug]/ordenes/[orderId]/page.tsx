@@ -102,7 +102,7 @@ function OrderDetailContent() {
       {mounted &&
         createPortal(
           <div
-            className="no-print fixed left-0 right-0 bottom-0 z-9998 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:hidden"
+            className="no-print fixed left-0 right-0 bottom-0 z-40 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:hidden"
             style={{
               paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
             }}
