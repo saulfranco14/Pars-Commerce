@@ -9,6 +9,7 @@ import { ProductSearchCombobox } from "./ProductSearchCombobox";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { Plus, X } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
+import { btnPrimaryFlex, btnSecondaryFlex } from "@/components/ui/buttonClasses";
 import { TouchStepper } from "@/components/ui/TouchStepper";
 
 const DEBOUNCE_MS = 300;
@@ -157,11 +158,14 @@ export function AddItemModal({
 
   if (!isOpen) return null;
 
+  const inputBase =
+    "input-form block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50";
   const selectClass =
-    "input-form mt-1 block w-full min-h-(--input-height,44px) rounded-lg px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30 disabled:opacity-50 appearance-none bg-[url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2378716c%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E')] bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10";
+    inputBase +
+    " mt-1 appearance-none bg-[url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2378716c%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E')] bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10";
 
   const formContent = (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-3">
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
@@ -233,7 +237,7 @@ export function AddItemModal({
         >
           Cantidad
         </label>
-        <div className="mt-2 md:mt-1">
+        <div className="mt-1">
           <div className="md:hidden" aria-labelledby="add-item-quantity-label">
             <TouchStepper
               value={quantity}
@@ -250,7 +254,7 @@ export function AddItemModal({
               type="button"
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
               disabled={loading || quantity <= 1}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-foreground transition-colors hover:bg-border-soft disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl border border-border bg-surface-raised text-foreground transition-colors hover:bg-border-soft disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/20"
               aria-label="Disminuir cantidad"
             >
               −
@@ -273,13 +277,13 @@ export function AddItemModal({
               onBlur={() => {
                 if (quantity < 1) setQuantity(1);
               }}
-              className="input-form w-20 text-center md:rounded-lg md:px-2 md:py-1.5 md:text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30"
+              className="input-form min-h-[44px] w-20 shrink-0 rounded-xl border border-border px-3 py-2.5 text-center text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             />
             <button
               type="button"
               onClick={() => setQuantity((q) => Math.min(999, q + 1))}
               disabled={loading || quantity >= 999}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-foreground transition-colors hover:bg-border-soft disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl border border-border bg-surface-raised text-foreground transition-colors hover:bg-border-soft disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/20"
               aria-label="Aumentar cantidad"
             >
               +
@@ -297,12 +301,12 @@ export function AddItemModal({
           )}
         </p>
       )}
-      <div className="flex flex-col gap-2 md:flex-row md:gap-2">
+      <div className="flex flex-col gap-3 md:flex-row md:gap-3">
         <button
           type="button"
           onClick={onClose}
           disabled={loading}
-          className="inline-flex min-h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50 md:h-9 md:min-h-0"
+          className={`${btnSecondaryFlex} w-full`}
         >
           <X className="h-4 w-4 shrink-0" aria-hidden />
           Cancelar
@@ -310,7 +314,7 @@ export function AddItemModal({
         <button
           type="submit"
           disabled={loading || !productId}
-          className="inline-flex min-h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-70 md:h-9 md:min-h-0 md:flex-1"
+          className={`${btnPrimaryFlex} w-full`}
         >
           {loading ? (
             "Agregando..."

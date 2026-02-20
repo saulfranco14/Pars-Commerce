@@ -55,12 +55,7 @@ export function BottomSheet({
         onClick={onClose}
         aria-hidden
       />
-      <div
-        className="relative z-10 flex max-h-[92vh] flex-col overflow-hidden rounded-t-xl border-t border-border bg-surface shadow-lg"
-        style={{
-          paddingBottom: "max(2rem, env(safe-area-inset-bottom))",
-        }}
-      >
+      <div className="relative z-10 flex max-h-[92vh] flex-col overflow-hidden rounded-t-xl border-t border-border bg-surface shadow-lg">
         <div className="flex shrink-0 flex-col items-center gap-3 py-3">
           <div
             className="h-1 w-10 rounded-full bg-muted-foreground/30"
@@ -80,6 +75,6 @@ export function BottomSheet({
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
