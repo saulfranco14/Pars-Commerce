@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ArrowLeft, Plus, X, Check, Palette } from "lucide-react";
 import { create as createTenant, list as listTenants } from "@/services/tenantsService";
+import { list as listTemplates } from "@/services/siteTemplatesService";
+import type { SiteTemplate } from "@/services/siteTemplatesService";
 import { useTenantStore, type MembershipItem } from "@/stores/useTenantStore";
 
 export default function CrearNegocioPage() {
@@ -14,8 +16,14 @@ export default function CrearNegocioPage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [businessType, setBusinessType] = useState("");
+  const [templates, setTemplates] = useState<SiteTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    listTemplates().then(setTemplates);
+  }, []);
 
   function deriveSlug(value: string) {
     return value
@@ -42,6 +50,7 @@ export default function CrearNegocioPage() {
         name: name.trim(),
         slug: slug.trim() || deriveSlug(name),
         business_type: businessType.trim() || undefined,
+        site_template_id: selectedTemplateId ?? undefined,
       })) as { id: string };
       const list = (await listTenants()) as MembershipItem[];
       setMemberships(list);
@@ -144,6 +153,53 @@ export default function CrearNegocioPage() {
                   <option value="renta_mesas">Renta mesas / carpas</option>
                   <option value="otro">Otro</option>
                 </select>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Palette className="h-4 w-4 shrink-0" aria-hidden />
+                  Apariencia de tu sitio (opcional)
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Elige cómo quieres que se vea tu catálogo público.
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                  {templates.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedTemplateId(
+                          selectedTemplateId === t.id ? null : t.id
+                        )
+                      }
+                      className={`relative flex min-h-[80px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 px-3 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
+                        selectedTemplateId === t.id
+                          ? "border-accent bg-accent/10"
+                          : "border-border hover:border-border-soft hover:bg-border-soft/30"
+                      }`}
+                    >
+                      <div
+                        className="mb-1 h-6 w-6 shrink-0 rounded-md"
+                        style={{
+                          backgroundColor:
+                            t.default_theme_color ?? "#6366f1",
+                        }}
+                        aria-hidden
+                      />
+                      <span className="truncate text-xs font-medium text-foreground">
+                        {t.name}
+                      </span>
+                      {selectedTemplateId === t.id && (
+                        <span
+                          className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground"
+                          aria-hidden
+                        >
+                          <Check className="h-3 w-3" />
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import useSWR from "swr";
 import Link from "next/link";
-import { Globe, MessageCircle, FileText, Check, ChevronDown, ChevronUp, Tag, ArrowRight } from "lucide-react";
+import { Globe, MessageCircle, FileText, Check, ChevronDown, ChevronUp, Tag, ArrowRight, Palette } from "lucide-react";
 import { useTenantStore } from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
 import type { SitePage } from "@/types/tenantSitePages";
 import { SiteContentForm } from "@/app/dashboard/[tenantSlug]/configuracion/SiteContentForm";
 import { update as updateTenant, list as listTenants } from "@/services/tenantsService";
+import { list as listTemplates } from "@/services/siteTemplatesService";
+import type { SiteTemplate } from "@/services/siteTemplatesService";
 import { swrFetcher } from "@/lib/swrFetcher";
 
 const sitePagesKey = (tenantId: string) =>
@@ -27,7 +29,6 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
   const [publicStoreEnabled, setPublicStoreEnabled] = useState(false);
   const [publicStoreLoading, setPublicStoreLoading] = useState(false);
   const [themeColor, setThemeColor] = useState("");
-  const [themeColorLoading, setThemeColorLoading] = useState(false);
   const [whatsappPhone, setWhatsappPhone] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [facebookUrl, setFacebookUrl] = useState("");
@@ -35,6 +36,16 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
   const [redesLoading, setRedesLoading] = useState(false);
   const [redesError, setRedesError] = useState<string | null>(null);
   const [redesSuccess, setRedesSuccess] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<SiteTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [appearanceLoading, setAppearanceLoading] = useState(false);
+  const [appearanceSuccess, setAppearanceSuccess] = useState<string | null>(null);
+
+  const savedTemplateId = (activeTenant as { site_template_id?: string | null })?.site_template_id ?? null;
+  const savedThemeColor = (activeTenant?.theme_color ?? "").trim();
+  const appearanceDirty =
+    selectedTemplateId !== savedTemplateId ||
+    (themeColor || "").trim() !== savedThemeColor;
   const [expandedStep, setExpandedStep] = useState<"paso1" | "paso2" | "paso3" | "paso4" | null>("paso1");
 
   const sitePagesKeyValue = activeTenant ? sitePagesKey(activeTenant.id) : null;
@@ -46,9 +57,17 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
   const sitePages = Array.isArray(sitePagesData) ? sitePagesData : [];
 
   useEffect(() => {
+    listTemplates().then(setTemplates);
+  }, []);
+
+  useEffect(() => {
     if (!activeTenant) return;
     setPublicStoreEnabled(activeTenant.public_store_enabled ?? false);
     setThemeColor(activeTenant.theme_color ?? "");
+    setSelectedTemplateId(
+      (activeTenant as { site_template_id?: string | null }).site_template_id ?? null
+    );
+    setAppearanceSuccess(null);
     setWhatsappPhone((activeTenant as { whatsapp_phone?: string }).whatsapp_phone ?? "");
     const sl = (activeTenant as { social_links?: { instagram?: string; facebook?: string; twitter?: string } })
       .social_links;
@@ -73,17 +92,32 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
     }
   }
 
-  async function handleSaveThemeColor(e: React.FormEvent) {
+  async function handleSaveAppearance(e: React.FormEvent) {
     e.preventDefault();
     if (!activeTenant) return;
-    setThemeColorLoading(true);
+    setAppearanceLoading(true);
+    setAppearanceSuccess(null);
     try {
-      await updateTenant(activeTenant.id, { theme_color: themeColor.trim() || undefined });
+      await updateTenant(activeTenant.id, {
+        site_template_id: selectedTemplateId,
+        theme_color: themeColor.trim() || undefined,
+      });
+      setAppearanceSuccess("Apariencia guardada correctamente.");
       const list = (await listTenants()) as MembershipItem[];
       setMemberships(list ?? []);
     } finally {
-      setThemeColorLoading(false);
+      setAppearanceLoading(false);
     }
+  }
+
+  function handleTemplateSelect(templateId: string | null) {
+    setSelectedTemplateId(templateId);
+    setAppearanceSuccess(null);
+  }
+
+  function handleThemeColorChange(value: string) {
+    setThemeColor(value);
+    setAppearanceSuccess(null);
   }
 
   async function handleSaveRedes(e: React.FormEvent) {
@@ -190,41 +224,94 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
                   <Globe className="h-4 w-4" aria-hidden />
                 </a>
               )}
-              <div className="mt-6 border-t border-border pt-4">
-                <label htmlFor="themeColor" className="block text-sm font-medium text-muted-foreground">
-                  Color del tema (opcional)
-                </label>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Color principal del sitio. Se usa en botones, enlaces y acentos.
-                </p>
-                <form onSubmit={handleSaveThemeColor} className="mt-3 flex flex-wrap items-end gap-3">
-                  <div className="flex gap-2">
+              <form onSubmit={handleSaveAppearance} className="mt-6 space-y-6 border-t border-border/60 pt-6">
+                <div>
+                  <h3 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Palette className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                    Apariencia del sitio
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Plantilla y color. Los cambios se guardan al pulsar Guardar.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-2">
+                    Plantilla
+                  </label>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                    {templates.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => handleTemplateSelect(selectedTemplateId === t.id ? null : t.id)}
+                        title={t.description ?? undefined}
+                        className={`relative flex min-h-[100px] cursor-pointer flex-col items-center justify-center rounded-xl border px-3 py-3 text-center transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
+                          selectedTemplateId === t.id
+                            ? "border-accent/70 bg-accent/5 ring-1 ring-accent/15"
+                            : "border-border/70 bg-surface hover:border-border hover:bg-muted/30"
+                        }`}
+                      >
+                        <div
+                          className="mb-2 h-8 w-8 shrink-0 rounded-lg"
+                          style={{
+                            backgroundColor: t.default_theme_color ?? "#6366f1",
+                            boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+                          }}
+                          aria-hidden
+                        />
+                        <span className="text-center text-xs font-semibold text-foreground">
+                          {t.name}
+                        </span>
+                        {t.description && (
+                          <span className="mt-0.5 line-clamp-2 text-center text-[10px] leading-tight text-muted-foreground">
+                            {t.description}
+                          </span>
+                        )}
+                        {selectedTemplateId === t.id && (
+                          <span
+                            className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground"
+                            aria-hidden
+                          >
+                            <Check className="h-3 w-3" />
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="themeColor" className="block text-xs font-medium text-muted-foreground mb-2">
+                    Color del tema
+                  </label>
+                  <div className="flex flex-wrap items-center gap-3">
                     <input
                       id="themeColor"
                       type="color"
                       value={themeColor || "#6366f1"}
-                      onChange={(e) => setThemeColor(e.target.value)}
-                      className="h-10 w-12 cursor-pointer rounded-lg border border-border shrink-0"
+                      onChange={(e) => handleThemeColorChange(e.target.value)}
+                      className="h-9 w-11 cursor-pointer rounded-lg border border-border/80 bg-surface shrink-0"
                     />
                     <input
                       type="text"
                       value={themeColor}
-                      onChange={(e) => setThemeColor(e.target.value)}
-                      className={inputClass}
+                      onChange={(e) => handleThemeColorChange(e.target.value)}
+                      className="h-9 w-28 rounded-lg border border-border/80 bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30"
                       placeholder="#6366f1"
-                      style={{ minWidth: "120px" }}
                     />
                   </div>
-                  <button
-                    type="submit"
-                    disabled={themeColorLoading}
-                    className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    <Check className="h-4 w-4 shrink-0" aria-hidden />
-                    {themeColorLoading ? "Guardando…" : "Guardar"}
-                  </button>
-                </form>
-              </div>
+                </div>
+                {appearanceSuccess && (
+                  <p className="text-sm text-green-600" role="status">{appearanceSuccess}</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={appearanceLoading || !appearanceDirty}
+                  className="inline-flex min-h-[40px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Check className="h-4 w-4 shrink-0" aria-hidden />
+                  {appearanceLoading ? "Guardando…" : "Guardar apariencia"}
+                </button>
+              </form>
               </div>
             </div>
           </div>

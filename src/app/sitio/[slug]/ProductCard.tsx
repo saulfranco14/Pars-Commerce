@@ -7,6 +7,7 @@ import { MessageCircle, Package, ShoppingCart } from "lucide-react";
 import { addItem } from "@/services/publicCartService";
 import { dispatchCartUpdated } from "@/lib/cartEvents";
 import { useFingerprint } from "@/hooks/useFingerprint";
+import type { ProductPromotionResult } from "@/lib/promotionPrice";
 
 interface ProductCardProps {
   product: {
@@ -16,7 +17,9 @@ interface ProductCardProps {
     description: string | null;
     price: number;
     image_url: string | null;
+    image_urls?: string[];
   };
+  promotion?: ProductPromotionResult | null;
   tenantId: string;
   sitioSlug: string;
   accentColor: string;
@@ -24,14 +27,21 @@ interface ProductCardProps {
   baseUrl?: string;
 }
 
-function buildWhatsAppUrl(phone: string, productName: string, productUrl: string): string {
-  const text = encodeURIComponent(`Hola, me interesa: ${productName}\n${productUrl}`);
+function buildWhatsAppUrl(
+  phone: string,
+  productName: string,
+  productUrl: string,
+): string {
+  const text = encodeURIComponent(
+    `Hola, me interesa: ${productName}\n${productUrl}`,
+  );
   const cleanPhone = phone.replace(/\D/g, "");
   return `https://wa.me/${cleanPhone}?text=${text}`;
 }
 
 export default function ProductCard({
   product,
+  promotion,
   tenantId,
   sitioSlug,
   accentColor,
@@ -43,6 +53,19 @@ export default function ProductCard({
   const [loading, setLoading] = useState(false);
   const productPath = `/sitio/${sitioSlug}/productos/${product.slug || product.id}`;
   const productUrl = baseUrl ? `${baseUrl}${productPath}` : productPath;
+
+  const imageUrls = product.image_urls?.length
+    ? product.image_urls
+    : product.image_url
+      ? [product.image_url]
+      : [];
+  const mainImage = imageUrls[0] ?? null;
+  const displayPrice = promotion ? promotion.finalPrice : Number(product.price);
+  const showOriginalPrice =
+    promotion && promotion.finalPrice < Number(product.price);
+  const badgeText = promotion?.discountPercent
+    ? `-${promotion.discountPercent}%`
+    : (promotion?.badgeLabel ?? null);
 
   const waHref = whatsappPhone
     ? buildWhatsAppUrl(whatsappPhone, product.name, productUrl)
@@ -62,24 +85,34 @@ export default function ProductCard({
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
-      <Link href={`/sitio/${sitioSlug}/productos/${product.slug || product.id}`}>
-        <div className="relative h-48 w-full overflow-hidden bg-gray-100">
-          {product.image_url ? (
+      <Link
+        href={`/sitio/${sitioSlug}/productos/${product.slug || product.id}`}
+      >
+        <div className="relative aspect-square w-full overflow-hidden bg-gray-50">
+          {mainImage ? (
             <img
-              src={product.image_url}
+              src={mainImage}
               alt={product.name}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+              className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <div className="flex h-full items-center justify-center">
               <Package className="h-12 w-12 text-gray-300" />
             </div>
           )}
+          {badgeText && (
+            <div
+              className="absolute left-3 top-3 rounded-md px-2 py-1 text-xs font-bold text-white shadow-md"
+              style={{ backgroundColor: "#dc2626" }}
+            >
+              {badgeText}
+            </div>
+          )}
           <div
             className="absolute right-3 top-3 rounded-lg px-3 py-1 text-sm font-bold text-white shadow-md"
             style={{ backgroundColor: accentColor }}
           >
-            ${Number(product.price).toFixed(2)}
+            ${displayPrice.toFixed(2)}
           </div>
         </div>
         <div className="flex flex-1 flex-col p-4">
@@ -89,6 +122,22 @@ export default function ProductCard({
               {product.description}
             </p>
           )}
+          <div className="mt-2 flex items-center gap-2">
+            {showOriginalPrice ? (
+              <>
+                <span className="font-semibold" style={{ color: accentColor }}>
+                  ${displayPrice.toFixed(2)}
+                </span>
+                <span className="text-sm text-gray-400 line-through">
+                  ${Number(product.price).toFixed(2)}
+                </span>
+              </>
+            ) : (
+              <span className="font-semibold" style={{ color: accentColor }}>
+                ${displayPrice.toFixed(2)}
+              </span>
+            )}
+          </div>
         </div>
       </Link>
       <div className="mx-4 mb-4 flex flex-col gap-2">
@@ -102,7 +151,7 @@ export default function ProductCard({
           <ShoppingCart className="h-4 w-4" />
           {loading ? "Agregando…" : "Agregar al carrito"}
         </button>
-        {waHref ? (
+        {waHref && (
           <a
             href={waHref}
             target="_blank"
@@ -113,10 +162,6 @@ export default function ProductCard({
             <MessageCircle className="h-4 w-4" />
             Consultar por WhatsApp
           </a>
-        ) : (
-          <p className="text-center text-xs text-gray-500">
-            Configura WhatsApp en tu dashboard
-          </p>
         )}
       </div>
     </div>

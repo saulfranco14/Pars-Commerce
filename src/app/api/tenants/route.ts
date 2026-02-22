@@ -21,7 +21,7 @@ export async function GET() {
       tenant_id,
       role_id,
       accepted_at,
-      tenant:tenants(id, name, slug, business_type, logo_url, theme_color, description, public_store_enabled, settings, whatsapp_phone, social_links),
+      tenant:tenants(id, name, slug, business_type, logo_url, theme_color, description, public_store_enabled, settings, whatsapp_phone, social_links, site_template_id),
       role:tenant_roles(id, name, permissions)
     `
     )
@@ -98,10 +98,11 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { name, slug, business_type } = body as {
+  const { name, slug, business_type, site_template_id } = body as {
     name: string;
     slug: string;
     business_type?: string;
+    site_template_id?: string;
   };
 
   if (!name || !slug) {
@@ -118,13 +119,16 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
+  const insertPayload: Record<string, unknown> = {
+    name,
+    slug: normalizedSlug,
+    business_type: business_type ?? null,
+  };
+  if (site_template_id) insertPayload.site_template_id = site_template_id;
+
   const { data: tenant, error: tenantError } = await admin
     .from("tenants")
-    .insert({
-      name,
-      slug: normalizedSlug,
-      business_type: business_type ?? null,
-    })
+    .insert(insertPayload)
     .select("id, name, slug")
     .single();
 
@@ -173,8 +177,10 @@ export async function PATCH(request: Request) {
     tenant_id,
     name,
     description,
+    logo_url,
     theme_color,
     public_store_enabled,
+    site_template_id,
     address,
     settings: settingsPayload,
     monthly_rent,
@@ -185,8 +191,10 @@ export async function PATCH(request: Request) {
     tenant_id: string;
     name?: string;
     description?: string;
+    logo_url?: string | null;
     theme_color?: string;
     public_store_enabled?: boolean;
+    site_template_id?: string | null;
     address?: {
       street?: string;
       city?: string;
@@ -239,10 +247,14 @@ export async function PATCH(request: Request) {
   if (name !== undefined) updates.name = name.trim();
   if (description !== undefined)
     updates.description = description?.trim() ?? null;
+  if (logo_url !== undefined)
+    updates.logo_url = logo_url?.trim() || null;
   if (theme_color !== undefined)
     updates.theme_color = theme_color?.trim() || null;
   if (public_store_enabled !== undefined)
     updates.public_store_enabled = public_store_enabled;
+  if (site_template_id !== undefined)
+    updates.site_template_id = site_template_id || null;
   if (whatsapp_phone !== undefined)
     updates.whatsapp_phone = whatsapp_phone?.trim() ?? null;
   if (social_links !== undefined)
@@ -262,7 +274,7 @@ export async function PATCH(request: Request) {
     .from("tenants")
     .update(updates)
     .eq("id", tenant_id)
-    .select("id, name, slug, description, theme_color, public_store_enabled, settings, whatsapp_phone, social_links")
+    .select("id, name, slug, description, logo_url, theme_color, public_store_enabled, settings, whatsapp_phone, social_links, site_template_id")
     .single();
 
   if (error) {

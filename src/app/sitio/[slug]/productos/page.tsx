@@ -4,10 +4,25 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Package } from "lucide-react";
 import ProductCard from "../ProductCard";
+import { enrichProducts } from "@/lib/enrichProducts";
+import type { PromotionForPrice } from "@/lib/promotionPrice";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ subcatalog_id?: string }>;
+}
+
+function filterActivePromotions(
+  rows: { valid_from?: string | null; valid_until?: string | null }[]
+): unknown[] {
+  const now = new Date();
+  return rows.filter((p) => {
+    const from = p.valid_from ? new Date(p.valid_from) : null;
+    const until = p.valid_until ? new Date(p.valid_until) : null;
+    if (from && from > now) return false;
+    if (until && until < now) return false;
+    return true;
+  });
 }
 
 export default async function ProductosPage({ params, searchParams }: PageProps) {
@@ -29,33 +44,55 @@ export default async function ProductosPage({ params, searchParams }: PageProps)
     notFound();
   }
 
-  const { data: subcatalogs } = await supabase
-    .from("product_subcatalogs")
-    .select("id, name, slug")
-    .eq("tenant_id", tenant.id)
-    .order("name", { ascending: true });
+  const [subcatalogsRes, productsRes, promosRes] = await Promise.all([
+    supabase
+      .from("product_subcatalogs")
+      .select("id, name, slug")
+      .eq("tenant_id", tenant.id)
+      .order("name", { ascending: true }),
+    (() => {
+      let q = supabase
+        .from("products")
+        .select("id, name, slug, description, price, image_url, subcatalog_id")
+        .eq("tenant_id", tenant.id)
+        .eq("is_public", true)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+      if (subcatalog_id) q = q.eq("subcatalog_id", subcatalog_id);
+      return q;
+    })(),
+    supabase
+      .from("promotions")
+      .select("id, type, value, quantity, product_ids, bundle_product_ids, badge_label, valid_from, valid_until")
+      .eq("tenant_id", tenant.id)
+      .order("created_at", { ascending: false }),
+  ]);
 
-  let productsQuery = supabase
-    .from("products")
-    .select("id, name, slug, description, price, image_url, subcatalog_id")
-    .eq("tenant_id", tenant.id)
-    .eq("is_public", true)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false });
+  const subcatalogs = subcatalogsRes.data ?? [];
+  const products = productsRes.data ?? [];
+  const productIds = products.map((p) => p.id);
 
-  if (subcatalog_id) {
-    productsQuery = productsQuery.eq("subcatalog_id", subcatalog_id);
-  }
-
-  const { data: products } = await productsQuery;
-  const list = (products ?? []).map((p) => ({
-    id: p.id,
-    name: p.name,
-    slug: p.slug,
-    description: p.description,
-    price: p.price,
-    image_url: p.image_url,
-  }));
+  const { data: imagesData } =
+    productIds.length > 0
+      ? await supabase
+          .from("product_images")
+          .select("product_id, url, position")
+          .in("product_id", productIds)
+      : { data: [] };
+  const images = imagesData ?? [];
+  const activePromos = filterActivePromotions(promosRes.data ?? []) as PromotionForPrice[];
+  const list = enrichProducts(
+    products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      description: p.description,
+      price: Number(p.price),
+      image_url: p.image_url,
+    })),
+    images,
+    activePromos
+  );
   const accentColor = tenant.theme_color?.trim() || "#6366f1";
 
   return (
@@ -120,6 +157,7 @@ export default async function ProductosPage({ params, searchParams }: PageProps)
             <ProductCard
               key={item.id}
               product={item}
+              promotion={item.promotion}
               tenantId={tenant.id}
               sitioSlug={slug}
               accentColor={accentColor}

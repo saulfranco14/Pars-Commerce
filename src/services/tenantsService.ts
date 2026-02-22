@@ -9,6 +9,7 @@ export async function create(payload: {
   name: string;
   slug: string;
   business_type?: string;
+  site_template_id?: string;
 }): Promise<unknown> {
   const data = await apiFetch("/api/tenants", {
     method: "POST",

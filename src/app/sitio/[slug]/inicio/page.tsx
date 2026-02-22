@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,12 +13,17 @@ import {
   ShoppingCart,
   MessageCircle,
   Package,
+  Tag,
 } from "lucide-react";
 import type {
   SitePageCard,
   SitePagePurchaseStep,
   SitePageFaqItem,
 } from "@/types/tenantSitePages";
+import ProductCard from "../ProductCard";
+import PromotionCard from "../promociones/PromotionCard";
+import { enrichProducts } from "@/lib/enrichProducts";
+import type { PromotionForPrice } from "@/lib/promotionPrice";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -74,13 +80,30 @@ const DEFAULT_PURCHASE_STEPS: SitePagePurchaseStep[] = [
   },
 ];
 
+function filterActivePromotions(
+  rows: { valid_from?: string | null; valid_until?: string | null }[]
+): unknown[] {
+  const now = new Date();
+  return rows.filter((p) => {
+    const from = p.valid_from ? new Date(p.valid_from) : null;
+    const until = p.valid_until ? new Date(p.valid_until) : null;
+    if (from && from > now) return false;
+    if (until && until < now) return false;
+    return true;
+  });
+}
+
 export default async function InicioPage({ params }: PageProps) {
   const { slug } = await params;
+  const headersList = await headers();
+  const host = headersList.get("host") ?? "";
+  const protocol = headersList.get("x-forwarded-proto") === "https" ? "https" : "http";
+  const baseUrl = host ? `${protocol}://${host}` : "";
   const supabase = createAdminClient();
 
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
-    .select("id, name, description, theme_color")
+    .select("id, name, description, theme_color, whatsapp_phone")
     .eq("slug", slug)
     .single();
 
@@ -88,13 +111,63 @@ export default async function InicioPage({ params }: PageProps) {
     notFound();
   }
 
-  const { data: page } = await supabase
-    .from("tenant_site_pages")
-    .select("content")
-    .eq("tenant_id", tenant.id)
-    .eq("slug", "inicio")
-    .eq("is_enabled", true)
-    .single();
+  const [pageRes, productsRes, promosRes] = await Promise.all([
+    supabase
+      .from("tenant_site_pages")
+      .select("content")
+      .eq("tenant_id", tenant.id)
+      .eq("slug", "inicio")
+      .eq("is_enabled", true)
+      .single(),
+    supabase
+      .from("products")
+      .select("id, name, slug, description, price, image_url, subcatalog_id")
+      .eq("tenant_id", tenant.id)
+      .eq("is_public", true)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(6),
+    supabase
+      .from("promotions")
+      .select("id, name, slug, type, value, quantity, product_ids, bundle_product_ids, badge_label, valid_from, valid_until, image_url")
+      .eq("tenant_id", tenant.id)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  const products = productsRes.data ?? [];
+  const productIds = products.map((p) => p.id);
+  const { data: imagesData } =
+    productIds.length > 0
+      ? await supabase
+          .from("product_images")
+          .select("product_id, url, position")
+          .in("product_id", productIds)
+      : { data: [] };
+  const images = imagesData ?? [];
+  const activePromos = filterActivePromotions(promosRes.data ?? []) as (typeof promosRes.data)[number][];
+  const promosForPrice: PromotionForPrice[] = (activePromos ?? []).map((p) => ({
+    id: p.id,
+    type: p.type,
+    value: Number(p.value),
+    quantity: p.quantity,
+    product_ids: p.product_ids,
+    bundle_product_ids: p.bundle_product_ids,
+    badge_label: p.badge_label,
+  }));
+  const featuredProducts = enrichProducts(
+    products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      description: p.description,
+      price: Number(p.price),
+      image_url: p.image_url,
+    })),
+    images,
+    promosForPrice
+  );
+
+  const { data: page } = pageRes;
 
   const rawContent = (page?.content as Record<string, unknown> | null) ?? {};
   const cards =
@@ -175,6 +248,86 @@ export default async function InicioPage({ params }: PageProps) {
           </div>
         </div>
       </section>
+
+      {featuredProducts.length > 0 && (
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Productos destacados
+            </h2>
+            <Link
+              href={`/sitio/${slug}/productos`}
+              className="inline-flex items-center gap-1 text-sm font-medium transition-colors hover:opacity-80"
+              style={{ color: accentColor }}
+            >
+              Ver todos <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3">
+            {featuredProducts.map((item) => (
+              <div
+                key={item.id}
+                className="min-w-[85vw] snap-center sm:min-w-0"
+              >
+                <ProductCard
+                  product={item}
+                  promotion={item.promotion}
+                  tenantId={tenant.id}
+                  sitioSlug={slug}
+                  accentColor={accentColor}
+                  whatsappPhone={tenant.whatsapp_phone ?? null}
+                  baseUrl={baseUrl}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {activePromos.length > 0 && (
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+              <Tag className="h-6 w-6" style={{ color: accentColor }} />
+              Promociones vigentes
+            </h2>
+            <Link
+              href={`/sitio/${slug}/promociones`}
+              className="inline-flex items-center gap-1 text-sm font-medium transition-colors hover:opacity-80"
+              style={{ color: accentColor }}
+            >
+              Ver todas <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {activePromos.slice(0, 3).map((p) => {
+              const productIds = [...(p.product_ids ?? []), ...(p.bundle_product_ids ?? [])].filter(Boolean);
+              const hasAddable = productIds.length > 0 && ["percentage", "fixed_amount", "bundle_price", "fixed_price"].includes(p.type);
+              return (
+                <PromotionCard
+                  key={p.id}
+                  promotion={{
+                    id: p.id,
+                    name: p.name,
+                    slug: p.slug,
+                    type: p.type,
+                    value: Number(p.value),
+                    quantity: p.quantity,
+                    min_amount: p.min_amount,
+                    valid_until: p.valid_until,
+                    image_url: p.image_url,
+                    badge_label: p.badge_label,
+                  }}
+                  tenantId={tenant.id}
+                  sitioSlug={slug}
+                  accentColor={accentColor}
+                  hasAddableProducts={hasAddable}
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Welcome text */}
       {content.welcome_text && (
