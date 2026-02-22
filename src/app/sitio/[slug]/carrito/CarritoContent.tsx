@@ -151,11 +151,15 @@ export default function CarritoContent({
         <div className="space-y-4">
           {items.map((item) => {
             const product = Array.isArray(item.product) ? item.product[0] : item.product;
+            const promotion = Array.isArray(item.promotion) ? item.promotion[0] : item.promotion;
+            const promoName = promotion?.name ?? null;
             const name = product?.name ?? "Producto";
             const imageUrl = product?.image_url ?? null;
             const price = Number(item.price_snapshot);
             const qty = item.quantity;
-            const itemSubtotal = price * qty;
+            const qtyFree = item.quantity_free ?? 0;
+            const paidQty = qty - qtyFree;
+            const itemSubtotal = paidQty * price;
             return (
               <div
                 key={item.id}
@@ -172,13 +176,22 @@ export default function CarritoContent({
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="font-semibold text-gray-900 line-clamp-2">{name}</h3>
-                  {item.promotion_id && (
+                  {(item.promotion_id || qtyFree > 0) && (
                     <span className="mt-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                      Promoción
+                      {promoName ?? "Promoción"}
                     </span>
                   )}
                   <p className="mt-2 text-base font-bold tabular-nums" style={{ color: accentColor }}>
-                    ${price.toFixed(2)} × {qty} = ${itemSubtotal.toFixed(2)}
+                    {qtyFree > 0 ? (
+                      <>
+                        ${price.toFixed(2)} × {paidQty} {qtyFree > 0 && `+ ${qtyFree} gratis`} = $
+                        {itemSubtotal.toFixed(2)}
+                      </>
+                    ) : (
+                      <>
+                        ${price.toFixed(2)} × {qty} = ${itemSubtotal.toFixed(2)}
+                      </>
+                    )}
                   </p>
                   <div className="mt-3 flex min-h-[44px] items-center gap-1">
                     <button

@@ -76,7 +76,7 @@ export async function POST(request: Request) {
 
   const { data: cartItems } = await admin
     .from("public_cart_items")
-    .select("product_id, quantity, price_snapshot, promotion_id")
+    .select("product_id, quantity, quantity_free, price_snapshot, promotion_id")
     .eq("cart_id", cart_id);
 
   if (!cartItems || cartItems.length === 0) {
@@ -86,10 +86,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const subtotal = cartItems.reduce(
-    (sum, i) => sum + Number(i.price_snapshot) * i.quantity,
-    0
-  );
+  const subtotal = cartItems.reduce((sum, i) => {
+    const qtyFree = i.quantity_free ?? 0;
+    const paidQty = i.quantity - qtyFree;
+    return sum + Number(i.price_snapshot) * paidQty;
+  }, 0);
   const totalAmount = subtotal;
 
   const { data: order, error: orderError } = await admin
@@ -117,12 +118,15 @@ export async function POST(request: Request) {
 
   for (const item of cartItems) {
     const qty = item.quantity;
+    const qtyFree = item.quantity_free ?? 0;
+    const paidQty = qty - qtyFree;
     const unitPrice = Number(item.price_snapshot);
-    const totalPrice = unitPrice * qty;
+    const totalPrice = unitPrice * paidQty;
     await admin.from("order_items").insert({
       order_id: order.id,
       product_id: item.product_id,
       quantity: qty,
+      quantity_free: qtyFree,
       unit_price: unitPrice,
       subtotal: totalPrice,
       promotion_id: item.promotion_id ?? null,

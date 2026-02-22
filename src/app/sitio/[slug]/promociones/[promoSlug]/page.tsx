@@ -21,6 +21,7 @@ function formatPromoValue(type: string, value: number, quantity?: number | null,
   if (type === "fixed_amount") return `$${val.toFixed(2)} de descuento`;
   if (type === "bundle_price") return quantity ? `${quantity} por $${val.toFixed(2)}` : `$${val.toFixed(2)}`;
   if (type === "fixed_price") return `Precio especial $${val.toFixed(2)}`;
+  if (type === "buy_x_get_y_free") return "Compra X, lleva Y gratis";
   if (type === "event_badge") return badgeLabel || "Promoción";
   return `$${val.toFixed(2)}`;
 }
@@ -41,7 +42,7 @@ export default async function PromocionDetallePage({ params }: PageProps) {
 
   const { data: bySlug } = await supabase
     .from("promotions")
-    .select("id, name, slug, type, value, quantity, min_amount, valid_from, valid_until, image_url, description, badge_label, product_ids, subcatalog_ids, bundle_product_ids")
+    .select("id, name, slug, type, value, quantity, min_amount, valid_from, valid_until, image_url, description, badge_label, product_ids, subcatalog_ids, bundle_product_ids, trigger_product_ids")
     .eq("tenant_id", tenant.id)
     .eq("slug", promoSlug)
     .maybeSingle();
@@ -50,7 +51,7 @@ export default async function PromocionDetallePage({ params }: PageProps) {
   if (!promotion) {
     const { data: byId } = await supabase
       .from("promotions")
-      .select("id, name, slug, type, value, quantity, min_amount, valid_from, valid_until, image_url, description, badge_label, product_ids, subcatalog_ids, bundle_product_ids")
+      .select("id, name, slug, type, value, quantity, min_amount, valid_from, valid_until, image_url, description, badge_label, product_ids, subcatalog_ids, bundle_product_ids, trigger_product_ids")
       .eq("tenant_id", tenant.id)
       .eq("id", promoSlug)
       .maybeSingle();
@@ -69,6 +70,7 @@ export default async function PromocionDetallePage({ params }: PageProps) {
   const allProductIds = [
     ...(promotion.product_ids ?? []),
     ...(promotion.bundle_product_ids ?? []),
+    ...(promotion.trigger_product_ids ?? []),
   ].filter(Boolean);
   const uniqueProductIds = [...new Set(allProductIds)];
 
@@ -119,7 +121,11 @@ export default async function PromocionDetallePage({ params }: PageProps) {
 
   const products = uniqueProductIds.map((id) => productsMap[id]).filter(Boolean);
   const subcatalogs = subcatalogIds.map((id) => subcatalogsMap[id]).filter(Boolean);
-  const hasAddableProducts = products.length > 0 && ["percentage", "fixed_amount", "bundle_price", "fixed_price"].includes(promotion.type);
+  const hasAddableProducts =
+    products.length > 0 &&
+    ["percentage", "fixed_amount", "bundle_price", "fixed_price", "buy_x_get_y_free"].includes(
+      promotion.type
+    );
 
   return (
     <div className="space-y-6">
