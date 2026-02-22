@@ -97,6 +97,12 @@ export async function POST(request: Request) {
     subcatalog_ids?: string[];
     quantity?: number;
     bundle_product_ids?: string[];
+    apply_automatically?: boolean;
+    priority?: number;
+    trigger_product_ids?: string[];
+    trigger_quantity?: number;
+    free_quantity_per_trigger?: number;
+    free_quantity_max?: number;
   };
   try {
     body = await request.json();
@@ -120,19 +126,32 @@ export async function POST(request: Request) {
     subcatalog_ids,
     quantity,
     bundle_product_ids,
+    apply_automatically,
+    priority,
+    trigger_product_ids,
+    trigger_quantity,
+    free_quantity_per_trigger,
+    free_quantity_max,
   } = body;
 
-  if (!tenant_id || !name || !type || value == null || value < 0) {
+  if (!tenant_id || !name || !type) {
     return NextResponse.json(
-      { error: "tenant_id, name, type and value (>= 0) are required" },
+      { error: "tenant_id, name and type are required" },
       { status: 400 },
     );
   }
 
-  const validTypes = ["percentage", "fixed_amount", "bundle_price", "fixed_price", "event_badge"];
+  if (type !== "event_badge" && type !== "buy_x_get_y_free" && (value == null || value < 0)) {
+    return NextResponse.json(
+      { error: "value (>= 0) is required for this promotion type" },
+      { status: 400 },
+    );
+  }
+
+  const validTypes = ["percentage", "fixed_amount", "bundle_price", "fixed_price", "event_badge", "buy_x_get_y_free"];
   if (!validTypes.includes(type)) {
     return NextResponse.json(
-      { error: "type must be one of: percentage, fixed_amount, bundle_price, fixed_price, event_badge" },
+      { error: "type must be one of: percentage, fixed_amount, bundle_price, fixed_price, event_badge, buy_x_get_y_free" },
       { status: 400 },
     );
   }
@@ -163,25 +182,33 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const insertData: Record<string, unknown> = {
+    tenant_id,
+    name: name.trim(),
+    slug: derivedSlug || undefined,
+    type,
+    value: type === "buy_x_get_y_free" ? 0 : value,
+    min_amount: min_amount ?? null,
+    product_ids: product_ids?.length ? product_ids : null,
+    valid_from: valid_from || null,
+    valid_until: valid_until || null,
+    image_url: image_url?.trim() || null,
+    description: description?.trim() || null,
+    badge_label: badge_label?.trim() || null,
+    subcatalog_ids: subcatalog_ids?.length ? subcatalog_ids : null,
+    quantity: quantity ?? null,
+    bundle_product_ids: bundle_product_ids?.length ? bundle_product_ids : null,
+    apply_automatically: apply_automatically ?? false,
+    priority: priority ?? 100,
+    trigger_product_ids: trigger_product_ids?.length ? trigger_product_ids : null,
+    trigger_quantity: trigger_quantity ?? 1,
+    free_quantity_per_trigger: free_quantity_per_trigger ?? 1,
+    free_quantity_max: free_quantity_max ?? null,
+  };
+
   const { data: promotion, error } = await admin
     .from("promotions")
-    .insert({
-      tenant_id,
-      name: name.trim(),
-      slug: derivedSlug || undefined,
-      type,
-      value,
-      min_amount: min_amount ?? null,
-      product_ids: product_ids?.length ? product_ids : null,
-      valid_from: valid_from || null,
-      valid_until: valid_until || null,
-      image_url: image_url?.trim() || null,
-      description: description?.trim() || null,
-      badge_label: badge_label?.trim() || null,
-      subcatalog_ids: subcatalog_ids?.length ? subcatalog_ids : null,
-      quantity: quantity ?? null,
-      bundle_product_ids: bundle_product_ids?.length ? bundle_product_ids : null,
-    })
+    .insert(insertData)
     .select()
     .single();
 
@@ -219,6 +246,12 @@ export async function PATCH(request: Request) {
     subcatalog_ids?: string[] | null;
     quantity?: number | null;
     bundle_product_ids?: string[] | null;
+    apply_automatically?: boolean;
+    priority?: number;
+    trigger_product_ids?: string[] | null;
+    trigger_quantity?: number;
+    free_quantity_per_trigger?: number;
+    free_quantity_max?: number | null;
   };
   try {
     body = await request.json();
@@ -296,6 +329,17 @@ export async function PATCH(request: Request) {
     updateData.quantity = updates.quantity;
   if (updates.bundle_product_ids !== undefined)
     updateData.bundle_product_ids = updates.bundle_product_ids;
+  if (updates.apply_automatically !== undefined)
+    updateData.apply_automatically = updates.apply_automatically;
+  if (updates.priority !== undefined) updateData.priority = updates.priority;
+  if (updates.trigger_product_ids !== undefined)
+    updateData.trigger_product_ids = updates.trigger_product_ids;
+  if (updates.trigger_quantity !== undefined)
+    updateData.trigger_quantity = updates.trigger_quantity;
+  if (updates.free_quantity_per_trigger !== undefined)
+    updateData.free_quantity_per_trigger = updates.free_quantity_per_trigger;
+  if (updates.free_quantity_max !== undefined)
+    updateData.free_quantity_max = updates.free_quantity_max;
 
   const { data: updated, error } = await admin
     .from("promotions")

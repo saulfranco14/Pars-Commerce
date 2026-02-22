@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 
   const { data: rawPromotions, error } = await supabase
     .from("promotions")
-    .select("id, name, slug, type, value, min_amount, product_ids, valid_from, valid_until, image_url, description, badge_label, subcatalog_ids, quantity, bundle_product_ids")
+    .select("id, name, slug, type, value, min_amount, product_ids, valid_from, valid_until, image_url, description, badge_label, subcatalog_ids, quantity, bundle_product_ids, trigger_product_ids, trigger_quantity, free_quantity_per_trigger, free_quantity_max")
     .eq("tenant_id", tenantId)
     .order("created_at", { ascending: false });
 
@@ -55,7 +55,8 @@ export async function GET(request: Request) {
   const allProductIds = active.flatMap((p) => {
     const ids = p.product_ids ?? [];
     const bundleIds = p.bundle_product_ids ?? [];
-    return [...ids, ...bundleIds];
+    const triggerIds = p.trigger_product_ids ?? [];
+    return [...ids, ...bundleIds, ...triggerIds];
   }).filter(Boolean);
   const uniqueIds = [...new Set(allProductIds)];
 
@@ -89,7 +90,11 @@ export async function GET(request: Request) {
   }
 
   const promotions = active.map((p) => {
-    const productIds = [...(p.product_ids ?? []), ...(p.bundle_product_ids ?? [])].filter(Boolean);
+    const productIds = [
+      ...(p.product_ids ?? []),
+      ...(p.bundle_product_ids ?? []),
+      ...(p.trigger_product_ids ?? []),
+    ].filter(Boolean);
     const uniqueProductIds = [...new Set(productIds)];
     return {
       id: p.id,
@@ -107,6 +112,10 @@ export async function GET(request: Request) {
       quantity: p.quantity,
       bundle_product_ids: p.bundle_product_ids ?? [],
       product_ids: p.product_ids ?? [],
+      trigger_product_ids: p.trigger_product_ids ?? [],
+      trigger_quantity: p.trigger_quantity ?? 1,
+      free_quantity_per_trigger: p.free_quantity_per_trigger ?? 1,
+      free_quantity_max: p.free_quantity_max ?? null,
       image_urls: imagesByPromo[p.id] ?? [],
       products: uniqueProductIds.map((id: string) => productsMap[id]).filter(Boolean),
     };

@@ -1,6 +1,12 @@
 import { apiFetch } from "@/services/apiFetch";
 
-export type PromotionType = "percentage" | "fixed_amount" | "bundle_price" | "fixed_price" | "event_badge";
+export type PromotionType =
+  | "percentage"
+  | "fixed_amount"
+  | "bundle_price"
+  | "fixed_price"
+  | "event_badge"
+  | "buy_x_get_y_free";
 
 export interface Promotion {
   id: string;
@@ -19,6 +25,12 @@ export interface Promotion {
   subcatalog_ids: string[] | null;
   quantity: number | null;
   bundle_product_ids: string[] | null;
+  apply_automatically?: boolean;
+  priority?: number;
+  trigger_product_ids?: string[] | null;
+  trigger_quantity?: number;
+  free_quantity_per_trigger?: number;
+  free_quantity_max?: number | null;
   created_at: string;
 }
 
@@ -26,7 +38,7 @@ export interface CreatePromotionPayload {
   tenant_id: string;
   name: string;
   type: PromotionType;
-  value: number;
+  value?: number;
   min_amount?: number;
   product_ids?: string[];
   valid_from?: string;
@@ -38,6 +50,12 @@ export interface CreatePromotionPayload {
   subcatalog_ids?: string[];
   quantity?: number;
   bundle_product_ids?: string[];
+  apply_automatically?: boolean;
+  priority?: number;
+  trigger_product_ids?: string[];
+  trigger_quantity?: number;
+  free_quantity_per_trigger?: number;
+  free_quantity_max?: number;
 }
 
 export async function list(

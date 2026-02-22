@@ -52,7 +52,13 @@ export default function PromocionesPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [promotionToDelete, setPromotionToDelete] = useState<Promotion | null>(null);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [selectedTriggerProductIds, setSelectedTriggerProductIds] = useState<string[]>([]);
   const [selectedSubcatalogIds, setSelectedSubcatalogIds] = useState<string[]>([]);
+  const [applyAutomatically, setApplyAutomatically] = useState(false);
+  const [priority, setPriority] = useState("100");
+  const [triggerQuantity, setTriggerQuantity] = useState("1");
+  const [freeQuantityPerTrigger, setFreeQuantityPerTrigger] = useState("1");
+  const [freeQuantityMax, setFreeQuantityMax] = useState("");
 
   const key = activeTenant ? promotionsKey(activeTenant.id) : null;
   const productsKeyValue = activeTenant ? productsKey(activeTenant.id) : null;
@@ -78,7 +84,7 @@ export default function PromocionesPage() {
         tenant_id: activeTenant.id,
         name: name.trim(),
         type,
-        value: parseFloat(value) || 0,
+        value: type !== "buy_x_get_y_free" && type !== "event_badge" ? parseFloat(value) || 0 : 0,
       };
       if (minAmount.trim()) payload.min_amount = parseFloat(minAmount);
       if (validFrom.trim()) payload.valid_from = validFrom;
@@ -86,13 +92,30 @@ export default function PromocionesPage() {
       if (type === "bundle_price") {
         if (selectedProductIds.length > 0) payload.bundle_product_ids = selectedProductIds;
         if (quantity.trim()) payload.quantity = parseInt(quantity, 10);
+      } else if (type === "buy_x_get_y_free") {
+        if (selectedTriggerProductIds.length > 0) payload.trigger_product_ids = selectedTriggerProductIds;
+        if (selectedProductIds.length > 0) payload.product_ids = selectedProductIds;
+        if (triggerQuantity.trim()) payload.trigger_quantity = parseInt(triggerQuantity, 10) || 1;
+        if (freeQuantityPerTrigger.trim()) payload.free_quantity_per_trigger = parseInt(freeQuantityPerTrigger, 10) || 1;
+        const maxVal = parseInt(freeQuantityMax, 10);
+        if (freeQuantityMax.trim() && !isNaN(maxVal)) payload.free_quantity_max = maxVal;
       } else if (selectedProductIds.length > 0) {
         payload.product_ids = selectedProductIds;
+      }
+      if ((type === "percentage" || type === "fixed_amount" || type === "fixed_price")) {
+        payload.apply_automatically = applyAutomatically;
+        payload.priority = parseInt(priority, 10) || 100;
       }
       if (imageUrl.trim()) payload.image_url = imageUrl.trim();
       if (description.trim()) payload.description = description.trim();
       if (badgeLabel.trim()) payload.badge_label = badgeLabel.trim();
-      if (selectedSubcatalogIds.length > 0) payload.subcatalog_ids = selectedSubcatalogIds;
+      if (selectedSubcatalogIds.length > 0 && type !== "buy_x_get_y_free") payload.subcatalog_ids = selectedSubcatalogIds;
+
+      if (type === "buy_x_get_y_free" && (selectedTriggerProductIds.length === 0 || selectedProductIds.length === 0)) {
+        setError("Compra X lleva Y gratis requiere productos trigger y productos a regalar");
+        setLoading(false);
+        return;
+      }
 
       await createPromotion(payload);
       setName("");
@@ -105,7 +128,13 @@ export default function PromocionesPage() {
       setQuantity("");
       setImageUrl("");
       setSelectedProductIds([]);
+      setSelectedTriggerProductIds([]);
       setSelectedSubcatalogIds([]);
+      setApplyAutomatically(false);
+      setPriority("100");
+      setTriggerQuantity("1");
+      setFreeQuantityPerTrigger("1");
+      setFreeQuantityMax("");
       setShowForm(false);
       await mutate();
     } catch (e) {
@@ -137,6 +166,7 @@ export default function PromocionesPage() {
     else if (p.type === "fixed_amount") desc = `$${val.toFixed(2)} de descuento`;
     else if (p.type === "bundle_price") desc = p.quantity ? `${p.quantity} por $${val.toFixed(2)}` : `$${val.toFixed(2)}`;
     else if (p.type === "fixed_price") desc = `Precio especial $${val.toFixed(2)}`;
+    else if (p.type === "buy_x_get_y_free") desc = "Compra X, lleva Y gratis";
     else if (p.type === "event_badge") desc = p.badge_label || "Promoción";
     else desc = `$${val.toFixed(2)}`;
     const min = p.min_amount ? ` Compra mínima $${Number(p.min_amount).toFixed(2)}.` : "";
@@ -236,10 +266,11 @@ export default function PromocionesPage() {
                 <option value="fixed_amount">Monto fijo</option>
                 <option value="bundle_price">X por $Y (pack)</option>
                 <option value="fixed_price">Precio especial</option>
+                <option value="buy_x_get_y_free">Compra X, lleva Y gratis</option>
                 <option value="event_badge">Etiqueta de evento</option>
               </select>
             </div>
-            {type !== "event_badge" && (
+            {type !== "event_badge" && type !== "buy_x_get_y_free" && (
               <div>
                 <label className="block text-xs font-medium text-muted-foreground">
                   Valor {type === "percentage" ? "(%)" : "($)"}
@@ -268,6 +299,36 @@ export default function PromocionesPage() {
                   placeholder="Ej. BUEN-FIN"
                 />
               </div>
+            )}
+            {type === "buy_x_get_y_free" && (
+              <>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground">
+                    Cantidad trigger (ej. 1 Vodka)
+                  </label>
+                  <input
+                    type="number"
+                    value={triggerQuantity}
+                    onChange={(e) => setTriggerQuantity(e.target.value)}
+                    min={1}
+                    className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm"
+                    placeholder="1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground">
+                    Unidades gratis por trigger
+                  </label>
+                  <input
+                    type="number"
+                    value={freeQuantityPerTrigger}
+                    onChange={(e) => setFreeQuantityPerTrigger(e.target.value)}
+                    min={1}
+                    className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm"
+                    placeholder="1"
+                  />
+                </div>
+              </>
             )}
             {type === "bundle_price" && (
               <div>
@@ -299,6 +360,30 @@ export default function PromocionesPage() {
               placeholder="0"
             />
           </div>
+          {(type === "percentage" || type === "fixed_amount" || type === "fixed_price") && (
+          <div className="flex items-center gap-4">
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={applyAutomatically}
+                onChange={(e) => setApplyAutomatically(e.target.checked)}
+                className="h-4 w-4 rounded border-border"
+              />
+              <span className="text-sm">Aplicar al agregar desde catálogo</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-muted-foreground">Prioridad</label>
+              <input
+                type="number"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                min={0}
+                className="input-form w-20 min-h-[36px] rounded-lg border px-2 py-1 text-sm"
+              />
+              <span className="text-xs text-muted-foreground">(menor = más prioridad)</span>
+            </div>
+          </div>
+          )}
           {(type === "bundle_price" || type === "fixed_price" || type === "percentage" || type === "fixed_amount") && (
           <div>
             <label className="block text-xs font-medium text-muted-foreground">
@@ -336,7 +421,81 @@ export default function PromocionesPage() {
             </div>
           </div>
           )}
-          {subcatalogs.length > 0 && type !== "event_badge" && (
+          {type === "buy_x_get_y_free" && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground">
+                Productos que debe comprar (trigger)
+              </label>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Al comprar estos productos, obtiene los regalos.
+              </p>
+              <div className="mt-2 max-h-32 overflow-y-auto rounded-lg border border-border p-2 space-y-1">
+                {products.map((prod) => (
+                  <label
+                    key={prod.id}
+                    className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-border-soft"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedTriggerProductIds.includes(prod.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedTriggerProductIds((prev) => [...prev, prod.id]);
+                        } else {
+                          setSelectedTriggerProductIds((prev) => prev.filter((id) => id !== prod.id));
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm">{prod.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground">
+                Productos que se regalan
+              </label>
+              <div className="mt-2 max-h-32 overflow-y-auto rounded-lg border border-border p-2 space-y-1">
+                {products.map((prod) => (
+                  <label
+                    key={prod.id}
+                    className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-border-soft"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedProductIds.includes(prod.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedProductIds((prev) => [...prev, prod.id]);
+                        } else {
+                          setSelectedProductIds((prev) => prev.filter((id) => id !== prod.id));
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm">{prod.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground">
+                Límite de unidades gratis (opcional)
+              </label>
+              <input
+                type="number"
+                value={freeQuantityMax}
+                onChange={(e) => setFreeQuantityMax(e.target.value)}
+                min={1}
+                className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm"
+                placeholder="Sin límite"
+              />
+            </div>
+          </div>
+          )}
+          {subcatalogs.length > 0 && type !== "event_badge" && type !== "buy_x_get_y_free" && (
             <div>
               <label className="block text-xs font-medium text-muted-foreground">
                 Subcatálogos aplicables (opcional)
@@ -429,9 +588,9 @@ export default function PromocionesPage() {
                     Esta promoción ya expiró y no se mostrará en tu sitio.
                   </p>
                 )}
-                {((p.product_ids?.length ?? 0) + (p.bundle_product_ids?.length ?? 0)) > 0 && (
+                {((p.product_ids?.length ?? 0) + (p.bundle_product_ids?.length ?? 0) + (p.trigger_product_ids?.length ?? 0)) > 0 && (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {((p.product_ids?.length ?? 0) + (p.bundle_product_ids?.length ?? 0))} producto{((p.product_ids?.length ?? 0) + (p.bundle_product_ids?.length ?? 0)) !== 1 ? "s" : ""} aplicable{((p.product_ids?.length ?? 0) + (p.bundle_product_ids?.length ?? 0)) !== 1 ? "s" : ""}
+                    {((p.product_ids?.length ?? 0) + (p.bundle_product_ids?.length ?? 0) + (p.trigger_product_ids?.length ?? 0))} producto{((p.product_ids?.length ?? 0) + (p.bundle_product_ids?.length ?? 0) + (p.trigger_product_ids?.length ?? 0)) !== 1 ? "s" : ""} aplicable{((p.product_ids?.length ?? 0) + (p.bundle_product_ids?.length ?? 0) + (p.trigger_product_ids?.length ?? 0)) !== 1 ? "s" : ""}
                   </p>
                 )}
               </div>

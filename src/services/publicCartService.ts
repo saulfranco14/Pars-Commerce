@@ -2,6 +2,7 @@ export interface PublicCartItem {
   id: string;
   product_id: string;
   quantity: number;
+  quantity_free?: number;
   price_snapshot: number;
   promotion_id?: string | null;
   product?: {
@@ -10,6 +11,7 @@ export interface PublicCartItem {
     slug: string | null;
     image_url: string | null;
   };
+  promotion?: { name: string } | { name: string }[];
 }
 
 export interface PublicCartResponse {
