@@ -14,13 +14,14 @@ export default function Icon() {
           alignItems: "center",
           justifyContent: "center",
           background: "linear-gradient(135deg, #ec4899 0%, #db2777 100%)",
-          borderRadius: "8px",
-          fontSize: 20,
+          borderRadius: "50%",
+          fontSize: 14,
           fontWeight: 700,
           color: "white",
+          fontFamily: "sans-serif",
         }}
       >
-        P
+        PC
       </div>
     ),
     { ...size }
