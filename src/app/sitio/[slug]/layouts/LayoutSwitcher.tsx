@@ -37,12 +37,14 @@ export function LayoutSwitcher({
     LAYOUT_MAP[layoutVariant] ?? ClassicLayout;
 
   return (
-    <LayoutComponent
-      tenant={tenant}
-      navPages={navPages}
-      accentColor={accentColor}
-    >
-      {children}
-    </LayoutComponent>
+    <div className="min-w-0 overflow-x-hidden">
+      <LayoutComponent
+        tenant={tenant}
+        navPages={navPages}
+        accentColor={accentColor}
+      >
+        {children}
+      </LayoutComponent>
+    </div>
   );
 }

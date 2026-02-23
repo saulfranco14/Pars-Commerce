@@ -7,6 +7,13 @@ import { updateContent } from "@/services/tenantSitePagesService";
 import { SiteContentInicioTab } from "./SiteContentInicioTab";
 import { SiteContentNosotrosTab } from "./SiteContentNosotrosTab";
 import { SiteContentContactoTab } from "./SiteContentContactoTab";
+import { FilterTabs } from "@/components/ui/FilterTabs";
+
+const CONTENT_TABS = [
+  { value: "inicio", label: "Inicio" },
+  { value: "nosotros", label: "Nosotros" },
+  { value: "contacto", label: "Contacto" },
+] as const;
 
 type SectionSlug = "inicio" | "nosotros" | "contacto";
 
@@ -36,6 +43,7 @@ export function SiteContentForm({
   onContentSaved,
   embedded = false,
 }: SiteContentFormProps) {
+  const [contentTab, setContentTab] = useState<SectionSlug>("inicio");
   const [expanded, setExpanded] = useState<SectionSlug | null>("inicio");
   const [inicio, setInicio] = useState<SitePageContent>({});
   const [nosotros, setNosotros] = useState<SitePageContent>({});
@@ -68,26 +76,90 @@ export function SiteContentForm({
     }
   }
 
+  if (embedded) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Edita el contenido de cada página de tu sitio público.
+        </p>
+
+        {error && (
+          <div
+            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
+            role="alert"
+          >
+            {error}
+          </div>
+        )}
+        {success && (
+          <div
+            className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700"
+            role="status"
+          >
+            {success}
+          </div>
+        )}
+
+        <FilterTabs
+          tabs={CONTENT_TABS}
+          activeValue={contentTab}
+          onTabChange={(v) => setContentTab(v as SectionSlug)}
+          ariaLabel="Páginas de contenido"
+        />
+
+        <div className="pt-1">
+          {contentTab === "inicio" && (
+            <SiteContentInicioTab
+              content={inicio}
+              onChange={setInicio}
+              onSave={() => handleSave("inicio", inicio)}
+              loading={loading === "inicio"}
+              narrow
+            />
+          )}
+          {contentTab === "nosotros" && (
+            <SiteContentNosotrosTab
+              content={nosotros}
+              onChange={setNosotros}
+              onSave={() => handleSave("nosotros", nosotros)}
+              loading={loading === "nosotros"}
+            />
+          )}
+          {contentTab === "contacto" && (
+            <SiteContentContactoTab
+              content={contacto}
+              onChange={setContacto}
+              onSave={() => handleSave("contacto", contacto)}
+              loading={loading === "contacto"}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={embedded ? "mt-4" : "mt-6 rounded-lg border border-border bg-surface-raised p-4"}>
-      {!embedded && (
-        <>
-          <h2 className="text-sm font-medium text-foreground">
-            Contenido del sitio
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Edita el contenido que se muestra en cada sección de tu sitio público.
-          </p>
-        </>
-      )}
+    <div className="mt-6 rounded-lg border border-border bg-surface-raised p-4">
+      <h2 className="text-sm font-medium text-foreground">
+        Contenido del sitio
+      </h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Edita el contenido que se muestra en cada sección de tu sitio público.
+      </p>
 
       {error && (
-        <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+        <div
+          className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
+          role="alert"
+        >
           {error}
         </div>
       )}
       {success && (
-        <div className="mt-3 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700" role="status">
+        <div
+          className="mt-3 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700"
+          role="status"
+        >
           {success}
         </div>
       )}
@@ -107,9 +179,15 @@ export function SiteContentForm({
               >
                 {label}
                 {isExpanded ? (
-                  <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                  <ChevronUp
+                    className="h-4 w-4 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
                 ) : (
-                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                  <ChevronDown
+                    className="h-4 w-4 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
                 )}
               </button>
               {isExpanded && (
@@ -120,6 +198,7 @@ export function SiteContentForm({
                       onChange={setInicio}
                       onSave={() => handleSave("inicio", inicio)}
                       loading={loading === "inicio"}
+                      narrow={false}
                     />
                   )}
                   {id === "nosotros" && (
@@ -145,15 +224,17 @@ export function SiteContentForm({
         })}
       </div>
 
-      <a
-        href={`/sitio/${tenantSlug}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-6 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-      >
-        <ExternalLink className="h-4 w-4" aria-hidden />
-        Ver cómo se ve el sitio
-      </a>
+      {!embedded && (
+        <a
+          href={`/sitio/${tenantSlug}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-6 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+        >
+          <ExternalLink className="h-4 w-4" aria-hidden />
+          Ver cómo se ve el sitio
+        </a>
+      )}
     </div>
   );
 }

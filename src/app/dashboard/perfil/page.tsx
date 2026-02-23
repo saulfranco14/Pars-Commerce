@@ -55,7 +55,7 @@ export default function PerfilPage() {
 
   return (
     <div className="w-full mx-auto flex min-h-0 max-w-5xl flex-1 flex-col overflow-hidden">
-      <div className="shrink-0 border-b border-border pb-4">
+      <div className="shrink-0 pb-4">
         <Link
           href="/dashboard"
           className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import useSWR from "swr";
 import Link from "next/link";
-import { Globe, MessageCircle, FileText, Check, ChevronDown, ChevronUp, Tag, ArrowRight, Palette } from "lucide-react";
+import { ArrowRight, Check, Save, Settings, Globe, FileText, Tag } from "lucide-react";
 import { useTenantStore } from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
 import type { SitePage } from "@/types/tenantSitePages";
@@ -12,12 +12,25 @@ import { update as updateTenant, list as listTenants } from "@/services/tenantsS
 import { list as listTemplates } from "@/services/siteTemplatesService";
 import type { SiteTemplate } from "@/services/siteTemplatesService";
 import { swrFetcher } from "@/lib/swrFetcher";
+import { SiteWebGeneralTab } from "./SiteWebGeneralTab";
+import { SiteWebRedesTab } from "./SiteWebRedesTab";
 
 const sitePagesKey = (tenantId: string) =>
   `/api/tenant-site-pages?tenant_id=${encodeURIComponent(tenantId)}`;
 
-const inputClass =
-  "input-form mt-1 block w-full min-h-[44px] rounded-lg border px-3 py-2.5 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-colors duration-200";
+type SitioTab = "general" | "redes" | "contenido" | "promociones";
+
+const SITIO_TABS: {
+  value: SitioTab;
+  label: string;
+  shortLabel: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  { value: "general", label: "General", shortLabel: "General", icon: Settings },
+  { value: "redes", label: "Redes", shortLabel: "Redes", icon: Globe },
+  { value: "contenido", label: "Contenido", shortLabel: "Contenido", icon: FileText },
+  { value: "promociones", label: "Promociones", shortLabel: "Promos", icon: Tag },
+];
 
 interface SiteWebConfigSectionProps {
   tenantSlug: string;
@@ -26,6 +39,8 @@ interface SiteWebConfigSectionProps {
 export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) {
   const activeTenant = useTenantStore((s) => s.activeTenant)();
   const setMemberships = useTenantStore((s) => s.setMemberships);
+  const [activeTab, setActiveTab] = useState<SitioTab>("general");
+
   const [publicStoreEnabled, setPublicStoreEnabled] = useState(false);
   const [publicStoreLoading, setPublicStoreLoading] = useState(false);
   const [themeColor, setThemeColor] = useState("");
@@ -41,12 +56,12 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
   const [appearanceLoading, setAppearanceLoading] = useState(false);
   const [appearanceSuccess, setAppearanceSuccess] = useState<string | null>(null);
 
-  const savedTemplateId = (activeTenant as { site_template_id?: string | null })?.site_template_id ?? null;
+  const savedTemplateId = (activeTenant as { site_template_id?: string | null })
+    ?.site_template_id ?? null;
   const savedThemeColor = (activeTenant?.theme_color ?? "").trim();
   const appearanceDirty =
     selectedTemplateId !== savedTemplateId ||
     (themeColor || "").trim() !== savedThemeColor;
-  const [expandedStep, setExpandedStep] = useState<"paso1" | "paso2" | "paso3" | "paso4" | null>("paso1");
 
   const sitePagesKeyValue = activeTenant ? sitePagesKey(activeTenant.id) : null;
   const { data: sitePagesData, mutate: mutateSitePages } = useSWR<SitePage[]>(
@@ -69,12 +84,17 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
     );
     setAppearanceSuccess(null);
     setWhatsappPhone((activeTenant as { whatsapp_phone?: string }).whatsapp_phone ?? "");
-    const sl = (activeTenant as { social_links?: { instagram?: string; facebook?: string; twitter?: string } })
-      .social_links;
+    const sl = (activeTenant as {
+      social_links?: { instagram?: string; facebook?: string; twitter?: string };
+    }).social_links;
     setInstagramUrl(sl?.instagram ?? "");
     setFacebookUrl(sl?.facebook ?? "");
     setTwitterUrl(sl?.twitter ?? "");
   }, [activeTenant?.id]);
+
+  function handleTabChange(tab: SitioTab) {
+    setActiveTab(tab);
+  }
 
   async function handleTogglePublicStore(e: React.ChangeEvent<HTMLInputElement>) {
     const checked = e.target.checked;
@@ -102,7 +122,7 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
         site_template_id: selectedTemplateId,
         theme_color: themeColor.trim() || undefined,
       });
-      setAppearanceSuccess("Apariencia guardada correctamente.");
+      setAppearanceSuccess("Apariencia guardada. La vista previa se actualizará.");
       const list = (await listTenants()) as MembershipItem[];
       setMemberships(list ?? []);
     } finally {
@@ -110,9 +130,12 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
     }
   }
 
-  function handleTemplateSelect(templateId: string | null) {
-    setSelectedTemplateId(templateId);
+  function handleTemplateSelect(t: SiteTemplate) {
+    setSelectedTemplateId((prev) => (prev === t.id ? null : t.id));
     setAppearanceSuccess(null);
+    if (t.default_theme_color && !savedThemeColor) {
+      setThemeColor(t.default_theme_color);
+    }
   }
 
   function handleThemeColorChange(value: string) {
@@ -153,371 +176,148 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
     );
   }
 
-  const stepCardClass =
-    "rounded-xl border border-border bg-surface-raised shadow-sm overflow-hidden";
-
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto space-y-4">
-        <div className={stepCardClass}>
-          <button
-            type="button"
-            onClick={() => setExpandedStep((s) => (s === "paso1" ? null : "paso1"))}
-            className="flex w-full min-h-[44px] cursor-pointer items-center gap-3 p-5 text-left transition-colors duration-200 hover:bg-border-soft/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset sm:p-6"
-          >
-            <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent"
-              aria-hidden
-            >
-              {publicStoreEnabled ? <Check className="h-5 w-5" /> : <Globe className="h-5 w-5" />}
-            </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-semibold text-foreground">Paso 1. Activar tu sitio</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {publicStoreEnabled
-                  ? "Tu catálogo público está activo. Los clientes pueden ver productos y contactarte por WhatsApp."
-                  : "Activa tu catálogo público para que los clientes vean productos y te contacten por WhatsApp."}
-              </p>
-            </div>
-            {expandedStep === "paso1" ? (
-              <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-            ) : (
-              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-            )}
-          </button>
-          <div
-            className="grid transition-[grid-template-rows] duration-200 ease-out"
-            style={{ gridTemplateRows: expandedStep === "paso1" ? "1fr" : "0fr" }}
-          >
-            <div className="min-h-0 overflow-hidden">
-              <div className="border-t border-border px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-4">
-              <div className="flex min-h-[44px] items-center gap-3">
-                <label
-                  htmlFor="publicStore"
-                  className="flex min-h-[44px] min-w-[44px] cursor-pointer items-center"
-                  aria-label="Activar tienda pública"
-                >
-                  <input
-                    id="publicStore"
-                    type="checkbox"
-                    checked={publicStoreEnabled}
-                    onChange={handleTogglePublicStore}
-                    disabled={publicStoreLoading}
-                    className="h-5 w-5 rounded border-border focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-                  />
-                </label>
-                <span className="text-sm font-medium text-foreground">
-                  Tienda pública habilitada
-                </span>
-                {publicStoreLoading && (
-                  <span className="text-xs text-muted-foreground">Guardando…</span>
-                )}
-              </div>
-              {publicStoreEnabled && (
-                <a
-                  href={`/sitio/${tenantSlug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-accent/10 px-4 py-2 text-sm font-medium text-accent hover:bg-accent/20 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 transition-colors duration-200 cursor-pointer"
-                >
-                  Ver mi sitio
-                  <Globe className="h-4 w-4" aria-hidden />
-                </a>
-              )}
-              <form onSubmit={handleSaveAppearance} className="mt-6 space-y-6 border-t border-border/60 pt-6">
-                <div>
-                  <h3 className="flex items-center gap-2 text-sm font-medium text-foreground">
-                    <Palette className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-                    Apariencia del sitio
-                  </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Plantilla y color. Los cambios se guardan al pulsar Guardar.
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-2">
-                    Plantilla
-                  </label>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                    {templates.map((t) => (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => handleTemplateSelect(selectedTemplateId === t.id ? null : t.id)}
-                        title={t.description ?? undefined}
-                        className={`relative flex min-h-[100px] cursor-pointer flex-col items-center justify-center rounded-xl border px-3 py-3 text-center transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
-                          selectedTemplateId === t.id
-                            ? "border-accent/70 bg-accent/5 ring-1 ring-accent/15"
-                            : "border-border/70 bg-surface hover:border-border hover:bg-muted/30"
-                        }`}
-                      >
-                        <div
-                          className="mb-2 h-8 w-8 shrink-0 rounded-lg"
-                          style={{
-                            backgroundColor: t.default_theme_color ?? "#6366f1",
-                            boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
-                          }}
-                          aria-hidden
-                        />
-                        <span className="text-center text-xs font-semibold text-foreground">
-                          {t.name}
-                        </span>
-                        {t.description && (
-                          <span className="mt-0.5 line-clamp-2 text-center text-[10px] leading-tight text-muted-foreground">
-                            {t.description}
-                          </span>
-                        )}
-                        {selectedTemplateId === t.id && (
-                          <span
-                            className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground"
-                            aria-hidden
-                          >
-                            <Check className="h-3 w-3" />
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="themeColor" className="block text-xs font-medium text-muted-foreground mb-2">
-                    Color del tema
-                  </label>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <input
-                      id="themeColor"
-                      type="color"
-                      value={themeColor || "#6366f1"}
-                      onChange={(e) => handleThemeColorChange(e.target.value)}
-                      className="h-9 w-11 cursor-pointer rounded-lg border border-border/80 bg-surface shrink-0"
-                    />
-                    <input
-                      type="text"
-                      value={themeColor}
-                      onChange={(e) => handleThemeColorChange(e.target.value)}
-                      className="h-9 w-28 rounded-lg border border-border/80 bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30"
-                      placeholder="#6366f1"
-                    />
-                  </div>
-                </div>
-                {appearanceSuccess && (
-                  <p className="text-sm text-green-600" role="status">{appearanceSuccess}</p>
-                )}
-                <button
-                  type="submit"
-                  disabled={appearanceLoading || !appearanceDirty}
-                  className="inline-flex min-h-[40px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Check className="h-4 w-4 shrink-0" aria-hidden />
-                  {appearanceLoading ? "Guardando…" : "Guardar apariencia"}
-                </button>
-              </form>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className={stepCardClass}>
-          <button
-            type="button"
-            onClick={() => setExpandedStep((s) => (s === "paso2" ? null : "paso2"))}
-            className="flex w-full min-h-[44px] cursor-pointer items-center gap-3 p-5 text-left transition-colors duration-200 hover:bg-border-soft/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset sm:p-6"
-          >
-            <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-border-soft text-muted-foreground"
-              aria-hidden
-            >
-              <MessageCircle className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-semibold text-foreground">Paso 2. Redes y contacto</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                WhatsApp y redes sociales para el sitio público. El botón de consulta por producto usará este número.
-              </p>
-            </div>
-            {expandedStep === "paso2" ? (
-              <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-            ) : (
-              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-            )}
-          </button>
-          <div
-            className="grid transition-[grid-template-rows] duration-200 ease-out"
-            style={{ gridTemplateRows: expandedStep === "paso2" ? "1fr" : "0fr" }}
-          >
-            <div className="min-h-0 overflow-hidden">
-              <div className="border-t border-border px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-4">
-              <form onSubmit={handleSaveRedes} className="space-y-4">
-                {redesError && (
-                  <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
-                    {redesError}
-                  </div>
-                )}
-                {redesSuccess && (
-                  <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700" role="status">
-                    {redesSuccess}
-                  </div>
-                )}
-                <div>
-                  <label htmlFor="whatsappPhone" className="block text-sm font-medium text-muted-foreground">
-                    WhatsApp (número con código de país)
-                  </label>
-                  <input
-                    id="whatsappPhone"
-                    type="text"
-                    value={whatsappPhone}
-                    onChange={(e) => setWhatsappPhone(e.target.value)}
-                    className={inputClass}
-                    placeholder="5215512345678"
-                  />
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <div>
-                    <label htmlFor="instagramUrl" className="block text-sm font-medium text-muted-foreground">
-                      Instagram URL
-                    </label>
-                    <input
-                      id="instagramUrl"
-                      type="url"
-                      value={instagramUrl}
-                      onChange={(e) => setInstagramUrl(e.target.value)}
-                      className={inputClass}
-                      placeholder="https://instagram.com/mi_tienda"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="facebookUrl" className="block text-sm font-medium text-muted-foreground">
-                      Facebook URL
-                    </label>
-                    <input
-                      id="facebookUrl"
-                      type="url"
-                      value={facebookUrl}
-                      onChange={(e) => setFacebookUrl(e.target.value)}
-                      className={inputClass}
-                      placeholder="https://facebook.com/mi_tienda"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="twitterUrl" className="block text-sm font-medium text-muted-foreground">
-                      Twitter/X URL
-                    </label>
-                    <input
-                      id="twitterUrl"
-                      type="url"
-                      value={twitterUrl}
-                      onChange={(e) => setTwitterUrl(e.target.value)}
-                      className={inputClass}
-                      placeholder="https://twitter.com/mi_tienda"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end border-t border-border pt-4">
-                  <button
-                    type="submit"
-                    disabled={redesLoading}
-                    className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    <Check className="h-4 w-4 shrink-0" aria-hidden />
-                    {redesLoading ? "Guardando…" : "Guardar redes"}
-                  </button>
-                </div>
-              </form>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {publicStoreEnabled && (
-          <div className={stepCardClass}>
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="shrink-0 p-4 pb-0 sm:p-5 sm:pb-0">
+        <div className="flex rounded-xl bg-muted/40 p-1 gap-0.5">
+        {SITIO_TABS.map((tab) => {
+          const isActive = activeTab === tab.value;
+          const Icon = tab.icon;
+          return (
             <button
+              key={tab.value}
               type="button"
-              onClick={() => setExpandedStep((s) => (s === "paso3" ? null : "paso3"))}
-              className="flex w-full min-h-[44px] cursor-pointer items-center gap-3 p-5 text-left transition-colors duration-200 hover:bg-border-soft/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset sm:p-6"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => handleTabChange(tab.value)}
+              className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-2 text-[10px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/40 ${
+                isActive
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
-              <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-border-soft text-muted-foreground"
-                aria-hidden
-              >
-                <FileText className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h2 className="text-sm font-semibold text-foreground">
-                  Paso 3. Contenido del sitio
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Edita el contenido que se muestra en Inicio, Nosotros y Contacto.
-                </p>
-              </div>
-              {expandedStep === "paso3" ? (
-                <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-              ) : (
-                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-              )}
+              <Icon className="h-3.5 w-3.5" aria-hidden />
+              {tab.shortLabel}
             </button>
-            <div
-              className="grid transition-[grid-template-rows] duration-200 ease-out"
-              style={{ gridTemplateRows: expandedStep === "paso3" ? "1fr" : "0fr" }}
-            >
-              <div className="min-h-0 overflow-hidden">
-                <div className="border-t border-border px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-4">
-                <SiteContentForm
-                  tenantId={activeTenant.id}
-                  tenantSlug={tenantSlug}
-                  sitePages={sitePages}
-                  onContentSaved={() => mutateSitePages()}
-                  embedded
-                />
-                </div>
-              </div>
-            </div>
+          );
+        })}
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-6 pt-4 sm:px-5 sm:pb-6 sm:pt-4">
+        {activeTab === "general" && (
+          <SiteWebGeneralTab
+            tenantSlug={tenantSlug}
+            publicStoreEnabled={publicStoreEnabled}
+            publicStoreLoading={publicStoreLoading}
+            onTogglePublicStore={handleTogglePublicStore}
+            templates={templates}
+            selectedTemplateId={selectedTemplateId}
+            onTemplateSelect={handleTemplateSelect}
+            themeColor={themeColor}
+            onThemeColorChange={handleThemeColorChange}
+            appearanceLoading={appearanceLoading}
+            appearanceDirty={appearanceDirty}
+            appearanceSuccess={appearanceSuccess}
+            onSaveAppearance={handleSaveAppearance}
+          />
+        )}
+
+        {activeTab === "redes" && (
+          <SiteWebRedesTab
+            whatsappPhone={whatsappPhone}
+            onWhatsappPhoneChange={setWhatsappPhone}
+            instagramUrl={instagramUrl}
+            onInstagramUrlChange={setInstagramUrl}
+            facebookUrl={facebookUrl}
+            onFacebookUrlChange={setFacebookUrl}
+            twitterUrl={twitterUrl}
+            onTwitterUrlChange={setTwitterUrl}
+            loading={redesLoading}
+            error={redesError}
+            success={redesSuccess}
+            onSave={handleSaveRedes}
+          />
+        )}
+
+        {activeTab === "contenido" && publicStoreEnabled && (
+          <SiteContentForm
+            tenantId={activeTenant.id}
+            tenantSlug={tenantSlug}
+            sitePages={sitePages}
+            onContentSaved={() => mutateSitePages()}
+            embedded
+          />
+        )}
+
+        {activeTab === "contenido" && !publicStoreEnabled && (
+          <div className="rounded-xl border border-border/50 bg-muted/20 px-4 py-6 text-center">
+            <p className="text-sm font-medium text-foreground">
+              Tienda pública desactivada
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Activa la tienda pública en la pestaña{" "}
+              <button
+                type="button"
+                onClick={() => handleTabChange("general")}
+                className="font-medium text-accent underline underline-offset-2 hover:no-underline"
+              >
+                General
+              </button>{" "}
+              para editar el contenido.
+            </p>
           </div>
         )}
 
-        <div className={stepCardClass}>
-          <button
-            type="button"
-            onClick={() => setExpandedStep((s) => (s === "paso4" ? null : "paso4"))}
-            className="flex w-full min-h-[44px] cursor-pointer items-center gap-3 p-5 text-left transition-colors duration-200 hover:bg-border-soft/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset sm:p-6"
-          >
-            <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-border-soft text-muted-foreground"
-              aria-hidden
-            >
-              <Tag className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-semibold text-foreground">
-                Paso 4. Promociones
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Crea y gestiona promociones para destacar productos en tu sitio público.
-              </p>
-            </div>
-            {expandedStep === "paso4" ? (
-              <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-            ) : (
-              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-            )}
-          </button>
-          <div
-            className="grid transition-[grid-template-rows] duration-200 ease-out"
-            style={{ gridTemplateRows: expandedStep === "paso4" ? "1fr" : "0fr" }}
-          >
-            <div className="min-h-0 overflow-hidden">
-              <div className="border-t border-border px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-4">
-                <Link
-                  href={`/dashboard/${tenantSlug}/promociones`}
-                  className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-                >
-                  Administrar promociones
-                  <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
-                </Link>
-              </div>
-            </div>
+        {activeTab === "promociones" && (
+          <div className="rounded-xl border border-border/50 bg-muted/10 px-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Crea y gestiona descuentos, cupones y ofertas especiales para tus
+              clientes.
+            </p>
           </div>
-        </div>
+        )}
+      </div>
+
+      <div className="shrink-0 border-t border-border/60 bg-background shadow-[0_-2px_8px_rgba(0,0,0,0.04)] px-4 py-3 sm:px-5 min-h-[60px] flex items-center">
+        {activeTab === "general" && (
+          <button
+            type="submit"
+            form="appearance-form"
+            disabled={appearanceLoading || !appearanceDirty}
+            className="flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Check className="h-4 w-4 shrink-0" aria-hidden />
+            {appearanceLoading ? "Guardando…" : "Guardar apariencia"}
+          </button>
+        )}
+        {activeTab === "redes" && (
+          <button
+            type="submit"
+            form="redes-form"
+            disabled={redesLoading}
+            className="flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Save className="h-4 w-4 shrink-0" aria-hidden />
+            {redesLoading ? "Guardando…" : "Guardar redes"}
+          </button>
+        )}
+        {activeTab === "contenido" && publicStoreEnabled && (
+          <p className="text-center text-xs text-muted-foreground">
+            Guarda los cambios en cada sección (Inicio, Nosotros, Contacto).
+          </p>
+        )}
+        {activeTab === "promociones" && (
+          <Link
+            href={`/dashboard/${tenantSlug}/promociones`}
+            className="flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          >
+            Administrar promociones
+            <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+          </Link>
+        )}
       </div>
     </div>
   );
 }
+

@@ -10,9 +10,10 @@ interface Props {
   onChange: (c: SitePageContent) => void;
   onSave: () => void;
   loading: boolean;
+  narrow?: boolean;
 }
 
-export function SiteContentInicioTab({ content, onChange, onSave, loading }: Props) {
+export function SiteContentInicioTab({ content, onChange, onSave, loading, narrow }: Props) {
   const cards = (content.cards ?? Array(4).fill(null)).slice(0, 4);
   const purchaseProcess = (content.purchase_process ?? Array(3).fill(null)).slice(0, 3);
   const faqItems = content.faq_items ?? [];
@@ -103,7 +104,7 @@ export function SiteContentInicioTab({ content, onChange, onSave, loading }: Pro
         title="Tarjetas de valor"
         description="Hasta 4 tarjetas que destacan beneficios (calidad, discreción, entrega, etc.) en la sección principal."
       >
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className={`grid gap-6 ${narrow ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}>
           {cards.map((card: SitePageCard | null, i) => (
             <div
               key={i}

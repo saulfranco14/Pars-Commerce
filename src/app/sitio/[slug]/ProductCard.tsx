@@ -140,7 +140,7 @@ export default function ProductCard({
             {product.description}
           </p>
         )}
-        <div className="mt-3 flex items-baseline gap-2">
+        <div className="mt-auto flex items-baseline gap-2 pt-3">
           <span className="text-xl font-bold" style={{ color: accentColor }}>
             ${displayPrice.toFixed(2)}
           </span>
