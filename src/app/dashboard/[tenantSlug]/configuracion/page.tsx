@@ -40,6 +40,7 @@ export default function ConfiguracionPage() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [expressOrderEnabled, setExpressOrderEnabled] = useState(false);
   const [addressStreet, setAddressStreet] = useState("");
   const [addressCity, setAddressCity] = useState("");
@@ -65,11 +66,31 @@ export default function ConfiguracionPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const [logoSaving, setLogoSaving] = useState(false);
+
+  async function handleLogoChange(url: string | null) {
+    if (!activeTenant) return;
+    setLogoUrl(url);
+    setLogoError(null);
+    setLogoSaving(true);
+    try {
+      await updateTenant(activeTenant.id, { logo_url: url });
+      const list = (await listTenants()) as MembershipItem[];
+      setMemberships(list ?? []);
+    } catch (e) {
+      setLogoError(e instanceof Error ? e.message : "Error al guardar logo");
+    } finally {
+      setLogoSaving(false);
+    }
+  }
 
   useEffect(() => {
     if (!activeTenant) return;
     setName(activeTenant.name ?? "");
     setDescription(activeTenant.description ?? "");
+    setLogoUrl(activeTenant.logo_url ?? null);
+    setLogoError(null);
     const st = activeTenant.settings as
       | Record<string, unknown>
       | null
@@ -118,6 +139,7 @@ export default function ConfiguracionPage() {
       await updateTenant(activeTenant.id, {
         name: name.trim(),
         description: description.trim() || undefined,
+        logo_url: logoUrl?.trim() || null,
         settings: {
           ...((activeTenant.settings as Record<string, unknown>) ?? {}),
           express_order_enabled: expressOrderEnabled,
@@ -220,10 +242,15 @@ export default function ConfiguracionPage() {
 
             {activeTab === "negocio" && (
               <ConfigNegocioSection
+                tenantId={activeTenant.id}
                 name={name}
                 onNameChange={setName}
                 description={description}
                 onDescriptionChange={setDescription}
+                logoUrl={logoUrl}
+                onLogoChange={handleLogoChange}
+                logoError={logoError}
+                logoSaving={logoSaving}
                 expressOrderEnabled={expressOrderEnabled}
                 onExpressOrderChange={setExpressOrderEnabled}
               />

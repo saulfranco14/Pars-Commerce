@@ -1,10 +1,17 @@
 "use client";
 
+import { LogoUpload } from "@/components/LogoUpload";
+
 interface ConfigNegocioSectionProps {
+  tenantId: string;
   name: string;
   onNameChange: (v: string) => void;
   description: string;
   onDescriptionChange: (v: string) => void;
+  logoUrl: string | null;
+  onLogoChange: (v: string | null) => void;
+  logoError?: string | null;
+  logoSaving?: boolean;
   expressOrderEnabled: boolean;
   onExpressOrderChange: (v: boolean) => void;
 }
@@ -14,15 +21,27 @@ const inputClass =
 const labelClass = "block text-sm font-medium text-muted-foreground";
 
 export function ConfigNegocioSection({
+  tenantId,
   name,
   onNameChange,
   description,
   onDescriptionChange,
+  logoUrl,
+  onLogoChange,
+  logoError,
+  logoSaving,
   expressOrderEnabled,
   onExpressOrderChange,
 }: ConfigNegocioSectionProps) {
   return (
     <div className="space-y-4">
+      <LogoUpload
+        tenantId={tenantId}
+        currentUrl={logoUrl}
+        onUploaded={onLogoChange}
+        saving={logoSaving}
+        saveError={logoError}
+      />
       <div>
         <label htmlFor="config-name" className={labelClass}>
           Nombre del negocio
