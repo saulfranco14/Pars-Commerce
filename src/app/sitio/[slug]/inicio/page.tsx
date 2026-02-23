@@ -129,7 +129,7 @@ export default async function InicioPage({ params }: PageProps) {
       .limit(6),
     supabase
       .from("promotions")
-      .select("id, name, slug, type, value, quantity, product_ids, bundle_product_ids, badge_label, valid_from, valid_until, image_url")
+      .select("id, name, slug, type, value, quantity, min_amount, product_ids, bundle_product_ids, badge_label, valid_from, valid_until, image_url")
       .eq("tenant_id", tenant.id)
       .order("created_at", { ascending: false }),
   ]);

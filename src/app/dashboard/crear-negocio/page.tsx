@@ -67,7 +67,7 @@ export default function CrearNegocioPage() {
         try {
           localStorage.setItem("pars_activeTenantId", tenant.id);
         } catch {
-          /* incognito, quota, disabled */
+          console.error("Error al guardar el ID del negocio en localStorage");
         }
       }
       router.push("/dashboard");

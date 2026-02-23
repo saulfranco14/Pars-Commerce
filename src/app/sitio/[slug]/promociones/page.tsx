@@ -39,13 +39,14 @@ export default async function PromocionesPage({ params }: PageProps) {
     .order("created_at", { ascending: false });
 
   const now = new Date();
-  const active = (promotions ?? []).filter((p) => {
+  const promoList = promotions ?? [];
+  const active = promoList.filter((p) => {
     const from = p.valid_from ? new Date(p.valid_from) : null;
     const until = p.valid_until ? new Date(p.valid_until) : null;
     if (from && from > now) return false;
     if (until && until < now) return false;
     return true;
-  }) as (typeof promotions)[number][];
+  });
 
   const allProductIds = [
     ...new Set(
