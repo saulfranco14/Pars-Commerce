@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SwrProvider } from "@/components/providers/SwrProvider";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -24,10 +25,20 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
+      {
+        url: "/android-chrome-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        url: "/android-chrome-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+      },
     ],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
 };
 
@@ -58,6 +69,7 @@ export default function RootLayout({
         />
         <SwrProvider>
           {children}
+          <Analytics />
           <div id="ticket-print-portal" aria-hidden="true" />
         </SwrProvider>
       </body>
