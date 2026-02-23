@@ -31,7 +31,7 @@ export function CreateEditHeader({
   );
 
   return (
-    <header className="shrink-0 border-b border-border pb-4">
+    <header className="shrink-0 pb-4">
       {onBack ? (
         <button
           type="button"
