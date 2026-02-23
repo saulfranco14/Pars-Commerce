@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import useSWR from "swr";
 import { ArrowLeft, Plus, X, Check, Palette } from "lucide-react";
 import {
   create as createTenant,
   list as listTenants,
 } from "@/services/tenantsService";
-import { list as listTemplates } from "@/services/siteTemplatesService";
 import type { SiteTemplate } from "@/services/siteTemplatesService";
 import { useTenantStore, type MembershipItem } from "@/stores/useTenantStore";
+import { swrFetcher } from "@/lib/swrFetcher";
 
 export default function CrearNegocioPage() {
   const router = useRouter();
@@ -19,16 +20,18 @@ export default function CrearNegocioPage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [businessType, setBusinessType] = useState("");
-  const [templates, setTemplates] = useState<SiteTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
     null,
   );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    listTemplates().then(setTemplates);
-  }, []);
+  const { data: templatesData } = useSWR<SiteTemplate[]>(
+    "/api/site-templates",
+    swrFetcher,
+    { fallbackData: [] },
+  );
+  const templates = Array.isArray(templatesData) ? templatesData : [];
 
   function deriveSlug(value: string) {
     return value

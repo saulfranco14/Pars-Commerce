@@ -9,7 +9,6 @@ import type { MembershipItem } from "@/stores/useTenantStore";
 import type { SitePage } from "@/types/tenantSitePages";
 import { SiteContentForm } from "@/app/dashboard/[tenantSlug]/configuracion/SiteContentForm";
 import { update as updateTenant, list as listTenants } from "@/services/tenantsService";
-import { list as listTemplates } from "@/services/siteTemplatesService";
 import type { SiteTemplate } from "@/services/siteTemplatesService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { SiteWebGeneralTab } from "./SiteWebGeneralTab";
@@ -51,7 +50,6 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
   const [redesLoading, setRedesLoading] = useState(false);
   const [redesError, setRedesError] = useState<string | null>(null);
   const [redesSuccess, setRedesSuccess] = useState<string | null>(null);
-  const [templates, setTemplates] = useState<SiteTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [appearanceLoading, setAppearanceLoading] = useState(false);
   const [appearanceSuccess, setAppearanceSuccess] = useState<string | null>(null);
@@ -71,9 +69,12 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
   );
   const sitePages = Array.isArray(sitePagesData) ? sitePagesData : [];
 
-  useEffect(() => {
-    listTemplates().then(setTemplates);
-  }, []);
+  const { data: templatesData } = useSWR<SiteTemplate[]>(
+    "/api/site-templates",
+    swrFetcher,
+    { fallbackData: [] },
+  );
+  const templates = Array.isArray(templatesData) ? templatesData : [];
 
   useEffect(() => {
     if (!activeTenant) return;
