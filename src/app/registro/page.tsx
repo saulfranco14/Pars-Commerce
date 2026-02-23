@@ -6,9 +6,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import * as yup from "yup";
 import {
-  Zap,
-  Store,
-  TrendingUp,
   Check,
   ArrowRight,
   Sparkles,
@@ -16,13 +13,8 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PasswordInput } from "@/components/ui/PasswordInput";
-import { registroSchema } from "@/lib/registroValidation";
-
-const BENEFITS = [
-  { icon: Zap, text: "Crea tu tienda en 2 minutos" },
-  { icon: Store, text: "Tu propia URL para compartir" },
-  { icon: TrendingUp, text: "Dashboard de ventas incluido" },
-];
+import { registroSchema } from "@/features/auth/validations/registroForm";
+import { BENEFITS } from "@/features/auth/constants/benefits";
 
 const inputClass =
   "input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";

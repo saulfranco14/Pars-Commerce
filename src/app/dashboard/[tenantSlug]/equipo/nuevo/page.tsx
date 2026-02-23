@@ -5,21 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
-import { ArrowLeft, Plus, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Plus, AlertTriangle, Mail, CheckCircle2 } from "lucide-react";
 import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
 import type { TenantRoleOption } from "@/services/tenantRolesService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { addMember } from "@/services/teamService";
-
-const tenantRolesKey = (tenantId: string) =>
-  `/api/tenant-roles?tenant_id=${encodeURIComponent(tenantId)}`;
-
-const ROLE_DESCRIPTIONS: Record<string, string> = {
-  owner:
-    "Acceso total al negocio: ventas, productos, inventario, equipo y configuración.",
-  member:
-    "Puede gestionar ventas, órdenes y catálogo; no puede gestionar equipo ni configuración.",
-};
+import { tenantRolesKey } from "@/features/equipo/helpers/swrKeys";
+import { ROLE_DESCRIPTIONS } from "@/features/equipo/constants/roleDescriptions";
 
 export default function NuevoMiembroPage() {
   const params = useParams();
@@ -105,19 +97,7 @@ export default function NuevoMiembroPage() {
       <div className="mx-auto flex min-h-0 max-w-lg flex-1 flex-col overflow-auto">
         <div className="rounded-xl border border-green-200 bg-green-50 p-6 shadow-sm alert-success">
           <div className="mb-4 flex items-center gap-2">
-            <svg
-              className="h-6 w-6 text-green-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-              />
-            </svg>
+            <Mail className="h-6 w-6 text-green-600" aria-hidden />
             <h2 className="text-xl font-semibold text-green-900">
               Invitación enviada
             </h2>
@@ -150,19 +130,7 @@ export default function NuevoMiembroPage() {
       <div className="mx-auto flex min-h-0 max-w-lg flex-1 flex-col overflow-auto">
         <div className="rounded-xl border border-green-200 bg-green-50 p-6 shadow-sm alert-success">
           <div className="mb-4 flex items-center gap-2">
-            <svg
-              className="h-6 w-6 text-green-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <CheckCircle2 className="h-6 w-6 text-green-600" aria-hidden />
             <h2 className="text-xl font-semibold text-green-900">
               Usuario creado exitosamente
             </h2>

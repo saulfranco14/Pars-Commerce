@@ -7,7 +7,7 @@ import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
 import { ChevronDown, Plus } from "lucide-react";
 import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
-import { productFormSchema } from "@/lib/productValidation";
+import { productFormSchema } from "@/features/productos/validations/productForm";
 import { create } from "@/services/productsService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { Subcatalog } from "@/types/subcatalogs";

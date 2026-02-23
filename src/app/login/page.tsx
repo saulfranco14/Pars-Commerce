@@ -6,13 +6,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import * as yup from "yup";
 import {
-  ShoppingBag,
-  BarChart3,
-  CreditCard,
-  Shield,
   ArrowRight,
   Lock,
+  Shield,
 } from "lucide-react";
+import { HIGHLIGHTS } from "@/features/auth/constants/loginHighlights";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -47,29 +45,6 @@ const setPasswordSchema = yup.object({
 });
 
 type FieldErrors = Record<string, string>;
-
-const HIGHLIGHTS = [
-  {
-    icon: ShoppingBag,
-    text: "Gestiona productos y ordenes",
-    accent: "bg-blue-500/10 text-blue-500 dark:text-blue-400",
-  },
-  {
-    icon: BarChart3,
-    text: "Dashboard de ventas en tiempo real",
-    accent: "bg-emerald-500/10 text-emerald-500 dark:text-emerald-400",
-  },
-  {
-    icon: CreditCard,
-    text: "Pagos integrados con MercadoPago",
-    accent: "bg-amber-500/10 text-amber-500 dark:text-amber-400",
-  },
-  {
-    icon: Shield,
-    text: "Seguro y confiable, 24/7",
-    accent: "bg-rose-500/10 text-rose-500 dark:text-rose-400",
-  },
-];
 
 const inputBase =
   "input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2";

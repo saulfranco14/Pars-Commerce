@@ -34,42 +34,13 @@ import {
   create as createCommissionPayment,
   update as updateCommissionPayment,
 } from "@/services/commissionPaymentsService";
-
-type TabView = "resumen" | "por-persona" | "por-orden" | "pagos";
-
-function buildCommissionsKey(
-  tenantId: string,
-  userFilter: string,
-  paidFilter: string,
-  dateFrom: string,
-  dateTo: string
-): string {
-  const search = new URLSearchParams({ tenant_id: tenantId });
-  if (userFilter) search.set("user_id", userFilter);
-  if (paidFilter) search.set("is_paid", paidFilter);
-  if (dateFrom) search.set("date_from", dateFrom);
-  if (dateTo) search.set("date_to", dateTo);
-  return `/api/sales-commissions?${search}`;
-}
-
-function buildAnalyticsKey(tenantId: string, dateFrom: string, dateTo: string): string | null {
-  if (!tenantId) return null;
-  const search = new URLSearchParams({ tenant_id: tenantId });
-  if (dateFrom) search.set("date_from", dateFrom);
-  if (dateTo) search.set("date_to", dateTo);
-  return `/api/sales-analytics?${search}`;
-}
-
-function buildPaymentsKey(
-  tenantId: string,
-  selectedUser: string,
-  paymentStatus: string
-): string {
-  const search = new URLSearchParams({ tenant_id: tenantId });
-  if (selectedUser) search.set("user_id", selectedUser);
-  if (paymentStatus) search.set("status", paymentStatus);
-  return `/api/commission-payments?${search}`;
-}
+import {
+  buildCommissionsKey,
+  buildAnalyticsKey,
+  buildPaymentsKey,
+} from "@/features/ventas/helpers/swrKeys";
+import type { TabView } from "@/features/ventas/constants/tabs";
+import { teamKey } from "@/features/equipo/helpers/swrKeys";
 
 export default function VentasPage() {
   const params = useParams();
@@ -102,11 +73,9 @@ export default function VentasPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const teamKey = activeTenant
-    ? `/api/team?tenant_id=${encodeURIComponent(activeTenant.id)}`
-    : null;
+  const teamKeyValue = activeTenant ? teamKey(activeTenant.id) : null;
   const { data: teamData, error: teamError } = useSWR<TeamMember[]>(
-    teamKey,
+    teamKeyValue,
     swrFetcher
   );
   const teamMembers = Array.isArray(teamData)

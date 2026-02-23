@@ -4,8 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recha
 import type { SalesBySource } from "@/app/api/sales-analytics/route";
 import { formatSourceLabel } from "@/lib/formatSource";
 import { ChartHeader } from "./ChartHeader";
-
-const COLORS = ["hsl(215 16% 47%)", "hsl(173 80% 40%)"];
+import { COLORS_SOURCE } from "@/features/ventas/constants/chartColors";
 
 interface SalesBySourceChartProps {
   data: SalesBySource;
@@ -83,7 +82,7 @@ export function SalesBySourceChart({
               nameKey="name"
             >
               {entries.map((_, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                <Cell key={i} fill={COLORS_SOURCE[i % COLORS_SOURCE.length]} />
               ))}
             </Pie>
             <Tooltip formatter={(v) => `$${Number(v ?? 0).toFixed(2)}`} />

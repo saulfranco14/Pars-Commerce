@@ -3,37 +3,25 @@
 import { useState, useEffect } from "react";
 import useSWR from "swr";
 import Link from "next/link";
-import { ArrowRight, Check, Save, Settings, Globe, FileText, Tag } from "lucide-react";
+import { ArrowRight, Check, Save } from "lucide-react";
 import { useTenantStore } from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
 import type { SitePage } from "@/types/tenantSitePages";
-import { SiteContentForm } from "@/app/dashboard/[tenantSlug]/configuracion/SiteContentForm";
+import { SiteContentForm } from "@/features/configuracion/components/SiteContentForm";
 import { update as updateTenant, list as listTenants } from "@/services/tenantsService";
 import type { SiteTemplate } from "@/services/siteTemplatesService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { SiteWebGeneralTab } from "./SiteWebGeneralTab";
 import { SiteWebRedesTab } from "./SiteWebRedesTab";
 
+import {
+  SITIO_TABS,
+  type SitioTab,
+} from "@/features/sitio-web/constants/tabs";
+import type { SiteWebConfigSectionProps } from "@/features/sitio-web/interfaces/siteWebConfig";
+
 const sitePagesKey = (tenantId: string) =>
   `/api/tenant-site-pages?tenant_id=${encodeURIComponent(tenantId)}`;
-
-type SitioTab = "general" | "redes" | "contenido" | "promociones";
-
-const SITIO_TABS: {
-  value: SitioTab;
-  label: string;
-  shortLabel: string;
-  icon: React.ComponentType<{ className?: string }>;
-}[] = [
-  { value: "general", label: "General", shortLabel: "General", icon: Settings },
-  { value: "redes", label: "Redes", shortLabel: "Redes", icon: Globe },
-  { value: "contenido", label: "Contenido", shortLabel: "Contenido", icon: FileText },
-  { value: "promociones", label: "Promociones", shortLabel: "Promos", icon: Tag },
-];
-
-interface SiteWebConfigSectionProps {
-  tenantSlug: string;
-}
 
 export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) {
   const activeTenant = useTenantStore((s) => s.activeTenant)();

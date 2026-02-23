@@ -1,14 +1,14 @@
-import { LandingNav } from "@/components/landing/LandingNav";
-import { LandingHero } from "@/components/landing/LandingHero";
-import { LandingLogos } from "@/components/landing/LandingLogos";
-import { LandingFeatures } from "@/components/landing/LandingFeatures";
-import { LandingHowItWorks } from "@/components/landing/LandingHowItWorks";
-import { LandingBentoShowcase } from "@/components/landing/LandingBentoShowcase";
-import { LandingShowflow } from "@/components/landing/LandingShowflow";
-import { LandingPricing } from "@/components/landing/LandingPricing";
-import { LandingFaq } from "@/components/landing/LandingFaq";
-import { LandingCta } from "@/components/landing/LandingCta";
-import { LandingFooter } from "@/components/landing/LandingFooter";
+import { LandingNav } from "@/features/landing/components/LandingNav";
+import { LandingHero } from "@/features/landing/components/LandingHero";
+import { LandingLogos } from "@/features/landing/components/LandingLogos";
+import { LandingFeatures } from "@/features/landing/components/LandingFeatures";
+import { LandingHowItWorks } from "@/features/landing/components/LandingHowItWorks";
+import { LandingBentoShowcase } from "@/features/landing/components/LandingBentoShowcase";
+import { LandingShowflow } from "@/features/landing/components/LandingShowflow";
+import { LandingPricing } from "@/features/landing/components/LandingPricing";
+import { LandingFaq } from "@/features/landing/components/LandingFaq";
+import { LandingCta } from "@/features/landing/components/LandingCta";
+import { LandingFooter } from "@/features/landing/components/LandingFooter";
 
 export default function Home() {
   return (

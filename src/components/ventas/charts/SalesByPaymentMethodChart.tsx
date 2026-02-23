@@ -4,14 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recha
 import type { SalesByPaymentMethod } from "@/app/api/sales-analytics/route";
 import { formatPaymentMethod } from "@/lib/formatPaymentMethod";
 import { ChartHeader } from "./ChartHeader";
-
-const COLORS = [
-  "hsl(142 71% 45%)",
-  "hsl(263 70% 50%)",
-  "hsl(217 91% 60%)",
-  "hsl(199 89% 48%)",
-  "hsl(25 95% 53%)",
-];
+import { COLORS_PAYMENT_METHOD } from "@/features/ventas/constants/chartColors";
 
 interface SalesByPaymentMethodChartProps {
   data: SalesByPaymentMethod;
@@ -92,7 +85,7 @@ export function SalesByPaymentMethodChart({
               nameKey="name"
             >
               {entries.map((_, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                <Cell key={i} fill={COLORS_PAYMENT_METHOD[i % COLORS_PAYMENT_METHOD.length]} />
               ))}
             </Pie>
             <Tooltip formatter={(v) => `$${Number(v ?? 0).toFixed(2)}`} />
