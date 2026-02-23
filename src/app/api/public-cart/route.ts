@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import {
+  buildProductPromoMap,
+  type PromotionForPrice,
+} from "@/lib/promotionPrice";
 
 const FINGERPRINT_HEADER = "x-fingerprint-id";
 
@@ -160,22 +164,64 @@ export async function POST(request: Request) {
     );
   }
 
-  const price = Number(product.price);
+  const basePrice = Number(product.price);
+  let priceSnapshot = basePrice;
+  let promotionId: string | null = null;
+
+  const { data: promotions } = await supabase
+    .from("promotions")
+    .select("id, type, value, quantity, product_ids, bundle_product_ids, valid_from, valid_until")
+    .eq("tenant_id", tenant_id);
+
+  const now = new Date();
+  const activePromos = (promotions ?? []).filter((p) => {
+    const from = p.valid_from ? new Date(p.valid_from) : null;
+    const until = p.valid_until ? new Date(p.valid_until) : null;
+    if (from && from > now) return false;
+    if (until && until < now) return false;
+    return true;
+  });
+
+  const promosForPrice: PromotionForPrice[] = activePromos.map((p) => ({
+    id: p.id,
+    type: p.type,
+    value: Number(p.value),
+    quantity: p.quantity,
+    product_ids: p.product_ids,
+    bundle_product_ids: p.bundle_product_ids,
+  }));
+
+  const promoMap = buildProductPromoMap(
+    promosForPrice,
+    [product_id],
+    new Map([[product_id, basePrice]])
+  );
+  const promo = promoMap.get(product_id);
+  if (promo && promo.finalPrice < basePrice) {
+    priceSnapshot = promo.finalPrice;
+    promotionId = promo.promotionId;
+  }
+
+  const upsertData: {
+    cart_id: string;
+    product_id: string;
+    quantity: number;
+    price_snapshot: number;
+    promotion_id?: string | null;
+  } = {
+    cart_id: cartId,
+    product_id: product_id,
+    quantity,
+    price_snapshot: Math.round(priceSnapshot * 100) / 100,
+  };
+  if (promotionId) upsertData.promotion_id = promotionId;
 
   const { error: upsertError } = await supabase
     .from("public_cart_items")
-    .upsert(
-      {
-        cart_id: cartId,
-        product_id: product_id,
-        quantity,
-        price_snapshot: price,
-      },
-      {
-        onConflict: "cart_id,product_id",
-        ignoreDuplicates: false,
-      }
-    );
+    .upsert(upsertData, {
+      onConflict: "cart_id,product_id",
+      ignoreDuplicates: false,
+    });
 
   if (upsertError) {
     return NextResponse.json({ error: upsertError.message }, { status: 500 });

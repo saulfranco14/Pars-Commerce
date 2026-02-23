@@ -8,7 +8,10 @@ import { ArrowLeft, X, Check } from "lucide-react";
 import useSWR from "swr";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
-import { btnPrimaryFlex, btnSecondaryFlex } from "@/components/ui/buttonClasses";
+import {
+  btnPrimaryFlex,
+  btnSecondaryFlex,
+} from "@/components/ui/buttonClasses";
 import { serviceFormSchema } from "@/lib/serviceValidation";
 import type { ProductDetail } from "@/types/products";
 import { update } from "@/services/productsService";
@@ -24,7 +27,9 @@ const subcatalogsKey = (tenantId: string) =>
 export default function EditarServicioPage() {
   const formId = useId();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const params = useParams();
   const router = useRouter();
   const serviceId = params.serviceId as string;
@@ -36,9 +41,12 @@ export default function EditarServicioPage() {
     ? subcatalogsKey(activeTenant.id)
     : null;
 
-  const { data: serviceData, error: serviceError, isLoading, mutate } = useSWR<
-    ProductDetail | null
-  >(productKeyValue, swrFetcher);
+  const {
+    data: serviceData,
+    error: serviceError,
+    isLoading,
+    mutate,
+  } = useSWR<ProductDetail | null>(productKeyValue, swrFetcher);
 
   const { data: subcatalogsData } = useSWR<Subcatalog[]>(
     subcatalogsKeyValue,
@@ -205,7 +213,7 @@ export default function EditarServicioPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-4">
-      <div className="shrink-0 border-b border-border pb-4">
+      <div className="shrink-0 pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/servicios`}
           className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
@@ -440,30 +448,36 @@ export default function EditarServicioPage() {
           </div>
 
           {/* Mobile: portal at body to bypass ancestor transform */}
-          {mounted && createPortal(
-            <div
-              className="fixed bottom-0 left-0 right-0 z-9998 flex shrink-0 flex-col gap-3 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:hidden"
-              style={{ paddingBottom: "max(1rem, calc(1rem + env(safe-area-inset-bottom)))", paddingLeft: "max(1rem, env(safe-area-inset-left, 1rem))", paddingRight: "max(1rem, env(safe-area-inset-right, 1rem))" }}
-            >
-              <Link
-                href={`/dashboard/${tenantSlug}/servicios`}
-                className={`${btnSecondaryFlex} w-full`}
+          {mounted &&
+            createPortal(
+              <div
+                className="fixed bottom-0 left-0 right-0 z-9998 flex shrink-0 flex-col gap-3 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:hidden"
+                style={{
+                  paddingBottom:
+                    "max(1rem, calc(1rem + env(safe-area-inset-bottom)))",
+                  paddingLeft: "max(1rem, env(safe-area-inset-left, 1rem))",
+                  paddingRight: "max(1rem, env(safe-area-inset-right, 1rem))",
+                }}
               >
-                <X className="h-4 w-4 shrink-0" aria-hidden />
-                Cancelar
-              </Link>
-              <button
-                type="submit"
-                form={formId}
-                disabled={loading}
-                className={`${btnPrimaryFlex} w-full`}
-              >
-                <Check className="h-4 w-4 shrink-0" aria-hidden />
-                {loading ? "Guardando…" : "Guardar"}
-              </button>
-            </div>,
-            document.body
-          )}
+                <Link
+                  href={`/dashboard/${tenantSlug}/servicios`}
+                  className={`${btnSecondaryFlex} w-full`}
+                >
+                  <X className="h-4 w-4 shrink-0" aria-hidden />
+                  Cancelar
+                </Link>
+                <button
+                  type="submit"
+                  form={formId}
+                  disabled={loading}
+                  className={`${btnPrimaryFlex} w-full`}
+                >
+                  <Check className="h-4 w-4 shrink-0" aria-hidden />
+                  {loading ? "Guardando…" : "Guardar"}
+                </button>
+              </div>,
+              document.body,
+            )}
           {/* Desktop: inline inside form */}
           <div className="hidden md:flex md:flex-row-reverse md:gap-3 md:px-8 md:py-4">
             <Link
