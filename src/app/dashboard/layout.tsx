@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuthInitializer } from "@/hooks/useAuthInitializer";
 import { useAuthProfileAndTenants } from "@/hooks/useAuthProfileAndTenants";
 import { useSessionStore } from "@/stores/useSessionStore";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -30,7 +30,7 @@ export default function DashboardLayout({
   const tenantsLoaded = useTenantStore((s) => s.tenantsLoaded);
   const activeTenantId = useTenantStore((s) => s.activeTenantId);
   const setActiveTenantId = useTenantStore((s) => s.setActiveTenantId);
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
 
   const pathParts = pathname.split("/").filter(Boolean);
   const tenantSlug =

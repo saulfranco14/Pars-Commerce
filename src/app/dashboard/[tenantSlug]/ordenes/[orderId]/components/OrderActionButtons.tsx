@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useOrder } from "../hooks/useOrder";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { AssignBeforePaidModal } from "./AssignBeforePaidModal";
 import { ConfirmPaymentModal } from "./ConfirmPaymentModal";
@@ -42,7 +42,7 @@ export function OrderActionButtons({
     handleGeneratePaymentLink,
     handleExpressToPayment,
   } = useOrder();
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
   const activeRole = useTenantStore((s) => s.activeRole)();
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [assignBeforePaidModalOpen, setAssignBeforePaidModalOpen] =

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { FolderTree, Pencil, Plus, Trash2 } from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { FilterTabs } from "@/components/ui/FilterTabs";
@@ -64,7 +64,7 @@ export default function ProductosPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
   const [subcatalogFilter, setSubcatalogFilter] = useState(
     () => searchParams.get("subcatalog_id") ?? "",
   );

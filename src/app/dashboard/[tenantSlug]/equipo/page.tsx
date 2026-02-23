@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import { Plus } from "lucide-react";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import type { TeamMember } from "@/types/team";
 import type { TenantRoleOption } from "@/services/tenantRolesService";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
@@ -30,7 +30,7 @@ const tenantRolesKey = (tenantId: string) =>
 export default function EquipoPage() {
   const params = useParams();
   const tenantSlug = params.tenantSlug as string;
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 

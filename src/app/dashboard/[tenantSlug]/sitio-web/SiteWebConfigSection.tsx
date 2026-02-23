@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import { ArrowRight, Check, Save, Settings, Globe, FileText, Tag } from "lucide-react";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
 import type { SitePage } from "@/types/tenantSitePages";
 import { SiteContentForm } from "@/app/dashboard/[tenantSlug]/configuracion/SiteContentForm";
@@ -36,7 +36,7 @@ interface SiteWebConfigSectionProps {
 }
 
 export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) {
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
   const setMemberships = useTenantStore((s) => s.setMemberships);
   const [activeTab, setActiveTab] = useState<SitioTab>("general");
 

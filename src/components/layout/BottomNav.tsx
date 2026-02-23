@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useActiveTenant } from "@/stores/useTenantStore";
 import {
   Home,
   ClipboardList,
@@ -21,7 +21,7 @@ export function BottomNav({
   ordersBadgeCount = 0,
 }: BottomNavProps) {
   const pathname = usePathname();
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
   const slug = activeTenant?.slug ?? null;
   const base = slug ? `/dashboard/${slug}` : "/dashboard";
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useOrder } from "../hooks/useOrder";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { OrderItem } from "../types";
 import { Plus, Tag } from "lucide-react";
@@ -18,7 +18,7 @@ export function OrderItemsTable() {
     handleSaveDiscount,
     fetchOrder,
   } = useOrder();
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [itemToRemove, setItemToRemove] = useState<OrderItem | null>(null);
   const [discountModalOpen, setDiscountModalOpen] = useState(false);

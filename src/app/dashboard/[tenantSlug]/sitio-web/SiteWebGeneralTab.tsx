@@ -2,80 +2,7 @@
 
 import { Check, ExternalLink, Palette } from "lucide-react";
 import type { SiteTemplate } from "@/services/siteTemplatesService";
-
-const VARIANT_STYLES: Record<
-  string,
-  {
-    bg: string;
-    headerBg: string;
-    heroBg: string;
-    cardBg: string;
-    dark?: boolean;
-  }
-> = {
-  classic: {
-    bg: "#F9FAFB",
-    headerBg: "#FFFFFF",
-    heroBg: "accent",
-    cardBg: "#FFFFFF",
-  },
-  minimal: {
-    bg: "#FFFFFF",
-    headerBg: "#FFFFFF",
-    heroBg: "#F3F4F6",
-    cardBg: "#FFFFFF",
-  },
-  bento: {
-    bg: "#F3F4F6",
-    headerBg: "#FFFFFF",
-    heroBg: "accent",
-    cardBg: "#FFFFFF",
-  },
-  dark: {
-    bg: "#111827",
-    headerBg: "#0D1117",
-    heroBg: "#1F2937",
-    cardBg: "#1F2937",
-    dark: true,
-  },
-  elegant: {
-    bg: "#FAFAF9",
-    headerBg: "#FAFAF9",
-    heroBg: "#F5F5F4",
-    cardBg: "#FFFFFF",
-  },
-  bold: {
-    bg: "#FFFFFF",
-    headerBg: "accent",
-    heroBg: "#F9FAFB",
-    cardBg: "#FFFFFF",
-  },
-  organic: {
-    bg: "#FFFBEB",
-    headerBg: "#FFFBEB",
-    heroBg: "#FEF3C7",
-    cardBg: "#FFFFFF",
-  },
-  industrial: {
-    bg: "#F1F5F9",
-    headerBg: "#1E293B",
-    heroBg: "#334155",
-    cardBg: "#E2E8F0",
-    dark: true,
-  },
-  vibrant: {
-    bg: "#F3F4F6",
-    headerBg: "accent",
-    heroBg: "accent",
-    cardBg: "#FFFFFF",
-  },
-  clean: {
-    bg: "#FFFFFF",
-    headerBg: "#FFFFFF",
-    heroBg: "#FFFFFF",
-    cardBg: "#F9FAFB",
-  },
-};
+import { TemplateSelector } from "@/components/site/TemplateSelector";
 
 const COLOR_PRESETS = [
   "#c20fbc",
@@ -89,92 +16,6 @@ const COLOR_PRESETS = [
   "#8b5cf6",
   "#f97316",
 ];
-
-function TemplateMiniPreview({
-  variant,
-  themeColor,
-}: {
-  variant: string;
-  themeColor: string;
-}) {
-  const s = VARIANT_STYLES[variant] ?? VARIANT_STYLES.classic;
-  const resolve = (val: string) => (val === "accent" ? themeColor : val);
-  const isDark = s.dark ?? false;
-  const textAlpha = isDark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.25)";
-
-  return (
-    <div
-      className="w-full overflow-hidden rounded-t-md"
-      style={{ background: s.bg, aspectRatio: "16/10" }}
-    >
-      <div
-        className="flex items-center gap-1 px-1.5 py-1"
-        style={{
-          background: resolve(s.headerBg),
-          borderBottom: "1px solid rgba(0,0,0,0.06)",
-        }}
-      >
-        <div
-          className="h-1.5 w-1.5 rounded-full shrink-0"
-          style={{ background: themeColor }}
-        />
-        <div
-          className="h-0.5 w-8 rounded-full"
-          style={{
-            background: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.2)",
-          }}
-        />
-      </div>
-      <div
-        className="flex flex-col gap-0.5 px-1.5 py-1.5"
-        style={{ background: resolve(s.heroBg) }}
-      >
-        <div
-          className="h-1 w-14 rounded-full"
-          style={{
-            background:
-              isDark || s.heroBg === "accent"
-                ? "rgba(255,255,255,0.85)"
-                : textAlpha,
-          }}
-        />
-        <div
-          className="h-2 w-10 rounded"
-          style={{
-            background:
-              s.heroBg === "accent" || isDark
-                ? "rgba(255,255,255,0.9)"
-                : themeColor,
-            opacity: 0.95,
-          }}
-        />
-      </div>
-      <div className="grid grid-cols-3 gap-0.5 p-1">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="overflow-hidden rounded-sm"
-            style={{
-              background: s.cardBg,
-              boxShadow: "0 1px 1px rgba(0,0,0,0.04)",
-            }}
-          >
-            <div
-              className="h-3 w-full"
-              style={{ background: `${themeColor}22` }}
-            />
-            <div className="p-0.5">
-              <div
-                className="h-0.5 w-5 rounded-full"
-                style={{ background: textAlpha }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 interface SiteWebGeneralTabProps {
   tenantSlug: string;
@@ -208,7 +49,6 @@ export function SiteWebGeneralTab({
   onSaveAppearance,
 }: SiteWebGeneralTabProps) {
   const previewColor = themeColor.trim() || "#6366f1";
-  const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
 
   return (
     <form id="appearance-form" onSubmit={onSaveAppearance} className="space-y-5">
@@ -318,75 +158,13 @@ export function SiteWebGeneralTab({
         </div>
 
         <div className="space-y-5">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold text-foreground">
-                Plantilla
-              </label>
-              {selectedTemplate && (
-                <span className="text-[10px] text-muted-foreground">
-                  {selectedTemplate.name} seleccionada
-                </span>
-              )}
-            </div>
-
-            <div>
-              <div className="grid grid-cols-3 gap-2">
-                  {templates.map((t) => {
-                    const isSelected = selectedTemplateId === t.id;
-                    const cardColor = t.default_theme_color ?? previewColor;
-                    return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => onTemplateSelect(t)}
-                        title={t.description ?? undefined}
-                        className={`group relative flex flex-col overflow-hidden rounded-xl border text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
-                          isSelected
-                            ? "border-accent ring-2 ring-accent/25 shadow-md"
-                            : "border-border/60 bg-background hover:border-accent/40 hover:shadow-sm"
-                        }`}
-                      >
-                        <div className="overflow-hidden">
-                          {t.preview_image_url ? (
-                            <img
-                              src={t.preview_image_url}
-                              alt={t.name}
-                              className="aspect-16/10 w-full object-cover"
-                            />
-                          ) : (
-                            <TemplateMiniPreview
-                              variant={t.layout_variant}
-                              themeColor={cardColor}
-                            />
-                          )}
-                        </div>
-                        <div
-                          className={`px-2 py-1.5 transition-colors ${
-                            isSelected ? "bg-accent/5" : "bg-background"
-                          }`}
-                        >
-                          <p className="text-[11px] font-medium text-foreground leading-tight truncate">
-                            {t.name}
-                          </p>
-                        </div>
-                        {isSelected && (
-                          <span
-                            className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-sm"
-                            aria-hidden
-                          >
-                            <Check className="h-2.5 w-2.5" />
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-            </div>
-            <p className="mt-1.5 text-[10px] text-muted-foreground/70">
-              {templates.length} plantillas disponibles
-            </p>
-          </div>
+          <TemplateSelector
+            templates={templates}
+            selectedTemplateId={selectedTemplateId}
+            onSelect={onTemplateSelect}
+            themeColor={previewColor}
+            label="Plantilla"
+          />
         </div>
       </div>
 

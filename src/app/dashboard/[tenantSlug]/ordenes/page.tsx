@@ -7,7 +7,7 @@ import useSWR from "swr";
 import { Plus, SlidersHorizontal, X } from "lucide-react";
 import { FAB } from "@/components/ui/FAB";
 import { OrdersFilterSheet } from "@/components/orders/OrdersFilterSheet";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { OrderCardMobile } from "@/components/orders/OrderCardMobile";
 import { TicketDownloadActions } from "@/components/orders/TicketDownloadActions";
@@ -73,7 +73,7 @@ export default function OrdenesPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
   const [statusFilter, setStatusFilter] = useState(
     () => searchParams.get("status") ?? "",
   );
