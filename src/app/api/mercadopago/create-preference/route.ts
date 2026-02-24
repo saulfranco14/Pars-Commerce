@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { preferenceClient } from "@/lib/mercadopago";
+import { calcBuyerTotal, TARIFA_DE_SERVICIO_LABEL } from "@/constants/commissionConfig";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -57,14 +58,15 @@ export async function POST(request: Request) {
   const orderTotal = Number(order.total);
   const orderItems = (order.items as unknown[]) ?? [];
   const hasDiscount = orderDiscount > 0;
+  const { total: buyerTotal, mpFee, parsFee } = calcBuyerTotal(orderTotal);
 
-  const items: { id: string; title: string; quantity: number; unit_price: number; currency_id: string }[] =
+  const baseItems: { id: string; title: string; quantity: number; unit_price: number; currency_id: string }[] =
     hasDiscount || orderItems.length === 0
       ? [{
           id: order.id,
           title: `Orden #${order.id.slice(0, 8)}`,
           quantity: 1,
-          unit_price: orderTotal,
+          unit_price: Math.round(orderTotal * 100) / 100,
           currency_id: "MXN",
         }]
       : orderItems.map((item: unknown) => {
@@ -81,6 +83,23 @@ export async function POST(request: Request) {
             currency_id: "MXN",
           };
         });
+
+  const mpFeeRounded = Math.round(mpFee * 100) / 100;
+  const parsFeeRounded = Math.round(parsFee * 100) / 100;
+
+  const items = [
+    ...baseItems,
+    ...(mpFeeRounded > 0
+      ? [{ id: "mp-fee", title: "Comisión Mercado Pago", quantity: 1, unit_price: mpFeeRounded, currency_id: "MXN" as const }]
+      : []),
+    {
+      id: "pars-fee",
+      title: TARIFA_DE_SERVICIO_LABEL,
+      quantity: 1,
+      unit_price: parsFeeRounded,
+      currency_id: "MXN" as const,
+    },
+  ];
 
   // Determine callback base URL
   const origin =

@@ -12,6 +12,7 @@ import { OrderItemsTable } from "./components/OrderItemsTable";
 import { OrderActionButtons } from "./components/OrderActionButtons";
 import { ReceiptActions } from "./components/ReceiptActions";
 import { PaymentLinkCard } from "./components/PaymentLinkCard";
+import { OrderCommissionsCard } from "./components/OrderCommissionsCard";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { ReceiptPreview } from "./components/ReceiptPreview";
 
@@ -91,8 +92,11 @@ function OrderDetailContent() {
           <div className="order-4 min-w-0 shrink-0 md:order-4">
             <PaymentLinkCard />
           </div>
+          <div className="order-5 min-w-0 shrink-0 md:order-5">
+            <OrderCommissionsCard />
+          </div>
           {showTicket && (
-            <div className="order-5 min-w-0 shrink-0 md:order-5">
+            <div className="order-6 min-w-0 shrink-0 md:order-6">
               <ReceiptActions />
             </div>
           )}

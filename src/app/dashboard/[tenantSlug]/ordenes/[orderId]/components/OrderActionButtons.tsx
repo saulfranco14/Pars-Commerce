@@ -6,6 +6,7 @@ import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { AssignBeforePaidModal } from "./AssignBeforePaidModal";
 import { ConfirmPaymentModal } from "./ConfirmPaymentModal";
+import { GenerateLinkModal } from "./GenerateLinkModal";
 import {
   Zap,
   PlayCircle,
@@ -48,6 +49,7 @@ export function OrderActionButtons({
   const [assignBeforePaidModalOpen, setAssignBeforePaidModalOpen] =
     useState(false);
   const [confirmPaymentModalOpen, setConfirmPaymentModalOpen] = useState(false);
+  const [generateLinkModalOpen, setGenerateLinkModalOpen] = useState(false);
 
   if (!order) return null;
 
@@ -190,12 +192,12 @@ export function OrderActionButtons({
             </button>
             <button
               type="button"
-              onClick={handleGeneratePaymentLink}
+              onClick={() => setGenerateLinkModalOpen(true)}
               disabled={actionLoading}
               className={`w-full min-w-0 shrink-0 sm:w-auto ${btnBlue}`}
             >
               <Smartphone className="h-4 w-4 shrink-0" aria-hidden />
-              {actionLoading ? "Generando…" : "Generar cobro (MercadoPago)"}
+              Generar cobro (MercadoPago)
             </button>
           </>
         )}
@@ -248,6 +250,17 @@ export function OrderActionButtons({
           setConfirmPaymentModalOpen(false);
         }}
         total={Number(order.total)}
+        loading={actionLoading}
+      />
+
+      <GenerateLinkModal
+        isOpen={generateLinkModalOpen}
+        onClose={() => setGenerateLinkModalOpen(false)}
+        onConfirm={async () => {
+          await handleGeneratePaymentLink();
+          setGenerateLinkModalOpen(false);
+        }}
+        vendorTotal={Number(order.total)}
         loading={actionLoading}
       />
     </div>

@@ -1,9 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { paymentClient } from "@/lib/mercadopago";
+import { verifyWebhookSignature } from "@/lib/mercadopagoWebhookVerify";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-  // Parse notification from MercadoPago
   let body: { type?: string; data?: { id?: string }; action?: string };
   try {
     body = await request.json();
@@ -11,9 +11,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // Only process payment notifications
+  const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+  const xSignature = request.headers.get("x-signature");
+  const xRequestId = request.headers.get("x-request-id");
+
+  if (webhookSecret) {
+    const valid = verifyWebhookSignature(
+      body,
+      xSignature,
+      xRequestId,
+      webhookSecret
+    );
+    if (!valid) {
+      console.warn("Webhook: invalid signature, rejecting");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
+  } else if (process.env.NODE_ENV === "production") {
+    console.warn("Webhook: MERCADOPAGO_WEBHOOK_SECRET not set in production");
+    return NextResponse.json(
+      { error: "Webhook secret not configured" },
+      { status: 401 }
+    );
+  }
+
   if (body.type !== "payment" || !body.data?.id) {
-    // Acknowledge other notification types
     return NextResponse.json({ received: true });
   }
 
@@ -29,7 +50,15 @@ export async function POST(request: Request) {
     }
 
     const orderId = mpPayment.external_reference;
-    const mpStatus = mpPayment.status; // approved, pending, rejected, etc.
+    const mpStatus = mpPayment.status;
+    const transactionAmount = Number(mpPayment.transaction_amount ?? 0);
+    const netReceived =
+      Number(
+        (mpPayment.transaction_details as { net_received_amount?: number })
+          ?.net_received_amount ?? 0
+      ) ?? 0;
+    const mpFeeAmount = Math.round((transactionAmount - netReceived) * 100) / 100;
+    const parsFeeAmount = 0;
     const supabase = createAdminClient();
 
     if (mpStatus === "approved") {
@@ -89,19 +118,23 @@ export async function POST(request: Request) {
         .limit(1)
         .single();
 
+      const paymentMetadata = {
+        mp_payment_id: paymentId,
+        mp_status: mpStatus,
+        mp_status_detail: mpPayment.status_detail,
+        mp_payment_method: mpPayment.payment_method_id,
+        paid_at: mpPayment.date_approved,
+        mp_fee_amount: mpFeeAmount,
+        pars_fee_amount: parsFeeAmount,
+      };
+
       if (existingPayment) {
         await supabase
           .from("payments")
           .update({
             external_id: String(paymentId),
             status: "approved",
-            metadata: {
-              mp_payment_id: paymentId,
-              mp_status: mpStatus,
-              mp_status_detail: mpPayment.status_detail,
-              mp_payment_method: mpPayment.payment_method_id,
-              paid_at: mpPayment.date_approved,
-            },
+            metadata: paymentMetadata,
             updated_at: new Date().toISOString(),
           })
           .eq("id", existingPayment.id);
@@ -111,20 +144,13 @@ export async function POST(request: Request) {
           provider: "mercadopago",
           external_id: String(paymentId),
           status: "approved",
-          amount: Number(mpPayment.transaction_amount ?? 0),
-          metadata: {
-            mp_payment_id: paymentId,
-            mp_status: mpStatus,
-            mp_status_detail: mpPayment.status_detail,
-            mp_payment_method: mpPayment.payment_method_id,
-            paid_at: mpPayment.date_approved,
-          },
+          amount: transactionAmount,
+          metadata: paymentMetadata,
         });
       }
 
       console.log(`Webhook: order ${orderId} marked as paid (payment ${paymentId})`);
     } else {
-      // For non-approved statuses, just update the payment record metadata
       const { data: existingPayment } = await supabase
         .from("payments")
         .select("id")
@@ -143,6 +169,8 @@ export async function POST(request: Request) {
               mp_payment_id: paymentId,
               mp_status: mpStatus,
               mp_status_detail: mpPayment.status_detail,
+              mp_fee_amount: mpFeeAmount,
+              pars_fee_amount: parsFeeAmount,
             },
             updated_at: new Date().toISOString(),
           })

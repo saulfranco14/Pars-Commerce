@@ -2,12 +2,13 @@
 
 import type { TenantAddress } from "@/types/database";
 import type { TicketSettings } from "@/types/ticketSettings";
-import { OrderDetail, OrderItem } from "../types";
+import type { OrderDetail, OrderItem, OrderPayment } from "../types";
 import { formatOrderDateFull } from "@/lib/formatDate";
 import {
   formatPaymentMethod,
   getPaymentMethodConfig,
 } from "@/lib/formatPaymentMethod";
+import { TARIFA_DE_SERVICIO_LABEL } from "@/constants/commissionConfig";
 
 interface ReceiptPreviewProps {
   order: OrderDetail;
@@ -199,6 +200,18 @@ export function ReceiptPreview({
                 <span className="text-muted-foreground">Descuento:</span>
                 <span className="tabular-nums">
                   -${Number(order.discount).toFixed(2)}
+                </span>
+              </p>
+            )}
+            {order.payment_method === "mercadopago" && (
+              <p className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{TARIFA_DE_SERVICIO_LABEL}:</span>
+                <span className="tabular-nums">
+                  ${(
+                    (order.payments as OrderPayment[] | undefined)
+                      ?.find((p) => p.provider === "mercadopago")
+                      ?.metadata?.pars_fee_amount ?? 0
+                  ).toFixed(2)}
                 </span>
               </p>
             )}
