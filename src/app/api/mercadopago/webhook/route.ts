@@ -135,6 +135,7 @@ export async function POST(request: Request) {
           .update({
             external_id: String(paymentId),
             status: "approved",
+            amount: transactionAmount,
             metadata: paymentMetadata,
             updated_at: new Date().toISOString(),
           })

@@ -14,7 +14,6 @@ import { ReceiptActions } from "@/features/orders/components/ReceiptActions";
 import { PaymentLinkCard } from "@/features/orders/components/PaymentLinkCard";
 import { ReceiptPreview } from "@/features/orders/components/ReceiptPreview";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
-import { OrderCommissionsCard } from "@/features/orders/components/OrderCommissionsCard";
 
 function OrderDetailContent() {
   const {
@@ -54,7 +53,10 @@ function OrderDetailContent() {
   if (!order) return null;
 
   const isPaid = order.status === "paid" || order.status === "completed";
-  const showTicket = isPaid || order.status === "pending_pickup";
+  const showTicket =
+    isPaid ||
+    order.status === "pending_pickup" ||
+    (order.status === "pending_payment" && !!order.payment_link);
   const printContainer =
     typeof document !== "undefined"
       ? document.getElementById("ticket-print-portal")
@@ -104,11 +106,8 @@ function OrderDetailContent() {
           <div className="order-4 min-w-0 shrink-0 md:order-4">
             <PaymentLinkCard />
           </div>
-          <div className="order-5 min-w-0 shrink-0 md:order-5">
-            <OrderCommissionsCard />
-          </div>
           {showTicket && (
-            <div className="order-6 min-w-0 shrink-0 md:order-6">
+            <div className="order-5 min-w-0 shrink-0 md:order-5">
               <ReceiptActions />
             </div>
           )}

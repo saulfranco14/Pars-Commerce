@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useOrder } from "@/features/orders/hooks/useOrder";
 import { useActiveTenant, useTenantStore } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
