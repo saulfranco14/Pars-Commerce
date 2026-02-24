@@ -12,27 +12,15 @@ import {
   create as createPromotion,
   remove as removePromotion,
 } from "@/services/promotionsService";
-
-const promotionsKey = (tenantId: string) =>
-  `/api/promotions?tenant_id=${encodeURIComponent(tenantId)}`;
-
-const productsKey = (tenantId: string) =>
-  `/api/products?tenant_id=${encodeURIComponent(tenantId)}`;
-
-const subcatalogsKey = (tenantId: string) =>
-  `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
-
-interface ProductItem {
-  id: string;
-  name: string;
-  slug: string | null;
-}
-
-interface SubcatalogItem {
-  id: string;
-  name: string;
-  slug: string;
-}
+import type {
+  ProductItem,
+  SubcatalogItem,
+} from "@/features/promociones/interfaces/selectItems";
+import {
+  promotionsKey,
+  productsKey,
+  subcatalogsKey,
+} from "@/features/promociones/helpers/swrKeys";
 
 export default function PromocionesPage() {
   const activeTenant = useActiveTenant();

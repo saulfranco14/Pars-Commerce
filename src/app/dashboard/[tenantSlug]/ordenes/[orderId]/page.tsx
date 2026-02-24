@@ -4,23 +4,32 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { OrderProvider, useOrder } from "./hooks/useOrder";
-import { OrderHeader } from "./components/OrderHeader";
-import { CustomerCard } from "./components/CustomerCard";
-import { AssignmentCard } from "./components/AssignmentCard";
-import { OrderItemsTable } from "./components/OrderItemsTable";
-import { OrderActionButtons } from "./components/OrderActionButtons";
-import { ReceiptActions } from "./components/ReceiptActions";
-import { PaymentLinkCard } from "./components/PaymentLinkCard";
-import { OrderCommissionsCard } from "./components/OrderCommissionsCard";
+import { OrderProvider, useOrder } from "@/features/orders/hooks/useOrder";
+import { OrderHeader } from "@/features/orders/components/OrderHeader";
+import { CustomerCard } from "@/features/orders/components/CustomerCard";
+import { AssignmentCard } from "@/features/orders/components/AssignmentCard";
+import { OrderItemsTable } from "@/features/orders/components/OrderItemsTable";
+import { OrderActionButtons } from "@/features/orders/components/OrderActionButtons";
+import { ReceiptActions } from "@/features/orders/components/ReceiptActions";
+import { PaymentLinkCard } from "@/features/orders/components/PaymentLinkCard";
+import { ReceiptPreview } from "@/features/orders/components/ReceiptPreview";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
-import { ReceiptPreview } from "./components/ReceiptPreview";
 
 function OrderDetailContent() {
-  const { order, loading, error, tenantSlug, businessName, businessAddress, ticketOptions, logoUrl } =
-    useOrder();
+  const {
+    order,
+    loading,
+    error,
+    tenantSlug,
+    businessName,
+    businessAddress,
+    ticketOptions,
+    logoUrl,
+  } = useOrder();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   if (loading) {
     return <LoadingBlock message="Cargando orden…" />;
@@ -46,7 +55,9 @@ function OrderDetailContent() {
   const isPaid = order.status === "paid" || order.status === "completed";
   const showTicket = isPaid || order.status === "pending_pickup";
   const printContainer =
-    typeof document !== "undefined" ? document.getElementById("ticket-print-portal") : null;
+    typeof document !== "undefined"
+      ? document.getElementById("ticket-print-portal")
+      : null;
 
   return (
     <>
@@ -67,7 +78,7 @@ function OrderDetailContent() {
               logoUrl={logoUrl}
             />
           </div>,
-          printContainer
+          printContainer,
         )}
 
       <div className="no-print flex min-h-0 min-w-0 h-full w-full max-w-5xl mx-auto flex-1 flex-col overflow-x-hidden overflow-y-auto pb-40 lg:pb-6 sm:max-w-5xl md:pb-0">
@@ -113,7 +124,7 @@ function OrderDetailContent() {
           >
             <OrderActionButtons embedded fixedBar />
           </div>,
-          document.body
+          document.body,
         )}
     </>
   );

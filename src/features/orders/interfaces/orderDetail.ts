@@ -1,0 +1,58 @@
+export interface OrderItem {
+  id: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  is_wholesale?: boolean;
+  wholesale_savings?: number;
+  product: {
+    id: string;
+    name: string;
+    type: string;
+    image_url?: string | null;
+  } | null;
+}
+
+export interface PaymentMetadata {
+  mp_fee_amount?: number;
+  pars_fee_amount?: number;
+}
+
+export interface OrderPayment {
+  provider: string;
+  status: string;
+  amount: number;
+  metadata?: PaymentMetadata | null;
+}
+
+export interface OrderDetail {
+  id: string;
+  status: string;
+  cancelled_from?: string | null;
+  source?: "dashboard" | "public_store" | null;
+  customer_name: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
+  subtotal: number;
+  discount: number;
+  total: number;
+  created_at: string;
+  paid_at: string | null;
+  assigned_to: string | null;
+  assigned_user?: {
+    id: string;
+    display_name: string | null;
+    email: string | null;
+  } | null;
+  payment_method: string | null;
+  payment_link?: string | null;
+  mp_preference_id?: string | null;
+  items: OrderItem[];
+  payments?: OrderPayment[];
+}
+
+export interface TeamMemberOption {
+  user_id: string;
+  display_name: string;
+  email: string;
+}

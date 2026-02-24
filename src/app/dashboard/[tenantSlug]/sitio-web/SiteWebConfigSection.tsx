@@ -3,39 +3,29 @@
 import { useState, useEffect } from "react";
 import useSWR from "swr";
 import Link from "next/link";
-import { ArrowRight, Check, Save, Settings, Globe, FileText, Tag } from "lucide-react";
-import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import { ArrowRight, Check, Save } from "lucide-react";
+import { useActiveTenant, useTenantStore } from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
 import type { SitePage } from "@/types/tenantSitePages";
-import { SiteContentForm } from "@/app/dashboard/[tenantSlug]/configuracion/SiteContentForm";
-import { update as updateTenant, list as listTenants } from "@/services/tenantsService";
+import { SiteContentForm } from "@/features/configuracion/components/SiteContentForm";
+import {
+  update as updateTenant,
+  list as listTenants,
+} from "@/services/tenantsService";
 import type { SiteTemplate } from "@/services/siteTemplatesService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { SiteWebGeneralTab } from "./SiteWebGeneralTab";
 import { SiteWebRedesTab } from "./SiteWebRedesTab";
 
+import { SITIO_TABS, type SitioTab } from "@/features/sitio-web/constants/tabs";
+import type { SiteWebConfigSectionProps } from "@/features/sitio-web/interfaces/siteWebConfig";
+
 const sitePagesKey = (tenantId: string) =>
   `/api/tenant-site-pages?tenant_id=${encodeURIComponent(tenantId)}`;
 
-type SitioTab = "general" | "redes" | "contenido" | "promociones";
-
-const SITIO_TABS: {
-  value: SitioTab;
-  label: string;
-  shortLabel: string;
-  icon: React.ComponentType<{ className?: string }>;
-}[] = [
-  { value: "general", label: "General", shortLabel: "General", icon: Settings },
-  { value: "redes", label: "Redes", shortLabel: "Redes", icon: Globe },
-  { value: "contenido", label: "Contenido", shortLabel: "Contenido", icon: FileText },
-  { value: "promociones", label: "Promociones", shortLabel: "Promos", icon: Tag },
-];
-
-interface SiteWebConfigSectionProps {
-  tenantSlug: string;
-}
-
-export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) {
+export function SiteWebConfigSection({
+  tenantSlug,
+}: SiteWebConfigSectionProps) {
   const activeTenant = useActiveTenant();
   const setMemberships = useTenantStore((s) => s.setMemberships);
   const [activeTab, setActiveTab] = useState<SitioTab>("general");
@@ -50,12 +40,17 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
   const [redesLoading, setRedesLoading] = useState(false);
   const [redesError, setRedesError] = useState<string | null>(null);
   const [redesSuccess, setRedesSuccess] = useState<string | null>(null);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
+    null,
+  );
   const [appearanceLoading, setAppearanceLoading] = useState(false);
-  const [appearanceSuccess, setAppearanceSuccess] = useState<string | null>(null);
+  const [appearanceSuccess, setAppearanceSuccess] = useState<string | null>(
+    null,
+  );
 
-  const savedTemplateId = (activeTenant as { site_template_id?: string | null })
-    ?.site_template_id ?? null;
+  const savedTemplateId =
+    (activeTenant as { site_template_id?: string | null })?.site_template_id ??
+    null;
   const savedThemeColor = (activeTenant?.theme_color ?? "").trim();
   const appearanceDirty =
     selectedTemplateId !== savedTemplateId ||
@@ -81,13 +76,22 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
     setPublicStoreEnabled(activeTenant.public_store_enabled ?? false);
     setThemeColor(activeTenant.theme_color ?? "");
     setSelectedTemplateId(
-      (activeTenant as { site_template_id?: string | null }).site_template_id ?? null
+      (activeTenant as { site_template_id?: string | null }).site_template_id ??
+        null,
     );
     setAppearanceSuccess(null);
-    setWhatsappPhone((activeTenant as { whatsapp_phone?: string }).whatsapp_phone ?? "");
-    const sl = (activeTenant as {
-      social_links?: { instagram?: string; facebook?: string; twitter?: string };
-    }).social_links;
+    setWhatsappPhone(
+      (activeTenant as { whatsapp_phone?: string }).whatsapp_phone ?? "",
+    );
+    const sl = (
+      activeTenant as {
+        social_links?: {
+          instagram?: string;
+          facebook?: string;
+          twitter?: string;
+        };
+      }
+    ).social_links;
     setInstagramUrl(sl?.instagram ?? "");
     setFacebookUrl(sl?.facebook ?? "");
     setTwitterUrl(sl?.twitter ?? "");
@@ -97,7 +101,9 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
     setActiveTab(tab);
   }
 
-  async function handleTogglePublicStore(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleTogglePublicStore(
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) {
     const checked = e.target.checked;
     if (!activeTenant) return;
     setPublicStoreLoading(true);
@@ -123,7 +129,9 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
         site_template_id: selectedTemplateId,
         theme_color: themeColor.trim() || undefined,
       });
-      setAppearanceSuccess("Apariencia guardada. La vista previa se actualizará.");
+      setAppearanceSuccess(
+        "Apariencia guardada. La vista previa se actualizará.",
+      );
       const list = (await listTenants()) as MembershipItem[];
       setMemberships(list ?? []);
     } finally {
@@ -181,27 +189,27 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0 p-4 pb-0 sm:p-5 sm:pb-0">
         <div className="flex rounded-xl bg-muted/40 p-1 gap-0.5">
-        {SITIO_TABS.map((tab) => {
-          const isActive = activeTab === tab.value;
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.value}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => handleTabChange(tab.value)}
-              className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-2 text-[10px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/40 ${
-                isActive
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" aria-hidden />
-              {tab.shortLabel}
-            </button>
-          );
-        })}
+          {SITIO_TABS.map((tab) => {
+            const isActive = activeTab === tab.value;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => handleTabChange(tab.value)}
+                className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-2 text-[10px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/40 ${
+                  isActive
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" aria-hidden />
+                {tab.shortLabel}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -321,4 +329,3 @@ export function SiteWebConfigSection({ tenantSlug }: SiteWebConfigSectionProps) 
     </div>
   );
 }
-

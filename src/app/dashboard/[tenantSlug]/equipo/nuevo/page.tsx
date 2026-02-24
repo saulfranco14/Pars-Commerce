@@ -4,22 +4,20 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
-import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
-import { ArrowLeft, Plus, AlertTriangle } from "lucide-react";
+import { useActiveTenant, useTenantStore } from "@/stores/useTenantStore";
+import {
+  ArrowLeft,
+  Plus,
+  AlertTriangle,
+  Mail,
+  CheckCircle2,
+} from "lucide-react";
 import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
 import type { TenantRoleOption } from "@/services/tenantRolesService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { addMember } from "@/services/teamService";
-
-const tenantRolesKey = (tenantId: string) =>
-  `/api/tenant-roles?tenant_id=${encodeURIComponent(tenantId)}`;
-
-const ROLE_DESCRIPTIONS: Record<string, string> = {
-  owner:
-    "Acceso total al negocio: ventas, productos, inventario, equipo y configuración.",
-  member:
-    "Puede gestionar ventas, órdenes y catálogo; no puede gestionar equipo ni configuración.",
-};
+import { tenantRolesKey } from "@/features/equipo/helpers/swrKeys";
+import { ROLE_DESCRIPTIONS } from "@/features/equipo/constants/roleDescriptions";
 
 export default function NuevoMiembroPage() {
   const params = useParams();
@@ -105,19 +103,7 @@ export default function NuevoMiembroPage() {
       <div className="mx-auto flex min-h-0 max-w-lg flex-1 flex-col overflow-auto">
         <div className="rounded-xl border border-green-200 bg-green-50 p-6 shadow-sm alert-success">
           <div className="mb-4 flex items-center gap-2">
-            <svg
-              className="h-6 w-6 text-green-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-              />
-            </svg>
+            <Mail className="h-6 w-6 text-green-600" aria-hidden />
             <h2 className="text-xl font-semibold text-green-900">
               Invitación enviada
             </h2>
@@ -150,19 +136,7 @@ export default function NuevoMiembroPage() {
       <div className="mx-auto flex min-h-0 max-w-lg flex-1 flex-col overflow-auto">
         <div className="rounded-xl border border-green-200 bg-green-50 p-6 shadow-sm alert-success">
           <div className="mb-4 flex items-center gap-2">
-            <svg
-              className="h-6 w-6 text-green-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <CheckCircle2 className="h-6 w-6 text-green-600" aria-hidden />
             <h2 className="text-xl font-semibold text-green-900">
               Usuario creado exitosamente
             </h2>
@@ -238,66 +212,66 @@ export default function NuevoMiembroPage() {
     >
       <section className="rounded-xl bg-surface p-4 sm:p-6 md:p-8">
         <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="displayName"
-                  className="block text-sm font-medium text-muted-foreground"
-                >
-                  Nombre <span className="font-normal text-muted">(opcional)</span>
-                </label>
-          <input
-            id="displayName"
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
-            placeholder="Nombre de la persona"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-muted-foreground"
-          >
-            Email del usuario
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
-            placeholder="usuario@ejemplo.com"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="role"
-            className="block text-sm font-medium text-muted-foreground"
-          >
-            Rol
-          </label>
-          <select
-            id="role"
-            value={roleId}
-            onChange={(e) => setRoleId(e.target.value)}
-            className="input-form select-custom mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-sm text-foreground transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
-          >
-            {roles.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-          {roleId && (
-            <p className="mt-1 text-xs text-muted">
-              {ROLE_DESCRIPTIONS[
-                roles.find((r) => r.id === roleId)?.name ?? ""
-              ] ?? ""}
-            </p>
-          )}
-        </div>
+          <div>
+            <label
+              htmlFor="displayName"
+              className="block text-sm font-medium text-muted-foreground"
+            >
+              Nombre <span className="font-normal text-muted">(opcional)</span>
+            </label>
+            <input
+              id="displayName"
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+              placeholder="Nombre de la persona"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-muted-foreground"
+            >
+              Email del usuario
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+              placeholder="usuario@ejemplo.com"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="role"
+              className="block text-sm font-medium text-muted-foreground"
+            >
+              Rol
+            </label>
+            <select
+              id="role"
+              value={roleId}
+              onChange={(e) => setRoleId(e.target.value)}
+              className="input-form select-custom mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-sm text-foreground transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+            >
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+            {roleId && (
+              <p className="mt-1 text-xs text-muted">
+                {ROLE_DESCRIPTIONS[
+                  roles.find((r) => r.id === roleId)?.name ?? ""
+                ] ?? ""}
+              </p>
+            )}
+          </div>
         </div>
       </section>
     </CreateEditPageLayout>

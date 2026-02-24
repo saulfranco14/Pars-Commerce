@@ -1,36 +1,96 @@
 "use client";
 
 import { Check, ExternalLink, Palette } from "lucide-react";
-import type { SiteTemplate } from "@/services/siteTemplatesService";
-import { TemplateSelector } from "@/components/site/TemplateSelector";
+import {
+  VARIANT_STYLES,
+  COLOR_PRESETS,
+} from "@/features/sitio-web/constants/templateStyles";
+import type { SiteWebGeneralTabProps } from "@/features/sitio-web/interfaces/siteWebGeneralTab";
 
-const COLOR_PRESETS = [
-  "#c20fbc",
-  "#6366f1",
-  "#0ea5e9",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#ec4899",
-  "#14b8a6",
-  "#8b5cf6",
-  "#f97316",
-];
-
-interface SiteWebGeneralTabProps {
-  tenantSlug: string;
-  publicStoreEnabled: boolean;
-  publicStoreLoading: boolean;
-  onTogglePublicStore: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  templates: SiteTemplate[];
-  selectedTemplateId: string | null;
-  onTemplateSelect: (t: SiteTemplate) => void;
+function TemplateMiniPreview({
+  variant,
+  themeColor,
+}: {
+  variant: string;
   themeColor: string;
-  onThemeColorChange: (value: string) => void;
-  appearanceLoading: boolean;
-  appearanceDirty: boolean;
-  appearanceSuccess: string | null;
-  onSaveAppearance: (e: React.FormEvent) => void;
+}) {
+  const s = VARIANT_STYLES[variant] ?? VARIANT_STYLES.classic;
+  const resolve = (val: string) => (val === "accent" ? themeColor : val);
+  const isDark = s.dark ?? false;
+  const textAlpha = isDark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.25)";
+
+  return (
+    <div
+      className="w-full overflow-hidden rounded-t-md"
+      style={{ background: s.bg, aspectRatio: "16/10" }}
+    >
+      <div
+        className="flex items-center gap-1 px-1.5 py-1"
+        style={{
+          background: resolve(s.headerBg),
+          borderBottom: "1px solid rgba(0,0,0,0.06)",
+        }}
+      >
+        <div
+          className="h-1.5 w-1.5 rounded-full shrink-0"
+          style={{ background: themeColor }}
+        />
+        <div
+          className="h-0.5 w-8 rounded-full"
+          style={{
+            background: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.2)",
+          }}
+        />
+      </div>
+      <div
+        className="flex flex-col gap-0.5 px-1.5 py-1.5"
+        style={{ background: resolve(s.heroBg) }}
+      >
+        <div
+          className="h-1 w-14 rounded-full"
+          style={{
+            background:
+              isDark || s.heroBg === "accent"
+                ? "rgba(255,255,255,0.85)"
+                : textAlpha,
+          }}
+        />
+        <div
+          className="h-2 w-10 rounded"
+          style={{
+            background:
+              s.heroBg === "accent" || isDark
+                ? "rgba(255,255,255,0.9)"
+                : themeColor,
+            opacity: 0.95,
+          }}
+        />
+      </div>
+      <div className="grid grid-cols-3 gap-0.5 p-1">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="overflow-hidden rounded-sm"
+            style={{
+              background: s.cardBg,
+              boxShadow: "0 1px 1px rgba(0,0,0,0.04)",
+            }}
+          >
+            <div
+              className="h-3 w-full"
+              style={{ background: `${themeColor}22` }}
+            />
+            <div className="p-0.5">
+              <div
+                className="h-0.5 w-5 rounded-full"
+                style={{ background: textAlpha }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function SiteWebGeneralTab({
@@ -51,7 +111,11 @@ export function SiteWebGeneralTab({
   const previewColor = themeColor.trim() || "#6366f1";
 
   return (
-    <form id="appearance-form" onSubmit={onSaveAppearance} className="space-y-5">
+    <form
+      id="appearance-form"
+      onSubmit={onSaveAppearance}
+      className="space-y-5"
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background p-4 shadow-sm">
           <div className="flex items-center gap-3">
@@ -131,8 +195,7 @@ export function SiteWebGeneralTab({
                   style={{
                     backgroundColor: c,
                     borderColor: themeColor === c ? "white" : "transparent",
-                    boxShadow:
-                      themeColor === c ? `0 0 0 2px ${c}` : undefined,
+                    boxShadow: themeColor === c ? `0 0 0 2px ${c}` : undefined,
                   }}
                   aria-label={`Color ${c}`}
                 />
@@ -151,9 +214,7 @@ export function SiteWebGeneralTab({
             <h3 className="text-sm font-semibold text-foreground">
               Apariencia
             </h3>
-            <p className="text-xs text-muted-foreground">
-              Plantilla del sitio
-            </p>
+            <p className="text-xs text-muted-foreground">Plantilla del sitio</p>
           </div>
         </div>
 

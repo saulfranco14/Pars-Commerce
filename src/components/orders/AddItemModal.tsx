@@ -11,9 +11,11 @@ import { Plus, X } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { btnPrimaryFlex, btnSecondaryFlex } from "@/components/ui/buttonClasses";
 import { TouchStepper } from "@/components/ui/TouchStepper";
-
-const DEBOUNCE_MS = 300;
-const SERVER_SEARCH_MIN_CHARS = 2;
+import {
+  DEBOUNCE_MS,
+  SERVER_SEARCH_MIN_CHARS,
+} from "@/features/orders/constants/search";
+import type { AddItemModalProps } from "@/features/orders/interfaces/addItemModal";
 
 const subcatalogsKey = (tid: string) =>
   `/api/subcatalogs?tenant_id=${encodeURIComponent(tid)}`;
@@ -29,14 +31,6 @@ const productsKey = (
     params.set("q", q.trim());
   return `/api/products?${params}`;
 };
-
-interface AddItemModalProps {
-  tenantId: string;
-  orderId: string;
-  isOpen: boolean;
-  onClose: () => void;
-  onAdded: () => void;
-}
 
 export function AddItemModal({
   tenantId,

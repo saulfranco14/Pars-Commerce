@@ -8,24 +8,7 @@ import {
   tableBodyCellClass,
   tableBodyCellMutedClass,
 } from "@/components/ui/TableWrapper";
-import type { SalesCommission, CommissionPayment } from "@/types/sales";
-
-interface TeamMemberOption {
-  id: string;
-  display_name: string | null;
-  email: string | null;
-}
-
-interface VentasPagosTabProps {
-  teamMembers: TeamMemberOption[];
-  pendingCommissions: SalesCommission[];
-  payments: CommissionPayment[];
-  loading: boolean;
-  actionLoading: boolean;
-  onGeneratePayment: (userId: string) => void;
-  onEditPayment: (p: CommissionPayment) => void;
-  onPayPayment: (p: CommissionPayment) => void;
-}
+import type { VentasPagosTabProps } from "@/features/ventas/interfaces/ventasPagosTab";
 
 function periodLabel(periodType: string): string {
   return periodType === "day" ? "Día" : periodType === "week" ? "Semana" : "Mes";
