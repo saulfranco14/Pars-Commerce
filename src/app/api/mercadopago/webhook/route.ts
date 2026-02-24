@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       body,
       xSignature,
       xRequestId,
-      webhookSecret
+      webhookSecret,
     );
     if (!valid) {
       console.warn("Webhook: invalid signature, rejecting");
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     console.warn("Webhook: MERCADOPAGO_WEBHOOK_SECRET not set in production");
     return NextResponse.json(
       { error: "Webhook secret not configured" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -55,9 +55,10 @@ export async function POST(request: Request) {
     const netReceived =
       Number(
         (mpPayment.transaction_details as { net_received_amount?: number })
-          ?.net_received_amount ?? 0
+          ?.net_received_amount ?? 0,
       ) ?? 0;
-    const mpFeeAmount = Math.round((transactionAmount - netReceived) * 100) / 100;
+    const mpFeeAmount =
+      Math.round((transactionAmount - netReceived) * 100) / 100;
     const parsFeeAmount = 0;
     const supabase = createAdminClient();
 
@@ -149,7 +150,9 @@ export async function POST(request: Request) {
         });
       }
 
-      console.log(`Webhook: order ${orderId} marked as paid (payment ${paymentId})`);
+      console.log(
+        `Webhook: order ${orderId} marked as paid (payment ${paymentId})`,
+      );
     } else {
       const { data: existingPayment } = await supabase
         .from("payments")
@@ -178,7 +181,7 @@ export async function POST(request: Request) {
       }
 
       console.log(
-        `Webhook: order ${orderId} payment ${paymentId} status: ${mpStatus}`
+        `Webhook: order ${orderId} payment ${paymentId} status: ${mpStatus}`,
       );
     }
 
