@@ -16,6 +16,7 @@ import { BUSINESS_TYPES } from "@/constants/businessTypes";
 import { TemplateSelector } from "@/components/site/TemplateSelector";
 import { CreateCancelActions } from "@/components/layout/CreateCancelActions";
 import { crearNegocioSchema } from "@/lib/tenantValidation";
+import { BusinessCreatedSuccess } from "@/components/tenants/BusinessCreatedSuccess";
 
 export default function CrearNegocioPage() {
   const formId = useId();
@@ -31,6 +32,7 @@ export default function CrearNegocioPage() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [createdBusinessName, setCreatedBusinessName] = useState<string | null>(null);
 
   const { data: templatesData } = useSWR<SiteTemplate[]>(
     "/api/site-templates",
@@ -106,12 +108,21 @@ export default function CrearNegocioPage() {
           console.error("Error al guardar el ID del negocio en localStorage");
         }
       }
-      router.push("/dashboard");
+      setCreatedBusinessName(name.trim());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al crear el negocio");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (createdBusinessName) {
+    return (
+      <BusinessCreatedSuccess
+        businessName={createdBusinessName}
+        onGoToDashboard={() => router.push("/dashboard")}
+      />
+    );
   }
 
   return (

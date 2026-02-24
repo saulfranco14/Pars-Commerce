@@ -321,6 +321,53 @@ body {
   display: none;
 }
 
+/* ── Business Created Success Screen ────────────────────────── */
+@keyframes confetti-fall-l {
+  0%   { transform: translateY(-16px) translateX(0)    rotate(0deg);   opacity: 1; }
+  80%  { opacity: 0.85; }
+  100% { transform: translateY(105vh) translateX(-50px) rotate(520deg); opacity: 0; }
+}
+
+@keyframes confetti-fall-r {
+  0%   { transform: translateY(-16px) translateX(0)    rotate(0deg);    opacity: 1; }
+  80%  { opacity: 0.85; }
+  100% { transform: translateY(105vh) translateX(50px) rotate(-520deg); opacity: 0; }
+}
+
+@keyframes success-bounce-in {
+  0%   { transform: scale(0.6) translateY(40px); opacity: 0; }
+  55%  { transform: scale(1.04) translateY(-6px); opacity: 1; }
+  75%  { transform: scale(0.97) translateY(3px); }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes icon-pop {
+  0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+  60%  { transform: scale(1.2) rotate(5deg); opacity: 1; }
+  80%  { transform: scale(0.92) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes float-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 8px 24px rgba(236, 72, 153, 0.35); }
+  50%       { box-shadow: 0 12px 36px rgba(236, 72, 153, 0.6); }
+}
+
+@keyframes checkmark-draw {
+  from { stroke-dashoffset: 38; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confetti-piece { display: none; }
+  .success-card   { animation: none !important; opacity: 1 !important; transform: none !important; }
+}
+
 @media print {
   .no-print {
     display: none !important;
