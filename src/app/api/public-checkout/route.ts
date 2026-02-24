@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { preferenceClient } from "@/lib/mercadopago";
+import { calcBuyerTotal, TARIFA_DE_SERVICIO_LABEL } from "@/constants/commissionConfig";
 import { NextResponse } from "next/server";
 
 const FINGERPRINT_HEADER = "x-fingerprint-id";
@@ -132,7 +133,11 @@ export async function POST(request: Request) {
     });
   }
 
-  const mpItems = cartItems.map((item) => {
+  const { total: buyerTotal, mpFee, parsFee } = calcBuyerTotal(totalAmount);
+  const mpFeeRounded = Math.round(mpFee * 100) / 100;
+  const parsFeeRounded = Math.round(parsFee * 100) / 100;
+
+  const baseItems = cartItems.map((item) => {
     const product = Array.isArray(item.product)
       ? item.product[0]
       : item.product;
@@ -144,6 +149,20 @@ export async function POST(request: Request) {
       currency_id: "MXN",
     };
   });
+
+  const mpItems = [
+    ...baseItems,
+    ...(mpFeeRounded > 0
+      ? [{ id: "mp-fee" as const, title: "Comisión Mercado Pago", quantity: 1, unit_price: mpFeeRounded, currency_id: "MXN" as const }]
+      : []),
+    {
+      id: "pars-fee" as const,
+      title: TARIFA_DE_SERVICIO_LABEL,
+      quantity: 1,
+      unit_price: parsFeeRounded,
+      currency_id: "MXN" as const,
+    },
+  ];
 
   const origin =
     request.headers.get("origin") ??

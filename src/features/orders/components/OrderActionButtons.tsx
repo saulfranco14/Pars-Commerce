@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useOrder } from "@/features/orders/hooks/useOrder";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useActiveTenant, useTenantStore } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { AssignBeforePaidModal } from "@/features/orders/components/AssignBeforePaidModal";
 import { ConfirmPaymentModal } from "@/features/orders/components/ConfirmPaymentModal";
@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import type { OrderActionButtonsProps } from "@/features/orders/interfaces/orderActionButtons";
+import { GenerateLinkModal } from "./GenerateLinkModal";
 
 function isExpressOrderEnabled(settings: unknown): boolean {
   if (!settings || typeof settings !== "object") return false;
@@ -38,12 +39,13 @@ export function OrderActionButtons({
     handleGeneratePaymentLink,
     handleExpressToPayment,
   } = useOrder();
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
   const activeRole = useTenantStore((s) => s.activeRole)();
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [assignBeforePaidModalOpen, setAssignBeforePaidModalOpen] =
     useState(false);
   const [confirmPaymentModalOpen, setConfirmPaymentModalOpen] = useState(false);
+  const [generateLinkModalOpen, setGenerateLinkModalOpen] = useState(false);
 
   if (!order) return null;
 
@@ -186,12 +188,12 @@ export function OrderActionButtons({
             </button>
             <button
               type="button"
-              onClick={handleGeneratePaymentLink}
+              onClick={() => setGenerateLinkModalOpen(true)}
               disabled={actionLoading}
               className={`w-full min-w-0 shrink-0 sm:w-auto ${btnBlue}`}
             >
               <Smartphone className="h-4 w-4 shrink-0" aria-hidden />
-              {actionLoading ? "Generando…" : "Generar cobro (MercadoPago)"}
+              Generar cobro (MercadoPago)
             </button>
           </>
         )}
@@ -244,6 +246,17 @@ export function OrderActionButtons({
           setConfirmPaymentModalOpen(false);
         }}
         total={Number(order.total)}
+        loading={actionLoading}
+      />
+
+      <GenerateLinkModal
+        isOpen={generateLinkModalOpen}
+        onClose={() => setGenerateLinkModalOpen(false)}
+        onConfirm={async () => {
+          await handleGeneratePaymentLink();
+          setGenerateLinkModalOpen(false);
+        }}
+        vendorTotal={Number(order.total)}
         loading={actionLoading}
       />
     </div>

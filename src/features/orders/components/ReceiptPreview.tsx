@@ -1,17 +1,14 @@
 "use client";
 
 import type { TenantAddress } from "@/types/database";
-import type { TicketSettings } from "@/types/ticketSettings";
-import type {
-  OrderDetail,
-  OrderItem,
-} from "@/features/orders/interfaces/orderDetail";
+import type { OrderPayment } from "@/features/orders/interfaces/orderDetail";
 import type { ReceiptPreviewProps } from "@/features/orders/interfaces/receiptPreview";
 import { formatOrderDateFull } from "@/lib/formatDate";
 import {
   formatPaymentMethod,
   getPaymentMethodConfig,
 } from "@/lib/formatPaymentMethod";
+import { TARIFA_DE_SERVICIO_LABEL } from "@/constants/commissionConfig";
 
 function formatAddressLine(addr: TenantAddress): string[] {
   const lines: string[] = [];
@@ -194,6 +191,21 @@ export function ReceiptPreview({
                 <span className="text-muted-foreground">Descuento:</span>
                 <span className="tabular-nums">
                   -${Number(order.discount).toFixed(2)}
+                </span>
+              </p>
+            )}
+            {order.payment_method === "mercadopago" && (
+              <p className="flex justify-between text-sm">
+                <span className="text-muted-foreground">
+                  {TARIFA_DE_SERVICIO_LABEL}:
+                </span>
+                <span className="tabular-nums">
+                  $
+                  {(
+                    (order.payments as OrderPayment[] | undefined)?.find(
+                      (p) => p.provider === "mercadopago",
+                    )?.metadata?.pars_fee_amount ?? 0
+                  ).toFixed(2)}
                 </span>
               </p>
             )}

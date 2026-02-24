@@ -3,6 +3,7 @@
 import { useOrder } from "@/features/orders/hooks/useOrder";
 import { useState } from "react";
 import { Link, Copy, Check, ExternalLink } from "lucide-react";
+import { calcBuyerTotal, TARIFA_DE_SERVICIO_LABEL } from "@/constants/commissionConfig";
 
 export function PaymentLinkCard() {
   const { order } = useOrder();
@@ -64,6 +65,26 @@ export function PaymentLinkCard() {
           Envía este link al cliente para que realice el pago por MercadoPago.
         </p>
       )}
+
+      {(() => {
+        const { total: buyerTotal, mpFee, parsFee } = calcBuyerTotal(Number(order.total));
+        return (
+          <div className="mb-3 space-y-1 rounded-lg bg-white/5 px-3 py-2 text-xs">
+            <div className="flex justify-between">
+              <span className="text-white/70">Total venta (recibirás)</span>
+              <span className="tabular-nums text-white/90">${Number(order.total).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/70">Comisión MP + {TARIFA_DE_SERVICIO_LABEL}</span>
+              <span className="tabular-nums text-white/90">${(mpFee + parsFee).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between font-medium">
+              <span className="text-white/90">Cliente pagará</span>
+              <span className="tabular-nums">${buyerTotal.toFixed(2)}</span>
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="flex items-center gap-2 rounded-lg bg-white/5 p-2.5">
         <input

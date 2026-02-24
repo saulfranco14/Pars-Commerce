@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { ChevronDown } from "lucide-react";
 import { MemberPickerSheet } from "@/components/orders/MemberPickerSheet";
 import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
@@ -17,7 +17,7 @@ export default function NuevaOrdenPage() {
   const params = useParams();
   const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
 
   const teamKeyValue = activeTenant ? teamKey(activeTenant.id) : null;
   const { data: teamData } = useSWR<TeamMember[]>(teamKeyValue, swrFetcher, {

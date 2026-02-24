@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, X, Check } from "lucide-react";
 import useSWR from "swr";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
 import {
   btnPrimaryFlex,
@@ -34,7 +34,7 @@ export default function EditarServicioPage() {
   const router = useRouter();
   const serviceId = params.serviceId as string;
   const tenantSlug = params.tenantSlug as string;
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
 
   const productKeyValue = serviceId ? productKey(serviceId) : null;
   const subcatalogsKeyValue = activeTenant

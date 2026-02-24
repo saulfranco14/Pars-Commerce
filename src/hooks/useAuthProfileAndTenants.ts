@@ -49,8 +49,8 @@ export function useAuthProfileAndTenants() {
       const items = list as MembershipItem[];
       if (stored && items.some((m) => m.tenant_id === stored)) {
         setActiveTenantId(stored);
-      } else if (list.length === 1) {
-        setActiveTenantId((items[0] as MembershipItem).tenant_id);
+      } else if (list.length > 0) {
+        setActiveTenantId(items[0].tenant_id);
       }
     }
   }, [

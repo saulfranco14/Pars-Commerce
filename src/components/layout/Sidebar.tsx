@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSessionStore } from "@/stores/useSessionStore";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { X, Download } from "lucide-react";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 
@@ -49,7 +49,7 @@ interface SidebarContentProps {
   memberships: {
     id: string;
     tenant_id: string;
-    tenant: { name: string };
+    tenant: { name: string; slug: string };
     role?: { name: string };
   }[];
   activeTenantId: string | null;
@@ -64,6 +64,7 @@ interface SidebarContentProps {
 }
 
 function SidebarContent(props: SidebarContentProps) {
+  const router = useRouter();
   const {
     pathname,
     base,
@@ -115,21 +116,37 @@ function SidebarContent(props: SidebarContentProps) {
       {memberships.length > 0 && (
         <div className="shrink-0 border-b border-border-soft px-3 py-3">
           <select
-            value={activeTenantId ?? ""}
+            value={activeTenantId ?? memberships[0]?.tenant_id ?? ""}
             onChange={(e) => {
-              const id = e.target.value || null;
+              const id = e.target.value;
+              if (!id) return;
+              const selected = memberships.find((m) => m.tenant_id === id);
+              if (!selected) return;
               setActiveTenantId(id);
               if (typeof window !== "undefined") {
                 try {
-                  localStorage.setItem("pars_activeTenantId", id ?? "");
+                  localStorage.setItem("pars_activeTenantId", id);
                 } catch {
                   /* incognito, quota, disabled */
                 }
               }
+              const pathParts = pathname.split("/").filter(Boolean);
+              const section =
+                pathParts[0] === "dashboard" &&
+                pathParts[1] &&
+                !["crear-negocio", "perfil"].includes(pathParts[1])
+                  ? pathParts.slice(2)
+                  : [];
+              if (section.length > 0) {
+                router.push(
+                  `/dashboard/${selected.tenant.slug}/${section.join("/")}`
+                );
+              } else if (pathname !== "/dashboard") {
+                router.push(`/dashboard/${selected.tenant.slug}`);
+              }
             }}
             className="select-custom w-full min-h-[44px] rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:py-1.5"
           >
-            <option value="">Seleccionar negocio</option>
             {memberships.map((m) => (
               <option key={m.id} value={m.tenant_id}>
                 {m.tenant.name}
@@ -272,7 +289,7 @@ export function Sidebar({
   const memberships = useTenantStore((s) => s.memberships);
   const activeTenantId = useTenantStore((s) => s.activeTenantId);
   const setActiveTenantId = useTenantStore((s) => s.setActiveTenantId);
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
   const { isInstallable, install } = usePwaInstall();
 
   const slug = tenantSlug ?? activeTenant?.slug ?? null;

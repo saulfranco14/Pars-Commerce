@@ -13,6 +13,18 @@ export interface OrderItem {
   } | null;
 }
 
+export interface PaymentMetadata {
+  mp_fee_amount?: number;
+  pars_fee_amount?: number;
+}
+
+export interface OrderPayment {
+  provider: string;
+  status: string;
+  amount: number;
+  metadata?: PaymentMetadata | null;
+}
+
 export interface OrderDetail {
   id: string;
   status: string;
@@ -36,6 +48,7 @@ export interface OrderDetail {
   payment_link?: string | null;
   mp_preference_id?: string | null;
   items: OrderItem[];
+  payments?: OrderPayment[];
 }
 
 export interface TeamMemberOption {

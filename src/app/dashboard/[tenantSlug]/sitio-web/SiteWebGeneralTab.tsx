@@ -6,6 +6,7 @@ import {
   COLOR_PRESETS,
 } from "@/features/sitio-web/constants/templateStyles";
 import type { SiteWebGeneralTabProps } from "@/features/sitio-web/interfaces/siteWebGeneralTab";
+import { TemplateSelector } from "@/components/site/TemplateSelector";
 
 function TemplateMiniPreview({
   variant,
@@ -109,10 +110,13 @@ export function SiteWebGeneralTab({
   onSaveAppearance,
 }: SiteWebGeneralTabProps) {
   const previewColor = themeColor.trim() || "#6366f1";
-  const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
 
   return (
-    <form id="appearance-form" onSubmit={onSaveAppearance} className="space-y-5">
+    <form
+      id="appearance-form"
+      onSubmit={onSaveAppearance}
+      className="space-y-5"
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background p-4 shadow-sm">
           <div className="flex items-center gap-3">
@@ -192,8 +196,7 @@ export function SiteWebGeneralTab({
                   style={{
                     backgroundColor: c,
                     borderColor: themeColor === c ? "white" : "transparent",
-                    boxShadow:
-                      themeColor === c ? `0 0 0 2px ${c}` : undefined,
+                    boxShadow: themeColor === c ? `0 0 0 2px ${c}` : undefined,
                   }}
                   aria-label={`Color ${c}`}
                 />
@@ -212,82 +215,18 @@ export function SiteWebGeneralTab({
             <h3 className="text-sm font-semibold text-foreground">
               Apariencia
             </h3>
-            <p className="text-xs text-muted-foreground">
-              Plantilla del sitio
-            </p>
+            <p className="text-xs text-muted-foreground">Plantilla del sitio</p>
           </div>
         </div>
 
         <div className="space-y-5">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold text-foreground">
-                Plantilla
-              </label>
-              {selectedTemplate && (
-                <span className="text-[10px] text-muted-foreground">
-                  {selectedTemplate.name} seleccionada
-                </span>
-              )}
-            </div>
-
-            <div>
-              <div className="grid grid-cols-3 gap-2">
-                  {templates.map((t) => {
-                    const isSelected = selectedTemplateId === t.id;
-                    const cardColor = t.default_theme_color ?? previewColor;
-                    return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => onTemplateSelect(t)}
-                        title={t.description ?? undefined}
-                        className={`group relative flex flex-col overflow-hidden rounded-xl border text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
-                          isSelected
-                            ? "border-accent ring-2 ring-accent/25 shadow-md"
-                            : "border-border/60 bg-background hover:border-accent/40 hover:shadow-sm"
-                        }`}
-                      >
-                        <div className="overflow-hidden">
-                          {t.preview_image_url ? (
-                            <img
-                              src={t.preview_image_url}
-                              alt={t.name}
-                              className="aspect-16/10 w-full object-cover"
-                            />
-                          ) : (
-                            <TemplateMiniPreview
-                              variant={t.layout_variant}
-                              themeColor={cardColor}
-                            />
-                          )}
-                        </div>
-                        <div
-                          className={`px-2 py-1.5 transition-colors ${
-                            isSelected ? "bg-accent/5" : "bg-background"
-                          }`}
-                        >
-                          <p className="text-[11px] font-medium text-foreground leading-tight truncate">
-                            {t.name}
-                          </p>
-                        </div>
-                        {isSelected && (
-                          <span
-                            className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-sm"
-                            aria-hidden
-                          >
-                            <Check className="h-2.5 w-2.5" />
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-            </div>
-            <p className="mt-1.5 text-[10px] text-muted-foreground/70">
-              {templates.length} plantillas disponibles
-            </p>
-          </div>
+          <TemplateSelector
+            templates={templates}
+            selectedTemplateId={selectedTemplateId}
+            onSelect={onTemplateSelect}
+            themeColor={previewColor}
+            label="Plantilla"
+          />
         </div>
       </div>
 

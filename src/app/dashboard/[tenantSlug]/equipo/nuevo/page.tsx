@@ -4,8 +4,14 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
-import { useTenantStore } from "@/stores/useTenantStore";
-import { ArrowLeft, Plus, AlertTriangle, Mail, CheckCircle2 } from "lucide-react";
+import { useActiveTenant, useTenantStore } from "@/stores/useTenantStore";
+import {
+  ArrowLeft,
+  Plus,
+  AlertTriangle,
+  Mail,
+  CheckCircle2,
+} from "lucide-react";
 import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
 import type { TenantRoleOption } from "@/services/tenantRolesService";
 import { swrFetcher } from "@/lib/swrFetcher";
@@ -17,7 +23,7 @@ export default function NuevoMiembroPage() {
   const params = useParams();
   const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
 
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -206,66 +212,66 @@ export default function NuevoMiembroPage() {
     >
       <section className="rounded-xl bg-surface p-4 sm:p-6 md:p-8">
         <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="displayName"
-                  className="block text-sm font-medium text-muted-foreground"
-                >
-                  Nombre <span className="font-normal text-muted">(opcional)</span>
-                </label>
-          <input
-            id="displayName"
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
-            placeholder="Nombre de la persona"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-muted-foreground"
-          >
-            Email del usuario
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
-            placeholder="usuario@ejemplo.com"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="role"
-            className="block text-sm font-medium text-muted-foreground"
-          >
-            Rol
-          </label>
-          <select
-            id="role"
-            value={roleId}
-            onChange={(e) => setRoleId(e.target.value)}
-            className="input-form select-custom mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-sm text-foreground transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
-          >
-            {roles.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-          {roleId && (
-            <p className="mt-1 text-xs text-muted">
-              {ROLE_DESCRIPTIONS[
-                roles.find((r) => r.id === roleId)?.name ?? ""
-              ] ?? ""}
-            </p>
-          )}
-        </div>
+          <div>
+            <label
+              htmlFor="displayName"
+              className="block text-sm font-medium text-muted-foreground"
+            >
+              Nombre <span className="font-normal text-muted">(opcional)</span>
+            </label>
+            <input
+              id="displayName"
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+              placeholder="Nombre de la persona"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-muted-foreground"
+            >
+              Email del usuario
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+              placeholder="usuario@ejemplo.com"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="role"
+              className="block text-sm font-medium text-muted-foreground"
+            >
+              Rol
+            </label>
+            <select
+              id="role"
+              value={roleId}
+              onChange={(e) => setRoleId(e.target.value)}
+              className="input-form select-custom mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-sm text-foreground transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+            >
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+            {roleId && (
+              <p className="mt-1 text-xs text-muted">
+                {ROLE_DESCRIPTIONS[
+                  roles.find((r) => r.id === roleId)?.name ?? ""
+                ] ?? ""}
+              </p>
+            )}
+          </div>
         </div>
       </section>
     </CreateEditPageLayout>

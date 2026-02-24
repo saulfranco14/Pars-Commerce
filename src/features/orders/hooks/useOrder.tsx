@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { update as updateOrder } from "@/services/ordersService";
 import { remove as removeOrderItem } from "@/services/orderItemsService";
 import { generatePaymentLink } from "@/services/mercadopagoService";
@@ -34,7 +34,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const orderId = params.orderId as string;
   const tenantSlug = params.tenantSlug as string;
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
   const businessName = activeTenant?.name ?? "Negocio";
   const businessAddress = activeTenant?.address ?? null;
   const ticketOptions = mergeTicketSettings(

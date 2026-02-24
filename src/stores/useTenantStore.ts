@@ -45,3 +45,7 @@ export const useTenantStore = create<TenantState>((set, get) => ({
   },
   clear: () => set({ memberships: [], tenantsLoaded: false, activeTenantId: null }),
 }));
+
+export function useActiveTenant(): Tenant | null {
+  return useTenantStore((s) => s.activeTenant());
+}

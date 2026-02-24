@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { btnPrimary } from "@/components/ui/buttonClasses";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useActiveTenant } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import {
@@ -40,7 +40,7 @@ import { salesByUser } from "@/features/ventas/helpers/salesByUser";
 import { orderContentType } from "@/features/orders/helpers/orderContentType";
 
 export default function DashboardPage() {
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
   const [period, setPeriod] = useState<
     "today" | "week" | "fortnight" | "month"
   >("week");

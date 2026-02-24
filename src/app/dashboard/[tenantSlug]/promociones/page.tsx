@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { ImageUpload } from "@/components/ImageUpload";
@@ -23,7 +23,7 @@ import {
 } from "@/features/promociones/helpers/swrKeys";
 
 export default function PromocionesPage() {
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [type, setType] = useState<PromotionType>("percentage");

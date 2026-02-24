@@ -4,7 +4,7 @@ import { useState, useEffect, useId } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Check } from "lucide-react";
-import { useTenantStore } from "@/stores/useTenantStore";
+import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
 import {
   update as updateTenant,
@@ -29,7 +29,7 @@ export default function ConfiguracionPage() {
   const formId = useId();
   const params = useParams();
   const tenantSlug = params.tenantSlug as string;
-  const activeTenant = useTenantStore((s) => s.activeTenant)();
+  const activeTenant = useActiveTenant();
   const setMemberships = useTenantStore((s) => s.setMemberships);
   const [activeTab, setActiveTab] = useState<ConfigTab>("negocio");
 
