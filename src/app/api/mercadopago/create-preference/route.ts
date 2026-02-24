@@ -4,6 +4,8 @@ import {
   calcBuyerTotal,
   TARIFA_DE_SERVICIO_LABEL,
 } from "@/constants/commissionConfig";
+import { MP_ITEM_CATEGORY_OTHERS } from "@/constants/mercadopagoCategories";
+import { buildPayerFromCustomer } from "@/lib/mercadopagoPayer";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -33,8 +35,8 @@ export async function POST(request: Request) {
     .select(
       `
       id, status, total, subtotal, discount, tenant_id,
-      customer_name, customer_email,
-      items:order_items(id, quantity, unit_price, subtotal, product:products(id, name))
+      customer_name, customer_email, customer_phone,
+      items:order_items(id, quantity, unit_price, subtotal, product:products(id, name, description))
     `,
     )
     .eq("id", order_id)
@@ -57,6 +59,26 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!order.customer_name?.trim() || order.customer_name.trim().length < 2) {
+    return NextResponse.json(
+      {
+        error:
+          "Para generar el link de pago con Mercado Pago necesitamos el nombre del cliente. Agrega el nombre en los datos de la orden.",
+      },
+      { status: 400 },
+    );
+  }
+
+  if (!order.customer_email?.trim()) {
+    return NextResponse.json(
+      {
+        error:
+          "Para generar el link de pago con Mercado Pago necesitamos el email del cliente. Agrega el email en los datos de la orden.",
+      },
+      { status: 400 },
+    );
+  }
+
   const orderDiscount = Number(order.discount);
   const orderTotal = Number(order.total);
   const orderItems = (order.items as unknown[]) ?? [];
@@ -69,6 +91,8 @@ export async function POST(request: Request) {
     quantity: number;
     unit_price: number;
     currency_id: string;
+    category_id: string;
+    description: string;
   }[] =
     hasDiscount || orderItems.length === 0
       ? [
@@ -78,20 +102,27 @@ export async function POST(request: Request) {
             quantity: 1,
             unit_price: Math.round(orderTotal * 100) / 100,
             currency_id: "MXN",
+            category_id: MP_ITEM_CATEGORY_OTHERS,
+            description: "Orden",
           },
         ]
       : orderItems.map((item: unknown) => {
           const i = item as {
             quantity: number;
             unit_price: number;
-            product: { id: string; name: string } | null;
+            product: { id: string; name: string; description?: string | null } | null;
           };
+          const product = i.product;
+          const desc =
+            product?.description || product?.name || "Producto";
           return {
-            id: i.product?.id ?? "unknown",
-            title: i.product?.name ?? "Producto",
+            id: product?.id ?? "unknown",
+            title: product?.name ?? "Producto",
             quantity: i.quantity,
             unit_price: Number(i.unit_price),
             currency_id: "MXN",
+            category_id: MP_ITEM_CATEGORY_OTHERS,
+            description: desc.slice(0, 256),
           };
         });
 
@@ -108,6 +139,8 @@ export async function POST(request: Request) {
             quantity: 1,
             unit_price: mpFeeRounded,
             currency_id: "MXN" as const,
+            category_id: MP_ITEM_CATEGORY_OTHERS,
+            description: "Comisión",
           },
         ]
       : []),
@@ -117,6 +150,8 @@ export async function POST(request: Request) {
       quantity: 1,
       unit_price: parsFeeRounded,
       currency_id: "MXN" as const,
+      category_id: MP_ITEM_CATEGORY_OTHERS,
+      description: "Comisión",
     },
   ];
 
@@ -138,9 +173,11 @@ export async function POST(request: Request) {
         },
         auto_return: "approved",
         notification_url: `${origin}/api/mercadopago/webhook`,
-        payer: order.customer_email
-          ? { email: order.customer_email }
-          : undefined,
+        payer: buildPayerFromCustomer({
+          customerName: order.customer_name,
+          customerEmail: order.customer_email,
+          customerPhone: order.customer_phone,
+        }),
       },
     });
 

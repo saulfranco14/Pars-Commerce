@@ -12,6 +12,8 @@ interface GenerateLinkModalProps {
   onClose: () => void;
   onConfirm: () => Promise<void>;
   vendorTotal: number;
+  customerName?: string | null;
+  customerEmail?: string | null;
   loading?: boolean;
 }
 
@@ -20,8 +22,15 @@ export function GenerateLinkModal({
   onClose,
   onConfirm,
   vendorTotal,
+  customerName,
+  customerEmail,
   loading = false,
 }: GenerateLinkModalProps) {
+  const hasValidName =
+    typeof customerName === "string" && customerName.trim().length >= 2;
+  const hasValidEmail =
+    typeof customerEmail === "string" && customerEmail.trim().length > 0;
+  const canGenerate = hasValidName && hasValidEmail;
   if (!isOpen) return null;
 
   const { total: buyerTotal, mpFee, parsFee } = calcBuyerTotal(vendorTotal);
@@ -105,6 +114,12 @@ export function GenerateLinkModal({
                 </div>
               </div>
             </div>
+            {!canGenerate && (
+              <p className="text-sm text-amber-600">
+                El nombre y el email del cliente son obligatorios para pagos con
+                Mercado Pago. Agrégalos en los datos de la orden.
+              </p>
+            )}
           </form>
         </div>
 
@@ -120,7 +135,7 @@ export function GenerateLinkModal({
           <button
             type="submit"
             form="generate-link-form"
-            disabled={loading}
+            disabled={loading || !canGenerate}
             className="flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-base font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
           >
             <Link className="h-5 w-5 shrink-0" aria-hidden />
