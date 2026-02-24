@@ -257,6 +257,8 @@ export function OrderActionButtons({
           setGenerateLinkModalOpen(false);
         }}
         vendorTotal={Number(order.total)}
+        customerName={order.customer_name}
+        customerEmail={order.customer_email}
         loading={actionLoading}
       />
     </div>
