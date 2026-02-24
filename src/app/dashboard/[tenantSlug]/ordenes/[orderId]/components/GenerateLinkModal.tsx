@@ -1,6 +1,10 @@
 "use client";
 
-import { calcBuyerTotal, TARIFA_DE_SERVICIO_LABEL } from "@/constants/commissionConfig";
+import { createPortal } from "react-dom";
+import {
+  calcBuyerTotal,
+  TARIFA_DE_SERVICIO_LABEL,
+} from "@/constants/commissionConfig";
 import { Link } from "lucide-react";
 
 interface GenerateLinkModalProps {
@@ -29,7 +33,7 @@ export function GenerateLinkModal({
     onClose();
   }
 
-  return (
+  const modalContent = (
     <div
       className="fixed inset-0 z-100 flex flex-col justify-end md:items-center md:justify-center bg-black/60 p-0 md:p-4"
       role="dialog"
@@ -126,4 +130,8 @@ export function GenerateLinkModal({
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modalContent, document.body)
+    : null;
 }

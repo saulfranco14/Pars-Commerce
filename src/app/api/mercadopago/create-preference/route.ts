@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { preferenceClient } from "@/lib/mercadopago";
-import { calcBuyerTotal, TARIFA_DE_SERVICIO_LABEL } from "@/constants/commissionConfig";
+import {
+  calcBuyerTotal,
+  TARIFA_DE_SERVICIO_LABEL,
+} from "@/constants/commissionConfig";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -20,7 +23,7 @@ export async function POST(request: Request) {
   if (!order_id) {
     return NextResponse.json(
       { error: "order_id is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -32,7 +35,7 @@ export async function POST(request: Request) {
       id, status, total, subtotal, discount, tenant_id,
       customer_name, customer_email,
       items:order_items(id, quantity, unit_price, subtotal, product:products(id, name))
-    `
+    `,
     )
     .eq("id", order_id)
     .single();
@@ -40,7 +43,7 @@ export async function POST(request: Request) {
   if (orderError || !order) {
     return NextResponse.json(
       { error: orderError?.message ?? "Order not found" },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
@@ -50,7 +53,7 @@ export async function POST(request: Request) {
         error:
           "Order must be in completed or pending_payment status to generate a payment link",
       },
-      { status: 409 }
+      { status: 409 },
     );
   }
 
@@ -60,15 +63,23 @@ export async function POST(request: Request) {
   const hasDiscount = orderDiscount > 0;
   const { total: buyerTotal, mpFee, parsFee } = calcBuyerTotal(orderTotal);
 
-  const baseItems: { id: string; title: string; quantity: number; unit_price: number; currency_id: string }[] =
+  const baseItems: {
+    id: string;
+    title: string;
+    quantity: number;
+    unit_price: number;
+    currency_id: string;
+  }[] =
     hasDiscount || orderItems.length === 0
-      ? [{
-          id: order.id,
-          title: `Orden #${order.id.slice(0, 8)}`,
-          quantity: 1,
-          unit_price: Math.round(orderTotal * 100) / 100,
-          currency_id: "MXN",
-        }]
+      ? [
+          {
+            id: order.id,
+            title: `Orden #${order.id.slice(0, 8)}`,
+            quantity: 1,
+            unit_price: Math.round(orderTotal * 100) / 100,
+            currency_id: "MXN",
+          },
+        ]
       : orderItems.map((item: unknown) => {
           const i = item as {
             quantity: number;
@@ -90,7 +101,15 @@ export async function POST(request: Request) {
   const items = [
     ...baseItems,
     ...(mpFeeRounded > 0
-      ? [{ id: "mp-fee", title: "Comisión Mercado Pago", quantity: 1, unit_price: mpFeeRounded, currency_id: "MXN" as const }]
+      ? [
+          {
+            id: "mp-fee",
+            title: "Comisión Mercado Pago",
+            quantity: 1,
+            unit_price: mpFeeRounded,
+            currency_id: "MXN" as const,
+          },
+        ]
       : []),
     {
       id: "pars-fee",
@@ -131,7 +150,7 @@ export async function POST(request: Request) {
     if (!paymentLink) {
       return NextResponse.json(
         { error: "MercadoPago did not return a payment link" },
-        { status: 502 }
+        { status: 502 },
       );
     }
 
