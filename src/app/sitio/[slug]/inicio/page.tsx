@@ -6,10 +6,6 @@ import {
   ArrowRight,
   ShoppingBag,
   Sparkles,
-  Heart,
-  Shield,
-  Lock,
-  Gift,
   ShoppingCart,
   MessageCircle,
   Package,
@@ -24,61 +20,15 @@ import ProductCard from "../ProductCard";
 import PromotionCard from "../promociones/PromotionCard";
 import { enrichProducts } from "@/lib/enrichProducts";
 import type { PromotionForPrice } from "@/lib/promotionPrice";
+import {
+  ICON_MAP,
+  DEFAULT_CARDS,
+  DEFAULT_PURCHASE_STEPS,
+} from "@/features/sitio/constants/inicio";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
-
-const ICON_MAP = {
-  heart: Heart,
-  shield: Shield,
-  lock: Lock,
-  gift: Gift,
-} as const;
-
-const DEFAULT_CARDS: SitePageCard[] = [
-  {
-    icon: "heart",
-    title: "Bienestar",
-    description:
-      "Creemos en el bienestar como pilar de una vida plena. Ofrecemos productos de calidad para redescubrir y disfrutar.",
-  },
-  {
-    icon: "shield",
-    title: "Calidad garantizada",
-    description:
-      "Productos certificados, seguros y fabricados con materiales premium. Tu satisfacción es nuestra prioridad.",
-  },
-  {
-    icon: "lock",
-    title: "Discreción total",
-    description:
-      "Respetamos tu privacidad. Empaque sin marca identificable y entrega confidencial para comprar con tranquilidad.",
-  },
-  {
-    icon: "gift",
-    title: "Entrega personalizada",
-    description:
-      "Adaptamos nuestro servicio a tu comodidad y preferencias. Elige la opción que mejor te funcione.",
-  },
-];
-
-const DEFAULT_PURCHASE_STEPS: SitePagePurchaseStep[] = [
-  {
-    title: "Selecciona tu producto",
-    description:
-      "Explora nuestro catálogo y elige el producto perfecto para ti.",
-  },
-  {
-    title: "Realiza tu pedido",
-    description: "Contáctanos por WhatsApp con tu selección.",
-  },
-  {
-    title: "Recibe y disfruta",
-    description:
-      "Tu paquete lo podrás en nuestro negocio o lo llevaremos a tu domicilio.",
-  },
-];
 
 function filterActivePromotions(
   rows: { valid_from?: string | null; valid_until?: string | null }[]
@@ -351,7 +301,7 @@ export default async function InicioPage({ params }: PageProps) {
           const IconComponent =
             item.icon && item.icon in ICON_MAP
               ? ICON_MAP[item.icon as keyof typeof ICON_MAP]
-              : Heart;
+              : ICON_MAP.heart;
           return (
             <div
               key={i}

@@ -31,42 +31,9 @@ import { formatPaymentMethod } from "@/lib/formatPaymentMethod";
 import { getSourceConfig } from "@/lib/formatSource";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { OrderListItem } from "@/types/orders";
-
-function orderContentType(
-  o: OrderListItem,
-): "productos" | "servicios" | "mixto" {
-  const p = o.products_count ?? 0;
-  const s = o.services_count ?? 0;
-  if (p > 0 && s > 0) return "mixto";
-  if (s > 0) return "servicios";
-  return "productos";
-}
-
-function buildOrdersKey(
-  tenantId: string | undefined,
-  status: string,
-  dateFrom: string,
-  dateTo: string,
-): string | null {
-  if (!tenantId) return null;
-  const search = new URLSearchParams({ tenant_id: tenantId });
-  if (status) search.set("status", status);
-  if (dateFrom) search.set("date_from", dateFrom);
-  if (dateTo) search.set("date_to", dateTo);
-  return `/api/orders?${search}`;
-}
-
-const STATUS_TABS: { value: string; label: string }[] = [
-  { value: "", label: "Todos" },
-  { value: "draft", label: "Borrador" },
-  { value: "assigned", label: "Asignada" },
-  { value: "in_progress", label: "En progreso" },
-  { value: "pending_payment", label: "Pago pendiente" },
-  { value: "pending_pickup", label: "Pendiente recoger" },
-  { value: "paid", label: "Pagada" },
-  { value: "completed", label: "Completada" },
-  { value: "cancelled", label: "Cancelada" },
-];
+import { STATUS_TABS } from "@/features/orders/constants/statusTabs";
+import { buildOrdersKey } from "@/features/orders/helpers/buildOrdersKey";
+import { orderContentType } from "@/features/orders/helpers/orderContentType";
 
 export default function OrdenesPage() {
   const params = useParams();

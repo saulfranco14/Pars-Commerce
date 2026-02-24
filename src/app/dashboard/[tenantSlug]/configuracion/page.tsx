@@ -16,19 +16,14 @@ import {
 } from "@/types/ticketSettings";
 import { FilterTabs } from "@/components/ui/FilterTabs";
 import { FormSaveBar } from "@/components/layout/FormSaveBar";
-import { ConfigNegocioSection } from "./components/ConfigNegocioSection";
-import { ConfigTicketSection } from "./components/ConfigTicketSection";
-import { ConfigFinanzasSection } from "./components/ConfigFinanzasSection";
-import { ConfigDireccionSection } from "./components/ConfigDireccionSection";
-
-const CONFIG_TABS = [
-  { value: "negocio", label: "Negocio" },
-  { value: "ticket", label: "Ticket" },
-  { value: "finanzas", label: "Finanzas" },
-  { value: "direccion", label: "Dirección" },
-] as const;
-
-type ConfigTab = (typeof CONFIG_TABS)[number]["value"];
+import { ConfigNegocioSection } from "@/features/configuracion/components/ConfigNegocioSection";
+import { ConfigTicketSection } from "@/features/configuracion/components/ConfigTicketSection";
+import { ConfigFinanzasSection } from "@/features/configuracion/components/ConfigFinanzasSection";
+import { ConfigDireccionSection } from "@/features/configuracion/components/ConfigDireccionSection";
+import {
+  CONFIG_TABS,
+  type ConfigTab,
+} from "@/features/configuracion/constants/tabs";
 
 export default function ConfiguracionPage() {
   const formId = useId();

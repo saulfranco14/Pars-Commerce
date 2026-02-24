@@ -12,7 +12,7 @@ import {
   btnPrimaryFlex,
   btnSecondaryFlex,
 } from "@/components/ui/buttonClasses";
-import { serviceFormSchema } from "@/lib/serviceValidation";
+import { serviceFormSchema } from "@/features/servicios/validations/serviceForm";
 import type { ProductDetail } from "@/types/products";
 import { update } from "@/services/productsService";
 import { swrFetcher } from "@/lib/swrFetcher";

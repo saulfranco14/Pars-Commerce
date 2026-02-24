@@ -11,9 +11,7 @@ import { inputForm, inputFormSelect, inputFormTrigger } from "@/components/ui/in
 import type { TeamMember } from "@/types/team";
 import { create as createOrder } from "@/services/ordersService";
 import { swrFetcher } from "@/lib/swrFetcher";
-
-const teamKey = (tenantId: string) =>
-  `/api/team?tenant_id=${encodeURIComponent(tenantId)}`;
+import { teamKey } from "@/features/equipo/helpers/swrKeys";
 
 export default function NuevaOrdenPage() {
   const params = useParams();

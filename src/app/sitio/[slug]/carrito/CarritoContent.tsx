@@ -9,7 +9,7 @@ import { dispatchCartUpdated } from "@/lib/cartEvents";
 import { useCartContext } from "../CartProvider";
 import { useFingerprint } from "@/hooks/useFingerprint";
 import * as yup from "yup";
-import { checkoutFormSchema } from "@/lib/checkoutValidation";
+import { checkoutFormSchema } from "@/features/orders/validations/checkoutForm";
 interface CarritoContentProps {
   tenantId: string;
   sitioSlug: string;

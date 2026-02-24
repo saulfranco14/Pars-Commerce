@@ -21,11 +21,7 @@ import {
 import { updateRole, remove as removeMember } from "@/services/teamService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { btnPrimaryHeader, btnDanger } from "@/components/ui/buttonClasses";
-
-const teamKey = (tenantId: string) =>
-  `/api/team?tenant_id=${encodeURIComponent(tenantId)}`;
-const tenantRolesKey = (tenantId: string) =>
-  `/api/tenant-roles?tenant_id=${encodeURIComponent(tenantId)}`;
+import { teamKey, tenantRolesKey } from "@/features/equipo/helpers/swrKeys";
 
 export default function EquipoPage() {
   const params = useParams();

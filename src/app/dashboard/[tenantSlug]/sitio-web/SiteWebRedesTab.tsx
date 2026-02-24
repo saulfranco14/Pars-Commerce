@@ -1,67 +1,8 @@
 "use client";
 
-
-const inputClass =
-  "mt-1.5 block w-full min-h-[44px] rounded-xl border border-border/80 bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-colors duration-200";
-
-interface SocialPlatform {
-  label: string;
-  hint: string;
-  placeholder: string;
-  type: "tel" | "url";
-  badge: string;
-  color: string;
-}
-
-const PLATFORMS: Record<string, SocialPlatform> = {
-  whatsapp: {
-    label: "WhatsApp",
-    hint: "Con código de país, sin espacios ni guiones",
-    placeholder: "5215512345678",
-    type: "tel",
-    badge: "WA",
-    color: "#25D366",
-  },
-  instagram: {
-    label: "Instagram",
-    hint: "URL completa de tu perfil de Instagram",
-    placeholder: "https://instagram.com/mi_tienda",
-    type: "url",
-    badge: "IG",
-    color: "#E1306C",
-  },
-  facebook: {
-    label: "Facebook",
-    hint: "URL de tu página o perfil de Facebook",
-    placeholder: "https://facebook.com/mi_tienda",
-    type: "url",
-    badge: "FB",
-    color: "#1877F2",
-  },
-  twitter: {
-    label: "Twitter / X",
-    hint: "URL de tu perfil de Twitter o X",
-    placeholder: "https://twitter.com/mi_tienda",
-    type: "url",
-    badge: "X",
-    color: "#111827",
-  },
-};
-
-interface SiteWebRedesTabProps {
-  whatsappPhone: string;
-  onWhatsappPhoneChange: (v: string) => void;
-  instagramUrl: string;
-  onInstagramUrlChange: (v: string) => void;
-  facebookUrl: string;
-  onFacebookUrlChange: (v: string) => void;
-  twitterUrl: string;
-  onTwitterUrlChange: (v: string) => void;
-  loading: boolean;
-  error: string | null;
-  success: string | null;
-  onSave: (e: React.FormEvent) => void;
-}
+import { inputForm } from "@/components/ui/inputClasses";
+import { PLATFORMS } from "@/features/sitio-web/constants/socialPlatforms";
+import type { SiteWebRedesTabProps } from "@/features/sitio-web/interfaces/siteWebRedesTab";
 
 function SocialFieldLabel({
   badge,
@@ -137,7 +78,7 @@ export function SiteWebRedesTab({
           type={wa.type}
           value={whatsappPhone}
           onChange={(e) => onWhatsappPhoneChange(e.target.value)}
-          className={inputClass}
+          className={inputForm}
           placeholder={wa.placeholder}
         />
         <p className="mt-1.5 text-[11px] text-muted-foreground">{wa.hint}</p>
@@ -152,7 +93,7 @@ export function SiteWebRedesTab({
           type={ig.type}
           value={instagramUrl}
           onChange={(e) => onInstagramUrlChange(e.target.value)}
-          className={inputClass}
+          className={inputForm}
           placeholder={ig.placeholder}
         />
         <p className="mt-1.5 text-[11px] text-muted-foreground">{ig.hint}</p>
@@ -167,7 +108,7 @@ export function SiteWebRedesTab({
           type={fb.type}
           value={facebookUrl}
           onChange={(e) => onFacebookUrlChange(e.target.value)}
-          className={inputClass}
+          className={inputForm}
           placeholder={fb.placeholder}
         />
         <p className="mt-1.5 text-[11px] text-muted-foreground">{fb.hint}</p>
@@ -182,7 +123,7 @@ export function SiteWebRedesTab({
           type={tw.type}
           value={twitterUrl}
           onChange={(e) => onTwitterUrlChange(e.target.value)}
-          className={inputClass}
+          className={inputForm}
           placeholder={tw.placeholder}
         />
         <p className="mt-1.5 text-[11px] text-muted-foreground">{tw.hint}</p>

@@ -7,7 +7,7 @@ import { useTenantStore } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
 import { Plus } from "lucide-react";
 import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
-import { serviceFormSchema } from "@/lib/serviceValidation";
+import { serviceFormSchema } from "@/features/servicios/validations/serviceForm";
 import { create } from "@/services/productsService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { Subcatalog } from "@/types/subcatalogs";

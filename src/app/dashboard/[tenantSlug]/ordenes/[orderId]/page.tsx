@@ -4,16 +4,19 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { OrderProvider, useOrder } from "./hooks/useOrder";
-import { OrderHeader } from "./components/OrderHeader";
-import { CustomerCard } from "./components/CustomerCard";
-import { AssignmentCard } from "./components/AssignmentCard";
-import { OrderItemsTable } from "./components/OrderItemsTable";
-import { OrderActionButtons } from "./components/OrderActionButtons";
-import { ReceiptActions } from "./components/ReceiptActions";
-import { PaymentLinkCard } from "./components/PaymentLinkCard";
+import {
+  OrderProvider,
+  useOrder,
+} from "@/features/orders/hooks/useOrder";
+import { OrderHeader } from "@/features/orders/components/OrderHeader";
+import { CustomerCard } from "@/features/orders/components/CustomerCard";
+import { AssignmentCard } from "@/features/orders/components/AssignmentCard";
+import { OrderItemsTable } from "@/features/orders/components/OrderItemsTable";
+import { OrderActionButtons } from "@/features/orders/components/OrderActionButtons";
+import { ReceiptActions } from "@/features/orders/components/ReceiptActions";
+import { PaymentLinkCard } from "@/features/orders/components/PaymentLinkCard";
+import { ReceiptPreview } from "@/features/orders/components/ReceiptPreview";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
-import { ReceiptPreview } from "./components/ReceiptPreview";
 
 function OrderDetailContent() {
   const { order, loading, error, tenantSlug, businessName, businessAddress, ticketOptions, logoUrl } =

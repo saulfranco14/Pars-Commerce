@@ -2,28 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, X } from "lucide-react";
-
-const STORAGE_KEY = "pars_onboarding_v1";
-
-// ─── Shared mini card ─────────────────────────────────────────
-function MiniCard({
-  children,
-  className = "",
-  style = {},
-}: {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <div
-      className={`rounded-2xl bg-white shadow-lg ${className}`}
-      style={{ border: "1px solid #ede9e4", ...style }}
-    >
-      {children}
-    </div>
-  );
-}
+import {
+  STORAGE_KEY,
+  MOCKUP_CHART_W,
+  MOCKUP_CHART_H,
+} from "@/features/onboarding/constants";
+import { MiniCard } from "@/features/onboarding/components/MiniCard";
 
 // ─── Slide mockup components ──────────────────────────────────
 
@@ -401,10 +385,9 @@ function OrdenesMockup() {
 }
 
 function VentasMockup() {
-  // SVG line chart
   const pts = [20, 38, 28, 58, 44, 72, 58, 82];
-  const W = 156;
-  const H = 36;
+  const W = MOCKUP_CHART_W;
+  const H = MOCKUP_CHART_H;
   const d = pts
     .map(
       (v, i) =>
