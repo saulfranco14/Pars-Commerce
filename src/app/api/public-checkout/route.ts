@@ -1,6 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { preferenceClient } from "@/lib/mercadopago";
-import { calcBuyerTotal, TARIFA_DE_SERVICIO_LABEL } from "@/constants/commissionConfig";
+import {
+  calcBuyerTotal,
+  TARIFA_DE_SERVICIO_LABEL,
+} from "@/constants/commissionConfig";
 import { NextResponse } from "next/server";
 
 const FINGERPRINT_HEADER = "x-fingerprint-id";
@@ -15,7 +18,7 @@ export async function POST(request: Request) {
   if (!fingerprint) {
     return NextResponse.json(
       { error: "x-fingerprint-id header is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -38,14 +41,14 @@ export async function POST(request: Request) {
   if (!tenant_id || !cart_id) {
     return NextResponse.json(
       { error: "tenant_id and cart_id are required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (!customer_name?.trim() || !customer_email?.trim()) {
     return NextResponse.json(
       { error: "customer_name and customer_email are required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -61,7 +64,7 @@ export async function POST(request: Request) {
   if (!tenant) {
     return NextResponse.json(
       { error: "Tenant not found or public store disabled" },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
@@ -83,15 +86,12 @@ export async function POST(request: Request) {
     .eq("cart_id", cart_id);
 
   if (!cartItems || cartItems.length === 0) {
-    return NextResponse.json(
-      { error: "Cart is empty" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
   }
 
   const subtotal = cartItems.reduce(
     (sum, i) => sum + Number(i.price_snapshot) * i.quantity,
-    0
+    0,
   );
   const totalAmount = subtotal;
 
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
   if (orderError || !order) {
     return NextResponse.json(
       { error: orderError?.message ?? "Error creating order" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -153,7 +153,15 @@ export async function POST(request: Request) {
   const mpItems = [
     ...baseItems,
     ...(mpFeeRounded > 0
-      ? [{ id: "mp-fee" as const, title: "Comisión Mercado Pago", quantity: 1, unit_price: mpFeeRounded, currency_id: "MXN" as const }]
+      ? [
+          {
+            id: "mp-fee" as const,
+            title: "Comisión Mercado Pago",
+            quantity: 1,
+            unit_price: mpFeeRounded,
+            currency_id: "MXN" as const,
+          },
+        ]
       : []),
     {
       id: "pars-fee" as const,
@@ -164,10 +172,17 @@ export async function POST(request: Request) {
     },
   ];
 
-  const origin =
+  const rawOrigin =
     request.headers.get("origin") ??
     request.headers.get("referer")?.replace(/\/[^/]*$/, "") ??
     "http://localhost:3000";
+
+  // MercadoPago requires publicly accessible URLs for back_urls and notification_url.
+  // When running locally, substitute the production URL so MP can resolve the callbacks.
+  const PROD_URL = "https://pars-commerce.vercel.app";
+  const isLocalhost =
+    rawOrigin.includes("localhost") || rawOrigin.includes("127.0.0.1");
+  const origin = isLocalhost ? PROD_URL : rawOrigin;
 
   const slugRes = await admin
     .from("tenants")
@@ -179,33 +194,37 @@ export async function POST(request: Request) {
   let preferenceRes;
   try {
     preferenceRes = await preferenceClient.create({
-    body: {
-      items: mpItems,
-      external_reference: order.id,
-      back_urls: {
-        success: `${origin}/sitio/${slug}/confirmacion?status=success&order_id=${order.id}`,
-        failure: `${origin}/sitio/${slug}/confirmacion?status=failure&order_id=${order.id}`,
-        pending: `${origin}/sitio/${slug}/confirmacion?status=pending&order_id=${order.id}`,
+      body: {
+        items: mpItems,
+        external_reference: order.id,
+        back_urls: {
+          success: `${origin}/sitio/${slug}/confirmacion?status=success&order_id=${order.id}`,
+          failure: `${origin}/sitio/${slug}/confirmacion?status=failure&order_id=${order.id}`,
+          pending: `${origin}/sitio/${slug}/confirmacion?status=pending&order_id=${order.id}`,
+        },
+        auto_return: "approved",
+        notification_url: `${origin}/api/mercadopago/webhook`,
+        payer: { email: customer_email.trim() },
       },
-      auto_return: "approved",
-      notification_url: `${origin}/api/mercadopago/webhook`,
-      payer: { email: customer_email.trim() },
-    },
-  });
+    });
   } catch (err) {
     console.error("MercadoPago preference error:", err);
+    console.log("******* origin *******");
+    console.log(origin);
+    console.log("******* origin *******");
     return NextResponse.json(
       { error: "Error al generar link de pago" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
-  const paymentLink = preferenceRes.init_point ?? preferenceRes.sandbox_init_point;
+  const paymentLink =
+    preferenceRes.init_point ?? preferenceRes.sandbox_init_point;
 
   if (!paymentLink) {
     return NextResponse.json(
       { error: "MercadoPago no devolvió link de pago" },
-      { status: 502 }
+      { status: 502 },
     );
   }
 

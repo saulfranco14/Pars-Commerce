@@ -8,7 +8,11 @@ import {
   formatPaymentMethod,
   getPaymentMethodConfig,
 } from "@/lib/formatPaymentMethod";
-import { TARIFA_DE_SERVICIO_LABEL } from "@/constants/commissionConfig";
+import {
+  RECEIPT_LINK_LABEL,
+  TARIFA_DE_SERVICIO_LABEL,
+  calcBuyerTotal,
+} from "@/constants/commissionConfig";
 
 function formatAddressLine(addr: TenantAddress): string[] {
   const lines: string[] = [];
@@ -50,6 +54,26 @@ export function ReceiptPreview({
     shouldShow(opts.showBusinessAddress) &&
     businessAddress &&
     formatAddressLine(businessAddress).length > 0;
+
+  const isMercadoPagoReceipt =
+    order.payment_method === "mercadopago" ||
+    (order.status === "pending_payment" && !!order.payment_link);
+  const receiptTotal = (() => {
+    if (!isMercadoPagoReceipt) return Number(order.total);
+    const mpPayment = (order.payments as OrderPayment[] | undefined)?.find(
+      (p) => p.provider === "mercadopago",
+    );
+    const mpFee = mpPayment?.metadata?.mp_fee_amount ?? 0;
+    const parsFee = mpPayment?.metadata?.pars_fee_amount ?? 0;
+    const vendorTotal = Number(order.total);
+    const storedClientTotal = mpPayment?.amount;
+    const computedClientTotal = vendorTotal + mpFee + parsFee;
+    if (storedClientTotal && storedClientTotal > vendorTotal)
+      return storedClientTotal;
+    if (mpFee > 0 || parsFee > 0) return computedClientTotal;
+    const { total } = calcBuyerTotal(vendorTotal);
+    return total;
+  })();
 
   return (
     <div className="receipt-ticket relative mx-auto w-[302px] max-w-full font-sans text-foreground print:w-[302px] print:max-w-[302px]">
@@ -194,29 +218,38 @@ export function ReceiptPreview({
                 </span>
               </p>
             )}
-            {order.payment_method === "mercadopago" && (
-              <p className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  {TARIFA_DE_SERVICIO_LABEL}:
-                </span>
-                <span className="tabular-nums">
-                  $
-                  {(
-                    (order.payments as OrderPayment[] | undefined)?.find(
-                      (p) => p.provider === "mercadopago",
-                    )?.metadata?.pars_fee_amount ?? 0
-                  ).toFixed(2)}
-                </span>
-              </p>
-            )}
+            {(order.payment_method === "mercadopago" ||
+              (order.status === "pending_payment" && !!order.payment_link)) &&
+              (() => {
+                const mpPayment = (
+                  order.payments as OrderPayment[] | undefined
+                )?.find((p) => p.provider === "mercadopago");
+                const mpFee = mpPayment?.metadata?.mp_fee_amount ?? 0;
+                const parsFee = mpPayment?.metadata?.pars_fee_amount ?? 0;
+                const vendorTotal = Number(order.total);
+                const { mpFee: estMpFee, parsFee: estParsFee } =
+                  calcBuyerTotal(vendorTotal);
+                const showEstimate = mpFee === 0 && parsFee === 0;
+                const combinedFee = showEstimate
+                  ? estMpFee + estParsFee
+                  : mpFee + parsFee;
+                return (
+                  <p className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {TARIFA_DE_SERVICIO_LABEL}:
+                    </span>
+                    <span className="tabular-nums">
+                      ${combinedFee.toFixed(2)}
+                    </span>
+                  </p>
+                );
+              })()}
           </div>
         </div>
         <div className="mt-4 border-t-2 border-foreground pt-4">
           <p className="flex justify-between text-base font-bold">
             <span>Total</span>
-            <span className="tabular-nums">
-              ${Number(order.total).toFixed(2)}
-            </span>
+            <span className="tabular-nums">${receiptTotal.toFixed(2)}</span>
           </p>
         </div>
         {shouldShow(opts.showPaymentMethod) && order.payment_method && (
@@ -230,6 +263,16 @@ export function ReceiptPreview({
               </span>{" "}
               {formatPaymentMethod(order.payment_method)}
             </span>
+          </div>
+        )}
+        {order.status === "pending_payment" && order.payment_link && (
+          <div className="mt-4 rounded border-2 border-dashed border-amber-500/60 bg-amber-50/80 px-3 py-3 print:border-amber-600 print:bg-amber-50">
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-amber-800">
+              {RECEIPT_LINK_LABEL}
+            </p>
+            <p className="break-all text-xs text-amber-900">
+              {order.payment_link}
+            </p>
           </div>
         )}
         {showAddress && (

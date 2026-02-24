@@ -154,10 +154,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Update order with payment link and set to pending_payment
     const updates: Record<string, unknown> = {
       payment_link: paymentLink,
       mp_preference_id: preferenceId,
+      payment_method: "mercadopago",
       updated_at: new Date().toISOString(),
     };
 
