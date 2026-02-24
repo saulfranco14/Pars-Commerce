@@ -1,18 +1,24 @@
 "use client";
 
-import type { OrderPayment } from "../types";
 import { useOrder } from "../hooks/useOrder";
 import { TARIFA_DE_SERVICIO_LABEL } from "@/constants/commissionConfig";
+import { OrderPayment } from "../interfaces/orderDetail";
 
 export function OrderCommissionsCard() {
   const { order } = useOrder();
 
-  if (!order || order.payment_method !== "mercadopago" || order.status !== "paid") {
+  if (
+    !order ||
+    order.payment_method !== "mercadopago" ||
+    order.status !== "paid"
+  ) {
     return null;
   }
 
   const payments = order.payments as OrderPayment[] | undefined;
-  const mpPayment = Array.isArray(payments) ? payments.find((p) => p.provider === "mercadopago") : null;
+  const mpPayment = Array.isArray(payments)
+    ? payments.find((p) => p.provider === "mercadopago")
+    : null;
   const metadata = mpPayment?.metadata;
   const transactionAmount = mpPayment?.amount ?? Number(order.total);
   const mpFee = metadata?.mp_fee_amount ?? 0;
@@ -38,11 +44,15 @@ export function OrderCommissionsCard() {
           <span className="tabular-nums">${mpFee.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">{TARIFA_DE_SERVICIO_LABEL}</span>
+          <span className="text-muted-foreground">
+            {TARIFA_DE_SERVICIO_LABEL}
+          </span>
           <span className="tabular-nums">${parsFee.toFixed(2)}</span>
         </div>
         <div className="flex justify-between border-t border-border pt-2 text-sm font-semibold">
-          <span className="text-muted-foreground">Total pagado por el cliente</span>
+          <span className="text-muted-foreground">
+            Total pagado por el cliente
+          </span>
           <span className="tabular-nums">${transactionAmount.toFixed(2)}</span>
         </div>
       </div>

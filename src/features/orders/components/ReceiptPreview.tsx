@@ -1,11 +1,7 @@
 "use client";
 
 import type { TenantAddress } from "@/types/database";
-import type { TicketSettings } from "@/types/ticketSettings";
-import type {
-  OrderDetail,
-  OrderItem,
-} from "@/features/orders/interfaces/orderDetail";
+import type { OrderPayment } from "@/features/orders/interfaces/orderDetail";
 import type { ReceiptPreviewProps } from "@/features/orders/interfaces/receiptPreview";
 import { formatOrderDateFull } from "@/lib/formatDate";
 import {

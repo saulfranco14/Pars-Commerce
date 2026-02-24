@@ -13,6 +13,11 @@ import type { SiteTemplate } from "@/services/siteTemplatesService";
 import { useTenantStore, type MembershipItem } from "@/stores/useTenantStore";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { deriveSlug } from "@/features/onboarding/helpers/deriveSlug";
+import { crearNegocioSchema } from "@/lib/tenantValidation";
+import { BusinessCreatedSuccess } from "@/components/tenants/BusinessCreatedSuccess";
+import { BUSINESS_TYPES } from "@/constants/businessTypes";
+import { TemplateSelector } from "@/components/site/TemplateSelector";
+import { CreateCancelActions } from "@/components/layout/CreateCancelActions";
 
 export default function CrearNegocioPage() {
   const formId = useId();

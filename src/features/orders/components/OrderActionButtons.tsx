@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import type { OrderActionButtonsProps } from "@/features/orders/interfaces/orderActionButtons";
+import { GenerateLinkModal } from "./GenerateLinkModal";
 
 function isExpressOrderEnabled(settings: unknown): boolean {
   if (!settings || typeof settings !== "object") return false;

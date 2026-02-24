@@ -6,6 +6,7 @@ import {
   COLOR_PRESETS,
 } from "@/features/sitio-web/constants/templateStyles";
 import type { SiteWebGeneralTabProps } from "@/features/sitio-web/interfaces/siteWebGeneralTab";
+import { TemplateSelector } from "@/components/site/TemplateSelector";
 
 function TemplateMiniPreview({
   variant,

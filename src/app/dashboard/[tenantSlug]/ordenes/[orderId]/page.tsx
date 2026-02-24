@@ -14,6 +14,7 @@ import { ReceiptActions } from "@/features/orders/components/ReceiptActions";
 import { PaymentLinkCard } from "@/features/orders/components/PaymentLinkCard";
 import { ReceiptPreview } from "@/features/orders/components/ReceiptPreview";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { OrderCommissionsCard } from "@/features/orders/components/OrderCommissionsCard";
 
 function OrderDetailContent() {
   const {
