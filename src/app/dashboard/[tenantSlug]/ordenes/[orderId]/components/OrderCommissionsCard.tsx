@@ -1,5 +1,6 @@
 "use client";
 
+import type { OrderPayment } from "../types";
 import { useOrder } from "../hooks/useOrder";
 import { TARIFA_DE_SERVICIO_LABEL } from "@/constants/commissionConfig";
 
@@ -10,7 +11,7 @@ export function OrderCommissionsCard() {
     return null;
   }
 
-  const payments = order.payments as { amount: number; metadata?: { mp_fee_amount?: number; pars_fee_amount?: number } }[] | undefined;
+  const payments = order.payments as OrderPayment[] | undefined;
   const mpPayment = Array.isArray(payments) ? payments.find((p) => p.provider === "mercadopago") : null;
   const metadata = mpPayment?.metadata;
   const transactionAmount = mpPayment?.amount ?? Number(order.total);
