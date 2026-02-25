@@ -15,6 +15,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { registroSchema } from "@/features/auth/validations/registroForm";
 import { BENEFITS } from "@/features/auth/constants/benefits";
+import { resolveUserError } from "@/lib/errors/resolveUserError";
 
 const inputClass =
   "input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
@@ -187,16 +188,15 @@ export default function RegistroPage() {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.error || "Error al enviar el correo de confirmación",
+          errorData.error || "Error al enviar el correo de confirmación"
         );
       }
 
       setRegisteredEmail(email.trim());
       setSuccess(true);
     } catch (err: unknown) {
-      const error = err instanceof Error ? err : new Error("Error desconocido");
-      console.error("Error en registro:", error);
-      setError(error.message || "Error al registrar usuario. Intenta de nuevo.");
+      console.error("Error en registro:", err);
+      setError(resolveUserError(err, null));
     } finally {
       setLoading(false);
     }

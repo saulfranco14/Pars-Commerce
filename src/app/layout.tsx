@@ -3,8 +3,8 @@ import { Inter } from "next/font/google";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SwrProvider } from "@/components/providers/SwrProvider";
-import { AuthHashRedirect } from "@/components/auth/AuthHashRedirect";
 import { Analytics } from "@vercel/analytics/next";
+import { AuthHashRedirect } from "@/components/auth/AuthHashRedirect";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -38,9 +38,7 @@ export const metadata: Metadata = {
         type: "image/png",
       },
     ],
-    apple: [
-      { url: "/apple-icon", sizes: "180x180", type: "image/png" },
-    ],
+    apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
   },
 };
 
