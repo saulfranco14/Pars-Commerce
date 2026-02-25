@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SwrProvider } from "@/components/providers/SwrProvider";
+import { AuthHashRedirect } from "@/components/auth/AuthHashRedirect";
 import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({
@@ -69,6 +70,7 @@ export default function RootLayout({
           }}
         />
         <SwrProvider>
+          <AuthHashRedirect />
           {children}
           <Analytics />
           <div id="ticket-print-portal" aria-hidden="true" />
