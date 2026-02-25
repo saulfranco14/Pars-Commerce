@@ -7,6 +7,7 @@ import * as yup from "yup";
 import { ArrowRight, Mail } from "lucide-react";
 import { BrandPanel } from "@/features/auth/components/BrandPanel";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { resolveUserError } from "@/lib/errors/resolveUserError";
 
 const forgotSchema = yup.object({
   email: yup
@@ -70,7 +71,7 @@ export default function OlvidarPage() {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Error al enviar. Intenta de nuevo.");
+      setError(resolveUserError(data.error ?? null, "supabase"));
       return;
     }
 

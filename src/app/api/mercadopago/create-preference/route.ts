@@ -6,6 +6,7 @@ import {
 } from "@/constants/commissionConfig";
 import { MP_ITEM_CATEGORY_OTHERS } from "@/constants/mercadopagoCategories";
 import { buildPayerFromCustomer } from "@/lib/mercadopagoPayer";
+import { resolveUserError } from "@/lib/errors/resolveUserError";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -223,8 +224,9 @@ export async function POST(request: Request) {
     });
   } catch (err: unknown) {
     console.error("MercadoPago preference creation error:", err);
-    const message =
-      err instanceof Error ? err.message : "Error creating payment preference";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: resolveUserError(err, "mercadopago") },
+      { status: 500 }
+    );
   }
 }

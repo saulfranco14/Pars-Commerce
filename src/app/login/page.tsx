@@ -15,6 +15,7 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { createClient } from "@/lib/supabase/client";
+import { resolveUserError } from "@/lib/errors/resolveUserError";
 
 function parseHashParams() {
   if (typeof window === "undefined") return {};
@@ -170,7 +171,7 @@ function LoginForm() {
     });
     setLoading(false);
     if (signInError) {
-      setError(signInError.message);
+      setError(resolveUserError(signInError, "supabase"));
       return;
     }
     router.push(next);
@@ -210,7 +211,7 @@ function LoginForm() {
     });
     setSetPasswordLoading(false);
     if (updateError) {
-      setSetPasswordError(updateError.message);
+      setSetPasswordError(resolveUserError(updateError, "supabase"));
       return;
     }
     window.history.replaceState(null, "", window.location.pathname);

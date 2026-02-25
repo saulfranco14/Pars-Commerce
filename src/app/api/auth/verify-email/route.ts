@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveUserError } from "@/lib/errors/resolveUserError";
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,15 +26,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json(
+        { error: resolveUserError(error, "supabase") },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json({ success: true, user: data.user });
   } catch (error: unknown) {
-    const err = error instanceof Error ? error : new Error("Unknown error");
-    console.error("Error verify-email:", err);
+    console.error("Error verify-email:", error);
     return NextResponse.json(
-      { error: err.message || "Error al verificar correo" },
+      { error: resolveUserError(error, "supabase") },
       { status: 500 }
     );
   }

@@ -1,4 +1,5 @@
 import sgMail from "@sendgrid/mail";
+import { resolveUserError } from "@/lib/errors/resolveUserError";
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
@@ -33,6 +34,6 @@ export async function sendEmail({
   } catch (error: unknown) {
     const err = error as { response?: { body?: unknown }; message?: string };
     console.error("SendGrid error:", err.response?.body ?? error);
-    throw new Error(err.message ?? "Error al enviar el correo");
+    throw new Error(resolveUserError(error, "sendgrid"));
   }
 }

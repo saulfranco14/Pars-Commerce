@@ -4,6 +4,7 @@ import {
   calcBuyerTotal,
   TARIFA_DE_SERVICIO_LABEL,
 } from "@/constants/commissionConfig";
+import { resolveUserError } from "@/lib/errors/resolveUserError";
 import { NextResponse } from "next/server";
 
 const FINGERPRINT_HEADER = "x-fingerprint-id";
@@ -209,11 +210,8 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error("MercadoPago preference error:", err);
-    console.log("******* origin *******");
-    console.log(origin);
-    console.log("******* origin *******");
     return NextResponse.json(
-      { error: "Error al generar link de pago" },
+      { error: resolveUserError(err, "mercadopago") },
       { status: 500 },
     );
   }
