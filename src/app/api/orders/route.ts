@@ -293,6 +293,17 @@ export async function PATCH(request: Request) {
   if (assigned_to !== undefined) updates.assigned_to = assigned_to || null;
   if (payment_method !== undefined)
     updates.payment_method = payment_method?.trim() || null;
+
+  const hasCustomerUpdate =
+    customer_name !== undefined ||
+    customer_email !== undefined ||
+    customer_phone !== undefined;
+  if (hasCustomerUpdate && order.status === "paid") {
+    return NextResponse.json(
+      { error: "No se puede editar el cliente en órdenes ya pagadas" },
+      { status: 409 }
+    );
+  }
   if (customer_name !== undefined)
     updates.customer_name = customer_name?.trim() || null;
   if (customer_email !== undefined)

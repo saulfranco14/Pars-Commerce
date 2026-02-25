@@ -50,7 +50,7 @@ export default function ProductDetailActions({
         <ShoppingCart className="h-5 w-5" />
         {loading ? "Agregando…" : "Agregar al carrito"}
       </button>
-      {waHref ? (
+      {waHref && (
         <a
           href={waHref}
           target="_blank"
@@ -61,10 +61,6 @@ export default function ProductDetailActions({
           <MessageCircle className="h-5 w-5" />
           Consultar por WhatsApp
         </a>
-      ) : (
-        <p className="text-center text-sm text-gray-500">
-          Configura WhatsApp en el dashboard para habilitar consultas.
-        </p>
       )}
     </div>
   );

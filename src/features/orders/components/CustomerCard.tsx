@@ -23,7 +23,9 @@ export function CustomerCard() {
 
   if (!order) return null;
 
-  const canEdit = ["draft", "assigned", "in_progress"].includes(order.status);
+  const canEdit = ["draft", "assigned", "in_progress", "completed", "pending_payment"].includes(
+    order.status
+  );
 
   const onSave = async () => {
     await handleSaveCustomer({ name, email, phone });

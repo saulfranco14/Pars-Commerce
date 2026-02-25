@@ -10,7 +10,7 @@ import {
   Lock,
   Shield,
 } from "lucide-react";
-import { HIGHLIGHTS } from "@/features/auth/constants/loginHighlights";
+import { BrandPanel } from "@/features/auth/components/BrandPanel";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -60,68 +60,6 @@ function FieldError({ message }: { message?: string }) {
   );
 }
 
-function BrandPanel() {
-  return (
-    <div className="relative hidden lg:flex lg:flex-1 items-center justify-center overflow-hidden">
-      <div
-        className="absolute inset-0 opacity-[0.03] dark:opacity-[0.06]"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
-          backgroundSize: "24px 24px",
-        }}
-        aria-hidden
-      />
-      <div
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full bg-accent/10 blur-[100px]"
-        aria-hidden
-      />
-
-      <div className="relative z-10 max-w-sm px-8">
-        <div className="flex items-center gap-3 mb-8">
-          <Image
-            src="/android-chrome-192x192.png"
-            alt=""
-            width={40}
-            height={40}
-            className="h-10 w-10"
-          />
-          <span className="text-xl font-bold text-foreground">
-            Pars Commerce
-          </span>
-        </div>
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">
-          Bienvenido de vuelta
-        </h2>
-        <p className="mt-2 text-muted-foreground leading-relaxed">
-          Accede a tu dashboard para gestionar tu negocio, revisar ordenes y
-          hacer crecer tus ventas.
-        </p>
-
-        <div className="mt-8 space-y-3">
-          {HIGHLIGHTS.map(({ icon: Icon, text, accent }) => (
-            <div
-              key={text}
-              className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 transition-all duration-200 hover:shadow-soft"
-            >
-              <div
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${accent}`}
-              >
-                <Icon className="h-4 w-4" aria-hidden />
-              </div>
-              <span className="text-sm text-foreground">{text}</span>
-            </div>
-          ))}
-        </div>
-
-        <p className="mt-8 text-xs text-muted-foreground/60">
-          Mas de 50 negocios ya confian en Pars Commerce
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -133,6 +71,7 @@ function LoginForm() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [inviteMode, setInviteMode] = useState<boolean | null>(null);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
   const [setPasswordNew, setSetPasswordNew] = useState("");
   const [setPasswordConfirm, setSetPasswordConfirm] = useState("");
   const [setPasswordLoading, setSetPasswordLoading] = useState(false);
@@ -175,6 +114,8 @@ function LoginForm() {
     const params = parseHashParams();
     const hasToken = !!params.access_token;
     const isInvite = params.type === "invite";
+    const isRecovery = params.type === "recovery";
+    const showSetPassword = isInvite || isRecovery;
 
     if (hasToken && params.access_token && params.refresh_token) {
       supabase.auth
@@ -183,8 +124,9 @@ function LoginForm() {
           refresh_token: params.refresh_token,
         })
         .then(({ data: { session } }) => {
-          if (session && isInvite) {
+          if (session && showSetPassword) {
             setInviteMode(true);
+            setIsRecoveryMode(isRecovery);
             setEmail(session.user.email ?? "");
           } else if (session) {
             window.history.replaceState(null, "", window.location.pathname);
@@ -292,11 +234,21 @@ function LoginForm() {
     </div>
   );
 
-  // Invite mode — set password
   if (inviteMode === true) {
     return (
       <div className="flex min-h-screen">
-        <BrandPanel />
+        <BrandPanel
+          title={
+            isRecoveryMode
+              ? "Restablece tu contraseña"
+              : "Establece tu contraseña"
+          }
+          subtitle={
+            isRecoveryMode
+              ? "Crea una nueva contraseña segura para tu cuenta."
+              : "Crea una contraseña para acceder a tu cuenta"
+          }
+        />
         <div className="relative flex flex-1 items-center justify-center bg-background px-4 py-8">
           <div className="absolute right-4 top-4 z-10">
             <ThemeToggle />
@@ -328,10 +280,14 @@ function LoginForm() {
                 <Lock className="h-5 w-5 text-accent" aria-hidden />
               </div>
               <h1 className="text-xl font-bold text-foreground text-center sm:text-2xl">
-                Establece tu contraseña
+                {isRecoveryMode
+                  ? "Restablece tu contraseña"
+                  : "Establece tu contraseña"}
               </h1>
               <p className="mt-2 text-sm text-muted-foreground text-center">
-                Crea una contraseña para acceder a tu cuenta
+                {isRecoveryMode
+                  ? "Crea una nueva contraseña segura para tu cuenta"
+                  : "Crea una contraseña para acceder a tu cuenta"}
               </p>
               <form
                 onSubmit={handleSetPassword}
@@ -626,6 +582,14 @@ function LoginForm() {
                 <FieldError
                   message={touched.password ? fieldErrors.password : undefined}
                 />
+                <p className="mt-1.5 text-right">
+                  <Link
+                    href="/login/olvidar"
+                    className="text-xs font-medium text-accent hover:text-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 rounded cursor-pointer"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </p>
               </div>
               <button
                 type="submit"
