@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { X, Plus, Loader2 } from "lucide-react";
+import { validateImageSize, handleUploadError } from "@/lib/uploadUtils";
 
 interface MultiImageUploadProps {
   tenantId: string;
@@ -27,14 +28,22 @@ export function MultiImageUpload({
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || urls.length >= max) return;
+
+    const sizeError = validateImageSize(file);
+    if (sizeError) {
+      setError(sizeError);
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+
     setError(null);
     setUploading(true);
     try {
       const { uploadProductImage } = await import("@/lib/supabase/storage");
       const url = await uploadProductImage(file, tenantId, productId);
       onChange([...urls, url]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al subir la imagen");
+    } catch (err: any) {
+      setError(handleUploadError(err));
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

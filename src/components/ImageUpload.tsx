@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { validateImageSize, handleUploadError } from "@/lib/uploadUtils";
 
 interface ImageUploadProps {
   tenantId: string;
@@ -30,6 +31,14 @@ export function ImageUpload({
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    const sizeError = validateImageSize(file);
+    if (sizeError) {
+      setError(sizeError);
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+
     setError(null);
     setUploading(true);
     try {
@@ -42,8 +51,8 @@ export function ImageUpload({
         const url = await uploadProductImage(file, tenantId, productId || undefined);
         onUploaded(url);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al subir la imagen");
+    } catch (err: any) {
+      setError(handleUploadError(err));
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

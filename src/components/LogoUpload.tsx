@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { validateImageSize, handleUploadError } from "@/lib/uploadUtils";
 
 interface LogoUploadProps {
   tenantId: string;
@@ -27,6 +28,14 @@ export function LogoUpload({
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const sizeError = validateImageSize(file);
+    if (sizeError) {
+      setError(sizeError);
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+
     setError(null);
     setUploading(true);
     try {
@@ -34,8 +43,8 @@ export function LogoUpload({
       const url = await uploadTenantLogo(file, tenantId);
       setImageKey((k) => k + 1);
       onUploaded(url);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al subir");
+    } catch (err: any) {
+      setError(handleUploadError(err, "Error al subir el logo. Por favor, intenta de nuevo."));
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
