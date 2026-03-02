@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { validateImageSize, handleUploadError } from "@/lib/uploadUtils";
 
 interface LogoUploadProps {
@@ -43,7 +44,7 @@ export function LogoUpload({
       const url = await uploadTenantLogo(file, tenantId);
       setImageKey((k) => k + 1);
       onUploaded(url);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(handleUploadError(err, "Error al subir el logo. Por favor, intenta de nuevo."));
     } finally {
       setUploading(false);
@@ -70,10 +71,12 @@ export function LogoUpload({
       )}
       {currentUrl && (
         <div className="flex items-center gap-3">
-          <img
+          <Image
             key={imageKey}
             src={`${currentUrl}${currentUrl.includes("?") ? "&" : "?"}v=${imageKey}`}
             alt="Logo"
+            width={64}
+            height={64}
             className="h-16 w-16 rounded border border-border object-contain"
           />
           <button

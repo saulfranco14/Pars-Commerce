@@ -9,11 +9,12 @@ export function validateImageSize(file: File): string | null {
 }
 
 export function handleUploadError(
-  err: any,
+  err: unknown,
   fallbackMessage: string = "Error al subir la imagen. Por favor, intenta de nuevo."
 ): string {
   console.error("Upload error:", err);
-  const errorStr = (err?.message || "").toLowerCase();
+  const errorObj = err as Record<string, unknown>;
+  const errorStr = (typeof errorObj?.message === "string" ? errorObj.message : "").toLowerCase();
   
   if (
     errorStr.includes("size") ||

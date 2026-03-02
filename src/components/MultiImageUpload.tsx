@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { X, Plus, Loader2 } from "lucide-react";
 import { validateImageSize, handleUploadError } from "@/lib/uploadUtils";
 
@@ -42,7 +43,7 @@ export function MultiImageUpload({
       const { uploadProductImage } = await import("@/lib/supabase/storage");
       const url = await uploadProductImage(file, tenantId, productId);
       onChange([...urls, url]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(handleUploadError(err));
     } finally {
       setUploading(false);
@@ -72,9 +73,11 @@ export function MultiImageUpload({
             key={`${url}-${i}`}
             className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-border bg-background sm:h-24 sm:w-24"
           >
-            <img
+            <Image
               src={url}
               alt={`Imagen del producto ${i + 1}`}
+              width={96}
+              height={96}
               className="h-full w-full object-cover"
             />
             {i === 0 && (

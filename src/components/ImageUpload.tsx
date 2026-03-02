@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { validateImageSize, handleUploadError } from "@/lib/uploadUtils";
 
 interface ImageUploadProps {
@@ -51,7 +52,7 @@ export function ImageUpload({
         const url = await uploadProductImage(file, tenantId, productId || undefined);
         onUploaded(url);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(handleUploadError(err));
     } finally {
       setUploading(false);
@@ -67,9 +68,11 @@ export function ImageUpload({
         {label}
       </label>
       {displayUrl && (
-        <img
+        <Image
           src={displayUrl}
           alt="Vista previa"
+          width={96}
+          height={96}
           className="h-24 w-24 rounded border border-border object-cover"
         />
       )}

@@ -12,6 +12,14 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["lucide-react", "recharts"],
     viewTransition: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+      },
+    ],
+  },
 };
 
 export default withSerwist(nextConfig);
