@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -147,10 +148,16 @@ export default async function InicioPage({ params }: PageProps) {
         }}
       >
         {content.hero_image_url && (
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${content.hero_image_url})` }}
-          >
+          <div className="absolute inset-0">
+            <Image
+              src={content.hero_image_url}
+              alt=""
+              fill
+              sizes="100vw"
+              className="object-cover"
+              priority
+              quality={80}
+            />
             <div className="absolute inset-0 bg-black/50" />
           </div>
         )}
@@ -209,7 +216,7 @@ export default async function InicioPage({ params }: PageProps) {
           </div>
           {/* Horizontal scroll on mobile, grid on sm+ */}
           <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3">
-            {featuredProducts.map((item) => (
+            {featuredProducts.map((item, idx) => (
               <div key={item.id} className="min-w-[78vw] snap-center sm:min-w-0">
                 <ProductCard
                   product={item}
@@ -219,6 +226,7 @@ export default async function InicioPage({ params }: PageProps) {
                   accentColor={accentColor}
                   whatsappPhone={tenant.whatsapp_phone ?? null}
                   baseUrl={baseUrl}
+                  priority={idx < 2}
                 />
               </div>
             ))}

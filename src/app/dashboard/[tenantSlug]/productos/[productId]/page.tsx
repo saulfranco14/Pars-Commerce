@@ -626,6 +626,9 @@ export default function EditarProductoPage() {
                     productId={productId}
                     urls={imageUrls}
                     onChange={setImageUrls}
+                    onRemove={async (newUrls) => {
+                      await update(productId, { image_urls: newUrls });
+                    }}
                   />
                 </div>
               )}

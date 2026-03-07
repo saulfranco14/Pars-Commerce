@@ -1,1 +1,1 @@
-export type TabView = "resumen" | "por-persona" | "por-orden" | "pagos";
+export type TabView = "resumen" | "por-persona" | "por-orden" | "pagos" | "cortes";

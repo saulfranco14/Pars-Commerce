@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
-import { MultiImageUpload } from "@/components/MultiImageUpload";
+import { MultiImageUpload, type MultiImageUploadRef } from "@/components/MultiImageUpload";
 import { ChevronDown, Plus } from "lucide-react";
 import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
 import { productFormSchema } from "@/features/productos/validations/productForm";
@@ -21,6 +21,7 @@ export default function NuevoProductoPage() {
   const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
+  const imageUploadRef = useRef<MultiImageUploadRef>(null);
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -161,7 +162,8 @@ export default function NuevoProductoPage() {
 
     setLoading(true);
     try {
-      await create({
+      // 1. Create the product first (no images yet)
+      const created = await create({
         tenant_id: activeTenant.id,
         name: name.trim(),
         slug: (slug.trim() || deriveSlug(name)).toLowerCase(),
@@ -176,10 +178,21 @@ export default function NuevoProductoPage() {
         track_stock: trackStock,
         stock: trackStock && stockNum !== undefined ? stockNum : undefined,
         is_public: isPublic,
-        image_urls: imageUrls.length > 0 ? imageUrls : undefined,
         wholesale_min_quantity: wholesaleMinNum ?? null,
         wholesale_price: wholesalePriceNum ?? null,
       });
+
+      // 2. Upload pending images using the real product ID
+      const uploadedUrls = imageUploadRef.current
+        ? await imageUploadRef.current.uploadPendingFiles(created.id)
+        : [];
+
+      // 3. If there were images, persist the URLs to the product
+      if (uploadedUrls.length > 0) {
+        const { update } = await import("@/services/productsService");
+        await update(created.id, { image_urls: uploadedUrls });
+      }
+
       router.push(`/dashboard/${tenantSlug}/productos`);
       router.refresh();
     } catch (e) {
@@ -599,6 +612,7 @@ export default function NuevoProductoPage() {
               </div>
               <div className="shrink-0 rounded-xl border border-border bg-surface p-5 md:w-80">
                 <MultiImageUpload
+                  ref={imageUploadRef}
                   tenantId={activeTenant.id}
                   urls={imageUrls}
                   onChange={setImageUrls}

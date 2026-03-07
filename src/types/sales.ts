@@ -53,6 +53,45 @@ export interface CommissionSummary {
   pending_commission: number;
 }
 
+export interface CutoffPersonBreakdown {
+  user_id: string;
+  display_name: string | null;
+  email: string | null;
+  total_revenue: number;
+  commission_amount: number;
+  orders_count: number;
+}
+
+export interface CutoffPaymentMethodBreakdown {
+  efectivo: number;
+  transferencia: number;
+  tarjeta: number;
+  mercadopago: number;
+  other: number;
+}
+
+export interface SalesCutoff {
+  id: string;
+  tenant_id: string;
+  period_start: string;
+  period_end: string;
+  total_orders: number;
+  total_revenue: number;
+  total_cost: number;
+  gross_profit: number;
+  commissions_pending: number;
+  commissions_paid: number;
+  breakdown_by_person: CutoffPersonBreakdown[] | null;
+  breakdown_by_payment_method: CutoffPaymentMethodBreakdown | null;
+  notes: string | null;
+  created_at: string;
+  created_by_profile?: {
+    id: string;
+    display_name: string | null;
+    email: string | null;
+  };
+}
+
 export interface CommissionPayment {
   id: string;
   user_id: string;

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
-import { Plus, SlidersHorizontal, X } from "lucide-react";
+import { Plus, Scissors, SlidersHorizontal, X } from "lucide-react";
 import { FAB } from "@/components/ui/FAB";
 import { OrdersFilterSheet } from "@/components/orders/OrdersFilterSheet";
 import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
@@ -50,6 +50,21 @@ export default function OrdenesPage() {
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
   const hasDateFilter = Boolean(dateFrom || dateTo);
+
+  // Fetch last cutoff to enable "desde último corte" quick filter
+  const cutoffsKey =
+    activeTenant?.id != null
+      ? `/api/sales-cutoffs?tenant_id=${encodeURIComponent(activeTenant.id)}`
+      : null;
+  const { data: cutoffsData } = useSWR<{ period_end: string }[]>(
+    cutoffsKey,
+    swrFetcher,
+    { fallbackData: [] },
+  );
+  const lastCutoffEnd =
+    Array.isArray(cutoffsData) && cutoffsData.length > 0
+      ? cutoffsData[0].period_end.slice(0, 10)
+      : null;
 
   function setQuickDate(range: "hoy" | "ayer" | "7dias") {
     const today = new Date();
@@ -102,7 +117,7 @@ export default function OrdenesPage() {
   const logoUrl = activeTenant.logo_url ?? null;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden gap-4">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden gap-2">
       <div className="shrink-0 space-y-4">
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -154,7 +169,7 @@ export default function OrdenesPage() {
 
           {/* ── Date filter (solo desktop) ── */}
           <div className="hidden md:block">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 my-4">
               <button
                 type="button"
                 onClick={() => setDateFiltersOpen((o) => !o)}
@@ -219,6 +234,23 @@ export default function OrdenesPage() {
                   >
                     7 días
                   </button>
+                  {lastCutoffEnd && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDateFrom(lastCutoffEnd);
+                        setDateTo(getTodayStr());
+                        setDateFiltersOpen(false);
+                      }}
+                      className={`min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                        dateFrom === lastCutoffEnd
+                          ? "bg-accent/15 text-accent ring-1 ring-accent/30"
+                          : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
+                      }`}
+                    >
+                      Último corte
+                    </button>
+                  )}
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <label className="flex flex-1 flex-col gap-1">
@@ -252,6 +284,27 @@ export default function OrdenesPage() {
             )}
           </div>
         </div>
+
+        {/* Banner: viendo desde último corte */}
+        {lastCutoffEnd && dateFrom === lastCutoffEnd && (
+          <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3">
+            <Scissors className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">
+                Viendo desde el último corte
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Órdenes desde el{" "}
+                {new Date(lastCutoffEnd).toLocaleDateString("es-MX", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+                . Las anteriores ya fueron incluidas en ese corte.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* ── Error ── */}
         {error && (

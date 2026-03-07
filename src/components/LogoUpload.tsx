@@ -41,7 +41,7 @@ export function LogoUpload({
     setUploading(true);
     try {
       const { uploadTenantLogo } = await import("@/lib/supabase/storage");
-      const url = await uploadTenantLogo(file, tenantId);
+      const url = await uploadTenantLogo(file, tenantId, currentUrl);
       setImageKey((k) => k + 1);
       onUploaded(url);
     } catch (err: unknown) {
@@ -52,10 +52,19 @@ export function LogoUpload({
     }
   }
 
-  function handleRemove() {
+  async function handleRemove() {
+    const urlToRemove = currentUrl;
     onUploaded(null);
     setError(null);
     setImageKey((k) => k + 1);
+    if (urlToRemove) {
+      try {
+        const { deleteFileByUrl } = await import("@/lib/supabase/storage");
+        await deleteFileByUrl(urlToRemove);
+      } catch {
+        // Silently ignore deletion errors
+      }
+    }
   }
 
   return (

@@ -348,6 +348,30 @@ export async function PATCH(request: Request) {
     );
   }
 
+  // Verify the product belongs to a tenant the user is a member of
+  const { data: productForAuth, error: authFetchError } = await supabase
+    .from("products")
+    .select("tenant_id")
+    .eq("id", product_id)
+    .is("deleted_at", null)
+    .single();
+
+  if (authFetchError || !productForAuth) {
+    return NextResponse.json({ error: "Product not found" }, { status: 404 });
+  }
+
+  const { data: membership } = await supabase
+    .from("tenant_memberships")
+    .select("id")
+    .eq("tenant_id", productForAuth.tenant_id)
+    .eq("user_id", user.id)
+    .not("accepted_at", "is", null)
+    .single();
+
+  if (!membership) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const updates: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
@@ -485,6 +509,30 @@ export async function DELETE(request: Request) {
       { error: "product_id is required" },
       { status: 400 },
     );
+  }
+
+  // Verify the product exists and belongs to a tenant the user is a member of
+  const { data: product, error: fetchError } = await supabase
+    .from("products")
+    .select("id, tenant_id")
+    .eq("id", productId)
+    .is("deleted_at", null)
+    .single();
+
+  if (fetchError || !product) {
+    return NextResponse.json({ error: "Product not found" }, { status: 404 });
+  }
+
+  const { data: membership } = await supabase
+    .from("tenant_memberships")
+    .select("id")
+    .eq("tenant_id", product.tenant_id)
+    .eq("user_id", user.id)
+    .not("accepted_at", "is", null)
+    .single();
+
+  if (!membership) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { error: delError } = await supabase

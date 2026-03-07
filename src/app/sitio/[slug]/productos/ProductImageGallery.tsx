@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Package, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ProductImageGalleryProps {
@@ -32,11 +33,15 @@ export default function ProductImageGallery({
     <div className="space-y-3">
       {/* Main image */}
       <div className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-gray-50">
-        <img
+        <Image
           key={mainUrl}
           src={mainUrl}
           alt={productName}
-          className="h-full w-full object-cover transition-transform duration-500"
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-cover transition-transform duration-500"
+          priority
+          quality={80}
         />
         {/* Navigation arrows (only when multiple images) */}
         {imageUrls.length > 1 && (
@@ -91,10 +96,14 @@ export default function ProductImageGallery({
               }}
               aria-label={`Ver imagen ${i + 1}`}
             >
-              <img
+              <Image
                 src={url}
                 alt={`${productName} ${i + 1}`}
-                className="h-full w-full object-cover"
+                fill
+                sizes="64px"
+                className="object-cover"
+                loading="lazy"
+                quality={60}
               />
             </button>
           ))}
