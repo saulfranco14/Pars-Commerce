@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Store, Menu, X } from "lucide-react";
 import CartBadge from "./CartBadge";
@@ -71,10 +72,13 @@ export default function SiteHeader({
             style={{ color: accentColor }}
           >
             {logoUrl ? (
-              <img
+              <Image
                 src={logoUrl}
                 alt=""
-                className="h-8 w-8 shrink-0 object-contain rounded"
+                width={32}
+                height={32}
+                className="shrink-0 object-contain rounded"
+                priority
               />
             ) : (
               <Store className="h-6 w-6 shrink-0" aria-hidden />
