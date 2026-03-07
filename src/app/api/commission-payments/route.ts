@@ -113,7 +113,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const periodEndInclusive = `${period_end}T23:59:59.999Z`;
+  // Fetch ALL pending commissions for this user (no date filter).
+  // The period_start/period_end sent by the client are used only as fallback labels.
+  // This fixes the bug where commissions from previous periods returned 0
+  // because the date range didn't match their created_at.
   const { data: commissions } = await supabase
     .from("sales_commissions")
     .select("*")
@@ -121,10 +124,11 @@ export async function POST(request: Request) {
     .eq("user_id", user_id)
     .eq("is_paid", false)
     .is("voided_at", null)
-    .gte("created_at", period_start)
-    .lte("created_at", periodEndInclusive);
+    .order("created_at", { ascending: true });
 
-  const totals = (commissions ?? []).reduce(
+  const rows = commissions ?? [];
+
+  const totals = rows.reduce(
     (acc, c) => ({
       total_orders: acc.total_orders + 1,
       total_items: acc.total_items + c.total_items_sold,
@@ -147,14 +151,23 @@ export async function POST(request: Request) {
     }
   );
 
+  // Use the actual date range of the included commissions as period bounds.
+  // Falls back to the client-supplied dates if there are no commissions.
+  const actualPeriodStart =
+    rows.length > 0 ? rows[0].created_at.slice(0, 10) : period_start;
+  const actualPeriodEnd =
+    rows.length > 0
+      ? rows[rows.length - 1].created_at.slice(0, 10)
+      : period_end;
+
   const { data: payment, error } = await supabase
     .from("commission_payments")
     .insert({
       tenant_id,
       user_id,
       period_type,
-      period_start,
-      period_end,
+      period_start: actualPeriodStart,
+      period_end: actualPeriodEnd,
       ...totals,
     })
     .select()

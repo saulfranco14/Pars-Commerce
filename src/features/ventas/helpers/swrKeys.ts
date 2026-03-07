@@ -35,3 +35,7 @@ export function buildPaymentsKey(
   if (paymentStatus) search.set("status", paymentStatus);
   return `/api/commission-payments?${search}`;
 }
+
+export function buildCutoffsKey(tenantId: string): string {
+  return `/api/sales-cutoffs?tenant_id=${encodeURIComponent(tenantId)}`;
+}

@@ -11,25 +11,25 @@ import { VentasFilters } from "@/components/ventas/VentasFilters";
 import { VentasPorPersona } from "@/components/ventas/VentasPorPersona";
 import { VentasPorOrden } from "@/components/ventas/VentasPorOrden";
 import { VentasPagosTab } from "@/components/ventas/VentasPagosTab";
+import { VentasCortesTab } from "@/components/ventas/VentasCortesTab";
 
 const VentasResumen = dynamic(
   () =>
     import("@/components/ventas/VentasResumen").then((m) => ({
       default: m.VentasResumen,
     })),
-  { ssr: false, loading: () => <LoadingBlock message="Cargando resumen…" /> }
+  { ssr: false, loading: () => <LoadingBlock message="Cargando resumen…" /> },
 );
 import { swrFetcher } from "@/lib/swrFetcher";
 import type {
   SalesCommission,
   CommissionSummary,
   CommissionPayment,
+  SalesCutoff,
 } from "@/types/sales";
 import type { SalesAnalyticsResponse } from "@/app/api/sales-analytics/route";
 import type { TeamMember } from "@/types/team";
-import {
-  update as updateSalesCommission,
-} from "@/services/salesCommissionsService";
+import { update as updateSalesCommission } from "@/services/salesCommissionsService";
 import {
   create as createCommissionPayment,
   update as updateCommissionPayment,
@@ -38,6 +38,7 @@ import {
   buildCommissionsKey,
   buildAnalyticsKey,
   buildPaymentsKey,
+  buildCutoffsKey,
 } from "@/features/ventas/helpers/swrKeys";
 import type { TabView } from "@/features/ventas/constants/tabs";
 import { teamKey } from "@/features/equipo/helpers/swrKeys";
@@ -46,6 +47,7 @@ export default function VentasPage() {
   const params = useParams();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
+  const activeRole = useTenantStore((s) => s.activeRole());
 
   const [activeTab, setActiveTab] = useState<TabView>("resumen");
   const [actionError, setActionError] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export default function VentasPage() {
   const [dateTo, setDateTo] = useState("");
 
   const [periodType, setPeriodType] = useState<"day" | "week" | "month">(
-    "week"
+    "week",
   );
   const [selectedUser, setSelectedUser] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("pending");
@@ -64,10 +66,10 @@ export default function VentasPage() {
   const [commissionToPay, setCommissionToPay] =
     useState<SalesCommission | null>(null);
   const [paymentToPay, setPaymentToPay] = useState<CommissionPayment | null>(
-    null
+    null,
   );
   const [paymentToEdit, setPaymentToEdit] = useState<CommissionPayment | null>(
-    null
+    null,
   );
   const [editAmount, setEditAmount] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -76,7 +78,7 @@ export default function VentasPage() {
   const teamKeyValue = activeTenant ? teamKey(activeTenant.id) : null;
   const { data: teamData, error: teamError } = useSWR<TeamMember[]>(
     teamKeyValue,
-    swrFetcher
+    swrFetcher,
   );
   const teamMembers = Array.isArray(teamData)
     ? teamData.map((m) => ({
@@ -87,47 +89,73 @@ export default function VentasPage() {
     : [];
 
   const commissionsKey =
-    activeTenant && activeTab !== "pagos"
+    activeTenant && activeTab !== "pagos" && activeTab !== "cortes"
       ? buildCommissionsKey(
           activeTenant.id,
           userFilter,
           paidFilter,
           dateFrom,
-          dateTo
+          dateTo,
         )
       : null;
-  const { data: commissionsData, error: commissionsError, isLoading: commissionsLoading, mutate: mutateCommissions } = useSWR<
-    SalesCommission[]
-  >(commissionsKey, swrFetcher, { fallbackData: [] });
-  const commissionsFromTab =
-    Array.isArray(commissionsData) ? commissionsData : [];
+  const {
+    data: commissionsData,
+    error: commissionsError,
+    isLoading: commissionsLoading,
+    mutate: mutateCommissions,
+  } = useSWR<SalesCommission[]>(commissionsKey, swrFetcher, {
+    fallbackData: [],
+  });
+  const commissionsFromTab = Array.isArray(commissionsData)
+    ? commissionsData
+    : [];
 
   const pendingCommissionsKey =
     activeTenant && activeTab === "pagos"
       ? `/api/sales-commissions?tenant_id=${encodeURIComponent(activeTenant.id)}&is_paid=false`
       : null;
-  const { data: pendingData, isLoading: pendingLoading, mutate: mutatePendingCommissions } = useSWR<
-    SalesCommission[]
-  >(pendingCommissionsKey, swrFetcher, { fallbackData: [] });
+  const {
+    data: pendingData,
+    isLoading: pendingLoading,
+    mutate: mutatePendingCommissions,
+  } = useSWR<SalesCommission[]>(pendingCommissionsKey, swrFetcher, {
+    fallbackData: [],
+  });
   const pendingCommissions = Array.isArray(pendingData) ? pendingData : [];
 
   const paymentsKey =
     activeTenant && activeTab === "pagos"
       ? buildPaymentsKey(activeTenant.id, selectedUser, paymentStatus)
       : null;
-  const { data: paymentsData, error: paymentsError, isLoading: paymentsLoading, mutate: mutatePayments } = useSWR<
-    CommissionPayment[]
-  >(paymentsKey, swrFetcher, { fallbackData: [] });
+  const {
+    data: paymentsData,
+    error: paymentsError,
+    isLoading: paymentsLoading,
+    mutate: mutatePayments,
+  } = useSWR<CommissionPayment[]>(paymentsKey, swrFetcher, {
+    fallbackData: [],
+  });
   const payments = Array.isArray(paymentsData) ? paymentsData : [];
 
   const analyticsKey =
     activeTenant && activeTab === "resumen"
       ? buildAnalyticsKey(activeTenant.id, dateFrom, dateTo)
       : null;
-  const { data: analyticsData, isLoading: analyticsLoading } = useSWR<SalesAnalyticsResponse>(
-    analyticsKey,
-    swrFetcher
-  );
+  const { data: analyticsData, isLoading: analyticsLoading } =
+    useSWR<SalesAnalyticsResponse>(analyticsKey, swrFetcher);
+
+  const cutoffsKey =
+    activeTenant && activeTab === "cortes"
+      ? buildCutoffsKey(activeTenant.id)
+      : null;
+  const {
+    data: cutoffsData,
+    isLoading: cutoffsLoading,
+    mutate: mutateCutoffs,
+  } = useSWR<SalesCutoff[]>(cutoffsKey, swrFetcher, { fallbackData: [] });
+  const cutoffs = Array.isArray(cutoffsData) ? cutoffsData : [];
+
+  const isAdmin = activeRole?.name === "owner" || activeRole?.name === "admin";
 
   const commissions =
     activeTab === "pagos" ? pendingCommissions : commissionsFromTab;
@@ -172,7 +200,7 @@ export default function VentasPage() {
         now.getDate(),
         0,
         0,
-        0
+        0,
       );
       periodEnd = new Date(
         now.getFullYear(),
@@ -180,7 +208,7 @@ export default function VentasPage() {
         now.getDate(),
         23,
         59,
-        59
+        59,
       );
     } else if (periodType === "week") {
       const dayOfWeek = now.getDay();
@@ -199,7 +227,7 @@ export default function VentasPage() {
         0,
         23,
         59,
-        59
+        59,
       );
     }
 
@@ -224,7 +252,9 @@ export default function VentasPage() {
     setActionLoading(true);
     setActionError(null);
     try {
-      await updateCommissionPayment(paymentToPay.id, { payment_status: "paid" });
+      await updateCommissionPayment(paymentToPay.id, {
+        payment_status: "paid",
+      });
       setPaymentToPay(null);
       await Promise.all([mutatePayments(), mutatePendingCommissions()]);
     } catch {
@@ -257,6 +287,33 @@ export default function VentasPage() {
     }
   }
 
+  async function handleGenerateCutoff(notes: string) {
+    if (!activeTenant) return;
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      const res = await fetch("/api/sales-cutoffs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenant_id: activeTenant.id,
+          notes: notes || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Error al generar el corte");
+      }
+      await mutateCutoffs();
+    } catch (e) {
+      setActionError(
+        e instanceof Error ? e.message : "No se pudo generar el corte de caja",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   const summary = commissions.reduce(
     (acc, c) => ({
       totalRevenue: acc.totalRevenue + Number(c.total_revenue),
@@ -273,44 +330,47 @@ export default function VentasPage() {
       grossProfit: 0,
       pendingCommission: 0,
       paidCommission: 0,
-    }
+    },
   );
 
   const byPerson: CommissionSummary[] = [];
-  const grouped = commissions.reduce((acc, c) => {
-    const uid = c.user_id;
-    if (!acc[uid]) {
-      acc[uid] = {
-        user_id: uid,
-        display_name: c.profiles?.display_name ?? null,
-        email: c.profiles?.email ?? null,
-        total_orders: 0,
-        total_items: 0,
-        products_sold: 0,
-        services_sold: 0,
-        total_revenue: 0,
-        total_cost: 0,
-        gross_profit: 0,
-        total_commission: 0,
-        paid_commission: 0,
-        pending_commission: 0,
-      };
-    }
-    acc[uid].total_orders += 1;
-    acc[uid].total_items += c.total_items_sold;
-    acc[uid].products_sold += c.products_count;
-    acc[uid].services_sold += c.services_count;
-    acc[uid].total_revenue += Number(c.total_revenue);
-    acc[uid].total_cost += Number(c.total_cost);
-    acc[uid].gross_profit += Number(c.gross_profit);
-    acc[uid].total_commission += Number(c.commission_amount);
-    if (c.is_paid) {
-      acc[uid].paid_commission += Number(c.commission_amount);
-    } else {
-      acc[uid].pending_commission += Number(c.commission_amount);
-    }
-    return acc;
-  }, {} as Record<string, CommissionSummary>);
+  const grouped = commissions.reduce(
+    (acc, c) => {
+      const uid = c.user_id;
+      if (!acc[uid]) {
+        acc[uid] = {
+          user_id: uid,
+          display_name: c.profiles?.display_name ?? null,
+          email: c.profiles?.email ?? null,
+          total_orders: 0,
+          total_items: 0,
+          products_sold: 0,
+          services_sold: 0,
+          total_revenue: 0,
+          total_cost: 0,
+          gross_profit: 0,
+          total_commission: 0,
+          paid_commission: 0,
+          pending_commission: 0,
+        };
+      }
+      acc[uid].total_orders += 1;
+      acc[uid].total_items += c.total_items_sold;
+      acc[uid].products_sold += c.products_count;
+      acc[uid].services_sold += c.services_count;
+      acc[uid].total_revenue += Number(c.total_revenue);
+      acc[uid].total_cost += Number(c.total_cost);
+      acc[uid].gross_profit += Number(c.gross_profit);
+      acc[uid].total_commission += Number(c.commission_amount);
+      if (c.is_paid) {
+        acc[uid].paid_commission += Number(c.commission_amount);
+      } else {
+        acc[uid].pending_commission += Number(c.commission_amount);
+      }
+      return acc;
+    },
+    {} as Record<string, CommissionSummary>,
+  );
 
   for (const uid in grouped) {
     byPerson.push(grouped[uid]);
@@ -324,222 +384,231 @@ export default function VentasPage() {
     );
   }
 
+  const tabBtnClass = (tab: TabView) =>
+    `min-h-[44px] shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${
+      activeTab === tab
+        ? "border-b-2 border-accent text-foreground"
+        : "text-muted hover:text-foreground active:text-foreground"
+    }`;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto">
       <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
-          Ventas y Comisiones
-        </h1>
-      </div>
-
-      <VentasFilters
-        activeTab={activeTab}
-        filtersOpen={filtersOpen}
-        setFiltersOpen={setFiltersOpen}
-        userFilter={userFilter}
-        setUserFilter={setUserFilter}
-        paidFilter={paidFilter}
-        setPaidFilter={setPaidFilter}
-        dateFrom={dateFrom}
-        setDateFrom={setDateFrom}
-        dateTo={dateTo}
-        setDateTo={setDateTo}
-        periodType={periodType}
-        setPeriodType={setPeriodType}
-        selectedUser={selectedUser}
-        setSelectedUser={setSelectedUser}
-        paymentStatus={paymentStatus}
-        setPaymentStatus={setPaymentStatus}
-        teamMembers={teamMembers}
-      />
-
-      <div className="md:hidden">
-        <label className="sr-only" htmlFor="ventas-tab-select">
-          Ver sección
-        </label>
-        <select
-          id="ventas-tab-select"
-          value={activeTab}
-          onChange={(e) => setActiveTab(e.target.value as TabView)}
-          className="input-form select-custom min-h-[44px] w-full appearance-none rounded-xl border px-4 py-2.5 text-sm font-medium text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-          aria-label="Seleccionar sección de ventas"
-        >
-          <option value="resumen">Resumen</option>
-          <option value="por-persona">Por persona</option>
-          <option value="por-orden">Por orden</option>
-          <option value="pagos">Pagos</option>
-        </select>
-      </div>
-      <div className="hidden gap-1 border-b border-border-soft md:flex">
-        <button
-          type="button"
-          onClick={() => setActiveTab("resumen")}
-          className={`min-h-[44px] shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${
-            activeTab === "resumen"
-              ? "border-b-2 border-accent text-foreground"
-              : "text-muted hover:text-foreground active:text-foreground"
-          }`}
-          aria-label="Ver resumen"
-          aria-pressed={activeTab === "resumen"}
-        >
-          Resumen
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("por-persona")}
-          className={`min-h-[44px] shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${
-            activeTab === "por-persona"
-              ? "border-b-2 border-accent text-foreground"
-              : "text-muted hover:text-foreground active:text-foreground"
-          }`}
-          aria-label="Por persona"
-          aria-pressed={activeTab === "por-persona"}
-        >
-          Por persona
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("por-orden")}
-          className={`min-h-[44px] shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${
-            activeTab === "por-orden"
-              ? "border-b-2 border-accent text-foreground"
-              : "text-muted hover:text-foreground active:text-foreground"
-          }`}
-          aria-label="Por orden"
-          aria-pressed={activeTab === "por-orden"}
-        >
-          Por orden
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("pagos")}
-          className={`min-h-[44px] shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${
-            activeTab === "pagos"
-              ? "border-b-2 border-accent text-foreground"
-              : "text-muted hover:text-foreground active:text-foreground"
-          }`}
-          aria-label="Pagos"
-          aria-pressed={activeTab === "pagos"}
-        >
-          Pagos
-        </button>
-      </div>
-
-      {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
-          {error}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
+            Ventas y Comisiones
+          </h1>
         </div>
-      )}
 
-      {loading ? (
-        <LoadingBlock message="Cargando ventas…" />
-      ) : activeTab === "resumen" ? (
-        <VentasResumen
-          summary={summary}
-          analytics={analyticsData ?? null}
-          analyticsLoading={analyticsLoading}
+        <VentasFilters
+          activeTab={activeTab}
+          filtersOpen={filtersOpen}
+          setFiltersOpen={setFiltersOpen}
+          userFilter={userFilter}
+          setUserFilter={setUserFilter}
+          paidFilter={paidFilter}
+          setPaidFilter={setPaidFilter}
           dateFrom={dateFrom}
+          setDateFrom={setDateFrom}
           dateTo={dateTo}
-        />
-      ) : activeTab === "por-persona" ? (
-        <VentasPorPersona byPerson={byPerson} />
-      ) : activeTab === "por-orden" ? (
-        <VentasPorOrden
-          commissions={commissions}
-          tenantSlug={tenantSlug}
-          onMarkAsPaid={setCommissionToPay}
-        />
-      ) : (
-        <VentasPagosTab
+          setDateTo={setDateTo}
+          periodType={periodType}
+          setPeriodType={setPeriodType}
+          selectedUser={selectedUser}
+          setSelectedUser={setSelectedUser}
+          paymentStatus={paymentStatus}
+          setPaymentStatus={setPaymentStatus}
           teamMembers={teamMembers}
-          pendingCommissions={commissions}
-          payments={payments}
-          loading={loading}
-          actionLoading={actionLoading}
-          onGeneratePayment={handleGeneratePayment}
-          onEditPayment={(p) => {
-            setPaymentToEdit(p);
-            setEditAmount(String(p.commission_amount));
-          }}
-          onPayPayment={setPaymentToPay}
         />
-      )}
 
-      <ConfirmModal
-        isOpen={commissionToPay !== null}
-        onClose={() => setCommissionToPay(null)}
-        onConfirm={handleMarkAsPaid}
-        title="Marcar comisión como pagada"
-        message={
-          commissionToPay
-            ? `¿Confirmar que se pagó la comisión de $${Number(
-                commissionToPay.commission_amount
-              ).toFixed(2)} a ${
-                commissionToPay.profiles?.display_name ||
-                commissionToPay.profiles?.email
-              }?`
-            : ""
-        }
-        confirmLabel="Marcar como pagada"
-        confirmDanger={false}
-        loading={actionLoading}
-      />
+        <div className="md:hidden">
+          <label className="sr-only" htmlFor="ventas-tab-select">
+            Ver sección
+          </label>
+          <select
+            id="ventas-tab-select"
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value as TabView)}
+            className="input-form select-custom min-h-[44px] w-full appearance-none rounded-xl border px-4 py-2.5 text-sm font-medium text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            aria-label="Seleccionar sección de ventas"
+          >
+            <option value="resumen">Resumen</option>
+            <option value="por-persona">Por persona</option>
+            <option value="por-orden">Por orden</option>
+            <option value="pagos">Pagos</option>
+            <option value="cortes">Cortes</option>
+          </select>
+        </div>
+        <div className="hidden gap-1 border-b border-border-soft md:flex">
+          <button
+            type="button"
+            onClick={() => setActiveTab("resumen")}
+            className={tabBtnClass("resumen")}
+            aria-label="Ver resumen"
+            aria-pressed={activeTab === "resumen"}
+          >
+            Resumen
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("por-persona")}
+            className={tabBtnClass("por-persona")}
+            aria-label="Por persona"
+            aria-pressed={activeTab === "por-persona"}
+          >
+            Por persona
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("por-orden")}
+            className={tabBtnClass("por-orden")}
+            aria-label="Por orden"
+            aria-pressed={activeTab === "por-orden"}
+          >
+            Por orden
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("pagos")}
+            className={tabBtnClass("pagos")}
+            aria-label="Pagos"
+            aria-pressed={activeTab === "pagos"}
+          >
+            Pagos
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("cortes")}
+            className={tabBtnClass("cortes")}
+            aria-label="Cortes de caja"
+            aria-pressed={activeTab === "cortes"}
+          >
+            Cortes
+          </button>
+        </div>
 
-      <ConfirmModal
-        isOpen={paymentToPay !== null}
-        onClose={() => setPaymentToPay(null)}
-        onConfirm={handleMarkPaymentAsPaid}
-        title="Marcar pago como realizado"
-        message={
-          paymentToPay
-            ? `¿Confirmar que se realizó el pago de $${Number(
-                paymentToPay.commission_amount
-              ).toFixed(2)} a ${
-                paymentToPay.profiles?.display_name ||
-                paymentToPay.profiles?.email
-              }? Esto marcará todas las comisiones del período como pagadas.`
-            : ""
-        }
-        confirmLabel="Confirmar pago"
-        confirmDanger={false}
-        loading={actionLoading}
-      />
+        {error && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
+            {error}
+          </div>
+        )}
 
-      <ConfirmModal
-        isOpen={paymentToEdit !== null}
-        onClose={() => {
-          setPaymentToEdit(null);
-          setEditAmount("");
-        }}
-        onConfirm={handleUpdatePaymentAmount}
-        title="Editar monto de comisión"
-        message={
-          paymentToEdit ? (
-            <div className="space-y-3">
-              <p>Ajusta el monto de la comisión si es necesario:</p>
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground">
-                  Monto
-                </label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={editAmount}
-                  onChange={(e) => setEditAmount(e.target.value)}
-                  className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  placeholder="0.00"
-                />
+        {activeTab === "cortes" ? (
+          <VentasCortesTab
+            cutoffs={cutoffs}
+            loading={cutoffsLoading}
+            actionLoading={actionLoading}
+            isAdmin={isAdmin}
+            onGenerateCutoff={handleGenerateCutoff}
+          />
+        ) : loading ? (
+          <LoadingBlock message="Cargando ventas…" />
+        ) : activeTab === "resumen" ? (
+          <VentasResumen
+            summary={summary}
+            analytics={analyticsData ?? null}
+            analyticsLoading={analyticsLoading}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+          />
+        ) : activeTab === "por-persona" ? (
+          <VentasPorPersona byPerson={byPerson} />
+        ) : activeTab === "por-orden" ? (
+          <VentasPorOrden
+            commissions={commissions}
+            tenantSlug={tenantSlug}
+            onMarkAsPaid={setCommissionToPay}
+          />
+        ) : (
+          <VentasPagosTab
+            teamMembers={teamMembers}
+            pendingCommissions={commissions}
+            payments={payments}
+            loading={loading}
+            actionLoading={actionLoading}
+            onGeneratePayment={handleGeneratePayment}
+            onEditPayment={(p) => {
+              setPaymentToEdit(p);
+              setEditAmount(String(p.commission_amount));
+            }}
+            onPayPayment={setPaymentToPay}
+          />
+        )}
+
+        <ConfirmModal
+          isOpen={commissionToPay !== null}
+          onClose={() => setCommissionToPay(null)}
+          onConfirm={handleMarkAsPaid}
+          title="Marcar comisión como pagada"
+          message={
+            commissionToPay
+              ? `¿Confirmar que se pagó la comisión de $${Number(
+                  commissionToPay.commission_amount,
+                ).toFixed(2)} a ${
+                  commissionToPay.profiles?.display_name ||
+                  commissionToPay.profiles?.email
+                }?`
+              : ""
+          }
+          confirmLabel="Marcar como pagada"
+          confirmDanger={false}
+          loading={actionLoading}
+        />
+
+        <ConfirmModal
+          isOpen={paymentToPay !== null}
+          onClose={() => setPaymentToPay(null)}
+          onConfirm={handleMarkPaymentAsPaid}
+          title="Marcar pago como realizado"
+          message={
+            paymentToPay
+              ? `¿Confirmar que se realizó el pago de $${Number(
+                  paymentToPay.commission_amount,
+                ).toFixed(2)} a ${
+                  paymentToPay.profiles?.display_name ||
+                  paymentToPay.profiles?.email
+                }? Esto marcará todas las comisiones del período como pagadas.`
+              : ""
+          }
+          confirmLabel="Confirmar pago"
+          confirmDanger={false}
+          loading={actionLoading}
+        />
+
+        <ConfirmModal
+          isOpen={paymentToEdit !== null}
+          onClose={() => {
+            setPaymentToEdit(null);
+            setEditAmount("");
+          }}
+          onConfirm={handleUpdatePaymentAmount}
+          title="Editar monto de comisión"
+          message={
+            paymentToEdit ? (
+              <div className="space-y-3">
+                <p>Ajusta el monto de la comisión si es necesario:</p>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground">
+                    Monto
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
+                    className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                    placeholder="0.00"
+                  />
+                </div>
               </div>
-            </div>
-          ) : (
-            ""
-          )
-        }
-        confirmLabel="Guardar"
-        confirmDanger={false}
-        loading={actionLoading}
-      />
+            ) : (
+              ""
+            )
+          }
+          confirmLabel="Guardar"
+          confirmDanger={false}
+          loading={actionLoading}
+        />
       </div>
     </div>
   );

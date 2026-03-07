@@ -441,6 +441,9 @@ export default function EditarServicioPage() {
                     productId={serviceId}
                     urls={imageUrls}
                     onChange={setImageUrls}
+                    onRemove={async (newUrls) => {
+                      await update(serviceId, { image_urls: newUrls });
+                    }}
                   />
                 </div>
               )}

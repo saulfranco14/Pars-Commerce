@@ -28,6 +28,7 @@ import {
   Clock,
   Plus,
   ShoppingBag,
+  Scissors,
   TrendingUp,
   Trophy,
   UserPlus,
@@ -42,10 +43,27 @@ import { orderContentType } from "@/features/orders/helpers/orderContentType";
 export default function DashboardPage() {
   const activeTenant = useActiveTenant();
   const [period, setPeriod] = useState<
-    "today" | "week" | "fortnight" | "month"
+    "today" | "week" | "fortnight" | "month" | "cutoff"
   >("week");
 
-  const { dateFrom, dateTo } = getPeriodDates(period);
+  // Fetch the last cutoff to use as date_from when period === "cutoff"
+  const cutoffsKey = activeTenant?.id != null
+    ? `/api/sales-cutoffs?tenant_id=${encodeURIComponent(activeTenant.id)}`
+    : null;
+  const { data: cutoffsData } = useSWR<{ period_end: string }[]>(
+    cutoffsKey,
+    swrFetcher,
+    { fallbackData: [] }
+  );
+  const lastCutoffEnd =
+    Array.isArray(cutoffsData) && cutoffsData.length > 0
+      ? cutoffsData[0].period_end.slice(0, 10)
+      : null;
+
+  const { dateFrom, dateTo } =
+    period === "cutoff" && lastCutoffEnd
+      ? { dateFrom: lastCutoffEnd, dateTo: new Date().toISOString().slice(0, 10) }
+      : getPeriodDates(period === "cutoff" ? "month" : period);
 
   const ordersKey =
     activeTenant?.id != null
@@ -118,7 +136,11 @@ export default function DashboardPage() {
         ? "Últimos 7 días"
         : period === "fortnight"
           ? "Últimos 15 días"
-          : "Últimos 30 días";
+          : period === "cutoff"
+            ? lastCutoffEnd
+              ? `Desde corte ${lastCutoffEnd}`
+              : "Últimos 30 días"
+            : "Últimos 30 días";
   const needsAttention = unassignedCount > 0 || activeOrders > 0;
 
   return (
@@ -138,7 +160,7 @@ export default function DashboardPage() {
               value={period}
               onChange={(e) =>
                 setPeriod(
-                  e.target.value as "today" | "week" | "fortnight" | "month",
+                  e.target.value as "today" | "week" | "fortnight" | "month" | "cutoff",
                 )
               }
               className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm font-medium text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none"
@@ -147,6 +169,9 @@ export default function DashboardPage() {
               <option value="week">Semana</option>
               <option value="fortnight">Quincena</option>
               <option value="month">Mes</option>
+              <option value="cutoff" disabled={!lastCutoffEnd}>
+                {lastCutoffEnd ? "Último corte" : "Sin cortes"}
+              </option>
             </select>
             <Link
               href={`/dashboard/${activeTenant.slug}/ordenes/nueva`}
@@ -157,6 +182,26 @@ export default function DashboardPage() {
             </Link>
           </div>
         </header>
+
+        {period === "cutoff" && lastCutoffEnd && (
+          <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3">
+            <Scissors className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">
+                Viendo desde el último corte
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Datos desde el{" "}
+                {new Date(lastCutoffEnd).toLocaleDateString("es-MX", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+                . Todo lo anterior ya fue contabilizado en ese corte.
+              </p>
+            </div>
+          </div>
+        )}
 
         {needsAttention && (
           <Link

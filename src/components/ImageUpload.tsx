@@ -45,7 +45,7 @@ export function ImageUpload({
     try {
       if (variant === "promotion") {
         const { uploadPromotionImage } = await import("@/lib/supabase/storage");
-        const url = await uploadPromotionImage(file, tenantId, promotionId || undefined);
+        const url = await uploadPromotionImage(file, tenantId, promotionId || undefined, currentUrl);
         onUploaded(url);
       } else {
         const { uploadProductImage } = await import("@/lib/supabase/storage");
