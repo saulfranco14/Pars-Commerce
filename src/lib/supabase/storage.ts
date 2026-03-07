@@ -81,6 +81,47 @@ export async function uploadPromotionImage(
   return publicUrl;
 }
 
+export async function uploadHeroImage(
+  file: File,
+  tenantId: string,
+  previousUrl?: string | null
+): Promise<string> {
+  const supabase = createClient();
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const safeExt = ["jpeg", "jpg", "png", "gif", "webp"].includes(ext)
+    ? ext
+    : "jpg";
+  // Use a unique name each upload so CDN cache is busted automatically
+  const uid = crypto.randomUUID().slice(0, 8);
+  const path = `${tenantId}/hero/hero-${uid}.${safeExt}`;
+
+  // Delete previous hero image to avoid orphaned files
+  if (previousUrl) {
+    const prevPath = extractPathFromUrl(previousUrl);
+    if (prevPath) {
+      await supabase.storage.from(BUCKET).remove([prevPath]);
+    }
+  }
+
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, file, { upsert: false });
+
+  if (error) throw error;
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return publicUrl;
+}
+
+export async function deleteHeroImage(url: string): Promise<void> {
+  const path = extractPathFromUrl(url);
+  if (!path) return;
+  const supabase = createClient();
+  await supabase.storage.from(BUCKET).remove([path]);
+}
+
 export async function uploadTenantLogo(
   file: File,
   tenantId: string,

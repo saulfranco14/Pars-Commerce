@@ -94,6 +94,7 @@ export function SiteContentForm({
         <div className="pt-1">
           {contentTab === "inicio" && (
             <SiteContentInicioTab
+              tenantId={tenantId}
               content={inicio}
               onChange={setInicio}
               onSave={() => handleSave("inicio", inicio)}
@@ -178,6 +179,7 @@ export function SiteContentForm({
                 <div className="border-t border-border px-4 py-4">
                   {id === "inicio" && (
                     <SiteContentInicioTab
+                      tenantId={tenantId}
                       content={inicio}
                       onChange={setInicio}
                       onSave={() => handleSave("inicio", inicio)}
