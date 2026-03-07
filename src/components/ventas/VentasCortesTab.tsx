@@ -68,7 +68,8 @@ function CutoffDetailModal({
             </h3>
             <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
               <CalendarDays className="h-3 w-3 shrink-0" />
-              {formatDate(cutoff.period_start)} → {formatDate(cutoff.period_end)}
+              {formatDate(cutoff.period_start)} →{" "}
+              {formatDate(cutoff.period_end)}
             </p>
           </div>
           <button
@@ -84,7 +85,9 @@ function CutoffDetailModal({
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">
           {cutoff.notes && (
             <p className="mb-4 rounded-lg bg-border-soft/50 px-3 py-2 text-sm italic text-muted-foreground">
-              "{cutoff.notes}"
+              {'"'}
+              {cutoff.notes}
+              {'"'}
             </p>
           )}
 
@@ -92,9 +95,19 @@ function CutoffDetailModal({
           <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {[
               { label: "Órdenes", value: String(cutoff.total_orders) },
-              { label: "Total vendido", value: `$${Number(cutoff.total_revenue).toFixed(2)}` },
-              { label: "Costo", value: `$${Number(cutoff.total_cost).toFixed(2)}` },
-              { label: "Ganancia", value: `$${Number(cutoff.gross_profit).toFixed(2)}`, accent: true },
+              {
+                label: "Total vendido",
+                value: `$${Number(cutoff.total_revenue).toFixed(2)}`,
+              },
+              {
+                label: "Costo",
+                value: `$${Number(cutoff.total_cost).toFixed(2)}`,
+              },
+              {
+                label: "Ganancia",
+                value: `$${Number(cutoff.gross_profit).toFixed(2)}`,
+                accent: true,
+              },
             ].map((item) => (
               <div
                 key={item.label}
@@ -208,7 +221,9 @@ export function VentasCortesTab({
 }: VentasCortesTabProps) {
   const [notes, setNotes] = useState("");
   const [showNotes, setShowNotes] = useState(false);
-  const [selectedCutoff, setSelectedCutoff] = useState<SalesCutoff | null>(null);
+  const [selectedCutoff, setSelectedCutoff] = useState<SalesCutoff | null>(
+    null,
+  );
   const [justGenerated, setJustGenerated] = useState(false);
 
   const lastCutoff = cutoffs.length > 0 ? cutoffs[0] : null;
