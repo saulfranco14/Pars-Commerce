@@ -16,7 +16,7 @@ import { validateImageSize, handleUploadError } from "@/lib/uploadUtils";
 import type { SiteContentTabProps } from "@/features/configuracion/interfaces/sections";
 
 export function SiteContentInicioTab({
-  tenantId,
+  tenantId = "",
   content,
   onChange,
   onSave,
