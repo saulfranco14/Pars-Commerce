@@ -81,6 +81,7 @@ export interface SiteContentFormProps {
 }
 
 export interface SiteContentTabProps {
+  tenantId?: string;
   content: SitePageContent;
   onChange: (c: SitePageContent) => void;
   onSave: () => void;

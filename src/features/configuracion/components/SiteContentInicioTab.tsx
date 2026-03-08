@@ -1,6 +1,8 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { useState, useRef } from "react";
+import { Check, Trash2, ImagePlus } from "lucide-react";
+import Image from "next/image";
 import type {
   SitePageCard,
   SitePagePurchaseStep,
@@ -10,15 +12,61 @@ import { FormSection } from "./SiteContentFormSection";
 import { inputForm } from "@/components/ui/inputClasses";
 import { btnPrimary } from "@/components/ui/buttonClasses";
 import { CardIconSelector } from "./CardIconSelector";
+import { validateImageSize, handleUploadError } from "@/lib/uploadUtils";
 import type { SiteContentTabProps } from "@/features/configuracion/interfaces/sections";
 
 export function SiteContentInicioTab({
+  tenantId = "",
   content,
   onChange,
   onSave,
   loading,
   narrow,
 }: SiteContentTabProps) {
+  const [heroUploading, setHeroUploading] = useState(false);
+  const [heroDeleting, setHeroDeleting] = useState(false);
+  const [heroError, setHeroError] = useState<string | null>(null);
+  const heroInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleHeroFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const sizeError = validateImageSize(file);
+    if (sizeError) {
+      setHeroError(sizeError);
+      if (heroInputRef.current) heroInputRef.current.value = "";
+      return;
+    }
+
+    setHeroError(null);
+    setHeroUploading(true);
+    try {
+      const { uploadHeroImage } = await import("@/lib/supabase/storage");
+      const url = await uploadHeroImage(file, tenantId, content.hero_image_url);
+      onChange({ ...content, hero_image_url: url });
+    } catch (err: unknown) {
+      setHeroError(handleUploadError(err));
+    } finally {
+      setHeroUploading(false);
+      if (heroInputRef.current) heroInputRef.current.value = "";
+    }
+  }
+
+  async function handleHeroDelete() {
+    if (!content.hero_image_url) return;
+    setHeroError(null);
+    setHeroDeleting(true);
+    try {
+      const { deleteHeroImage } = await import("@/lib/supabase/storage");
+      await deleteHeroImage(content.hero_image_url);
+      onChange({ ...content, hero_image_url: undefined });
+    } catch (err: unknown) {
+      setHeroError(handleUploadError(err, "Error al eliminar la imagen."));
+    } finally {
+      setHeroDeleting(false);
+    }
+  }
   const cards = (content.cards ?? Array(4).fill(null)).slice(0, 4);
   const purchaseProcess = (content.purchase_process ?? Array(3).fill(null)).slice(0, 3);
   const faqItems = content.faq_items ?? [];
@@ -86,21 +134,69 @@ export function SiteContentInicioTab({
               placeholder="1–2 párrafos presentando tu negocio"
             />
           </div>
-          <div>
-            <label htmlFor="inicio-hero" className="block text-sm font-medium text-muted-foreground">
-              URL imagen de fondo (hero)
-            </label>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Imagen que cubre la zona superior. Usa una URL pública (ej. desde Imgur o tu host).
-            </p>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground">
+                Imagen de fondo (hero)
+              </label>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Imagen que cubre la zona superior de tu sitio. JPG, PNG o WebP, máx. 12 MB.
+              </p>
+            </div>
+
+            {content.hero_image_url ? (
+              <div className="space-y-2">
+                <div className="relative w-full overflow-hidden rounded-lg border border-border" style={{ aspectRatio: "16/5" }}>
+                  <Image
+                    src={content.hero_image_url}
+                    alt="Vista previa hero"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => heroInputRef.current?.click()}
+                    disabled={heroUploading || heroDeleting}
+                    className="inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-border-soft disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <ImagePlus className="h-4 w-4" aria-hidden />
+                    {heroUploading ? "Subiendo…" : "Cambiar imagen"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleHeroDelete}
+                    disabled={heroUploading || heroDeleting}
+                    className="inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border border-red-200 bg-surface px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden />
+                    {heroDeleting ? "Eliminando…" : "Eliminar"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => heroInputRef.current?.click()}
+                disabled={heroUploading}
+                className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-surface py-8 text-sm text-muted-foreground transition-colors hover:border-accent/40 hover:bg-border-soft disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ImagePlus className="h-8 w-8 text-muted-foreground/50" aria-hidden />
+                <span>{heroUploading ? "Subiendo imagen…" : "Haz clic para subir imagen"}</span>
+                <span className="text-xs">JPG, PNG, WebP · máx. 12 MB</span>
+              </button>
+            )}
+
             <input
-              id="inicio-hero"
-              type="url"
-              value={content.hero_image_url ?? ""}
-              onChange={(e) => onChange({ ...content, hero_image_url: e.target.value })}
-              className={inputForm}
-              placeholder="https://ejemplo.com/imagen.jpg"
+              ref={heroInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              onChange={handleHeroFile}
+              disabled={heroUploading || heroDeleting}
+              className="sr-only"
             />
+            {heroError && <p className="text-sm text-red-600">{heroError}</p>}
           </div>
         </div>
       </FormSection>
