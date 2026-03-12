@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useOrder } from "@/features/orders/hooks/useOrder";
 import { useActiveTenant, useTenantStore } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -13,6 +14,8 @@ import {
   DollarSign,
   Smartphone,
   X,
+  Banknote,
+  ExternalLink,
 } from "lucide-react";
 import type { OrderActionButtonsProps } from "@/features/orders/interfaces/orderActionButtons";
 import { GenerateLinkModal } from "./GenerateLinkModal";
@@ -29,9 +32,11 @@ export function OrderActionButtons({
   embedded,
   fixedBar,
 }: OrderActionButtonsProps = {}) {
+  const router = useRouter();
   const {
     order,
     team,
+    tenantSlug,
     actionLoading,
     handleStatusChange,
     handleAssignAndMarkPaid,
@@ -65,6 +70,33 @@ export function OrderActionButtons({
     ["draft", "assigned", "in_progress", "pending_pickup", "paid"].includes(
       order.status,
     );
+
+  // Préstamo vinculado
+  const existingLoan = (order as { loan?: { id: string; status: string } | null }).loan;
+  const hasActiveLoan = existingLoan && existingLoan.status !== "cancelled";
+  // Mostrar "Ver préstamo" si hay uno activo (cualquier status de orden)
+  // Mostrar "Registrar como préstamo" solo si no tiene préstamo y la orden no está pagada/cancelada
+  const showViewLoanButton = isOwner && !!hasActiveLoan;
+  const showRegisterLoanButton = isOwner && !hasActiveLoan && order.status !== "cancelled" && order.status !== "paid";
+
+  function handleGoToLoan() {
+    if (existingLoan?.id) {
+      router.push(`/dashboard/${tenantSlug}/prestamos/${existingLoan.id}`);
+    }
+  }
+
+  function handleRegisterLoan() {
+    const concept = order.items
+      ?.map((i) => i.product?.name)
+      .filter(Boolean)
+      .join(", ") || `Orden ${order.id.slice(0, 8)}`;
+    const params = new URLSearchParams({
+      order_id: order.id,
+      amount: String(order.total),
+      concept,
+    });
+    router.push(`/dashboard/${tenantSlug}/prestamos/nuevo?${params.toString()}`);
+  }
   const needsAssignBeforePaid =
     order.status === "completed" ||
     order.status === "pending_payment" ||
@@ -209,6 +241,27 @@ export function OrderActionButtons({
             {order.status === "pending_pickup"
               ? "Marcar como cobrado (recogió)"
               : "Marcar como pagado"}
+          </button>
+        )}
+        {showViewLoanButton && (
+          <button
+            type="button"
+            onClick={handleGoToLoan}
+            className={`w-full min-w-0 shrink-0 sm:w-auto ${btnBase} border border-border bg-surface text-foreground hover:bg-surface-raised focus-visible:ring-accent`}
+          >
+            <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
+            Ver préstamo
+          </button>
+        )}
+        {showRegisterLoanButton && (
+          <button
+            type="button"
+            onClick={handleRegisterLoan}
+            disabled={actionLoading}
+            className={`w-full min-w-0 shrink-0 sm:w-auto ${btnBase} border border-border bg-surface text-foreground hover:bg-surface-raised focus-visible:ring-accent`}
+          >
+            <Banknote className="h-4 w-4 shrink-0" aria-hidden />
+            Registrar como préstamo
           </button>
         )}
       </div>

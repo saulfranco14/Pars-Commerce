@@ -93,9 +93,10 @@ export function CustomerPicker({ activeTenantId, selected, onSelect, onClear, er
     </div>
   );
 
-  // ── Create panel ─────────────────────────────────────────────────────────────
+  // ── Create panel — usa div en lugar de form para evitar form anidado ─────────
+  const submitCreate = handleSubmit(handleCreate);
   const createPanel = (
-    <form onSubmit={handleSubmit(handleCreate)} noValidate className="space-y-4">
+    <div className="space-y-4">
       <button
         type="button"
         onClick={handleBackToSearch}
@@ -156,14 +157,15 @@ export function CustomerPicker({ activeTenantId, selected, onSelect, onClear, er
       )}
 
       <button
-        type="submit"
+        type="button"
+        onClick={submitCreate}
         disabled={creating || !newIsValid}
         className={`${btnPrimary} w-full`}
       >
         {creating && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
         Guardar cliente
       </button>
-    </form>
+    </div>
   );
 
   const pickerContent = showCreate ? createPanel : searchPanel;

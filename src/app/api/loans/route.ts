@@ -14,6 +14,7 @@ export async function GET(request: Request) {
   const tenantId = searchParams.get('tenant_id')
   const loanId = searchParams.get('loan_id')
   const customerId = searchParams.get('customer_id')
+  const orderId = searchParams.get('order_id')
   const status = searchParams.get('status')         // pending | partial | paid | cancelled | active
   const overdueOnly = searchParams.get('overdue') === 'true'
 
@@ -42,6 +43,26 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error?.message ?? 'Loan not found' }, { status: 404 })
     }
     return NextResponse.json(loan)
+  }
+
+  // Búsqueda por order_id: devuelve el primer préstamo vinculado a esa orden
+  if (orderId) {
+    const { data: loan, error } = await supabase
+      .from('loans')
+      .select(`
+        id, concept, amount, amount_paid, amount_pending, status,
+        customer:customers(id, name, email, phone)
+      `)
+      .eq('order_id', orderId)
+      .not('status', 'eq', 'cancelled')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+    return NextResponse.json(loan ?? null)
   }
 
   if (!tenantId) {
