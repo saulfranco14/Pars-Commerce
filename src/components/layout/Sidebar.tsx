@@ -195,6 +195,26 @@ function SidebarContent(props: SidebarContentProps) {
             >
               Órdenes / Tickets
             </NavLink>
+            <NavLink
+              href={`${base}/prestamos`}
+              active={
+                pathname === `${base}/prestamos` ||
+                pathname.startsWith(`${base}/prestamos/`)
+              }
+              onNavigate={onNavigate}
+            >
+              Préstamos
+            </NavLink>
+            <NavLink
+              href={`${base}/clientes`}
+              active={
+                pathname === `${base}/clientes` ||
+                pathname.startsWith(`${base}/clientes/`)
+              }
+              onNavigate={onNavigate}
+            >
+              Clientes
+            </NavLink>
             {canAccessTeamAndSettings && (
               <NavLink
                 href={`${base}/ventas`}

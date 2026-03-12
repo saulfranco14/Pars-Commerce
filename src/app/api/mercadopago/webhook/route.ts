@@ -2,9 +2,18 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { paymentClient } from "@/lib/mercadopago";
 import { verifyWebhookSignature } from "@/lib/mercadopagoWebhookVerify";
 import { NextResponse } from "next/server";
+import { sendEmail } from "@/lib/email/sendgrid";
+import {
+  loanPaymentConfirmationTemplate,
+  loanCardFailedTemplate,
+} from "@/lib/email/templates";
 
 export async function POST(request: Request) {
-  let body: { type?: string; data?: { id?: string }; action?: string };
+  let body: {
+    type?: string;
+    data?: { id?: string };
+    action?: string;
+  };
   try {
     body = await request.json();
   } catch {
@@ -34,6 +43,17 @@ export async function POST(request: Request) {
     );
   }
 
+  // ── Cobro automático de suscripción (PreApproval) ─────────────────────────
+  if (body.type === "subscription_authorized_payment" && body.data?.id) {
+    try {
+      await handlePreapprovalPayment(body.data.id);
+    } catch (err) {
+      console.error("Webhook: error en subscription_authorized_payment:", err);
+    }
+    return NextResponse.json({ received: true });
+  }
+
+  // Solo procesar notificaciones de pago único
   if (body.type !== "payment" || !body.data?.id) {
     return NextResponse.json({ received: true });
   }
@@ -41,7 +61,6 @@ export async function POST(request: Request) {
   const paymentId = body.data.id;
 
   try {
-    // Fetch payment details from MercadoPago API
     const mpPayment = await paymentClient.get({ id: paymentId });
 
     if (!mpPayment || !mpPayment.external_reference) {
@@ -49,7 +68,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
-    const orderId = mpPayment.external_reference;
+    const externalRef = mpPayment.external_reference;
     const mpStatus = mpPayment.status;
     const transactionAmount = Number(mpPayment.transaction_amount ?? 0);
     const netReceived =
@@ -61,6 +80,39 @@ export async function POST(request: Request) {
       Math.round((transactionAmount - netReceived) * 100) / 100;
     const parsFeeAmount = 0;
     const supabase = createAdminClient();
+
+    // ── Pago bulk de préstamos ────────────────────────────────────────────────
+    if (externalRef.startsWith("bulk_loan:")) {
+      if (mpStatus === "approved") {
+        await handleBulkLoanPayment(
+          supabase,
+          mpPayment.id ? String(mpPayment.id) : String(paymentId),
+          String(paymentId),
+          transactionAmount,
+          mpFeeAmount,
+          netReceived,
+        );
+      }
+      return NextResponse.json({ received: true });
+    }
+
+    // ── Pago de préstamo individual ───────────────────────────────────────────
+    if (externalRef.startsWith("loan:")) {
+      if (mpStatus === "approved") {
+        await handleSingleLoanPayment(
+          supabase,
+          externalRef,
+          String(paymentId),
+          transactionAmount,
+          mpFeeAmount,
+          netReceived,
+        );
+      }
+      return NextResponse.json({ received: true });
+    }
+
+    // ── Pago de orden normal (flujo existente sin cambios) ────────────────────
+    const orderId = externalRef;
 
     if (mpStatus === "approved") {
       const { data: order } = await supabase
@@ -110,7 +162,6 @@ export async function POST(request: Request) {
         .eq("id", orderId)
         .in("status", ["pending_payment", "completed"]);
 
-      // Update or insert payment record
       const { data: existingPayment } = await supabase
         .from("payments")
         .select("id")
@@ -189,7 +240,303 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true });
   } catch (err: unknown) {
     console.error("Webhook processing error:", err);
-    // Still return 200 to prevent MercadoPago from retrying
     return NextResponse.json({ received: true });
+  }
+}
+
+// =============================================================================
+// Handler: pago de préstamo individual por link único
+// externalRef formato: "loan:{loanId}"
+// =============================================================================
+async function handleSingleLoanPayment(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  externalRef: string,
+  mpPaymentId: string,
+  amount: number,
+  mpFeeAmount: number,
+  mpNetAmount: number,
+) {
+  const loanId = externalRef.replace("loan:", "");
+
+  const { data: loan } = await supabase
+    .from("loans")
+    .select(`
+      id, tenant_id, concept, amount_pending, status,
+      customer:customers(id, name, email),
+      tenant:tenants(name)
+    `)
+    .eq("id", loanId)
+    .single();
+
+  if (!loan || loan.status === "paid" || loan.status === "cancelled") {
+    console.warn(`Webhook: loan ${loanId} not found or already closed`);
+    return;
+  }
+
+  const { error: insertError } = await supabase.from("loan_payments").insert({
+    loan_id: loanId,
+    tenant_id: loan.tenant_id,
+    amount: Math.min(amount, loan.amount_pending),
+    payment_method: "mercadopago",
+    source: "mercadopago_webhook",
+    mp_payment_id: mpPaymentId,
+    mp_fee_amount: mpFeeAmount,
+    mp_net_amount: mpNetAmount,
+  });
+
+  if (insertError) {
+    if (insertError.code === "23505") {
+      console.warn(`Webhook: duplicate mp_payment_id ${mpPaymentId}, skipping`);
+      return;
+    }
+    console.error("Webhook: error insertando loan_payment:", insertError);
+    return;
+  }
+
+  await sendLoanPaymentEmail(loan, amount, "mercadopago");
+  console.log(`Webhook: loan ${loanId} payment registered (${mpPaymentId})`);
+}
+
+// =============================================================================
+// Handler: pago bulk (varios préstamos en un link)
+// Identifica el bulk payment por mp_preference_id guardado en loan_bulk_payments
+// =============================================================================
+async function handleBulkLoanPayment(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  preferenceId: string,
+  mpPaymentId: string,
+  totalAmount: number,
+  mpFeeAmount: number,
+  _mpNetAmount: number,
+) {
+  const { data: bulk } = await supabase
+    .from("loan_bulk_payments")
+    .select("id, tenant_id, customer_id, loan_ids, distribution, status")
+    .eq("mp_preference_id", preferenceId)
+    .single();
+
+  if (!bulk) {
+    console.warn(`Webhook: bulk payment not found for preference ${preferenceId}`);
+    return;
+  }
+
+  if (bulk.status === "paid") {
+    console.warn(`Webhook: bulk payment already paid, skipping`);
+    return;
+  }
+
+  const distribution: Record<string, number> = bulk.distribution ?? {};
+
+  for (const [loanId, loanAmount] of Object.entries(distribution)) {
+    const { error } = await supabase.from("loan_payments").insert({
+      loan_id: loanId,
+      tenant_id: bulk.tenant_id,
+      amount: loanAmount as number,
+      payment_method: "mercadopago",
+      source: "mercadopago_webhook",
+      // Sufijo por loan para mantener unicidad del índice mp_payment_id
+      mp_payment_id: `${mpPaymentId}_${loanId}`,
+      mp_fee_amount: null,
+      mp_net_amount: null,
+    });
+
+    if (error && error.code !== "23505") {
+      console.error(`Webhook: error en bulk loan_payment para ${loanId}:`, error);
+    }
+  }
+
+  await supabase
+    .from("loan_bulk_payments")
+    .update({ mp_payment_id: mpPaymentId, status: "paid" })
+    .eq("id", bulk.id);
+
+  // Email resumen al cliente
+  try {
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("name, email")
+      .eq("id", bulk.customer_id)
+      .single();
+
+    const { data: tenant } = await supabase
+      .from("tenants")
+      .select("name")
+      .eq("id", bulk.tenant_id)
+      .single();
+
+    if (customer?.email && tenant?.name) {
+      await sendEmail({
+        to: customer.email,
+        subject: `Pagos recibidos — ${tenant.name}`,
+        html: loanPaymentConfirmationTemplate({
+          businessName: tenant.name,
+          customerName: customer.name,
+          amountPaid: totalAmount - mpFeeAmount,
+          amountPending: 0,
+          concept: `${bulk.loan_ids.length} préstamos`,
+          paymentMethod: "mercadopago",
+          isFullyPaid: true,
+          isBulk: true,
+        }),
+      });
+    }
+  } catch {
+    console.error("Webhook: error enviando email bulk");
+  }
+
+  console.log(
+    `Webhook: bulk payment ${bulk.id} paid (${mpPaymentId}), ${bulk.loan_ids.length} loans`,
+  );
+}
+
+// =============================================================================
+// Handler: cobro automático de suscripción (PreApproval)
+// topic = "subscription_authorized_payment"
+// =============================================================================
+async function handlePreapprovalPayment(authorizedPaymentId: string) {
+  const supabase = createAdminClient();
+
+  // Buscar el loan por su mp_preapproval_id activo
+  const { data: loan } = await supabase
+    .from("loans")
+    .select(`
+      id, tenant_id, concept, amount_pending,
+      payment_plan_installment_amount, payment_plan_status,
+      mp_preapproval_id,
+      customer:customers(id, name, email),
+      tenant:tenants(name)
+    `)
+    .eq("payment_plan_status", "active")
+    .not("mp_preapproval_id", "is", null)
+    .single();
+
+  if (!loan) {
+    console.warn(
+      `Webhook: no active loan for preapproval payment ${authorizedPaymentId}`,
+    );
+    return;
+  }
+
+  const chargeAmount = loan.payment_plan_installment_amount ?? 0;
+  if (chargeAmount <= 0) return;
+
+  const actualAmount = Math.min(chargeAmount, loan.amount_pending);
+
+  const { error: insertError } = await supabase.from("loan_payments").insert({
+    loan_id: loan.id,
+    tenant_id: loan.tenant_id,
+    amount: actualAmount,
+    payment_method: "mercadopago",
+    source: "preapproval_webhook",
+    mp_payment_id: authorizedPaymentId,
+    mp_preapproval_id: loan.mp_preapproval_id,
+    mp_fee_amount: null,
+    mp_net_amount: null,
+  });
+
+  if (insertError) {
+    if (insertError.code === "23505") {
+      console.warn(`Webhook: duplicate preapproval payment ${authorizedPaymentId}`);
+      return;
+    }
+    console.error("Webhook: error en preapproval payment:", insertError);
+    return;
+  }
+
+  await sendLoanPaymentEmail(loan, actualAmount, "mercadopago");
+  console.log(
+    `Webhook: preapproval payment ${authorizedPaymentId} applied to loan ${loan.id}`,
+  );
+}
+
+// =============================================================================
+// Utilidad: marcar fallo de tarjeta en suscripción
+// Llamado externamente o cuando MP notifique el fallo definitivo
+// =============================================================================
+export async function markLoanCardFailed(preapprovalId: string) {
+  const supabase = createAdminClient();
+
+  const { data: loan } = await supabase
+    .from("loans")
+    .select(`
+      id, tenant_id, concept, amount_pending,
+      customer:customers(id, name, email),
+      tenant:tenants(name)
+    `)
+    .eq("mp_preapproval_id", preapprovalId)
+    .single();
+
+  if (!loan) return;
+
+  await supabase
+    .from("loans")
+    .update({
+      payment_plan_status: "card_failed",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", loan.id);
+
+  const customer = loan.customer as unknown as { email: string | null; name: string } | null;
+  const tenant = loan.tenant as unknown as { name: string } | null;
+
+  if (customer?.email && tenant?.name) {
+    try {
+      await sendEmail({
+        to: customer.email,
+        subject: `Problema con tu pago — ${tenant.name}`,
+        html: loanCardFailedTemplate({
+          businessName: tenant.name,
+          customerName: customer.name,
+          amountPending: loan.amount_pending,
+          concept: loan.concept,
+        }),
+      });
+    } catch {
+      console.error("Webhook: error enviando email fallo de tarjeta");
+    }
+  }
+
+  console.log(`Webhook: card failed for loan ${loan.id}`);
+}
+
+// =============================================================================
+// Utilidad compartida: enviar email de confirmación de pago
+// =============================================================================
+async function sendLoanPaymentEmail(
+  loan: {
+    id: string;
+    concept: string;
+    amount_pending: number;
+    customer: unknown;
+    tenant: unknown;
+  },
+  amountPaid: number,
+  paymentMethod: string,
+) {
+  const customer = loan.customer as unknown as { email: string | null; name: string } | null;
+  const tenant = loan.tenant as unknown as { name: string } | null;
+
+  if (!customer?.email || !tenant?.name) return;
+
+  const newPending = Math.max(0, loan.amount_pending - amountPaid);
+
+  try {
+    await sendEmail({
+      to: customer.email,
+      subject: `Pago recibido — ${tenant.name}`,
+      html: loanPaymentConfirmationTemplate({
+        businessName: tenant.name,
+        customerName: customer.name,
+        amountPaid,
+        amountPending: newPending,
+        concept: loan.concept,
+        paymentMethod,
+        isFullyPaid: newPending <= 0,
+      }),
+    });
+  } catch {
+    console.error(`Webhook: error enviando email para loan ${loan.id}`);
   }
 }
