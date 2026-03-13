@@ -7,7 +7,7 @@ import {
   Home,
   ClipboardList,
   Package,
-  Scissors,
+  Banknote,
   MoreHorizontal,
 } from "lucide-react";
 
@@ -129,29 +129,29 @@ export function BottomNav({
 
       {hasTenant && (
         <Link
-          href={`${base}/servicios`}
+          href={`${base}/prestamos`}
           className={navItemClass(
-            pathname === `${base}/servicios` ||
-              pathname.startsWith(`${base}/servicios/`)
+            pathname === `${base}/prestamos` ||
+              pathname.startsWith(`${base}/prestamos/`)
           )}
           aria-current={
-            pathname === `${base}/servicios` ||
-            pathname.startsWith(`${base}/servicios/`)
+            pathname === `${base}/prestamos` ||
+            pathname.startsWith(`${base}/prestamos/`)
               ? "page"
               : undefined
           }
         >
           <span className={iconWrapperClass}>
-            <Scissors
+            <Banknote
               className={`h-6 w-6 ${iconClass(
-                pathname === `${base}/servicios` ||
-                  pathname.startsWith(`${base}/servicios/`)
+                pathname === `${base}/prestamos` ||
+                  pathname.startsWith(`${base}/prestamos/`)
               )}`}
               aria-hidden
             />
           </span>
           <span className="text-[11px] font-medium leading-tight">
-            Servicios
+            Préstamos
           </span>
         </Link>
       )}

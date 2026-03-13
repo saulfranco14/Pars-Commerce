@@ -86,6 +86,7 @@ export function OrderActionButtons({
   }
 
   function handleRegisterLoan() {
+    if (!order) return;
     const concept = order.items
       ?.map((i) => i.product?.name)
       .filter(Boolean)

@@ -88,24 +88,23 @@ export default function ClientesPage() {
 
         {/* Stats */}
         {customers.length > 0 && (
-          <div className="grid grid-cols-3 gap-3">
+          <div className={`grid gap-3 ${withOverdue > 0 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
             <div className="rounded-xl border border-border bg-surface-raised px-4 py-3">
-              <p className="text-xs text-muted-foreground">Clientes</p>
-              <p className="mt-0.5 text-lg font-semibold text-foreground">{customers.length}</p>
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Clientes</p>
+              <p className="mt-0.5 text-lg font-bold text-foreground">{customers.length}</p>
             </div>
             <div className="rounded-xl border border-border bg-surface-raised px-4 py-3">
-              <p className="text-xs text-muted-foreground">Con deuda</p>
-              <p className="mt-0.5 text-lg font-semibold text-foreground">{withDebt}</p>
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Con deuda</p>
+              <p className="mt-0.5 text-lg font-bold text-foreground">{withDebt}</p>
             </div>
-            {withOverdue > 0 ? (
+            <div className="rounded-xl border border-border bg-surface-raised px-4 py-3">
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Por cobrar</p>
+              <p className="mt-0.5 text-lg font-bold text-foreground tabular-nums">{formatMXN(totalPendingAll)}</p>
+            </div>
+            {withOverdue > 0 && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-                <p className="text-xs text-red-600">Vencidos</p>
-                <p className="mt-0.5 text-lg font-semibold text-red-700">{withOverdue}</p>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-border bg-surface-raised px-4 py-3">
-                <p className="text-xs text-muted-foreground">Por cobrar</p>
-                <p className="mt-0.5 text-lg font-semibold text-foreground">{formatMXN(totalPendingAll)}</p>
+                <p className="text-[11px] font-medium text-red-600 uppercase tracking-wide">Vencidos</p>
+                <p className="mt-0.5 text-lg font-bold text-red-700">{withOverdue}</p>
               </div>
             )}
           </div>
@@ -149,14 +148,23 @@ export default function ClientesPage() {
           <div className="space-y-2">
             {customers.map((c) => {
               const { activeCount, totalPending, hasOverdue } = computeStats(c);
+              const initials = c.name
+                .split(" ")
+                .slice(0, 2)
+                .map((w) => w[0])
+                .join("")
+                .toUpperCase();
               return (
                 <div
                   key={c.id}
                   className={`cursor-pointer rounded-xl border bg-surface-raised p-4 transition-colors hover:bg-surface active:scale-[0.99] ${hasOverdue ? "border-red-200" : "border-border"}`}
                   onClick={() => router.push(`/dashboard/${tenantSlug}/prestamos?customer=${c.id}`)}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold shrink-0 ${hasOverdue ? "bg-red-100 text-red-700" : activeCount > 0 ? "bg-orange-100 text-orange-700" : "bg-border-soft text-muted-foreground"}`}>
+                      {initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
                       <p className="font-medium text-foreground">{c.name}</p>
                       <p className="text-xs text-muted-foreground truncate">
                         {[c.phone, c.email].filter(Boolean).join(" · ") || "Sin contacto"}
@@ -165,20 +173,22 @@ export default function ClientesPage() {
                     <div className="shrink-0 text-right">
                       {activeCount > 0 ? (
                         <>
-                          <p className={`text-sm font-bold ${hasOverdue ? "text-red-700" : "text-orange-700"}`}>
+                          <p className={`text-sm font-bold tabular-nums ${hasOverdue ? "text-red-700" : "text-orange-700"}`}>
                             {formatMXN(totalPending)}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-[11px] text-muted-foreground">
                             {activeCount} préstamo{activeCount !== 1 ? "s" : ""}
                           </p>
                         </>
                       ) : (
-                        <p className="text-xs text-muted-foreground">Sin deuda</p>
+                        <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700">
+                          Sin deuda
+                        </span>
                       )}
                     </div>
                   </div>
                   {hasOverdue && (
-                    <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                    <div className="mt-2 ml-[52px] inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
                       <AlertTriangle className="h-3 w-3" />
                       Tiene vencidos
                     </div>

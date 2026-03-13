@@ -3,10 +3,7 @@ import { paymentClient } from "@/lib/mercadopago";
 import { verifyWebhookSignature } from "@/lib/mercadopagoWebhookVerify";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/sendgrid";
-import {
-  loanPaymentConfirmationTemplate,
-  loanCardFailedTemplate,
-} from "@/lib/email/templates";
+import { loanPaymentConfirmationTemplate } from "@/lib/email/templates";
 
 export async function POST(request: Request) {
   let body: {
@@ -398,8 +395,34 @@ async function handleBulkLoanPayment(
 async function handlePreapprovalPayment(authorizedPaymentId: string) {
   const supabase = createAdminClient();
 
-  // Buscar el loan por su mp_preapproval_id activo
-  const { data: loan } = await supabase
+  // 1. Obtener el preapproval_id del pago autorizado vía API de MP
+  //    Esto es necesario porque el webhook solo envía el authorized_payment_id,
+  //    no el preapproval_id. Sin este paso, con 2+ suscripciones activas
+  //    no sabríamos a cuál préstamo aplicar el pago.
+  let preapprovalId: string | null = null;
+  try {
+    const mpRes = await fetch(
+      `https://api.mercadopago.com/authorized_payments/${authorizedPaymentId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+        },
+      },
+    );
+    if (mpRes.ok) {
+      const mpData = await mpRes.json();
+      preapprovalId = mpData.preapproval_id ?? null;
+    }
+  } catch (err) {
+    console.error(
+      `Webhook: error fetching authorized_payment ${authorizedPaymentId} from MP:`,
+      err,
+    );
+  }
+
+  // 2. Buscar el loan: por preapproval_id específico si lo tenemos,
+  //    o como fallback buscar el único activo (comportamiento anterior)
+  let loanQuery = supabase
     .from("loans")
     .select(`
       id, tenant_id, concept, amount_pending,
@@ -409,12 +432,18 @@ async function handlePreapprovalPayment(authorizedPaymentId: string) {
       tenant:tenants(name)
     `)
     .eq("payment_plan_status", "active")
-    .not("mp_preapproval_id", "is", null)
-    .single();
+    .not("mp_preapproval_id", "is", null);
+
+  if (preapprovalId) {
+    loanQuery = loanQuery.eq("mp_preapproval_id", preapprovalId);
+  }
+
+  const { data: loan } = await loanQuery.single();
 
   if (!loan) {
     console.warn(
-      `Webhook: no active loan for preapproval payment ${authorizedPaymentId}`,
+      `Webhook: no active loan for preapproval payment ${authorizedPaymentId}` +
+        (preapprovalId ? ` (preapproval_id: ${preapprovalId})` : ""),
     );
     return;
   }
@@ -449,56 +478,6 @@ async function handlePreapprovalPayment(authorizedPaymentId: string) {
   console.log(
     `Webhook: preapproval payment ${authorizedPaymentId} applied to loan ${loan.id}`,
   );
-}
-
-// =============================================================================
-// Utilidad: marcar fallo de tarjeta en suscripción
-// Llamado externamente o cuando MP notifique el fallo definitivo
-// =============================================================================
-export async function markLoanCardFailed(preapprovalId: string) {
-  const supabase = createAdminClient();
-
-  const { data: loan } = await supabase
-    .from("loans")
-    .select(`
-      id, tenant_id, concept, amount_pending,
-      customer:customers(id, name, email),
-      tenant:tenants(name)
-    `)
-    .eq("mp_preapproval_id", preapprovalId)
-    .single();
-
-  if (!loan) return;
-
-  await supabase
-    .from("loans")
-    .update({
-      payment_plan_status: "card_failed",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", loan.id);
-
-  const customer = loan.customer as unknown as { email: string | null; name: string } | null;
-  const tenant = loan.tenant as unknown as { name: string } | null;
-
-  if (customer?.email && tenant?.name) {
-    try {
-      await sendEmail({
-        to: customer.email,
-        subject: `Problema con tu pago — ${tenant.name}`,
-        html: loanCardFailedTemplate({
-          businessName: tenant.name,
-          customerName: customer.name,
-          amountPending: loan.amount_pending,
-          concept: loan.concept,
-        }),
-      });
-    } catch {
-      console.error("Webhook: error enviando email fallo de tarjeta");
-    }
-  }
-
-  console.log(`Webhook: card failed for loan ${loan.id}`);
 }
 
 // =============================================================================

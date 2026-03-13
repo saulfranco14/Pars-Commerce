@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Plus, Link2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Link2, ToggleLeft, ToggleRight, Users, ShoppingCart, FileText, CreditCard, Info } from "lucide-react";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { loanDetailsSchema } from "@/features/prestamos/validations/loanForm";
 import { deriveConcept } from "@/features/prestamos/helpers/loanItems";
@@ -155,7 +155,7 @@ export default function NuevoPrestamo() {
       error={submitError}
       onSubmit={handleSubmit}
     >
-      <div className="p-4 sm:p-6 flex flex-col gap-6">
+      <div className="p-4 sm:p-6 flex flex-col gap-5">
 
         {/* ── Banner: viene de una orden ────────────────────────────────────── */}
         {fromOrderId && (
@@ -172,34 +172,57 @@ export default function NuevoPrestamo() {
           </div>
         )}
 
-        {/* ── Cliente ──────────────────────────────────────────────────────── */}
-        <section>
-          <div className="mb-4 border-b border-border pb-2">
-            <h3 className="text-sm font-semibold text-foreground">Cliente *</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Busca un cliente existente o crea uno nuevo.
-            </p>
+        {/* ── Paso 1: Cliente ──────────────────────────────────────────────── */}
+        <section className="rounded-xl border border-border bg-surface-raised overflow-hidden">
+          <div className="flex items-center gap-3 border-b border-border px-4 py-3 bg-surface">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground shrink-0">1</span>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Users className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Cliente</h3>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  Busca un cliente existente o crea uno nuevo
+                </p>
+              </div>
+            </div>
+            {selectedCustomer && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-800 shrink-0">
+                Listo
+              </span>
+            )}
           </div>
-          <CustomerPicker
-            activeTenantId={activeTenant.id}
-            selected={selectedCustomer}
-            onSelect={(c) => { setSelectedCustomer(c); setCustomerError(undefined); }}
-            onClear={() => setSelectedCustomer(null)}
-            error={customerError}
-          />
+          <div className="p-4">
+            <CustomerPicker
+              activeTenantId={activeTenant.id}
+              selected={selectedCustomer}
+              onSelect={(c) => { setSelectedCustomer(c); setCustomerError(undefined); }}
+              onClear={() => setSelectedCustomer(null)}
+              error={customerError}
+            />
+          </div>
         </section>
 
-        {/* ── Productos (solo si no viene de una orden) ─────────────────────── */}
+        {/* ── Paso 2: Productos (solo si no viene de una orden) ───────────── */}
         {!fromOrderId && (
-          <section>
-            <div className="mb-4 border-b border-border pb-2">
-              <h3 className="text-sm font-semibold text-foreground">Productos *</h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                El total se calcula automáticamente a partir de los productos.
-              </p>
+          <section className="rounded-xl border border-border bg-surface-raised overflow-hidden">
+            <div className="flex items-center gap-3 border-b border-border px-4 py-3 bg-surface">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground shrink-0">2</span>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <ShoppingCart className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Productos</h3>
+                  <p className="text-[11px] text-muted-foreground leading-tight">
+                    El total se calcula automáticamente
+                  </p>
+                </div>
+              </div>
+              {items.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent tabular-nums shrink-0">
+                  {formatMXN(total)}
+                </span>
+              )}
             </div>
-
-            <div className="space-y-4">
+            <div className="p-4 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Agregar producto del catálogo
@@ -237,7 +260,7 @@ export default function NuevoPrestamo() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-8 gap-2">
-                  <Plus className="h-8 w-8 text-muted-foreground/30" aria-hidden />
+                  <ShoppingCart className="h-7 w-7 text-muted-foreground/30" aria-hidden />
                   <p className="text-sm text-muted-foreground text-center">
                     Busca y agrega productos<br />para calcular el total
                   </p>
@@ -247,79 +270,90 @@ export default function NuevoPrestamo() {
           </section>
         )}
 
-        {/* ── Detalles adicionales ──────────────────────────────────────────── */}
-        <section>
-          <div className="mb-4 border-b border-border pb-2">
-            <h3 className="text-sm font-semibold text-foreground">Detalles adicionales</h3>
-            {!fromOrderId && (
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                El concepto se genera automáticamente de los productos.
-              </p>
-            )}
+        {/* ── Paso 3: Detalles adicionales ───────────────────────────────────── */}
+        <section className="rounded-xl border border-border bg-surface-raised overflow-hidden">
+          <div className="flex items-center gap-3 border-b border-border px-4 py-3 bg-surface">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground shrink-0">{fromOrderId ? "2" : "3"}</span>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <FileText className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Detalles adicionales</h3>
+                {!fromOrderId && (
+                  <p className="text-[11px] text-muted-foreground leading-tight">
+                    El concepto se genera automáticamente de los productos
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
+          <div className="p-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label htmlFor="loan-concept" className="block text-sm font-medium text-foreground">
+                  Concepto
+                </label>
+                <input
+                  id="loan-concept"
+                  type="text"
+                  value={concept}
+                  onChange={(e) => { setConcept(e.target.value); setFieldErrors((p) => ({ ...p, concept: undefined })); }}
+                  placeholder={derivedConcept || "Ej: Arreglo con globos y dulces"}
+                  className={fieldErrors.concept ? inputError : inputBase}
+                />
+                {!concept && derivedConcept && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Se usará: &quot;{derivedConcept.slice(0, 80)}{derivedConcept.length > 80 ? "…" : ""}&quot;
+                  </p>
+                )}
+                <FieldError message={fieldErrors.concept} />
+              </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="md:col-span-2">
-              <label htmlFor="loan-concept" className="block text-sm font-medium text-foreground">
-                Concepto
-              </label>
-              <input
-                id="loan-concept"
-                type="text"
-                value={concept}
-                onChange={(e) => { setConcept(e.target.value); setFieldErrors((p) => ({ ...p, concept: undefined })); }}
-                placeholder={derivedConcept || "Ej: Arreglo con globos y dulces"}
-                className={fieldErrors.concept ? inputError : inputBase}
-              />
-              {!concept && derivedConcept && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Se usará: &quot;{derivedConcept.slice(0, 80)}{derivedConcept.length > 80 ? "…" : ""}&quot;
-                </p>
-              )}
-              <FieldError message={fieldErrors.concept} />
-            </div>
+              <div>
+                <label htmlFor="loan-duedate" className="block text-sm font-medium text-foreground">
+                  Fecha límite de pago
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">(opcional)</span>
+                </label>
+                <input
+                  id="loan-duedate"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className={inputBase}
+                />
+              </div>
 
-            <div>
-              <label htmlFor="loan-duedate" className="block text-sm font-medium text-foreground">
-                Fecha límite de pago
-                <span className="ml-1 text-xs font-normal text-muted-foreground">(opcional)</span>
-              </label>
-              <input
-                id="loan-duedate"
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className={inputBase}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="loan-notes" className="block text-sm font-medium text-foreground">
-                Notas
-                <span className="ml-1 text-xs font-normal text-muted-foreground">(opcional)</span>
-              </label>
-              <textarea
-                id="loan-notes"
-                value={notes}
-                onChange={(e) => { setNotes(e.target.value); setFieldErrors((p) => ({ ...p, notes: undefined })); }}
-                rows={3}
-                placeholder="Acuerdos especiales, detalles, etc."
-                className={`${fieldErrors.notes ? inputError : inputBase} resize-none`}
-              />
-              <FieldError message={fieldErrors.notes} />
+              <div>
+                <label htmlFor="loan-notes" className="block text-sm font-medium text-foreground">
+                  Notas
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">(opcional)</span>
+                </label>
+                <textarea
+                  id="loan-notes"
+                  value={notes}
+                  onChange={(e) => { setNotes(e.target.value); setFieldErrors((p) => ({ ...p, notes: undefined })); }}
+                  rows={3}
+                  placeholder="Acuerdos especiales, detalles, etc."
+                  className={`${fieldErrors.notes ? inputError : inputBase} resize-none`}
+                />
+                <FieldError message={fieldErrors.notes} />
+              </div>
             </div>
           </div>
         </section>
 
-        {/* ── Plan de cobro automático ──────────────────────────────────────── */}
-        <section>
-          <div className="mb-4 border-b border-border pb-2 flex items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">Cobro automático con MercadoPago</h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Configura cargos recurrentes a la tarjeta del cliente.
-                <span className="ml-1 font-normal text-muted-foreground">(opcional)</span>
-              </p>
+        {/* ── Paso 4: Plan de cobro automático con MercadoPago ────────────── */}
+        <section className={`rounded-xl border overflow-hidden transition-colors ${showPaymentPlan ? "border-accent/40 bg-accent/2" : "border-border bg-surface-raised"}`}>
+          <div className="flex items-center gap-3 border-b border-border px-4 py-3 bg-surface">
+            <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold shrink-0 ${showPaymentPlan ? "bg-accent text-accent-foreground" : "bg-border-soft text-muted-foreground"}`}>{fromOrderId ? "3" : "4"}</span>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <CreditCard className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Cobro automático con MercadoPago</h3>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  Cargos recurrentes a la tarjeta del cliente
+                  <span className="ml-1">(opcional)</span>
+                </p>
+              </div>
             </div>
             <button
               type="button"
@@ -335,85 +369,110 @@ export default function NuevoPrestamo() {
           </div>
 
           {showPaymentPlan && (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Tipo de plan
-                </label>
-                <div className="flex gap-2 flex-wrap">
-                  {([
-                    { value: "installments", label: "Cuotas fijas" },
-                    { value: "recurring", label: "Recurrente (sin límite)" },
-                  ] as { value: PaymentPlanType; label: string }[]).map(({ value, label }) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setPlanType(value)}
-                      className={`min-h-[36px] rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                        planType === value
-                          ? "border-accent bg-accent/10 text-accent"
-                          : "border-border bg-surface text-foreground hover:bg-surface-raised"
-                      }`}
+            <div className="p-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                    Tipo de plan
+                  </label>
+                  <div className="flex gap-2 flex-wrap">
+                    {([
+                      { value: "installments", label: "Cuotas fijas", desc: "Monto fijo hasta cubrir la deuda" },
+                      { value: "recurring", label: "Recurrente (sin límite)", desc: "Se cobra indefinidamente" },
+                    ] as { value: PaymentPlanType; label: string; desc: string }[]).map(({ value, label, desc }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setPlanType(value)}
+                        className={`flex-1 min-h-[44px] rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                          planType === value
+                            ? "border-accent bg-accent/10 ring-1 ring-accent/20"
+                            : "border-border bg-surface hover:bg-surface-raised"
+                        }`}
+                      >
+                        <span className={`block text-sm font-medium ${planType === value ? "text-accent" : "text-foreground"}`}>{label}</span>
+                        <span className="block text-[11px] text-muted-foreground mt-0.5">{desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="plan-installment" className="block text-sm font-medium text-foreground">
+                    Monto por cobro
+                  </label>
+                  <div className="relative mt-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                    <input
+                      id="plan-installment"
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      value={planInstallmentAmount}
+                      onChange={(e) => setPlanInstallmentAmount(e.target.value)}
+                      placeholder="0.00"
+                      className={`${inputBase} pl-7`}
+                    />
+                  </div>
+                  {planType === "installments" && planInstallmentAmount && effectiveTotal > 0 && (
+                    <p className="mt-1.5 text-xs text-accent font-medium">
+                      ≈ {Math.ceil(effectiveTotal / parseFloat(planInstallmentAmount || "1"))} cobros para cubrir {formatMXN(effectiveTotal)}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground">
+                    Frecuencia
+                  </label>
+                  <div className="mt-1 flex gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max="12"
+                      value={planFrequency}
+                      onChange={(e) => setPlanFrequency(e.target.value)}
+                      className={`${inputBase} w-20`}
+                    />
+                    <select
+                      value={planFrequencyType}
+                      onChange={(e) => setPlanFrequencyType(e.target.value as "weeks" | "months")}
+                      className="flex-1 min-h-[44px] rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                     >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="plan-installment" className="block text-sm font-medium text-foreground">
-                  Monto por cobro
-                </label>
-                <div className="relative mt-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
-                  <input
-                    id="plan-installment"
-                    type="number"
-                    min="1"
-                    step="0.01"
-                    value={planInstallmentAmount}
-                    onChange={(e) => setPlanInstallmentAmount(e.target.value)}
-                    placeholder="0.00"
-                    className={`${inputBase} pl-7`}
-                  />
-                </div>
-                {planType === "installments" && planInstallmentAmount && effectiveTotal > 0 && (
+                      <option value="weeks">Semana(s)</option>
+                      <option value="months">Mes(es)</option>
+                    </select>
+                  </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    ≈ {Math.ceil(effectiveTotal / parseFloat(planInstallmentAmount || "1"))} cobros para cubrir {formatMXN(effectiveTotal)}
+                    Se cobrará cada {planFrequency} {planFrequencyType === "weeks" ? "semana(s)" : "mes(es)"}
                   </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground">
-                  Frecuencia
-                </label>
-                <div className="mt-1 flex gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    value={planFrequency}
-                    onChange={(e) => setPlanFrequency(e.target.value)}
-                    className={`${inputBase} w-20`}
-                  />
-                  <select
-                    value={planFrequencyType}
-                    onChange={(e) => setPlanFrequencyType(e.target.value as "weeks" | "months")}
-                    className="flex-1 min-h-[44px] rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  >
-                    <option value="weeks">Semana(s)</option>
-                    <option value="months">Mes(es)</option>
-                  </select>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Se cobrará cada {planFrequency} {planFrequencyType === "weeks" ? "semana(s)" : "mes(es)"}
-                </p>
-              </div>
 
-              <div className="md:col-span-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
-                Al registrar el préstamo podrás activar el cobro automático desde el detalle. El cliente deberá autorizar el cargo desde un link de MercadoPago.
+                {/* Resumen visual del plan */}
+                {planInstallmentAmount && parseFloat(planInstallmentAmount) > 0 && effectiveTotal > 0 && (
+                  <div className="md:col-span-2 rounded-xl border border-accent/20 bg-accent/5 px-4 py-3">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Info className="h-3.5 w-3.5 text-accent shrink-0" aria-hidden />
+                      <p className="text-xs font-semibold text-accent">Resumen del plan</p>
+                    </div>
+                    <p className="text-sm text-foreground">
+                      {formatMXN(parseFloat(planInstallmentAmount))} cada {planFrequency} {planFrequencyType === "weeks" ? "semana(s)" : "mes(es)"}
+                      {planType === "installments" && (
+                        <> · ≈ {Math.ceil(effectiveTotal / parseFloat(planInstallmentAmount || "1"))} cobros totales</>
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                <div className="md:col-span-2 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+                  <div>
+                    <p className="text-xs font-medium text-amber-800">El cobro no se activa al crear</p>
+                    <p className="mt-0.5 text-[11px] text-amber-700">
+                      Una vez registrado el préstamo, podrás activar el cobro automático desde el detalle. El cliente deberá autorizar el cargo desde un link de MercadoPago.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           )}

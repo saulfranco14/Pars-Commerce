@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, UserPlus } from "lucide-react";
 import { FieldError } from "@/features/prestamos/components/FieldError";
 import { useNewCustomerForm } from "@/features/prestamos/hooks/useNewCustomerForm";
 import { inputBase, inputError } from "@/features/prestamos/constants/formClasses";
@@ -32,8 +32,14 @@ export function NewCustomerModal({ activeTenantId, onSuccess, onClose }: NewCust
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
       <div className="w-full max-w-sm rounded-2xl border border-border bg-surface shadow-xl">
-        <div className="border-b border-border px-4 py-3">
-          <h3 className="text-base font-semibold text-foreground">Nuevo cliente</h3>
+        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 shrink-0">
+            <UserPlus className="h-4 w-4 text-accent" aria-hidden />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-foreground">Nuevo cliente</h3>
+            <p className="text-[11px] text-muted-foreground">Completa los datos del cliente</p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit(handleCreate)} noValidate className="p-4 space-y-4">

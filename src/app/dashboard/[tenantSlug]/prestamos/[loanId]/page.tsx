@@ -267,39 +267,43 @@ export default function LoanDetailPage() {
   return (
     <div className="mx-auto max-w-2xl w-full space-y-4 pb-56 md:pb-4">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => router.push(`/dashboard/${tenantSlug}/prestamos`)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-border-soft hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-semibold text-foreground truncate">{loan.concept}</h1>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-            <span className="text-sm text-muted-foreground">
-              {loan.customer?.name ?? "Cliente desconocido"}
-            </span>
-            {loan.customer?.phone && (
-              <a
-                href={`tel:${loan.customer.phone}`}
-                className="text-sm text-accent hover:underline"
-              >
-                {loan.customer.phone}
-              </a>
-            )}
-            {loan.customer?.email && (
-              <a
-                href={`mailto:${loan.customer.email}`}
-                className="text-sm text-accent hover:underline truncate"
-              >
-                {loan.customer.email}
-              </a>
-            )}
+      <div className="rounded-xl border border-border bg-surface-raised overflow-hidden">
+        <div className="flex items-center gap-3 p-4">
+          <button
+            type="button"
+            onClick={() => router.push(`/dashboard/${tenantSlug}/prestamos`)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-border-soft hover:text-foreground transition-colors shrink-0"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg font-semibold text-foreground truncate">{loan.concept}</h1>
+              <LoanStatusBadge loan={loan} />
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
+              <span className="text-sm font-medium text-foreground">
+                {loan.customer?.name ?? "Cliente desconocido"}
+              </span>
+              {loan.customer?.phone && (
+                <a
+                  href={`tel:${loan.customer.phone}`}
+                  className="text-sm text-accent hover:underline"
+                >
+                  {loan.customer.phone}
+                </a>
+              )}
+              {loan.customer?.email && (
+                <a
+                  href={`mailto:${loan.customer.email}`}
+                  className="text-sm text-accent hover:underline truncate"
+                >
+                  {loan.customer.email}
+                </a>
+              )}
+            </div>
           </div>
         </div>
-        <LoanStatusBadge loan={loan} />
       </div>
 
       {/* Alerta si vencido */}
@@ -319,56 +323,67 @@ export default function LoanDetailPage() {
       )}
 
       {/* Resumen de montos */}
-      <div className="rounded-xl border border-border bg-surface-raised p-4 space-y-3">
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <div>
-            <p className="text-xs text-muted-foreground">Total</p>
-            <p className="mt-0.5 text-base font-semibold text-foreground">{formatMXN(loan.amount)}</p>
+      <div className="rounded-xl border border-border bg-surface-raised overflow-hidden">
+        <div className="p-4 space-y-3">
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="rounded-lg bg-surface p-2.5">
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Total</p>
+              <p className="mt-0.5 text-base font-bold text-foreground tabular-nums">{formatMXN(loan.amount)}</p>
+            </div>
+            <div className="rounded-lg bg-green-50 p-2.5">
+              <p className="text-[11px] font-medium text-green-600 uppercase tracking-wide">Pagado</p>
+              <p className="mt-0.5 text-base font-bold text-green-700 tabular-nums">{formatMXN(loan.amount_paid)}</p>
+            </div>
+            <div className={`rounded-lg p-2.5 ${isActive ? "bg-orange-50" : "bg-surface"}`}>
+              <p className={`text-[11px] font-medium uppercase tracking-wide ${isActive ? "text-orange-600" : "text-muted-foreground"}`}>Pendiente</p>
+              <p className={`mt-0.5 text-base font-bold tabular-nums ${isActive ? "text-orange-700" : "text-muted-foreground"}`}>
+                {formatMXN(loan.amount_pending)}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Pagado</p>
-            <p className="mt-0.5 text-base font-semibold text-green-700">{formatMXN(loan.amount_paid)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Pendiente</p>
-            <p className={`mt-0.5 text-base font-semibold ${isActive ? "text-orange-700" : "text-muted-foreground"}`}>
-              {formatMXN(loan.amount_pending)}
-            </p>
-          </div>
-        </div>
 
-        {/* Barra de progreso */}
-        <div className="h-2 rounded-full bg-border overflow-hidden">
-          <div
-            className="h-full rounded-full bg-green-500 transition-all duration-500"
-            style={{ width: `${progressPct}%` }}
-          />
-        </div>
+          {/* Barra de progreso */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[11px] text-muted-foreground">{Math.round(progressPct)}% pagado</p>
+              {isActive && loan.amount_pending > 0 && (
+                <p className="text-[11px] text-muted-foreground">Falta {formatMXN(loan.amount_pending)}</p>
+              )}
+            </div>
+            <div className="h-2.5 rounded-full bg-border overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${progressPct >= 100 ? "bg-green-500" : progressPct > 0 ? "bg-green-500" : "bg-border"}`}
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
 
-        {interest > 0 && (
-          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            Interés acumulado: +{formatMXN(interest)} → Total a cobrar: {formatMXN(interestTotal)}
-          </p>
-        )}
+          {interest > 0 && (
+            <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" aria-hidden />
+              <span>Interés acumulado: +{formatMXN(interest)} · Total a cobrar: <strong>{formatMXN(interestTotal)}</strong></span>
+            </div>
+          )}
+        </div>
 
         {(loan.due_date || loan.notes) && (
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="border-t border-border px-4 py-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             {loan.due_date && (
               <div>
-                <p className="text-xs text-muted-foreground">Fecha límite</p>
-                <p className={`font-medium ${overdue ? "text-red-600" : "text-foreground"}`}>
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Fecha límite</p>
+                <p className={`mt-0.5 font-medium ${overdue ? "text-red-600" : "text-foreground"}`}>
                   {new Date(loan.due_date).toLocaleDateString("es-MX", {
                     day: "2-digit",
-                    month: "short",
+                    month: "long",
                     year: "numeric",
                   })}
                 </p>
               </div>
             )}
             {loan.notes && (
-              <div className="col-span-2">
-                <p className="text-xs text-muted-foreground">Notas</p>
-                <p className="text-foreground">{loan.notes}</p>
+              <div className={loan.due_date ? "" : "sm:col-span-2"}>
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Notas</p>
+                <p className="mt-0.5 text-foreground">{loan.notes}</p>
               </div>
             )}
           </div>
@@ -586,36 +601,44 @@ export default function LoanDetailPage() {
       })()}
 
       {/* Historial de pagos */}
-      <div className="rounded-xl border border-border bg-surface-raised p-4 space-y-3">
-        <h2 className="text-sm font-semibold text-foreground">
-          Historial de pagos
+      <div className="rounded-xl border border-border bg-surface-raised overflow-hidden">
+        <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Banknote className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+            <h2 className="text-sm font-semibold text-foreground">Historial de pagos</h2>
+          </div>
           {loan.payments && loan.payments.length > 0 && (
-            <span className="ml-2 text-xs font-normal text-muted-foreground">
-              ({loan.payments.length})
+            <span className="inline-flex items-center rounded-full bg-border-soft px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {loan.payments.length}
             </span>
           )}
-        </h2>
+        </div>
 
         {!loan.payments || loan.payments.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Sin pagos registrados aún.</p>
+          <div className="px-4 py-6 text-center">
+            <Banknote className="mx-auto h-7 w-7 text-muted-foreground/30 mb-2" aria-hidden />
+            <p className="text-sm text-muted-foreground">Sin pagos registrados aún.</p>
+          </div>
         ) : (
-          <div className="space-y-2">
+          <div className="divide-y divide-border">
             {loan.payments.map((p) => (
               <div
                 key={p.id}
-                className="flex items-start justify-between gap-3 rounded-lg border border-border px-3 py-2.5"
+                className="flex items-start justify-between gap-3 px-4 py-3"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground">
                     {LOAN_PAYMENT_METHOD_LABEL[p.payment_method] ?? p.payment_method}
-                    {p.source === "mercadopago_webhook" && (
-                      <span className="ml-1.5 text-xs text-muted-foreground">(MercadoPago)</span>
+                    {(p.source === "mercadopago_webhook" || p.source === "preapproval_webhook") && (
+                      <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+                        <CreditCard className="h-2.5 w-2.5" aria-hidden /> MP
+                      </span>
                     )}
                   </p>
                   {p.notes && (
-                    <p className="text-xs text-muted-foreground truncate">{p.notes}</p>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">{p.notes}</p>
                   )}
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
                     {new Date(p.created_at).toLocaleDateString("es-MX", {
                       day: "2-digit",
                       month: "short",
@@ -628,7 +651,7 @@ export default function LoanDetailPage() {
                     )}
                   </p>
                 </div>
-                <p className="shrink-0 text-sm font-semibold text-green-700">
+                <p className="shrink-0 text-sm font-bold text-green-700 tabular-nums">
                   +{formatMXN(p.amount)}
                 </p>
               </div>
