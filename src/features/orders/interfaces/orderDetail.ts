@@ -25,11 +25,20 @@ export interface OrderPayment {
   metadata?: PaymentMetadata | null;
 }
 
+export interface OrderLoanSummary {
+  id: string;
+  status: string;
+  amount: number;
+  amount_pending: number;
+  concept: string;
+}
+
 export interface OrderDetail {
   id: string;
   status: string;
   cancelled_from?: string | null;
   source?: "dashboard" | "public_store" | null;
+  customer_id?: string | null;
   customer_name: string | null;
   customer_email: string | null;
   customer_phone: string | null;
@@ -49,6 +58,7 @@ export interface OrderDetail {
   mp_preference_id?: string | null;
   items: OrderItem[];
   payments?: OrderPayment[];
+  loan?: OrderLoanSummary | null;
 }
 
 export interface TeamMemberOption {

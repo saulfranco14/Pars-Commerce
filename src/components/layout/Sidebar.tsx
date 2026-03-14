@@ -5,7 +5,20 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
-import { X, Download } from "lucide-react";
+import {
+  X,
+  Download,
+  Home,
+  Package,
+  Scissors,
+  ClipboardList,
+  Banknote,
+  Users,
+  BarChart3,
+  UsersRound,
+  Globe,
+  Settings,
+} from "lucide-react";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 
 interface SidebarProps {
@@ -19,23 +32,26 @@ function NavLink({
   href,
   children,
   active,
+  icon: Icon,
   onNavigate,
 }: {
   href: string;
   children: React.ReactNode;
   active: boolean;
+  icon?: React.ComponentType<{ className?: string }>;
   onNavigate?: () => void;
 }) {
   return (
     <Link
       href={href}
       onClick={onNavigate}
-      className={`block min-h-[44px] rounded-lg px-3 py-3 text-base font-medium transition-colors sm:min-h-0 sm:py-2 sm:text-sm ${
+      className={`flex items-center gap-2.5 min-h-[44px] rounded-lg px-3 py-3 text-base font-medium transition-colors sm:min-h-0 sm:py-2 sm:text-sm ${
         active
           ? "bg-border-soft text-foreground"
           : "text-muted hover:bg-border-soft/60 hover:text-foreground active:bg-border-soft"
       }`}
     >
+      {Icon && <Icon className={`h-4 w-4 shrink-0 ${active ? "text-accent" : ""}`} />}
       {children}
     </Link>
   );
@@ -159,6 +175,7 @@ function SidebarContent(props: SidebarContentProps) {
         <NavLink
           href="/dashboard"
           active={pathname === "/dashboard"}
+          icon={Home}
           onNavigate={onNavigate}
         >
           Inicio
@@ -171,6 +188,7 @@ function SidebarContent(props: SidebarContentProps) {
                 pathname === `${base}/productos` ||
                 pathname.startsWith(`${base}/productos/`)
               }
+              icon={Package}
               onNavigate={onNavigate}
             >
               Productos
@@ -181,6 +199,7 @@ function SidebarContent(props: SidebarContentProps) {
                 pathname === `${base}/servicios` ||
                 pathname.startsWith(`${base}/servicios/`)
               }
+              icon={Scissors}
               onNavigate={onNavigate}
             >
               Servicios
@@ -191,39 +210,71 @@ function SidebarContent(props: SidebarContentProps) {
                 pathname === `${base}/ordenes` ||
                 pathname.startsWith(`${base}/ordenes/`)
               }
+              icon={ClipboardList}
               onNavigate={onNavigate}
             >
               Órdenes / Tickets
             </NavLink>
-            {canAccessTeamAndSettings && (
+
+            <div className="pt-2 mt-2 border-t border-border-soft">
+              <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                Cobranza
+              </p>
               <NavLink
-                href={`${base}/ventas`}
+                href={`${base}/prestamos`}
                 active={
-                  pathname === `${base}/ventas` ||
-                  pathname.startsWith(`${base}/ventas/`)
+                  pathname === `${base}/prestamos` ||
+                  pathname.startsWith(`${base}/prestamos/`)
                 }
+                icon={Banknote}
                 onNavigate={onNavigate}
               >
-                Ventas y Comisiones
+                Préstamos
               </NavLink>
-            )}
-            {canAccessTeamAndSettings && (
               <NavLink
-                href={`${base}/equipo`}
+                href={`${base}/clientes`}
                 active={
-                  pathname === `${base}/equipo` ||
-                  pathname.startsWith(`${base}/equipo/`)
+                  pathname === `${base}/clientes` ||
+                  pathname.startsWith(`${base}/clientes/`)
                 }
+                icon={Users}
                 onNavigate={onNavigate}
               >
-                Equipo
+                Clientes
               </NavLink>
-            )}
+            </div>
+
             {canAccessTeamAndSettings && (
-              <>
+              <div className="pt-2 mt-2 border-t border-border-soft">
+                <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  Administración
+                </p>
+                <NavLink
+                  href={`${base}/ventas`}
+                  active={
+                    pathname === `${base}/ventas` ||
+                    pathname.startsWith(`${base}/ventas/`)
+                  }
+                  icon={BarChart3}
+                  onNavigate={onNavigate}
+                >
+                  Ventas y Comisiones
+                </NavLink>
+                <NavLink
+                  href={`${base}/equipo`}
+                  active={
+                    pathname === `${base}/equipo` ||
+                    pathname.startsWith(`${base}/equipo/`)
+                  }
+                  icon={UsersRound}
+                  onNavigate={onNavigate}
+                >
+                  Equipo
+                </NavLink>
                 <NavLink
                   href={`${base}/sitio-web`}
                   active={pathname === `${base}/sitio-web`}
+                  icon={Globe}
                   onNavigate={onNavigate}
                 >
                   Sitio web
@@ -231,11 +282,12 @@ function SidebarContent(props: SidebarContentProps) {
                 <NavLink
                   href={`${base}/configuracion`}
                   active={pathname === `${base}/configuracion`}
+                  icon={Settings}
                   onNavigate={onNavigate}
                 >
                   Configuración
                 </NavLink>
-              </>
+              </div>
             )}
           </>
         )}

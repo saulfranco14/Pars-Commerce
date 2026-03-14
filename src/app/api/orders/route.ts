@@ -26,13 +26,14 @@ export async function GET(request: Request) {
       .from("orders")
       .select(
         `
-        id, status, cancelled_from, source, customer_name, customer_email, customer_phone,
+        id, status, cancelled_from, source, customer_id, customer_name, customer_email, customer_phone,
         subtotal, discount, total, created_at, updated_at,
         created_by, assigned_to, completed_by, completed_at, paid_at,
         payment_method, payment_link, mp_preference_id,
         assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email),
         items:order_items(id, quantity, unit_price, subtotal, is_wholesale, wholesale_savings, product:products(id, name, type, image_url)),
-        payments(provider, status, amount, metadata)
+        payments(provider, status, amount, metadata),
+        loan:loans!loans_order_id_fkey(id, status, amount, amount_pending, concept)
       `
       )
       .eq("id", orderId)
@@ -44,7 +45,14 @@ export async function GET(request: Request) {
         { status: 404 }
       );
     }
-    return NextResponse.json(order);
+
+    // Supabase devuelve loan como array por ser relación 1-N; normalizar a objeto o null
+    const loans = order.loan as unknown as unknown[];
+    const normalized = {
+      ...order,
+      loan: Array.isArray(loans) && loans.length > 0 ? loans[0] : null,
+    };
+    return NextResponse.json(normalized);
   }
 
   if (!tenantId) {
