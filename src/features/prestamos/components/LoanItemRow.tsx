@@ -1,12 +1,28 @@
-import { Trash2 } from "lucide-react";
+import { Trash2, Package } from "lucide-react";
 import { TouchStepper } from "@/components/ui/TouchStepper";
 import { btnIconDanger } from "@/components/ui/buttonClasses";
 import { formatMXN } from "@/lib/loanUtils";
 import type { LoanItemRowProps } from "@/features/prestamos/interfaces/loanForm";
 
 export function LoanItemRow({ item, index, onQuantityChange, onRemove }: LoanItemRowProps) {
+  const hasImage = !!item.product.image_url;
+
   return (
     <div className="flex items-center gap-3 rounded-xl border border-border bg-surface px-3 py-3">
+      {/* Imagen o placeholder */}
+      <div className="h-11 w-11 shrink-0 rounded-lg border border-border overflow-hidden bg-surface-raised flex items-center justify-center">
+        {hasImage ? (
+          <img
+            src={item.product.image_url!}
+            alt={item.product.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <Package className="h-5 w-5 text-muted-foreground/40" aria-hidden />
+        )}
+      </div>
+
+      {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground truncate">{item.product.name}</p>
         <p className="text-xs text-muted-foreground tabular-nums">{formatMXN(item.unitPrice)} c/u</p>
