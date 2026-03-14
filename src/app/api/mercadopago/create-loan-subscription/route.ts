@@ -114,6 +114,38 @@ export async function POST(request: Request) {
   });
   const preApproval = new PreApproval(mpConfig);
 
+  // Si el loan ya tiene una suscripción previa pendiente, intentar cancelarla
+  // para permitir crear una nueva (ej: el usuario cambió de opinión o hubo un error)
+  const { data: existingLoan } = await supabase
+    .from("loans")
+    .select("mp_preapproval_id, payment_plan_status")
+    .eq("id", loan_id)
+    .single();
+
+  if (existingLoan?.mp_preapproval_id && existingLoan.payment_plan_status === "pending_setup") {
+    try {
+      const cancelRes = await fetch(
+        `https://api.mercadopago.com/preapproval/${existingLoan.mp_preapproval_id}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: "cancelled" }),
+        },
+      );
+      if (!cancelRes.ok) {
+        console.warn(
+          `[create-loan-subscription] No se pudo cancelar preapproval anterior ${existingLoan.mp_preapproval_id}:`,
+          await cancelRes.text(),
+        );
+      }
+    } catch (cancelErr) {
+      console.warn("[create-loan-subscription] Error cancelando preapproval anterior:", cancelErr);
+    }
+  }
+
   let subscription;
   try {
     subscription = await preApproval.create({
@@ -121,7 +153,7 @@ export async function POST(request: Request) {
         reason: loan.concept,
         payer_email: customer.email,
         back_url: `${APP_URL}/dashboard`,
-        status: "pending", // pending = el cliente debe autorizar ingresando su tarjeta
+        status: "pending",
         external_reference: `loan_sub:${loan_id}`,
         auto_recurring: {
           frequency: loan.payment_plan_frequency,
@@ -136,10 +168,27 @@ export async function POST(request: Request) {
         },
       },
     });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("[create-loan-subscription] Error en MP PreApproval:", err);
+
+    // Extraer detalle del error de MP para ayudar a diagnosticar
+    let mpErrorDetail = "Error al crear la suscripción en MercadoPago";
+    if (err && typeof err === "object") {
+      const mpErr = err as { message?: string; cause?: unknown; status?: number };
+      if (mpErr.message) {
+        mpErrorDetail += `: ${mpErr.message}`;
+      }
+      // El SDK de MP a veces incluye el body de error en cause
+      if (mpErr.cause && typeof mpErr.cause === "object") {
+        try {
+          const causeStr = JSON.stringify(mpErr.cause);
+          console.error("[create-loan-subscription] MP error cause:", causeStr);
+        } catch { /* ignore */ }
+      }
+    }
+
     return NextResponse.json(
-      { error: "Error al crear la suscripción en MercadoPago" },
+      { error: mpErrorDetail },
       { status: 500 },
     );
   }
