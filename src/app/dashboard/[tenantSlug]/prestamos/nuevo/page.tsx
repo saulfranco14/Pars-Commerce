@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Plus, Link2, ToggleLeft, ToggleRight, Users, ShoppingCart, FileText, CreditCard, Info } from "lucide-react";
+import { Plus, Link2, ToggleLeft, ToggleRight, Users, ShoppingCart, FileText, CreditCard, Info, AlertTriangle, Calculator, Check } from "lucide-react";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { loanDetailsSchema } from "@/features/prestamos/validations/loanForm";
 import { deriveConcept } from "@/features/prestamos/helpers/loanItems";
@@ -15,8 +15,9 @@ import { FieldError } from "@/features/prestamos/components/FieldError";
 import { inputBase, inputError } from "@/features/prestamos/constants/formClasses";
 import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
 import { formatMXN } from "@/lib/loanUtils";
+import { calcSubscriptionFees, MP_SUB_FEE_PERCENT, MP_SUB_FEE_FIXED_MXN, PARS_SERVICE_FEE_PERCENT } from "@/constants/commissionConfig";
 import type { Customer } from "@/types/customers";
-import type { PaymentPlanType } from "@/types/loans";
+import type { PaymentPlanType, MpFeeAbsorbedBy } from "@/types/loans";
 
 export default function NuevoPrestamo() {
   const params = useParams();
@@ -50,6 +51,7 @@ export default function NuevoPrestamo() {
   const [planFrequency, setPlanFrequency] = useState("1");
   const [planFrequencyType, setPlanFrequencyType] = useState<"weeks" | "months">("months");
   const [planInstallmentAmount, setPlanInstallmentAmount] = useState("");
+  const [feeAbsorbedBy, setFeeAbsorbedBy] = useState<MpFeeAbsorbedBy>("customer");
 
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -105,6 +107,18 @@ export default function NuevoPrestamo() {
       }
     }
 
+    // Validar monto de cobro automático
+    if (showPaymentPlan && planInstallmentAmount) {
+      const installmentVal = parseFloat(planInstallmentAmount);
+      if (isNaN(installmentVal) || installmentVal < 15) {
+        setSubmitError("El monto por cobro debe ser al menos $15.00 MXN (mínimo de MercadoPago)");
+        valid = false;
+      } else if (planType === "installments" && effectiveTotal > 0 && installmentVal > effectiveTotal) {
+        setSubmitError("El monto por cobro no puede ser mayor al total de la deuda");
+        valid = false;
+      }
+    }
+
     if (!valid || !activeTenant?.id || !selectedCustomer) return;
 
     setLoading(true);
@@ -118,6 +132,7 @@ export default function NuevoPrestamo() {
         due_date: dueDate || undefined,
         notes: notes.trim() || undefined,
         order_id: fromOrderId,
+        mp_fee_absorbed_by: showPaymentPlan ? feeAbsorbedBy : undefined,
         ...(showPaymentPlan && planInstallmentAmount && !isNaN(installment) && {
           payment_plan_type: planType,
           payment_plan_frequency: parseInt(planFrequency, 10),
@@ -374,114 +389,394 @@ export default function NuevoPrestamo() {
             </button>
           </div>
 
-          {showPaymentPlan && (
-            <div className="p-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
-                    Tipo de plan
-                  </label>
-                  <div className="flex gap-2 flex-wrap">
-                    {([
-                      { value: "installments", label: "Cuotas fijas", desc: "Monto fijo hasta cubrir la deuda" },
-                      { value: "recurring", label: "Recurrente (sin límite)", desc: "Se cobra indefinidamente" },
-                    ] as { value: PaymentPlanType; label: string; desc: string }[]).map(({ value, label, desc }) => (
+          {showPaymentPlan && (() => {
+            const MP_MIN_AMOUNT = 15;
+            const parsedAmount = parseFloat(planInstallmentAmount) || 0;
+            const hasAmount = planInstallmentAmount !== "" && parsedAmount > 0;
+            const fees = hasAmount ? calcSubscriptionFees(parsedAmount, feeAbsorbedBy) : null;
+
+            // Validaciones
+            const amountTooLow = hasAmount && parsedAmount < MP_MIN_AMOUNT;
+            const amountExceedsTotal = hasAmount && planType === "installments" && effectiveTotal > 0 && parsedAmount > effectiveTotal;
+            const hasValidationError = amountTooLow || amountExceedsTotal;
+
+            const numPayments = hasAmount && planType === "installments" && effectiveTotal > 0 && !amountExceedsTotal
+              ? Math.ceil(effectiveTotal / parsedAmount)
+              : null;
+
+            const freqLabel = planFrequency === "1" && planFrequencyType === "months" ? "mes"
+              : planFrequency === "1" && planFrequencyType === "weeks" ? "semana"
+              : planFrequency === "2" && planFrequencyType === "weeks" ? "quincena"
+              : `${planFrequency} ${planFrequencyType === "weeks" ? "semanas" : "meses"}`;
+
+            // Sugerencias inteligentes: dividir deuda en N pagos comunes
+            const suggestedSplits = effectiveTotal > 0
+              ? [2, 3, 4, 6, 12]
+                  .map((n) => ({ n, amount: Math.ceil((effectiveTotal / n) * 100) / 100 }))
+                  .filter(({ amount }) => amount >= MP_MIN_AMOUNT && amount <= effectiveTotal)
+              : [];
+
+            return (
+            <div className="p-4 space-y-5">
+
+              {/* ── 1. ¿Cuánto quieres recibir? ─────────────────────────── */}
+              <div>
+                <label htmlFor="plan-installment" className="block text-sm font-semibold text-foreground mb-1">
+                  ¿Cuánto quieres recibir en cada pago?
+                </label>
+                <p className="text-[11px] text-muted-foreground mb-2">
+                  El monto que recibirás en tu cuenta por cada cobro automático
+                </p>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                  <input
+                    id="plan-installment"
+                    type="number"
+                    min={MP_MIN_AMOUNT}
+                    max={planType === "installments" ? effectiveTotal || undefined : undefined}
+                    step="0.01"
+                    value={planInstallmentAmount}
+                    onChange={(e) => setPlanInstallmentAmount(e.target.value)}
+                    placeholder={effectiveTotal > 0 ? `${MP_MIN_AMOUNT}.00 — ${effectiveTotal.toFixed(2)}` : "0.00"}
+                    className={`${hasValidationError ? inputError : inputBase} pl-7 text-lg font-semibold`}
+                  />
+                </div>
+
+                {/* Validation errors */}
+                {amountTooLow && (
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" aria-hidden />
+                    <p className="text-xs text-red-600 font-medium">
+                      MercadoPago requiere un mínimo de {formatMXN(MP_MIN_AMOUNT)} por cobro
+                    </p>
+                  </div>
+                )}
+                {amountExceedsTotal && (
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" aria-hidden />
+                    <p className="text-xs text-red-600 font-medium">
+                      El cobro no puede ser mayor al total de la deuda ({formatMXN(effectiveTotal)})
+                    </p>
+                  </div>
+                )}
+
+                {/* Payments count hint */}
+                {numPayments && !hasValidationError && (
+                  <p className="mt-1.5 text-xs text-accent font-medium">
+                    ≈ {numPayments} cobro{numPayments !== 1 ? "s" : ""} para cubrir {formatMXN(effectiveTotal)}
+                  </p>
+                )}
+
+                {/* ── Sugerencias rápidas ── */}
+                {suggestedSplits.length > 0 && planType === "installments" && (
+                  <div className="mt-3">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Calculator className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                      <span className="text-[11px] font-medium text-muted-foreground">Sugerencias para cubrir {formatMXN(effectiveTotal)}</span>
+                    </div>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {suggestedSplits.map(({ n, amount }) => {
+                        const isActive = parsedAmount === amount;
+                        return (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => setPlanInstallmentAmount(amount.toString())}
+                            className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                              isActive
+                                ? "border-accent bg-accent/10 text-accent"
+                                : "border-border bg-surface text-foreground hover:bg-surface-raised hover:border-border-soft"
+                            }`}
+                          >
+                            {isActive && <Check className="h-3 w-3" aria-hidden />}
+                            <span className="tabular-nums">{n} pagos</span>
+                            <span className="text-muted-foreground">de {formatMXN(amount)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── 2. ¿Cada cuánto? (Frecuencia friendly) ──────────────── */}
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  ¿Cada cuánto se cobra?
+                </label>
+                <div className="flex gap-2 flex-wrap">
+                  {([
+                    { freq: "1", type: "weeks" as const, label: "Semanal" },
+                    { freq: "2", type: "weeks" as const, label: "Quincenal" },
+                    { freq: "1", type: "months" as const, label: "Mensual" },
+                  ]).map(({ freq, type, label }) => {
+                    const isSelected = planFrequency === freq && planFrequencyType === type;
+                    return (
                       <button
-                        key={value}
+                        key={label}
                         type="button"
-                        onClick={() => setPlanType(value)}
-                        className={`flex-1 min-h-[44px] rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                          planType === value
-                            ? "border-accent bg-accent/10 ring-1 ring-accent/20"
-                            : "border-border bg-surface hover:bg-surface-raised"
+                        onClick={() => { setPlanFrequency(freq); setPlanFrequencyType(type); }}
+                        className={`flex-1 min-h-[44px] rounded-xl border px-3 py-2.5 text-center text-sm font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                          isSelected
+                            ? "border-accent bg-accent/10 text-accent ring-1 ring-accent/20"
+                            : "border-border bg-surface text-foreground hover:bg-surface-raised"
                         }`}
                       >
-                        <span className={`block text-sm font-medium ${planType === value ? "text-accent" : "text-foreground"}`}>{label}</span>
-                        <span className="block text-[11px] text-muted-foreground mt-0.5">{desc}</span>
+                        {label}
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-
-                <div>
-                  <label htmlFor="plan-installment" className="block text-sm font-medium text-foreground">
-                    Monto por cobro
-                  </label>
-                  <div className="relative mt-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
-                    <input
-                      id="plan-installment"
-                      type="number"
-                      min="1"
-                      step="0.01"
-                      value={planInstallmentAmount}
-                      onChange={(e) => setPlanInstallmentAmount(e.target.value)}
-                      placeholder="0.00"
-                      className={`${inputBase} pl-7`}
-                    />
-                  </div>
-                  {planType === "installments" && planInstallmentAmount && effectiveTotal > 0 && (
-                    <p className="mt-1.5 text-xs text-accent font-medium">
-                      ≈ {Math.ceil(effectiveTotal / parseFloat(planInstallmentAmount || "1"))} cobros para cubrir {formatMXN(effectiveTotal)}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground">
-                    Frecuencia
-                  </label>
-                  <div className="mt-1 flex gap-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max="12"
-                      value={planFrequency}
-                      onChange={(e) => setPlanFrequency(e.target.value)}
-                      className={`${inputBase} w-20`}
-                    />
+                <details className="mt-2">
+                  <summary className="text-[11px] text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                    Personalizar frecuencia
+                  </summary>
+                  <div className="mt-2 flex gap-2">
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-[11px]">Cada</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="12"
+                        value={planFrequency}
+                        onChange={(e) => setPlanFrequency(e.target.value)}
+                        className={`${inputBase} w-24 pl-11 text-center`}
+                      />
+                    </div>
                     <select
                       value={planFrequencyType}
                       onChange={(e) => setPlanFrequencyType(e.target.value as "weeks" | "months")}
                       className="flex-1 min-h-[44px] rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                     >
-                      <option value="weeks">Semana(s)</option>
-                      <option value="months">Mes(es)</option>
+                      <option value="weeks">semana(s)</option>
+                      <option value="months">mes(es)</option>
                     </select>
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Se cobrará cada {planFrequency} {planFrequencyType === "weeks" ? "semana(s)" : "mes(es)"}
-                  </p>
+                </details>
+              </div>
+
+              {/* ── 3. Tipo de plan ──────────────────────────────────────── */}
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  ¿Hasta cuándo se cobra?
+                </label>
+                <div className="flex gap-2 flex-wrap">
+                  {([
+                    { value: "installments" as PaymentPlanType, label: "Hasta cubrir la deuda", desc: "Se deja de cobrar al liquidar" },
+                    { value: "recurring" as PaymentPlanType, label: "Sin límite", desc: "Cobra hasta cancelar manualmente" },
+                  ]).map(({ value, label, desc }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setPlanType(value)}
+                      className={`flex-1 min-h-[44px] rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                        planType === value
+                          ? "border-accent bg-accent/10 ring-1 ring-accent/20"
+                          : "border-border bg-surface hover:bg-surface-raised"
+                      }`}
+                    >
+                      <span className={`block text-sm font-medium ${planType === value ? "text-accent" : "text-foreground"}`}>{label}</span>
+                      <span className="block text-[11px] text-muted-foreground mt-0.5">{desc}</span>
+                    </button>
+                  ))}
                 </div>
+              </div>
 
-                {/* Resumen visual del plan */}
-                {planInstallmentAmount && parseFloat(planInstallmentAmount) > 0 && effectiveTotal > 0 && (
-                  <div className="md:col-span-2 rounded-xl border border-accent/20 bg-accent/5 px-4 py-3">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <Info className="h-3.5 w-3.5 text-accent shrink-0" aria-hidden />
-                      <p className="text-xs font-semibold text-accent">Resumen del plan</p>
-                    </div>
-                    <p className="text-sm text-foreground">
-                      {formatMXN(parseFloat(planInstallmentAmount))} cada {planFrequency} {planFrequencyType === "weeks" ? "semana(s)" : "mes(es)"}
-                      {planType === "installments" && (
-                        <> · ≈ {Math.ceil(effectiveTotal / parseFloat(planInstallmentAmount || "1"))} cobros totales</>
+              {/* ── 4. Comisión ──────────────────────────────────────────── */}
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  Comisión de MercadoPago
+                </label>
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setFeeAbsorbedBy("business")}
+                    className={`flex-1 min-h-[44px] rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                      feeAbsorbedBy === "business"
+                        ? "border-accent bg-accent/10 ring-1 ring-accent/20"
+                        : "border-border bg-surface hover:bg-surface-raised"
+                    }`}
+                  >
+                    <span className={`block text-sm font-medium ${feeAbsorbedBy === "business" ? "text-accent" : "text-foreground"}`}>Yo la absorbo</span>
+                    <span className="block text-[11px] text-muted-foreground mt-0.5">Recibo menos por cada cobro</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFeeAbsorbedBy("customer")}
+                    className={`flex-1 min-h-[44px] rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                      feeAbsorbedBy === "customer"
+                        ? "border-accent bg-accent/10 ring-1 ring-accent/20"
+                        : "border-border bg-surface hover:bg-surface-raised"
+                    }`}
+                  >
+                    <span className={`block text-sm font-medium ${feeAbsorbedBy === "customer" ? "text-accent" : "text-foreground"}`}>El cliente la paga</span>
+                    <span className="block text-[11px] text-muted-foreground mt-0.5">Se le cobra un poco más al cliente</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* ── 5. Resumen con desglose ──────────────────────────────── */}
+              {fees && !hasValidationError && (
+                <div className="rounded-xl border border-accent/20 bg-accent/5 overflow-hidden">
+                  <div className="px-4 py-3 space-y-3">
+                    {/* Línea principal */}
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="text-sm font-semibold text-foreground">
+                        {formatMXN(fees.netReceived)} <span className="text-xs font-normal text-muted-foreground">/ {freqLabel}</span>
+                      </p>
+                      {numPayments && (
+                        <span className="text-xs text-muted-foreground">
+                          ≈ {numPayments} cobro{numPayments !== 1 ? "s" : ""}
+                        </span>
                       )}
-                    </p>
-                  </div>
-                )}
+                    </div>
 
-                <div className="md:col-span-2 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
-                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
-                  <div>
-                    <p className="text-xs font-medium text-amber-800">El cobro no se activa al crear</p>
-                    <p className="mt-0.5 text-[11px] text-amber-700">
-                      Una vez registrado el préstamo, podrás activar el cobro automático desde el detalle. El cliente deberá autorizar el cargo desde un link de MercadoPago.
-                    </p>
+                    {/* Desglose */}
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Se cobra al cliente</span>
+                        <span className="font-medium text-foreground tabular-nums">{formatMXN(fees.chargeAmount)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          Comisión MP <span className="text-[10px]">({(MP_SUB_FEE_PERCENT * 100).toFixed(2)}% + {formatMXN(MP_SUB_FEE_FIXED_MXN)})</span>
+                        </span>
+                        <span className="font-medium text-red-600 tabular-nums">−{formatMXN(fees.mpFee)}</span>
+                      </div>
+                      {PARS_SERVICE_FEE_PERCENT > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Tarifa de servicio</span>
+                          <span className="font-medium text-red-600 tabular-nums">−{formatMXN(fees.parsFee)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between border-t border-accent/10 pt-1.5">
+                        <span className="font-semibold text-foreground">Recibes por cobro</span>
+                        <span className="font-bold text-accent tabular-nums">{formatMXN(fees.netReceived)}</span>
+                      </div>
+                    </div>
+
+                    {/* Totales */}
+                    {numPayments && (
+                      <div className="flex justify-between border-t border-accent/10 pt-2 text-xs">
+                        <span className="text-muted-foreground">Total estimado a recibir</span>
+                        <span className="font-bold text-foreground tabular-nums">{formatMXN(fees.netReceived * numPayments)}</span>
+                      </div>
+                    )}
                   </div>
+                </div>
+              )}
+
+              {/* ── 6. Tabla de pagos (amortización visual) ─────────────── */}
+              {fees && numPayments && numPayments > 1 && numPayments <= 60 && !hasValidationError && (
+                <details className="group">
+                  <summary className="flex items-center gap-2 cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    <Calculator className="h-3.5 w-3.5" aria-hidden />
+                    Ver desglose por cobro ({numPayments} pagos)
+                    <span className="ml-auto text-[10px] text-muted-foreground group-open:hidden">Expandir</span>
+                  </summary>
+                  <div className="mt-2 rounded-xl border border-border overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-surface border-b border-border">
+                            <th className="py-2 px-3 text-left font-semibold text-muted-foreground">#</th>
+                            <th className="py-2 px-3 text-right font-semibold text-muted-foreground">Cobro</th>
+                            <th className="py-2 px-3 text-right font-semibold text-muted-foreground">Recibes</th>
+                            <th className="py-2 px-3 text-right font-semibold text-muted-foreground">Saldo</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Array.from({ length: numPayments }, (_, i) => {
+                            const isLast = i === numPayments - 1;
+                            const remainingBefore = effectiveTotal - (parsedAmount * i);
+                            // Last payment might be less if remainder < installment
+                            const thisPayment = isLast ? Math.min(parsedAmount, remainingBefore) : parsedAmount;
+                            const thisFees = calcSubscriptionFees(thisPayment, feeAbsorbedBy);
+                            const remainingAfter = Math.max(0, remainingBefore - thisPayment);
+
+                            return (
+                              <tr
+                                key={i}
+                                className={`border-b border-border/50 transition-colors ${
+                                  isLast ? "bg-green-50/60" : i % 2 === 0 ? "bg-surface-raised" : "bg-surface"
+                                }`}
+                              >
+                                <td className="py-2 px-3 font-medium text-muted-foreground tabular-nums">
+                                  {i + 1}
+                                </td>
+                                <td className="py-2 px-3 text-right tabular-nums text-foreground">
+                                  {formatMXN(thisFees.chargeAmount)}
+                                </td>
+                                <td className="py-2 px-3 text-right tabular-nums text-accent font-medium">
+                                  {formatMXN(thisFees.netReceived)}
+                                </td>
+                                <td className={`py-2 px-3 text-right tabular-nums font-medium ${
+                                  remainingAfter === 0 ? "text-green-600" : "text-foreground"
+                                }`}>
+                                  {remainingAfter === 0 ? (
+                                    <span className="inline-flex items-center gap-1">
+                                      <Check className="h-3 w-3" aria-hidden />
+                                      Liquidado
+                                    </span>
+                                  ) : (
+                                    formatMXN(remainingAfter)
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-accent/5 border-t border-accent/20">
+                            <td className="py-2.5 px-3 font-bold text-foreground">Total</td>
+                            <td className="py-2.5 px-3 text-right tabular-nums font-bold text-foreground">
+                              {formatMXN((() => {
+                                let sum = 0;
+                                for (let i = 0; i < numPayments; i++) {
+                                  const rem = effectiveTotal - (parsedAmount * i);
+                                  const p = i === numPayments - 1 ? Math.min(parsedAmount, rem) : parsedAmount;
+                                  sum += calcSubscriptionFees(p, feeAbsorbedBy).chargeAmount;
+                                }
+                                return sum;
+                              })())}
+                            </td>
+                            <td className="py-2.5 px-3 text-right tabular-nums font-bold text-accent">
+                              {formatMXN((() => {
+                                let sum = 0;
+                                for (let i = 0; i < numPayments; i++) {
+                                  const rem = effectiveTotal - (parsedAmount * i);
+                                  const p = i === numPayments - 1 ? Math.min(parsedAmount, rem) : parsedAmount;
+                                  sum += calcSubscriptionFees(p, feeAbsorbedBy).netReceived;
+                                }
+                                return sum;
+                              })())}
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              <span className="inline-flex items-center gap-1 text-green-600 font-bold text-[10px]">
+                                <Check className="h-3 w-3" aria-hidden />
+                                {formatMXN(0)}
+                              </span>
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                </details>
+              )}
+
+              <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+                <div>
+                  <p className="text-xs font-medium text-amber-800">El cobro no se activa al crear</p>
+                  <p className="mt-0.5 text-[11px] text-amber-700">
+                    Una vez registrado, activa el cobro desde el detalle del préstamo. El cliente autoriza el cargo desde un link de MercadoPago.
+                  </p>
                 </div>
               </div>
             </div>
-          )}
+            );
+          })()}
         </section>
 
       </div>
