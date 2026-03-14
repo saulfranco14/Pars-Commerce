@@ -247,23 +247,29 @@ export default function NuevoPrestamo() {
                       onRemove={handleRemove}
                     />
                   ))}
-                  <div className="flex items-center justify-between rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 mt-1">
+                  <div className="flex items-center justify-between rounded-xl border border-accent/20 bg-accent/5 px-4 py-3.5 mt-1">
                     <div>
-                      <p className="text-sm font-medium text-foreground">Total del préstamo</p>
-                      <p className="text-xs text-muted-foreground">
-                        {items.length} producto{items.length !== 1 ? "s" : ""} ·{" "}
-                        {items.reduce((s, i) => s + i.quantity, 0)} unidades
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Total del préstamo
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {items.length} producto{items.length !== 1 ? "s" : ""} · {items.reduce((s, i) => s + i.quantity, 0)} unidades
                       </p>
                     </div>
                     <p className="text-xl font-bold text-accent tabular-nums">{formatMXN(total)}</p>
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-8 gap-2">
-                  <ShoppingCart className="h-7 w-7 text-muted-foreground/30" aria-hidden />
-                  <p className="text-sm text-muted-foreground text-center">
-                    Busca y agrega productos<br />para calcular el total
-                  </p>
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-10 gap-2.5">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-border-soft/50">
+                    <ShoppingCart className="h-6 w-6 text-muted-foreground/40" aria-hidden />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-muted-foreground">Sin productos</p>
+                    <p className="text-xs text-muted-foreground/70 mt-0.5">
+                      Busca y agrega productos del catálogo
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

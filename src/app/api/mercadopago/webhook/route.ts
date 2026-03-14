@@ -40,6 +40,16 @@ export async function POST(request: Request) {
     );
   }
 
+  // ── Cambio de estado de suscripción (cliente autorizó / pausó / canceló) ──
+  if (body.type === "subscription_preapproval" && body.data?.id) {
+    try {
+      await handlePreapprovalStatusChange(body.data.id);
+    } catch (err) {
+      console.error("Webhook: error en subscription_preapproval:", err);
+    }
+    return NextResponse.json({ received: true });
+  }
+
   // ── Cobro automático de suscripción (PreApproval) ─────────────────────────
   if (body.type === "subscription_authorized_payment" && body.data?.id) {
     try {
@@ -389,6 +399,78 @@ async function handleBulkLoanPayment(
 }
 
 // =============================================================================
+// Handler: cambio de estado de suscripción (PreApproval)
+// topic = "subscription_preapproval"
+// MP envía este webhook cuando el cliente autoriza, pausa o cancela la suscripción
+// =============================================================================
+async function handlePreapprovalStatusChange(preapprovalId: string) {
+  const supabase = createAdminClient();
+
+  // Consultar el estado actual de la suscripción en MP
+  const mpRes = await fetch(
+    `https://api.mercadopago.com/preapproval/${preapprovalId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+      },
+    },
+  );
+
+  if (!mpRes.ok) {
+    console.error(
+      `Webhook: error fetching preapproval ${preapprovalId} from MP:`,
+      mpRes.status,
+      await mpRes.text(),
+    );
+    return;
+  }
+
+  const mpData = await mpRes.json();
+  const mpStatus: string = mpData.status; // "authorized", "paused", "cancelled", "pending"
+
+  // Mapear estado de MP a nuestro payment_plan_status
+  const statusMap: Record<string, string> = {
+    authorized: "active",
+    paused: "paused",
+    cancelled: "cancelled",
+    pending: "pending_setup",
+  };
+
+  const newPlanStatus = statusMap[mpStatus];
+  if (!newPlanStatus) {
+    console.warn(`Webhook: unknown preapproval status "${mpStatus}" for ${preapprovalId}`);
+    return;
+  }
+
+  // Buscar el loan con este preapproval_id
+  const { data: loan, error } = await supabase
+    .from("loans")
+    .select("id, payment_plan_status")
+    .eq("mp_preapproval_id", preapprovalId)
+    .single();
+
+  if (error || !loan) {
+    console.warn(`Webhook: no loan found for preapproval_id ${preapprovalId}`);
+    return;
+  }
+
+  // Solo actualizar si el estado cambió
+  if (loan.payment_plan_status === newPlanStatus) return;
+
+  await supabase
+    .from("loans")
+    .update({
+      payment_plan_status: newPlanStatus,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", loan.id);
+
+  console.log(
+    `Webhook: preapproval ${preapprovalId} status changed to "${mpStatus}" → loan ${loan.id} plan_status="${newPlanStatus}"`,
+  );
+}
+
+// =============================================================================
 // Handler: cobro automático de suscripción (PreApproval)
 // topic = "subscription_authorized_payment"
 // =============================================================================
@@ -422,6 +504,8 @@ async function handlePreapprovalPayment(authorizedPaymentId: string) {
 
   // 2. Buscar el loan: por preapproval_id específico si lo tenemos,
   //    o como fallback buscar el único activo (comportamiento anterior)
+  //    Incluimos "pending_setup" porque el webhook de pago puede llegar
+  //    antes que el de subscription_preapproval (cambio de estado)
   let loanQuery = supabase
     .from("loans")
     .select(`
@@ -431,7 +515,7 @@ async function handlePreapprovalPayment(authorizedPaymentId: string) {
       customer:customers(id, name, email),
       tenant:tenants(name)
     `)
-    .eq("payment_plan_status", "active")
+    .in("payment_plan_status", ["active", "pending_setup"])
     .not("mp_preapproval_id", "is", null);
 
   if (preapprovalId) {
@@ -446,6 +530,15 @@ async function handlePreapprovalPayment(authorizedPaymentId: string) {
         (preapprovalId ? ` (preapproval_id: ${preapprovalId})` : ""),
     );
     return;
+  }
+
+  // Si el loan aún estaba en pending_setup, activarlo (el pago confirma autorización)
+  if (loan.payment_plan_status === "pending_setup") {
+    await supabase
+      .from("loans")
+      .update({ payment_plan_status: "active", updated_at: new Date().toISOString() })
+      .eq("id", loan.id);
+    console.log(`Webhook: loan ${loan.id} auto-activated from pending_setup (payment received)`);
   }
 
   const chargeAmount = loan.payment_plan_installment_amount ?? 0;
