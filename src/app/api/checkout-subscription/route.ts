@@ -308,10 +308,9 @@ export async function POST(request: Request) {
     request.headers.get("origin") ??
     request.headers.get("referer")?.replace(/\/[^/]*$/, "") ??
     "http://localhost:3000";
-  const PROD_URL = "https://pars-commerce.vercel.app";
   const isLocalhost =
     rawOrigin.includes("localhost") || rawOrigin.includes("127.0.0.1");
-  const origin = isLocalhost ? PROD_URL : rawOrigin;
+  const origin = isLocalhost ? APP_URL : rawOrigin;
 
   const slug = tenant.slug ?? "";
   const backUrl = `${origin}/sitio/${slug}/confirmacion?order_id=${order.id}&subscription_id=${subscription.id}&status=success`;
@@ -321,29 +320,37 @@ export async function POST(request: Request) {
   });
   const preApproval = new PreApproval(mpConfig);
 
+  // MP requires start_date to be at least a few seconds in the future
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() + 1);
+
   let mpSubscription;
   try {
-    mpSubscription = await preApproval.create({
-      body: {
-        reason: shortConcept,
-        payer_email: customer_email.trim(),
-        back_url: backUrl,
-        status: "pending",
-        external_reference: `store_sub:${subscription.id}`,
-        auto_recurring: {
-          frequency,
-          frequency_type: frequency_type as "months" | "weeks",
-          transaction_amount: fees.chargeAmount,
-          currency_id: "MXN",
-          start_date: new Date().toISOString(),
-          ...(totalInstallments && { repetitions: totalInstallments }),
-        },
+    const mpBody = {
+      reason: shortConcept,
+      payer_email: customer_email.trim(),
+      back_url: backUrl,
+      status: "pending" as const,
+      external_reference: `store_sub:${subscription.id}`,
+      auto_recurring: {
+        frequency,
+        frequency_type: frequency_type as "months" | "weeks",
+        transaction_amount: fees.chargeAmount,
+        currency_id: "MXN" as const,
+        start_date: startDate.toISOString(),
+        ...(totalInstallments ? { repetitions: totalInstallments } : {}),
       },
-    });
+    };
+    console.log("[checkout-subscription] Creating MP PreApproval with body:", JSON.stringify(mpBody));
+    mpSubscription = await preApproval.create({ body: mpBody });
   } catch (err: unknown) {
-    console.error("[checkout-subscription] Error en MP PreApproval:", err);
+    const errMsg = err instanceof Error ? err.message : String(err);
+    const errDetail = typeof err === "object" && err !== null && "cause" in err
+      ? JSON.stringify((err as { cause: unknown }).cause)
+      : undefined;
+    console.error("[checkout-subscription] Error en MP PreApproval:", errMsg, errDetail ?? "");
     return NextResponse.json(
-      { error: "Error al crear la suscripción en MercadoPago" },
+      { error: `Error al crear la suscripción en MercadoPago: ${errMsg}` },
       { status: 500 },
     );
   }
