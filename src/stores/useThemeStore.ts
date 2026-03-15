@@ -36,7 +36,7 @@ interface ThemeState {
   initFromStorage: () => void;
 }
 
-export const useThemeStore = create<ThemeState>((set, get) => ({
+export const useThemeStore = create<ThemeState>((set) => ({
   theme: "light",
   setTheme: (theme) => {
     applyTheme(theme);
