@@ -14,6 +14,7 @@ import {
   ClipboardList,
   Banknote,
   Users,
+  Repeat,
   BarChart3,
   UsersRound,
   Globe,
@@ -214,6 +215,17 @@ function SidebarContent(props: SidebarContentProps) {
               onNavigate={onNavigate}
             >
               Órdenes / Tickets
+            </NavLink>
+            <NavLink
+              href={`${base}/suscripciones`}
+              active={
+                pathname === `${base}/suscripciones` ||
+                pathname.startsWith(`${base}/suscripciones/`)
+              }
+              icon={Repeat}
+              onNavigate={onNavigate}
+            >
+              Suscripciones
             </NavLink>
 
             <div className="pt-2 mt-2 border-t border-border-soft">

@@ -17,6 +17,8 @@ export interface OrderListItem {
   } | null;
   products_count?: number;
   services_count?: number;
+  subscription_id?: string | null;
+  subscription_installment?: number | null;
 }
 
 export interface CreateOrderPayload {
@@ -31,6 +33,7 @@ export interface UpdateOrderPayload {
   status?: string;
   assigned_to?: string | null;
   payment_method?: string | null;
+  customer_id?: string | null;
   customer_name?: string | null;
   customer_email?: string | null;
   customer_phone?: string | null;

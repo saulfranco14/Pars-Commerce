@@ -8,4 +8,6 @@ export const STATUS_TABS: { value: string; label: string }[] = [
   { value: "paid", label: "Pagada" },
   { value: "completed", label: "Completada" },
   { value: "cancelled", label: "Cancelada" },
+  { value: "installment_active", label: "En cuotas" },
+  { value: "pending_subscription", label: "Suscripción" },
 ];

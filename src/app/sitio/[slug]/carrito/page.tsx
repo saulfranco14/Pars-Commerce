@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { ShoppingCart } from "lucide-react";
 import CarritoContent from "./CarritoContent";
+import { DEFAULT_RECURRING_CONFIG } from "@/types/subscriptions";
+import type { RecurringPurchasesConfig } from "@/types/subscriptions";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -13,7 +15,7 @@ export default async function CarritoPage({ params }: PageProps) {
 
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
-    .select("id, name, theme_color")
+    .select("id, name, theme_color, settings")
     .eq("slug", slug)
     .single();
 
@@ -22,6 +24,11 @@ export default async function CarritoPage({ params }: PageProps) {
   }
 
   const accentColor = tenant.theme_color?.trim() || "#6366f1";
+  const settings = (tenant.settings as Record<string, unknown> | null) ?? {};
+  const recurringConfig = {
+    ...DEFAULT_RECURRING_CONFIG,
+    ...((settings.recurring_purchases as Partial<RecurringPurchasesConfig>) ?? {}),
+  };
 
   return (
     <div className="space-y-6">
@@ -41,6 +48,7 @@ export default async function CarritoPage({ params }: PageProps) {
         tenantId={tenant.id}
         sitioSlug={slug}
         accentColor={accentColor}
+        recurringConfig={recurringConfig}
       />
     </div>
   );

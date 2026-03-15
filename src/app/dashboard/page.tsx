@@ -27,6 +27,7 @@ import {
   ClipboardList,
   Clock,
   Plus,
+  Repeat,
   ShoppingBag,
   Scissors,
   TrendingUp,
@@ -97,6 +98,24 @@ export default function DashboardPage() {
       : null;
   const { data: catalogStats, isLoading: catalogLoading } =
     useSWR<CatalogStats | null>(statsKey, swrFetcher);
+
+  const subsKey = activeTenant?.id != null
+    ? `/api/subscriptions?tenant_id=${encodeURIComponent(activeTenant.id)}&status=active`
+    : null;
+  const { data: activeSubs } = useSWR<{ id: string; charge_amount: number; type: string; frequency: number; frequency_type: string }[]>(
+    subsKey,
+    swrFetcher,
+    { fallbackData: [], revalidateOnFocus: false },
+  );
+  const activeSubsList = Array.isArray(activeSubs) ? activeSubs : [];
+  const activeSubsCount = activeSubsList.length;
+  const mrr = activeSubsList.reduce((sum, s) => {
+    const monthlyAmount =
+      s.frequency_type === "weeks"
+        ? (s.charge_amount * 4) / s.frequency
+        : s.charge_amount / s.frequency;
+    return sum + monthlyAmount;
+  }, 0);
 
   if (!activeTenant) {
     return null;
@@ -328,6 +347,50 @@ export default function DashboardPage() {
             </Link>
           </div>
         </section>
+
+        {activeSubsCount > 0 && (
+          <section>
+            <div className="mb-3 flex items-baseline justify-between gap-4">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
+                Suscripciones activas
+              </h2>
+              <Link
+                href={`/dashboard/${activeTenant.slug}/suscripciones`}
+                className="text-xs font-medium text-muted hover:text-foreground"
+              >
+                Ver todas <ArrowRight className="inline h-3 w-3" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                href={`/dashboard/${activeTenant.slug}/suscripciones`}
+                className="block cursor-pointer rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-muted">MRR estimado</p>
+                  <TrendingUp className="h-4 w-4 text-accent" />
+                </div>
+                <p className="mt-1.5 text-2xl font-bold tabular-nums text-foreground">
+                  ${mrr.toFixed(2)}
+                </p>
+                <p className="mt-0.5 text-xs text-muted">Ingreso recurrente mensual</p>
+              </Link>
+              <Link
+                href={`/dashboard/${activeTenant.slug}/suscripciones`}
+                className="block cursor-pointer rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-muted">Activas</p>
+                  <Repeat className="h-4 w-4 text-accent" />
+                </div>
+                <p className="mt-1.5 text-2xl font-bold tabular-nums text-foreground">
+                  {activeSubsCount}
+                </p>
+                <p className="mt-0.5 text-xs text-muted">Suscripciones</p>
+              </Link>
+            </div>
+          </section>
+        )}
 
         {unassignedCount > 0 && (
           <Link

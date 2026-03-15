@@ -1,25 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ShoppingCart, Package, Trash2, Minus, Plus } from "lucide-react";
-import { updateItemQuantity, removeItem, checkoutPickup } from "@/services/publicCartService";
+import { ShoppingCart, Package, Trash2, Minus, Plus, CreditCard, Repeat, SplitSquareHorizontal, Info } from "lucide-react";
+import { updateItemQuantity, removeItem, checkoutPickup, checkoutSubscription } from "@/services/publicCartService";
 import { dispatchCartUpdated } from "@/lib/cartEvents";
 import { useCartContext } from "../CartProvider";
 import { useFingerprint } from "@/hooks/useFingerprint";
 import * as yup from "yup";
 import { checkoutFormSchema } from "@/features/orders/validations/checkoutForm";
+import { calcSubscriptionFees } from "@/constants/commissionConfig";
+
+import type { RecurringPurchasesConfig } from "@/types/subscriptions";
+
+type PaymentMode = "single" | "installments" | "recurring";
+
 interface CarritoContentProps {
   tenantId: string;
   sitioSlug: string;
   accentColor: string;
+  recurringConfig: RecurringPurchasesConfig;
+}
+
+function buildInstallmentOptions(total: number, max: number): number[] {
+  const options = [2, 3, 4, 6, 9, 12].filter((n) => n <= max && total / n >= 15);
+  return options;
+}
+
+function freqLabel(freq: "weekly" | "biweekly" | "monthly"): string {
+  if (freq === "weekly") return "Sem.";
+  if (freq === "biweekly") return "Quinc.";
+  return "Mens.";
+}
+
+function freqToValues(freq: "weekly" | "biweekly" | "monthly"): { frequency: number; frequency_type: "weeks" | "months" } {
+  if (freq === "weekly") return { frequency: 1, frequency_type: "weeks" };
+  if (freq === "biweekly") return { frequency: 2, frequency_type: "weeks" };
+  return { frequency: 1, frequency_type: "months" };
+}
+
+function freqPeriodLabel(freq: "weekly" | "biweekly" | "monthly"): string {
+  if (freq === "weekly") return "/ sem";
+  if (freq === "biweekly") return "/ quinc";
+  return "/ mes";
 }
 
 export default function CarritoContent({
   tenantId,
   sitioSlug,
   accentColor,
+  recurringConfig,
 }: CarritoContentProps) {
   const router = useRouter();
   const fingerprint = useFingerprint();
@@ -28,6 +59,51 @@ export default function CarritoContent({
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ customer_name: "", customer_email: "", customer_phone: "" });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const hasRecurringOptions = recurringConfig.installments_enabled || recurringConfig.recurring_enabled;
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>("single");
+  const [selectedInstallments, setSelectedInstallments] = useState<number>(3);
+  const [selectedFrequency, setSelectedFrequency] = useState<"weekly" | "biweekly" | "monthly">(
+    recurringConfig.allowed_frequencies[0] ?? "monthly"
+  );
+
+  const installmentOptions = useMemo(
+    () => buildInstallmentOptions(subtotal, recurringConfig.max_installments),
+    [subtotal, recurringConfig.max_installments]
+  );
+
+  // Set default installments when options change
+  useMemo(() => {
+    if (installmentOptions.length > 0 && !installmentOptions.includes(selectedInstallments)) {
+      setSelectedInstallments(installmentOptions[0]);
+    }
+  }, [installmentOptions]);
+
+  const feeBreakdown = useMemo(() => {
+    if (paymentMode === "single" || subtotal <= 0) return null;
+
+    const discountPercent = paymentMode === "recurring" ? recurringConfig.subscription_discount_percent : 0;
+    const discountedAmount = subtotal * (1 - discountPercent / 100);
+    const installmentBase = paymentMode === "installments"
+      ? discountedAmount / selectedInstallments
+      : discountedAmount;
+
+    const fees = calcSubscriptionFees(installmentBase, recurringConfig.fee_absorbed_by);
+
+    return {
+      discountPercent,
+      discountAmount: subtotal - discountedAmount,
+      discountedAmount,
+      installmentBase: Math.round(installmentBase * 100) / 100,
+      chargePerPeriod: fees.chargeAmount,
+      serviceFee: Math.round((fees.chargeAmount - installmentBase) * 100) / 100,
+      totalPayments: paymentMode === "installments" ? selectedInstallments : null,
+      totalPaid: paymentMode === "installments"
+        ? Math.round(fees.chargeAmount * selectedInstallments * 100) / 100
+        : null,
+      netReceived: fees.netReceived,
+    };
+  }, [paymentMode, subtotal, selectedInstallments, selectedFrequency, recurringConfig]);
 
   const handleQuantityChange = async (productId: string, quantity: number) => {
     if (!cart || !fingerprint || quantity < 1) return;
@@ -89,17 +165,38 @@ export default function CarritoContent({
         { abortEarly: false }
       );
       setSubmitting(true);
-      const result = await checkoutPickup(
-        {
-          tenant_id: tenantId,
-          cart_id: cart.id,
-          customer_name: validated.customer_name,
-          customer_email: validated.customer_email,
-          customer_phone: validated.customer_phone,
-        },
-        fingerprint
-      );
-      router.push(result.redirect_url);
+
+      if (paymentMode === "single") {
+        const result = await checkoutPickup(
+          {
+            tenant_id: tenantId,
+            cart_id: cart.id,
+            customer_name: validated.customer_name,
+            customer_email: validated.customer_email,
+            customer_phone: validated.customer_phone,
+          },
+          fingerprint
+        );
+        router.push(result.redirect_url);
+      } else {
+        const freqValues = freqToValues(selectedFrequency);
+        const result = await checkoutSubscription(
+          {
+            tenant_id: tenantId,
+            cart_id: cart.id,
+            customer_name: validated.customer_name,
+            customer_email: validated.customer_email,
+            customer_phone: validated.customer_phone,
+            payment_mode: paymentMode,
+            installments: paymentMode === "installments" ? selectedInstallments : undefined,
+            frequency: freqValues.frequency,
+            frequency_type: freqValues.frequency_type,
+          },
+          fingerprint
+        );
+        // Redirect to MP init_point for card authorization
+        window.location.href = result.init_point;
+      }
     } catch (e) {
       if (e instanceof yup.ValidationError) {
         const errs: Record<string, string> = {};
@@ -148,6 +245,7 @@ export default function CarritoContent({
         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* ── Items column ────────────────────────────────────── */}
         <div className="space-y-4">
           {items.map((item) => {
             const product = Array.isArray(item.product) ? item.product[0] : item.product;
@@ -212,18 +310,178 @@ export default function CarritoContent({
             );
           })}
         </div>
-        <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+
+        {/* ── Checkout column ─────────────────────────────────── */}
+        <div className="space-y-5 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900">Finalizar pedido</h2>
+
+          {/* Subtotal */}
           <div
-            className="mt-4 flex items-center justify-between rounded-xl border-2 px-4 py-4"
+            className="flex items-center justify-between rounded-xl border-2 px-4 py-4"
             style={{ borderColor: accentColor, backgroundColor: `${accentColor}0c` }}
           >
-            <span className="text-sm font-semibold text-gray-700">Total</span>
-            <span className="text-xl font-bold" style={{ color: accentColor }}>
+            <span className="text-sm font-semibold text-gray-700">Subtotal</span>
+            <span className="text-xl font-bold tabular-nums" style={{ color: accentColor }}>
               ${subtotal.toFixed(2)}
             </span>
           </div>
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+
+          {/* ── Payment Mode Selector ─────────────────────────── */}
+          {hasRecurringOptions && (
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-gray-700">¿Cómo quieres pagar?</p>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMode("single")}
+                  className={`flex min-h-[60px] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 px-2 py-3 text-center transition-colors ${
+                    paymentMode === "single"
+                      ? "border-current bg-current/5"
+                      : "border-gray-200 text-gray-500 hover:border-gray-300"
+                  }`}
+                  style={paymentMode === "single" ? { color: accentColor, borderColor: accentColor } : undefined}
+                >
+                  <CreditCard className="h-5 w-5 shrink-0" />
+                  <span className="text-xs font-semibold leading-tight">Pago único</span>
+                </button>
+                {recurringConfig.installments_enabled && (
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMode("installments")}
+                    className={`flex min-h-[60px] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 px-2 py-3 text-center transition-colors ${
+                      paymentMode === "installments"
+                        ? "border-current bg-current/5"
+                        : "border-gray-200 text-gray-500 hover:border-gray-300"
+                    }`}
+                    style={paymentMode === "installments" ? { color: accentColor, borderColor: accentColor } : undefined}
+                  >
+                    <SplitSquareHorizontal className="h-5 w-5 shrink-0" />
+                    <span className="text-xs font-semibold leading-tight">En cuotas</span>
+                  </button>
+                )}
+                {recurringConfig.recurring_enabled && (
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMode("recurring")}
+                    className={`flex min-h-[60px] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 px-2 py-3 text-center transition-colors ${
+                      paymentMode === "recurring"
+                        ? "border-current bg-current/5"
+                        : "border-gray-200 text-gray-500 hover:border-gray-300"
+                    }`}
+                    style={paymentMode === "recurring" ? { color: accentColor, borderColor: accentColor } : undefined}
+                  >
+                    <Repeat className="h-5 w-5 shrink-0" />
+                    <span className="text-xs font-semibold leading-tight">Recurrente</span>
+                  </button>
+                )}
+              </div>
+
+              {/* ── Installments Options ──────────────────────── */}
+              {paymentMode === "installments" && installmentOptions.length > 0 && (
+                <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+                  <p className="text-xs font-medium text-gray-600">Divide tu compra en:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {installmentOptions.map((n) => {
+                      const perPayment = Math.round((subtotal / n) * 100) / 100;
+                      return (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setSelectedInstallments(n)}
+                          className={`min-h-[40px] cursor-pointer rounded-lg border-2 px-3 py-1.5 text-xs font-semibold tabular-nums transition-colors ${
+                            selectedInstallments === n
+                              ? "border-current bg-current/5"
+                              : "border-gray-200 text-gray-600 hover:border-gray-300"
+                          }`}
+                          style={selectedInstallments === n ? { color: accentColor, borderColor: accentColor } : undefined}
+                        >
+                          {n}x ${perPayment.toFixed(2)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Frequency Selector ────────────────────────── */}
+              {paymentMode !== "single" && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-gray-600">
+                    {paymentMode === "recurring" ? "Recibe tus productos cada:" : "Frecuencia de cobro:"}
+                  </p>
+                  <div className="flex gap-2">
+                    {recurringConfig.allowed_frequencies.map((freq) => (
+                      <button
+                        key={freq}
+                        type="button"
+                        onClick={() => setSelectedFrequency(freq)}
+                        className={`min-h-[40px] flex-1 cursor-pointer rounded-lg border-2 px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          selectedFrequency === freq
+                            ? "border-current bg-current/5"
+                            : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        }`}
+                        style={selectedFrequency === freq ? { color: accentColor, borderColor: accentColor } : undefined}
+                      >
+                        {freqLabel(freq)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Fee Breakdown ──────────────────────────────── */}
+              {feeBreakdown && (
+                <div className="space-y-2 rounded-xl border border-gray-200 bg-white p-4">
+                  {feeBreakdown.discountPercent > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-green-700">Descuento suscripción ({feeBreakdown.discountPercent}%)</span>
+                      <span className="font-medium tabular-nums text-green-700">
+                        -${feeBreakdown.discountAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">
+                      Cobro {freqPeriodLabel(selectedFrequency)}
+                    </span>
+                    <span className="font-bold tabular-nums text-gray-900">
+                      ${feeBreakdown.chargePerPeriod.toFixed(2)}
+                    </span>
+                  </div>
+                  {recurringConfig.fee_absorbed_by === "customer" && feeBreakdown.serviceFee > 0 && (
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>Tarifa de servicio incluida</span>
+                      <span className="tabular-nums">${feeBreakdown.serviceFee.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {feeBreakdown.totalPayments && (
+                    <>
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>Cobros</span>
+                        <span className="tabular-nums">{feeBreakdown.totalPayments}</span>
+                      </div>
+                      <div className="border-t border-gray-100 pt-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium text-gray-700">Total a pagar</span>
+                          <span className="font-bold tabular-nums text-gray-900">
+                            ${feeBreakdown.totalPaid!.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {paymentMode === "recurring" && (
+                    <p className="pt-1 text-xs text-gray-500">
+                      Cancela cuando quieras sin penalización.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Customer Form ─────────────────────────────────── */}
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="checkout-name" className="block text-sm font-medium text-gray-700">
                 Nombre
@@ -302,11 +560,20 @@ export default function CarritoContent({
               className="w-full min-h-[48px] cursor-pointer rounded-xl px-6 py-4 font-semibold text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
               style={{ backgroundColor: accentColor }}
             >
-              {submitting ? "Procesando…" : "Confirmar pedido"}
+              {submitting
+                ? "Procesando…"
+                : paymentMode === "single"
+                  ? "Confirmar pedido"
+                  : "Continuar al pago"
+              }
             </button>
           </form>
-          <p className="mt-3 text-xs text-gray-500">
-            Tu ticket será creado. Pasarás a recoger tu pedido en la dirección del negocio.
+
+          <p className="text-xs text-gray-500">
+            {paymentMode === "single"
+              ? "Tu ticket será creado. Pasarás a recoger tu pedido en la dirección del negocio."
+              : "Se abrirá MercadoPago para guardar tu método de pago de forma segura."
+            }
           </p>
         </div>
       </div>

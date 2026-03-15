@@ -45,18 +45,22 @@ export function CreateEditPageLayout({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto">
       <div
-        className={`mx-auto w-full flex-1 flex flex-col px-1 md:px-0 mb-4 ${maxWidthClass[maxWidth]}`}
+        className={`mx-auto w-full flex-1 flex flex-col md:px-0 mb-4 ${maxWidthClass[maxWidth]}`}
       >
-        <CreateEditHeader title={title} backHref={backHref} backLabel={backLabel} />
-        <p className="mt-2 mb-4 text-sm leading-relaxed text-muted">{description}</p>
+        <CreateEditHeader
+          title={title}
+          backHref={backHref}
+          backLabel={backLabel}
+          description={description}
+        />
 
         <form
           id={formId}
           onSubmit={onSubmit}
-          className="flex min-h-0 flex-1 flex-col gap-0 pb-40 md:pb-0"
+          className="flex min-h-0 flex-1 flex-col gap-0 mt-3 md:mt-4 pb-40 md:pb-0"
         >
           {error && (
-            <div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
+            <div className="mb-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
               {error}
             </div>
           )}

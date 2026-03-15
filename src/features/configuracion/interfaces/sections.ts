@@ -72,6 +72,23 @@ export interface ConfigTicketSectionProps {
   onFooterMessageChange: (v: string) => void;
 }
 
+export interface ConfigRecurrentesSectionProps {
+  installmentsEnabled: boolean;
+  onInstallmentsEnabledChange: (v: boolean) => void;
+  recurringEnabled: boolean;
+  onRecurringEnabledChange: (v: boolean) => void;
+  feeAbsorbedBy: "customer" | "business";
+  onFeeAbsorbedByChange: (v: "customer" | "business") => void;
+  subscriptionDiscountPercent: string;
+  onSubscriptionDiscountPercentChange: (v: string) => void;
+  deliveryOn: "first_payment" | "full_payment";
+  onDeliveryOnChange: (v: "first_payment" | "full_payment") => void;
+  allowedFrequencies: Array<"weekly" | "biweekly" | "monthly">;
+  onAllowedFrequenciesChange: (v: Array<"weekly" | "biweekly" | "monthly">) => void;
+  maxInstallments: string;
+  onMaxInstallmentsChange: (v: string) => void;
+}
+
 export interface SiteContentFormProps {
   tenantId: string;
   tenantSlug: string;

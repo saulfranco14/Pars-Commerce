@@ -1,9 +1,15 @@
 import type { Customer } from "@/types/customers";
-import type { NewCustomerValues } from "@/features/prestamos/validations/loanForm";
+
+interface CreateCustomerInput {
+  name: string;
+  phone: string;
+  email?: string;
+  notes?: string;
+}
 
 export async function createCustomer(
   tenantId: string,
-  values: NewCustomerValues
+  values: CreateCustomerInput
 ): Promise<Customer> {
   const res = await fetch("/api/customers", {
     method: "POST",

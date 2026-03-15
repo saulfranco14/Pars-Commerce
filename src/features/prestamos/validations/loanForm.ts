@@ -64,3 +64,33 @@ export const loanFormSchema = customerSelectionSchema.concat(loanDetailsSchema);
 
 export type LoanFormValues = yup.InferType<typeof loanFormSchema>;
 export type NewCustomerValues = yup.InferType<typeof newCustomerSchema>;
+
+// ── Schema para editar cliente desde órdenes (nombre y teléfono obligatorios) ──
+export const orderCustomerSchema = yup.object({
+  name: yup
+    .string()
+    .trim()
+    .required("El nombre es obligatorio")
+    .min(3, "Mínimo 3 caracteres")
+    .max(120, "Máximo 120 caracteres")
+    .matches(
+      /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s\-'\.]+$/,
+      "El nombre solo puede contener letras",
+    ),
+  phone: yup
+    .string()
+    .trim()
+    .required("El teléfono es obligatorio")
+    .min(7, "Mínimo 7 dígitos")
+    .max(20, "Máximo 20 dígitos")
+    .matches(/^[\d\s\-\+\(\)]+$/, "Solo números, espacios y símbolos + - ( )"),
+  email: yup
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v === "" ? undefined : v))
+    .email("Email inválido")
+    .max(254, "Máximo 254 caracteres"),
+});
+
+export type OrderCustomerValues = yup.InferType<typeof orderCustomerSchema>;
