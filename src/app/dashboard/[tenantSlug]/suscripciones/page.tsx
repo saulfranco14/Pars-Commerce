@@ -9,6 +9,7 @@ import { Repeat, CalendarCheck, ChevronRight } from "lucide-react";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { FilterTabs } from "@/components/ui/FilterTabs";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { SubscriptionsOnboardingOverlay } from "@/components/onboarding/SubscriptionsOnboardingOverlay";
 import {
   TableWrapper,
   tableHeaderRowClass,
@@ -221,6 +222,8 @@ export default function SuscripcionesPage() {
           </div>
         </>
       )}
+
+      <SubscriptionsOnboardingOverlay />
     </div>
   );
 }

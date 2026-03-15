@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import Link from "next/link";
-import { ArrowRight, Package } from "lucide-react";
+import { ArrowRight, Package, CreditCard, Repeat } from "lucide-react";
 
 function DashboardMockup() {
   return (
@@ -161,6 +161,64 @@ export function LandingHero() {
                 <DashboardMockup />
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* ── Loans & Subscriptions Feature Cards ─────────────── */}
+        <div className="mt-20 grid gap-6 sm:grid-cols-2 lg:mt-28">
+          {/* Loans card */}
+          <div className="animate-fade-in-up animation-delay-400 group rounded-2xl border border-border bg-surface p-6 transition-all duration-300 hover:shadow-soft sm:p-8">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
+              <CreditCard className="h-6 w-6 text-emerald-500" aria-hidden />
+            </div>
+            <h3 className="text-xl font-bold text-foreground">
+              Préstamos y créditos
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Ofrece crédito a tus clientes directamente desde tu negocio.
+              Define montos, plazos e intereses. Los cobros se hacen
+              automáticamente con MercadoPago.
+            </p>
+            <ul className="mt-4 space-y-2">
+              {[
+                "Crea préstamos en segundos con productos de tu catálogo",
+                "Plazos flexibles: semanal, quincenal o mensual",
+                "Cobro automático vía MercadoPago — sin perseguir pagos",
+                "Seguimiento en tiempo real desde tu dashboard",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <span className="mt-0.5 text-emerald-500 shrink-0">✓</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Subscriptions card */}
+          <div className="animate-fade-in-up animation-delay-500 group rounded-2xl border border-border bg-surface p-6 transition-all duration-300 hover:shadow-soft sm:p-8">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/10">
+              <Repeat className="h-6 w-6 text-violet-500" aria-hidden />
+            </div>
+            <h3 className="text-xl font-bold text-foreground">
+              Suscripciones y pagos recurrentes
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Permite a tus clientes pagar en cuotas o de forma recurrente
+              directamente desde tu tienda online. Ellos eligen, tú cobras.
+            </p>
+            <ul className="mt-4 space-y-2">
+              {[
+                "Pago en cuotas: divide la compra en 2, 3, 6 o hasta 12 pagos",
+                "Suscripción recurrente: cobro periódico sin fecha de fin",
+                "El cliente autoriza su tarjeta una sola vez vía MercadoPago",
+                "Monitorea todo: pagos completados, pendientes y cancelaciones",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <span className="mt-0.5 text-violet-500 shrink-0">✓</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>

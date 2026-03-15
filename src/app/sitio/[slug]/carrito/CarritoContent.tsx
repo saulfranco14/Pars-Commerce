@@ -11,6 +11,7 @@ import { useFingerprint } from "@/hooks/useFingerprint";
 import * as yup from "yup";
 import { checkoutFormSchema } from "@/features/orders/validations/checkoutForm";
 import { calcSubscriptionFees } from "@/constants/commissionConfig";
+import { CheckoutGuide } from "@/components/onboarding/CheckoutGuide";
 
 import type { RecurringPurchasesConfig } from "@/types/subscriptions";
 
@@ -244,6 +245,15 @@ export default function CarritoContent({
       {error && (
         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
+
+      {hasRecurringOptions && (
+        <CheckoutGuide
+          accentColor={accentColor}
+          hasInstallments={recurringConfig.installments_enabled}
+          hasRecurring={recurringConfig.recurring_enabled}
+        />
+      )}
+
       <div className="grid gap-6 lg:grid-cols-2">
         {/* ── Items column ────────────────────────────────────── */}
         <div className="space-y-4">
