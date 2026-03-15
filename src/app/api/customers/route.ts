@@ -97,9 +97,9 @@ export async function POST(request: Request) {
   const body: CreateCustomerPayload = await request.json();
   const { tenant_id, name, email, phone, notes } = body;
 
-  if (!tenant_id || !name?.trim() || !phone?.trim() || !email?.trim()) {
+  if (!tenant_id || !name?.trim() || !phone?.trim()) {
     return NextResponse.json(
-      { error: "tenant_id, name, phone y email son requeridos" },
+      { error: "tenant_id, name y phone son requeridos" },
       { status: 400 },
     );
   }

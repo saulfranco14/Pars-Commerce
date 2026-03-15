@@ -173,3 +173,42 @@ export async function checkoutPickup(
   }
   return data as CheckoutPickupResponse;
 }
+
+export interface CheckoutSubscriptionPayload {
+  tenant_id: string;
+  cart_id: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  payment_mode: "installments" | "recurring";
+  installments?: number;
+  frequency: number;
+  frequency_type: "weeks" | "months";
+}
+
+export interface CheckoutSubscriptionResponse {
+  subscription_id: string;
+  order_id: string;
+  init_point: string;
+  redirect_url: string;
+}
+
+export async function checkoutSubscription(
+  payload: CheckoutSubscriptionPayload,
+  fingerprintId: string
+): Promise<CheckoutSubscriptionResponse> {
+  const res = await fetch("/api/checkout-subscription", {
+    method: "POST",
+    headers: getHeaders(fingerprintId),
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      typeof (data as { error?: string }).error === "string"
+        ? (data as { error: string }).error
+        : res.statusText
+    );
+  }
+  return data as CheckoutSubscriptionResponse;
+}

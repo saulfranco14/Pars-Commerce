@@ -166,6 +166,7 @@ export async function PATCH(request: Request) {
     status,
     assigned_to,
     payment_method,
+    customer_id,
     customer_name,
     customer_email,
     customer_phone,
@@ -175,6 +176,7 @@ export async function PATCH(request: Request) {
     status?: string;
     assigned_to?: string | null;
     payment_method?: string | null;
+    customer_id?: string | null;
     customer_name?: string | null;
     customer_email?: string | null;
     customer_phone?: string | null;
@@ -303,6 +305,7 @@ export async function PATCH(request: Request) {
     updates.payment_method = payment_method?.trim() || null;
 
   const hasCustomerUpdate =
+    customer_id !== undefined ||
     customer_name !== undefined ||
     customer_email !== undefined ||
     customer_phone !== undefined;
@@ -312,6 +315,7 @@ export async function PATCH(request: Request) {
       { status: 409 }
     );
   }
+  if (customer_id !== undefined) updates.customer_id = customer_id;
   if (customer_name !== undefined)
     updates.customer_name = customer_name?.trim() || null;
   if (customer_email !== undefined)

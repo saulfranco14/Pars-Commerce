@@ -442,32 +442,58 @@ async function handlePreapprovalStatusChange(preapprovalId: string) {
     return;
   }
 
-  // Buscar el loan con este preapproval_id
-  const { data: loan, error } = await supabase
+  // Buscar primero en loans
+  const { data: loan } = await supabase
     .from("loans")
     .select("id, payment_plan_status")
     .eq("mp_preapproval_id", preapprovalId)
     .single();
 
-  if (error || !loan) {
-    console.warn(`Webhook: no loan found for preapproval_id ${preapprovalId}`);
+  if (loan) {
+    if (loan.payment_plan_status === newPlanStatus) return;
+    await supabase
+      .from("loans")
+      .update({
+        payment_plan_status: newPlanStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", loan.id);
+    console.log(
+      `Webhook: preapproval ${preapprovalId} → loan ${loan.id} plan_status="${newPlanStatus}"`,
+    );
     return;
   }
 
-  // Solo actualizar si el estado cambió
-  if (loan.payment_plan_status === newPlanStatus) return;
+  // Si no está en loans, buscar en subscriptions (storefront)
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("id, status")
+    .eq("mp_preapproval_id", preapprovalId)
+    .single();
 
-  await supabase
-    .from("loans")
-    .update({
-      payment_plan_status: newPlanStatus,
+  if (subscription) {
+    if (subscription.status === newPlanStatus) return;
+
+    const updatePayload: Record<string, string> = {
+      status: newPlanStatus,
       updated_at: new Date().toISOString(),
-    })
-    .eq("id", loan.id);
+    };
+    if (newPlanStatus === "cancelled") {
+      updatePayload.cancelled_at = new Date().toISOString();
+    }
 
-  console.log(
-    `Webhook: preapproval ${preapprovalId} status changed to "${mpStatus}" → loan ${loan.id} plan_status="${newPlanStatus}"`,
-  );
+    await supabase
+      .from("subscriptions")
+      .update(updatePayload)
+      .eq("id", subscription.id);
+
+    console.log(
+      `Webhook: preapproval ${preapprovalId} → subscription ${subscription.id} status="${newPlanStatus}"`,
+    );
+    return;
+  }
+
+  console.warn(`Webhook: no loan or subscription found for preapproval_id ${preapprovalId}`);
 }
 
 // =============================================================================
@@ -525,10 +551,8 @@ async function handlePreapprovalPayment(authorizedPaymentId: string) {
   const { data: loan } = await loanQuery.single();
 
   if (!loan) {
-    console.warn(
-      `Webhook: no active loan for preapproval payment ${authorizedPaymentId}` +
-        (preapprovalId ? ` (preapproval_id: ${preapprovalId})` : ""),
-    );
+    // No loan found — try storefront subscriptions
+    await handleStoreSubscriptionPayment(supabase, authorizedPaymentId, preapprovalId);
     return;
   }
 
@@ -570,6 +594,169 @@ async function handlePreapprovalPayment(authorizedPaymentId: string) {
   await sendLoanPaymentEmail(loan, actualAmount, "mercadopago");
   console.log(
     `Webhook: preapproval payment ${authorizedPaymentId} applied to loan ${loan.id}`,
+  );
+}
+
+// =============================================================================
+// Handler: cobro de suscripción de storefront (compra recurrente / cuotas)
+// =============================================================================
+async function handleStoreSubscriptionPayment(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  authorizedPaymentId: string,
+  preapprovalId: string | null,
+) {
+  if (!preapprovalId) {
+    console.warn(`Webhook: no preapproval_id for store subscription payment ${authorizedPaymentId}`);
+    return;
+  }
+
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select(`
+      id, tenant_id, type, status, concept,
+      installment_amount, charge_amount, service_fee_per_charge,
+      total_installments, completed_installments,
+      mp_preapproval_id, items_snapshot,
+      customer_name, customer_email, customer_phone,
+      customer_id, original_order_id
+    `)
+    .eq("mp_preapproval_id", preapprovalId)
+    .in("status", ["active", "pending_setup"])
+    .single();
+
+  if (!subscription) {
+    console.warn(
+      `Webhook: no active subscription for preapproval ${preapprovalId} (payment ${authorizedPaymentId})`,
+    );
+    return;
+  }
+
+  // Auto-activate if still pending_setup
+  if (subscription.status === "pending_setup") {
+    await supabase
+      .from("subscriptions")
+      .update({ status: "active", updated_at: new Date().toISOString() })
+      .eq("id", subscription.id);
+    console.log(`Webhook: subscription ${subscription.id} auto-activated from pending_setup`);
+  }
+
+  const newInstallmentNumber = subscription.completed_installments + 1;
+
+  // ── For recurring: create a new order for each charge ──────────────────────
+  let orderId: string | null = null;
+
+  if (subscription.type === "recurring") {
+    const items = subscription.items_snapshot as Array<{
+      product_id: string;
+      name: string;
+      quantity: number;
+      unit_price: number;
+      promotion_id?: string | null;
+    }>;
+    const subtotal = items.reduce((s: number, i: { unit_price: number; quantity: number }) => s + i.unit_price * i.quantity, 0);
+
+    const { data: newOrder } = await supabase
+      .from("orders")
+      .insert({
+        tenant_id: subscription.tenant_id,
+        status: "paid",
+        subtotal,
+        discount: 0,
+        total: subtotal,
+        source: "public_store",
+        payment_method: "mercadopago",
+        customer_name: subscription.customer_name,
+        customer_email: subscription.customer_email,
+        customer_phone: subscription.customer_phone,
+        customer_id: subscription.customer_id,
+        subscription_id: subscription.id,
+        subscription_installment: newInstallmentNumber,
+        paid_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (newOrder) {
+      orderId = newOrder.id;
+      for (const item of items) {
+        await supabase.from("order_items").insert({
+          order_id: newOrder.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          subtotal: item.unit_price * item.quantity,
+          promotion_id: item.promotion_id ?? null,
+        });
+      }
+    }
+  } else {
+    // For installments: reference the original order
+    orderId = subscription.original_order_id;
+  }
+
+  // ── Create subscription payment record ────────────────────────────────────
+  const { error: insertError } = await supabase
+    .from("subscription_payments")
+    .insert({
+      subscription_id: subscription.id,
+      tenant_id: subscription.tenant_id,
+      installment_number: newInstallmentNumber,
+      amount: subscription.installment_amount,
+      service_fee: subscription.service_fee_per_charge,
+      net_amount: subscription.installment_amount - subscription.service_fee_per_charge,
+      order_id: orderId,
+      mp_payment_id: authorizedPaymentId,
+      mp_preapproval_id: preapprovalId,
+      status: "paid",
+    });
+
+  if (insertError) {
+    if (insertError.code === "23505") {
+      console.warn(`Webhook: duplicate subscription payment ${authorizedPaymentId}`);
+      return;
+    }
+    console.error("Webhook: error inserting subscription_payment:", insertError);
+    return;
+  }
+
+  // ── Update subscription progress ──────────────────────────────────────────
+  const newCompleted = newInstallmentNumber;
+  const isComplete =
+    subscription.type === "installments" &&
+    subscription.total_installments &&
+    newCompleted >= subscription.total_installments;
+
+  const subUpdate: Record<string, unknown> = {
+    completed_installments: newCompleted,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (isComplete) {
+    subUpdate.status = "completed";
+
+    // Mark original order as paid when all installments are done
+    if (subscription.original_order_id) {
+      await supabase
+        .from("orders")
+        .update({
+          status: "paid",
+          paid_at: new Date().toISOString(),
+          payment_method: "mercadopago",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", subscription.original_order_id);
+    }
+  }
+
+  await supabase
+    .from("subscriptions")
+    .update(subUpdate)
+    .eq("id", subscription.id);
+
+  console.log(
+    `Webhook: subscription ${subscription.id} payment #${newInstallmentNumber} registered` +
+      (isComplete ? " (COMPLETED)" : ""),
   );
 }
 

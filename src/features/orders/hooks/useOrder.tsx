@@ -7,6 +7,7 @@ import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { update as updateOrder } from "@/services/ordersService";
 import { remove as removeOrderItem } from "@/services/orderItemsService";
 import { generatePaymentLink } from "@/services/mercadopagoService";
+import { createCustomer } from "@/features/prestamos/services/customerService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { TenantAddress } from "@/types/database";
 import type { TeamMember } from "@/types/team";
@@ -178,14 +179,27 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleSaveCustomer = async (details: { name: string; email: string; phone: string }) => {
-    if (!order) return;
+    if (!order || !activeTenant?.id) return;
     setActionLoading(true);
     setError(null);
     try {
+      const trimmedName = details.name.trim();
+      const trimmedPhone = details.phone.trim();
+      const trimmedEmail = details.email.trim();
+
+      // Create a customer record in the customers table
+      const customer = await createCustomer(activeTenant.id, {
+        name: trimmedName,
+        phone: trimmedPhone,
+        ...(trimmedEmail ? { email: trimmedEmail } : {}),
+      });
+
+      // Link customer_id + denormalized fields to the order
       await updateOrder(order.id, {
-        customer_name: details.name.trim() || null,
-        customer_email: details.email.trim() || null,
-        customer_phone: details.phone.trim() || null,
+        customer_id: customer.id,
+        customer_name: trimmedName || null,
+        customer_email: trimmedEmail || null,
+        customer_phone: trimmedPhone || null,
       });
       await fetchOrder();
     } catch (err) {

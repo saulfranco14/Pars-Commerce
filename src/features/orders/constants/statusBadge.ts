@@ -1,10 +1,12 @@
 import type { ComponentType } from "react";
 import {
+  CalendarCheck,
   CheckCircle,
   Clock,
   FileText,
   Loader2,
   Package,
+  Repeat,
   UserCheck,
   XCircle,
 } from "lucide-react";
@@ -18,6 +20,8 @@ export const STATUS_LABELS: Record<string, string> = {
   pending_pickup: "Pendiente recoger",
   paid: "Pagada",
   cancelled: "Cancelada",
+  pending_subscription: "Suscripción pendiente",
+  installment_active: "En cuotas",
 };
 
 export const STATUS_CLASSES: Record<string, string> = {
@@ -29,6 +33,8 @@ export const STATUS_CLASSES: Record<string, string> = {
   pending_pickup: "bg-violet-100 text-violet-800",
   paid: "bg-emerald-100 text-emerald-800",
   cancelled: "bg-red-100 text-red-800",
+  pending_subscription: "bg-indigo-100 text-indigo-800",
+  installment_active: "bg-purple-100 text-purple-800",
 };
 
 export const STATUS_ICONS: Record<
@@ -43,4 +49,6 @@ export const STATUS_ICONS: Record<
   pending_pickup: Package,
   paid: CheckCircle,
   cancelled: XCircle,
+  pending_subscription: Repeat,
+  installment_active: CalendarCheck,
 };

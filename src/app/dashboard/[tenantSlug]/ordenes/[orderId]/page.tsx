@@ -3,7 +3,14 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ArrowLeft, Banknote, ExternalLink, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import {
+  ArrowLeft,
+  Banknote,
+  ExternalLink,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+} from "lucide-react";
 import { OrderProvider, useOrder } from "@/features/orders/hooks/useOrder";
 import { OrderHeader } from "@/features/orders/components/OrderHeader";
 import { CustomerCard } from "@/features/orders/components/CustomerCard";
@@ -17,10 +24,19 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import type { OrderLoanSummary } from "@/features/orders/interfaces/orderDetail";
 
 function formatMXN(n: number) {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n);
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+  }).format(n);
 }
 
-function OrderLoanCard({ loan, tenantSlug }: { loan: OrderLoanSummary; tenantSlug: string }) {
+function OrderLoanCard({
+  loan,
+  tenantSlug,
+}: {
+  loan: OrderLoanSummary;
+  tenantSlug: string;
+}) {
   const isPaid = loan.status === "paid";
   const isActive = loan.status === "pending" || loan.status === "partial";
 
@@ -28,8 +44,13 @@ function OrderLoanCard({ loan, tenantSlug }: { loan: OrderLoanSummary; tenantSlu
     <div className="rounded-xl border border-border bg-surface-raised overflow-hidden">
       <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
-          <Banknote className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="text-sm font-semibold text-foreground">Préstamo vinculado</span>
+          <Banknote
+            className="h-4 w-4 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
+          <span className="text-sm font-semibold text-foreground">
+            Préstamo vinculado
+          </span>
         </div>
         {isPaid ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
@@ -50,8 +71,11 @@ function OrderLoanCard({ loan, tenantSlug }: { loan: OrderLoanSummary; tenantSlu
           <p className="text-sm text-foreground truncate">{loan.concept}</p>
           {!isPaid && (
             <p className="text-xs text-muted-foreground mt-0.5">
-              Pendiente: <span className="font-medium text-orange-700">{formatMXN(loan.amount_pending)}</span>
-              {" "}de {formatMXN(loan.amount)}
+              Pendiente:{" "}
+              <span className="font-medium text-orange-700">
+                {formatMXN(loan.amount_pending)}
+              </span>{" "}
+              de {formatMXN(loan.amount)}
             </p>
           )}
         </div>
@@ -78,7 +102,8 @@ function OrderDetailContent() {
     ticketOptions,
     logoUrl,
   } = useOrder();
-  const loan = (order as { loan?: OrderLoanSummary | null } | null)?.loan ?? null;
+  const loan =
+    (order as { loan?: OrderLoanSummary | null } | null)?.loan ?? null;
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -137,7 +162,7 @@ function OrderDetailContent() {
           printContainer,
         )}
 
-      <div className="no-print flex min-h-0 min-w-0 h-full w-full max-w-5xl mx-auto flex-1 flex-col overflow-x-hidden overflow-y-auto pb-40 lg:pb-6 sm:max-w-5xl md:pb-0">
+      <div className="no-print flex min-h-0 min-w-0 h-full w-full max-w-5xl mx-auto flex-1 flex-col overflow-x-hidden overflow-y-auto pb-48 lg:pb-6 sm:max-w-5xl md:pb-0">
         <div className="shrink-0">
           <OrderHeader />
         </div>
@@ -146,7 +171,7 @@ function OrderDetailContent() {
             {error}
           </div>
         )}
-        <div className="mt-4 flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+        <div className="mt-0 lg:mt-4 flex min-h-0 min-w-0 flex-1 flex-col gap-2">
           <div className="order-1 min-h-0 min-w-0 flex-1 md:order-3">
             <OrderItemsTable />
           </div>

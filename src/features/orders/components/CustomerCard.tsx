@@ -1,25 +1,40 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { useOrder } from "@/features/orders/hooks/useOrder";
 import { User, Mail, Phone, X, Check, Pencil, ChevronDown } from "lucide-react";
+import { orderCustomerSchema } from "@/features/prestamos/validations/loanForm";
+import { CustomerFields, type CustomerFieldValues } from "@/features/prestamos/components/CustomerFields";
 
 export function CustomerCard() {
   const { order, actionLoading, handleSaveCustomer } = useOrder();
   const [editing, setEditing] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<CustomerFieldValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: yupResolver(orderCustomerSchema) as any,
+    mode: "onChange",
+    defaultValues: { name: "", email: "", phone: "" },
+  });
 
   useEffect(() => {
     if (order) {
-      setName(order.customer_name ?? "");
-      setEmail(order.customer_email ?? "");
-      setPhone(order.customer_phone ?? "");
+      reset({
+        name: order.customer_name ?? "",
+        email: order.customer_email ?? "",
+        phone: order.customer_phone ?? "",
+      });
     }
-  }, [order]);
+  }, [order, reset]);
 
   if (!order) return null;
 
@@ -27,16 +42,22 @@ export function CustomerCard() {
     order.status
   );
 
-  const onSave = async () => {
-    await handleSaveCustomer({ name, email, phone });
+  const onSave = handleSubmit(async (values) => {
+    await handleSaveCustomer({
+      name: values.name ?? "",
+      email: values.email ?? "",
+      phone: values.phone ?? "",
+    });
     setEditing(false);
-  };
+  });
 
   const onCancel = () => {
     setEditing(false);
-    setName(order.customer_name ?? "");
-    setEmail(order.customer_email ?? "");
-    setPhone(order.customer_phone ?? "");
+    reset({
+      name: order.customer_name ?? "",
+      email: order.customer_email ?? "",
+      phone: order.customer_phone ?? "",
+    });
   };
 
   const customerSummary = order.customer_name || order.customer_email || order.customer_phone || "—";
@@ -65,36 +86,14 @@ export function CustomerCard() {
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <label className="text-[10px] font-bold text-muted uppercase">Nombre</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-border px-3 py-1.5 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/20"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-muted uppercase">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-border px-3 py-1.5 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/20"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-muted uppercase">Teléfono</label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-border px-3 py-1.5 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/20"
-                />
-              </div>
-            </div>
+          <div className="space-y-3">
+            <CustomerFields
+              register={register}
+              errors={errors}
+              compact
+              idPrefix="order-customer"
+              disabled={actionLoading}
+            />
             <div className="flex gap-3">
               <button
                 type="button"

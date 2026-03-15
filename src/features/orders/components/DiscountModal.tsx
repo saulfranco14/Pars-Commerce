@@ -66,7 +66,7 @@ export function DiscountModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-h-[92vh] max-w-sm flex flex-col overflow-hidden rounded-t-2xl border-t border-border bg-surface-raised shadow-lg md:max-h-none md:rounded-xl md:border"
+        className="w-full max-h-[92vh] flex flex-col overflow-hidden rounded-t-2xl border-t border-border bg-surface-raised shadow-lg md:max-w-sm md:max-h-none md:rounded-xl md:border"
         onClick={(e) => e.stopPropagation()}
         style={{
           paddingBottom: "max(1rem, env(safe-area-inset-bottom))",

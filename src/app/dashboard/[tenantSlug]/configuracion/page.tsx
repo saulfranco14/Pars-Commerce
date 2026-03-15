@@ -20,10 +20,13 @@ import { ConfigNegocioSection } from "@/features/configuracion/components/Config
 import { ConfigTicketSection } from "@/features/configuracion/components/ConfigTicketSection";
 import { ConfigFinanzasSection } from "@/features/configuracion/components/ConfigFinanzasSection";
 import { ConfigDireccionSection } from "@/features/configuracion/components/ConfigDireccionSection";
+import { ConfigRecurrentesSection } from "@/features/configuracion/components/ConfigRecurrentesSection";
 import {
   CONFIG_TABS,
   type ConfigTab,
 } from "@/features/configuracion/constants/tabs";
+import { DEFAULT_RECURRING_CONFIG } from "@/types/subscriptions";
+import type { RecurringPurchasesConfig } from "@/types/subscriptions";
 
 export default function ConfiguracionPage() {
   const formId = useId();
@@ -58,6 +61,13 @@ export default function ConfiguracionPage() {
     useState(true);
   const [ticketShowPaymentMethod, setTicketShowPaymentMethod] = useState(true);
   const [ticketFooterMessage, setTicketFooterMessage] = useState("");
+  const [rcInstallmentsEnabled, setRcInstallmentsEnabled] = useState(false);
+  const [rcRecurringEnabled, setRcRecurringEnabled] = useState(false);
+  const [rcFeeAbsorbedBy, setRcFeeAbsorbedBy] = useState<"customer" | "business">("customer");
+  const [rcDiscountPercent, setRcDiscountPercent] = useState("0");
+  const [rcDeliveryOn, setRcDeliveryOn] = useState<"first_payment" | "full_payment">("first_payment");
+  const [rcAllowedFrequencies, setRcAllowedFrequencies] = useState<Array<"weekly" | "biweekly" | "monthly">>(["weekly", "biweekly", "monthly"]);
+  const [rcMaxInstallments, setRcMaxInstallments] = useState("6");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -119,6 +129,14 @@ export default function ConfiguracionPage() {
         ? String(sc.monthly_sales_objective)
         : "",
     );
+    const rc = (st?.recurring_purchases as RecurringPurchasesConfig | undefined) ?? DEFAULT_RECURRING_CONFIG;
+    setRcInstallmentsEnabled(rc.installments_enabled);
+    setRcRecurringEnabled(rc.recurring_enabled);
+    setRcFeeAbsorbedBy(rc.fee_absorbed_by);
+    setRcDiscountPercent(String(rc.subscription_discount_percent));
+    setRcDeliveryOn(rc.delivery_on);
+    setRcAllowedFrequencies(rc.allowed_frequencies);
+    setRcMaxInstallments(String(rc.max_installments));
   }, [activeTenant?.id]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -139,6 +157,15 @@ export default function ConfiguracionPage() {
           ...((activeTenant.settings as Record<string, unknown>) ?? {}),
           express_order_enabled: expressOrderEnabled,
           express_orders: expressOrderEnabled,
+          recurring_purchases: {
+            installments_enabled: rcInstallmentsEnabled,
+            recurring_enabled: rcRecurringEnabled,
+            fee_absorbed_by: rcFeeAbsorbedBy,
+            subscription_discount_percent: parseFloat(rcDiscountPercent) || 0,
+            delivery_on: rcDeliveryOn,
+            allowed_frequencies: rcAllowedFrequencies,
+            max_installments: parseInt(rcMaxInstallments, 10) || 6,
+          },
           ticket: {
             showLogo: ticketShowLogo,
             showBusinessAddress: ticketShowBusinessAddress,
@@ -282,6 +309,24 @@ export default function ConfiguracionPage() {
                 onMonthlyRentChange={setMonthlyRent}
                 monthlySalesObjective={monthlySalesObjective}
                 onMonthlySalesObjectiveChange={setMonthlySalesObjective}
+              />
+            )}
+            {activeTab === "recurrentes" && (
+              <ConfigRecurrentesSection
+                installmentsEnabled={rcInstallmentsEnabled}
+                onInstallmentsEnabledChange={setRcInstallmentsEnabled}
+                recurringEnabled={rcRecurringEnabled}
+                onRecurringEnabledChange={setRcRecurringEnabled}
+                feeAbsorbedBy={rcFeeAbsorbedBy}
+                onFeeAbsorbedByChange={setRcFeeAbsorbedBy}
+                subscriptionDiscountPercent={rcDiscountPercent}
+                onSubscriptionDiscountPercentChange={setRcDiscountPercent}
+                deliveryOn={rcDeliveryOn}
+                onDeliveryOnChange={setRcDeliveryOn}
+                allowedFrequencies={rcAllowedFrequencies}
+                onAllowedFrequenciesChange={setRcAllowedFrequencies}
+                maxInstallments={rcMaxInstallments}
+                onMaxInstallmentsChange={setRcMaxInstallments}
               />
             )}
             {activeTab === "direccion" && (
