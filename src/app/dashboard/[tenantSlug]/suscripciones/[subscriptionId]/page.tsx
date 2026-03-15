@@ -349,7 +349,7 @@ export default function SubscriptionDetailPage() {
 
       {/* Confirm action bottom sheet */}
       <BottomSheet
-        open={confirmAction !== null}
+        isOpen={confirmAction !== null}
         onClose={() => setConfirmAction(null)}
         title={confirmAction === "pause" ? "Pausar suscripción" : "Cancelar suscripción"}
       >
