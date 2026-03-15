@@ -344,11 +344,20 @@ export async function POST(request: Request) {
     console.log("[checkout-subscription] Creating MP PreApproval with body:", JSON.stringify(mpBody));
     mpSubscription = await preApproval.create({ body: mpBody });
   } catch (err: unknown) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    const errDetail = typeof err === "object" && err !== null && "cause" in err
-      ? JSON.stringify((err as { cause: unknown }).cause)
-      : undefined;
-    console.error("[checkout-subscription] Error en MP PreApproval:", errMsg, errDetail ?? "");
+    let errMsg = "Error desconocido";
+    if (err instanceof Error) {
+      errMsg = err.message;
+    } else if (typeof err === "object" && err !== null) {
+      const obj = err as Record<string, unknown>;
+      errMsg = obj.message
+        ? String(obj.message)
+        : obj.cause
+          ? JSON.stringify(obj.cause)
+          : JSON.stringify(obj);
+    } else {
+      errMsg = String(err);
+    }
+    console.error("[checkout-subscription] Error en MP PreApproval:", JSON.stringify(err));
     return NextResponse.json(
       { error: `Error al crear la suscripción en MercadoPago: ${errMsg}` },
       { status: 500 },
