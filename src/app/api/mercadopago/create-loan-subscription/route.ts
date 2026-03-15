@@ -156,10 +156,13 @@ export async function POST(request: Request) {
         status: "pending",
         external_reference: `loan_sub:${loan_id}`,
         auto_recurring: {
-          frequency: loan.payment_plan_frequency,
-          frequency_type: loan.payment_plan_frequency_type as
-            | "months"
-            | "weeks",
+          // MP only accepts "days" | "months", convert weeks → days
+          frequency: loan.payment_plan_frequency_type === "weeks"
+            ? loan.payment_plan_frequency * 7
+            : loan.payment_plan_frequency,
+          frequency_type: (loan.payment_plan_frequency_type === "weeks"
+            ? "days"
+            : "months") as "days" | "months",
           transaction_amount: chargeAmount,
           currency_id: "MXN",
           start_date: start_date,

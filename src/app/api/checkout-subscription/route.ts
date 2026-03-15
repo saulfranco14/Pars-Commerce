@@ -333,8 +333,9 @@ export async function POST(request: Request) {
       status: "pending" as const,
       external_reference: `store_sub:${subscription.id}`,
       auto_recurring: {
-        frequency,
-        frequency_type: frequency_type as "months" | "weeks",
+        // MP only accepts "days" | "months", convert weeks → days
+        frequency: frequency_type === "weeks" ? frequency * 7 : frequency,
+        frequency_type: frequency_type === "weeks" ? "days" as const : "months" as const,
         transaction_amount: fees.chargeAmount,
         currency_id: "MXN" as const,
         start_date: startDate.toISOString(),
