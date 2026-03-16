@@ -3,6 +3,8 @@ import {
   BarChart3,
   CreditCard,
   Shield,
+  Banknote,
+  Repeat,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -25,6 +27,16 @@ export const HIGHLIGHTS: {
     icon: CreditCard,
     text: "Pagos integrados con MercadoPago",
     accent: "bg-amber-500/10 text-amber-500 dark:text-amber-400",
+  },
+  {
+    icon: Banknote,
+    text: "Préstamos y créditos a clientes",
+    accent: "bg-teal-500/10 text-teal-500 dark:text-teal-400",
+  },
+  {
+    icon: Repeat,
+    text: "Suscripciones y cobros recurrentes",
+    accent: "bg-violet-500/10 text-violet-500 dark:text-violet-400",
   },
   {
     icon: Shield,

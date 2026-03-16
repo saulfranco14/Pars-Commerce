@@ -12,6 +12,7 @@ import { VentasPorPersona } from "@/components/ventas/VentasPorPersona";
 import { VentasPorOrden } from "@/components/ventas/VentasPorOrden";
 import { VentasPagosTab } from "@/components/ventas/VentasPagosTab";
 import { VentasCortesTab } from "@/components/ventas/VentasCortesTab";
+import { SalesOnboardingOverlay } from "@/components/onboarding/SalesOnboardingOverlay";
 
 const VentasResumen = dynamic(
   () =>
@@ -610,6 +611,8 @@ export default function VentasPage() {
           loading={actionLoading}
         />
       </div>
+
+      <SalesOnboardingOverlay />
     </div>
   );
 }

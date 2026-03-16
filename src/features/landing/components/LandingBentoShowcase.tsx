@@ -4,6 +4,11 @@ import {
   ClipboardList,
   ShoppingBag,
   CreditCard,
+  Banknote,
+  Repeat,
+  CalendarDays,
+  CircleDollarSign,
+  SplitSquareHorizontal,
 } from "lucide-react";
 
 function BentoCell({
@@ -156,6 +161,86 @@ function MiniCheckout() {
   );
 }
 
+function MiniLoanTimeline() {
+  const steps = [
+    { icon: Banknote, label: "Creas préstamo", color: "bg-emerald-500" },
+    { icon: CalendarDays, label: "Plazos automáticos", color: "bg-blue-500" },
+    { icon: CircleDollarSign, label: "Cobro vía MP", color: "bg-amber-500" },
+  ];
+  return (
+    <div className="space-y-2">
+      {steps.map((s, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2"
+        >
+          <div
+            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${s.color}/15`}
+          >
+            <s.icon className={`h-3.5 w-3.5 ${s.color.replace("bg-", "text-")}`} aria-hidden />
+          </div>
+          <span className="text-xs font-medium text-foreground">{s.label}</span>
+          {i < steps.length - 1 && (
+            <span className="ml-auto text-[10px] text-muted-foreground">→</span>
+          )}
+        </div>
+      ))}
+      <div className="flex justify-between rounded-lg border border-dashed border-accent/30 bg-accent/5 px-3 py-2">
+        <span className="text-[10px] text-muted-foreground">Total prestado</span>
+        <span className="text-xs font-bold text-foreground">$12,500.00</span>
+      </div>
+    </div>
+  );
+}
+
+function MiniSubscriptionCards() {
+  const items = [
+    {
+      icon: SplitSquareHorizontal,
+      label: "Cuotas",
+      detail: "3 de 6 pagos",
+      amount: "$150/mes",
+      color: "text-violet-500",
+      bg: "bg-violet-500/10",
+    },
+    {
+      icon: Repeat,
+      label: "Recurrente",
+      detail: "Sin fecha de fin",
+      amount: "$89/mes",
+      color: "text-pink-500",
+      bg: "bg-pink-500/10",
+    },
+  ];
+  return (
+    <div className="space-y-2">
+      {items.map((item) => (
+        <div
+          key={item.label}
+          className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5"
+        >
+          <div
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${item.bg}`}
+          >
+            <item.icon className={`h-4 w-4 ${item.color}`} aria-hidden />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-foreground">{item.label}</p>
+            <p className="text-[10px] text-muted-foreground">{item.detail}</p>
+          </div>
+          <span className="shrink-0 text-xs font-bold text-foreground">{item.amount}</span>
+        </div>
+      ))}
+      <div className="flex items-center gap-2 px-1">
+        <div className="h-1.5 flex-1 rounded-full bg-border">
+          <div className="h-full w-1/2 rounded-full bg-accent" aria-hidden />
+        </div>
+        <span className="text-[10px] text-muted-foreground">50% cobrado</span>
+      </div>
+    </div>
+  );
+}
+
 export function LandingBentoShowcase() {
   return (
     <section className="border-t border-border bg-surface/50 py-16 sm:py-24">
@@ -214,6 +299,23 @@ export function LandingBentoShowcase() {
             icon={CreditCard}
           >
             <MiniCheckout />
+          </BentoCell>
+
+          <BentoCell
+            className="lg:col-span-2"
+            title="Préstamos y créditos"
+            description="Ofrece financiamiento a tus clientes con cobros automáticos vía MercadoPago."
+            icon={Banknote}
+          >
+            <MiniLoanTimeline />
+          </BentoCell>
+
+          <BentoCell
+            title="Suscripciones y cuotas"
+            description="Cobra en cuotas o de forma recurrente, todo automatizado."
+            icon={Repeat}
+          >
+            <MiniSubscriptionCards />
           </BentoCell>
         </div>
       </div>

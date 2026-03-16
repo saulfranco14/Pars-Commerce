@@ -8,6 +8,7 @@ import { Plus, AlertTriangle, Clock, CheckCircle2, XCircle } from "lucide-react"
 import { FAB } from "@/components/ui/FAB";
 import { FilterTabs } from "@/components/ui/FilterTabs";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { LoansOnboardingOverlay } from "@/components/onboarding/LoansOnboardingOverlay";
 import {
   TableWrapper,
   tableHeaderRowClass,
@@ -339,6 +340,8 @@ export default function PrestamosPage() {
       <FAB href={`/dashboard/${tenantSlug}/prestamos/nuevo`} aria-label="Nuevo préstamo">
         <Plus className="h-6 w-6 shrink-0" />
       </FAB>
+
+      <LoansOnboardingOverlay />
     </div>
   );
 }
