@@ -1,7 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, X } from "lucide-react";
+import {
+  ArrowRight,
+  X,
+  UserPlus,
+  Package,
+  CalendarDays,
+  CreditCard,
+  BarChart3,
+  Banknote,
+  CheckCircle2,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { LOANS_ONBOARDING_KEY } from "@/features/onboarding/constants";
 import { MiniCard } from "@/features/onboarding/components/MiniCard";
 
@@ -392,13 +403,13 @@ function SeguimientoMockup() {
 }
 
 function ListoMockup() {
-  const steps = [
-    { emoji: "👤", name: "Selecciona cliente", color: "#10b981", bg: "#d1fae5" },
-    { emoji: "📦", name: "Agrega productos", color: "#3b82f6", bg: "#dbeafe" },
-    { emoji: "📅", name: "Elige plazos", color: "#f59e0b", bg: "#fef3c7" },
-    { emoji: "💳", name: "Cobra con MP", color: "#009ee3", bg: "#e0f2fe" },
-    { emoji: "📊", name: "Da seguimiento", color: "#a855f7", bg: "#ede9fe" },
-    { emoji: "💰", name: "Recibe pagos", color: "#ec4899", bg: "#fce7f3" },
+  const steps: { icon: LucideIcon; name: string; color: string; bg: string }[] = [
+    { icon: UserPlus, name: "Selecciona cliente", color: "#10b981", bg: "#d1fae5" },
+    { icon: Package, name: "Agrega productos", color: "#3b82f6", bg: "#dbeafe" },
+    { icon: CalendarDays, name: "Elige plazos", color: "#f59e0b", bg: "#fef3c7" },
+    { icon: CreditCard, name: "Cobra con MP", color: "#009ee3", bg: "#e0f2fe" },
+    { icon: BarChart3, name: "Da seguimiento", color: "#a855f7", bg: "#ede9fe" },
+    { icon: Banknote, name: "Recibe pagos", color: "#ec4899", bg: "#fce7f3" },
   ];
   return (
     <div className="relative mx-auto h-52 w-72">
@@ -412,27 +423,25 @@ function ListoMockup() {
       >
         <div className="p-3">
           <div className="grid grid-cols-3 gap-2">
-            {steps.map((s) => (
-              <div
-                key={s.name}
-                className="flex flex-col items-center gap-1 rounded-xl py-2"
-                style={{ background: s.bg }}
-              >
-                <span className="text-lg">{s.emoji}</span>
-                <span
-                  className="text-center text-[7px] font-medium leading-tight"
-                  style={{ color: "#292524" }}
-                >
-                  {s.name}
-                </span>
+            {steps.map((s) => {
+              const Icon = s.icon;
+              return (
                 <div
-                  className="flex h-3.5 w-3.5 items-center justify-center rounded-full"
-                  style={{ background: "#10b981" }}
+                  key={s.name}
+                  className="flex flex-col items-center gap-1 rounded-xl py-2"
+                  style={{ background: s.bg }}
                 >
-                  <span className="text-[7px] font-bold text-white">✓</span>
+                  <Icon className="h-5 w-5" style={{ color: s.color }} />
+                  <span
+                    className="text-center text-[7px] font-medium leading-tight"
+                    style={{ color: "#292524" }}
+                  >
+                    {s.name}
+                  </span>
+                  <CheckCircle2 className="h-3.5 w-3.5" style={{ color: "#10b981" }} />
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div
             className="mt-2.5 rounded-xl py-2 text-center"

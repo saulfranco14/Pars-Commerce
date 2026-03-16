@@ -1,7 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, X } from "lucide-react";
+import {
+  ArrowRight,
+  X,
+  Settings,
+  ShoppingCart,
+  CreditCard,
+  Repeat,
+  BarChart3,
+  Banknote,
+  CheckCircle2,
+  SplitSquareHorizontal,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { SUBSCRIPTIONS_ONBOARDING_KEY } from "@/features/onboarding/constants";
 import { MiniCard } from "@/features/onboarding/components/MiniCard";
 
@@ -109,7 +121,7 @@ function TiposMockup() {
             style={{ background: "#ede9fe", border: "2px solid #8b5cf6" }}
           >
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm">📦</span>
+              <SplitSquareHorizontal className="h-4 w-4" style={{ color: "#5b21b6" }} />
               <p className="text-[9px] font-bold" style={{ color: "#5b21b6" }}>
                 En cuotas
               </p>
@@ -136,7 +148,7 @@ function TiposMockup() {
             style={{ background: "#dbeafe", border: "1px solid #93c5fd" }}
           >
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm">🔄</span>
+              <Repeat className="h-4 w-4" style={{ color: "#1e40af" }} />
               <p className="text-[9px] font-bold" style={{ color: "#1e40af" }}>
                 Recurrente
               </p>
@@ -203,16 +215,16 @@ function ClienteVeMockup() {
             ¿Cómo quieres pagar?
           </p>
           <div className="grid grid-cols-3 gap-1">
-            <div className="rounded-lg p-1.5 text-center" style={{ background: "#f5f5f4", border: "1px solid #ede9e4" }}>
-              <span className="text-[10px]">💳</span>
+            <div className="flex flex-col items-center rounded-lg p-1.5" style={{ background: "#f5f5f4", border: "1px solid #ede9e4" }}>
+              <CreditCard className="h-3 w-3" style={{ color: "#78716c" }} />
               <p className="text-[6px] font-medium" style={{ color: "#78716c" }}>Pago único</p>
             </div>
-            <div className="rounded-lg p-1.5 text-center" style={{ background: "#ede9fe", border: "2px solid #8b5cf6" }}>
-              <span className="text-[10px]">📦</span>
+            <div className="flex flex-col items-center rounded-lg p-1.5" style={{ background: "#ede9fe", border: "2px solid #8b5cf6" }}>
+              <SplitSquareHorizontal className="h-3 w-3" style={{ color: "#5b21b6" }} />
               <p className="text-[6px] font-bold" style={{ color: "#5b21b6" }}>En cuotas</p>
             </div>
-            <div className="rounded-lg p-1.5 text-center" style={{ background: "#f5f5f4", border: "1px solid #ede9e4" }}>
-              <span className="text-[10px]">🔄</span>
+            <div className="flex flex-col items-center rounded-lg p-1.5" style={{ background: "#f5f5f4", border: "1px solid #ede9e4" }}>
+              <Repeat className="h-3 w-3" style={{ color: "#78716c" }} />
               <p className="text-[6px] font-medium" style={{ color: "#78716c" }}>Recurrente</p>
             </div>
           </div>
@@ -271,7 +283,9 @@ function CobroMPMockup() {
 
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 rounded-lg p-2" style={{ background: "#ecfdf5" }}>
-              <span className="text-[10px]">1️⃣</span>
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ background: "#059669" }}>
+                <span className="text-[8px] font-bold text-white">1</span>
+              </div>
               <div>
                 <p className="text-[7px] font-semibold" style={{ color: "#065f46" }}>
                   Cliente autoriza su tarjeta
@@ -282,7 +296,9 @@ function CobroMPMockup() {
               </div>
             </div>
             <div className="flex items-center gap-2 rounded-lg p-2" style={{ background: "#ede9fe" }}>
-              <span className="text-[10px]">2️⃣</span>
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ background: "#7c3aed" }}>
+                <span className="text-[8px] font-bold text-white">2</span>
+              </div>
               <div>
                 <p className="text-[7px] font-semibold" style={{ color: "#5b21b6" }}>
                   Se cobran las cuotas automáticamente
@@ -293,7 +309,9 @@ function CobroMPMockup() {
               </div>
             </div>
             <div className="flex items-center gap-2 rounded-lg p-2" style={{ background: "#dbeafe" }}>
-              <span className="text-[10px]">3️⃣</span>
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ background: "#2563eb" }}>
+                <span className="text-[8px] font-bold text-white">3</span>
+              </div>
               <div>
                 <p className="text-[7px] font-semibold" style={{ color: "#1e40af" }}>
                   Recibes el dinero en tu cuenta
@@ -382,13 +400,13 @@ function DashboardMockup() {
 }
 
 function ListoMockup() {
-  const steps = [
-    { emoji: "⚙️", name: "Configura opciones", color: "#8b5cf6", bg: "#ede9fe" },
-    { emoji: "🛒", name: "Cliente compra", color: "#ec4899", bg: "#fce7f3" },
-    { emoji: "💳", name: "Autoriza tarjeta", color: "#009ee3", bg: "#e0f2fe" },
-    { emoji: "🔄", name: "Cobro automático", color: "#10b981", bg: "#d1fae5" },
-    { emoji: "📊", name: "Monitorea todo", color: "#f59e0b", bg: "#fef3c7" },
-    { emoji: "💰", name: "Recibe pagos", color: "#3b82f6", bg: "#dbeafe" },
+  const steps: { icon: LucideIcon; name: string; color: string; bg: string }[] = [
+    { icon: Settings, name: "Configura opciones", color: "#8b5cf6", bg: "#ede9fe" },
+    { icon: ShoppingCart, name: "Cliente compra", color: "#ec4899", bg: "#fce7f3" },
+    { icon: CreditCard, name: "Autoriza tarjeta", color: "#009ee3", bg: "#e0f2fe" },
+    { icon: Repeat, name: "Cobro automático", color: "#10b981", bg: "#d1fae5" },
+    { icon: BarChart3, name: "Monitorea todo", color: "#f59e0b", bg: "#fef3c7" },
+    { icon: Banknote, name: "Recibe pagos", color: "#3b82f6", bg: "#dbeafe" },
   ];
   return (
     <div className="relative mx-auto h-52 w-72">
@@ -402,27 +420,25 @@ function ListoMockup() {
       >
         <div className="p-3">
           <div className="grid grid-cols-3 gap-2">
-            {steps.map((s) => (
-              <div
-                key={s.name}
-                className="flex flex-col items-center gap-1 rounded-xl py-2"
-                style={{ background: s.bg }}
-              >
-                <span className="text-lg">{s.emoji}</span>
-                <span
-                  className="text-center text-[7px] font-medium leading-tight"
-                  style={{ color: "#292524" }}
-                >
-                  {s.name}
-                </span>
+            {steps.map((s) => {
+              const Icon = s.icon;
+              return (
                 <div
-                  className="flex h-3.5 w-3.5 items-center justify-center rounded-full"
-                  style={{ background: "#10b981" }}
+                  key={s.name}
+                  className="flex flex-col items-center gap-1 rounded-xl py-2"
+                  style={{ background: s.bg }}
                 >
-                  <span className="text-[7px] font-bold text-white">✓</span>
+                  <Icon className="h-5 w-5" style={{ color: s.color }} />
+                  <span
+                    className="text-center text-[7px] font-medium leading-tight"
+                    style={{ color: "#292524" }}
+                  >
+                    {s.name}
+                  </span>
+                  <CheckCircle2 className="h-3.5 w-3.5" style={{ color: "#10b981" }} />
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div
             className="mt-2.5 rounded-xl py-2 text-center"
