@@ -155,6 +155,9 @@ export async function POST(request: Request) {
         notification_url: WEBHOOK_URL,
         external_reference: `loan:${loan_id}`,
         statement_descriptor: "PARS COMMERCE",
+        payment_methods: {
+          installments: 12,
+        },
       },
     });
   } catch (err) {

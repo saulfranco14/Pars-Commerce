@@ -179,6 +179,9 @@ export async function POST(request: Request) {
           customerEmail: order.customer_email,
           customerPhone: order.customer_phone,
         }),
+        payment_methods: {
+          installments: 12,
+        },
       },
     });
 

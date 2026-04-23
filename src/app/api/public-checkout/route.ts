@@ -206,6 +206,9 @@ export async function POST(request: Request) {
         auto_return: "approved",
         notification_url: `${origin}/api/mercadopago/webhook`,
         payer: { email: customer_email.trim() },
+        payment_methods: {
+          installments: 12,
+        },
       },
     });
   } catch (err) {
