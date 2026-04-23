@@ -164,6 +164,9 @@ export async function POST(request: Request) {
         // El external_reference identifica este como pago bulk
         external_reference: `bulk_loan:${loanIds.join(",")}`,
         statement_descriptor: "PARS COMMERCE",
+        payment_methods: {
+          installments: 12,
+        },
       },
     });
   } catch (err) {
