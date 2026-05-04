@@ -1,4 +1,8 @@
-import { calcBuyerTotal, calcSubscriptionFees, TARIFA_DE_SERVICIO_LABEL } from "@/constants/commissionConfig";
+import {
+  calcBuyerTotal,
+  calcSubscriptionFees,
+  TARIFA_DE_SERVICIO_LABEL,
+} from "@/constants/commissionConfig";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 import { preferenceClient } from "@/lib/mercadopago";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -6,11 +10,19 @@ import { DEFAULT_RECURRING_CONFIG } from "@/types/subscriptions";
 import { MercadoPagoConfig, PreApproval } from "mercadopago";
 import { NextResponse } from "next/server";
 
-import type { CheckoutMode, PublicCheckoutPayload, PublicCheckoutResponse } from "@/features/checkout/interfaces/publicCheckout";
-import type { RecurringPurchasesConfig, SubscriptionItemSnapshot } from "@/types/subscriptions";
+import type {
+  CheckoutMode,
+  PublicCheckoutPayload,
+  PublicCheckoutResponse,
+} from "@/features/checkout/interfaces/publicCheckout";
+import type {
+  RecurringPurchasesConfig,
+  SubscriptionItemSnapshot,
+} from "@/types/subscriptions";
 
 const FINGERPRINT_HEADER = "x-fingerprint-id";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://commerce.pars.com.mx";
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL ?? "https://commerce.pars.com.mx";
 
 interface ExecuteCheckoutParams {
   request: Request;
@@ -42,7 +54,13 @@ function getFingerprint(request: Request): string | null {
 function parseBody(raw: unknown): PublicCheckoutPayload | null {
   if (!raw || typeof raw !== "object") return null;
   const body = raw as Partial<PublicCheckoutPayload>;
-  if (!body.tenant_id || !body.cart_id || !body.customer_name || !body.customer_email) return null;
+  if (
+    !body.tenant_id ||
+    !body.cart_id ||
+    !body.customer_name ||
+    !body.customer_email
+  )
+    return null;
   return {
     tenant_id: body.tenant_id,
     cart_id: body.cart_id,
@@ -66,13 +84,21 @@ function getOrigin(request: Request): string {
   return isLocalhost ? APP_URL : rawOrigin;
 }
 
-function toMode(mode: string | undefined, modeOverride?: CheckoutMode): CheckoutMode {
+function toMode(
+  mode: string | undefined,
+  modeOverride?: CheckoutMode,
+): CheckoutMode {
   if (modeOverride) return modeOverride;
-  if (mode === "subscription" || mode === "partial" || mode === "single") return mode;
+  if (mode === "subscription" || mode === "partial" || mode === "single")
+    return mode;
   return "single";
 }
 
-function frequencyToDate(baseDate: Date, step: number, type: "weeks" | "months"): Date {
+function frequencyToDate(
+  baseDate: Date,
+  step: number,
+  type: "weeks" | "months",
+): Date {
   const next = new Date(baseDate);
   if (type === "weeks") {
     next.setDate(next.getDate() + step * 7);
@@ -113,7 +139,11 @@ async function ensureCustomer(
   return created?.id ?? null;
 }
 
-function mapCartItemProduct(item: CartItemRow): { id: string; name: string; image_url: string | null } {
+function mapCartItemProduct(item: CartItemRow): {
+  id: string;
+  name: string;
+  image_url: string | null;
+} {
   const product = Array.isArray(item.product) ? item.product[0] : item.product;
   return {
     id: product?.id ?? item.product_id,
@@ -189,7 +219,9 @@ async function createOrderItems(
 export async function executePublicCheckout({
   request,
   modeOverride,
-}: ExecuteCheckoutParams): Promise<NextResponse<PublicCheckoutResponse | { error: string }>> {
+}: ExecuteCheckoutParams): Promise<
+  NextResponse<PublicCheckoutResponse | { error: string }>
+> {
   const fingerprint = getFingerprint(request);
   if (!fingerprint) {
     return NextResponse.json(
@@ -208,7 +240,10 @@ export async function executePublicCheckout({
   const payload = parseBody(rawBody);
   if (!payload) {
     return NextResponse.json(
-      { error: "tenant_id, cart_id, customer_name and customer_email are required" },
+      {
+        error:
+          "tenant_id, cart_id, customer_name and customer_email are required",
+      },
       { status: 400 },
     );
   }
@@ -230,10 +265,12 @@ export async function executePublicCheckout({
     );
   }
 
-  const tenantSettings = (tenant.settings as Record<string, unknown> | null) ?? {};
+  const tenantSettings =
+    (tenant.settings as Record<string, unknown> | null) ?? {};
   const recurringConfig: RecurringPurchasesConfig = {
     ...DEFAULT_RECURRING_CONFIG,
-    ...((tenantSettings.recurring_purchases as Partial<RecurringPurchasesConfig>) ?? {}),
+    ...((tenantSettings.recurring_purchases as Partial<RecurringPurchasesConfig>) ??
+      {}),
   };
 
   const { data: cart } = await admin
@@ -250,7 +287,9 @@ export async function executePublicCheckout({
 
   const { data: cartItems } = await admin
     .from("public_cart_items")
-    .select("product_id, quantity, price_snapshot, promotion_id, product:products(id, name, image_url)")
+    .select(
+      "product_id, quantity, price_snapshot, promotion_id, product:products(id, name, image_url)",
+    )
     .eq("cart_id", payload.cart_id);
 
   if (!cartItems || cartItems.length === 0) {
@@ -272,9 +311,7 @@ export async function executePublicCheckout({
   );
 
   const orderStatus =
-    mode === "subscription"
-      ? "pending_subscription"
-      : "pending_payment";
+    mode === "subscription" ? "pending_subscription" : "pending_payment";
   const paymentPlanStatus =
     mode === "subscription"
       ? "pending"
@@ -282,8 +319,10 @@ export async function executePublicCheckout({
         ? "active"
         : "none";
 
-  const installments = payload.installments && payload.installments > 1 ? payload.installments : 0;
-  const frequency = payload.frequency && payload.frequency > 0 ? payload.frequency : 1;
+  const installments =
+    payload.installments && payload.installments > 1 ? payload.installments : 0;
+  const frequency =
+    payload.frequency && payload.frequency > 0 ? payload.frequency : 1;
   const frequencyType = payload.frequency_type ?? "months";
 
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
@@ -497,7 +536,9 @@ export async function executePublicCheckout({
         const dueDate = frequencyToDate(now, idx * frequency, frequencyType);
         const amountDue =
           installmentNumber === partialInstallments
-            ? Math.round((subtotal - installmentBase * (partialInstallments - 1)) * 100) / 100
+            ? Math.round(
+                (subtotal - installmentBase * (partialInstallments - 1)) * 100,
+              ) / 100
             : installmentBase;
         return {
           order_id: order.id,
@@ -522,7 +563,9 @@ export async function executePublicCheckout({
 
     if (scheduleError || !createdSchedules || createdSchedules.length === 0) {
       return NextResponse.json(
-        { error: scheduleError?.message ?? "No se pudo crear el plan de abonos" },
+        {
+          error: scheduleError?.message ?? "No se pudo crear el plan de abonos",
+        },
         { status: 500 },
       );
     }
@@ -660,22 +703,26 @@ export async function executePublicCheckout({
     discountedAmount,
     recurringConfig.fee_absorbed_by,
   );
-  const serviceFee = Math.round((feeCalc.chargeAmount - discountedAmount) * 100) / 100;
+  const serviceFee =
+    Math.round((feeCalc.chargeAmount - discountedAmount) * 100) / 100;
 
-  const itemsSnapshot: SubscriptionItemSnapshot[] = normalizedItems.map((item) => {
-    const product = mapCartItemProduct(item);
-    return {
-      product_id: item.product_id,
-      name: product.name,
-      quantity: item.quantity,
-      unit_price: Number(item.price_snapshot),
-      image_url: product.image_url,
-      promotion_id: item.promotion_id ?? null,
-    };
-  });
+  const itemsSnapshot: SubscriptionItemSnapshot[] = normalizedItems.map(
+    (item) => {
+      const product = mapCartItemProduct(item);
+      return {
+        product_id: item.product_id,
+        name: product.name,
+        quantity: item.quantity,
+        unit_price: Number(item.price_snapshot),
+        image_url: product.image_url,
+        promotion_id: item.promotion_id ?? null,
+      };
+    },
+  );
 
   const concept = itemsSnapshot.map((item) => item.name).join(", ");
-  const shortConcept = concept.length > 100 ? `${concept.slice(0, 97)}...` : concept;
+  const shortConcept =
+    concept.length > 100 ? `${concept.slice(0, 97)}...` : concept;
 
   const { data: subscription, error: subError } = await admin
     .from("subscriptions")
@@ -758,15 +805,13 @@ export async function executePublicCheckout({
   try {
     mpSubscription = await preApproval.create({
       body: {
-        reason: shortConcept || "Suscripción mensual",
-        payer_email: payload.customer_email.trim(),
+        reason: shortConcept,
         back_url: backUrl,
         status: "pending",
         external_reference: externalReference,
         auto_recurring: {
           frequency: frequencyType === "weeks" ? frequency * 7 : frequency,
-          frequency_type:
-            frequencyType === "weeks" ? "days" : "months",
+          frequency_type: frequencyType === "weeks" ? "days" : "months",
           transaction_amount: feeCalc.chargeAmount,
           currency_id: "MXN",
           start_date: startDate.toISOString(),
@@ -816,4 +861,3 @@ export async function executePublicCheckout({
     next_action: "open_payment_link",
   });
 }
-
