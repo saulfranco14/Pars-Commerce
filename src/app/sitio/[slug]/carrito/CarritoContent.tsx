@@ -543,7 +543,7 @@ export default function CarritoContent({
                 if (fieldErrors.customer_name)
                   setFieldErrors((prev) => ({ ...prev, customer_name: "" }));
               }}
-              className={`mt-1 w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base transition-colors focus:outline-none focus:ring-2 ${
+              className={`mt-1 w-full min-h-[44px] rounded-xl border bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:ring-2 ${
                 fieldErrors.customer_name
                   ? "border-red-500 focus:ring-red-500/20"
                   : "border-gray-300 focus:border-gray-400 focus:ring-gray-400/20"
@@ -573,7 +573,7 @@ export default function CarritoContent({
                 if (fieldErrors.customer_email)
                   setFieldErrors((prev) => ({ ...prev, customer_email: "" }));
               }}
-              className={`mt-1 w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base transition-colors focus:outline-none focus:ring-2 ${
+              className={`mt-1 w-full min-h-[44px] rounded-xl border bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:ring-2 ${
                 fieldErrors.customer_email
                   ? "border-red-500 focus:ring-red-500/20"
                   : "border-gray-300 focus:border-gray-400 focus:ring-gray-400/20"
@@ -607,7 +607,7 @@ export default function CarritoContent({
                 if (fieldErrors.customer_phone)
                   setFieldErrors((prev) => ({ ...prev, customer_phone: "" }));
               }}
-              className={`mt-1 w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base transition-colors focus:outline-none focus:ring-2 ${
+              className={`mt-1 w-full min-h-[44px] rounded-xl border bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:ring-2 ${
                 fieldErrors.customer_phone
                   ? "border-red-500 focus:ring-red-500/20"
                   : "border-gray-300 focus:border-gray-400 focus:ring-gray-400/20"

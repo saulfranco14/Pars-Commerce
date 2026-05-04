@@ -806,6 +806,7 @@ export async function executePublicCheckout({
     mpSubscription = await preApproval.create({
       body: {
         reason: shortConcept,
+        payer_email: payload.customer_email.trim(),
         back_url: backUrl,
         status: "pending",
         external_reference: externalReference,
