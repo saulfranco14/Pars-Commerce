@@ -17,9 +17,9 @@ export const checkoutFormSchema = yup.object({
     .string()
     .trim()
     .required("El teléfono es obligatorio")
-    .min(8, "Mínimo 8 dígitos")
-    .max(20, "Máximo 20 caracteres")
-    .matches(/^[\d\s\-\+\(\)]+$/, "Solo números, espacios y símbolos + - ( )"),
+    .matches(/^\d+$/, "Solo dígitos, sin espacios ni símbolos")
+    .min(10, "Mínimo 10 dígitos")
+    .max(12, "Máximo 12 dígitos"),
 });
 
 export type CheckoutFormValues = yup.InferType<typeof checkoutFormSchema>;

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Store } from "lucide-react";
 import SiteHeader from "../SiteHeader";
 import { CartProvider } from "../CartProvider";
+import { HideOnCheckout } from "../HideOnCheckout";
 import type { SiteLayoutProps } from "./layoutTypes";
 
 export function VibrantLayout({
@@ -34,6 +35,7 @@ export function VibrantLayout({
           {children}
         </main>
       </CartProvider>
+      <HideOnCheckout>
       <footer
         className="mt-auto py-10"
         style={{
@@ -77,6 +79,7 @@ export function VibrantLayout({
           </div>
         </div>
       </footer>
+      </HideOnCheckout>
     </div>
   );
 }

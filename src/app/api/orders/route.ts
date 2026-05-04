@@ -27,12 +27,13 @@ export async function GET(request: Request) {
       .select(
         `
         id, status, cancelled_from, source, customer_id, customer_name, customer_email, customer_phone,
-        subtotal, discount, total, created_at, updated_at,
+        subtotal, discount, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, updated_at,
         created_by, assigned_to, completed_by, completed_at, paid_at,
         payment_method, payment_link, mp_preference_id,
         assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email),
         items:order_items(id, quantity, unit_price, subtotal, is_wholesale, wholesale_savings, product:products(id, name, type, image_url)),
         payments(provider, status, amount, metadata),
+        payment_schedules:order_payment_schedules(id, installment_number, due_date, amount_due, amount_paid, status, paid_at),
         loan:loans!loans_order_id_fkey(id, status, amount, amount_pending, concept)
       `
       )
@@ -66,7 +67,7 @@ export async function GET(request: Request) {
     .from("orders")
     .select(
       `
-      id, status, cancelled_from, source, customer_name, customer_email, total, created_at, paid_at, assigned_to, payment_method,
+      id, status, cancelled_from, source, customer_name, customer_email, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, paid_at, assigned_to, payment_method,
       assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email)
       `
     )
@@ -143,8 +144,11 @@ const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   assigned: ["in_progress", "cancelled"],
   in_progress: ["completed", "cancelled"],
   completed: ["pending_payment", "paid"],
-  pending_payment: ["paid"],
+  pending_payment: ["partial", "paid", "cancelled"],
   pending_pickup: ["paid", "cancelled"],
+  pending_subscription: ["installment_active", "cancelled"],
+  installment_active: ["partial", "paid", "cancelled"],
+  partial: ["paid", "cancelled"],
   paid: ["cancelled"],
   cancelled: [],
 };
@@ -192,7 +196,7 @@ export async function PATCH(request: Request) {
 
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("id, status, tenant_id, subtotal")
+      .select("id, status, tenant_id, subtotal, total, paid_total")
     .eq("id", order_id)
     .single();
 
@@ -293,6 +297,13 @@ export async function PATCH(request: Request) {
     }
     if (status === "paid") {
       updates.paid_at = new Date().toISOString();
+      updates.paid_total = Number(order.total ?? 0);
+      updates.balance_due = 0;
+    }
+    if (status === "partial") {
+      const paidTotal = Number(order.paid_total ?? 0);
+      updates.paid_total = paidTotal;
+      updates.balance_due = Math.max(0, Number(order.total ?? 0) - paidTotal);
     }
     if (status === "completed") {
       updates.completed_at = new Date().toISOString();

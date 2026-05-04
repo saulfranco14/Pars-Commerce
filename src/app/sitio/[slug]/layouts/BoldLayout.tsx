@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Store } from "lucide-react";
 import SiteHeader from "../SiteHeader";
 import { CartProvider } from "../CartProvider";
+import { HideOnCheckout } from "../HideOnCheckout";
 import type { SiteLayoutProps } from "./layoutTypes";
 
 export function BoldLayout({
@@ -32,6 +33,7 @@ export function BoldLayout({
           {children}
         </main>
       </CartProvider>
+      <HideOnCheckout>
       <footer className="mt-auto border-t-4 bg-gray-900 py-10" style={{ borderColor: accentColor }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex flex-wrap items-start justify-between gap-8">
@@ -64,6 +66,7 @@ export function BoldLayout({
           </div>
         </div>
       </footer>
+      </HideOnCheckout>
     </div>
   );
 }

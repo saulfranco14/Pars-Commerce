@@ -19,6 +19,7 @@ import { OrderItemsTable } from "@/features/orders/components/OrderItemsTable";
 import { OrderActionButtons } from "@/features/orders/components/OrderActionButtons";
 import { ReceiptActions } from "@/features/orders/components/ReceiptActions";
 import { PaymentLinkCard } from "@/features/orders/components/PaymentLinkCard";
+import { OrderPaymentPlanCard } from "@/features/orders/components/OrderPaymentPlanCard";
 import { ReceiptPreview } from "@/features/orders/components/ReceiptPreview";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import type { OrderLoanSummary } from "@/features/orders/interfaces/orderDetail";
@@ -189,8 +190,11 @@ function OrderDetailContent() {
           <div className="order-5 min-w-0 shrink-0 md:order-5">
             <PaymentLinkCard />
           </div>
+          <div className="order-6 min-w-0 shrink-0 md:order-6">
+            <OrderPaymentPlanCard />
+          </div>
           {showTicket && (
-            <div className="order-6 min-w-0 shrink-0 md:order-6">
+            <div className="order-7 min-w-0 shrink-0 md:order-7">
               <ReceiptActions />
             </div>
           )}
