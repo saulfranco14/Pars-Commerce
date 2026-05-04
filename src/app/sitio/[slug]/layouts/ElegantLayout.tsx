@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Store } from "lucide-react";
 import SiteHeader from "../SiteHeader";
 import { CartProvider } from "../CartProvider";
+import { HideOnCheckout } from "../HideOnCheckout";
 import type { SiteLayoutProps } from "./layoutTypes";
 
 export function ElegantLayout({
@@ -32,6 +33,7 @@ export function ElegantLayout({
           {children}
         </main>
       </CartProvider>
+      <HideOnCheckout>
       <footer className="mt-auto border-t border-stone-200 bg-white py-12">
         <div className="mx-auto max-w-5xl px-6 sm:px-8">
           <div className="flex flex-col gap-10 sm:flex-row sm:justify-between">
@@ -67,6 +69,7 @@ export function ElegantLayout({
           </div>
         </div>
       </footer>
+      </HideOnCheckout>
     </div>
   );
 }

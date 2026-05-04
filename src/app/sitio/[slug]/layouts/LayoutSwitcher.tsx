@@ -1,3 +1,4 @@
+import type { ComponentType } from "react";
 import { ClassicLayout } from "./ClassicLayout";
 import { MinimalLayout } from "./MinimalLayout";
 import { BentoLayout } from "./BentoLayout";
@@ -13,7 +14,7 @@ interface LayoutSwitcherProps extends SiteLayoutProps {
   layoutVariant: string;
 }
 
-const LAYOUT_MAP: Record<string, React.ComponentType<SiteLayoutProps>> = {
+const LAYOUT_MAP: Record<string, ComponentType<SiteLayoutProps>> = {
   classic: ClassicLayout,
   minimal: MinimalLayout,
   bento: BentoLayout,
@@ -33,16 +34,11 @@ export function LayoutSwitcher({
   accentColor,
   children,
 }: LayoutSwitcherProps) {
-  const LayoutComponent =
-    LAYOUT_MAP[layoutVariant] ?? ClassicLayout;
+  const LayoutComponent = LAYOUT_MAP[layoutVariant] ?? ClassicLayout;
 
   return (
     <div className="min-w-0 overflow-x-hidden">
-      <LayoutComponent
-        tenant={tenant}
-        navPages={navPages}
-        accentColor={accentColor}
-      >
+      <LayoutComponent tenant={tenant} navPages={navPages} accentColor={accentColor}>
         {children}
       </LayoutComponent>
     </div>

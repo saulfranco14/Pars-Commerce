@@ -7,7 +7,7 @@ import { PaymentSuccessFullScreen } from "./PaymentSuccessFullScreen";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ order_id?: string; status?: string; subscription_id?: string }>;
+  searchParams: Promise<{ order_id?: string; status?: string; subscription_id?: string; mode?: string }>;
 }
 
 function formatAddress(addr: {
@@ -74,7 +74,7 @@ export default async function ConfirmacionPage({
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, status, total, customer_name, created_at")
+    .select("id, status, total, paid_total, balance_due, payment_mode, payment_link, payment_plan_status, customer_name, created_at")
     .eq("id", order_id)
     .eq("tenant_id", tenant.id)
     .single();
@@ -90,7 +90,22 @@ export default async function ConfirmacionPage({
     .single();
 
   const formattedAddress = formatAddress(address ?? {});
-  const paymentStatus = status ?? "success";
+  const { data: lastAttempt } = await supabase
+    .from("order_payment_attempts")
+    .select("status")
+    .eq("order_id", order.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const paymentStatus =
+    order.status === "paid" || order.status === "completed"
+      ? "success"
+      : lastAttempt?.status === "failed" || lastAttempt?.status === "cancelled" || lastAttempt?.status === "expired"
+        ? "failure"
+        : status === "failure"
+          ? "failure"
+          : "pending";
 
   // ── Subscription confirmation ───────────────────────────────────
   if (subscription_id) {
@@ -106,7 +121,7 @@ export default async function ConfirmacionPage({
 
     return (
       <>
-        <ClearCartOnConfirm />
+        {paymentStatus === "success" && <ClearCartOnConfirm />}
         <div className="space-y-6">
           <div className="rounded-2xl bg-white p-8 shadow-sm">
             <div className="flex items-center justify-center">
@@ -123,13 +138,19 @@ export default async function ConfirmacionPage({
             </div>
 
             <h1 className="mt-6 text-center text-2xl font-bold text-gray-900">
-              {isInstallments ? "¡Plan de pagos activado!" : "¡Compra recurrente activada!"}
+              {paymentStatus === "success"
+                ? isInstallments
+                  ? "¡Plan de pagos activado!"
+                  : "¡Compra recurrente activada!"
+                : paymentStatus === "pending"
+                  ? "Tu autorización está en proceso"
+                  : "No se pudo activar tu suscripción"}
             </h1>
             <p className="mt-2 text-center font-mono text-sm font-semibold text-gray-500">
               Orden: {order.id.slice(0, 8).toUpperCase()}
             </p>
 
-            {sub && (
+            {sub && paymentStatus !== "failure" && (
               <div className="mx-auto mt-6 max-w-xs space-y-3">
                 <div
                   className="rounded-xl border-2 p-4"
@@ -180,6 +201,15 @@ export default async function ConfirmacionPage({
             )}
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
+              {paymentStatus !== "success" && order.payment_link && (
+                <a
+                  href={order.payment_link}
+                  className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  Reintentar pago
+                </a>
+              )}
               <Link
                 href={`/sitio/${slug}/productos`}
                 className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
@@ -188,12 +218,12 @@ export default async function ConfirmacionPage({
                 Seguir comprando
               </Link>
               <Link
-                href={`/sitio/${slug}/inicio`}
+                href={paymentStatus === "failure" ? `/sitio/${slug}/carrito` : `/sitio/${slug}/inicio`}
                 className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-6 py-4 font-semibold transition-opacity hover:opacity-90"
                 style={{ borderColor: accentColor, color: accentColor }}
               >
                 <ArrowLeft className="h-4 w-4" />
-                Volver al inicio
+                {paymentStatus === "failure" ? "Cambiar modalidad en carrito" : "Volver al inicio"}
               </Link>
             </div>
           </div>
@@ -223,7 +253,6 @@ export default async function ConfirmacionPage({
   if (paymentStatus === "pending") {
     return (
       <div className="space-y-6">
-        <ClearCartOnConfirm />
         <div className="rounded-2xl bg-white p-8 shadow-sm">
           <div className="flex items-center justify-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
@@ -240,13 +269,27 @@ export default async function ConfirmacionPage({
             Hola {order.customer_name}, tu pago está siendo procesado. Te
             contactaremos cuando sea confirmado.
           </p>
+          {order.payment_link && (
+            <p className="mt-3 text-center text-sm text-gray-500">
+              Si saliste de Mercado Pago sin completar, puedes reintentar desde el carrito o con el botón siguiente.
+            </p>
+          )}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
+            {order.payment_link && (
+              <a
+                href={order.payment_link}
+                className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: accentColor }}
+              >
+                Reintentar en Mercado Pago
+              </a>
+            )}
             <Link
-              href={`/sitio/${slug}/productos`}
+              href={`/sitio/${slug}/carrito`}
               className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: accentColor }}
             >
-              Seguir comprando
+              Volver al carrito
             </Link>
             <Link
               href={`/sitio/${slug}/inicio`}
@@ -279,6 +322,15 @@ export default async function ConfirmacionPage({
           Puedes intentarlo de nuevo.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
+          {order.payment_link && (
+            <a
+              href={order.payment_link}
+              className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: accentColor }}
+            >
+              Reintentar en Mercado Pago
+            </a>
+          )}
           <Link
             href={`/sitio/${slug}/carrito`}
             className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"

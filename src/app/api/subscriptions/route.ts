@@ -42,6 +42,17 @@ export async function GET(request: Request) {
       );
     }
 
+    const { data: membership } = await supabase
+      .from("tenant_memberships")
+      .select("id")
+      .eq("tenant_id", subscription.tenant_id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (!membership) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     return NextResponse.json(subscription);
   }
 
