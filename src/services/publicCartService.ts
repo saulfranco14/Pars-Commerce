@@ -1,23 +1,19 @@
-export interface PublicCartItem {
-  id: string;
-  product_id: string;
-  quantity: number;
-  price_snapshot: number;
-  promotion_id?: string | null;
-  product?: {
-    id: string;
-    name: string;
-    slug: string | null;
-    image_url: string | null;
-  };
-}
+import type {
+  PublicCartResponse,
+  CheckoutPickupPayload,
+  CheckoutPickupResponse,
+  CheckoutSubscriptionPayload,
+  CheckoutSubscriptionResponse,
+} from "@/types/cart";
 
-export interface PublicCartResponse {
-  cart: { id: string; tenant_id: string } | null;
-  items: PublicCartItem[];
-  subtotal: number;
-  items_count: number;
-}
+export type {
+  PublicCartItem,
+  PublicCartResponse,
+  CheckoutPickupPayload,
+  CheckoutPickupResponse,
+  CheckoutSubscriptionPayload,
+  CheckoutSubscriptionResponse,
+} from "@/types/cart";
 
 function getHeaders(fingerprintId: string): HeadersInit {
   return {
@@ -140,75 +136,68 @@ export async function removeItem(
   }
 }
 
-export interface CheckoutPickupPayload {
-  tenant_id: string;
-  cart_id: string;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string;
-}
-
-export interface CheckoutPickupResponse {
-  success: boolean;
-  order_id: string;
-  redirect_url: string;
-}
-
 export async function checkoutPickup(
   payload: CheckoutPickupPayload,
   fingerprintId: string
 ): Promise<CheckoutPickupResponse> {
-  const res = await fetch("/api/checkout-pickup", {
+  const res = await fetch("/api/public-checkout", {
     method: "POST",
     headers: getHeaders(fingerprintId),
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, mode: "single" }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(
       typeof (data as { error?: string }).error === "string"
         ? (data as { error: string }).error
-        : res.statusText
+        : res.statusText,
     );
   }
-  return data as CheckoutPickupResponse;
-}
-
-export interface CheckoutSubscriptionPayload {
-  tenant_id: string;
-  cart_id: string;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string;
-  payment_mode: "installments" | "recurring";
-  installments?: number;
-  frequency: number;
-  frequency_type: "weeks" | "months";
-}
-
-export interface CheckoutSubscriptionResponse {
-  subscription_id: string;
-  order_id: string;
-  init_point: string;
-  redirect_url: string;
+  return {
+    success: true,
+    order_id: (data as { order_id: string }).order_id,
+    redirect_url:
+      (data as { redirect_url?: string; payment_link?: string }).redirect_url ??
+      (data as { payment_link: string }).payment_link,
+  };
 }
 
 export async function checkoutSubscription(
   payload: CheckoutSubscriptionPayload,
   fingerprintId: string
 ): Promise<CheckoutSubscriptionResponse> {
-  const res = await fetch("/api/checkout-subscription", {
+  const mode = payload.payment_mode === "recurring" ? "subscription" : "partial";
+  const res = await fetch("/api/public-checkout", {
     method: "POST",
     headers: getHeaders(fingerprintId),
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      tenant_id: payload.tenant_id,
+      cart_id: payload.cart_id,
+      customer_name: payload.customer_name,
+      customer_email: payload.customer_email,
+      customer_phone: payload.customer_phone,
+      mode,
+      installments: payload.installments,
+      frequency: payload.frequency,
+      frequency_type: payload.frequency_type,
+    }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(
       typeof (data as { error?: string }).error === "string"
         ? (data as { error: string }).error
-        : res.statusText
+        : res.statusText,
     );
   }
-  return data as CheckoutSubscriptionResponse;
+  return {
+    subscription_id: (data as { subscription_id?: string }).subscription_id ?? "",
+    order_id: (data as { order_id: string }).order_id,
+    init_point:
+      (data as { payment_link?: string; redirect_url?: string }).payment_link ??
+      (data as { redirect_url: string }).redirect_url,
+    redirect_url:
+      (data as { redirect_url?: string; payment_link?: string }).redirect_url ??
+      (data as { payment_link: string }).payment_link,
+  };
 }

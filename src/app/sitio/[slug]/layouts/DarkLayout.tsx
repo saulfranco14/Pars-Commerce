@@ -3,6 +3,7 @@ import { Store } from "lucide-react";
 import { WhatsAppIcon } from "@/features/sitio/components/icons/WhatsAppIcon";
 import SiteHeader from "../SiteHeader";
 import { CartProvider } from "../CartProvider";
+import { HideOnCheckout } from "../HideOnCheckout";
 import type { SiteLayoutProps } from "./layoutTypes";
 
 export function DarkLayout({
@@ -34,6 +35,7 @@ export function DarkLayout({
           {children}
         </main>
       </CartProvider>
+      <HideOnCheckout>
       <footer className="mt-auto border-t border-gray-800 bg-gray-900 py-10">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="grid gap-8 sm:grid-cols-3">
@@ -90,6 +92,7 @@ export function DarkLayout({
           </div>
         </div>
       </footer>
+      </HideOnCheckout>
     </div>
   );
 }

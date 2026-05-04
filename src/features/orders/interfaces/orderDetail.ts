@@ -25,6 +25,16 @@ export interface OrderPayment {
   metadata?: PaymentMetadata | null;
 }
 
+export interface OrderPaymentSchedule {
+  id: string;
+  installment_number: number;
+  due_date: string;
+  amount_due: number;
+  amount_paid: number;
+  status: string;
+  paid_at?: string | null;
+}
+
 export interface OrderLoanSummary {
   id: string;
   status: string;
@@ -45,6 +55,10 @@ export interface OrderDetail {
   subtotal: number;
   discount: number;
   total: number;
+  paid_total?: number;
+  balance_due?: number;
+  payment_mode?: "single" | "subscription" | "partial" | null;
+  payment_plan_status?: string | null;
   created_at: string;
   paid_at: string | null;
   assigned_to: string | null;
@@ -58,6 +72,7 @@ export interface OrderDetail {
   mp_preference_id?: string | null;
   items: OrderItem[];
   payments?: OrderPayment[];
+  payment_schedules?: OrderPaymentSchedule[];
   loan?: OrderLoanSummary | null;
 }
 

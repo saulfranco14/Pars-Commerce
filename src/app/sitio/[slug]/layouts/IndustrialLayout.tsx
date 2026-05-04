@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Store } from "lucide-react";
 import SiteHeader from "../SiteHeader";
 import { CartProvider } from "../CartProvider";
+import { HideOnCheckout } from "../HideOnCheckout";
 import type { SiteLayoutProps } from "./layoutTypes";
 
 export function IndustrialLayout({
@@ -29,6 +30,7 @@ export function IndustrialLayout({
           {children}
         </main>
       </CartProvider>
+      <HideOnCheckout>
       <footer className="mt-auto border-t-2 border-slate-300 bg-slate-200 py-8">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
@@ -64,6 +66,7 @@ export function IndustrialLayout({
           </div>
         </div>
       </footer>
+      </HideOnCheckout>
     </div>
   );
 }
