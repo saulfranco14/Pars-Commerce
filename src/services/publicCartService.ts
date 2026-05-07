@@ -143,7 +143,11 @@ export async function checkoutPickup(
   const res = await fetch("/api/public-checkout", {
     method: "POST",
     headers: getHeaders(fingerprintId),
-    body: JSON.stringify({ ...payload, mode: "single" }),
+    body: JSON.stringify({
+      ...payload,
+      mode: "single",
+      msi_option: payload.msi_option ?? 1,
+    }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -180,6 +184,7 @@ export async function checkoutSubscription(
       installments: payload.installments,
       frequency: payload.frequency,
       frequency_type: payload.frequency_type,
+      msi_option: mode === "partial" ? (payload.msi_option ?? 1) : undefined,
     }),
   });
   const data = await res.json().catch(() => ({}));
