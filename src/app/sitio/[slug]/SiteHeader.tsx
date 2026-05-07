@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Store, Menu, X } from "lucide-react";
@@ -29,9 +30,10 @@ export default function SiteHeader({
   logoUrl,
   accentColor,
   navPages,
-  tenantId,
   variant = "light",
 }: SiteHeaderProps) {
+  const pathname = usePathname();
+  const checkoutFocus = pathname?.split("/").pop() === "carrito";
   const isDark = variant === "dark";
   const headerClass = isDark
     ? "sticky top-0 z-50 border-b border-gray-800 bg-gray-900/98 shadow-sm backdrop-blur-sm"
@@ -62,6 +64,7 @@ export default function SiteHeader({
     };
   }, [mobileMenuOpen]);
 
+
   return (
     <>
       <header className={headerClass}>
@@ -85,82 +88,88 @@ export default function SiteHeader({
             )}
             <span className="truncate">{tenantName}</span>
           </Link>
-          <nav
-            className="hidden items-center gap-0.5 md:flex sm:gap-1"
-            aria-label="Navegación principal"
-          >
-            {navPages.map((p) => (
-              <Link
-                key={p.id}
-                href={`/sitio/${slug}/${p.slug}`}
-                className={`flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 ${navLinkClass}`}
+          {!checkoutFocus && (
+            <>
+              <nav
+                className="hidden items-center gap-0.5 md:flex sm:gap-1"
+                aria-label="Navegación principal"
               >
-                {p.title}
-              </Link>
-            ))}
-            <CartBadge sitioSlug={slug} accentColor={accentColor} />
-          </nav>
-          <div className="flex items-center gap-1 md:hidden">
-            <CartBadge sitioSlug={slug} accentColor={accentColor} />
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen((o) => !o)}
-              className={`flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 ${menuButtonClass}`}
-              aria-expanded={mobileMenuOpen}
-              aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
-            >
-              {mobileMenuOpen ? (
-                <X className="h-6 w-6" aria-hidden />
-              ) : (
-                <Menu className="h-6 w-6" aria-hidden />
-              )}
-            </button>
-          </div>
+                {navPages.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/sitio/${slug}/${p.slug}`}
+                    className={`flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 ${navLinkClass}`}
+                  >
+                    {p.title}
+                  </Link>
+                ))}
+                <CartBadge sitioSlug={slug} accentColor={accentColor} />
+              </nav>
+              <div className="flex items-center gap-1 md:hidden">
+                <CartBadge sitioSlug={slug} accentColor={accentColor} />
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen((o) => !o)}
+                  className={`flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 ${menuButtonClass}`}
+                  aria-expanded={mobileMenuOpen}
+                  aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                >
+                  {mobileMenuOpen ? (
+                    <X className="h-6 w-6" aria-hidden />
+                  ) : (
+                    <Menu className="h-6 w-6" aria-hidden />
+                  )}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </header>
-      {mobileMenuOpen && (
+      {!checkoutFocus && mobileMenuOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/20 md:hidden"
           aria-hidden
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
-      <div
-        className={`fixed top-0 right-0 z-50 h-full w-[min(280px,85vw)] border-l shadow-xl transition-transform duration-200 ease-out md:hidden ${mobilePanelClass} ${
-          mobileMenuOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-        role="dialog"
-        aria-label="Menú de navegación"
-        aria-modal="true"
-      >
-        <div className="flex flex-col gap-1 p-4 pt-16">
-          {navPages.map((p) => (
-            <Link
-              key={p.id}
-              href={`/sitio/${slug}/${p.slug}`}
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex min-h-[48px] cursor-pointer items-center rounded-xl px-4 py-3 text-base font-medium ${mobileLinkClass}`}
-            >
-              {p.title}
-            </Link>
-          ))}
-          <Link
-            href={`/sitio/${slug}/carrito`}
-            onClick={() => setMobileMenuOpen(false)}
-            className={`mt-2 flex min-h-[48px] cursor-pointer items-center justify-between rounded-xl px-4 py-3 text-base font-medium ${mobileLinkClass}`}
-          >
-            <span>Carrito</span>
-            {itemsCount > 0 && (
-              <span
-                className="flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-xs font-bold text-white"
-                style={{ backgroundColor: accentColor }}
+      {!checkoutFocus && (
+        <div
+          className={`fixed top-0 right-0 z-50 h-full w-[min(280px,85vw)] border-l shadow-xl transition-transform duration-200 ease-out md:hidden ${mobilePanelClass} ${
+            mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+          role="dialog"
+          aria-label="Menú de navegación"
+          aria-modal="true"
+        >
+          <div className="flex flex-col gap-1 p-4 pt-16">
+            {navPages.map((p) => (
+              <Link
+                key={p.id}
+                href={`/sitio/${slug}/${p.slug}`}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex min-h-[48px] cursor-pointer items-center rounded-xl px-4 py-3 text-base font-medium ${mobileLinkClass}`}
               >
-                {itemsCount > 99 ? "99+" : itemsCount}
-              </span>
-            )}
-          </Link>
+                {p.title}
+              </Link>
+            ))}
+            <Link
+              href={`/sitio/${slug}/carrito`}
+              onClick={() => setMobileMenuOpen(false)}
+              className={`mt-2 flex min-h-[48px] cursor-pointer items-center justify-between rounded-xl px-4 py-3 text-base font-medium ${mobileLinkClass}`}
+            >
+              <span>Carrito</span>
+              {itemsCount > 0 && (
+                <span
+                  className="flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-xs font-bold text-white"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  {itemsCount > 99 ? "99+" : itemsCount}
+                </span>
+              )}
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }

@@ -6,6 +6,7 @@ import { FacebookIcon } from "@/features/sitio/components/icons/FacebookIcon";
 import { TwitterIcon } from "@/features/sitio/components/icons/TwitterIcon";
 import SiteHeader from "../SiteHeader";
 import { CartProvider } from "../CartProvider";
+import { HideOnCheckout } from "../HideOnCheckout";
 import type { SiteLayoutProps } from "./layoutTypes";
 
 export function ClassicLayout({
@@ -38,6 +39,7 @@ export function ClassicLayout({
           {children}
         </main>
       </CartProvider>
+      <HideOnCheckout>
       <footer className="mt-auto border-t border-gray-200 bg-gray-900 text-gray-300">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
           <div className="grid gap-8 sm:grid-cols-3">
@@ -139,6 +141,7 @@ export function ClassicLayout({
           </div>
         </div>
       </footer>
+      </HideOnCheckout>
     </div>
   );
 }
