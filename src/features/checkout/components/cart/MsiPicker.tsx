@@ -26,15 +26,21 @@ export function MsiPicker({
 }: MsiPickerProps) {
   if (msiBaseAmount <= 0) return null;
 
+  const title =
+    paymentMode === "installments"
+      ? "Forma de pago del primer abono"
+      : "Forma de pago";
+
+  const subtitle =
+    feeAbsorbedBy === "customer"
+      ? "Los precios incluyen tarifa de servicio"
+      : "";
+
   return (
     <div className="space-y-3">
-      <div className="flex items-baseline justify-between">
-        <p className="text-sm font-semibold text-gray-700">
-          Meses sin intereses
-        </p>
-        {paymentMode === "installments" && (
-          <p className="text-[11px] text-gray-500">Aplica al primer abono</p>
-        )}
+      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between">
+        <p className="text-sm font-semibold text-gray-700">{title}</p>
+        <p className="text-[11px] text-gray-400">{subtitle}</p>
       </div>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
         {MSI_OPTIONS.map((n) => {
@@ -65,14 +71,14 @@ export function MsiPicker({
               <span className="text-xs font-bold leading-tight">
                 {n === 1 ? "Contado" : `${n} MSI`}
               </span>
-              {breakdown && n > 1 && (
-                <span className="text-[10px] tabular-nums opacity-80">
-                  ${breakdown.perMonth.toFixed(2)}/mes
-                </span>
-              )}
               {breakdown && n === 1 && (
                 <span className="text-[10px] tabular-nums opacity-80">
                   ${breakdown.total.toFixed(2)}
+                </span>
+              )}
+              {breakdown && n > 1 && (
+                <span className="text-[10px] tabular-nums opacity-80">
+                  ${breakdown.perMonth.toFixed(2)}/mes
                 </span>
               )}
               {!isViable && <span className="text-[10px]">Min. bajo</span>}

@@ -63,9 +63,14 @@ export async function handleSingleCheckout(
     };
   });
 
+  // Sólo añadimos la comisión como línea en MP cuando el cliente la absorbe
+  // (buyerTotal > subtotal). Si el negocio absorbe, el cliente paga el subtotal
+  // tal cual y MP descuenta de lo que le transfiere al negocio.
+  const customerAbsorbsFee = buyerTotal > subtotal;
+
   const mpItems = [
     ...baseItems,
-    ...(mpFeeRounded > 0
+    ...(mpFeeRounded > 0 && customerAbsorbsFee
       ? [
           {
             id: "mp-fee",
@@ -79,7 +84,7 @@ export async function handleSingleCheckout(
           },
         ]
       : []),
-    ...(parsFeeRounded > 0
+    ...(parsFeeRounded > 0 && customerAbsorbsFee
       ? [
           {
             id: "pars-fee",
@@ -125,10 +130,15 @@ export async function handleSingleCheckout(
         auto_return: "approved",
         notification_url: `${origin}/api/mercadopago/webhook`,
         payer: { email: payload.customer_email.trim() },
-        payment_methods: {
-          installments: msiOption,
-          default_installments: msiOption,
-        },
+        // Para contado (msiOption=1) no forzamos installments en MP — el cliente
+        // elige su método de pago libremente. Para MSI real (3/6/9/12) sí
+        // preseleccionamos el plan acordado.
+        ...(msiOption > 1 && {
+          payment_methods: {
+            installments: msiOption,
+            default_installments: msiOption,
+          },
+        }),
       },
     });
   } catch (err) {

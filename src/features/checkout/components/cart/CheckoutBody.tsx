@@ -159,17 +159,16 @@ export function CheckoutBody({
             accentColor={accentColor}
             onSelect={onMsiOptionChange}
           />
-          {msiBreakdown && (
-            <MsiBreakdownCard
-              paymentMode={paymentMode}
-              msiOption={msiOption}
-              total={msiBreakdown.total}
-              perMonth={msiBreakdown.perMonth}
-              mpFee={msiBreakdown.mpFee}
-              feeAbsorbedBy={recurringConfig.fee_absorbed_by}
-              accentColor={accentColor}
-            />
-          )}
+          <MsiBreakdownCard
+            paymentMode={paymentMode}
+            msiOption={msiOption}
+            total={msiBreakdown?.total ?? subtotal}
+            subtotal={msiBaseAmount}
+            perMonth={msiBreakdown?.perMonth ?? subtotal}
+            mpFee={msiBreakdown?.mpFee ?? 0}
+            feeAbsorbedBy={recurringConfig.fee_absorbed_by}
+            accentColor={accentColor}
+          />
         </div>
       )}
 

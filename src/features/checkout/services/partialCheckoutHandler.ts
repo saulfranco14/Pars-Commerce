@@ -166,10 +166,12 @@ export async function handlePartialCheckout(
         auto_return: "approved",
         notification_url: `${origin}/api/mercadopago/webhook`,
         payer: { email: payload.customer_email.trim() },
-        payment_methods: {
-          installments: msiOption,
-          default_installments: msiOption,
-        },
+        ...(msiOption > 1 && {
+          payment_methods: {
+            installments: msiOption,
+            default_installments: msiOption,
+          },
+        }),
       },
     });
   } catch (err) {

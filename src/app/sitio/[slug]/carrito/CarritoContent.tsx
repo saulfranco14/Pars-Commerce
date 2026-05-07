@@ -94,12 +94,15 @@ export default function CarritoContent({
 
   const combinedError = checkoutForm.error ?? cartActions.error;
   const singlePayAmount = msiBreakdown ? msiBreakdown.total : subtotal;
+  const customerAbsorbsFee =
+    recurringConfig.fee_absorbed_by === "customer" && singlePayAmount > subtotal;
   const { submitLabel, submitDisclaimer } = getSubmitLabels({
     submitting: checkoutForm.submitting,
     paymentMode,
     msiOption,
     payAmount: singlePayAmount,
     perMonth: msiBreakdown?.perMonth ?? 0,
+    customerAbsorbsFee,
   });
 
   if (isLoading) {

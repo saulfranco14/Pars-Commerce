@@ -122,6 +122,26 @@ export function calcMsiBuyerTotal(
   perMonth: number;
   msi: MsiOption;
 } {
+  // msi=1 significa "Contado" (pago único sin cuotas MSI).
+  // Usamos la tarifa estándar de checkout MP (MP_FEE_PERCENT + MP_FEE_FIXED_MXN),
+  // distinta a la tarifa MSI (MP_MSI_BASE_RATE). Si el negocio absorbe,
+  // el cliente paga el subtotal y el negocio recibe menos; si el cliente
+  // absorbe, se cobra la comisión estándar encima del subtotal.
+  if (msi === 1) {
+    const parsFee = Math.round(vendorTotal * PARS_SERVICE_FEE_PERCENT * 100) / 100;
+    if (absorbedBy === "business") {
+      const total = Math.round(vendorTotal * 100) / 100;
+      const mpFee =
+        Math.round((vendorTotal * MP_FEE_PERCENT + MP_FEE_FIXED_MXN) * 100) / 100;
+      const netReceived = Math.round((total - mpFee - parsFee) * 100) / 100;
+      return { total, mpFee, parsFee, netReceived, perMonth: total, msi };
+    }
+    // Cliente absorbe: calcBuyerTotal ya usa MP_FEE_PERCENT + MP_FEE_FIXED_MXN
+    const { total, mpFee: mpFeeCalc, parsFee: parsFeeCalc } = calcBuyerTotal(vendorTotal);
+    const netReceived = Math.round((total - mpFeeCalc - parsFeeCalc) * 100) / 100;
+    return { total, mpFee: mpFeeCalc, parsFee: parsFeeCalc, netReceived, perMonth: total, msi };
+  }
+
   const msiRate = MP_MSI_RATES[msi] ?? 0;
   const feePercentEffective =
     (MP_MSI_BASE_RATE + msiRate) * (1 + MP_IVA_PERCENT);
