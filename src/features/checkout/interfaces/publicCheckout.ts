@@ -1,3 +1,5 @@
+import type { MsiOption } from "@/constants/commissionConfig";
+
 export type CheckoutMode = "single" | "subscription" | "partial";
 
 export interface PublicCheckoutPayload {
@@ -10,6 +12,7 @@ export interface PublicCheckoutPayload {
   installments?: number;
   frequency?: number;
   frequency_type?: "weeks" | "months";
+  msi_option?: MsiOption;
 }
 
 export interface PublicCheckoutResponse {
@@ -22,4 +25,3 @@ export interface PublicCheckoutResponse {
   redirect_url?: string;
   next_action: "open_payment_link" | "retry_or_change_mode";
 }
-

@@ -1,3 +1,5 @@
+import { MsiOption } from "@/constants/commissionConfig";
+
 export interface PublicCartItem {
   id: string;
   product_id: string;
@@ -25,6 +27,7 @@ export interface CheckoutPickupPayload {
   customer_name: string;
   customer_email: string;
   customer_phone: string;
+  msi_option?: MsiOption;
 }
 
 export interface CheckoutPickupResponse {
@@ -43,6 +46,7 @@ export interface CheckoutSubscriptionPayload {
   installments?: number;
   frequency: number;
   frequency_type: "weeks" | "months";
+  msi_option?: MsiOption;
 }
 
 export interface CheckoutSubscriptionResponse {
