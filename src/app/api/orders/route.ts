@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       .from("orders")
       .select(
         `
-        id, status, cancelled_from, source, customer_id, customer_name, customer_email, customer_phone,
+        id, status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_id, customer_name, customer_email, customer_phone,
         subtotal, discount, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, updated_at,
         created_by, assigned_to, completed_by, completed_at, paid_at,
         payment_method, payment_link, mp_preference_id,
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
     .from("orders")
     .select(
       `
-      id, status, cancelled_from, source, customer_name, customer_email, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, paid_at, assigned_to, payment_method,
+      id, status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_name, customer_email, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, paid_at, assigned_to, payment_method,
       assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email)
       `
     )

@@ -124,6 +124,7 @@ export async function POST(request: Request) {
     const orderId = parsedRef?.orderId ?? externalRef;
     const checkoutMode = parsedRef?.mode ?? "single";
     const attemptId = parsedRef?.attemptId ?? null;
+    const splitGroupId = parsedRef?.splitGroupId ?? null;
 
     if (attemptId) {
       const attemptStatus =
@@ -294,6 +295,7 @@ export async function POST(request: Request) {
             status: "approved",
             amount: appliedAmount,
             installment_number: installmentNumber,
+            split_group_id: splitGroupId,
             metadata: paymentMetadata,
             updated_at: new Date().toISOString(),
           })
@@ -305,9 +307,11 @@ export async function POST(request: Request) {
           external_id: String(paymentId),
           status: "approved",
           amount: appliedAmount,
-          payment_kind: checkoutMode === "partial" ? "partial" : "single",
+          payment_kind:
+            checkoutMode === "partial" || splitGroupId ? "partial" : "single",
           attempt_id: attemptId,
           installment_number: installmentNumber,
+          split_group_id: splitGroupId,
           idempotency_key: attemptId ? `payment:${attemptId}` : null,
           metadata: paymentMetadata,
         });

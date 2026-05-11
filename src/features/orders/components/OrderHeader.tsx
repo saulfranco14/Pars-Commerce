@@ -47,6 +47,14 @@ export function OrderHeader() {
               </span>
             );
           })()}
+        {order.order_type && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-border-soft px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+            {order.order_type === "dine_in" && "Mesa"}
+            {order.order_type === "takeaway" && "Para llevar"}
+            {order.order_type === "qr_payment" && "Cobro QR"}
+            {order.table_label ? ` · ${order.table_label}` : ""}
+          </span>
+        )}
         <StatusBadge
           status={order.status}
           cancelledFrom={order.cancelled_from}

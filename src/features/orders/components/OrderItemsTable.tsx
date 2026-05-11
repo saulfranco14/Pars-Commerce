@@ -40,9 +40,17 @@ export function OrderItemsTable() {
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised text-left shadow-sm">
       <div className="flex shrink-0 items-center justify-between border-b border-border p-3">
-        <h2 className="text-base font-semibold text-foreground">
-          Items de la orden
-        </h2>
+        <div>
+          <h2 className="text-base font-semibold text-foreground">Items de la orden</h2>
+          {order.order_type && (
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {order.order_type === "dine_in" && "Tipo: Mesa"}
+              {order.order_type === "takeaway" && "Tipo: Para llevar"}
+              {order.order_type === "qr_payment" && "Tipo: Cobro QR"}
+              {order.table_label ? ` · ${order.table_label}` : ""}
+            </p>
+          )}
+        </div>
         {canAddRemoveItems && activeTenant && (
           <button
             type="button"

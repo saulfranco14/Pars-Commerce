@@ -19,6 +19,9 @@ import {
   UsersRound,
   Globe,
   Settings,
+  QrCode,
+  Table2,
+  Landmark,
 } from "lucide-react";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 
@@ -101,7 +104,15 @@ function SidebarContent(props: SidebarContentProps) {
     (m) => m.tenant_id === activeTenantId,
   );
   const userRole = activeMembership?.role?.name || "member";
-  const canAccessTeamAndSettings = userRole !== "member";
+  const canAccessTeamAndSettings =
+    userRole === "owner" || userRole === "admin";
+  const canAccessQr = userRole === "owner" || userRole === "admin";
+  const canAccessTables =
+    userRole === "owner" ||
+    userRole === "admin" ||
+    userRole === "cashier" ||
+    userRole === "waiter";
+  const canAccessBankAccounts = userRole === "owner" || userRole === "admin";
   return (
     <>
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-border-soft px-4">
@@ -227,6 +238,31 @@ function SidebarContent(props: SidebarContentProps) {
             >
               Suscripciones
             </NavLink>
+            {canAccessQr && (
+              <NavLink
+                href={`${base}/qr`}
+                active={
+                  pathname === `${base}/qr` || pathname.startsWith(`${base}/qr/`)
+                }
+                icon={QrCode}
+                onNavigate={onNavigate}
+              >
+                Códigos QR
+              </NavLink>
+            )}
+            {canAccessTables && (
+              <NavLink
+                href={`${base}/mesas`}
+                active={
+                  pathname === `${base}/mesas` ||
+                  pathname.startsWith(`${base}/mesas/`)
+                }
+                icon={Table2}
+                onNavigate={onNavigate}
+              >
+                Mesas
+              </NavLink>
+            )}
 
             <div className="pt-2 mt-2 border-t border-border-soft">
               <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
@@ -299,6 +335,16 @@ function SidebarContent(props: SidebarContentProps) {
                 >
                   Configuración
                 </NavLink>
+                {canAccessBankAccounts && (
+                  <NavLink
+                    href={`${base}/configuracion/cuentas-bancarias`}
+                    active={pathname === `${base}/configuracion/cuentas-bancarias`}
+                    icon={Landmark}
+                    onNavigate={onNavigate}
+                  >
+                    Cuentas bancarias
+                  </NavLink>
+                )}
               </div>
             )}
           </>
