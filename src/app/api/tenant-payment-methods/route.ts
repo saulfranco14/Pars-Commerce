@@ -85,6 +85,23 @@ export async function POST(request: Request) {
     display_order: Number(body.display_order ?? 0),
   };
 
+  // Check for duplicate CLABE within the same tenant before inserting.
+  if (payload.clabe) {
+    const { data: existing } = await supabase
+      .from("tenant_payment_methods")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .eq("clabe", payload.clabe)
+      .maybeSingle();
+
+    if (existing) {
+      return NextResponse.json(
+        { error: "Ya existe una cuenta con esa CLABE en este negocio." },
+        { status: 409 },
+      );
+    }
+  }
+
   const { data, error } = await supabase
     .from("tenant_payment_methods")
     .insert(payload)
@@ -149,6 +166,23 @@ export async function PATCH(request: Request) {
   if (typeof body.is_active === "boolean") updates.is_active = body.is_active;
   if (body.display_order !== undefined)
     updates.display_order = Number(body.display_order);
+
+  // When activating a record, first deactivate all others for this tenant
+  // so only one account can be active at a time.
+  if (updates.is_active === true) {
+    const { error: deactivateError } = await supabase
+      .from("tenant_payment_methods")
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq("tenant_id", tenantId)
+      .neq("id", id);
+
+    if (deactivateError) {
+      return NextResponse.json(
+        { error: resolveUserError(deactivateError, "supabase") },
+        { status: 500 },
+      );
+    }
+  }
 
   const { data, error } = await supabase
     .from("tenant_payment_methods")

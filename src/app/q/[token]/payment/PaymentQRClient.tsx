@@ -4,7 +4,9 @@ import { useState } from "react";
 
 import { BankTransferPanel } from "@/features/qr/components/BankTransferPanel";
 import { PaymentAmountForm } from "@/features/qr/components/PaymentAmountForm";
+
 import type { PaymentAmountValues } from "@/features/qr/validations/paymentAmountSchema";
+import type { TenantPaymentMethod } from "@/features/configuracion/interfaces/bankAccount";
 
 interface PaymentQRClientProps {
   token: string;
@@ -14,9 +16,10 @@ interface PaymentQRClientProps {
     label: string;
     preset_amount: number | null;
   };
+  activePaymentMethod: TenantPaymentMethod | null;
 }
 
-export function PaymentQRClient({ tenant, qrCode }: PaymentQRClientProps) {
+export function PaymentQRClient({ tenant, qrCode, activePaymentMethod }: PaymentQRClientProps) {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -70,7 +73,13 @@ export function PaymentQRClient({ tenant, qrCode }: PaymentQRClientProps) {
         submitting={submitting}
       />
 
-      <BankTransferPanel bankName={null} accountHolder={null} clabe={null} />
+      {activePaymentMethod && (
+        <BankTransferPanel
+          bankName={activePaymentMethod.bank_name}
+          accountHolder={activePaymentMethod.account_holder}
+          clabe={activePaymentMethod.clabe}
+        />
+      )}
     </main>
   );
 }
