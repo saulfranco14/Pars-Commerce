@@ -184,14 +184,14 @@ export default async function ProductoDetallePage({ params }: PageProps) {
               )}
 
               {/* Product name */}
-              <h1 className="mt-3 text-2xl font-extrabold leading-tight text-gray-900 sm:text-3xl xl:text-4xl">
+              <h1 className="mt-3 text-2xl font-bold leading-tight text-gray-900 sm:text-3xl xl:text-4xl">
                 {product.name}
               </h1>
 
               {/* Price block */}
               <div className="mt-5 flex items-end gap-3">
                 <span
-                  className="text-4xl font-extrabold tracking-tight sm:text-5xl"
+                  className="text-4xl font-bold tracking-tight sm:text-5xl"
                   style={{ color: accentColor }}
                 >
                   ${displayPrice.toFixed(2)}

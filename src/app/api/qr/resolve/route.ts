@@ -118,29 +118,53 @@ export async function GET(request: Request) {
     }
 
     if (fingerprint) {
-      const { data: currentDevices } = await admin
-        .from("order_devices")
-        .select("id, color_hex")
-        .eq("order_id", orderId);
+      const now = new Date().toISOString();
 
-      const color = pickColor((currentDevices ?? []).length);
-      const { data: device } = await admin
+      // Check if this device already has a row for THIS order. If not, it
+      // means either (a) brand-new device, or (b) returning device whose
+      // previous order already closed. In both cases the customer must go
+      // through the name prompt again — we never silently revive a stale
+      // identity onto a fresh order. The is_new_session flag tells the
+      // client to clear the cached display_name in localStorage.
+      const { data: existing } = await admin
         .from("order_devices")
-        .upsert(
-          {
+        .select("id, display_name, color_hex, joined_at, last_seen_at")
+        .eq("order_id", orderId)
+        .eq("device_fingerprint", fingerprint)
+        .maybeSingle();
+
+      let isNewSession = false;
+
+      if (existing) {
+        await admin
+          .from("order_devices")
+          .update({ last_seen_at: now, updated_at: now })
+          .eq("id", existing.id);
+        response.my_device = existing;
+      } else {
+        isNewSession = true;
+        const { data: allDevices } = await admin
+          .from("order_devices")
+          .select("id")
+          .eq("order_id", orderId);
+        const color = pickColor((allDevices ?? []).length);
+        const { data: device } = await admin
+          .from("order_devices")
+          .insert({
             order_id: orderId,
             device_fingerprint: fingerprint,
             display_name: null,
             color_hex: color,
-            last_seen_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "order_id,device_fingerprint" },
-        )
-        .select("id, display_name, color_hex, joined_at, last_seen_at")
-        .single();
+            last_seen_at: now,
+            updated_at: now,
+          })
+          .select("id, display_name, color_hex, joined_at, last_seen_at")
+          .single();
+        response.my_device = device ?? null;
+      }
 
-      response.my_device = device ?? null;
+      response.is_new_session = isNewSession;
+
       const { count } = await admin
         .from("order_devices")
         .select("id", { count: "exact", head: true })

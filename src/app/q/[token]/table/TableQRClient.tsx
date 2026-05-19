@@ -1,18 +1,28 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-
-import { TableCartSheet } from "@/features/qr/components/TableCartSheet";
+import { Notification } from "@/components/ui/Notification";
+import { DeviceNamePrompt } from "@/features/qr/components/DeviceNamePrompt";
+import { TableCtaBar } from "@/features/qr/components/TableCtaBar";
+import { TableHeader } from "@/features/qr/components/TableHeader";
 import { TableMenuGrid } from "@/features/qr/components/TableMenuGrid";
-import type { TableOrderItem } from "@/features/qr/interfaces/tableOrder";
+import { useDeviceNaming } from "@/features/qr/hooks/useDeviceNaming";
+import { useTableCart } from "@/features/qr/hooks/useTableCart";
+
+import type {
+  QrSessionMenuItem,
+  QrSessionOrder,
+  QrSessionQrCode,
+  QrSessionTenant,
+} from "@/features/qr/interfaces/tableSession";
 
 interface TableQRClientProps {
   token: string;
-  tenant: { id: string; name: string; slug: string };
-  qrCode: { id: string; label: string };
-  order: { id: string; status: string } | null;
-  menu: Array<{ id: string; name: string; price: number }>;
+  tenant: QrSessionTenant;
+  qrCode: Pick<QrSessionQrCode, "id" | "label">;
+  order: QrSessionOrder | null;
+  menu: QrSessionMenuItem[];
+  fingerprint: string;
+  initialDeviceName: string | null;
 }
 
 export function TableQRClient({
@@ -21,102 +31,77 @@ export function TableQRClient({
   qrCode,
   order,
   menu,
+  fingerprint,
+  initialDeviceName,
 }: TableQRClientProps) {
-  const [items, setItems] = useState<TableOrderItem[]>([]);
-  const [showCart, setShowCart] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const naming = useDeviceNaming({
+    qrToken: token,
+    fingerprint,
+    initialName: initialDeviceName,
+  });
 
-  const total = useMemo(
-    () => items.reduce((acc, item) => acc + Number(item.subtotal), 0),
-    [items],
-  );
+  const cart = useTableCart({
+    menu,
+    orderId: order?.id ?? null,
+    qrToken: token,
+    fingerprint,
+  });
 
-  function handleAdd(productId: string) {
-    const product = menu.find((entry) => entry.id === productId);
-    if (!product) return;
-    setItems((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        product_id: product.id,
-        quantity: 1,
-        unit_price: product.price,
-        subtotal: product.price,
-      },
-    ]);
-    setShowCart(true);
-  }
-
-  async function handleSendOrder() {
-    if (!order) return;
-    setSaving(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/qr/table/items", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_id: order.id,
-          qr_token: token,
-          items: items.map((item) => ({
-            product_id: item.product_id,
-            quantity: item.quantity,
-          })),
-        }),
-      });
-      const data = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(data.error || "No se pudo enviar el pedido");
-      setItems([]);
-      setShowCart(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error inesperado");
-    } finally {
-      setSaving(false);
-    }
+  if (!naming.deviceName) {
+    return (
+      <DeviceNamePrompt
+        tenantName={tenant.name}
+        tableLabel={qrCode.label}
+        onConfirm={naming.confirm}
+        submitting={naming.submitting}
+        error={naming.error}
+      />
+    );
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-4 px-4 py-6">
-      <header>
-        <p className="text-sm text-muted-foreground">{tenant.name}</p>
-        <h1 className="text-2xl font-semibold text-foreground">{qrCode.label}</h1>
-      </header>
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </div>
+    <main className="mx-auto w-full max-w-3xl px-4 pb-36 pt-5">
+      <TableHeader
+        tenantName={tenant.name}
+        tableLabel={qrCode.label}
+        deviceName={naming.deviceName}
+      />
+
+      {cart.confirmation && (
+        <Notification
+          tone="success"
+          message="¡Pedido enviado! Sigue agregando o pasa a la cuenta."
+          onDismiss={cart.dismissConfirmation}
+          className="mb-4"
+        />
       )}
-      <TableMenuGrid products={menu} onAdd={handleAdd} />
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => setShowCart((value) => !value)}
-          className="min-h-[44px] rounded-lg border border-border px-4 py-2 text-sm"
-        >
-          Ver carrito ({items.length})
-        </button>
-        <button
-          type="button"
-          onClick={handleSendOrder}
-          disabled={saving || items.length === 0}
-          className="min-h-[44px] rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-60"
-        >
-          {saving ? "Enviando..." : "Confirmar pedido"}
-        </button>
-        {order && (
-          <Link
-            href={`/q/${token}/table/bill?order_id=${order.id}`}
-            className="min-h-[44px] rounded-lg border border-border px-4 py-2 text-sm"
-          >
-            Ver cuenta
-          </Link>
-        )}
-      </div>
-      {showCart && <TableCartSheet items={items} onClose={() => setShowCart(false)} />}
-      <p className="text-xs text-muted-foreground">
-        Total temporal: ${total.toFixed(2)}
-      </p>
+
+      {cart.error && (
+        <Notification tone="error" message={cart.error} className="mb-4" />
+      )}
+
+      <section>
+        <h2 className="mb-3 text-base font-bold text-foreground">
+          Productos disponibles
+        </h2>
+        <TableMenuGrid
+          products={menu}
+          onAdd={cart.add}
+          quantities={cart.quantitiesByProduct}
+          onDecrement={cart.decrement}
+        />
+      </section>
+
+      <TableCtaBar
+        token={token}
+        orderId={order?.id ?? null}
+        entries={cart.entries}
+        total={cart.total}
+        itemCount={cart.itemCount}
+        saving={cart.saving}
+        onSend={cart.send}
+        onDecrement={cart.decrement}
+      />
     </main>
   );
 }

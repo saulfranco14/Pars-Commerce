@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 
-import { BankTransferPanel } from "@/features/qr/components/BankTransferPanel";
-import { PaymentAmountForm } from "@/features/qr/components/PaymentAmountForm";
+import { TipScreen } from "@/features/qr/components/TipScreen";
 
 import type { PaymentAmountValues } from "@/features/qr/validations/paymentAmountSchema";
 import type { TenantPaymentMethod } from "@/features/configuracion/interfaces/bankAccount";
@@ -19,7 +18,7 @@ interface PaymentQRClientProps {
   activePaymentMethod: TenantPaymentMethod | null;
 }
 
-export function PaymentQRClient({ tenant, qrCode, activePaymentMethod }: PaymentQRClientProps) {
+export function PaymentQRClient({ tenant, qrCode }: PaymentQRClientProps) {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -45,7 +44,10 @@ export function PaymentQRClient({ tenant, qrCode, activePaymentMethod }: Payment
       };
       if (!res.ok) throw new Error(data.error || "No se pudo procesar el pago");
       const url = data.redirect_url ?? data.payment_link;
-      if (url) window.location.href = url;
+      if (url) {
+        window.location.href = url;
+        return;
+      }
       setMessage("Pago generado correctamente.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Error inesperado");
@@ -55,31 +57,13 @@ export function PaymentQRClient({ tenant, qrCode, activePaymentMethod }: Payment
   }
 
   return (
-    <main className="mx-auto w-full max-w-lg space-y-4 px-4 py-6">
-      <header>
-        <p className="text-sm text-muted-foreground">{tenant.name}</p>
-        <h1 className="text-2xl font-semibold text-foreground">{qrCode.label}</h1>
-      </header>
-
-      {message && (
-        <div className="rounded-lg border border-border bg-surface px-3 py-2 text-sm">
-          {message}
-        </div>
-      )}
-
-      <PaymentAmountForm
-        defaultAmount={qrCode.preset_amount}
-        onSubmit={onSubmit}
-        submitting={submitting}
-      />
-
-      {activePaymentMethod && (
-        <BankTransferPanel
-          bankName={activePaymentMethod.bank_name}
-          accountHolder={activePaymentMethod.account_holder}
-          clabe={activePaymentMethod.clabe}
-        />
-      )}
-    </main>
+    <TipScreen
+      tenantName={tenant.name}
+      qrLabel={qrCode.label}
+      presetAmount={qrCode.preset_amount}
+      submitting={submitting}
+      message={message}
+      onSubmit={onSubmit}
+    />
   );
 }

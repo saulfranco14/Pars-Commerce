@@ -32,7 +32,7 @@ interface PageProps {
 }
 
 function filterActivePromotions(
-  rows: { valid_from?: string | null; valid_until?: string | null }[]
+  rows: { valid_from?: string | null; valid_until?: string | null }[],
 ): unknown[] {
   const now = new Date();
   return rows.filter((p) => {
@@ -48,7 +48,8 @@ export default async function InicioPage({ params }: PageProps) {
   const { slug } = await params;
   const headersList = await headers();
   const host = headersList.get("host") ?? "";
-  const protocol = headersList.get("x-forwarded-proto") === "https" ? "https" : "http";
+  const protocol =
+    headersList.get("x-forwarded-proto") === "https" ? "https" : "http";
   const baseUrl = host ? `${protocol}://${host}` : "";
   const supabase = createAdminClient();
 
@@ -80,7 +81,9 @@ export default async function InicioPage({ params }: PageProps) {
       .limit(6),
     supabase
       .from("promotions")
-      .select("id, name, slug, type, value, quantity, min_amount, product_ids, bundle_product_ids, badge_label, valid_from, valid_until, image_url")
+      .select(
+        "id, name, slug, type, value, quantity, min_amount, product_ids, bundle_product_ids, badge_label, valid_from, valid_until, image_url",
+      )
       .eq("tenant_id", tenant.id)
       .order("created_at", { ascending: false }),
   ]);
@@ -95,7 +98,9 @@ export default async function InicioPage({ params }: PageProps) {
           .in("product_id", productIds)
       : { data: [] };
   const images = imagesData ?? [];
-  const activePromos = filterActivePromotions(promosRes.data ?? []) as NonNullable<typeof promosRes.data>;
+  const activePromos = filterActivePromotions(
+    promosRes.data ?? [],
+  ) as NonNullable<typeof promosRes.data>;
   const promosForPrice: PromotionForPrice[] = (activePromos ?? []).map((p) => ({
     id: p.id,
     type: p.type,
@@ -115,7 +120,7 @@ export default async function InicioPage({ params }: PageProps) {
       image_url: p.image_url,
     })),
     images,
-    promosForPrice
+    promosForPrice,
   );
 
   const { data: page } = pageRes;
@@ -164,7 +169,7 @@ export default async function InicioPage({ params }: PageProps) {
 
         <div className="relative z-10 flex min-h-[45vh] flex-col justify-end px-8 pb-12 pt-20 sm:min-h-[55vh] sm:px-14 sm:pb-16">
           <div className="max-w-2xl">
-            <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-6xl">
+            <h1 className="text-4xl font-bold leading-tight tracking-tight text-white sm:text-6xl">
               {content.title || `Bienvenido a ${tenant.name}`}
             </h1>
 
@@ -201,10 +206,12 @@ export default async function InicioPage({ params }: PageProps) {
         <section>
           <div className="mb-6 flex items-end justify-between">
             <div>
-              <h2 className="text-2xl font-extrabold text-gray-900 sm:text-3xl">
+              <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
                 Productos destacados
               </h2>
-              <p className="mt-1 text-sm text-gray-500">Lo más popular de nuestro catálogo</p>
+              <p className="mt-1 text-sm text-gray-500">
+                Lo más popular de nuestro catálogo
+              </p>
             </div>
             <Link
               href={`/sitio/${slug}/productos`}
@@ -217,7 +224,10 @@ export default async function InicioPage({ params }: PageProps) {
           {/* Horizontal scroll on mobile, grid on sm+ */}
           <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3">
             {featuredProducts.map((item, idx) => (
-              <div key={item.id} className="min-w-[78vw] snap-center sm:min-w-0">
+              <div
+                key={item.id}
+                className="min-w-[78vw] snap-center sm:min-w-0"
+              >
                 <ProductCard
                   product={item}
                   promotion={item.promotion}
@@ -248,11 +258,13 @@ export default async function InicioPage({ params }: PageProps) {
         <section>
           <div className="mb-6 flex items-end justify-between">
             <div>
-              <h2 className="flex items-center gap-2 text-2xl font-extrabold text-gray-900 sm:text-3xl">
+              <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-900 sm:text-3xl">
                 <Tag className="h-6 w-6" style={{ color: accentColor }} />
                 Promociones vigentes
               </h2>
-              <p className="mt-1 text-sm text-gray-500">Ofertas por tiempo limitado</p>
+              <p className="mt-1 text-sm text-gray-500">
+                Ofertas por tiempo limitado
+              </p>
             </div>
             <Link
               href={`/sitio/${slug}/promociones`}
@@ -264,8 +276,18 @@ export default async function InicioPage({ params }: PageProps) {
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {activePromos.slice(0, 3).map((p) => {
-              const productIds = [...(p.product_ids ?? []), ...(p.bundle_product_ids ?? [])].filter(Boolean);
-              const hasAddable = productIds.length > 0 && ["percentage", "fixed_amount", "bundle_price", "fixed_price"].includes(p.type);
+              const productIds = [
+                ...(p.product_ids ?? []),
+                ...(p.bundle_product_ids ?? []),
+              ].filter(Boolean);
+              const hasAddable =
+                productIds.length > 0 &&
+                [
+                  "percentage",
+                  "fixed_amount",
+                  "bundle_price",
+                  "fixed_price",
+                ].includes(p.type);
               return (
                 <PromotionCard
                   key={p.id}
@@ -321,11 +343,16 @@ export default async function InicioPage({ params }: PageProps) {
             >
               <div
                 className="flex h-12 w-12 items-center justify-center rounded-xl transition-transform group-hover:scale-110"
-                style={{ backgroundColor: `${accentColor}25`, color: accentColor }}
+                style={{
+                  backgroundColor: `${accentColor}25`,
+                  color: accentColor,
+                }}
               >
                 <IconComponent className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 font-bold text-gray-900">{item.title || "Card"}</h3>
+              <h3 className="mt-4 font-bold text-gray-900">
+                {item.title || "Card"}
+              </h3>
               <p className="mt-2 text-sm leading-relaxed text-gray-600">
                 {item.description || ""}
               </p>
@@ -337,7 +364,7 @@ export default async function InicioPage({ params }: PageProps) {
       {/* ── Purchase Steps ── */}
       <section>
         <div className="mb-6">
-          <h2 className="text-2xl font-extrabold text-gray-900 sm:text-3xl">
+          <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
             Proceso de compra sencillo
           </h2>
           <p className="mt-1 text-sm text-gray-500">
@@ -355,7 +382,7 @@ export default async function InicioPage({ params }: PageProps) {
               >
                 {/* Step number */}
                 <div
-                  className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full text-xs font-extrabold text-white"
+                  className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white"
                   style={{ backgroundColor: accentColor }}
                 >
                   {i + 1}
@@ -367,7 +394,10 @@ export default async function InicioPage({ params }: PageProps) {
                 />
                 <div
                   className="flex h-14 w-14 items-center justify-center rounded-2xl"
-                  style={{ backgroundColor: `${accentColor}15`, color: accentColor }}
+                  style={{
+                    backgroundColor: `${accentColor}15`,
+                    color: accentColor,
+                  }}
                 >
                   <IconEl className="h-7 w-7" />
                 </div>
@@ -398,7 +428,7 @@ export default async function InicioPage({ params }: PageProps) {
       {/* ── FAQ ── */}
       {faqItems.length > 0 && (
         <section className="rounded-3xl bg-white p-8 shadow-sm">
-          <h2 className="mb-6 text-xl font-extrabold text-gray-900">
+          <h2 className="mb-6 text-xl font-bold text-gray-900">
             Preguntas frecuentes
           </h2>
           <div className="space-y-3">

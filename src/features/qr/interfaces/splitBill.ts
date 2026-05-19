@@ -6,6 +6,6 @@ export interface SplitGroup {
   total: number;
   paid_total: number;
   balance_due: number;
-  payment_status: "pending" | "paid";
+  payment_status: "pending" | "paid" | "pending_validation";
   device_id?: string | null;
 }

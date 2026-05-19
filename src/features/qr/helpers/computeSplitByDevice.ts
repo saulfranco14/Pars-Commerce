@@ -30,7 +30,7 @@ export function computeSplitByDevice(
   const sharedPerDevice = devices.length > 0 ? sharedTotal / devices.length : 0;
   return devices.map((device, index) => ({
     deviceId: device.id,
-    label: device.display_name || `Comensal ${index + 1}`,
+    label: device.display_name || `Cliente ${index + 1}`,
     total: Number(totals.get(device.id) ?? 0) + sharedPerDevice,
   }));
 }

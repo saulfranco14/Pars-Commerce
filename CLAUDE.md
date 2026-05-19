@@ -8,6 +8,31 @@ model: claude-sonnet-4-5-20250929
 
 ---
 
+## 📐 ARCHITECTURE (lectura obligatoria antes de tocar código)
+
+**Antes de crear o modificar CUALQUIER componente, hook, service o feature, lee `ARCHITECTURE.md` en la raíz del proyecto.** Define las reglas de modularización que no son negociables: no inline interfaces, no `fetch` en componentes, no helpers duplicados, no `useState`/`useEffect` con lógica de dominio dentro de componentes. Todo va a su carpeta (`interfaces/`, `hooks/`, `services/`, `helpers/`).
+
+Si encuentras código existente que viola estas reglas (ej. `formatCurrency` duplicado en 12 archivos, `fetch` inline en un componente, interface inline en `.tsx`), refactorízalo en vez de copiar el anti-patrón.
+
+---
+
+## 🎨 DESIGN SYSTEM (lectura obligatoria antes de tocar UI de cliente)
+
+**Antes de crear o modificar CUALQUIER pantalla customer-facing (`/src/app/q/**` o features dirigidas al cliente final), lee `DESIGN_SYSTEM.md` en la raíz del proyecto.**
+
+Reglas que aplican siempre:
+- Hero accent (`bg-accent`) en la parte superior, nunca pantallas blancas planas
+- El monto en pesos es el protagonista — `text-3xl` a `text-5xl`, `font-bold`, `tracking-tight`
+- Cards `rounded-2xl`, CTAs primarios con `shadow-md shadow-accent/20`
+- Inputs nunca pelados — siempre con label + icono + `rounded-2xl border-2`
+- Para montos/propinas: presets primero (chips de tap), input custom solo si el cliente quiere otro monto
+- `min-h-[48px]` mínimo en touch targets, `[56px]` en CTAs primarios
+- Prohibido `font-extrabold` en body, `window.confirm`, multi-color gradients
+
+Si una pantalla se ve como "formulario genérico", está mal. Reabrir y aplicar el design system.
+
+---
+
 ## Arquitectura: Clean Architecture por Features
 
 ### Principio fundamental

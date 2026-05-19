@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { DEFAULT_RECURRING_CONFIG } from "@/types/subscriptions";
+import type { RecurringPurchasesConfig } from "@/types/subscriptions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 import { handleSingleCheckout } from "@/features/checkout/services/singleCheckoutHandler";
@@ -29,19 +30,20 @@ export async function POST(request: Request) {
   if (
     !body.tenant_id ||
     !body.qr_code_id ||
-    !body.customer_name?.trim() ||
-    !body.customer_email?.trim() ||
     !Number.isFinite(body.amount) ||
     Number(body.amount) <= 0
   ) {
     return NextResponse.json(
-      {
-        error:
-          "tenant_id, qr_code_id, customer_name, customer_email y amount son requeridos",
-      },
+      { error: "tenant_id, qr_code_id y amount son requeridos" },
       { status: 400 },
     );
   }
+
+  // Name and email are optional for anonymous QR payments (tips). Fall back
+  // to safe defaults so downstream code keeps working without forcing the
+  // customer to share PII.
+  const customerName = body.customer_name?.trim() || "Cliente";
+  const customerEmail = body.customer_email?.trim() || "anonimo@pars.com.mx";
 
   const admin = createAdminClient();
   const { data: tenant } = await admin
@@ -54,11 +56,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Negocio no encontrado" }, { status: 404 });
   }
 
+  // Resolve the QR token so the back_urls can point at the branded
+  // `/q/{token}/payment/success` page rather than the generic storefront
+  // confirmation route.
+  const { data: qrRow } = await admin
+    .from("qr_codes")
+    .select("token")
+    .eq("id", body.qr_code_id)
+    .maybeSingle();
+  const qrToken = qrRow?.token ?? null;
+
   const customerId = await ensureCustomer(
     admin,
     body.tenant_id,
-    body.customer_name,
-    body.customer_email,
+    customerName,
+    customerEmail,
     body.customer_phone,
   );
 
@@ -77,8 +89,8 @@ export async function POST(request: Request) {
       order_type: "qr_payment",
       qr_code_id: body.qr_code_id,
       customer_id: customerId,
-      customer_name: body.customer_name.trim(),
-      customer_email: body.customer_email.trim().toLowerCase(),
+      customer_name: customerName,
+      customer_email: customerEmail.toLowerCase(),
       customer_phone: body.customer_phone?.trim() || null,
       payment_mode: "single",
       payment_plan_status: "none",
@@ -100,7 +112,7 @@ export async function POST(request: Request) {
   await admin.from("order_activity_log").insert({
     order_id: order.id,
     actor_type: "device",
-    actor_label: body.customer_name.trim(),
+    actor_label: customerName,
     action: "order.created",
     payload: {
       order_type: "qr_payment",
@@ -114,14 +126,19 @@ export async function POST(request: Request) {
     payload: {
       tenant_id: body.tenant_id,
       cart_id: `qr-payment:${body.qr_code_id}`,
-      customer_name: body.customer_name.trim(),
-      customer_email: body.customer_email.trim().toLowerCase(),
+      customer_name: customerName,
+      customer_email: customerEmail.toLowerCase(),
       customer_phone: body.customer_phone?.trim() || "",
       mode: "single",
       msi_option: 1,
     },
     tenantSlug: tenant.slug,
-    recurringConfig: DEFAULT_RECURRING_CONFIG,
+    // Business absorbs MP fee for QR payments (especially tips) — the
+    // customer pays exactly the amount they chose.
+    recurringConfig: {
+      ...DEFAULT_RECURRING_CONFIG,
+      fee_absorbed_by: "business",
+    } as RecurringPurchasesConfig,
     cartItems: [
       {
         product_id: body.qr_code_id,
@@ -147,6 +164,14 @@ export async function POST(request: Request) {
     installments: 0,
     frequency: 1,
     frequencyType: "months",
+    // Land back on the branded QR success page when we have a token.
+    backUrls: qrToken
+      ? {
+          success: `${request.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/q/${qrToken}/payment/success?order_id=${order.id}&status=success`,
+          failure: `${request.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/q/${qrToken}/payment/success?order_id=${order.id}&status=failure`,
+          pending: `${request.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/q/${qrToken}/payment/success?order_id=${order.id}&status=pending`,
+        }
+      : undefined,
   };
 
   return handleSingleCheckout(ctx);

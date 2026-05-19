@@ -9,6 +9,10 @@ import {
   handlePreapprovalLoanPayment,
 } from "@/features/prestamos/services/loanWebhookHandlers";
 import { handleStoreSubscriptionPayment } from "@/features/sitio/services/subscriptionWebhookHandlers";
+import {
+  handleQrTableMpPayment,
+  isQrTableReference,
+} from "@/features/qr/services/tableMpWebhookService";
 
 export async function POST(request: Request) {
   let body: {
@@ -115,6 +119,19 @@ export async function POST(request: Request) {
           mpFeeAmount,
           netReceived,
         );
+      }
+      return NextResponse.json({ received: true });
+    }
+
+    // ── Pago de QR mesa (full / split group) ─────────────────────────────────
+    if (isQrTableReference(externalRef)) {
+      if (mpStatus === "approved") {
+        await handleQrTableMpPayment({
+          admin: supabase,
+          externalReference: externalRef,
+          mpPaymentId: String(mpPayment.id ?? paymentId),
+          amount: transactionAmount,
+        });
       }
       return NextResponse.json({ received: true });
     }

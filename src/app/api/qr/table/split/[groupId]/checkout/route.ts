@@ -1,90 +1,51 @@
 import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  payGroup,
+  type CheckoutMethod,
+} from "@/features/qr/services/tablePaymentService";
+import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
 
 interface RouteContext {
   params: Promise<{ groupId: string }>;
 }
 
 interface SplitCheckoutBody {
-  method: "mercadopago" | "efectivo" | "transferencia";
+  method: CheckoutMethod;
+}
+
+function isCheckoutMethod(value: unknown): value is CheckoutMethod {
+  return (
+    value === "efectivo" ||
+    value === "transferencia" ||
+    value === "tarjeta" ||
+    value === "mercadopago"
+  );
 }
 
 export async function POST(request: Request, context: RouteContext) {
   const { groupId } = await context.params;
-  const body = (await request.json()) as SplitCheckoutBody;
+  let body: SplitCheckoutBody;
+  try {
+    body = (await request.json()) as SplitCheckoutBody;
+  } catch {
+    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+  }
+
+  if (!isCheckoutMethod(body.method)) {
+    return NextResponse.json(
+      { error: "Método de pago no válido" },
+      { status: 400 },
+    );
+  }
+
   const admin = createAdminClient();
+  const result = await payGroup(admin, { groupId, method: body.method });
+  if (!result.ok) return serviceErrorToResponse(result.error);
 
-  const { data: group } = await admin
-    .from("order_split_groups")
-    .select("id, order_id, total, paid_total, balance_due, payment_status")
-    .eq("id", groupId)
-    .single();
-
-  if (!group) {
-    return NextResponse.json({ error: "Grupo no encontrado" }, { status: 404 });
-  }
-
-  if (group.payment_status === "paid") {
-    return NextResponse.json({ success: true, already_paid: true });
-  }
-
-  const now = new Date().toISOString();
-  const amount = Number(group.balance_due ?? group.total);
-
-  await admin
-    .from("order_split_groups")
-    .update({
-      paid_total: Number(group.total),
-      balance_due: 0,
-      payment_status: "paid",
-      updated_at: now,
-    })
-    .eq("id", groupId);
-
-  await admin.from("payments").insert({
-    order_id: group.order_id,
-    provider: body.method === "mercadopago" ? "mercadopago" : "manual",
-    status: "approved",
-    amount,
-    payment_kind: "partial",
-    split_group_id: groupId,
-    metadata: {
-      source: "qr_split_checkout",
-      method: body.method,
-    },
+  return NextResponse.json({
+    success: true,
+    all_paid: result.data.allPaid,
   });
-
-  const { data: allGroups } = await admin
-    .from("order_split_groups")
-    .select("id, payment_status")
-    .eq("order_id", group.order_id);
-
-  const allPaid = (allGroups ?? []).every((entry) => entry.payment_status === "paid");
-  if (allPaid) {
-    await admin
-      .from("orders")
-      .update({
-        status: "paid",
-        paid_at: now,
-        balance_due: 0,
-        paid_total: Number(group.total),
-        payment_method: body.method,
-      })
-      .eq("id", group.order_id);
-  }
-
-  await admin.from("order_activity_log").insert({
-    order_id: group.order_id,
-    actor_type: "device",
-    actor_label: "cliente",
-    action: "payment.succeeded",
-    payload: {
-      split_group_id: groupId,
-      method: body.method,
-      amount,
-    },
-  });
-
-  return NextResponse.json({ success: true, all_paid: allPaid });
 }

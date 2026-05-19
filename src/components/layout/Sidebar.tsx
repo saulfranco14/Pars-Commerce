@@ -104,15 +104,13 @@ function SidebarContent(props: SidebarContentProps) {
     (m) => m.tenant_id === activeTenantId,
   );
   const userRole = activeMembership?.role?.name || "member";
-  const canAccessTeamAndSettings =
-    userRole === "owner" || userRole === "admin";
-  const canAccessQr = userRole === "owner" || userRole === "admin";
+  const canAccessTeamAndSettings = userRole === "owner";
+  const canAccessQr = userRole === "owner";
   const canAccessTables =
     userRole === "owner" ||
-    userRole === "admin" ||
     userRole === "cashier" ||
     userRole === "waiter";
-  const canAccessBankAccounts = userRole === "owner" || userRole === "admin";
+  const canAccessBankAccounts = userRole === "owner";
   return (
     <>
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-border-soft px-4">

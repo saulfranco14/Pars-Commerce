@@ -1,32 +1,81 @@
-interface TableMenuProduct {
-  id: string;
-  name: string;
-  price: number;
-}
+"use client";
+
+import { Loader2 } from "lucide-react";
+
+import { MenuProductCard } from "@/features/qr/components/MenuProductCard";
+import { MenuSearchBar } from "@/features/qr/components/MenuSearchBar";
+import { useMenuFilter } from "@/features/qr/hooks/useMenuFilter";
+
+import type { MenuItem } from "@/features/qr/interfaces/tableCart";
 
 interface TableMenuGridProps {
-  products: TableMenuProduct[];
+  products: MenuItem[];
   onAdd: (productId: string) => void;
+  onDecrement?: (productId: string) => void;
+  quantities?: Record<string, number>;
+  /** Show the search bar when product count >= this threshold. Default 10. */
+  searchThreshold?: number;
 }
 
-export function TableMenuGrid({ products, onAdd }: TableMenuGridProps) {
+export function TableMenuGrid({
+  products,
+  onAdd,
+  onDecrement,
+  quantities = {},
+  searchThreshold = 10,
+}: TableMenuGridProps) {
+  const filter = useMenuFilter({ products });
+
+  if (products.length === 0) {
+    return (
+      <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+        Este negocio aún no tiene productos disponibles.
+      </p>
+    );
+  }
+
+  const showSearch = products.length >= searchThreshold;
+
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {products.map((item) => (
-        <article key={item.id} className="rounded-xl border border-border p-3">
-          <h3 className="text-sm font-medium text-foreground">{item.name}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            ${Number(item.price).toFixed(2)}
-          </p>
-          <button
-            type="button"
-            className="mt-3 min-h-[44px] rounded-lg bg-accent px-3 py-2 text-sm font-medium text-foreground"
-            onClick={() => onAdd(item.id)}
-          >
-            Agregar
-          </button>
-        </article>
-      ))}
+    <div className="space-y-3">
+      {showSearch && (
+        <MenuSearchBar
+          value={filter.query}
+          onChange={filter.setQuery}
+          totalCount={filter.totalCount}
+          filteredCount={filter.filtered.length}
+        />
+      )}
+
+      {filter.filtered.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+          No encontramos productos que coincidan con tu búsqueda.
+        </p>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {filter.visible.map((item) => (
+              <MenuProductCard
+                key={item.id}
+                product={item}
+                quantity={quantities[item.id] ?? 0}
+                onAdd={onAdd}
+                onDecrement={onDecrement}
+              />
+            ))}
+          </div>
+
+          {filter.hasMore && (
+            <div
+              ref={filter.sentinelRef}
+              className="flex items-center justify-center gap-2 py-4 text-xs text-muted-foreground"
+            >
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Cargando más productos...
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
