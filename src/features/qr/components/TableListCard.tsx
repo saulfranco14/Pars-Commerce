@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Coffee, QrCode as QrIcon, Users } from "lucide-react";
+import { QrCode as QrIcon, Store, Users } from "lucide-react";
 
 import { AdminListCard } from "@/components/admin/AdminListCard";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -27,7 +27,7 @@ export function TableListCard({
 
   return (
     <AdminListCard
-      icon={Coffee}
+      icon={Store}
       title={table.label}
       meta={
         table.table_capacity ? (

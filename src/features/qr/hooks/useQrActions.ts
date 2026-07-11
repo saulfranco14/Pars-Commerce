@@ -10,6 +10,7 @@ import {
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
+import type { QrKind } from "@/features/qr/constants/qrKinds";
 
 interface UpdateQrInput {
   label?: string;
@@ -23,7 +24,7 @@ export function useQrActions(tenantId: string | null) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function revalidateAll(kind?: "payment" | "table") {
+  async function revalidateAll(kind?: QrKind) {
     if (!tenantId) return;
     await mutate(buildQrCodesKey(tenantId));
     if (kind) await mutate(buildQrCodesKey(tenantId, kind));

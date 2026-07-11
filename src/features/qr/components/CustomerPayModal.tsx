@@ -20,7 +20,10 @@ export type CustomerPayMethod =
 interface CustomerPayModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (method: CustomerPayMethod) => Promise<void> | void;
+  onConfirm: (
+    method: CustomerPayMethod,
+    customerPhone?: string,
+  ) => Promise<void> | void;
   total: number;
   tenantId: string;
   tenantName: string;
@@ -28,6 +31,8 @@ interface CustomerPayModalProps {
   loading?: boolean;
   error?: string | null;
   description?: string;
+  /** Ask an anonymous customer for a phone on manual methods (order tickets). */
+  requirePhone?: boolean;
 }
 
 /**
@@ -54,6 +59,7 @@ export function CustomerPayModal({
   loading = false,
   error,
   description,
+  requirePhone = false,
 }: CustomerPayModalProps) {
   const [mounted, setMounted] = useState(false);
   const [selected, setSelected] = useState<CustomerPayMethod | null>(null);
@@ -141,8 +147,9 @@ export function CustomerPayModal({
               tenantId={tenantId}
               tenantName={tenantName}
               tableLabel={tableLabel}
-              onConfirm={async () => {
-                await onConfirm(selected);
+              requirePhone={requirePhone}
+              onConfirm={async (phone) => {
+                await onConfirm(selected, phone);
               }}
               onBack={() => setSelected(null)}
               loading={loading}

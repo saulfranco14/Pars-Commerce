@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { CheckCircle2, Clock, Coffee, LayoutGrid, Plus } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, ClipboardList, Clock, Coffee, LayoutGrid, Plus } from "lucide-react";
 
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -74,14 +75,19 @@ export default function MesasPage() {
         title="Mesas"
         description="Cada mesa tiene un QR único para que tus clientes ordenen y paguen."
         action={
-          <button
-            type="button"
-            onClick={openCreate}
-            className={primaryCta}
-          >
-            <Plus className="h-4 w-4" />
-            Agregar mesa
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={`/dashboard/${tenantSlug}/pedidos/nuevo`}
+              className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-2 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
+            >
+              <ClipboardList className="h-4 w-4" />
+              Tomar pedido
+            </Link>
+            <button type="button" onClick={openCreate} className={primaryCta}>
+              <Plus className="h-4 w-4" />
+              Agregar mesa
+            </button>
+          </div>
         }
       />
 

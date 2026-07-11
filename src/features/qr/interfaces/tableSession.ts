@@ -4,6 +4,8 @@
  * the same contract.
  */
 
+import type { QrPromotion } from "@/features/qr/interfaces/promotion";
+
 export interface QrSessionTenant {
   id: string;
   name: string;
@@ -76,6 +78,8 @@ export interface TableSessionResponse {
   connected_devices?: number;
   incoming_merge_request?: QrIncomingMergeRequest | null;
   outgoing_merge_request?: QrOutgoingMergeRequest | null;
+  /** Active tenant promotions to tease inside the menu (Rappi-style banners). */
+  promotions?: QrPromotion[];
 }
 
 /**

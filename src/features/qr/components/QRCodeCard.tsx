@@ -6,12 +6,12 @@ import { QRCodeCanvas } from "qrcode.react";
 import {
   Archive,
   Check,
-  Coffee,
   Copy,
   CreditCard,
   ExternalLink,
   Eye,
   Power,
+  Store,
 } from "lucide-react";
 
 import { AdminListCard } from "@/components/admin/AdminListCard";
@@ -50,7 +50,7 @@ export function QRCodeCard({
   const [pending, setPending] = useState<PendingAction>(null);
   const url = buildPublicQrUrl(code.token);
   const isTable = code.kind === "table";
-  const Icon = isTable ? Coffee : CreditCard;
+  const Icon = isTable ? Store : CreditCard;
   const isInactive = !code.is_active;
 
   async function handleCopy(e: React.MouseEvent) {

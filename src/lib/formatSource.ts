@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, Globe } from "lucide-react";
+import { ClipboardList, Globe, LayoutDashboard, QrCode } from "lucide-react";
 
-export type OrderSource = "dashboard" | "public_store";
+export type OrderSource = "dashboard" | "public_store" | "staff" | "qr_table";
 
 const SOURCE_CONFIG: Record<
   OrderSource,
@@ -16,6 +16,18 @@ const SOURCE_CONFIG: Record<
     label: "Sitio web",
     icon: Globe,
     iconClass: "text-teal-600",
+  },
+  // Staff-taken counter order (QR ticket the customer scans to pay).
+  staff: {
+    label: "Mostrador",
+    icon: ClipboardList,
+    iconClass: "text-violet-600",
+  },
+  // Customer-initiated table order via the table's QR.
+  qr_table: {
+    label: "Mesa QR",
+    icon: QrCode,
+    iconClass: "text-blue-600",
   },
 };
 

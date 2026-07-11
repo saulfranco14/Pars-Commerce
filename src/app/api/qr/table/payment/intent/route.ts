@@ -11,6 +11,8 @@ interface RequestBody {
   order_id: string;
   group_id?: string | null;
   method: IntentMethod;
+  /** Anonymous customer phone to link the ticket (optional). */
+  customer_phone?: string;
 }
 
 function isIntentMethod(value: unknown): value is IntentMethod {
@@ -42,6 +44,7 @@ export async function POST(request: Request) {
     groupId: body.group_id ?? null,
     method: body.method,
     fingerprint,
+    customerPhone: body.customer_phone ?? null,
   });
 
   if (!result.ok) return serviceErrorToResponse(result.error);

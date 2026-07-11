@@ -46,7 +46,12 @@ export default function QrCodesPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [previewCode, setPreviewCode] = useState<QrCode | null>(null);
 
-  const codes = data ?? [];
+  // Configuration screen: only the reusable QR kinds (tables + fixed charges).
+  // Single-use 'order' tickets are ephemeral and live under Órdenes, not here.
+  const codes = useMemo(
+    () => (data ?? []).filter((c) => c.kind === "table" || c.kind === "payment"),
+    [data],
+  );
   const visibleCodes = useMemo(() => {
     if (filter === "all") return codes;
     return codes.filter((c) => c.kind === filter);

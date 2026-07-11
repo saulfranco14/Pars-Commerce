@@ -1,6 +1,7 @@
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPendingMergeRequests } from "@/features/qr/services/tableMergeRequestService";
+import { filterActivePromotions } from "@/features/qr/helpers/filterActivePromotions";
 import { NextResponse } from "next/server";
 
 const DEVICE_COLORS = [
@@ -63,11 +64,16 @@ export async function GET(request: Request) {
     kind: qrCode.kind,
   };
 
-  if (qrCode.kind === "table") {
+  if (qrCode.kind === "table" || qrCode.kind === "order") {
     // Note (LINK model): linked tables each keep their own live order + QR, so
     // scanning any table resolves its own order normally. The shared bill is
     // aggregated at read-time in the bill route via merge_group_id — no
     // redirect needed here.
+    //
+    // 'order' kind = a single-use staff-built ticket: the order already exists,
+    // so we resolve it but NEVER auto-create a new one (a spent/closed ticket
+    // returns active:false rather than opening a fresh order).
+    const isSingleUseTicket = qrCode.kind === "order";
     let orderId = qrCode.current_order_id as string | null;
     if (orderId) {
       const { data: existingOrder } = await admin
@@ -81,6 +87,11 @@ export async function GET(request: Request) {
       } else {
         response.order = existingOrder;
       }
+    }
+
+    if (!orderId && isSingleUseTicket) {
+      // Spent ticket — nothing to open. Tell the client the session ended.
+      return NextResponse.json({ ...response, active: false });
     }
 
     if (!orderId) {
@@ -278,6 +289,28 @@ export async function GET(request: Request) {
     } else {
       response.categories = [];
     }
+
+    // Active promotions to tease inside the menu (Rappi-style banners). Same
+    // active-window rule as the storefront; trimmed to what the banner needs.
+    const { data: promoRows } = await admin
+      .from("promotions")
+      .select(
+        "id, name, type, value, badge_label, image_url, description, valid_from, valid_until",
+      )
+      .eq("tenant_id", tenant.id)
+      .order("created_at", { ascending: false });
+    response.promotions = filterActivePromotions(promoRows ?? [], Date.now()).map(
+      (p) => ({
+        id: p.id,
+        name: p.name,
+        type: p.type,
+        value: p.value,
+        badge_label: p.badge_label,
+        image_url: p.image_url,
+        description: p.description,
+        valid_until: p.valid_until,
+      }),
+    );
   }
 
   return NextResponse.json(response);

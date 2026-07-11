@@ -5,11 +5,14 @@ import { ChevronUp, Search, X } from "lucide-react";
 
 import { MenuPeekRow } from "@/features/qr/components/MenuPeekRow";
 import { MenuProductCard } from "@/features/qr/components/MenuProductCard";
+import { PromoBanner } from "@/features/qr/components/PromoBanner";
 import { ReorderRow } from "@/features/qr/components/ReorderRow";
 import { ProductDetailSheet } from "@/features/qr/components/ProductDetailSheet";
+import { interleavePromos } from "@/features/qr/helpers/interleavePromos";
 import { useMenuSections } from "@/features/qr/hooks/useMenuSections";
 
 import type { MenuItem } from "@/features/qr/interfaces/tableCart";
+import type { QrPromotion } from "@/features/qr/interfaces/promotion";
 import type {
   QrSessionCategory,
   QrSessionMenuItem,
@@ -37,6 +40,8 @@ interface TableMenuSectionsProps {
    * only products NOT ordered yet, so the two rails never repeat items.
    */
   reorderProducts?: QrSessionMenuItem[];
+  /** Active promotions to interleave as banners between menu products. */
+  promotions?: QrPromotion[];
 }
 
 /**
@@ -59,6 +64,7 @@ export function TableMenuSections({
   tenantName,
   startCollapsed = false,
   reorderProducts,
+  promotions,
 }: TableMenuSectionsProps) {
   const { query, setQuery, searching, filtered, sections, totalCount } =
     useMenuSections({ products, categories });
@@ -241,7 +247,7 @@ export function TableMenuSections({
       ) : (
         /* Grouped sections */
         <div className="space-y-6">
-          {sections.map((s) => (
+          {sections.map((s, si) => (
             <section
               key={s.id}
               id={`sec-${s.id}`}
@@ -256,18 +262,30 @@ export function TableMenuSections({
                 </h3>
               )}
               <div className="space-y-2.5">
-                {s.products.map((item) => (
-                  <MenuProductCard
-                    key={item.id}
-                    product={item}
-                    quantity={quantities[item.id] ?? 0}
-                    onAdd={onAdd}
-                    onDecrement={onDecrement}
-                    onOpenDetail={setDetail}
-                    tenantLogoUrl={tenantLogoUrl}
-                    tenantName={tenantName}
-                  />
-                ))}
+                {/* Promos ride in the FIRST section only, so a banner set never
+                    repeats across sections. Interleaving is a pure helper. */}
+                {interleavePromos(
+                  s.products,
+                  si === 0 ? (promotions ?? []) : [],
+                ).map((entry) =>
+                  entry.kind === "promo" ? (
+                    <PromoBanner
+                      key={`promo-${entry.item.id}`}
+                      promotion={entry.item}
+                    />
+                  ) : (
+                    <MenuProductCard
+                      key={entry.item.id}
+                      product={entry.item}
+                      quantity={quantities[entry.item.id] ?? 0}
+                      onAdd={onAdd}
+                      onDecrement={onDecrement}
+                      onOpenDetail={setDetail}
+                      tenantLogoUrl={tenantLogoUrl}
+                      tenantName={tenantName}
+                    />
+                  ),
+                )}
               </div>
             </section>
           ))}

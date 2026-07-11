@@ -28,11 +28,12 @@ export async function GET(request: Request) {
 
   const admin = createAdminClient();
 
+  // Both 'table' and single-use 'order' tickets carry a live order to poll.
   const { data: qrCode } = await admin
     .from("qr_codes")
-    .select("id, current_order_id")
+    .select("id, current_order_id, kind")
     .eq("token", token)
-    .eq("kind", "table")
+    .in("kind", ["table", "order"])
     .is("archived_at", null)
     .eq("is_active", true)
     .single();

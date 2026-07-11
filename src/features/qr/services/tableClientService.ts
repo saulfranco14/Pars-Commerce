@@ -145,6 +145,8 @@ export async function createPaymentIntent(payload: {
   groupId?: string | null;
   method: Exclude<CustomerPayMethod, "mercadopago">;
   fingerprint: string;
+  /** Anonymous customer phone to link the ticket (optional). */
+  customerPhone?: string | null;
 }): Promise<PaymentIntentResult> {
   return apiFetch("/api/qr/table/payment/intent", {
     method: "POST",
@@ -153,6 +155,7 @@ export async function createPaymentIntent(payload: {
       order_id: payload.orderId,
       group_id: payload.groupId ?? null,
       method: payload.method,
+      customer_phone: payload.customerPhone ?? null,
     }),
   }) as Promise<PaymentIntentResult>;
 }

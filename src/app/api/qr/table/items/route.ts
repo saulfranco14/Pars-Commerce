@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 import { resetFulfillmentForNewItems } from "@/features/qr/services/tableFulfillmentService";
+import {
+  buildOrderItemRows,
+  filterValidItems,
+} from "@/features/qr/helpers/buildOrderItemRows";
 
 interface TableItemPayload {
   product_id: string;
@@ -76,12 +80,7 @@ export async function POST(request: Request) {
     deviceId = device?.id ?? null;
   }
 
-  const validItems = body.items.filter(
-    (item) =>
-      item.product_id &&
-      Number.isFinite(Number(item.quantity)) &&
-      Number(item.quantity) > 0,
-  );
+  const validItems = filterValidItems(body.items);
 
   if (validItems.length === 0) {
     return NextResponse.json(
@@ -97,29 +96,19 @@ export async function POST(request: Request) {
     .in("id", productIds)
     .eq("tenant_id", order.tenant_id);
 
-  const priceMap = new Map<string, number>();
+  const priceByProduct = new Map<string, number>();
   for (const product of products ?? []) {
-    priceMap.set(product.id, Number(product.price));
+    priceByProduct.set(product.id, Number(product.price));
   }
 
-  const rows = validItems
-    .map((item) => {
-      const unitPrice = priceMap.get(item.product_id);
-      if (unitPrice === undefined) return null;
-      const quantity = Number(item.quantity);
-      return {
-        order_id: body.order_id,
-        product_id: item.product_id,
-        quantity,
-        unit_price: unitPrice,
-        subtotal: unitPrice * quantity,
-        added_by_device_id: deviceId,
-        is_shared: item.is_shared === true,
-        // Snapshot the table this was ordered at, so it survives a later merge.
-        origin_table_label: order.table_label ?? null,
-      };
-    })
-    .filter(Boolean);
+  const rows = buildOrderItemRows({
+    orderId: body.order_id,
+    items: validItems,
+    priceByProduct,
+    addedByDeviceId: deviceId,
+    // Snapshot the table this was ordered at, so it survives a later merge.
+    originTableLabel: order.table_label ?? null,
+  });
 
   if (rows.length === 0) {
     return NextResponse.json(

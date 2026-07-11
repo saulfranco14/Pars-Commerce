@@ -23,6 +23,7 @@ import {
 } from "@/features/qr/helpers/deviceFingerprint";
 import { getReorderProducts } from "@/features/qr/helpers/getReorderProducts";
 
+import type { QrPromotion } from "@/features/qr/interfaces/promotion";
 import type {
   QrIncomingMergeRequest,
   QrOutgoingMergeRequest,
@@ -45,6 +46,7 @@ interface TableQRClientProps {
   isOwner: boolean;
   incomingMerge: QrIncomingMergeRequest | null;
   outgoingMerge: QrOutgoingMergeRequest | null;
+  promotions: QrPromotion[];
   onSessionRefresh: () => void | Promise<void>;
 }
 
@@ -60,6 +62,7 @@ export function TableQRClient({
   isOwner,
   incomingMerge,
   outgoingMerge,
+  promotions,
   onSessionRefresh,
 }: TableQRClientProps) {
   const naming = useDeviceNaming({
@@ -137,19 +140,28 @@ export function TableQRClient({
       prevItemCountRef.current = liveItemCount;
   }, [order?.id, liveFulfillment, liveItemCount, reloadTracker]);
 
-  // The "¡Ya puedes pagar!" moment — announce ONCE per ready-cycle: persisted
-  // per order so screen re-entry never re-announces, but a new batch (state
-  // regresses to received) clears the flag so the NEXT ready celebrates again.
+  // The "¡Ya puedes pagar!" moment — announce ONCE per ready-cycle.
+  //
+  // Persisted per order (localStorage) so re-entering the screen never
+  // re-announces. The flag is cleared ONLY on a real regression: we must have
+  // OBSERVED "ready" in this mount and then seen it drop to a non-ready state
+  // (a new batch). The transient initial "received" on every remount — before
+  // the pulse/tracker resolve the true state — never observed "ready" first,
+  // so it does NOT clear the flag (that was the bug).
   const [readyToast, setReadyToast] = useState(false);
+  const sawReadyRef = useRef(false);
   useEffect(() => {
     const id = order?.id;
     if (!id) return;
     if (liveFulfillment === "ready") {
+      sawReadyRef.current = true;
       if (!hasSeenReady(id)) {
         markReadySeen(id);
         setReadyToast(true);
       }
-    } else {
+    } else if (sawReadyRef.current) {
+      // Genuine ready → not-ready regression (new batch) in this session.
+      sawReadyRef.current = false;
       clearReadySeen(id);
     }
   }, [order?.id, liveFulfillment]);
@@ -321,6 +333,7 @@ export function TableQRClient({
         // jump when the tracker resolves a beat after the menu paints.
         startCollapsed={hasExistingOrder}
         reorderProducts={reorderProducts}
+        promotions={promotions}
       />
     </CustomerScreen>
   );

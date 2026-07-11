@@ -7,6 +7,7 @@ import useSWR, { useSWRConfig } from "swr";
 import {
   ArrowLeft,
   CheckCircle2,
+  ClipboardList,
   Clock,
   Link2,
   Power,
@@ -22,6 +23,7 @@ import { useActiveTenant } from "@/stores/useTenantStore";
 import { Notification } from "@/components/ui/Notification";
 import {
   adminActionButtonDanger,
+  adminActionButtonPrimary,
   adminActionButtonSecondary,
 } from "@/components/admin/actionButtonClasses";
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
@@ -223,7 +225,17 @@ export default function MesaDetailPage() {
             ) : null}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Staff takes/extends this table's order (appends to its account) */}
+          {orderId && (
+            <Link
+              href={`/dashboard/${tenantSlug}/pedidos/nuevo?table_order_id=${orderId}`}
+              className={adminActionButtonPrimary}
+            >
+              <ClipboardList className="h-4 w-4" />
+              Tomar pedido
+            </Link>
+          )}
           {(data?.linked_tables?.length ?? 0) > 0 ? (
             <button
               type="button"

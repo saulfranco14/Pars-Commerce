@@ -2,13 +2,15 @@ import { QrCode as QrIcon } from "lucide-react";
 
 import { PaymentQRClient } from "./payment/PaymentQRClient";
 import { TableSession } from "./table/TableSession";
+import { OrderTicketScreen } from "./order/OrderTicketScreen";
 
 import type { TenantPaymentMethod } from "@/features/configuracion/interfaces/bankAccount";
 import type { QrSessionTenant } from "@/features/qr/interfaces/tableSession";
 
 interface QrResolveResponse {
   tenant: QrSessionTenant;
-  kind: "payment" | "table";
+  kind: "payment" | "table" | "order";
+  active?: boolean;
   qr_code: {
     id: string;
     label: string;
@@ -120,6 +122,23 @@ export default async function QrPage({ params }: QrPageProps) {
         tenant={session.tenant}
         qrCode={session.qr_code}
         activePaymentMethod={activePaymentMethod}
+      />
+    );
+  }
+
+  // Single-use staff 'order' ticket: the order is already built — show the lean
+  // review-and-pay screen. A spent/closed ticket resolves active:false.
+  if (session.kind === "order") {
+    if (session.active === false || !session.order) {
+      return (
+        <QrUnavailable message="Este pedido ya fue pagado o ya no está disponible." />
+      );
+    }
+    return (
+      <OrderTicketScreen
+        token={token}
+        tenant={session.tenant}
+        orderId={session.order.id}
       />
     );
   }

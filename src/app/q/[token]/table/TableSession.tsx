@@ -96,6 +96,7 @@ export function TableSession({ token }: TableSessionProps) {
       isOwner={data.my_device?.is_owner === true}
       incomingMerge={data.incoming_merge_request ?? null}
       outgoingMerge={data.outgoing_merge_request ?? null}
+      promotions={data.promotions ?? []}
       onSessionRefresh={refresh}
     />
   );

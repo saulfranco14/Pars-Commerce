@@ -61,7 +61,7 @@ export function usePaymentFlow({
     setPending(null);
   }
 
-  async function confirmIntent(method: CustomerPayMethod) {
+  async function confirmIntent(method: CustomerPayMethod, customerPhone?: string) {
     if (!target) return;
     const amount =
       target.kind === "group"
@@ -88,6 +88,7 @@ export function usePaymentFlow({
         groupId: target.kind === "group" ? target.group.id : null,
         method,
         fingerprint,
+        customerPhone: customerPhone ?? null,
       });
       setPending({
         paymentId: result.payment_id,

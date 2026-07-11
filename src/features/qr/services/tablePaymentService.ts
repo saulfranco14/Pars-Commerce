@@ -57,6 +57,8 @@ export interface CreatePaymentIntentInput {
   groupId?: string | null;
   method: IntentMethod;
   fingerprint: string | null;
+  /** Anonymous customer (no session): phone to link the ticket to. */
+  customerPhone?: string | null;
 }
 
 export interface CreatePaymentIntentResult {
@@ -173,6 +175,16 @@ export async function createPaymentIntent(
     .single();
   const intentAmount = Number(groupRow?.balance_due ?? groupRow?.total ?? 0);
 
+  // Anonymous customer: link the ticket to their phone so the business can
+  // reach them and the payment is attributable.
+  const phone = input.customerPhone?.trim() || null;
+  if (phone) {
+    await admin
+      .from("orders")
+      .update({ customer_phone: phone, updated_at: new Date().toISOString() })
+      .eq("id", input.orderId);
+  }
+
   const { data: paymentRow } = await admin
     .from("payments")
     .insert({
@@ -186,6 +198,7 @@ export async function createPaymentIntent(
         source: "qr_table_payment_intent",
         method: input.method,
         device_id: deviceId,
+        customer_phone: phone,
       },
     })
     .select("id")

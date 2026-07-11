@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { Check, Copy, Loader2 } from "lucide-react";
+import { Check, Copy, Loader2, Phone } from "lucide-react";
 
 import { Notification } from "@/components/ui/Notification";
 import { formatCurrency } from "@/features/qr/helpers/format";
@@ -17,10 +17,12 @@ interface PaymentMethodStepProps {
   tenantId: string;
   tenantName: string;
   tableLabel?: string;
-  onConfirm: () => Promise<void>;
+  onConfirm: (customerPhone?: string) => Promise<void>;
   onBack: () => void;
   loading?: boolean;
   error?: string | null;
+  /** Ask an anonymous customer for a phone on manual methods. */
+  requirePhone?: boolean;
 }
 
 /**
@@ -38,7 +40,15 @@ export function PaymentMethodStep({
   onBack,
   loading,
   error,
+  requirePhone = false,
 }: PaymentMethodStepProps) {
+  const [phone, setPhone] = useState("");
+  // Manual methods (cash/transfer) validated by staff need a way to reach the
+  // customer; MP tracks itself. Only ask when the caller opts in (order ticket).
+  const isManual = method === "efectivo" || method === "transferencia";
+  const askPhone = requirePhone && isManual;
+  const phoneOk = !askPhone || phone.replace(/\D/g, "").length >= 10;
+
   const isTransferencia = method === "transferencia";
   const key = isTransferencia
     ? `/api/tenant-payment-methods?tenant_id=${encodeURIComponent(tenantId)}`
@@ -55,6 +65,7 @@ export function PaymentMethodStep({
 
   const canConfirm =
     !loading &&
+    phoneOk &&
     (!isTransferencia || (!loadingMethods && hasActiveBankAccount));
 
   return (
@@ -86,6 +97,28 @@ export function PaymentMethodStep({
       )}
       {method === "mercadopago" && <MercadoPagoStep amount={amount} />}
 
+      {askPhone && (
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Tu celular
+          </span>
+          <div className="relative">
+            <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="tel"
+              inputMode="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="55 1234 5678"
+              className="block w-full rounded-2xl border-2 border-border bg-background py-3.5 pl-10 pr-3 text-base font-medium text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none transition-colors"
+            />
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Lo usamos para vincular tu pago. No te llegará spam.
+          </p>
+        </label>
+      )}
+
       {error && <Notification tone="error" message={error} />}
 
       {isTransferencia && !loadingMethods && !hasActiveBankAccount ? (
@@ -106,7 +139,7 @@ export function PaymentMethodStep({
       ) : (
         <button
           type="button"
-          onClick={onConfirm}
+          onClick={() => onConfirm(askPhone ? phone : undefined)}
           disabled={!canConfirm}
           className="flex min-h-[56px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 transition-all"
         >

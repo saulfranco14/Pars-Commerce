@@ -24,16 +24,23 @@ export async function releaseTableQrIfPaid(
   // where the QR was already linked to a brand-new order).
   const { data: qr } = await admin
     .from("qr_codes")
-    .select("id, current_order_id")
+    .select("id, current_order_id, kind")
     .eq("id", order.qr_code_id)
     .single();
 
   if (!qr || qr.current_order_id !== orderId) return;
 
   const now = new Date().toISOString();
+  // A single-use 'order' ticket is spent once paid → archive it so it can't be
+  // rescanned. A persistent 'table'/'payment' QR just frees up for the next use.
+  const isSingleUse = qr.kind === "order";
   await admin
     .from("qr_codes")
-    .update({ current_order_id: null, updated_at: now })
+    .update({
+      current_order_id: null,
+      updated_at: now,
+      ...(isSingleUse ? { is_active: false, archived_at: now } : {}),
+    })
     .eq("id", order.qr_code_id);
 
   await admin.from("order_activity_log").insert({
