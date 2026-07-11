@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
+import { Notification } from "@/components/ui/Notification";
 import { formatCurrency } from "@/features/qr/helpers/format";
 
 interface AssignableItem {
@@ -87,8 +88,8 @@ export function SplitItemsAssigner({
     <section className="rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">
-            Asignar items a cada persona
+          <h3 className="text-sm font-bold text-foreground">
+            ¿Quién pidió cada producto?
           </h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Selecciona a quién pertenece cada producto.
@@ -182,9 +183,12 @@ export function SplitItemsAssigner({
       )}
 
       {unassignedCount > 0 && (
-        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Faltan asignar {unassignedCount} producto{unassignedCount === 1 ? "" : "s"}.
-        </p>
+        <div className="mt-3">
+          <Notification
+            tone="warning"
+            message={`Faltan asignar ${unassignedCount} producto${unassignedCount === 1 ? "" : "s"}.`}
+          />
+        </div>
       )}
     </section>
   );

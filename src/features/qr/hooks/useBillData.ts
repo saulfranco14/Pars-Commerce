@@ -16,30 +16,55 @@ export interface BillItem {
   subtotal: number;
   added_by_device_id: string | null;
   is_shared: boolean;
+  origin_table_label: string | null;
+  created_at: string | null;
 }
 
 export interface BillDevice {
   id: string;
   display_name: string | null;
   color_hex: string;
+  /** Per-person preparation state: received | in_progress | ready. */
+  fulfillment_status?: string;
 }
 
 export interface BillResponse {
   order: {
     id: string;
     status: string;
+    fulfillment_status: string;
     total: number;
     paid_total: number;
     balance_due: number;
     created_at: string;
     payment_method: string | null;
   };
-  tenant?: { id: string; name: string; slug: string } | null;
+  tenant?: {
+    id: string;
+    name: string;
+    slug: string;
+    logo_url?: string | null;
+  } | null;
   qr_code?: { id: string; label: string } | null;
   groups: SplitGroup[];
   items: BillItem[];
   devices: BillDevice[];
   my_device_id: string | null;
+  /** This caller's own preparation state — gates "pagar mi parte". */
+  my_fulfillment_status?: string;
+  i_am_owner?: boolean;
+  is_linked?: boolean;
+  linked_labels?: string[];
+  incoming_merge_request?: {
+    id: string;
+    requester_label: string;
+    expires_at: string;
+  } | null;
+  outgoing_merge_request?: {
+    id: string;
+    target_label: string;
+    expires_at: string;
+  } | null;
 }
 
 interface UseBillDataOptions {

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
+import { Notification } from "@/components/ui/Notification";
+import { CustomerLoading } from "@/features/qr/components/CustomerLoading";
 import { PaymentReceipt } from "@/features/qr/components/PaymentReceipt";
 import { useBillData } from "@/features/qr/hooks/useBillData";
 
@@ -48,31 +50,31 @@ export default function TablePaymentResultPage() {
 
   if (!orderId) {
     return (
-      <main className="mx-auto w-full max-w-md px-4 py-6">
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-          Falta order_id en la URL.
-        </p>
+      <main className="mx-auto flex min-h-dvh w-full max-w-md items-center px-4 py-6">
+        <Notification
+          tone="error"
+          title="No pudimos verificar tu pago"
+          message="Falta la referencia de la orden. Vuelve a la cuenta de tu mesa."
+        />
       </main>
     );
   }
 
   if (isLoading && !data) {
-    return (
-      <main className="flex min-h-dvh items-center justify-center px-4">
-        <p className="text-sm text-muted-foreground">Verificando pago...</p>
-      </main>
-    );
+    return <CustomerLoading message="Verificando tu pago..." />;
   }
 
   if (error || !data) {
     return (
-      <main className="mx-auto w-full max-w-md px-4 py-6">
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-          No pudimos verificar el pago. Vuelve a la cuenta.
-        </p>
+      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-3 px-4 py-6">
+        <Notification
+          tone="error"
+          title="No pudimos verificar el pago"
+          message="Vuelve a la cuenta e inténtalo de nuevo."
+        />
         <Link
           href={`/q/${token}/table/bill?order_id=${orderId}`}
-          className="mt-3 inline-flex min-h-[48px] items-center justify-center rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground"
+          className="inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
         >
           Ir a la cuenta
         </Link>
@@ -116,14 +118,16 @@ export default function TablePaymentResultPage() {
           Estamos verificando con Mercado Pago. Esto puede tardar unos segundos.
         </p>
         {waitedTooLong && (
-          <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            ¿Tarda demasiado? El pago puede llegar en unos minutos. Puedes
-            volver a la cuenta y revisar después.
-          </p>
+          <div className="mt-4 text-left">
+            <Notification
+              tone="warning"
+              message="¿Tarda demasiado? El pago puede llegar en unos minutos. Puedes volver a la cuenta y revisar después."
+            />
+          </div>
         )}
         <Link
           href={`/q/${token}/table/bill?order_id=${orderId}`}
-          className="mt-5 inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-border-soft/40"
+          className="mt-5 inline-flex min-h-[48px] cursor-pointer items-center justify-center rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
         >
           Ir a la cuenta
         </Link>

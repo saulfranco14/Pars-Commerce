@@ -13,6 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export interface AdminViewOrder {
   id: string;
   status: string;
+  fulfillment_status: string;
   subtotal: number;
   total: number;
   paid_total: number;
@@ -30,6 +31,8 @@ export interface AdminViewDevice {
   color_hex: string;
   joined_at: string;
   last_seen_at: string;
+  /** Per-person preparation state: received | in_progress | ready. */
+  fulfillment_status: string;
 }
 
 export interface AdminViewItem {
@@ -84,6 +87,8 @@ export interface AdminViewResponse {
   split_groups: AdminViewSplitGroup[];
   activity_log: AdminViewActivity[];
   pending_payments: AdminViewPendingPayment[];
+  /** Labels of the OTHER tables this one is linked with (empty if not linked). */
+  linked_tables: string[];
 }
 
 export async function getTableAdminView(
@@ -96,12 +101,25 @@ export async function getTableAdminView(
   const { data: order } = await admin
     .from("orders")
     .select(
-      "id, tenant_id, status, subtotal, total, paid_total, balance_due, payment_method, created_at, paid_at, qr_code_id, table_label, cancel_reason",
+      "id, tenant_id, status, fulfillment_status, subtotal, total, paid_total, balance_due, payment_method, created_at, paid_at, qr_code_id, table_label, cancel_reason, merge_group_id",
     )
     .eq("id", orderId)
     .single();
 
   if (!order) return { order: null, view: null };
+
+  // Labels of the other tables this one is linked with (LINK model).
+  let linkedTables: string[] = [];
+  if (order.merge_group_id) {
+    const { data: linked } = await admin
+      .from("orders")
+      .select("id, table_label")
+      .eq("merge_group_id", order.merge_group_id)
+      .neq("id", orderId);
+    linkedTables = (linked ?? [])
+      .map((o) => o.table_label as string | null)
+      .filter((l): l is string => !!l);
+  }
 
   const [
     { data: qrCode },
@@ -127,7 +145,9 @@ export async function getTableAdminView(
       .order("created_at", { ascending: true }),
     admin
       .from("order_devices")
-      .select("id, display_name, color_hex, joined_at, last_seen_at")
+      .select(
+        "id, display_name, color_hex, joined_at, last_seen_at, fulfillment_status",
+      )
       .eq("order_id", orderId)
       .order("joined_at", { ascending: true }),
     admin
@@ -220,6 +240,7 @@ export async function getTableAdminView(
       order: {
         id: order.id,
         status: order.status,
+        fulfillment_status: order.fulfillment_status ?? "received",
         subtotal: Number(order.subtotal),
         total: Number(order.total),
         paid_total: Number(order.paid_total ?? 0),
@@ -231,11 +252,15 @@ export async function getTableAdminView(
         cancel_reason: order.cancel_reason,
       },
       qr_code: qrCode as AdminViewResponse["qr_code"],
-      devices: devices ?? [],
+      devices: (devices ?? []).map((d) => ({
+        ...d,
+        fulfillment_status: d.fulfillment_status ?? "received",
+      })),
       items,
       split_groups: splitGroups ?? [],
       activity_log: rawLog ?? [],
       pending_payments: pendingPayments,
+      linked_tables: linkedTables,
     },
   };
 }

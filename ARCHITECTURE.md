@@ -211,6 +211,38 @@ A server-side service in `features/.../services/*Service.ts`:
 
 ---
 
+## 6.1 Reglas de integración con Mercado Pago
+
+Aplican a cualquier servicio que cree una `Preference` (storefront,
+propinas, mesas, préstamos):
+
+- **El negocio absorbe la comisión MP en flujos de QR (mesas y propinas).**
+  El cliente paga exactamente el monto mostrado; nunca inflamos
+  `unit_price` con la comisión. Marca la preferencia con
+  `metadata.fee_absorbed_by = "business"` y deja que MP descuente su
+  comisión del depósito. Para checkout de storefront con MSI se usa
+  `calcMsiBuyerTotal(..., absorbedBy)` — el flag viene de
+  `recurringConfig.fee_absorbed_by`.
+- **`auto_return: "approved"` solo se envía cuando las `back_urls` son
+  HTTPS públicas.** En desarrollo (`http://localhost`) MP rechaza la
+  preferencia con `auto_return invalid`. Guarda detrás de
+  `base.startsWith("https://")`. Patrón aplicado en
+  `singleCheckoutHandler` y `tableMpPreferenceService`.
+- **Los errores del SDK de MP deben loguearse con detalle.** El SDK
+  envuelve el mensaje en `err.cause.message`. Usa el helper
+  `extractMercadoPagoError` (o equivalente) para sacar el mensaje real,
+  loguéalo en el servidor con contexto (`orderId`, `amount`, etc.) y
+  propágalo al cliente cuando esté disponible — nunca devuelvas un
+  genérico *"No se pudo conectar con Mercado Pago"* si tienes el mensaje
+  real.
+- **`external_reference` debe seguir convenciones por flujo** para que el
+  webhook (`/api/mercadopago/webhook`) sepa a qué servicio derivar:
+  - `qr_table:{order_id}` → pago completo de mesa
+  - `qr_table_group:{group_id}` → pago de grupo de split
+  - `order:{order_id}:mode:single:attempt:{attempt_id}` → storefront
+
+---
+
 ## 7. Anti-patterns we've explicitly killed
 
 | Anti-pattern                                          | Where we killed it                          |
@@ -225,6 +257,14 @@ A server-side service in `features/.../services/*Service.ts`:
 | `PaymentMethodStep` rendering its own back button + duplicate method header card | Now lives inside `<CustomerScreenLayout>` with `<PaymentMethodHero>` as the hero |
 | `METHOD_META` / `METHOD_LABELS` / `METHOD_ICONS` redeclared in `CustomerPayModal`, `PaymentMethodStep`, `PaymentReceipt`, `PendingPaymentsCard` | Now in `features/qr/constants/paymentMethodMeta.ts` — single source of truth |
 | `TableMenuGrid` rendering all products at once (1000+ unusable) | Now uses `useMenuFilter` (search + chunked rendering via IntersectionObserver) + `MenuProductCard` + `MenuSearchBar` |
+| Header `<h1>` + descripción + botón "Nuevo …" copy-pasted en cada página de dashboard | Ahora `<PageHeader title description action>` en `src/components/admin/PageHeader.tsx` |
+| Filtros con pills + count badges reimplementados en `qr/page.tsx`, `mesas/page.tsx`, `TablesFilterTabs.tsx` con el mismo Tailwind | Ahora `<FilterPills value onChange filters>` con `<TablesFilterTabs>` como wrapper delgado |
+| Estados vacíos (`border-dashed` + icon circle + h2 + descripción + CTA) replicados en `mesas/page`, `qr/page`, `cuentas-bancarias/page` | Ahora `<EmptyState icon title description action>` |
+| Status pills (`bg-emerald-100 text-emerald-800` + dot) inline en `TableListCard`, `QRCodeCard`, `mesas/[mesaId]`, `BankAccountCard` | Ahora `<StatusBadge tone label>` |
+| Métricas KPI (label + valor grande con tone amber/emerald) duplicadas en `mesas/page` y `mesas/[mesaId]` | Ahora `<MetricsStrip metrics={[{label, value, tone, icon}]}>` |
+| Toast `createPortal` ad-hoc dentro de `cuentas-bancarias/page` | Ahora `<Toast message tone onDone>` en `src/components/ui/Toast.tsx` |
+| Botones pequeños `inline-flex min-h-[36px] rounded-lg border …` copy-pasted en 5+ cards | Ahora `adminActionButtonSecondary \| Primary \| Danger` desde `actionButtonClasses.ts` |
+| Cards de listado con la misma estructura (icon + title + meta + badge + actions) reescritas en `TableListCard`, `QRCodeCard`, `BankAccountCard` | Ahora extienden `<AdminListCard>` (composición vía props `thumbnail`, `meta`, `badge`, `body`, `actions`) |
 
 When you spot any of these patterns in new code, refactor BEFORE shipping.
 
@@ -255,5 +295,12 @@ Before writing a new component, hook, service, or helper:
 - [ ] Touch-targets ≥ 48px on customer-facing UI; design follows
       `DESIGN_SYSTEM.md`.
 - [ ] Customer-facing screens use `<CustomerScreenLayout>`.
+- [ ] Admin pages usan las primitivas de `src/components/admin/`:
+      `PageHeader`, `MetricsStrip`, `FilterPills`, `EmptyState`,
+      `StatusBadge`, `AdminListCard`, `Toast`, y las clases
+      `adminActionButton*`. Cero pills/cards/empty-states inline.
+- [ ] Si tocas un servicio de Mercado Pago, sigues §6.1 (fee absorbido por
+      negocio en QR, `auto_return` solo en HTTPS, error real del SDK
+      propagado, `external_reference` con el prefijo correcto).
 
 If any box is unchecked, the change is not done — go back and finish.

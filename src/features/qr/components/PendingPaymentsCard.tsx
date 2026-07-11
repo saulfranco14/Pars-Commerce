@@ -2,6 +2,10 @@
 
 import { Check, Loader2, X } from "lucide-react";
 
+import {
+  adminActionButtonConfirm,
+  adminActionButtonDanger,
+} from "@/components/admin/actionButtonClasses";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { PAYMENT_METHOD_META } from "@/features/qr/constants/paymentMethodMeta";
 
@@ -58,7 +62,7 @@ export function PendingPaymentsCard({
             >
               <div className="flex items-start gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-border-soft/50">
-                  <Icon className={`h-4 w-4 ${meta.color}`} />
+                  <Icon className="h-4 w-4 text-muted-foreground" />
                 </span>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground">
@@ -76,7 +80,7 @@ export function PendingPaymentsCard({
                   type="button"
                   onClick={() => onReject(p.id)}
                   disabled={isBusy}
-                  className="inline-flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-lg border border-red-200 bg-surface px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className={adminActionButtonDanger}
                 >
                   <X className="h-4 w-4" />
                   Rechazar
@@ -85,7 +89,7 @@ export function PendingPaymentsCard({
                   type="button"
                   onClick={() => onConfirm(p.id)}
                   disabled={isBusy}
-                  className="inline-flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className={adminActionButtonConfirm}
                 >
                   {isBusy ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

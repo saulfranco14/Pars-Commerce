@@ -1,13 +1,3 @@
-/**
- * Builds a MercadoPago preference for paying a table order — either the full
- * order or a specific split group. Lives as a service so the route handler
- * stays a thin adapter.
- *
- * external_reference convention:
- *   - "qr_table:{order_id}"        → full order pay
- *   - "qr_table_group:{group_id}"  → split group pay
- */
-
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { preferenceClient } from "@/lib/mercadopago";
@@ -21,7 +11,6 @@ import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 export interface CreatePreferenceInput {
   orderId: string;
   groupId?: string | null;
-  /** Public origin used to build back_urls. Pass from the request URL. */
   baseUrl: string;
   qrToken: string;
 }
@@ -38,7 +27,7 @@ export async function createTableMpPreference(
 ): Promise<ServiceResult<CreatePreferenceResult>> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, tenant_id, status, total, balance_due")
+    .select("id, tenant_id, status, fulfillment_status, total, balance_due")
     .eq("id", input.orderId)
     .single();
 
@@ -56,6 +45,15 @@ export async function createTableMpPreference(
     return {
       ok: false,
       error: { code: "conflict", message: "La orden fue cancelada" },
+    };
+  if (order.fulfillment_status !== "ready")
+    return {
+      ok: false,
+      error: {
+        code: "conflict",
+        message:
+          "El negocio aún está preparando tu pedido. Podrás pagar cuando esté listo.",
+      },
     };
 
   let amount: number;
@@ -85,7 +83,6 @@ export async function createTableMpPreference(
     title = `Pago de ${group.label}`;
     externalReference = `${QR_TABLE_GROUP_PREFIX}${group.id}`;
   } else {
-    // Whole order — block if it was already split.
     const { data: existing } = await admin
       .from("order_split_groups")
       .select("id")
@@ -120,10 +117,6 @@ export async function createTableMpPreference(
   successUrl.searchParams.set("order_id", order.id);
   if (input.groupId) successUrl.searchParams.set("group_id", input.groupId);
 
-  // Business absorbs the MP fee on table payments — the customer pays
-  // exactly the amount shown on the bill. See `calcMsiBuyerTotal` with
-  // `absorbedBy: "business"` for the contado breakdown used by the rest
-  // of the platform.
   const isPubliclyReachable = base.startsWith("https://");
 
   try {
@@ -145,9 +138,6 @@ export async function createTableMpPreference(
           failure: successUrl.toString(),
           pending: successUrl.toString(),
         },
-        // MP rejects auto_return when back_urls aren't publicly reachable
-        // (localhost during dev triggers `auto_return invalid`). Only set
-        // it on real HTTPS hosts. Same guard used by singleCheckoutHandler.
         ...(isPubliclyReachable ? { auto_return: "approved" as const } : {}),
         metadata: {
           source: "qr_table",

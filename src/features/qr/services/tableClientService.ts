@@ -11,7 +11,11 @@ import { apiFetch } from "@/services/apiFetch";
 
 import type { CustomerPayMethod } from "@/features/qr/components/CustomerPayModal";
 import type { AssignedGroup } from "@/features/qr/components/SplitItemsAssigner";
-import type { TableSessionResponse } from "@/features/qr/interfaces/tableSession";
+import type { BillResponse } from "@/features/qr/hooks/useBillData";
+import type {
+  TablePulseResponse,
+  TableSessionResponse,
+} from "@/features/qr/interfaces/tableSession";
 
 /* ---------- QR resolve (initial session) ---------- */
 
@@ -26,6 +30,36 @@ export async function resolveTableSession(payload: {
       headers: fingerprintHeader(payload.fingerprint),
     },
   ) as Promise<TableSessionResponse>;
+}
+
+/* ---------- One-shot bill read (order tracker on the mesa screen) ---------- */
+
+export async function fetchTableBill(payload: {
+  orderId: string;
+  fingerprint: string;
+}): Promise<BillResponse> {
+  return apiFetch(
+    `/api/qr/table/${encodeURIComponent(payload.orderId)}/bill`,
+    {
+      cache: "no-store",
+      headers: fingerprintHeader(payload.fingerprint),
+    },
+  ) as Promise<BillResponse>;
+}
+
+/* ---------- Lightweight heartbeat (poll this, not resolve) ---------- */
+
+export async function fetchTablePulse(payload: {
+  token: string;
+  fingerprint: string;
+}): Promise<TablePulseResponse> {
+  return apiFetch(
+    `/api/qr/table/pulse?token=${encodeURIComponent(payload.token)}`,
+    {
+      cache: "no-store",
+      headers: fingerprintHeader(payload.fingerprint),
+    },
+  ) as Promise<TablePulseResponse>;
 }
 
 function fingerprintHeader(fingerprint: string): HeadersInit {
@@ -49,7 +83,7 @@ export async function setMyDeviceName(payload: {
   });
 }
 
-/* ---------- Sending items to the kitchen/staff ---------- */
+/* ---------- Sending items to the business/staff ---------- */
 
 export interface SendItemsItem {
   product_id: string;
@@ -144,4 +178,55 @@ export async function createMpPreference(payload: {
       qr_token: payload.qrToken,
     }),
   }) as Promise<MpPreferenceResult>;
+}
+
+/* ---------- Combine tables (customer-initiated) ---------- */
+
+export interface MergeableTable {
+  order_id: string;
+  label: string;
+}
+
+export async function fetchMergeableTables(payload: {
+  orderId: string;
+  fingerprint: string;
+}): Promise<MergeableTable[]> {
+  const res = (await apiFetch(
+    `/api/qr/table/${encodeURIComponent(payload.orderId)}/mergeable`,
+    { headers: fingerprintHeader(payload.fingerprint) },
+  )) as { tables: MergeableTable[] };
+  return res.tables ?? [];
+}
+
+/** Ask another table to merge into this one. Creates a pending request; the
+ *  other table's owner must approve before anything merges. */
+export async function requestTableMerge(payload: {
+  orderId: string;
+  secondaryOrderId: string;
+  fingerprint: string;
+}) {
+  return apiFetch(
+    `/api/qr/table/${encodeURIComponent(payload.orderId)}/merge-request`,
+    {
+      method: "POST",
+      headers: fingerprintHeader(payload.fingerprint),
+      body: JSON.stringify({ secondary_order_id: payload.secondaryOrderId }),
+    },
+  );
+}
+
+/** Respond to a merge request: owner approves/declines, requester cancels. */
+export async function respondToMergeRequest(payload: {
+  requestId: string;
+  decision: "approved" | "declined" | "cancelled";
+  fingerprint: string;
+}) {
+  return apiFetch(
+    `/api/qr/table/merge-request/${encodeURIComponent(payload.requestId)}/respond`,
+    {
+      method: "POST",
+      headers: fingerprintHeader(payload.fingerprint),
+      body: JSON.stringify({ decision: payload.decision }),
+    },
+  );
 }

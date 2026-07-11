@@ -50,3 +50,30 @@ export function setLastOrderId(token: string, orderId: string): void {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(LAST_ORDER_KEY + token, orderId);
 }
+
+const READY_SEEN_KEY = "pars_qr_ready_seen_";
+
+/**
+ * Whether the "your order is ready" celebration was ALREADY shown for this
+ * order on this device. Persisted per order id so it fires exactly once — not
+ * every time the customer re-enters the screen (that was noisy).
+ */
+export function hasSeenReady(orderId: string): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(READY_SEEN_KEY + orderId) === "1";
+}
+
+export function markReadySeen(orderId: string): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(READY_SEEN_KEY + orderId, "1");
+}
+
+/**
+ * A new batch regressed the state (ready → received): forget the celebration
+ * so the NEXT "ready" announces again — once per ready-cycle, never on mere
+ * screen re-entry.
+ */
+export function clearReadySeen(orderId: string): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(READY_SEEN_KEY + orderId);
+}

@@ -2,34 +2,40 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import useSWR from "swr";
+import { useParams, useRouter } from "next/navigation";
+import useSWR, { useSWRConfig } from "swr";
 import {
   ArrowLeft,
   CheckCircle2,
   Clock,
-  Coffee,
+  Link2,
   Power,
   QrCode as QrIcon,
   ShoppingBag,
+  Store,
+  Unlink,
   Users,
 } from "lucide-react";
 
 import { swrFetcher } from "@/lib/swrFetcher";
 import { useActiveTenant } from "@/stores/useTenantStore";
+import { Notification } from "@/components/ui/Notification";
+import {
+  adminActionButtonDanger,
+  adminActionButtonSecondary,
+} from "@/components/admin/actionButtonClasses";
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
+import { formatCurrency } from "@/features/qr/helpers/format";
 import { QrPreview } from "@/features/qr/components/QrPreview";
 import { TableTimeline } from "@/features/qr/components/TableTimeline";
 import { PendingPaymentsCard } from "@/features/qr/components/PendingPaymentsCard";
 import { CloseTableDialog } from "@/features/qr/components/CloseTableDialog";
+import { MergeTableDialog } from "@/features/qr/components/MergeTableDialog";
+import { PerPersonFulfillmentCard } from "@/features/qr/components/PerPersonFulfillmentCard";
 import { useTableAdminLive } from "@/features/qr/hooks/useTableAdminLive";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
 import type { AdminViewDevice } from "@/features/qr/services/tableAdminViewService";
-
-function formatCurrency(value: number) {
-  return `$${value.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
-}
 
 function elapsedLabel(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -43,6 +49,8 @@ function elapsedLabel(iso: string) {
 
 export default function MesaDetailPage() {
   const params = useParams();
+  const router = useRouter();
+  const { mutate: globalMutate } = useSWRConfig();
   const mesaQrId = params.mesaId as string;
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
@@ -58,6 +66,19 @@ export default function MesaDetailPage() {
   const live = useTableAdminLive(orderId);
   const [showQr, setShowQr] = useState(false);
   const [closeOpen, setCloseOpen] = useState(false);
+  const [mergeOpen, setMergeOpen] = useState(false);
+
+  // Other tables currently in use — candidates to merge into this one.
+  const mergeCandidates = useMemo(
+    () =>
+      (qrList ?? []).filter(
+        (q) =>
+          q.kind === "table" &&
+          !!q.current_order_id &&
+          q.current_order_id !== orderId,
+      ),
+    [qrList, orderId],
+  );
 
   const deviceById = useMemo(() => {
     const map = new Map<string, AdminViewDevice>();
@@ -138,7 +159,25 @@ export default function MesaDetailPage() {
 
   async function handleClose(payload: Parameters<typeof live.closeTable>[0]) {
     const ok = await live.closeTable(payload);
-    if (ok) setCloseOpen(false);
+    if (ok) {
+      setCloseOpen(false);
+      // Mark this table free in BOTH qr-codes caches (detail key has no kind,
+      // the tables list uses kind=table) so the list shows "Libre" instantly
+      // instead of waiting for its next 8s poll.
+      const freeTable = (list: QrCode[] | undefined) =>
+        (list ?? []).map((q) =>
+          q.id === mesaQrId ? { ...q, current_order_id: null } : q,
+        );
+      await Promise.all([
+        globalMutate(qrKey, freeTable, { revalidate: true }),
+        globalMutate(
+          buildQrCodesKey(activeTenant?.id ?? null, "table"),
+          freeTable,
+          { revalidate: true },
+        ),
+      ]);
+      router.push(`/dashboard/${tenantSlug}/mesas`);
+    }
   }
 
   return (
@@ -155,7 +194,7 @@ export default function MesaDetailPage() {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <Coffee className="h-5 w-5 text-muted-foreground" />
+            <Store className="h-5 w-5 text-muted-foreground" />
             <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
               {qr.label}
             </h1>
@@ -165,6 +204,12 @@ export default function MesaDetailPage() {
               <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
               En uso
             </span>
+            {(data?.linked_tables?.length ?? 0) > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent">
+                <Link2 className="h-3 w-3" />
+                Unida con {data!.linked_tables.join(", ")}
+              </span>
+            )}
             {data?.order?.created_at && (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
@@ -179,10 +224,30 @@ export default function MesaDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {(data?.linked_tables?.length ?? 0) > 0 ? (
+            <button
+              type="button"
+              onClick={() => live.unlink()}
+              disabled={live.merging}
+              className={adminActionButtonSecondary}
+            >
+              <Unlink className="h-4 w-4" />
+              Separar
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setMergeOpen(true)}
+              className={adminActionButtonSecondary}
+            >
+              <Users className="h-4 w-4" />
+              Unir mesa
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setShowQr((v) => !v)}
-            className="inline-flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground hover:bg-border-soft/40"
+            className={adminActionButtonSecondary}
           >
             <QrIcon className="h-4 w-4" />
             {showQr ? "Ocultar QR" : "Ver QR"}
@@ -204,11 +269,7 @@ export default function MesaDetailPage() {
         <p className="text-sm text-muted-foreground">Cargando información...</p>
       )}
 
-      {live.error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {live.error}
-        </div>
-      )}
+      {live.error && <Notification tone="error" message={live.error} />}
 
       {data && (
         <>
@@ -243,6 +304,17 @@ export default function MesaDetailPage() {
               </p>
             </div>
           </section>
+
+          {/* Preparation state — staff advances each person received → ready */}
+          {data.order && (
+            <PerPersonFulfillmentCard
+              devices={data.devices}
+              busyDeviceId={live.busyDeviceId}
+              busyAll={live.advancing}
+              onAdvanceDevice={live.advanceDevice}
+              onAdvanceAll={live.advanceAll}
+            />
+          )}
 
           {/* Devices */}
           <section className="rounded-xl border border-border bg-surface p-4">
@@ -362,7 +434,7 @@ export default function MesaDetailPage() {
             <button
               type="button"
               onClick={() => setCloseOpen(true)}
-              className="mt-3 inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-lg border border-red-200 bg-surface px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+              className={`mt-3 ${adminActionButtonDanger}`}
             >
               <Power className="h-4 w-4" />
               Cerrar mesa manualmente
@@ -380,6 +452,19 @@ export default function MesaDetailPage() {
         }}
         onConfirm={handleClose}
         loading={live.closing}
+        error={live.error}
+      />
+
+      <MergeTableDialog
+        isOpen={mergeOpen}
+        onClose={() => {
+          if (live.merging) return;
+          setMergeOpen(false);
+          live.resetError();
+        }}
+        candidates={mergeCandidates}
+        onMerge={live.mergeTable}
+        merging={live.merging}
         error={live.error}
       />
     </div>

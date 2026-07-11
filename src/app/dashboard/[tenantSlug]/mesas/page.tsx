@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { Coffee, Plus } from "lucide-react";
+import { CheckCircle2, Clock, Coffee, LayoutGrid, Plus } from "lucide-react";
 
 import { useActiveTenant } from "@/stores/useTenantStore";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { MetricsStrip } from "@/components/admin/MetricsStrip";
+import { PageHeader } from "@/components/admin/PageHeader";
 import { FormSheet } from "@/components/ui/FormSheet";
 import { QrCreateForm } from "@/features/qr/components/QrCreateForm";
 import { CreatedQrSuccess } from "@/features/qr/components/CreatedQrSuccess";
@@ -14,6 +17,9 @@ import { TablesFilterTabs } from "@/features/qr/components/TablesFilterTabs";
 import { useTablesList } from "@/features/qr/hooks/useTablesList";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
+
+const primaryCta =
+  "inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-2xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] transition-all";
 
 export default function MesasPage() {
   const params = useParams();
@@ -60,43 +66,50 @@ export default function MesasPage() {
     />
   );
 
+  const hasTables = list.tables.length > 0;
+
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
-            Mesas
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Cada mesa tiene un QR único para que tus clientes ordenen y paguen.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
-        >
-          <Plus className="h-4 w-4" />
-          Agregar mesa
-        </button>
-      </div>
+      <PageHeader
+        title="Mesas"
+        description="Cada mesa tiene un QR único para que tus clientes ordenen y paguen."
+        action={
+          <button
+            type="button"
+            onClick={openCreate}
+            className={primaryCta}
+          >
+            <Plus className="h-4 w-4" />
+            Agregar mesa
+          </button>
+        }
+      />
 
-      {/* Metrics */}
-      {list.tables.length > 0 && (
-        <div className="grid grid-cols-3 gap-3 rounded-xl border border-border bg-surface p-4">
-          <Metric label="Mesas totales" value={list.metrics.total} />
-          <Metric
-            label="En uso"
-            value={list.metrics.occupied}
-            tone="amber"
-          />
-          <Metric label="Libres" value={list.metrics.free} tone="emerald" />
-        </div>
+      {hasTables && (
+        <MetricsStrip
+          metrics={[
+            {
+              label: "Mesas totales",
+              value: list.metrics.total,
+              icon: LayoutGrid,
+            },
+            {
+              label: "En uso",
+              value: list.metrics.occupied,
+              tone: "amber",
+              icon: Clock,
+            },
+            {
+              label: "Libres",
+              value: list.metrics.free,
+              tone: "emerald",
+              icon: CheckCircle2,
+            },
+          ]}
+        />
       )}
 
-      {/* Filters */}
-      {list.tables.length > 0 && (
+      {hasTables && (
         <TablesFilterTabs
           filter={list.filter}
           onChange={list.setFilter}
@@ -128,34 +141,26 @@ export default function MesasPage() {
         )}
       </FormSheet>
 
-      {/* Body */}
-      {list.isLoading && list.tables.length === 0 ? (
+      {list.isLoading && !hasTables ? (
         <p className="text-sm text-muted-foreground">Cargando mesas...</p>
-      ) : list.tables.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border p-10 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 text-accent">
-            <Coffee className="h-6 w-6" />
-          </div>
-          <div>
-            <h2 className="text-base font-semibold text-foreground">
-              Aún no tienes mesas
-            </h2>
-            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-              Crea tu primera mesa para que tus clientes puedan escanear y
-              ordenar desde su celular.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={openCreate}
-            className="mt-2 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
-          >
-            <Plus className="h-4 w-4" />
-            Crear primera mesa
-          </button>
-        </div>
+      ) : !hasTables ? (
+        <EmptyState
+          icon={Coffee}
+          title="Aún no tienes mesas"
+          description="Crea tu primera mesa para que tus clientes puedan escanear y ordenar desde su celular."
+          action={
+            <button
+              type="button"
+              onClick={openCreate}
+              className={primaryCta}
+            >
+              <Plus className="h-4 w-4" />
+              Crear primera mesa
+            </button>
+          }
+        />
       ) : list.filtered.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+        <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
           No hay mesas en esta categoría.
         </p>
       ) : (
@@ -170,29 +175,6 @@ export default function MesasPage() {
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function Metric({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone?: "amber" | "emerald";
-}) {
-  const valueClass =
-    tone === "amber"
-      ? "text-amber-700"
-      : tone === "emerald"
-        ? "text-emerald-700"
-        : "text-foreground";
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`mt-0.5 text-xl font-bold ${valueClass}`}>{value}</p>
     </div>
   );
 }

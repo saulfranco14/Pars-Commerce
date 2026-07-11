@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { AlertTriangle, Check } from "lucide-react";
+import { AlertTriangle, Check, Loader2 } from "lucide-react";
 
 import type { CloseReason } from "@/features/qr/services/tableCloseService";
 
@@ -211,7 +211,14 @@ export function CloseTableDialog({
               disabled={!canSubmit}
               className="flex min-h-[48px] w-full cursor-pointer items-center justify-center rounded-xl bg-red-600 px-4 py-3 text-base font-semibold text-white shadow-sm hover:bg-red-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 md:max-w-[200px]"
             >
-              {loading ? "Cerrando..." : "Cerrar mesa"}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Cerrando mesa...
+                </>
+              ) : (
+                "Cerrar mesa"
+              )}
             </button>
           </div>
         </div>

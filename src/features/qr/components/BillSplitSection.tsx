@@ -1,9 +1,9 @@
 "use client";
 
-import { Users } from "lucide-react";
-
+import { Notification } from "@/components/ui/Notification";
 import { SplitItemsAssigner } from "@/features/qr/components/SplitItemsAssigner";
 import { SplitModePicker } from "@/features/qr/components/SplitModePicker";
+import { formatCurrency } from "@/features/qr/helpers/format";
 
 import type { AssignedGroup } from "@/features/qr/components/SplitItemsAssigner";
 import type { SplitMode } from "@/features/qr/interfaces/splitBill";
@@ -24,13 +24,13 @@ interface BillSplitSectionProps {
   items: BillItem[];
   deviceCount: number;
   orderTotal: number;
-  submitting: boolean;
   error: string | null;
-  onSubmit: () => void;
 }
 
 /**
- * Pure presentational section that owns the split-bill controls. State and
+ * Pure presentational section with the split-bill controls (mode picker +
+ * per-mode inputs). The "Confirmar división" CTA lives in the page's fixed
+ * footer, so it stays visible no matter how many items the bill has. State and
  * service calls live in `useSplitBill` — the page wires them.
  */
 export function BillSplitSection({
@@ -42,14 +42,12 @@ export function BillSplitSection({
   items,
   deviceCount,
   orderTotal,
-  submitting,
   error,
-  onSubmit,
 }: BillSplitSectionProps) {
   return (
-    <section className="space-y-3 rounded-xl border border-border bg-surface p-4">
+    <section className="space-y-4 rounded-2xl border border-border bg-surface p-4 shadow-sm">
       <div>
-        <h2 className="text-sm font-semibold text-foreground">Dividir cuenta</h2>
+        <h2 className="text-base font-bold text-foreground">Dividir cuenta</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">
           Elijan cómo repartir el total.
         </p>
@@ -58,17 +56,17 @@ export function BillSplitSection({
       <SplitModePicker mode={mode} onChange={onModeChange} />
 
       {mode === "by_device" && (
-        <p className="rounded-lg bg-border-soft/40 px-3 py-2 text-xs text-muted-foreground">
+        <p className="rounded-xl bg-border-soft/40 px-3 py-2.5 text-xs text-muted-foreground">
           Se dividirá según quién pidió cada producto. Hay{" "}
-          <strong>{deviceCount}</strong> persona
+          <strong className="text-foreground">{deviceCount}</strong> persona
           {deviceCount === 1 ? "" : "s"} conectada
           {deviceCount === 1 ? "" : "s"}.
         </p>
       )}
 
       {mode === "equal" && (
-        <label className="block space-y-1">
-          <span className="text-xs text-muted-foreground">
+        <label className="block">
+          <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             ¿Entre cuántas personas?
           </span>
           <input
@@ -77,37 +75,22 @@ export function BillSplitSection({
             max={30}
             value={peopleCount}
             onChange={(e) => onPeopleCountChange(Number(e.target.value))}
-            className="w-full rounded-lg border border-border px-3 py-2 text-base"
+            className="block w-full rounded-2xl border-2 border-border bg-background px-4 py-3 text-base font-medium text-foreground transition-colors focus:border-accent focus:outline-none"
           />
-          <span className="block text-xs text-muted-foreground">
-            Cada uno pagará $
-            {(orderTotal / Math.max(2, peopleCount)).toFixed(2)}
+          <span className="mt-1.5 block text-xs text-muted-foreground">
+            Cada uno pagará{" "}
+            <strong className="text-foreground">
+              {formatCurrency(orderTotal / Math.max(2, peopleCount))}
+            </strong>
           </span>
         </label>
       )}
 
       {mode === "items" && (
-        <SplitItemsAssigner
-          items={items}
-          onChange={onItemsAssignmentChange}
-        />
+        <SplitItemsAssigner items={items} onChange={onItemsAssignmentChange} />
       )}
 
-      {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      )}
-
-      <button
-        type="button"
-        onClick={onSubmit}
-        disabled={submitting}
-        className="inline-flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <Users className="h-4 w-4" />
-        {submitting ? "Dividiendo..." : "Confirmar división"}
-      </button>
+      {error && <Notification tone="error" message={error} />}
     </section>
   );
 }

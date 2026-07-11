@@ -4,9 +4,10 @@ import { PaymentQRClient } from "./payment/PaymentQRClient";
 import { TableSession } from "./table/TableSession";
 
 import type { TenantPaymentMethod } from "@/features/configuracion/interfaces/bankAccount";
+import type { QrSessionTenant } from "@/features/qr/interfaces/tableSession";
 
 interface QrResolveResponse {
-  tenant: { id: string; name: string; slug: string };
+  tenant: QrSessionTenant;
   kind: "payment" | "table";
   qr_code: {
     id: string;

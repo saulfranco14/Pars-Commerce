@@ -1,15 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  CheckCircle2,
-  Clock,
-  Receipt,
-  ShieldCheck,
-  Sparkles,
-  XCircle,
-} from "lucide-react";
+import { CheckCircle2, Clock, Receipt, ShieldCheck, XCircle } from "lucide-react";
 
-import { CustomerScreenLayout } from "@/features/qr/components/CustomerScreenLayout";
+import { CustomerScreen } from "@/features/qr/components/CustomerScreen";
+import { formatCurrency } from "@/features/qr/helpers/format";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 interface PageProps {
@@ -19,12 +13,6 @@ interface PageProps {
     status?: "success" | "failure" | "pending";
     payment_id?: string;
   }>;
-}
-
-function formatCurrency(value: number) {
-  return `$${Number(value).toLocaleString("es-MX", {
-    minimumFractionDigits: 2,
-  })}`;
 }
 
 function formatDate(iso: string) {
@@ -220,41 +208,30 @@ function PaymentStatusShell({
   rows = [],
   receiptUrl,
 }: PaymentStatusShellProps) {
-  const heroBgClass =
+  const tone =
     variant === "success"
-      ? "bg-emerald-600"
+      ? "success"
       : variant === "pending"
-        ? "bg-amber-500"
-        : "bg-red-600";
+        ? "pending"
+        : "danger";
 
   const HeroIcon =
     variant === "success" ? CheckCircle2 : variant === "pending" ? Clock : XCircle;
 
-  const iconColor =
-    variant === "success"
-      ? "text-emerald-600"
-      : variant === "pending"
-        ? "text-amber-500"
-        : "text-red-600";
-
   const hero = (
     <div className="text-center">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-md">
-          <HeroIcon className={`h-7 w-7 ${iconColor}`} strokeWidth={2.5} />
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-md">
+          <HeroIcon className="h-6 w-6 text-accent" strokeWidth={2.5} />
         </div>
       </div>
 
-      <h1 className="mt-4 text-2xl font-bold tracking-tight lg:text-3xl">
-        {title}
-      </h1>
-      <p className="mx-auto mt-1 max-w-xs text-sm opacity-90 lg:max-w-sm">
-        {subtitle}
-      </p>
+      <h1 className="mt-4 text-2xl font-bold tracking-tight">{title}</h1>
+      <p className="mx-auto mt-1 max-w-xs text-sm opacity-90">{subtitle}</p>
 
       {amount !== undefined && (
         <div className="mt-5 inline-flex items-baseline gap-1 rounded-2xl bg-white/15 px-5 py-2.5 backdrop-blur-sm">
-          <span className="text-3xl font-bold tracking-tight lg:text-4xl">
+          <span className="text-3xl font-bold tracking-tight">
             {formatCurrency(amount)}
           </span>
         </div>
@@ -262,12 +239,49 @@ function PaymentStatusShell({
     </div>
   );
 
+  const footer = (
+    <div className="space-y-2">
+      {variant === "success" && receiptUrl && (
+        <a
+          href={receiptUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-all hover:bg-border-soft/40 active:scale-[0.99]"
+        >
+          <Receipt className="h-4 w-4" />
+          Ver comprobante de Mercado Pago
+        </a>
+      )}
+
+      {variant !== "success" && (
+        <Link
+          href={`/q/${token}`}
+          className="flex min-h-[54px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
+        >
+          Intentar de nuevo
+        </Link>
+      )}
+
+      <Link
+        href={`/q/${token}`}
+        className={`flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-2xl px-4 text-sm font-bold transition-all active:scale-[0.99] ${
+          variant === "success"
+            ? "bg-accent text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90"
+            : "border border-border bg-surface text-foreground hover:bg-border-soft/40"
+        }`}
+      >
+        {variant === "success" ? "Listo" : "Volver al inicio"}
+      </Link>
+    </div>
+  );
+
   return (
-    <CustomerScreenLayout
-      hero={hero}
-      heroBgClass={heroBgClass}
+    <CustomerScreen
+      header={hero}
+      tone={tone}
       backHref={`/q/${token}`}
       tenantName={tenantName}
+      footer={footer}
     >
       <div className="space-y-4">
         {rows.length > 0 && (
@@ -297,40 +311,6 @@ function PaymentStatusShell({
           </section>
         )}
 
-        <div className="space-y-2">
-          {variant === "success" && receiptUrl && (
-            <a
-              href={receiptUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-border bg-surface px-4 py-3 text-sm font-bold text-foreground hover:bg-border-soft/40 active:scale-[0.99] transition-all"
-            >
-              <Receipt className="h-4 w-4" />
-              Ver comprobante de Mercado Pago
-            </a>
-          )}
-
-          {variant !== "success" && (
-            <Link
-              href={`/q/${token}`}
-              className="flex min-h-[56px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] transition-all"
-            >
-              Intentar de nuevo
-            </Link>
-          )}
-
-          <Link
-            href={`/q/${token}`}
-            className={`flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-2xl px-4 py-3 text-sm font-bold transition-all active:scale-[0.99] ${
-              variant === "success"
-                ? "bg-accent text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90"
-                : "border-2 border-border bg-surface text-foreground hover:bg-border-soft/40"
-            }`}
-          >
-            {variant === "success" ? "Listo" : "Volver al inicio"}
-          </Link>
-        </div>
-
         <div className="flex flex-col items-center gap-1.5 pt-2 text-center">
           <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1">
@@ -338,10 +318,7 @@ function PaymentStatusShell({
               Pago seguro
             </span>
             <span className="text-border">·</span>
-            <span className="inline-flex items-center gap-1">
-              <Sparkles className="h-3.5 w-3.5" />
-              Mercado Pago
-            </span>
+            <span>Mercado Pago</span>
           </div>
           <p className="text-[11px] text-muted-foreground/80">
             Guarda esta página como comprobante.
@@ -352,6 +329,6 @@ function PaymentStatusShell({
           {qrLabel}
         </div>
       </div>
-    </CustomerScreenLayout>
+    </CustomerScreen>
   );
 }

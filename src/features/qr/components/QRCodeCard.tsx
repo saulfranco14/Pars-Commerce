@@ -6,16 +6,24 @@ import { QRCodeCanvas } from "qrcode.react";
 import {
   Archive,
   Check,
-  Copy,
   Coffee,
+  Copy,
   CreditCard,
   ExternalLink,
   Eye,
   Power,
 } from "lucide-react";
 
-import { buildPublicQrUrl } from "@/features/qr/helpers/buildPublicQrUrl";
+import { AdminListCard } from "@/components/admin/AdminListCard";
+import { StatusBadge } from "@/components/admin/StatusBadge";
+import {
+  adminActionButtonDanger,
+  adminActionButtonPrimary,
+  adminActionButtonSecondary,
+} from "@/components/admin/actionButtonClasses";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { buildPublicQrUrl } from "@/features/qr/helpers/buildPublicQrUrl";
+import { formatCurrency } from "@/features/qr/helpers/format";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
 
@@ -58,7 +66,6 @@ export function QRCodeCard({
 
   function requestToggle() {
     if (!onToggleActive || busy) return;
-    // If activating, no confirmation needed; if deactivating, confirm first.
     if (isInactive) {
       onToggleActive(code);
       return;
@@ -77,138 +84,129 @@ export function QRCodeCard({
     setPending(null);
   }
 
-  return (
-    <article
-      className={`flex flex-col gap-4 rounded-xl border bg-surface p-4 transition-colors ${
-        isInactive
-          ? "border-border opacity-70 hover:border-border"
-          : "border-border hover:border-accent/40"
+  const thumbnail = (
+    <button
+      type="button"
+      onClick={() => onPreview?.(code)}
+      aria-label="Ver QR ampliado"
+      className={`flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border bg-white p-2 transition-transform hover:scale-105 ${
+        isInactive ? "grayscale" : ""
       }`}
     >
-      <div className="flex items-start gap-3">
-        {/* QR thumb */}
-        <button
-          type="button"
-          onClick={() => onPreview?.(code)}
-          aria-label="Ver QR ampliado"
-          className={`flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-white p-2 transition-transform hover:scale-105 ${isInactive ? "grayscale" : ""}`}
-        >
-          <QRCodeCanvas
-            value={url}
-            size={64}
-            level="M"
-            marginSize={0}
-            bgColor="#ffffff"
-            fgColor="#111111"
+      <QRCodeCanvas
+        value={url}
+        size={64}
+        level="M"
+        marginSize={0}
+        bgColor="#ffffff"
+        fgColor="#111111"
+      />
+    </button>
+  );
+
+  const meta = (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <Icon className="h-3.5 w-3.5" />
+      <span>{isTable ? "Mesa" : "Cobro libre"}</span>
+      {isTable && code.table_capacity ? (
+        <>
+          <span aria-hidden>·</span>
+          <span>{code.table_capacity} personas</span>
+        </>
+      ) : null}
+      {!isTable && code.preset_amount != null ? (
+        <>
+          <span aria-hidden>·</span>
+          <span>Sugerido: {formatCurrency(Number(code.preset_amount))}</span>
+        </>
+      ) : null}
+    </div>
+  );
+
+  return (
+    <>
+      <AdminListCard
+        title={code.label}
+        thumbnail={thumbnail}
+        meta={meta}
+        badge={
+          <StatusBadge
+            tone={code.is_active ? "success" : "warning"}
+            label={code.is_active ? "Activo" : "Inactivo"}
           />
-        </button>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-            <Icon className="h-3.5 w-3.5" />
-            <span>{isTable ? "Mesa" : "Cobro libre"}</span>
-            <span aria-hidden>·</span>
-            <span
-              className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-                code.is_active
-                  ? "bg-emerald-100 text-emerald-700"
-                  : "bg-amber-100 text-amber-800"
-              }`}
+        }
+        body={
+          isInactive ? (
+            <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+              Este QR no funcionará al escanearlo. Actívalo para volver a
+              usarlo.
+            </p>
+          ) : undefined
+        }
+        actions={
+          <>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className={adminActionButtonSecondary}
             >
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  code.is_active ? "bg-emerald-500" : "bg-amber-500"
+              {copied ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-accent" />
+                  Copiado
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" />
+                  Copiar
+                </>
+              )}
+            </button>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={adminActionButtonSecondary}
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Probar
+            </a>
+            {onToggleActive && (
+              <button
+                type="button"
+                onClick={requestToggle}
+                disabled={busy}
+                className={`inline-flex min-h-[36px] cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium hover:bg-border-soft/40 disabled:cursor-not-allowed disabled:opacity-60 transition-colors ${
+                  isInactive
+                    ? "border-emerald-200 text-emerald-700"
+                    : "border-amber-200 text-amber-800"
                 }`}
-              />
-              {code.is_active ? "Activo" : "Inactivo"}
-            </span>
-          </div>
-          <h3 className="mt-0.5 truncate text-base font-semibold text-foreground">
-            {code.label}
-          </h3>
-          {isTable && code.table_capacity ? (
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {code.table_capacity} personas
-            </p>
-          ) : null}
-          {!isTable && code.preset_amount != null ? (
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Monto sugerido: $
-              {Number(code.preset_amount).toLocaleString("es-MX", {
-                minimumFractionDigits: 2,
-              })}
-            </p>
-          ) : null}
-        </div>
-      </div>
-
-      {isInactive && (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Este QR no funcionará al escanearlo. Actívalo para volver a usarlo.
-        </p>
-      )}
-
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground hover:bg-border-soft/40"
-        >
-          {copied ? (
-            <>
-              <Check className="h-3.5 w-3.5 text-accent" />
-              Copiado
-            </>
-          ) : (
-            <>
-              <Copy className="h-3.5 w-3.5" />
-              Copiar
-            </>
-          )}
-        </button>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground hover:bg-border-soft/40"
-        >
-          <ExternalLink className="h-3.5 w-3.5" />
-          Probar
-        </a>
-        {onToggleActive && (
-          <button
-            type="button"
-            onClick={requestToggle}
-            disabled={busy}
-            className={`inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-border-soft/40 disabled:cursor-not-allowed disabled:opacity-60 ${
-              isInactive
-                ? "border-emerald-200 text-emerald-700"
-                : "border-amber-200 text-amber-800"
-            }`}
-          >
-            <Power className="h-3.5 w-3.5" />
-            {busy ? "..." : isInactive ? "Activar" : "Desactivar"}
-          </button>
-        )}
-        {onArchive && (
-          <button
-            type="button"
-            onClick={requestArchive}
-            disabled={busy}
-            aria-label="Archivar"
-            className="inline-flex min-h-[36px] cursor-pointer items-center justify-center rounded-lg border border-red-200 bg-surface px-2.5 py-1.5 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Archive className="h-3.5 w-3.5" />
-          </button>
-        )}
-        <Link
-          href={`/dashboard/${tenantSlug}/qr/${code.id}`}
-          className="ml-auto inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:bg-accent/90"
-        >
-          <Eye className="h-3.5 w-3.5" />
-          Detalle
-        </Link>
-      </div>
+              >
+                <Power className="h-3.5 w-3.5" />
+                {busy ? "..." : isInactive ? "Activar" : "Desactivar"}
+              </button>
+            )}
+            {onArchive && (
+              <button
+                type="button"
+                onClick={requestArchive}
+                disabled={busy}
+                aria-label="Archivar"
+                className={adminActionButtonDanger}
+              >
+                <Archive className="h-3.5 w-3.5" />
+              </button>
+            )}
+            <Link
+              href={`/dashboard/${tenantSlug}/qr/${code.id}`}
+              className={`${adminActionButtonPrimary} ml-auto`}
+            >
+              <Eye className="h-3.5 w-3.5" />
+              Detalle
+            </Link>
+          </>
+        }
+      />
 
       <ConfirmDialog
         isOpen={pending !== null}
@@ -228,6 +226,6 @@ export function QRCodeCard({
         variant="danger"
         loading={busy}
       />
-    </article>
+    </>
   );
 }

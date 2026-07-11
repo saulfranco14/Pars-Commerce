@@ -9,7 +9,7 @@ import type { TenantPaymentMethod } from "@/features/configuracion/interfaces/ba
 
 interface PaymentQRClientProps {
   token: string;
-  tenant: { id: string; name: string; slug: string };
+  tenant: { id: string; name: string; slug: string; logo_url?: string | null };
   qrCode: {
     id: string;
     label: string;
@@ -59,6 +59,7 @@ export function PaymentQRClient({ tenant, qrCode }: PaymentQRClientProps) {
   return (
     <TipScreen
       tenantName={tenant.name}
+      tenantLogoUrl={tenant.logo_url}
       qrLabel={qrCode.label}
       presetAmount={qrCode.preset_amount}
       submitting={submitting}

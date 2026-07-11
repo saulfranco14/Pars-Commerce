@@ -22,6 +22,7 @@ interface UseTableCartResult {
   error: string | null;
   confirmation: boolean;
   add: (productId: string) => void;
+  addMany: (productId: string, qty: number) => void;
   decrement: (productId: string) => void;
   remove: (productId: string) => void;
   send: () => Promise<void>;
@@ -64,14 +65,16 @@ export function useTableCart({
     return map;
   }, [entries]);
 
-  function add(productId: string) {
+  function addMany(productId: string, qty: number) {
     const product = menu.find((m) => m.id === productId);
-    if (!product) return;
+    if (!product || qty <= 0) return;
     setEntries((prev) => {
       const existing = prev.find((e) => e.product_id === productId);
       if (existing) {
         return prev.map((e) =>
-          e.product_id === productId ? { ...e, quantity: e.quantity + 1 } : e,
+          e.product_id === productId
+            ? { ...e, quantity: e.quantity + qty }
+            : e,
         );
       }
       return [
@@ -80,10 +83,14 @@ export function useTableCart({
           product_id: product.id,
           product_name: product.name,
           unit_price: Number(product.price),
-          quantity: 1,
+          quantity: qty,
         },
       ];
     });
+  }
+
+  function add(productId: string) {
+    addMany(productId, 1);
   }
 
   function decrement(productId: string) {
@@ -136,6 +143,7 @@ export function useTableCart({
     error,
     confirmation,
     add,
+    addMany,
     decrement,
     remove,
     send,

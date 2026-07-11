@@ -93,50 +93,75 @@ content density of the screen.
 
 ## 4. Required patterns per screen type
 
-### 4.1 CANONICAL LAYOUT — `CustomerScreenLayout`
+### 4.1 CANONICAL LAYOUT — `CustomerScreen`
 
 **EVERY customer-facing screen in `/src/app/q/**` MUST use
-`<CustomerScreenLayout>` from `src/features/qr/components/CustomerScreenLayout.tsx`.**
+`<CustomerScreen>` from `src/features/qr/components/CustomerScreen.tsx`.**
 
-This component encodes the one accepted layout pattern:
+Mobile-first, single centered column (`max-w-lg`) on every breakpoint — NO
+empty split-pane on desktop. Flat accent, no gradients/blobs. The layout has
+three regions:
 
 ```
-┌─────────────────────────┬─────────────────────────┐
-│                         │                         │
-│      HERO (accent bg)   │      BODY (form/cards)  │   <- desktop (lg+)
-│                         │                         │
-└─────────────────────────┴─────────────────────────┘
-
-┌─────────────────────────┐
-│      HERO (accent bg)   │
-├─────────────────────────┤
-│   BODY sheet slides up  │   <- mobile
-└─────────────────────────┘
+┌──────────────────────────┐
+│  compact accent header   │  ← flat accent; logo + label + AMOUNT (protagonist)
+├──────────────────────────┤
+│  neutral body (scrolls)  │  ← cards / lists / forms on bg-background
+│                          │
+├──────────────────────────┤
+│  fixed action bar (CTA)  │  ← pinned to viewport bottom, ALWAYS visible
+└──────────────────────────┘
 ```
 
-Required props:
-- `hero` — the hero content (eyebrow + title + amount + status pills)
-- `children` — the body content (cards, lists, forms)
-- `heroBgClass` — `"bg-accent"` (default), `"bg-emerald-600"` (success),
-  `"bg-amber-500"` (pending), `"bg-red-600"` (failure)
-- `tenantName` — shown as eyebrow top-right
-- `backHref` or `onBack` — back button top-left
+Key props:
+- `header` — compact header content (logo + label + amount). Keep it SHORT —
+  never a full-height accent panel.
+- `children` — body content on the neutral background.
+- `footer` — the fixed bottom action bar (primary CTA). First-class slot; every
+  actionable screen fills it. The body auto-pads (`pb-40`) to clear it.
+- `tone` — `"accent"` (default), `"success"`, `"pending"`, `"danger"`.
+- `tenantName` — eyebrow top-right. `backHref` / `onBack` — back button.
 
-The layout handles:
-- Mobile/desktop responsiveness (stack vs split-pane)
-- Depth gradients on the hero
-- Sheet-slide-up animation on mobile (`-mt-8 rounded-t-3xl`)
-- Grabber on mobile
-- Body content max-width and centering
+**Rules:**
+- The **amount is the protagonist** and lives in the header (`text-4xl`–`5xl`).
+- **Primary CTAs go in the `footer`** (fixed), not floating in the body.
+- The header is COMPACT. The old giant-accent-hero split-pane
+  (`CustomerScreenLayout`) is removed — do not recreate it.
+- Icons monochrome; **accent only on the active/selected element** (§2.1).
 
-**DO NOT build a custom `<main>` + `<section>` hero stack again.** If you
-need something the layout doesn't support, extend `CustomerScreenLayout`
-itself — don't fork.
+**Canonical implementations:** `TipScreen`, bill page, mesa (`TableQRClient`),
+`DeviceNamePrompt`, QR payment success page.
 
-**Canonical implementations:**
-- `TipScreen` (`bg-accent`)
-- Bill page (`bg-accent` or `bg-emerald-600` when paid)
-- QR payment success page (`bg-emerald-600` / `bg-amber-500` / `bg-red-600`)
+### 4.1.1 Loading states — skeleton screens first
+
+Never show a bare "Cargando..." line. Order of preference:
+
+1. **Skeleton screens** for full-screen data resolves whose layout is known:
+   mesa → `<TableScreenSkeleton />`, cuenta → `<BillScreenSkeleton />`
+   (`src/features/qr/components/`). They mirror the real layout (accent
+   header, cards) so content replaces them in place with no jump. In-card
+   async blocks use their own skeleton (`OrderTrackerSkeleton`). Compose new
+   ones from the shared `<Skeleton className="h-4 w-24" />` primitive
+   (`src/components/ui/Skeleton.tsx`) — never hand-roll `animate-pulse` divs.
+2. `<CustomerLoading message="..." />` (branded pulsing orb) only where the
+   destination layout is unknown (e.g. QR resolve deciding which screen).
+3. In-place navigation feedback: buttons swap their icon for a `Loader2`
+   spinner + verb ("Abriendo cuenta...", "Enviando...").
+
+### 4.1.2 Product detail — `ProductDetailSheet`
+
+Tapping a product card (image/name area) opens `<ProductDetailSheet>` — big
+image, name, price, description, quantity stepper, and "Agregar N · $X". The
+"Agregar" button on the card still adds 1 directly. This gives every business
+(restaurant, taller, spa) a real product view before ordering.
+
+### 4.1.3 Combine tables
+
+Two tables → one bill. Staff: "Unir mesa" on the mesa detail
+(`MergeTableDialog`). Customer on the bill: "Unir con otra mesa"
+(`CustomerMergeSheet`, gated by device membership). Both go through
+`tableMergeService.mergeTables` (absorbs the secondary order's items+devices,
+recomputes totals, cancels + frees the secondary QR).
 
 ### 4.2 Receipt-style screens
 
@@ -183,6 +208,64 @@ For any text/number/email input in a form, use `<FormInput>` from
 `@/components/ui/FormInput`. It encodes the canonical input pattern
 described in §5 (eyebrow label, leading icon, rounded-2xl border-2,
 inline error). Pass `icon`, `error`, `optional` props as needed.
+
+### 4.7 Admin dashboard pages (mesas, QR, cuentas bancarias, futuras)
+
+Las pantallas internas del dashboard (`/src/app/dashboard/**`) NO usan
+`CustomerScreenLayout`. Siguen un patrón propio, igual de homologado.
+**Composición canónica de una página de listado admin:**
+
+```tsx
+<div className="space-y-5">
+  <PageHeader title="…" description="…" action={<button …>Nuevo</button>} />
+
+  <MetricsStrip metrics={[ …KPIs… ]} />     // si aplica
+
+  <FilterPills value={filter} onChange={setFilter} filters={[…]} />
+
+  {hasItems ? (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {items.map((i) => <ItemCard … />)}
+    </div>
+  ) : (
+    <EmptyState icon={Icon} title="…" description="…" action={…} />
+  )}
+
+  <FormSheet isOpen={…} onClose={…} title="…">…</FormSheet>
+  {toast && <Toast message={…} tone={…} onDone={…} />}
+</div>
+```
+
+**Reglas:**
+
+- Título de página → `<PageHeader>` siempre. Cero `<h1>` ad-hoc.
+- KPIs → `<MetricsStrip metrics={[{label, value, tone, icon}]}>`.
+- Tabs de filtro → `<FilterPills>` (1 sola implementación, soporta
+  count badges). Si tu feature tiene un wrapper como `TablesFilterTabs`,
+  ese wrapper SOLO traduce los filtros del dominio a `FilterPill[]` y
+  delega.
+- Estados vacíos → `<EmptyState icon title description action>` siempre.
+  Cero `<div className="border-dashed">` ad-hoc.
+- Cards de listado → `<AdminListCard icon title meta badge thumbnail
+  body actions>`. Si necesitas un layout muy distinto, extiende
+  `AdminListCard`, no clones la card desde cero.
+- Badges de estado → `<StatusBadge tone="success|warning|danger|info|neutral"
+  label="…">`. Cero pills inline con `bg-emerald-100 text-emerald-800`.
+- Botones secundarios pequeños dentro de una card → usar las clases
+  `adminActionButtonSecondary | adminActionButtonPrimary |
+  adminActionButtonDanger` de `@/components/admin/actionButtonClasses`.
+  Cero `inline-flex min-h-[36px] rounded-lg border …` copy-pasted.
+- CTAs primarios del header de página → patrón homologado:
+  ```
+  inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-2xl
+  bg-accent px-4 py-2 text-sm font-bold text-accent-foreground
+  shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99]
+  transition-all
+  ```
+- Forms en modal → `<FormSheet>`. Cero `ModalShell` + `BottomSheet` en
+  paralelo.
+- Toasts de éxito/error post-mutación → `<Toast tone="success|error">`.
+  Cero `createPortal` ad-hoc en cada página.
 
 ---
 
@@ -244,19 +327,16 @@ These are the canonical references — match their pattern:
 
 | Screen                                       | File                                                             |
 | -------------------------------------------- | ---------------------------------------------------------------- |
-| **CustomerScreenLayout (REQUIRED wrapper)**  | `src/features/qr/components/CustomerScreenLayout.tsx`            |
+| **CustomerScreen (REQUIRED wrapper)**        | `src/features/qr/components/CustomerScreen.tsx`                  |
+| CustomerLoading (branded loader)             | `src/features/qr/components/CustomerLoading.tsx`                 |
 | TipScreen (uses layout, preset chips)        | `src/features/qr/components/TipScreen.tsx`                       |
-| Bill page (uses layout, totals hero)         | `src/app/q/[token]/table/bill/page.tsx`                          |
-| Finalizar pago (uses layout + method hero)   | `src/app/q/[token]/table/bill/page.tsx` (method branch)          |
+| Bill page (header + fixed pay footer)        | `src/app/q/[token]/table/bill/page.tsx`                          |
+| Mesa menu (sections + sticky pills)          | `src/app/q/[token]/table/TableQRClient.tsx`                      |
+| Pago (single sheet)                          | `src/features/qr/components/CustomerPayModal.tsx`               |
 | QR payment success page (uses layout)        | `src/app/q/[token]/payment/success/page.tsx`                     |
 | PaymentReceipt (focused card overlay)        | `src/features/qr/components/PaymentReceipt.tsx`                  |
-| DeviceNamePrompt (hero + form)               | `src/features/qr/components/DeviceNamePrompt.tsx`                |
-
-**Hero blocks (live inside CustomerScreenLayout)**
-
-| Hero                                         | File                                                             |
-| -------------------------------------------- | ---------------------------------------------------------------- |
-| PaymentMethodHero (method icon + amount)     | `src/features/qr/components/PaymentMethodHero.tsx`               |
+| DeviceNamePrompt (header + form)             | `src/features/qr/components/DeviceNamePrompt.tsx`                |
+| ProductDetailSheet (tap-to-view product)     | `src/features/qr/components/ProductDetailSheet.tsx`             |
 
 **Reusable primitives (use these — do not redeclare)**
 
@@ -266,6 +346,20 @@ These are the canonical references — match their pattern:
 | `FormInput` (canonical labeled input)        | `src/components/ui/FormInput.tsx`                                |
 | `FormSheet` (mobile sheet + desktop modal)   | `src/components/ui/FormSheet.tsx`                                |
 | `ConfirmDialog` (yes/no confirmations)       | `src/components/ui/ConfirmDialog.tsx`                            |
+| `Toast` (success/error toast, auto-dismiss)  | `src/components/ui/Toast.tsx`                                    |
+| `Skeleton` (loading placeholder block)       | `src/components/ui/Skeleton.tsx`                                 |
+
+**Admin dashboard primitives (use these — do not redeclare)**
+
+| Primitive                                    | File                                                             |
+| -------------------------------------------- | ---------------------------------------------------------------- |
+| `PageHeader` (title + description + action)  | `src/components/admin/PageHeader.tsx`                            |
+| `MetricsStrip` (KPI grid, tone-aware)        | `src/components/admin/MetricsStrip.tsx`                          |
+| `FilterPills` (pill tabs with count badges)  | `src/components/admin/FilterPills.tsx`                           |
+| `StatusBadge` (colored dot + label pill)     | `src/components/admin/StatusBadge.tsx`                           |
+| `EmptyState` (dashed card + icon + CTA)      | `src/components/admin/EmptyState.tsx`                            |
+| `AdminListCard` (icon + title + meta + actions) | `src/components/admin/AdminListCard.tsx`                      |
+| `actionButtonClasses` (secondary/primary/danger) | `src/components/admin/actionButtonClasses.ts`                |
 
 **Feature-internal pieces**
 
@@ -274,7 +368,7 @@ These are the canonical references — match their pattern:
 | CustomerPayModal (method picker bottom sheet)| `src/features/qr/components/CustomerPayModal.tsx`                |
 | PaymentMethodStep (bank info / instructions) | `src/features/qr/components/PaymentMethodStep.tsx`               |
 | BillSummary (cards in body)                  | `src/features/qr/components/BillSummary.tsx`                     |
-| MenuProductCard + MenuSearchBar + grid       | `src/features/qr/components/{MenuProductCard,MenuSearchBar,TableMenuGrid}.tsx` |
+| Menu sections + card (categories + search)   | `src/features/qr/components/{TableMenuSections,MenuProductCard}.tsx` |
 
 If a new screen doesn't follow these patterns, it should be reworked, not
 shipped.

@@ -6,6 +6,50 @@
 import { apiFetch } from "@/services/apiFetch";
 
 import type { CloseReason } from "@/features/qr/services/tableCloseService";
+import type { FulfillmentStatus } from "@/features/qr/services/tableFulfillmentService";
+
+/** Advance the staff-controlled preparation state (received → in_progress → ready). */
+export async function advanceOrderFulfillment(payload: {
+  orderId: string;
+  status: FulfillmentStatus;
+}) {
+  return apiFetch(
+    `/api/qr/table/${encodeURIComponent(payload.orderId)}/fulfillment`,
+    {
+      method: "POST",
+      body: JSON.stringify({ status: payload.status }),
+    },
+  );
+}
+
+/** Advance ONE person's preparation state (per-device). */
+export async function advanceDeviceFulfillment(payload: {
+  orderId: string;
+  deviceId: string;
+  status: FulfillmentStatus;
+}) {
+  return apiFetch(
+    `/api/qr/table/${encodeURIComponent(payload.orderId)}/fulfillment`,
+    {
+      method: "POST",
+      body: JSON.stringify({ status: payload.status, device_id: payload.deviceId }),
+    },
+  );
+}
+
+/** Whole-table shortcut: set every person to `status` at once. */
+export async function advanceAllFulfillment(payload: {
+  orderId: string;
+  status: FulfillmentStatus;
+}) {
+  return apiFetch(
+    `/api/qr/table/${encodeURIComponent(payload.orderId)}/fulfillment`,
+    {
+      method: "POST",
+      body: JSON.stringify({ status: payload.status, all: true }),
+    },
+  );
+}
 
 export async function confirmPendingPayment(paymentId: string) {
   return apiFetch(
@@ -42,4 +86,25 @@ export async function closeTableManually(payload: {
       }),
     },
   );
+}
+
+/** Link another active table to `primaryOrderId` (shared bill; both stay open). */
+export async function mergeTableInto(payload: {
+  primaryOrderId: string;
+  secondaryOrderId: string;
+}) {
+  return apiFetch(
+    `/api/qr/table/${encodeURIComponent(payload.primaryOrderId)}/merge`,
+    {
+      method: "POST",
+      body: JSON.stringify({ secondary_order_id: payload.secondaryOrderId }),
+    },
+  );
+}
+
+/** Separate this table from its linked group. */
+export async function unlinkTable(orderId: string) {
+  return apiFetch(`/api/qr/table/${encodeURIComponent(orderId)}/unlink`, {
+    method: "POST",
+  });
 }

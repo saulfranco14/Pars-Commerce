@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import useSWR from "swr";
 import { Check, Copy, Loader2 } from "lucide-react";
 
@@ -24,10 +24,9 @@ interface PaymentMethodStepProps {
 }
 
 /**
- * Body content for the "Finalizar pago" screen. Renders the
- * method-specific instructions and the confirm CTA. The screen-wide
- * hero + back button + accent layout are owned by `CustomerScreenLayout`
- * in the parent route.
+ * Method-specific detail view rendered inside the CustomerPayModal sheet:
+ * the instructions/bank data for the chosen method plus the confirm CTA.
+ * The sheet (amount header, method picker, back) is owned by the modal.
  */
 export function PaymentMethodStep({
   method,
@@ -257,29 +256,22 @@ function CashOrCardStep({
 
 function MercadoPagoStep({ amount }: { amount: number }) {
   return (
-    <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
-      <p className="text-sm font-bold text-blue-900">
+    <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+      <p className="text-sm font-bold text-foreground">
         Te llevaremos al checkout seguro de Mercado Pago.
       </p>
-      <p className="mt-1 text-xs text-blue-700">
+      <p className="mt-1 text-xs text-muted-foreground">
         Puedes pagar con tarjeta, débito o SPEI. Al terminar regresarás aquí
         automáticamente.
       </p>
-      <div className="mt-3 flex items-baseline justify-between rounded-xl bg-white/70 px-4 py-2.5">
-        <p className="text-xs font-bold uppercase tracking-wider text-blue-700">
+      <div className="mt-3 flex items-baseline justify-between rounded-xl bg-border-soft/40 px-4 py-2.5">
+        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
           Cargo total
         </p>
-        <p className="text-xl font-bold text-blue-900">
+        <p className="text-xl font-bold text-foreground">
           {formatCurrency(amount)}
         </p>
       </div>
     </div>
   );
-}
-
-export function PaymentMethodStepMounted({ ...props }: PaymentMethodStepProps) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
-  return <PaymentMethodStep {...props} />;
 }

@@ -39,6 +39,15 @@ function err(
   return { ok: false, error: { code, message } };
 }
 
+/**
+ * The customer can only pay once the business marks the order as ready
+ * (fulfillment_status = "ready"). Shared across every payment entry point.
+ */
+const NOT_READY_ERROR = err(
+  "conflict",
+  "El negocio aún está preparando tu pedido. Podrás pagar cuando esté listo.",
+);
+
 /* -------------------------------------------------------------------------- */
 /* Payment intent — customer signals they want to pay (cash/transfer/in-card) */
 /* -------------------------------------------------------------------------- */
@@ -63,7 +72,7 @@ export async function createPaymentIntent(
 ): Promise<ServiceResult<CreatePaymentIntentResult>> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, tenant_id, status, total, balance_due")
+    .select("id, tenant_id, status, fulfillment_status, total, balance_due")
     .eq("id", input.orderId)
     .single();
 
@@ -73,16 +82,27 @@ export async function createPaymentIntent(
   if (order.status === "cancelled")
     return err("conflict", "La orden fue cancelada");
 
-  // Locate device id so the activity log records who paid.
+  // Locate device id so the activity log records who paid AND so we can gate
+  // payment on THAT person's readiness (per-person), not the whole table.
   let deviceId: string | null = null;
+  let deviceStatus: string | null = null;
   if (input.fingerprint) {
     const { data: device } = await admin
       .from("order_devices")
-      .select("id")
+      .select("id, fulfillment_status")
       .eq("order_id", input.orderId)
       .eq("device_fingerprint", input.fingerprint)
       .maybeSingle();
     deviceId = device?.id ?? null;
+    deviceStatus = device?.fulfillment_status ?? null;
+  }
+
+  // Payment gate: if we know the paying person, gate on their state; otherwise
+  // fall back to the order-level summary (derived from all people).
+  if (deviceStatus !== null) {
+    if (deviceStatus !== "ready") return NOT_READY_ERROR;
+  } else if (order.fulfillment_status !== "ready") {
+    return NOT_READY_ERROR;
   }
 
   let targetGroupId = input.groupId ?? null;
@@ -286,7 +306,7 @@ export async function confirmPayment(
 
   await admin.from("order_activity_log").insert({
     order_id: order.id,
-    actor_type: "user",
+    actor_type: "member",
     actor_id: input.actorUserId,
     actor_label: "personal",
     action: "payment.confirmed",
@@ -350,7 +370,7 @@ export async function rejectPayment(
 
   await admin.from("order_activity_log").insert({
     order_id: payment.order_id,
-    actor_type: "user",
+    actor_type: "member",
     actor_id: input.actorUserId,
     actor_label: "personal",
     action: "payment.rejected",
@@ -386,7 +406,9 @@ export async function payFullOrder(
 ): Promise<ServiceResult<PayFullOrderResult>> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, status, total, paid_total, balance_due")
+    .select(
+      "id, status, fulfillment_status, total, paid_total, balance_due, merge_group_id",
+    )
     .eq("id", input.orderId)
     .single();
 
@@ -407,11 +429,25 @@ export async function payFullOrder(
       "Esta cuenta fue cancelada y no puede pagarse",
     );
   }
+  if (order.fulfillment_status !== "ready") return NOT_READY_ERROR;
+
+  // Linked tables pay as one: settle every order in the merge group and
+  // release every QR. Not linked → just this order.
+  const groupOrderIds = order.merge_group_id
+    ? (
+        (
+          await admin
+            .from("orders")
+            .select("id")
+            .eq("merge_group_id", order.merge_group_id)
+        ).data ?? []
+      ).map((o) => o.id as string)
+    : [order.id];
 
   const { data: existingGroups } = await admin
     .from("order_split_groups")
     .select("id")
-    .eq("order_id", input.orderId)
+    .in("order_id", groupOrderIds)
     .limit(1);
 
   if (existingGroups && existingGroups.length > 0) {
@@ -421,41 +457,57 @@ export async function payFullOrder(
     );
   }
 
-  const amount = Number(order.balance_due ?? order.total);
+  const { data: groupOrders } = await admin
+    .from("orders")
+    .select("id, total, balance_due")
+    .in("id", groupOrderIds);
+
+  const amount = (groupOrders ?? []).reduce(
+    (a, o) => a + Number(o.balance_due ?? o.total ?? 0),
+    0,
+  );
   const now = new Date().toISOString();
 
-  const { error: orderError } = await admin
-    .from("orders")
-    .update({
-      status: "paid",
-      paid_at: now,
-      balance_due: 0,
-      paid_total: Number(order.total),
-      payment_method: input.method,
-      updated_at: now,
-    })
-    .eq("id", input.orderId);
+  // Settle each order + insert a payment row for it (keeps per-order books
+  // correct and the CHECK(>=0) invariants intact).
+  for (const o of groupOrders ?? []) {
+    const oAmount = Number(o.balance_due ?? o.total ?? 0);
+    const { error: orderError } = await admin
+      .from("orders")
+      .update({
+        status: "paid",
+        paid_at: now,
+        balance_due: 0,
+        paid_total: Number(o.total),
+        payment_method: input.method,
+        updated_at: now,
+      })
+      .eq("id", o.id);
+    if (orderError) return err("internal", orderError.message);
 
-  if (orderError) return err("internal", orderError.message);
+    await admin.from("payments").insert({
+      order_id: o.id,
+      provider: input.method === "mercadopago" ? "mercadopago" : "manual",
+      status: "approved",
+      amount: oAmount,
+      payment_kind: "full",
+      metadata: {
+        source: "qr_table_pay_full",
+        method: input.method,
+        group: order.merge_group_id ?? null,
+      },
+    });
 
-  await admin.from("payments").insert({
-    order_id: order.id,
-    provider: input.method === "mercadopago" ? "mercadopago" : "manual",
-    status: "approved",
-    amount,
-    payment_kind: "full",
-    metadata: { source: "qr_table_pay_full", method: input.method },
-  });
+    await admin.from("order_activity_log").insert({
+      order_id: o.id,
+      actor_type: "device",
+      actor_label: "cliente",
+      action: "payment.succeeded",
+      payload: { method: input.method, amount: oAmount, kind: "full" },
+    });
 
-  await admin.from("order_activity_log").insert({
-    order_id: order.id,
-    actor_type: "device",
-    actor_label: "cliente",
-    action: "payment.succeeded",
-    payload: { method: input.method, amount, kind: "full" },
-  });
-
-  await releaseTableQrIfPaid(admin, order.id);
+    await releaseTableQrIfPaid(admin, o.id);
+  }
 
   return { ok: true, data: { amount, paidAt: now, alreadyPaid: false } };
 }
@@ -480,13 +532,36 @@ export async function payGroup(
 ): Promise<ServiceResult<PayGroupResult>> {
   const { data: group } = await admin
     .from("order_split_groups")
-    .select("id, order_id, total, paid_total, balance_due, payment_status")
+    .select(
+      "id, order_id, device_id, total, paid_total, balance_due, payment_status",
+    )
     .eq("id", input.groupId)
     .single();
 
   if (!group) return err("not_found", "Grupo no encontrado");
   if (group.payment_status === "paid") {
     return { ok: true, data: { allPaid: false, amount: 0 } };
+  }
+
+  // Per-person gating: a group tied to a device is payable as soon as THAT
+  // person is ready, even if the rest of the table isn't. Groups without a
+  // device (e.g. "cuenta total") fall back to the order-level summary.
+  if (group.device_id) {
+    const { data: device } = await admin
+      .from("order_devices")
+      .select("fulfillment_status")
+      .eq("id", group.device_id)
+      .maybeSingle();
+    if (device && device.fulfillment_status !== "ready")
+      return NOT_READY_ERROR;
+  } else {
+    const { data: groupOrder } = await admin
+      .from("orders")
+      .select("fulfillment_status")
+      .eq("id", group.order_id)
+      .single();
+    if (groupOrder && groupOrder.fulfillment_status !== "ready")
+      return NOT_READY_ERROR;
   }
 
   const now = new Date().toISOString();

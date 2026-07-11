@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getPendingMergeRequests } from "@/features/qr/services/tableMergeRequestService";
+import { getGroupOrderIds } from "@/features/qr/services/tableLinkService";
 
 interface RouteContext {
   params: Promise<{ orderId: string }>;
@@ -14,7 +16,7 @@ export async function GET(request: Request, context: RouteContext) {
   const { data: order } = await admin
     .from("orders")
     .select(
-      "id, tenant_id, status, total, paid_total, balance_due, created_at, qr_code_id, payment_method",
+      "id, tenant_id, status, fulfillment_status, total, paid_total, balance_due, created_at, qr_code_id, payment_method, merge_group_id",
     )
     .eq("id", orderId)
     .single();
@@ -25,11 +27,16 @@ export async function GET(request: Request, context: RouteContext) {
 
   const { data: tenant } = await admin
     .from("tenants")
-    .select("id, name, slug")
+    .select("id, name, slug, logo_url")
     .eq("id", order.tenant_id)
     .single();
 
-  const [{ data: qrCode }, { data: splitGroups }, { data: items }, { data: devices }] =
+  // Linked tables share one bill: aggregate items/splits/devices/totals across
+  // every order in the merge group (just [orderId] when not linked).
+  const groupOrderIds = await getGroupOrderIds(admin, orderId);
+  const isLinked = groupOrderIds.length > 1;
+
+  const [{ data: qrCode }, { data: splitGroups }, { data: items }, { data: devices }, { data: groupOrders }] =
     await Promise.all([
       order.qr_code_id
         ? admin
@@ -43,21 +50,46 @@ export async function GET(request: Request, context: RouteContext) {
         .select(
           "id, label, total, paid_total, balance_due, payment_status, device_id",
         )
-        .eq("order_id", orderId)
+        .in("order_id", groupOrderIds)
         .order("created_at", { ascending: true }),
       admin
         .from("order_items")
         .select(
-          "id, product_id, quantity, unit_price, subtotal, added_by_device_id, is_shared",
+          "id, product_id, quantity, unit_price, subtotal, added_by_device_id, is_shared, origin_table_label, created_at",
         )
-        .eq("order_id", orderId)
+        .in("order_id", groupOrderIds)
         .order("created_at", { ascending: true }),
       admin
         .from("order_devices")
-        .select("id, display_name, color_hex, joined_at, last_seen_at")
-        .eq("order_id", orderId)
+        .select(
+          "id, display_name, color_hex, joined_at, last_seen_at, fulfillment_status, device_fingerprint",
+        )
+        .in("order_id", groupOrderIds)
         .order("joined_at", { ascending: true }),
+      admin
+        .from("orders")
+        .select("id, total, paid_total, balance_due, table_label")
+        .in("id", groupOrderIds),
     ]);
+
+  // Aggregate totals across the group.
+  const groupTotal = (groupOrders ?? []).reduce(
+    (a, o) => a + Number(o.total ?? 0),
+    0,
+  );
+  const groupPaid = (groupOrders ?? []).reduce(
+    (a, o) => a + Number(o.paid_total ?? 0),
+    0,
+  );
+  const groupBalance = (groupOrders ?? []).reduce(
+    (a, o) => a + Number(o.balance_due ?? o.total ?? 0),
+    0,
+  );
+  const linkedLabels = isLinked
+    ? (groupOrders ?? [])
+        .map((o) => o.table_label as string | null)
+        .filter((l): l is string => !!l)
+    : [];
 
   // Fetch product names so the bill can show "1x Encerado" instead of an id.
   const productIds = Array.from(
@@ -83,6 +115,8 @@ export async function GET(request: Request, context: RouteContext) {
     subtotal: Number(item.subtotal),
     added_by_device_id: item.added_by_device_id,
     is_shared: item.is_shared === true,
+    origin_table_label: item.origin_table_label ?? null,
+    created_at: item.created_at ?? null,
   }));
 
   const groups =
@@ -92,34 +126,87 @@ export async function GET(request: Request, context: RouteContext) {
           {
             id: `order-${order.id}`,
             label: "Cuenta total",
-            total: Number(order.total),
-            paid_total: Number(order.paid_total ?? 0),
-            balance_due: Number(order.balance_due ?? order.total),
-            payment_status:
-              Number(order.balance_due ?? order.total) <= 0 ? "paid" : "pending",
+            total: groupTotal,
+            paid_total: groupPaid,
+            balance_due: groupBalance,
+            payment_status: groupBalance <= 0 ? "paid" : "pending",
             device_id: null,
           },
         ];
 
-  // Resolve current device id from fingerprint so the UI can highlight "tu cuenta".
+  // Resolve current device id from fingerprint so the UI can highlight "tu
+  // cuenta", know whether this device is the table's owner (approver), and
+  // read THIS person's preparation state (to gate "pagar mi parte").
   let myDeviceId: string | null = null;
+  let iAmOwner = false;
+  let myFulfillmentStatus = "received";
   if (fingerprint) {
-    const { data: device } = await admin
-      .from("order_devices")
-      .select("id")
-      .eq("order_id", orderId)
-      .eq("device_fingerprint", fingerprint)
-      .maybeSingle();
-    myDeviceId = device?.id ?? null;
+    const mine = (devices ?? []).find(
+      (d) => d.device_fingerprint === fingerprint,
+    );
+    if (mine) {
+      myDeviceId = mine.id;
+      myFulfillmentStatus = mine.fulfillment_status ?? "received";
+      // is_owner isn't in the bulk select; one tiny read only when needed.
+      const { data: ownerRow } = await admin
+        .from("order_devices")
+        .select("is_owner")
+        .eq("id", mine.id)
+        .maybeSingle();
+      iAmOwner = ownerRow?.is_owner === true;
+    }
   }
+
+  // Pending merge requests (consent flow) — one read; stale rows expire lazily.
+  const nowIso = new Date().toISOString();
+  const { incoming, outgoing } = await getPendingMergeRequests(
+    admin,
+    orderId,
+    nowIso,
+  );
+
+  // Resolve a friendly label for the OTHER table in each request.
+  async function labelForOrder(otherOrderId: string): Promise<string> {
+    const { data: o } = await admin
+      .from("orders")
+      .select("table_label")
+      .eq("id", otherOrderId)
+      .maybeSingle();
+    return (o?.table_label as string | null) ?? "otra mesa";
+  }
+
+  const incomingPayload = incoming
+    ? {
+        id: incoming.id,
+        requester_label: await labelForOrder(incoming.requester_order_id),
+        expires_at: incoming.expires_at,
+      }
+    : null;
+  const outgoingPayload = outgoing
+    ? {
+        id: outgoing.id,
+        target_label: await labelForOrder(outgoing.target_order_id),
+        expires_at: outgoing.expires_at,
+      }
+    : null;
+
+  // For a linked group, "paid" means the whole group is settled.
+  const groupStatus = isLinked
+    ? groupBalance <= 0
+      ? "paid"
+      : order.status === "paid"
+        ? "in_progress"
+        : order.status
+    : order.status;
 
   return NextResponse.json({
     order: {
       id: order.id,
-      status: order.status,
-      total: Number(order.total),
-      paid_total: Number(order.paid_total ?? 0),
-      balance_due: Number(order.balance_due ?? order.total),
+      status: groupStatus,
+      fulfillment_status: order.fulfillment_status ?? "received",
+      total: groupTotal,
+      paid_total: groupPaid,
+      balance_due: groupBalance,
       created_at: order.created_at,
       payment_method: order.payment_method ?? null,
     },
@@ -127,7 +214,19 @@ export async function GET(request: Request, context: RouteContext) {
     qr_code: qrCode ?? null,
     groups,
     items: enrichedItems,
-    devices: devices ?? [],
+    // Strip device_fingerprint (identifier) — expose only what the UI renders.
+    devices: (devices ?? []).map((d) => ({
+      id: d.id,
+      display_name: d.display_name,
+      color_hex: d.color_hex,
+      fulfillment_status: d.fulfillment_status ?? "received",
+    })),
     my_device_id: myDeviceId,
+    my_fulfillment_status: myFulfillmentStatus,
+    i_am_owner: iAmOwner,
+    is_linked: isLinked,
+    linked_labels: linkedLabels,
+    incoming_merge_request: incomingPayload,
+    outgoing_merge_request: outgoingPayload,
   });
 }

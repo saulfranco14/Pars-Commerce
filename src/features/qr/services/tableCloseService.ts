@@ -48,7 +48,7 @@ export async function closeTableOrder(
 
   const { data: order } = await admin
     .from("orders")
-    .select("id, status, qr_code_id")
+    .select("id, status, qr_code_id, merge_group_id")
     .eq("id", input.orderId)
     .single();
 
@@ -68,7 +68,7 @@ export async function closeTableOrder(
 
       await admin.from("order_activity_log").insert({
         order_id: input.orderId,
-        actor_type: "user",
+        actor_type: "member",
         actor_id: input.actorUserId,
         actor_label: "personal",
         action: "table.qr_released_manual",
@@ -98,39 +98,50 @@ export async function closeTableOrder(
   const reasonText =
     input.reason === "other" ? input.reasonDetails!.trim() : input.reason;
 
+  // Linked tables share one bill, so closing one closes the whole group and
+  // frees every QR. Not linked → just this order. Batched: one orders UPDATE,
+  // one QR release, one log insert — closing must feel instant to the staff.
+  const { data: groupOrders } = order.merge_group_id
+    ? await admin
+        .from("orders")
+        .select("id")
+        .eq("merge_group_id", order.merge_group_id)
+    : { data: [{ id: order.id }] };
+
+  const targetIds = (groupOrders ?? [{ id: order.id }]).map(
+    (o) => o.id as string,
+  );
+
   const { error: updateError } = await admin
     .from("orders")
     .update({
       status: "cancelled",
       cancel_reason: reasonText,
       closed_by_membership_id: input.membershipId,
+      merge_group_id: null,
       updated_at: now,
     })
-    .eq("id", input.orderId);
-
+    .in("id", targetIds);
   if (updateError) {
     return { ok: false, error: { code: "internal", message: updateError.message } };
   }
 
-  if (order.qr_code_id) {
-    await admin
-      .from("qr_codes")
-      .update({ current_order_id: null, updated_at: now })
-      .eq("id", order.qr_code_id)
-      .eq("current_order_id", input.orderId);
-  }
+  // Free every QR still pointing at any of the closed orders.
+  await admin
+    .from("qr_codes")
+    .update({ current_order_id: null, updated_at: now })
+    .in("current_order_id", targetIds);
 
-  await admin.from("order_activity_log").insert({
-    order_id: input.orderId,
-    actor_type: "user",
-    actor_id: input.actorUserId,
-    actor_label: "personal",
-    action: "table.closed_manual",
-    payload: {
-      reason_code: input.reason,
-      reason: reasonText,
-    },
-  });
+  await admin.from("order_activity_log").insert(
+    targetIds.map((id) => ({
+      order_id: id,
+      actor_type: "member",
+      actor_id: input.actorUserId,
+      actor_label: "personal",
+      action: "table.closed_manual",
+      payload: { reason_code: input.reason, reason: reasonText },
+    })),
+  );
 
   return { ok: true, data: { closedAt: now } };
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
+import { resetFulfillmentForNewItems } from "@/features/qr/services/tableFulfillmentService";
 
 interface TableItemPayload {
   product_id: string;
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
 
   const { data: order } = await admin
     .from("orders")
-    .select("id, tenant_id, status, subtotal, total")
+    .select("id, tenant_id, status, subtotal, total, table_label")
     .eq("id", body.order_id)
     .single();
 
@@ -114,6 +115,8 @@ export async function POST(request: Request) {
         subtotal: unitPrice * quantity,
         added_by_device_id: deviceId,
         is_shared: item.is_shared === true,
+        // Snapshot the table this was ordered at, so it survives a later merge.
+        origin_table_label: order.table_label ?? null,
       };
     })
     .filter(Boolean);
@@ -132,6 +135,14 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  // A new batch restarts THIS person's preparation state (received) — the
+  // journey begins again and the payment gate closes until the business marks
+  // the new work ready. Other people at the table are untouched.
+  await resetFulfillmentForNewItems(admin, {
+    orderId: body.order_id,
+    deviceId,
+  });
 
   const addedSubtotal = rows.reduce(
     (acc, row) => acc + Number(row?.subtotal ?? 0),

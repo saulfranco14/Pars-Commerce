@@ -8,10 +8,16 @@ import {
   confirmPendingPayment,
   rejectPendingPayment,
   closeTableManually,
+  mergeTableInto,
+  unlinkTable,
+  advanceOrderFulfillment,
+  advanceDeviceFulfillment,
+  advanceAllFulfillment,
 } from "@/features/qr/services/tableAdminClientService";
 
 import type { AdminViewResponse } from "@/features/qr/services/tableAdminViewService";
 import type { CloseReason } from "@/features/qr/services/tableCloseService";
+import type { FulfillmentStatus } from "@/features/qr/services/tableFulfillmentService";
 
 interface UseTableAdminLiveOptions {
   refreshIntervalMs?: number;
@@ -38,6 +44,9 @@ export function useTableAdminLive(
 
   const [busyPaymentId, setBusyPaymentId] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
+  const [merging, setMerging] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
+  const [busyDeviceId, setBusyDeviceId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function confirmPayment(paymentId: string) {
@@ -91,14 +100,117 @@ export function useTableAdminLive(
     }
   }
 
+  async function mergeTable(secondaryOrderId: string) {
+    if (!orderId) return false;
+    setMerging(true);
+    setError(null);
+    try {
+      await mergeTableInto({ primaryOrderId: orderId, secondaryOrderId });
+      await swr.mutate();
+      return true;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "No se pudieron unir las mesas",
+      );
+      return false;
+    } finally {
+      setMerging(false);
+    }
+  }
+
+  async function unlink() {
+    if (!orderId) return false;
+    setMerging(true);
+    setError(null);
+    try {
+      await unlinkTable(orderId);
+      await swr.mutate();
+      return true;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "No se pudo separar la mesa",
+      );
+      return false;
+    } finally {
+      setMerging(false);
+    }
+  }
+
+  async function advanceFulfillment(status: FulfillmentStatus) {
+    if (!orderId) return false;
+    setAdvancing(true);
+    setError(null);
+    try {
+      await advanceOrderFulfillment({ orderId, status });
+      await swr.mutate();
+      return true;
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo actualizar el estado",
+      );
+      return false;
+    } finally {
+      setAdvancing(false);
+    }
+  }
+
+  async function advanceDevice(
+    deviceId: string,
+    status: FulfillmentStatus,
+  ) {
+    if (!orderId) return false;
+    setBusyDeviceId(deviceId);
+    setError(null);
+    try {
+      await advanceDeviceFulfillment({ orderId, deviceId, status });
+      await swr.mutate();
+      return true;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "No se pudo actualizar el estado",
+      );
+      return false;
+    } finally {
+      setBusyDeviceId(null);
+    }
+  }
+
+  async function advanceAll(status: FulfillmentStatus) {
+    if (!orderId) return false;
+    setAdvancing(true);
+    setError(null);
+    try {
+      await advanceAllFulfillment({ orderId, status });
+      await swr.mutate();
+      return true;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "No se pudo actualizar el estado",
+      );
+      return false;
+    } finally {
+      setAdvancing(false);
+    }
+  }
+
   return {
     ...swr,
     busyPaymentId,
     closing,
+    merging,
+    advancing,
+    busyDeviceId,
     error,
     resetError: () => setError(null),
     confirmPayment,
     rejectPayment,
     closeTable,
+    mergeTable,
+    unlink,
+    advanceFulfillment,
+    advanceDevice,
+    advanceAll,
   };
 }

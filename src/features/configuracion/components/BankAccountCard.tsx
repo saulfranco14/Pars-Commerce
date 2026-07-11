@@ -2,6 +2,12 @@
 
 import { Check } from "lucide-react";
 
+import { StatusBadge } from "@/components/admin/StatusBadge";
+import {
+  adminActionButtonDanger,
+  adminActionButtonSecondary,
+} from "@/components/admin/actionButtonClasses";
+
 import type { TenantPaymentMethod } from "@/features/configuracion/interfaces/bankAccount";
 
 interface BankAccountCardProps {
@@ -41,7 +47,7 @@ export function BankAccountCard({
       tabIndex={isSelected ? -1 : 0}
       onClick={handleCardClick}
       onKeyDown={handleCardKey}
-      className={`group relative rounded-xl border bg-surface p-4 space-y-3 transition-all duration-200
+      className={`group relative rounded-2xl border bg-surface p-4 space-y-3 transition-all duration-200
         ${isSelected
           ? "border-accent ring-2 ring-accent/20 shadow-sm"
           : "border-border hover:border-accent/40 hover:bg-border-soft/20 cursor-pointer"}
@@ -70,9 +76,7 @@ export function BankAccountCard({
               {account.label ?? "Cuenta sin nombre"}
             </h3>
             {isSelected && (
-              <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">
-                Principal
-              </span>
+              <StatusBadge tone="info" label="Principal" dot={false} />
             )}
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
@@ -89,7 +93,7 @@ export function BankAccountCard({
         <button
           type="button"
           onClick={() => onEdit(account)}
-          className="min-h-[36px] cursor-pointer rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground hover:bg-border-soft/40"
+          className={adminActionButtonSecondary}
         >
           Editar
         </button>
@@ -98,7 +102,7 @@ export function BankAccountCard({
           onClick={() => onDelete(account.id)}
           disabled={deleting || isSelected}
           title={isSelected ? "No puedes eliminar la cuenta principal" : undefined}
-          className="min-h-[36px] cursor-pointer rounded-lg border border-red-200 bg-surface px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          className={adminActionButtonDanger}
         >
           {deleting ? "Eliminando..." : "Eliminar"}
         </button>

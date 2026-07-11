@@ -30,16 +30,16 @@ interface UsePaymentFlowParams {
 }
 
 /**
- * State machine for the customer payment flow on the bill page:
+ * State machine for the customer payment flow on the bill page. Collapsed to
+ * a single sheet (DESIGN_SYSTEM.md §4.4): picking a target opens
+ * <CustomerPayModal>, and method selection + confirmation both happen inside
+ * that one sheet:
  *
  *   bill
- *    └── pickTarget(target)        // user clicks "Pagar" or "Pagar grupo"
- *         └── pickMethod(method)   // user selects method in CustomerPayModal
- *              └── confirmIntent() // user confirms in PaymentMethodStep
- *                   └── pendingPayment shown via PaymentReceipt
- *
- * The MercadoPago method is excluded from this flow — that integration goes
- * through its own preference + webhook (next block).
+ *    └── pickTarget(target)          // user taps "Pagar" / "Pagar grupo"
+ *         └── confirmIntent(method)  // confirmed from within the sheet
+ *              └── pending shown via PaymentReceipt (manual methods)
+ *                  or hard-redirect to Mercado Pago
  */
 export function usePaymentFlow({
   orderId,
@@ -48,25 +48,12 @@ export function usePaymentFlow({
   onSubmitted,
 }: UsePaymentFlowParams) {
   const [target, setTarget] = useState<PayTarget | null>(null);
-  const [method, setMethod] = useState<CustomerPayMethod | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingPayment | null>(null);
 
   function pickTarget(t: PayTarget | null) {
     setTarget(t);
-    setMethod(null);
-    setError(null);
-  }
-
-  function pickMethod(m: CustomerPayMethod) {
-    setMethod(m);
-    setError(null);
-  }
-
-  function backToMethodPicker() {
-    if (!target) return;
-    setMethod(null);
     setError(null);
   }
 
@@ -74,8 +61,8 @@ export function usePaymentFlow({
     setPending(null);
   }
 
-  async function confirmIntent() {
-    if (!target || !method) return;
+  async function confirmIntent(method: CustomerPayMethod) {
+    if (!target) return;
     const amount =
       target.kind === "group"
         ? Number(target.group.balance_due || target.group.total)
@@ -110,7 +97,6 @@ export function usePaymentFlow({
         submittedAt: new Date().toISOString(),
       });
       setTarget(null);
-      setMethod(null);
       if (onSubmitted) await onSubmitted();
     } catch (err) {
       setError(
@@ -124,14 +110,11 @@ export function usePaymentFlow({
   return {
     /* state */
     target,
-    method,
     submitting,
     error,
     pending,
     /* transitions */
     pickTarget,
-    pickMethod,
-    backToMethodPicker,
     confirmIntent,
     dismissPending,
   };
