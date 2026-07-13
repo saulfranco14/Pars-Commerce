@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
-import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import { useActiveTenant } from "@/stores/useTenantStore";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { FAB } from "@/components/ui/FAB";
+import { FilterTabs } from "@/components/ui/FilterTabs";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import {
   TableWrapper,
@@ -20,29 +22,89 @@ import {
 } from "@/components/ui/TableWrapper";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { ProductListItem } from "@/types/products";
+import type { Subcatalog } from "@/types/subcatalogs";
 import { remove } from "@/services/productsService";
 import {
   btnPrimary,
-  btnPrimaryHeader,
   btnSecondaryFlex,
   btnDanger,
   btnSecondarySmall,
   btnDangerSmall,
 } from "@/components/ui/buttonClasses";
+import { PageHeader } from "@/components/admin/PageHeader";
+import { ServiceFormSheet } from "@/features/servicios/components/ServiceFormSheet";
 
-const servicesKey = (tenantId: string) =>
-  `/api/products?tenant_id=${encodeURIComponent(tenantId)}&type=service`;
+const subcatalogsKey = (tenantId: string) =>
+  `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
+
+function buildServicesKey(tenantId: string, subcatalogId: string): string {
+  const params = new URLSearchParams({ tenant_id: tenantId, type: "service" });
+  if (subcatalogId) params.set("subcatalog_id", subcatalogId);
+  return `/api/products?${params}`;
+}
+
+function buildSubcatalogTabs(subcatalogs: Subcatalog[]) {
+  const tabs = [{ value: "", label: "Todos" }];
+  for (const sc of subcatalogs) {
+    tabs.push({ value: sc.id, label: sc.name });
+  }
+  return tabs;
+}
 
 export default function ServiciosPage() {
   const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [serviceToDelete, setServiceToDelete] =
     useState<ProductListItem | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [subcatalogFilter, setSubcatalogFilter] = useState(
+    () => searchParams.get("subcatalog_id") ?? "",
+  );
 
-  const key = activeTenant ? servicesKey(activeTenant.id) : null;
+  useEffect(() => {
+    if (searchParams.get("nuevo") === "1") setCreateOpen(true);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const urlValue = searchParams.get("subcatalog_id") ?? "";
+    if (urlValue !== subcatalogFilter) {
+      setSubcatalogFilter(urlValue);
+    }
+  }, [searchParams]);
+
+  function closeCreate() {
+    setCreateOpen(false);
+    if (searchParams.get("nuevo") === "1") {
+      router.replace(`/dashboard/${tenantSlug}/servicios`);
+    }
+  }
+
+  function handleSubcatalogChange(value: string) {
+    setSubcatalogFilter(value);
+    const path = `/dashboard/${tenantSlug}/servicios`;
+    const query = value ? `?subcatalog_id=${encodeURIComponent(value)}` : "";
+    router.replace(path + query, { scroll: false });
+  }
+
+  const subcatalogsKeyValue = activeTenant
+    ? subcatalogsKey(activeTenant.id)
+    : null;
+  const { data: subcatalogsData } = useSWR<Subcatalog[]>(
+    subcatalogsKeyValue,
+    swrFetcher,
+    { fallbackData: [] },
+  );
+  const subcatalogs = Array.isArray(subcatalogsData) ? subcatalogsData : [];
+  const subcatalogTabs = buildSubcatalogTabs(subcatalogs);
+
+  const key = activeTenant
+    ? buildServicesKey(activeTenant.id, subcatalogFilter)
+    : null;
   const {
     data: servicesData,
     error: swrError,
@@ -89,17 +151,27 @@ export default function ServiciosPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="space-y-4 sm:px-0">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
-            Servicios
-          </h1>
-          <Link
-            href={`/dashboard/${tenantSlug}/servicios/nuevo`}
-            className={btnPrimaryHeader}
-          >
-            <Plus className="h-4 w-4 shrink-0" aria-hidden />
-            Nuevo servicio
-          </Link>
+        <PageHeader
+          title="Servicios"
+          description="Gestiona tu catálogo de servicios."
+        />
+
+        {/* Único punto de creación — FAB en móvil y desktop. */}
+        <FAB
+          onClick={() => setCreateOpen(true)}
+          aria-label="Nuevo servicio"
+          alwaysVisible
+        >
+          <Plus className="h-6 w-6 shrink-0" aria-hidden />
+        </FAB>
+
+        <div className="border-t border-border-soft pt-3">
+          <FilterTabs
+            tabs={subcatalogTabs}
+            activeValue={subcatalogFilter}
+            onTabChange={handleSubcatalogChange}
+            ariaLabel="Filtrar por subcatálogo"
+          />
         </div>
 
         {error && (
@@ -121,13 +193,14 @@ export default function ServiciosPage() {
             <p className="text-sm text-muted">
               No hay servicios. Crea uno con &quot;Nuevo servicio&quot;.
             </p>
-            <Link
-              href={`/dashboard/${tenantSlug}/servicios/nuevo`}
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
               className={`mt-4 ${btnPrimary}`}
             >
               <Plus className="h-4 w-4 shrink-0" aria-hidden />
               Crear primer servicio
-            </Link>
+            </button>
           </div>
         ) : (
           <>
@@ -299,6 +372,18 @@ export default function ServiciosPage() {
         confirmDanger
         loading={deletingId !== null}
       />
+
+      {activeTenant && (
+        <ServiceFormSheet
+          isOpen={createOpen}
+          onClose={closeCreate}
+          tenantId={activeTenant.id}
+          onCreated={async () => {
+            await mutate();
+            closeCreate();
+          }}
+        />
+      )}
     </div>
   );
 }

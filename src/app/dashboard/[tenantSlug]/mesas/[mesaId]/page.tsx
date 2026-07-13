@@ -118,39 +118,47 @@ export default function MesaDetailPage() {
           Volver a mesas
         </Link>
 
+        {/* Header — icon tile + state, mirrors the list card */}
         <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
-              {qr.label}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Libre
-              </span>
-              {qr.table_capacity ? (
-                <span className="ml-2 text-xs text-muted-foreground">
-                  Capacidad: {qr.table_capacity} personas
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+              <Store className="h-5 w-5" />
+            </span>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                {qr.label}
+              </h1>
+              <div className="mt-0.5 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Libre
                 </span>
-              ) : null}
-            </p>
+                {qr.table_capacity ? (
+                  <span className="text-xs text-muted-foreground">
+                    {qr.table_capacity} personas
+                  </span>
+                ) : null}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-dashed border-border p-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            Esta mesa está libre. Cuando un cliente escanee el QR aparecerán
-            aquí los productos pedidos en vivo.
+        {/* Share card — the QR with a single clean frame (no cuadro-sobre-cuadro) */}
+        <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            Comparte para que ordenen
           </p>
+          <p className="mb-3 mt-0.5 text-xs text-muted-foreground">
+            Cuando un cliente escanee este QR, aquí verás sus productos en vivo.
+          </p>
+          <QrPreview
+            token={qr.token}
+            label={qr.label}
+            kind="table"
+            tableCapacity={qr.table_capacity}
+            businessName={activeTenant.name}
+          />
         </div>
-
-        <QrPreview
-          token={qr.token}
-          label={qr.label}
-          kind="table"
-          tableCapacity={qr.table_capacity}
-          businessName={activeTenant.name}
-        />
       </div>
     );
   }

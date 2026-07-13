@@ -1,9 +1,19 @@
 "use client";
 
-import { Loader2, UserPlus } from "lucide-react";
-import { FieldError } from "@/features/prestamos/components/FieldError";
-import { useNewCustomerForm } from "@/features/prestamos/hooks/useNewCustomerForm";
-import { inputBase, inputError } from "@/features/prestamos/constants/formClasses";
+import { useId } from "react";
+
+import { UserPlus } from "lucide-react";
+
+import { FormSheet } from "@/components/ui/FormSheet";
+import { btnPrimaryFlex, btnSecondary } from "@/components/ui/buttonClasses";
+import { useSchemaForm } from "@/lib/forms/useSchemaForm";
+import { SchemaFormFields } from "@/lib/forms/SchemaFormFields";
+import { createCustomer } from "@/features/prestamos/services/customerService";
+import {
+  newCustomerFields,
+  type NewCustomerFieldValues,
+} from "@/features/prestamos/validations/newCustomerFieldSchema";
+
 import type { Customer } from "@/types/customers";
 
 interface NewCustomerModalProps {
@@ -12,105 +22,76 @@ interface NewCustomerModalProps {
   onClose: () => void;
 }
 
-export function NewCustomerModal({ activeTenantId, onSuccess, onClose }: NewCustomerModalProps) {
-  const {
-    register,
-    handleSubmit,
-    errors,
-    isValid,
-    creating,
-    createError,
-    handleCreate,
-    resetForm,
-  } = useNewCustomerForm(activeTenantId, onSuccess);
+/**
+ * "Nuevo cliente" — the reference create-record sheet. Now built on the same
+ * schema-driven engine (FieldSchema + useSchemaForm + SchemaFormFields) as
+ * every other homologated create form, inside the shared FormSheet with its
+ * icon-chip header — instead of the bespoke hand-rolled modal this used to be.
+ */
+export function NewCustomerModal({
+  activeTenantId,
+  onSuccess,
+  onClose,
+}: NewCustomerModalProps) {
+  const formId = useId();
+  const form = useSchemaForm<NewCustomerFieldValues>(
+    newCustomerFields,
+    async (values) => {
+      const customer = await createCustomer(activeTenantId, values);
+      onSuccess(customer);
+    },
+  );
 
   function handleClose() {
-    resetForm();
+    form.resetForm();
     onClose();
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface shadow-xl">
-        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 shrink-0">
-            <UserPlus className="h-4 w-4 text-accent" aria-hidden />
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-foreground">Nuevo cliente</h3>
-            <p className="text-[11px] text-muted-foreground">Completa los datos del cliente</p>
-          </div>
+    <FormSheet
+      isOpen
+      onClose={handleClose}
+      icon={UserPlus}
+      title="Nuevo cliente"
+      description="Completa los datos del cliente"
+      maxWidth="max-w-md"
+      footer={
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            form={formId}
+            disabled={form.submitting || !form.isValid}
+            className={btnPrimaryFlex}
+          >
+            {form.submitting ? "Guardando..." : "Guardar"}
+          </button>
+          <button type="button" onClick={handleClose} className={btnSecondary}>
+            Cancelar
+          </button>
         </div>
+      }
+    >
+      <form
+        id={formId}
+        onSubmit={form.handleSubmit(form.submit)}
+        noValidate
+        className="space-y-4"
+      >
+        <SchemaFormFields
+          fields={newCustomerFields}
+          register={form.register}
+          errors={form.errors}
+        />
 
-        <form onSubmit={handleSubmit(handleCreate)} noValidate className="p-4 space-y-4">
-          <div>
-            <label htmlFor="modal-customer-name" className="block text-sm font-medium text-foreground mb-1.5">
-              Nombre *
-            </label>
-            <input
-              id="modal-customer-name"
-              type="text"
-              {...register("name")}
-              placeholder="Nombre completo"
-              autoFocus
-              className={errors.name ? inputError : inputBase}
-            />
-            <FieldError message={errors.name?.message} />
+        {form.submitError && (
+          <div
+            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+            role="alert"
+          >
+            {form.submitError}
           </div>
-
-          <div>
-            <label htmlFor="modal-customer-phone" className="block text-sm font-medium text-foreground mb-1.5">
-              Teléfono *
-            </label>
-            <input
-              id="modal-customer-phone"
-              type="tel"
-              {...register("phone")}
-              placeholder="Ej: 5512345678"
-              className={errors.phone ? inputError : inputBase}
-            />
-            <FieldError message={errors.phone?.message} />
-          </div>
-
-          <div>
-            <label htmlFor="modal-customer-email" className="block text-sm font-medium text-foreground mb-1.5">
-              Email *
-            </label>
-            <input
-              id="modal-customer-email"
-              type="email"
-              {...register("email")}
-              placeholder="correo@ejemplo.com"
-              className={errors.email ? inputError : inputBase}
-            />
-            <FieldError message={errors.email?.message} />
-          </div>
-
-          {createError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
-              {createError}
-            </div>
-          )}
-
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={creating || !isValid}
-              className="flex-1 min-h-[44px] rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-            >
-              {creating && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
-              Guardar
-            </button>
-            <button
-              type="button"
-              onClick={handleClose}
-              className="min-h-[44px] rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border-soft transition-colors"
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        )}
+      </form>
+    </FormSheet>
   );
 }

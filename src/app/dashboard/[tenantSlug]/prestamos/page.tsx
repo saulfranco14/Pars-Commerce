@@ -4,9 +4,16 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
-import { Plus, AlertTriangle, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, AlertTriangle, Clock, CheckCircle2, SlidersHorizontal, XCircle } from "lucide-react";
 import { FAB } from "@/components/ui/FAB";
 import { FilterTabs } from "@/components/ui/FilterTabs";
+import {
+  DateFilterSheet,
+  getSevenDaysAgoStr,
+  getYesterdayStr,
+  type QuickDateRange,
+} from "@/components/ui/DateFilterSheet";
+import { getTodayStr } from "@/lib/dateValidation";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { LoansOnboardingOverlay } from "@/components/onboarding/LoansOnboardingOverlay";
 import {
@@ -91,6 +98,24 @@ export default function PrestamosPage() {
   const activeTenant = useActiveTenant();
   const [statusFilter, setStatusFilter] = useState("active");
   const [overdueOnly, setOverdueOnly] = useState(false);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const hasDateFilter = !!dateFrom || !!dateTo;
+
+  function setQuickDate(range: QuickDateRange) {
+    const today = getTodayStr();
+    if (range === "hoy") {
+      setDateFrom(today);
+      setDateTo(today);
+    } else if (range === "ayer") {
+      setDateFrom(getYesterdayStr());
+      setDateTo(getYesterdayStr());
+    } else {
+      setDateFrom(getSevenDaysAgoStr());
+      setDateTo(today);
+    }
+  }
 
   const loansKey =
     activeTenant?.id
@@ -102,7 +127,15 @@ export default function PrestamosPage() {
     swrFetcher,
     { fallbackData: [] }
   );
-  const loans = Array.isArray(loansData) ? loansData : [];
+  // Date range is applied client-side (the loans API has no date params). Bounds
+  // are inclusive on the calendar day.
+  const loans = (Array.isArray(loansData) ? loansData : []).filter((l) => {
+    if (!hasDateFilter) return true;
+    const day = (l.created_at ?? "").slice(0, 10);
+    if (dateFrom && day < dateFrom) return false;
+    if (dateTo && day > dateTo) return false;
+    return true;
+  });
 
   // Resumen rápido
   const totalPending = loans
@@ -166,7 +199,7 @@ export default function PrestamosPage() {
             }}
             ariaLabel="Filtrar por estado"
           />
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setOverdueOnly((o) => !o)}
@@ -179,8 +212,45 @@ export default function PrestamosPage() {
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
               Solo vencidos
             </button>
+            <button
+              type="button"
+              onClick={() => setFilterSheetOpen(true)}
+              className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                hasDateFilter
+                  ? "bg-accent/15 text-accent hover:bg-accent/20"
+                  : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
+              }`}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+              {hasDateFilter
+                ? `Fechas: ${dateFrom || "—"} a ${dateTo || "—"}`
+                : "Filtrar por fecha"}
+            </button>
+            {hasDateFilter && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+                className="inline-flex min-h-[36px] items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                Limpiar
+              </button>
+            )}
           </div>
         </div>
+
+        <DateFilterSheet
+          isOpen={filterSheetOpen}
+          onClose={() => setFilterSheetOpen(false)}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onDateFromChange={setDateFrom}
+          onDateToChange={setDateTo}
+          onQuickDate={setQuickDate}
+          onApply={() => setFilterSheetOpen(false)}
+        />
 
         {swrError && (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

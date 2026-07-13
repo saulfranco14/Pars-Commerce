@@ -1,6 +1,6 @@
 "use client";
 
-import { FilterPills } from "@/components/admin/FilterPills";
+import { FilterTabs } from "@/components/ui/FilterTabs";
 
 import type { TableFilter } from "@/features/qr/hooks/useTablesList";
 
@@ -10,20 +10,25 @@ interface TablesFilterTabsProps {
   counts: { total: number; free: number; occupied: number };
 }
 
+/**
+ * Table filter tabs. Uses the shared FilterTabs (the dashboard-wide filter
+ * style — rectangular, accent when active) with the count folded into each
+ * label, since FilterTabs has no count-badge slot.
+ */
 export function TablesFilterTabs({
   filter,
   onChange,
   counts,
 }: TablesFilterTabsProps) {
   return (
-    <FilterPills<TableFilter>
+    <FilterTabs
       ariaLabel="Filtrar mesas"
-      value={filter}
-      onChange={onChange}
-      filters={[
-        { value: "all", label: "Todas", count: counts.total },
-        { value: "occupied", label: "Ocupadas", count: counts.occupied },
-        { value: "free", label: "Libres", count: counts.free },
+      activeValue={filter}
+      onTabChange={(v) => onChange(v as TableFilter)}
+      tabs={[
+        { value: "all", label: `Todas ${counts.total}` },
+        { value: "occupied", label: `Ocupadas ${counts.occupied}` },
+        { value: "free", label: `Libres ${counts.free}` },
       ]}
     />
   );

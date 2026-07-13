@@ -240,10 +240,14 @@ Las pantallas internas del dashboard (`/src/app/dashboard/**`) NO usan
 
 - Título de página → `<PageHeader>` siempre. Cero `<h1>` ad-hoc.
 - KPIs → `<MetricsStrip metrics={[{label, value, tone, icon}]}>`.
-- Tabs de filtro → `<FilterPills>` (1 sola implementación, soporta
-  count badges). Si tu feature tiene un wrapper como `TablesFilterTabs`,
-  ese wrapper SOLO traduce los filtros del dominio a `FilterPill[]` y
-  delega.
+- Tabs de filtro → `<FilterTabs>` (`@/components/ui/FilterTabs`), el estilo
+  ÚNICO de filtros del dashboard: tabs rectangulares (`rounded-lg`), activo
+  en `bg-accent text-accent-foreground` (rosa). Lo usan órdenes, préstamos,
+  productos, mesas, QR. `FilterTabs` no tiene slot de count-badge: si
+  necesitas contador, pliégalo en el label (`Todas 2`). Si tu feature tiene
+  un wrapper (p.ej. `TablesFilterTabs`), ese wrapper SOLO traduce los filtros
+  del dominio a `FilterTabItem[]` y delega. (`FilterPills` queda obsoleto para
+  filtros de listado — no usarlo en pantallas nuevas.)
 - Estados vacíos → `<EmptyState icon title description action>` siempre.
   Cero `<div className="border-dashed">` ad-hoc.
 - Cards de listado → `<AdminListCard icon title meta badge thumbnail
@@ -255,13 +259,18 @@ Las pantallas internas del dashboard (`/src/app/dashboard/**`) NO usan
   `adminActionButtonSecondary | adminActionButtonPrimary |
   adminActionButtonDanger` de `@/components/admin/actionButtonClasses`.
   Cero `inline-flex min-h-[36px] rounded-lg border …` copy-pasted.
-- CTAs primarios del header de página → patrón homologado:
+- CTA primario de creación → **`<FAB>` en móvil + botón en header en desktop**
+  (patrón de órdenes/préstamos, aplicado a todo el dashboard). El botón del
+  header lleva `hidden md:inline-flex` (el FAB es `md:hidden`, sin solaparse) y
+  usa la clase compartida `pageHeaderCta` de
+  `@/components/admin/actionButtonClasses`:
   ```
   inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-2xl
   bg-accent px-4 py-2 text-sm font-bold text-accent-foreground
   shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99]
   transition-all
   ```
+  El FAB (`@/components/ui/FAB`) recibe `href` o `onClick` + `aria-label`.
 - Forms en modal → `<FormSheet>`. Cero `ModalShell` + `BottomSheet` en
   paralelo.
 - Toasts de éxito/error post-mutación → `<Toast tone="success|error">`.

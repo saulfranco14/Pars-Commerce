@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
-import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import { useActiveTenant } from "@/stores/useTenantStore";
 import { FolderTree, Pencil, Plus, Trash2 } from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { FAB } from "@/components/ui/FAB";
 import { FilterTabs } from "@/components/ui/FilterTabs";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import {
@@ -25,13 +26,13 @@ import type { Subcatalog } from "@/types/subcatalogs";
 import { remove } from "@/services/productsService";
 import {
   btnPrimary,
-  btnPrimaryHeader,
-  btnSecondaryHeader,
   btnSecondaryFlex,
   btnDanger,
   btnSecondarySmall,
   btnDangerSmall,
 } from "@/components/ui/buttonClasses";
+import { PageHeader } from "@/components/admin/PageHeader";
+import { ProductFormSheet } from "@/features/productos/components/ProductFormSheet";
 
 const subcatalogsKey = (tenantId: string) =>
   `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
@@ -68,6 +69,7 @@ export default function ProductosPage() {
   const [subcatalogFilter, setSubcatalogFilter] = useState(
     () => searchParams.get("subcatalog_id") ?? "",
   );
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
     const urlValue = searchParams.get("subcatalog_id") ?? "";
@@ -75,6 +77,17 @@ export default function ProductosPage() {
       setSubcatalogFilter(urlValue);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (searchParams.get("nuevo") === "1") setCreateOpen(true);
+  }, [searchParams]);
+
+  function closeCreate() {
+    setCreateOpen(false);
+    if (searchParams.get("nuevo") === "1") {
+      router.replace(`/dashboard/${tenantSlug}/productos`);
+    }
+  }
 
   function handleSubcatalogChange(value: string) {
     setSubcatalogFilter(value);
@@ -147,27 +160,28 @@ export default function ProductosPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="space-y-4 sm:px-0">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
-            Productos
-          </h1>
-          <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
+        <PageHeader
+          title="Productos"
+          description="Gestiona tu catálogo de productos y sus subcatálogos."
+          action={
             <Link
               href={`/dashboard/${tenantSlug}/productos/subcatalogos`}
-              className={btnSecondaryHeader}
+              className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-2 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
             >
               <FolderTree className="h-4 w-4 shrink-0" aria-hidden />
-              Subcatalogos
+              Subcatálogos
             </Link>
-            <Link
-              href={`/dashboard/${tenantSlug}/productos/nuevo`}
-              className={btnPrimaryHeader}
-            >
-              <Plus className="h-4 w-4 shrink-0" aria-hidden />
-              Nuevo producto
-            </Link>
-          </div>
-        </div>
+          }
+        />
+
+        {/* Único punto de creación — FAB en móvil y desktop. */}
+        <FAB
+          onClick={() => setCreateOpen(true)}
+          aria-label="Nuevo producto"
+          alwaysVisible
+        >
+          <Plus className="h-6 w-6 shrink-0" aria-hidden />
+        </FAB>
 
         {error && (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
@@ -175,7 +189,7 @@ export default function ProductosPage() {
           </div>
         )}
 
-        <div className="space-y-2">
+        <div className="border-t border-border-soft pt-3">
           <FilterTabs
             tabs={productTabs}
             activeValue={subcatalogFilter}
@@ -198,13 +212,14 @@ export default function ProductosPage() {
               No hay productos{subcatalogFilter ? " en este subcatálogo" : ""}.
               Crea uno con &quot;Nuevo producto&quot;.
             </p>
-            <Link
-              href={`/dashboard/${tenantSlug}/productos/nuevo`}
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
               className={`mt-4 ${btnPrimary}`}
             >
               <Plus className="h-4 w-4 shrink-0" aria-hidden />
               Crear primer producto
-            </Link>
+            </button>
           </div>
         ) : (
           <>
@@ -386,6 +401,16 @@ export default function ProductosPage() {
         confirmLabel="Eliminar"
         confirmDanger
         loading={deletingId !== null}
+      />
+
+      <ProductFormSheet
+        isOpen={createOpen}
+        onClose={closeCreate}
+        tenantId={activeTenant.id}
+        onCreated={async () => {
+          await mutate();
+          closeCreate();
+        }}
       />
     </div>
   );

@@ -9,11 +9,13 @@ import { Plus, QrCode as QrIcon } from "lucide-react";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { FormSheet } from "@/components/ui/FormSheet";
 import { Notification } from "@/components/ui/Notification";
+import { FAB } from "@/components/ui/FAB";
+import { FilterTabs } from "@/components/ui/FilterTabs";
 import { EmptyState } from "@/components/admin/EmptyState";
-import { FilterPills } from "@/components/admin/FilterPills";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { useActiveTenant } from "@/stores/useTenantStore";
+import { pageHeaderCta } from "@/components/admin/actionButtonClasses";
 import { QRCodeCard } from "@/features/qr/components/QRCodeCard";
 import { QrPreview } from "@/features/qr/components/QrPreview";
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
@@ -23,8 +25,7 @@ import type { QrCode } from "@/features/qr/interfaces/qrCode";
 
 type Filter = "all" | "table" | "payment";
 
-const primaryCta =
-  "inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-2xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] transition-all";
+const primaryCta = pageHeaderCta;
 
 export default function QrCodesPage() {
   const params = useParams();
@@ -80,7 +81,7 @@ export default function QrCodesPage() {
         action={
           <Link
             href={`/dashboard/${tenantSlug}/qr/nuevo`}
-            className={primaryCta}
+            className={`${primaryCta} hidden md:inline-flex`}
           >
             <Plus className="h-4 w-4" />
             Nuevo QR
@@ -88,17 +89,22 @@ export default function QrCodesPage() {
         }
       />
 
+      {/* Mobile FAB — mirrors Órdenes/Préstamos. */}
+      <FAB href={`/dashboard/${tenantSlug}/qr/nuevo`} aria-label="Nuevo QR">
+        <Plus className="h-6 w-6 shrink-0" aria-hidden />
+      </FAB>
+
       {actionError && <Notification tone="error" message={actionError} />}
 
       {hasCodes && (
-        <FilterPills<Filter>
+        <FilterTabs
           ariaLabel="Filtrar QR"
-          value={filter}
-          onChange={setFilter}
-          filters={[
-            { value: "all", label: "Todos", count: counts.all },
-            { value: "table", label: "Mesas", count: counts.table },
-            { value: "payment", label: "Cobros", count: counts.payment },
+          activeValue={filter}
+          onTabChange={(v) => setFilter(v as Filter)}
+          tabs={[
+            { value: "all", label: `Todos ${counts.all}` },
+            { value: "table", label: `Mesas ${counts.table}` },
+            { value: "payment", label: `Cobros ${counts.payment}` },
           ]}
         />
       )}

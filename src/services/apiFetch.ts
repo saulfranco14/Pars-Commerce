@@ -16,3 +16,8 @@ export async function apiFetch(
   }
   return data;
 }
+
+/** True for a fetch aborted via AbortController — callers should swallow this, not surface it as an error. */
+export function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}

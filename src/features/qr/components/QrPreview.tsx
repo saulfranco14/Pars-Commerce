@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
-import { Check, Coffee, Copy, CreditCard, Download, ExternalLink } from "lucide-react";
+import { Check, Copy, CreditCard, Download, ExternalLink, Store } from "lucide-react";
 
 import { buildPublicQrUrl } from "@/features/qr/helpers/buildPublicQrUrl";
 import { formatCurrency } from "@/features/qr/helpers/format";
@@ -34,7 +34,7 @@ export function QrPreview({
 
   const isTable = kind === "table";
   const isPayment = kind === "payment";
-  const Icon = isTable ? Coffee : isPayment ? CreditCard : null;
+  const Icon = isTable ? Store : isPayment ? CreditCard : null;
 
   async function handleCopy() {
     try {
@@ -62,11 +62,13 @@ export function QrPreview({
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-surface p-5">
-      {/* Printable card: this is what the business will save / print / paste */}
+    <div className="flex flex-col items-center gap-4">
+      {/* Printable card: this is what the business will save / print / paste.
+          A single framed card — no outer wrapper border and no inner box around
+          the code (that read as "cuadro sobre cuadro"). */}
       <div
         ref={printableRef}
-        className="flex w-full max-w-xs flex-col items-center gap-3 rounded-2xl border border-border bg-white p-5 text-center"
+        className="flex w-full max-w-xs flex-col items-center gap-3 rounded-2xl border border-border bg-white p-6 text-center shadow-sm"
       >
         {businessName && (
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -93,7 +95,7 @@ export function QrPreview({
           </p>
         ) : null}
 
-        <div className="rounded-lg border border-slate-200 bg-white p-2">
+        <div className="p-1">
           <QRCodeCanvas
             value={url}
             size={size}

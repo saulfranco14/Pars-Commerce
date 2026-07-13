@@ -14,7 +14,7 @@ export function PageHeader({
   eyebrow,
 }: PageHeaderProps) {
   return (
-    <header className="flex flex-wrap items-start justify-between gap-3">
+    <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
         {eyebrow && (
           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">

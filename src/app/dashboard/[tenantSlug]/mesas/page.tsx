@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, ClipboardList, Clock, Coffee, LayoutGrid, Plus } from "lucide-react";
+import { CheckCircle2, ClipboardList, Clock, LayoutGrid, Plus, Store } from "lucide-react";
 
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { MetricsStrip } from "@/components/admin/MetricsStrip";
 import { PageHeader } from "@/components/admin/PageHeader";
+import { pageHeaderCta } from "@/components/admin/actionButtonClasses";
+import { FabSpeedDial } from "@/components/ui/FabSpeedDial";
 import { FormSheet } from "@/components/ui/FormSheet";
 import { QrCreateForm } from "@/features/qr/components/QrCreateForm";
 import { CreatedQrSuccess } from "@/features/qr/components/CreatedQrSuccess";
@@ -19,8 +21,7 @@ import { useTablesList } from "@/features/qr/hooks/useTablesList";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
 
-const primaryCta =
-  "inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-2xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] transition-all";
+const primaryCta = pageHeaderCta;
 
 export default function MesasPage() {
   const params = useParams();
@@ -75,7 +76,9 @@ export default function MesasPage() {
         title="Mesas"
         description="Cada mesa tiene un QR único para que tus clientes ordenen y paguen."
         action={
-          <div className="flex flex-wrap items-center gap-2">
+          // Desktop: both actions in the header. Mobile: a single FAB speed-dial
+          // (below) — never the same action duplicated in header + FAB.
+          <div className="hidden flex-wrap items-center gap-2 md:flex">
             <Link
               href={`/dashboard/${tenantSlug}/pedidos/nuevo`}
               className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-2 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
@@ -89,6 +92,19 @@ export default function MesasPage() {
             </button>
           </div>
         }
+      />
+
+      {/* Mobile: one FAB that expands to both create actions. */}
+      <FabSpeedDial
+        aria-label="Acciones"
+        actions={[
+          { label: "Agregar mesa", icon: Plus, onClick: openCreate },
+          {
+            label: "Tomar pedido",
+            icon: ClipboardList,
+            href: `/dashboard/${tenantSlug}/pedidos/nuevo`,
+          },
+        ]}
       />
 
       {hasTables && (
@@ -151,7 +167,7 @@ export default function MesasPage() {
         <p className="text-sm text-muted-foreground">Cargando mesas...</p>
       ) : !hasTables ? (
         <EmptyState
-          icon={Coffee}
+          icon={Store}
           title="Aún no tienes mesas"
           description="Crea tu primera mesa para que tus clientes puedan escanear y ordenar desde su celular."
           action={

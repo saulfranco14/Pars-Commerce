@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
+import type { LucideIcon } from "lucide-react";
+
 interface FormSheetProps {
   isOpen: boolean;
   onClose: () => void;
@@ -13,6 +15,19 @@ interface FormSheetProps {
   maxWidth?: "max-w-md" | "max-w-lg" | "max-w-xl" | "max-w-2xl";
   /** Disable click-outside-to-close (e.g. while a form is submitting). */
   dismissible?: boolean;
+  /**
+   * Optional leading icon chip next to the title — the "Nuevo cliente"-style
+   * header (icon in a tinted circle, title + description beside it) used by
+   * create-record sheets. Omit for the plain title-only header.
+   */
+  icon?: LucideIcon;
+  /**
+   * Optional fixed footer (e.g. Guardar/Cancelar) rendered outside the
+   * scrollable body — stays pinned at the bottom of the sheet regardless of
+   * how long the form is; only `children` scrolls. Omit to keep the legacy
+   * behavior where the footer scrolls together with the rest of `children`.
+   */
+  footer?: React.ReactNode;
 }
 
 /**
@@ -34,6 +49,8 @@ export function FormSheet({
   children,
   maxWidth = "max-w-lg",
   dismissible = true,
+  icon: Icon,
+  footer,
 }: FormSheetProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -75,23 +92,60 @@ export function FormSheet({
           />
         </div>
 
-        {/* Header */}
+        {/* Header — plain title, or the "Nuevo cliente"-style icon chip
+            layout when `icon` is passed. */}
         <div className="shrink-0 px-5 pb-3 pt-3 md:px-6 md:pt-6">
-          <h2
-            id="form-sheet-title"
-            className="text-base font-bold text-foreground md:text-lg"
-          >
-            {title}
-          </h2>
-          {description && (
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          {Icon ? (
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10">
+                <Icon className="h-5 w-5 text-accent" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <h2
+                  id="form-sheet-title"
+                  className="text-base font-bold text-foreground md:text-lg"
+                >
+                  {title}
+                </h2>
+                {description && (
+                  <p className="text-xs text-muted-foreground md:text-sm">
+                    {description}
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              <h2
+                id="form-sheet-title"
+                className="text-base font-bold text-foreground md:text-lg"
+              >
+                {title}
+              </h2>
+              {description && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {description}
+                </p>
+              )}
+            </>
           )}
         </div>
 
         {/* Body — scrolls when content is long */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 md:px-6 md:pb-6">
+        <div
+          className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 md:px-6 ${
+            footer ? "pb-4 md:pb-4" : "pb-5 md:pb-6"
+          }`}
+        >
           {children}
         </div>
+
+        {/* Fixed footer — stays pinned below the scrollable body. */}
+        {footer && (
+          <div className="shrink-0 border-t border-border-soft px-5 py-3 md:px-6 md:py-4">
+            {footer}
+          </div>
+        )}
       </div>
     </div>,
     document.body,

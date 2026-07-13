@@ -15,3 +15,11 @@ export const adminActionButtonDanger =
  */
 export const adminActionButtonConfirm =
   "inline-flex min-h-[36px] cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm shadow-emerald-600/15 hover:bg-emerald-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 transition-all";
+
+/**
+ * The homologated page-header primary CTA (DESIGN_SYSTEM.md §4.7). Shared here
+ * so list pages (mesas, qr, inicio, …) import ONE string instead of each
+ * copy-pasting it — the audit found this duplicated across pages.
+ */
+export const pageHeaderCta =
+  "inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-2xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] transition-all";

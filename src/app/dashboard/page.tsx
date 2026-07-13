@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
-import { btnPrimary } from "@/components/ui/buttonClasses";
+import { PageHeader } from "@/components/admin/PageHeader";
+import { PeriodSelector } from "@/components/admin/PeriodSelector";
+import { pageHeaderCta } from "@/components/admin/actionButtonClasses";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
@@ -164,43 +166,41 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto">
-      <div className="space-y-8 pb-8 sm:pb-10">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              {activeTenant.name}
-            </h1>
-            <p className="mt-0.5 text-sm text-muted sm:text-base">
-              {periodLabel}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <select
+      <div className="space-y-5 pb-8 sm:pb-10">
+        {/* Header card: name + period + CTA live together as one composed
+            block, not loose elements floating on the page background. */}
+        <div className="space-y-3 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5">
+          <PageHeader title={activeTenant.name} description={periodLabel} />
+
+          {/* Own full-width row so the 50/50 split isn't fighting PageHeader's
+              flex/shrink-0 action slot. Desktop: natural width, right-aligned
+              via PageHeader normally would — here both breakpoints just flow
+              left since this card owns the whole width already. */}
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
+            <PeriodSelector
               value={period}
-              onChange={(e) =>
-                setPeriod(
-                  e.target.value as "today" | "week" | "fortnight" | "month" | "cutoff",
-                )
-              }
-              className="select-custom min-h-[44px] flex-1 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm font-medium text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-none"
-            >
-              <option value="today">Hoy</option>
-              <option value="week">Semana</option>
-              <option value="fortnight">Quincena</option>
-              <option value="month">Mes</option>
-              <option value="cutoff" disabled={!lastCutoffEnd}>
-                {lastCutoffEnd ? "Último corte" : "Sin cortes"}
-              </option>
-            </select>
+              onChange={(v) => setPeriod(v as typeof period)}
+              options={[
+                { value: "today", label: "Hoy" },
+                { value: "week", label: "Semana" },
+                { value: "fortnight", label: "Quincena" },
+                { value: "month", label: "Mes" },
+                {
+                  value: "cutoff",
+                  label: lastCutoffEnd ? "Último corte" : "Sin cortes",
+                  disabled: !lastCutoffEnd,
+                },
+              ]}
+            />
             <Link
               href={`/dashboard/${activeTenant.slug}/ordenes/nueva`}
-              className={`${btnPrimary} flex-1 sm:flex-none`}
+              className={`${pageHeaderCta} justify-center whitespace-nowrap sm:w-auto`}
             >
               <Plus className="h-4 w-4 shrink-0" aria-hidden />
               Nueva Orden
             </Link>
           </div>
-        </header>
+        </div>
 
         {period === "cutoff" && lastCutoffEnd && (
           <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3">
@@ -225,20 +225,44 @@ export default function DashboardPage() {
         {needsAttention && (
           <Link
             href={`/dashboard/${activeTenant.slug}/ordenes`}
-            className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-soft bg-border-soft/50 px-4 py-3 transition-colors duration-200 hover:bg-border-soft/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+            className="flex cursor-pointer items-center gap-3 rounded-2xl border border-border bg-surface p-3 shadow-sm transition-colors duration-200 hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
           >
-            <div className="flex items-center gap-2">
+            <div
+              className={`grid flex-1 gap-2 ${
+                activeOrders > 0 && unassignedCount > 0
+                  ? "grid-cols-2"
+                  : "grid-cols-1"
+              }`}
+            >
               {activeOrders > 0 && (
-                <span className="flex items-center gap-1.5 text-sm text-foreground">
-                  <Clock className="h-4 w-4 text-amber-500" />
-                  {activeOrders} en progreso
-                </span>
+                <div className="flex items-center gap-2.5 rounded-xl bg-amber-50 px-3 py-2">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                    <Clock className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-lg font-bold leading-none tabular-nums text-amber-800">
+                      {activeOrders}
+                    </p>
+                    <p className="text-[11px] font-medium text-amber-700">
+                      en progreso
+                    </p>
+                  </div>
+                </div>
               )}
               {unassignedCount > 0 && (
-                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <UserPlus className="h-4 w-4" />
-                  {unassignedCount} sin asignar
-                </span>
+                <div className="flex items-center gap-2.5 rounded-xl bg-border-soft/60 px-3 py-2">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-border-soft text-muted-foreground">
+                    <UserPlus className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-lg font-bold leading-none tabular-nums text-foreground">
+                      {unassignedCount}
+                    </p>
+                    <p className="text-[11px] font-medium text-muted-foreground">
+                      sin asignar
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
             <ArrowRight className="h-4 w-4 shrink-0 text-muted" />
