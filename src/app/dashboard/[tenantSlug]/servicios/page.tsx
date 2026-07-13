@@ -21,6 +21,7 @@ import {
   tableBodyCellRightClass,
 } from "@/components/ui/TableWrapper";
 import { swrFetcher } from "@/lib/swrFetcher";
+import { isAbortError } from "@/services/apiFetch";
 import type { ProductListItem } from "@/types/products";
 import type { Subcatalog } from "@/types/subcatalogs";
 import { remove } from "@/services/productsService";
@@ -113,7 +114,10 @@ export default function ServiciosPage() {
   } = useSWR<ProductListItem[]>(key, swrFetcher, { fallbackData: [] });
   const services = Array.isArray(servicesData) ? servicesData : [];
   const error =
-    actionError ?? (swrError ? "No se pudieron cargar los servicios" : null);
+    actionError ??
+    (swrError && !isAbortError(swrError)
+      ? "No se pudieron cargar los servicios"
+      : null);
 
   function openDeleteModal(s: ProductListItem) {
     setServiceToDelete(s);

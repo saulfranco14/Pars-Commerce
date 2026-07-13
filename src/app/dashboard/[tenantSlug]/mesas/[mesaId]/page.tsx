@@ -20,12 +20,11 @@ import {
 
 import { swrFetcher } from "@/lib/swrFetcher";
 import { useActiveTenant } from "@/stores/useTenantStore";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
-import {
-  adminActionButtonDanger,
-  adminActionButtonPrimary,
-  adminActionButtonSecondary,
-} from "@/components/admin/actionButtonClasses";
+import { ActionsMenu } from "@/components/ui/ActionsMenu";
+import { StatusBadge } from "@/components/admin/StatusBadge";
+import { adminActionButtonPrimary } from "@/components/admin/actionButtonClasses";
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { QrPreview } from "@/features/qr/components/QrPreview";
@@ -57,8 +56,11 @@ export default function MesaDetailPage() {
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
 
-  // Resolve the QR (and its current_order_id) from the list cache.
-  const qrKey = buildQrCodesKey(activeTenant?.id ?? null);
+  // Resolve the QR (and its current_order_id) from the SAME cache key the
+  // Mesas list uses (kind=table) — reusing it means this page shows the
+  // list's already-loaded data instantly via SWR's cache/dedupe instead of
+  // starting a brand new fetch from scratch on every visit.
+  const qrKey = buildQrCodesKey(activeTenant?.id ?? null, "table");
   const { data: qrList } = useSWR<QrCode[]>(qrKey, swrFetcher, {
     fallbackData: [],
   });
@@ -74,10 +76,7 @@ export default function MesaDetailPage() {
   const mergeCandidates = useMemo(
     () =>
       (qrList ?? []).filter(
-        (q) =>
-          q.kind === "table" &&
-          !!q.current_order_id &&
-          q.current_order_id !== orderId,
+        (q) => !!q.current_order_id && q.current_order_id !== orderId,
       ),
     [qrList, orderId],
   );
@@ -119,26 +118,21 @@ export default function MesaDetailPage() {
         </Link>
 
         {/* Header — icon tile + state, mirrors the list card */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-              <Store className="h-5 w-5" />
-            </span>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-                {qr.label}
-              </h1>
-              <div className="mt-0.5 flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Libre
+        <div className="flex items-center gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+            <Store className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              {qr.label}
+            </h1>
+            <div className="mt-0.5 flex items-center gap-2">
+              <StatusBadge tone="success" label="Libre" />
+              {qr.table_capacity ? (
+                <span className="text-xs text-muted-foreground">
+                  {qr.table_capacity} personas
                 </span>
-                {qr.table_capacity ? (
-                  <span className="text-xs text-muted-foreground">
-                    {qr.table_capacity} personas
-                  </span>
-                ) : null}
-              </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -166,29 +160,49 @@ export default function MesaDetailPage() {
   /* ---------- Active table ---------- */
   const data = live.data;
   const hasPendingPayments = (data?.pending_payments ?? []).length > 0;
+  const isLinked = (data?.linked_tables?.length ?? 0) > 0;
 
   async function handleClose(payload: Parameters<typeof live.closeTable>[0]) {
     const ok = await live.closeTable(payload);
     if (ok) {
       setCloseOpen(false);
-      // Mark this table free in BOTH qr-codes caches (detail key has no kind,
-      // the tables list uses kind=table) so the list shows "Libre" instantly
-      // instead of waiting for its next 8s poll.
+      // Mark this table free in the shared qr-codes cache (this page and the
+      // Mesas list now read the same kind=table key) so the list shows
+      // "Libre" instantly instead of waiting for its next 8s poll.
       const freeTable = (list: QrCode[] | undefined) =>
         (list ?? []).map((q) =>
           q.id === mesaQrId ? { ...q, current_order_id: null } : q,
         );
-      await Promise.all([
-        globalMutate(qrKey, freeTable, { revalidate: true }),
-        globalMutate(
-          buildQrCodesKey(activeTenant?.id ?? null, "table"),
-          freeTable,
-          { revalidate: true },
-        ),
-      ]);
+      await globalMutate(qrKey, freeTable, { revalidate: true });
       router.push(`/dashboard/${tenantSlug}/mesas`);
     }
   }
+
+  const menuItems = [
+    isLinked
+      ? {
+          label: "Separar mesa",
+          icon: Unlink,
+          onClick: () => live.unlink(),
+          disabled: live.merging,
+        }
+      : {
+          label: "Unir mesa",
+          icon: Users,
+          onClick: () => setMergeOpen(true),
+        },
+    {
+      label: showQr ? "Ocultar QR" : "Ver QR",
+      icon: QrIcon,
+      onClick: () => setShowQr((v) => !v),
+    },
+    {
+      label: "Cerrar mesa manualmente",
+      icon: Power,
+      onClick: () => setCloseOpen(true),
+      danger: true,
+    },
+  ];
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-5">
@@ -200,78 +214,50 @@ export default function MesaDetailPage() {
         Volver a mesas
       </Link>
 
-      {/* Header */}
+      {/* Header — icon tile + state, mirrors the list card */}
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <Store className="h-5 w-5 text-muted-foreground" />
-            <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+            <Store className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
               {qr.label}
             </h1>
-          </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-              En uso
-            </span>
-            {(data?.linked_tables?.length ?? 0) > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent">
-                <Link2 className="h-3 w-3" />
-                Unida con {data!.linked_tables.join(", ")}
-              </span>
-            )}
-            {data?.order?.created_at && (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                {elapsedLabel(data.order.created_at)}
-              </span>
-            )}
-            {qr.table_capacity ? (
-              <span className="text-xs text-muted-foreground">
-                Capacidad: {qr.table_capacity}
-              </span>
-            ) : null}
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <StatusBadge tone="warning" label="En uso" />
+              {isLinked && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent">
+                  <Link2 className="h-3 w-3" />
+                  Unida con {data!.linked_tables.join(", ")}
+                </span>
+              )}
+              {data?.order?.created_at && (
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  {elapsedLabel(data.order.created_at)}
+                </span>
+              )}
+              {qr.table_capacity ? (
+                <span className="text-xs text-muted-foreground">
+                  Capacidad: {qr.table_capacity}
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Staff takes/extends this table's order (appends to its account) */}
-          {orderId && (
-            <Link
-              href={`/dashboard/${tenantSlug}/pedidos/nuevo?table_order_id=${orderId}`}
-              className={adminActionButtonPrimary}
-            >
-              <ClipboardList className="h-4 w-4" />
-              Tomar pedido
-            </Link>
-          )}
-          {(data?.linked_tables?.length ?? 0) > 0 ? (
-            <button
-              type="button"
-              onClick={() => live.unlink()}
-              disabled={live.merging}
-              className={adminActionButtonSecondary}
-            >
-              <Unlink className="h-4 w-4" />
-              Separar
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setMergeOpen(true)}
-              className={adminActionButtonSecondary}
-            >
-              <Users className="h-4 w-4" />
-              Unir mesa
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setShowQr((v) => !v)}
-            className={adminActionButtonSecondary}
+
+        {/* Mobile-first: one primary action (Tomar pedido) + everything else
+            (Unir/Separar, Ver QR, Cerrar mesa) collapsed into the ⋯ menu. */}
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href={`/dashboard/${tenantSlug}/pedidos/nuevo?table_order_id=${orderId}`}
+            className={adminActionButtonPrimary}
           >
-            <QrIcon className="h-4 w-4" />
-            {showQr ? "Ocultar QR" : "Ver QR"}
-          </button>
+            <ClipboardList className="h-4 w-4" />
+            <span className="hidden sm:inline">Tomar pedido</span>
+          </Link>
+          <ActionsMenu items={menuItems} aria-label="Más acciones de la mesa" />
         </div>
       </div>
 
@@ -286,7 +272,7 @@ export default function MesaDetailPage() {
       )}
 
       {live.isLoading && !data && (
-        <p className="text-sm text-muted-foreground">Cargando información...</p>
+        <LoadingBlock message="Cargando información de la mesa" />
       )}
 
       {live.error && <Notification tone="error" message={live.error} />}
@@ -440,25 +426,6 @@ export default function MesaDetailPage() {
               activityLog={data.activity_log}
               devices={deviceById}
             />
-          </section>
-
-          {/* Manual close action */}
-          <section className="rounded-xl border border-red-200 bg-red-50/40 p-4">
-            <h2 className="text-sm font-semibold text-foreground">
-              ¿Necesitas cerrar la mesa manualmente?
-            </h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              La mesa se cierra automáticamente cuando se completa el pago.
-              Solo cierra manualmente si algo salió fuera de lo normal.
-            </p>
-            <button
-              type="button"
-              onClick={() => setCloseOpen(true)}
-              className={`mt-3 ${adminActionButtonDanger}`}
-            >
-              <Power className="h-4 w-4" />
-              Cerrar mesa manualmente
-            </button>
           </section>
         </>
       )}

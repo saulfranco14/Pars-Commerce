@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { Plus, QrCode as QrIcon } from "lucide-react";
 
@@ -14,9 +13,10 @@ import { FilterTabs } from "@/components/ui/FilterTabs";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { swrFetcher } from "@/lib/swrFetcher";
+import { isAbortError } from "@/services/apiFetch";
 import { useActiveTenant } from "@/stores/useTenantStore";
-import { pageHeaderCta } from "@/components/admin/actionButtonClasses";
 import { QRCodeCard } from "@/features/qr/components/QRCodeCard";
+import { QrCreateFormSheet } from "@/features/qr/components/QrCreateFormSheet";
 import { QrPreview } from "@/features/qr/components/QrPreview";
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
 import { useQrActions } from "@/features/qr/hooks/useQrActions";
@@ -25,17 +25,30 @@ import type { QrCode } from "@/features/qr/interfaces/qrCode";
 
 type Filter = "all" | "table" | "payment";
 
-const primaryCta = pageHeaderCta;
-
 export default function QrCodesPage() {
   const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
 
   const key = buildQrCodesKey(activeTenant?.id ?? null);
-  const { data, isLoading, error } = useSWR<QrCode[]>(key, swrFetcher, {
+  const { data, isLoading, error, mutate } = useSWR<QrCode[]>(key, swrFetcher, {
     fallbackData: [],
   });
+
+  const [createOpen, setCreateOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("nuevo") === "1") setCreateOpen(true);
+  }, [searchParams]);
+
+  function closeCreate() {
+    setCreateOpen(false);
+    if (searchParams.get("nuevo") === "1") {
+      router.replace(`/dashboard/${tenantSlug}/qr`);
+    }
+  }
 
   const {
     toggleActive,
@@ -78,19 +91,10 @@ export default function QrCodesPage() {
       <PageHeader
         title="Códigos QR"
         description="Genera QR para mesas y cobros libres. Imprime, comparte o escanea desde aquí."
-        action={
-          <Link
-            href={`/dashboard/${tenantSlug}/qr/nuevo`}
-            className={`${primaryCta} hidden md:inline-flex`}
-          >
-            <Plus className="h-4 w-4" />
-            Nuevo QR
-          </Link>
-        }
       />
 
-      {/* Mobile FAB — mirrors Órdenes/Préstamos. */}
-      <FAB href={`/dashboard/${tenantSlug}/qr/nuevo`} aria-label="Nuevo QR">
+      {/* Único punto de creación — FAB en móvil y desktop. */}
+      <FAB onClick={() => setCreateOpen(true)} aria-label="Nuevo QR" alwaysVisible>
         <Plus className="h-6 w-6 shrink-0" aria-hidden />
       </FAB>
 
@@ -111,7 +115,7 @@ export default function QrCodesPage() {
 
       {isLoading ? (
         <LoadingBlock message="Cargando códigos QR" />
-      ) : error ? (
+      ) : error && !isAbortError(error) ? (
         <Notification tone="error" message="No se pudieron cargar los QR." />
       ) : !hasCodes ? (
         <EmptyState
@@ -119,13 +123,14 @@ export default function QrCodesPage() {
           title="Aún no tienes códigos QR"
           description="Crea tu primer QR para que tus clientes puedan ordenar desde la mesa o pagarte sin contacto."
           action={
-            <Link
-              href={`/dashboard/${tenantSlug}/qr/nuevo`}
-              className={primaryCta}
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-2xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] transition-all"
             >
               <Plus className="h-4 w-4" />
               Crear primer QR
-            </Link>
+            </button>
           }
         />
       ) : visibleCodes.length === 0 ? (
@@ -163,6 +168,14 @@ export default function QrCodesPage() {
           />
         )}
       </FormSheet>
+
+      <QrCreateFormSheet
+        isOpen={createOpen}
+        tenantId={activeTenant.id}
+        tenantSlug={tenantSlug}
+        onClose={closeCreate}
+        onCreated={() => mutate()}
+      />
     </div>
   );
 }

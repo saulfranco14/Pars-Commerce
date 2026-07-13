@@ -21,6 +21,7 @@ import {
   tableBodyCellRightClass,
 } from "@/components/ui/TableWrapper";
 import { swrFetcher } from "@/lib/swrFetcher";
+import { isAbortError } from "@/services/apiFetch";
 import type { ProductListItem } from "@/types/products";
 import type { Subcatalog } from "@/types/subcatalogs";
 import { remove } from "@/services/productsService";
@@ -122,7 +123,10 @@ export default function ProductosPage() {
   } = useSWR<ProductListItem[]>(key, swrFetcher, { fallbackData: [] });
   const products = Array.isArray(productsData) ? productsData : [];
   const error =
-    actionError ?? (swrError ? "No se pudieron cargar los productos" : null);
+    actionError ??
+    (swrError && !isAbortError(swrError)
+      ? "No se pudieron cargar los productos"
+      : null);
 
   function openDeleteModal(p: ProductListItem) {
     setProductToDelete(p);

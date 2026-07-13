@@ -6,14 +6,13 @@ import { Landmark, Plus } from "lucide-react";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { useBankAccounts } from "@/features/configuracion/hooks/useBankAccounts";
 import { BankAccountCard } from "@/features/configuracion/components/BankAccountCard";
-import { BankAccountForm } from "@/features/configuracion/components/BankAccountForm";
+import { BankAccountFormSheet } from "@/features/configuracion/components/BankAccountForm";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { PageHeader } from "@/components/admin/PageHeader";
-import { FormSheet } from "@/components/ui/FormSheet";
 import { Toast } from "@/components/ui/Toast";
 
 import type { TenantPaymentMethod } from "@/features/configuracion/interfaces/bankAccount";
-import type { BankAccountFormValues } from "@/features/configuracion/validations/bankAccountSchema";
+import type { BankAccountFieldValues } from "@/features/configuracion/validations/bankAccountFieldSchema";
 
 const primaryCta =
   "inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-2xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] transition-all";
@@ -32,10 +31,8 @@ export default function BankAccountsPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<TenantPaymentMethod | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activatingId, setActivatingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{
     message: string;
     tone: "success" | "error";
@@ -49,46 +46,33 @@ export default function BankAccountsPage() {
     );
   }
 
-  const formTitle = editing ? "Editar cuenta bancaria" : "Nueva cuenta bancaria";
-
   function openCreate() {
     setEditing(null);
-    setError(null);
     setShowForm(true);
   }
 
   function openEdit(account: TenantPaymentMethod) {
     setEditing(account);
-    setError(null);
     setShowForm(true);
   }
 
   function closeForm() {
     setShowForm(false);
     setEditing(null);
-    setError(null);
   }
 
-  async function onSubmit(values: BankAccountFormValues) {
-    setSubmitting(true);
-    setError(null);
-    try {
-      if (editing) {
-        await handleUpdate(editing.id, values);
-        setToast({
-          message: "Cuenta actualizada correctamente.",
-          tone: "success",
-        });
-      } else {
-        await handleCreate(values);
-        setToast({ message: "Cuenta agregada correctamente.", tone: "success" });
-      }
-      closeForm();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo guardar");
-    } finally {
-      setSubmitting(false);
+  async function onSubmit(values: BankAccountFieldValues) {
+    if (editing) {
+      await handleUpdate(editing.id, values);
+      setToast({
+        message: "Cuenta actualizada correctamente.",
+        tone: "success",
+      });
+    } else {
+      await handleCreate(values);
+      setToast({ message: "Cuenta agregada correctamente.", tone: "success" });
     }
+    closeForm();
   }
 
   async function onSelect(id: string) {
@@ -137,15 +121,12 @@ export default function BankAccountsPage() {
         }
       />
 
-      <FormSheet isOpen={showForm} onClose={closeForm} title={formTitle}>
-        <BankAccountForm
-          initial={editing}
-          onSubmit={onSubmit}
-          onCancel={closeForm}
-          submitting={submitting}
-          error={error}
-        />
-      </FormSheet>
+      <BankAccountFormSheet
+        isOpen={showForm}
+        initial={editing}
+        onSubmit={onSubmit}
+        onCancel={closeForm}
+      />
 
       {isLoading && (
         <p className="text-sm text-muted-foreground">Cargando cuentas...</p>

@@ -17,6 +17,7 @@ import {
   tableBodyCellClass,
 } from "@/components/ui/TableWrapper";
 import { swrFetcher } from "@/lib/swrFetcher";
+import { isAbortError } from "@/services/apiFetch";
 import { useSchemaForm } from "@/lib/forms/useSchemaForm";
 import { SchemaFormFields } from "@/lib/forms/SchemaFormFields";
 import {
@@ -62,7 +63,10 @@ export default function SubcatalogosPage() {
   } = useSWR<Subcatalog[]>(key, swrFetcher, { fallbackData: [] });
   const subcatalogs = Array.isArray(subcatalogsData) ? subcatalogsData : [];
   const listError =
-    error ?? (swrError ? "No se pudieron cargar los subcatalogos" : null);
+    error ??
+    (swrError && !isAbortError(swrError)
+      ? "No se pudieron cargar los subcatalogos"
+      : null);
   const editingSubcatalog = subcatalogs.find((s) => s.id === editingId) ?? null;
 
   // Create sheet — same JSON-driven form the "Editar" sheet below reuses.

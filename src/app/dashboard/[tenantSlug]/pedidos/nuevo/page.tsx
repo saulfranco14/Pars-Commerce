@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { ArrowLeft, Loader2, Search, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Loader2, Search, ShoppingBag, User } from "lucide-react";
 import Link from "next/link";
 import useSWR from "swr";
 
@@ -10,6 +10,7 @@ import { useActiveTenant } from "@/stores/useTenantStore";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { FilterPills } from "@/components/admin/FilterPills";
+import { FormInput } from "@/components/ui/FormInput";
 import { MenuProductCard } from "@/features/qr/components/MenuProductCard";
 import { StaffOrderQrResult } from "@/features/qr/components/StaffOrderQrResult";
 import { useStaffOrderBuilder } from "@/features/qr/hooks/useStaffOrderBuilder";
@@ -123,29 +124,33 @@ export default function NuevoPedidoStaffPage() {
         />
       </div>
 
-      {/* Customer name (optional) */}
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
-          Cliente (opcional)
-        </span>
-        <input
-          value={builder.customerName}
-          onChange={(e) => builder.setCustomerName(e.target.value)}
-          placeholder="Nombre del cliente"
-          className="block w-full rounded-2xl border-2 border-border bg-background px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none transition-colors"
-        />
-      </label>
+      {/* Customer name (optional) — icon + FormInput so it doesn't read as
+          a second search box next to the product search below. */}
+      <FormInput
+        label="Cliente"
+        icon={User}
+        optional
+        value={builder.customerName}
+        onChange={(e) => builder.setCustomerName(e.target.value)}
+        placeholder="Nombre del cliente"
+      />
 
-      {/* Product search */}
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar producto..."
-          className="block w-full rounded-2xl border-2 border-border bg-background py-3 pl-11 pr-4 text-sm font-medium text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none transition-colors"
-        />
+      {/* Product search — visually its own section (eyebrow + divider) so
+          it doesn't blend into the customer-name field above it. */}
+      <div className="border-t border-border-soft pt-4">
+        <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+          Productos
+        </span>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar producto..."
+            className="block w-full rounded-2xl border-2 border-border bg-background py-3 pl-11 pr-4 text-sm font-medium text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none transition-colors"
+          />
+        </div>
       </div>
 
       {/* Category pills — only when there's more than one real category */}

@@ -12,7 +12,7 @@ import {
 } from "@/features/configuracion/services/bankAccountService";
 
 import type { TenantPaymentMethod, CreateBankAccountPayload } from "@/features/configuracion/interfaces/bankAccount";
-import type { BankAccountFormValues } from "@/features/configuracion/validations/bankAccountSchema";
+import type { BankAccountFieldValues } from "@/features/configuracion/validations/bankAccountFieldSchema";
 
 export function useBankAccounts(tenantId: string | null) {
   const key = buildPaymentMethodKey(tenantId);
@@ -43,7 +43,7 @@ export function useBankAccounts(tenantId: string | null) {
     );
   }
 
-  async function handleCreate(values: BankAccountFormValues) {
+  async function handleCreate(values: BankAccountFieldValues) {
     if (!tenantId) return;
     if (isClabeDuplicated(values.clabe)) {
       throw new Error("Ya existe una cuenta con esa CLABE en este negocio.");
@@ -55,14 +55,14 @@ export function useBankAccounts(tenantId: string | null) {
       bank_name: values.bank_name,
       account_holder: values.account_holder,
       clabe: values.clabe,
-      account_number: values.account_number ?? undefined,
+      account_number: values.account_number?.trim() || undefined,
       is_active: accounts.length === 0,
     };
     await createBankAccount(payload);
     await mutate();
   }
 
-  async function handleUpdate(id: string, values: BankAccountFormValues) {
+  async function handleUpdate(id: string, values: BankAccountFieldValues) {
     if (!tenantId) return;
     if (isClabeDuplicated(values.clabe, id)) {
       throw new Error("Ya existe otra cuenta con esa CLABE en este negocio.");
@@ -74,7 +74,7 @@ export function useBankAccounts(tenantId: string | null) {
       bank_name: values.bank_name,
       account_holder: values.account_holder,
       clabe: values.clabe,
-      account_number: values.account_number ?? null,
+      account_number: values.account_number?.trim() || null,
     });
     await mutate();
   }

@@ -3,11 +3,10 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, ClipboardList, Clock, LayoutGrid, Plus, Store } from "lucide-react";
+import { ClipboardList, Plus, Store } from "lucide-react";
 
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { EmptyState } from "@/components/admin/EmptyState";
-import { MetricsStrip } from "@/components/admin/MetricsStrip";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { pageHeaderCta } from "@/components/admin/actionButtonClasses";
 import { FabSpeedDial } from "@/components/ui/FabSpeedDial";
@@ -71,28 +70,40 @@ export default function MesasPage() {
   const hasTables = list.tables.length > 0;
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        title="Mesas"
-        description="Cada mesa tiene un QR único para que tus clientes ordenen y paguen."
-        action={
-          // Desktop: both actions in the header. Mobile: a single FAB speed-dial
-          // (below) — never the same action duplicated in header + FAB.
-          <div className="hidden flex-wrap items-center gap-2 md:flex">
-            <Link
-              href={`/dashboard/${tenantSlug}/pedidos/nuevo`}
-              className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-2 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
-            >
-              <ClipboardList className="h-4 w-4" />
-              Tomar pedido
-            </Link>
-            <button type="button" onClick={openCreate} className={primaryCta}>
-              <Plus className="h-4 w-4" />
-              Agregar mesa
-            </button>
+    <div className="space-y-4">
+      <div className="space-y-3">
+        <PageHeader
+          title="Mesas"
+          description="Cada mesa tiene un QR único para que tus clientes ordenen y paguen."
+          action={
+            // Desktop: both actions in the header. Mobile: a single FAB speed-dial
+            // (below) — never the same action duplicated in header + FAB.
+            <div className="hidden flex-wrap items-center gap-2 md:flex">
+              <Link
+                href={`/dashboard/${tenantSlug}/pedidos/nuevo`}
+                className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-2 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
+              >
+                <ClipboardList className="h-4 w-4" />
+                Tomar pedido
+              </Link>
+              <button type="button" onClick={openCreate} className={primaryCta}>
+                <Plus className="h-4 w-4" />
+                Agregar mesa
+              </button>
+            </div>
+          }
+        />
+
+        {hasTables && (
+          <div className="border-t border-border-soft pt-3">
+            <TablesFilterTabs
+              filter={list.filter}
+              onChange={list.setFilter}
+              counts={list.metrics}
+            />
           </div>
-        }
-      />
+        )}
+      </div>
 
       {/* Mobile: one FAB that expands to both create actions. */}
       <FabSpeedDial
@@ -106,38 +117,6 @@ export default function MesasPage() {
           },
         ]}
       />
-
-      {hasTables && (
-        <MetricsStrip
-          metrics={[
-            {
-              label: "Mesas totales",
-              value: list.metrics.total,
-              icon: LayoutGrid,
-            },
-            {
-              label: "En uso",
-              value: list.metrics.occupied,
-              tone: "amber",
-              icon: Clock,
-            },
-            {
-              label: "Libres",
-              value: list.metrics.free,
-              tone: "emerald",
-              icon: CheckCircle2,
-            },
-          ]}
-        />
-      )}
-
-      {hasTables && (
-        <TablesFilterTabs
-          filter={list.filter}
-          onChange={list.setFilter}
-          counts={list.metrics}
-        />
-      )}
 
       <FormSheet
         isOpen={showCreate}

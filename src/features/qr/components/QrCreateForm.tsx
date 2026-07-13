@@ -2,20 +2,17 @@
 
 import Link from "next/link";
 import useSWR from "swr";
-import { Controller, useForm, type Resolver } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { ArrowRight, DollarSign, Info, Tag, Users } from "lucide-react";
+import { ArrowRight, Info } from "lucide-react";
 
-import { FormInput } from "@/components/ui/FormInput";
 import { Notification } from "@/components/ui/Notification";
+import { useSchemaForm } from "@/lib/forms/useSchemaForm";
+import { SchemaFormFields } from "@/lib/forms/SchemaFormFields";
 import { useCreateQr } from "@/features/qr/hooks/useCreateQr";
-import { QrKindSelector } from "@/features/qr/components/QrKindSelector";
-import { qrCodeSchema } from "@/features/qr/validations/qrCodeSchema";
+import { buildQrFields } from "@/features/qr/validations/qrFieldSchema";
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
-import { labelClass } from "@/features/configuracion/constants/formClasses";
 import { swrFetcher } from "@/lib/swrFetcher";
 
-import type { QrCodeFormValues } from "@/features/qr/validations/qrCodeSchema";
+import type { QrFieldValues } from "@/features/qr/validations/qrFieldSchema";
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
 
 interface QrCreateFormProps {
@@ -27,6 +24,13 @@ interface QrCreateFormProps {
   onCancel?: () => void;
 }
 
+/**
+ * "Nuevo QR" — homologated onto the schema-driven engine. Also reused by
+ * "Agregar mesa" (via `lockKind`, which hides the kind picker and only ever
+ * submits `kind: "table"`). `kind`'s conditional required/visible rules on
+ * `table_capacity`/`preset_amount` are declared in qrFieldSchema.tsx
+ * (`showWhen`/`requiredWhen`) instead of hand-written JSX branches.
+ */
 export function QrCreateForm({
   tenantId,
   tenantSlug,
@@ -43,61 +47,26 @@ export function QrCreateForm({
     revalidateOnFocus: false,
   });
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    watch,
-    formState: { errors },
-  } = useForm<QrCodeFormValues>({
-    resolver: yupResolver(qrCodeSchema) as unknown as Resolver<QrCodeFormValues>,
-    defaultValues: {
-      kind: defaultKind,
-      label: "",
-      table_capacity: defaultKind === "table" ? 4 : null,
-      preset_amount: null,
-      preset_concept: null,
-      allow_amount_override: true,
-    },
-  });
+  const fields = buildQrFields({ lockKind, defaultKind });
 
-  const kind = watch("kind");
-
-  async function onSubmit(values: QrCodeFormValues) {
+  const form = useSchemaForm<QrFieldValues>(fields, async (values) => {
+    const kind = lockKind ? "table" : values.kind;
     const qr = await create({
       tenant_id: tenantId,
-      kind: values.kind,
+      kind,
       label: values.label,
-      table_capacity:
-        values.kind === "table" ? (values.table_capacity ?? null) : null,
-      preset_amount:
-        values.kind === "payment" ? (values.preset_amount ?? null) : null,
+      table_capacity: kind === "table" ? values.table_capacity ?? null : null,
+      preset_amount: kind === "payment" ? values.preset_amount ?? null : null,
     });
     if (qr) onSuccess(qr);
-  }
+  });
 
+  const kind = form.watch("kind" as never) as unknown as string;
   const showTablesHint = !lockKind && kind === "table";
   const tablesList = existingTables ?? [];
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      {!lockKind && (
-        <div className="space-y-2">
-          <span className={labelClass}>Tipo de QR</span>
-          <Controller
-            name="kind"
-            control={control}
-            render={({ field }) => (
-              <QrKindSelector
-                value={field.value}
-                onChange={field.onChange}
-                disabled={loading}
-              />
-            )}
-          />
-        </div>
-      )}
-
+    <form onSubmit={form.handleSubmit(form.submit)} noValidate className="space-y-5">
       {showTablesHint && tenantSlug && (
         <Notification
           tone="info"
@@ -141,43 +110,14 @@ export function QrCreateForm({
         />
       )}
 
-      <FormInput
-        label={kind === "table" ? "Nombre de la mesa" : "Etiqueta del QR"}
-        icon={Tag}
-        placeholder={
-          kind === "table" ? "Ej. Mesa 5, Terraza A" : "Ej. Caja principal, Propinas"
-        }
-        error={errors.label?.message}
-        {...register("label")}
+      <SchemaFormFields
+        fields={fields}
+        register={form.register}
+        errors={form.errors}
+        watch={form.watch}
+        setValue={form.setValue}
+        control={form.control}
       />
-
-      {kind === "table" && (
-        <FormInput
-          label="Capacidad"
-          hint="Número de personas"
-          icon={Users}
-          type="number"
-          min={1}
-          placeholder="4"
-          error={errors.table_capacity?.message}
-          {...register("table_capacity")}
-        />
-      )}
-
-      {kind === "payment" && (
-        <FormInput
-          label="Monto sugerido"
-          optional
-          hint="Déjalo vacío para que el cliente decida"
-          icon={DollarSign}
-          type="number"
-          min={0}
-          step="0.01"
-          placeholder="0.00"
-          error={errors.preset_amount?.message}
-          {...register("preset_amount")}
-        />
-      )}
 
       {!showTablesHint && (
         <div className="flex items-start gap-2 rounded-xl bg-border-soft/40 px-3 py-2 text-[11px] text-muted-foreground">
@@ -189,7 +129,9 @@ export function QrCreateForm({
         </div>
       )}
 
-      {error && <Notification tone="error" message={error} />}
+      {(error || form.submitError) && (
+        <Notification tone="error" message={error ?? form.submitError ?? ""} />
+      )}
 
       <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
         {onCancel && (
@@ -204,7 +146,7 @@ export function QrCreateForm({
         )}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !form.isValid}
           className="flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 transition-all sm:max-w-[220px]"
         >
           {loading

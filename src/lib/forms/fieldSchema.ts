@@ -1,6 +1,22 @@
 import * as yup from "yup";
 
 import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
+import type {
+  Control,
+  UseFormRegister,
+  UseFormSetValue,
+  UseFormWatch,
+} from "react-hook-form";
+
+/** Context passed to `FieldSchema.render` for `type: "custom"` fields. */
+export interface CustomFieldRenderContext {
+  register: UseFormRegister<Record<string, unknown>>;
+  watch: UseFormWatch<Record<string, unknown>>;
+  setValue: UseFormSetValue<Record<string, unknown>>;
+  control: Control<Record<string, unknown>>;
+  disabled?: boolean;
+}
 
 /** One selectable option for a `select` field. */
 export interface FieldOption {
@@ -23,12 +39,42 @@ export interface FieldOption {
 export interface FieldSchema {
   /** react-hook-form field name; also the object key sent to the API. */
   name: string;
-  /** FormInput/label text (rendered as the uppercase eyebrow). */
+  /** FormInput/label text (rendered as the uppercase eyebrow). Unused for `type: "custom"`. */
   label: string;
-  type: "text" | "email" | "tel" | "number" | "textarea" | "select" | "checkbox";
+  type:
+    | "text"
+    | "email"
+    | "tel"
+    | "number"
+    | "textarea"
+    | "select"
+    | "checkbox"
+    | "custom";
   icon?: LucideIcon;
   placeholder?: string;
   required?: boolean;
+  /**
+   * Conditional required, evaluated against the form's current values (e.g.
+   * `table_capacity` required only when `kind === "table"`). Takes
+   * precedence over the static `required` when present. Folds into the same
+   * per-field Yup schema via `.test()` so it participates in `isValid`.
+   */
+  requiredWhen?: (values: Record<string, unknown>) => boolean;
+  /**
+   * Conditionally render this field at all, evaluated against the form's
+   * current values (e.g. `preset_amount` only shown when `kind ===
+   * "payment"`). Omit to always show. A hidden field still validates if
+   * `required`/`requiredWhen` says so — pair with a matching condition to
+   * avoid validating a field the user can't see.
+   */
+  showWhen?: (values: Record<string, unknown>) => boolean;
+  /**
+   * `type: "custom"` — delegates rendering entirely to this function (e.g. a
+   * radio-card picker like QrKindSelector that doesn't fit text/select/
+   * checkbox). Receives the same register/watch/setValue the rest of the
+   * engine uses, plus RHF's `control` for fields that need a `Controller`.
+   */
+  render?: (ctx: CustomFieldRenderContext) => ReactNode;
   /** Shown as "(opcional)" next to the label when false. */
   hint?: string;
   /** `type: "textarea"` row count. */
@@ -54,15 +100,14 @@ export interface FieldSchema {
   /** Placeholder row shown when nothing is selected (default "Selecciona..."). */
   emptyOptionLabel?: string;
   /**
-   * `type: "select"` — when set, an extra "+ createNewLabel" row is appended
-   * to the options. Picking it doesn't set the field's value; instead it
-   * calls this callback so the page can open its own create-record sheet
-   * (e.g. "+ Crear subcatálogo") and, once created, set the field's value
-   * and refresh `options` itself. Keeps the generic engine decoupled from
-   * any specific entity.
+   * `type: "select"` — when set, a small link/legend renders below the
+   * select ("+ Crear subcatálogo"). Clicking it doesn't touch the field's
+   * value; it calls this callback so the page can open its own create-record
+   * sheet and, once created, set the field's value and refresh `options`
+   * itself. Keeps the generic engine decoupled from any specific entity.
    */
   onCreateNew?: () => void;
-  /** Label for the `onCreateNew` row (default "+ Crear nuevo"). */
+  /** Label for the `onCreateNew` link (default "+ Crear nuevo"). */
   createNewLabel?: string;
   /**
    * Bump this (e.g. a counter) to force a `select` field to re-run its async
@@ -135,7 +180,27 @@ export function buildYupSchema(
   crossFieldRules: CrossFieldRule[] = [],
 ) {
   const shape: Record<string, yup.AnySchema> = {};
+  const requiredWhenRules: CrossFieldRule[] = [];
+
   for (const field of fields) {
+    if (field.requiredWhen) {
+      requiredWhenRules.push({
+        name: `${field.name}-required-when`,
+        message: `${field.label} es requerido`,
+        path: field.name,
+        test: (values) =>
+          !field.requiredWhen!(values) || hasFieldValue(values[field.name]),
+      });
+    }
+
+    if (field.type === "custom") {
+      // Rendering is entirely delegated; whatever value it sets on
+      // `field.name` is passed through unvalidated by the base type check —
+      // only requiredWhen/cross-field rules apply, same as everything else.
+      shape[field.name] = yup.mixed().optional();
+      continue;
+    }
+
     if (field.type === "checkbox") {
       shape[field.name] = yup.boolean().default(false);
       continue;
@@ -165,7 +230,7 @@ export function buildYupSchema(
   }
 
   let schema = yup.object(shape);
-  for (const rule of crossFieldRules) {
+  for (const rule of [...requiredWhenRules, ...crossFieldRules]) {
     schema = schema.test(rule.name, rule.message, (values) =>
       rule.test(values as Record<string, unknown>)
         ? true
@@ -173,6 +238,10 @@ export function buildYupSchema(
     ) as typeof schema;
   }
   return schema;
+}
+
+function hasFieldValue(v: unknown): boolean {
+  return v !== undefined && v !== null && v !== "";
 }
 
 /** Default value map so React Hook Form starts controlled. */

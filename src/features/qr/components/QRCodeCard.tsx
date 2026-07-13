@@ -16,11 +16,8 @@ import {
 
 import { AdminListCard } from "@/components/admin/AdminListCard";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import {
-  adminActionButtonDanger,
-  adminActionButtonPrimary,
-  adminActionButtonSecondary,
-} from "@/components/admin/actionButtonClasses";
+import { adminActionButtonPrimary, adminActionButtonSecondary } from "@/components/admin/actionButtonClasses";
+import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { buildPublicQrUrl } from "@/features/qr/helpers/buildPublicQrUrl";
 import { formatCurrency } from "@/features/qr/helpers/format";
@@ -38,6 +35,11 @@ interface QRCodeCardProps {
   onArchive?: (code: QrCode) => void;
 }
 
+/**
+ * Mobile-first: 2 primary actions visible (Copiar, Detalle) + an overflow
+ * menu (Probar, Activar/Desactivar, Archivar) instead of 5 competing
+ * buttons — see DESIGN_SYSTEM.md card action guidance.
+ */
 export function QRCodeCard({
   tenantSlug,
   code,
@@ -53,8 +55,7 @@ export function QRCodeCard({
   const Icon = isTable ? Store : CreditCard;
   const isInactive = !code.is_active;
 
-  async function handleCopy(e: React.MouseEvent) {
-    e.preventDefault();
+  async function handleCopy() {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -123,6 +124,35 @@ export function QRCodeCard({
     </div>
   );
 
+  const menuItems = [
+    {
+      label: "Probar QR",
+      icon: ExternalLink,
+      onClick: () => window.open(url, "_blank", "noopener,noreferrer"),
+    },
+    ...(onToggleActive
+      ? [
+          {
+            label: isInactive ? "Activar" : "Desactivar",
+            icon: Power,
+            onClick: requestToggle,
+            disabled: busy,
+          },
+        ]
+      : []),
+    ...(onArchive
+      ? [
+          {
+            label: "Archivar",
+            icon: Archive,
+            onClick: requestArchive,
+            disabled: busy,
+            danger: true,
+          },
+        ]
+      : []),
+  ];
+
   return (
     <>
       <AdminListCard
@@ -144,11 +174,11 @@ export function QRCodeCard({
           ) : undefined
         }
         actions={
-          <>
+          <div className="flex w-full items-center gap-2">
             <button
               type="button"
               onClick={handleCopy}
-              className={adminActionButtonSecondary}
+              className={`flex-1 ${adminActionButtonSecondary} min-h-11`}
             >
               {copied ? (
                 <>
@@ -162,49 +192,15 @@ export function QRCodeCard({
                 </>
               )}
             </button>
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={adminActionButtonSecondary}
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Probar
-            </a>
-            {onToggleActive && (
-              <button
-                type="button"
-                onClick={requestToggle}
-                disabled={busy}
-                className={`inline-flex min-h-[36px] cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium hover:bg-border-soft/40 disabled:cursor-not-allowed disabled:opacity-60 transition-colors ${
-                  isInactive
-                    ? "border-emerald-200 text-emerald-700"
-                    : "border-amber-200 text-amber-800"
-                }`}
-              >
-                <Power className="h-3.5 w-3.5" />
-                {busy ? "..." : isInactive ? "Activar" : "Desactivar"}
-              </button>
-            )}
-            {onArchive && (
-              <button
-                type="button"
-                onClick={requestArchive}
-                disabled={busy}
-                aria-label="Archivar"
-                className={adminActionButtonDanger}
-              >
-                <Archive className="h-3.5 w-3.5" />
-              </button>
-            )}
             <Link
               href={`/dashboard/${tenantSlug}/qr/${code.id}`}
-              className={`${adminActionButtonPrimary} ml-auto`}
+              className={`flex-1 ${adminActionButtonPrimary} min-h-11`}
             >
               <Eye className="h-3.5 w-3.5" />
               Detalle
             </Link>
-          </>
+            <ActionsMenu items={menuItems} aria-label={`Más acciones para ${code.label}`} />
+          </div>
         }
       />
 

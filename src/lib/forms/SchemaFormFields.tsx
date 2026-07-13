@@ -8,23 +8,28 @@ import { FormInput } from "@/components/ui/FormInput";
 
 import type { FieldOption, FieldSchema } from "@/lib/forms/fieldSchema";
 import type {
+  Control,
   FieldErrors,
   FieldValues,
   UseFormRegister,
+  UseFormSetValue,
   UseFormWatch,
 } from "react-hook-form";
-
-const CREATE_NEW_SENTINEL = "__create_new__";
 
 interface SchemaFormFieldsProps<T extends FieldValues> {
   fields: FieldSchema[];
   register: UseFormRegister<T>;
   errors: FieldErrors<T>;
   /**
-   * Only required when a field declares `dependsOn` (parent→child selects) —
-   * lets a child select re-load its options when the parent field changes.
+   * Required when a field declares `dependsOn` (parent→child selects),
+   * `derivedFrom` (e.g. slug), `disabledUnless`, `requiredWhen`, or
+   * `showWhen` — the engine watches live values to resolve those.
    */
   watch?: UseFormWatch<T>;
+  /** Required by `type: "custom"` fields that need imperative value control. */
+  setValue?: UseFormSetValue<T>;
+  /** Required by `type: "custom"` fields built around RHF's `Controller`. */
+  control?: Control<T>;
 }
 
 /**
@@ -44,16 +49,35 @@ export function SchemaFormFields<T extends FieldValues>({
   register,
   errors,
   watch,
+  setValue,
+  control,
 }: SchemaFormFieldsProps<T>) {
   // `field.name` is a runtime string (from the JSON schema), not a literal
   // keyof T — react-hook-form's own types can't express "dynamic field list"
   // statically, so this one indexed read is the single, scoped cast point.
   const errorMap = errors as Record<string, { message?: string } | undefined>;
+  const liveValues = watch ? (watch() as unknown as Record<string, unknown>) : {};
 
   return (
     <div className="space-y-4">
       {fields.map((field) => {
+        if (field.showWhen && !field.showWhen(liveValues)) return null;
+
         const error = errorMap[field.name]?.message;
+
+        if (field.type === "custom") {
+          if (!field.render || !watch || !setValue || !control) return null;
+          return (
+            <div key={field.name}>
+              {field.render({
+                register: register as never,
+                watch: watch as never,
+                setValue: setValue as never,
+                control: control as never,
+              })}
+            </div>
+          );
+        }
 
         if (field.type === "checkbox") {
           return (
@@ -213,8 +237,7 @@ function SchemaSelectField<T extends FieldValues>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parentValue, field.dependsOn, field.refreshKey]);
 
-  const { onChange: registerOnChange, ref: registerRef, ...registerRest } =
-    register(field.name as never);
+  const { ref: registerRef, ...registerRest } = register(field.name as never);
 
   return (
     <label className="block">
@@ -233,14 +256,6 @@ function SchemaSelectField<T extends FieldValues>({
             registerRef(el);
             selectRef.current = el;
           }}
-          onChange={(e) => {
-            if (e.target.value === CREATE_NEW_SENTINEL) {
-              e.target.value = "";
-              field.onCreateNew?.();
-              return;
-            }
-            void registerOnChange(e);
-          }}
           disabled={field.dependsOn ? !parentValue : loading}
           className="block w-full appearance-none rounded-2xl border-2 border-border bg-background py-3 pl-4 pr-10 text-sm font-medium text-foreground focus:border-accent focus:outline-none disabled:opacity-50"
         >
@@ -250,11 +265,6 @@ function SchemaSelectField<T extends FieldValues>({
               {opt.label}
             </option>
           ))}
-          {field.onCreateNew && (
-            <option value={CREATE_NEW_SENTINEL}>
-              {field.createNewLabel ?? "+ Crear nuevo"}
-            </option>
-          )}
         </select>
         <ChevronDown
           className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -263,6 +273,15 @@ function SchemaSelectField<T extends FieldValues>({
       </div>
       {error && (
         <p className="mt-1 text-xs font-medium text-red-600">{error}</p>
+      )}
+      {field.onCreateNew && (
+        <button
+          type="button"
+          onClick={field.onCreateNew}
+          className="mt-1.5 text-xs font-semibold text-accent hover:underline"
+        >
+          {field.createNewLabel ?? "+ Crear nuevo"}
+        </button>
       )}
     </label>
   );

@@ -43,6 +43,7 @@ export function useSchemaForm<T extends FieldValues>(
     reset,
     setValue,
     watch,
+    control,
     formState: { errors, isValid },
   } = useForm<T>({
     resolver: yupResolver(schema) as never,
@@ -75,6 +76,8 @@ export function useSchemaForm<T extends FieldValues>(
     handleSubmit,
     setValue,
     watch,
+    control,
+    reset,
     errors,
     isValid,
     submitting,
