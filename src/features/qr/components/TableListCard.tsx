@@ -63,22 +63,22 @@ export function TableListCard({
         />
       }
       actions={
-        <>
+        <div className="flex w-full items-center gap-2">
           <button
             type="button"
             onClick={() => onViewQr(table)}
-            className={adminActionButtonSecondary}
+            className={`flex-1 ${adminActionButtonSecondary}`}
           >
             <QrIcon className="h-3.5 w-3.5" />
             Ver QR
           </button>
           <Link
             href={`/dashboard/${tenantSlug}/mesas/${table.id}`}
-            className={`${adminActionButtonPrimary} ml-auto`}
+            className={`flex-1 ${occupied ? adminActionButtonPrimary : adminActionButtonSecondary}`}
           >
             {occupied ? "Ver actividad" : "Detalle"}
           </Link>
-        </>
+        </div>
       }
     />
   );

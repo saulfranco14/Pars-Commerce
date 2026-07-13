@@ -71,7 +71,7 @@ export default function MesasPage() {
 
   return (
     <div className="space-y-4">
-      <div className="space-y-3">
+      <div className="space-y-1.5">
         <PageHeader
           title="Mesas"
           description="Cada mesa tiene un QR único para que tus clientes ordenen y paguen."
@@ -95,13 +95,11 @@ export default function MesasPage() {
         />
 
         {hasTables && (
-          <div className="border-t border-border-soft pt-3">
-            <TablesFilterTabs
-              filter={list.filter}
-              onChange={list.setFilter}
-              counts={list.metrics}
-            />
-          </div>
+          <TablesFilterTabs
+            filter={list.filter}
+            onChange={list.setFilter}
+            counts={list.metrics}
+          />
         )}
       </div>
 
