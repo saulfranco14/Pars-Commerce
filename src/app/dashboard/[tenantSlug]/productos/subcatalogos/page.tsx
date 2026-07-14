@@ -291,7 +291,7 @@ export default function SubcatalogosPage() {
           title="Nuevo subcatálogo"
           description="Agrupa productos y servicios similares."
           footer={
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
               <button
                 type="submit"
                 form={createFormId}
@@ -340,7 +340,7 @@ export default function SubcatalogosPage() {
           title="Editar subcatálogo"
           description={editingSubcatalog?.name}
           footer={
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
               <button
                 type="submit"
                 form={editFormId}

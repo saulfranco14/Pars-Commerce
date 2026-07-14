@@ -90,7 +90,7 @@ export function ServiceFormSheet({
       description="Agrega un servicio a tu catálogo"
       maxWidth="max-w-xl"
       footer={
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <button
             type="submit"
             form={formId}
@@ -157,7 +157,7 @@ export function ServiceFormSheet({
         title="Nuevo subcatálogo"
         description="Agrupa productos y servicios similares."
         footer={
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
             <button
               type="submit"
               form={newSubcatalogFormId}

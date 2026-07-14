@@ -153,7 +153,7 @@ export function TeamMemberFormSheet({
       title="Agregar miembro"
       description="Si el usuario no existe, se le enviará una invitación por correo para que establezca su contraseña."
       footer={
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <button
             type="submit"
             form={formId}
@@ -174,7 +174,12 @@ export function TeamMemberFormSheet({
         noValidate
         className="space-y-4"
       >
-        <SchemaFormFields fields={fields} register={form.register} errors={form.errors} />
+        <SchemaFormFields
+          fields={fields}
+          register={form.register}
+          errors={form.errors}
+          watch={form.watch}
+        />
 
         {form.submitError && (
           <div

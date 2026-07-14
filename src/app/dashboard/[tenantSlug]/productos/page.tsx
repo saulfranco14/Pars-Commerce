@@ -167,16 +167,17 @@ export default function ProductosPage() {
         <PageHeader
           title="Productos"
           description="Gestiona tu catálogo de productos y sus subcatálogos."
-          action={
-            <Link
-              href={`/dashboard/${tenantSlug}/productos/subcatalogos`}
-              className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-2 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
-            >
-              <FolderTree className="h-4 w-4 shrink-0" aria-hidden />
-              Subcatálogos
-            </Link>
-          }
         />
+
+        {/* Navegación secundaria — link de texto, no un botón pill, para que
+            no se confunda con los tabs de filtro que vienen justo debajo. */}
+        <Link
+          href={`/dashboard/${tenantSlug}/productos/subcatalogos`}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent hover:underline"
+        >
+          <FolderTree className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          Administrar subcatálogos
+        </Link>
 
         {/* Único punto de creación — FAB en móvil y desktop. */}
         <FAB

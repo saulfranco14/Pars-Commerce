@@ -195,6 +195,7 @@ function SchemaSelectField<T extends FieldValues>({
 
   const selectRef = useRef<HTMLSelectElement | null>(null);
   const parentValue = field.dependsOn && watch ? watch(field.dependsOn as never) : undefined;
+  const ownValue = watch ? (watch(field.name as never) as unknown as string) : undefined;
 
   useEffect(() => {
     let cancelled = false;
@@ -241,12 +242,23 @@ function SchemaSelectField<T extends FieldValues>({
 
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-        {field.label}
-        {!field.required && (
-          <span className="ml-1 font-medium normal-case text-muted-foreground/60">
-            (opcional)
-          </span>
+      <span className="mb-1.5 flex items-center justify-between gap-2">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+          {field.label}
+          {!field.required && (
+            <span className="ml-1 font-medium normal-case text-muted-foreground/60">
+              (opcional)
+            </span>
+          )}
+        </span>
+        {field.onCreateNew && (
+          <button
+            type="button"
+            onClick={field.onCreateNew}
+            className="shrink-0 text-[11px] font-semibold normal-case text-accent hover:underline"
+          >
+            {field.createNewLabel ?? "+ Crear nuevo"}
+          </button>
         )}
       </span>
       <div className="relative">
@@ -271,17 +283,16 @@ function SchemaSelectField<T extends FieldValues>({
           aria-hidden
         />
       </div>
+      {(() => {
+        if (!field.hintForOption) return null;
+        const selectedOption = options.find((opt) => opt.value === ownValue) ?? null;
+        const hint = field.hintForOption(selectedOption);
+        return hint ? (
+          <p className="mt-1.5 text-[11px] text-muted-foreground">{hint}</p>
+        ) : null;
+      })()}
       {error && (
         <p className="mt-1 text-xs font-medium text-red-600">{error}</p>
-      )}
-      {field.onCreateNew && (
-        <button
-          type="button"
-          onClick={field.onCreateNew}
-          className="mt-1.5 text-xs font-semibold text-accent hover:underline"
-        >
-          {field.createNewLabel ?? "+ Crear nuevo"}
-        </button>
       )}
     </label>
   );

@@ -1,6 +1,7 @@
 import { Mail, User } from "lucide-react";
 
 import { list as listTenantRoles } from "@/services/tenantRolesService";
+import { ROLE_DESCRIPTIONS } from "@/features/equipo/constants/roleDescriptions";
 
 import type { FieldSchema } from "@/lib/forms/fieldSchema";
 
@@ -43,6 +44,8 @@ export function buildTeamFields({ tenantId }: BuildTeamFieldsOptions): FieldSche
           .filter((r) => r.name !== "owner")
           .map((r) => ({ value: r.id, label: r.name }));
       },
+      hintForOption: (option) =>
+        option ? ROLE_DESCRIPTIONS[option.label] : undefined,
     },
   ];
 }

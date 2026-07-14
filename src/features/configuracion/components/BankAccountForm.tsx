@@ -73,7 +73,7 @@ export function BankAccountFormSheet({
       title={initial ? "Editar cuenta bancaria" : "Nueva cuenta bancaria"}
       description="Tus clientes podrán transferir directamente a esta cuenta."
       footer={
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <button
             type="submit"
             form={formId}

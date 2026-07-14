@@ -56,7 +56,7 @@ export function NewCustomerModal({
       description="Completa los datos del cliente"
       maxWidth="max-w-md"
       footer={
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <button
             type="submit"
             form={formId}
