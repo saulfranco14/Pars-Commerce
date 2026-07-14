@@ -7,6 +7,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { releaseTableQrIfPaid } from "@/features/qr/helpers/releaseTableQrIfPaid";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 
 export const VALID_CLOSE_REASONS = [
@@ -48,7 +49,7 @@ export async function closeTableOrder(
 
   const { data: order } = await admin
     .from("orders")
-    .select("id, status, qr_code_id, merge_group_id")
+    .select("id, status, qr_code_id, merge_group_id, total, balance_due")
     .eq("id", input.orderId)
     .single();
 
@@ -104,13 +105,62 @@ export async function closeTableOrder(
   const { data: groupOrders } = order.merge_group_id
     ? await admin
         .from("orders")
-        .select("id")
+        .select("id, total, balance_due")
         .eq("merge_group_id", order.merge_group_id)
-    : { data: [{ id: order.id }] };
+    : { data: [{ id: order.id, total: order.total, balance_due: order.balance_due }] };
 
-  const targetIds = (groupOrders ?? [{ id: order.id }]).map(
-    (o) => o.id as string,
-  );
+  const targets = groupOrders ?? [
+    { id: order.id, total: order.total, balance_due: order.balance_due },
+  ];
+  const targetIds = targets.map((o) => o.id as string);
+
+  // "Cobré fuera del sistema" means the staff DID receive the money (cash,
+  // another app) — unlike the other reasons, this must settle the order as
+  // PAID (paid_total/balance_due/payment_method), not just cancel it with a
+  // note. Mirrors payFullOrder's settlement shape so reports/dashboards see
+  // real revenue instead of a cancelled order with balance_due sitting at
+  // its original total forever.
+  if (input.reason === "paid_outside_system") {
+    for (const t of targets) {
+      const amount = Number(t.total ?? 0);
+      const { error: updateError } = await admin
+        .from("orders")
+        .update({
+          status: "paid",
+          paid_at: now,
+          balance_due: 0,
+          paid_total: amount,
+          payment_method: "efectivo",
+          merge_group_id: null,
+          updated_at: now,
+        })
+        .eq("id", t.id as string);
+      if (updateError) {
+        return { ok: false, error: { code: "internal", message: updateError.message } };
+      }
+
+      await admin.from("payments").insert({
+        order_id: t.id,
+        provider: "manual",
+        status: "approved",
+        amount,
+        payment_kind: "full",
+        metadata: { source: "qr_table_close_paid_outside_system" },
+      });
+
+      await admin.from("order_activity_log").insert({
+        order_id: t.id,
+        actor_type: "member",
+        actor_id: input.actorUserId,
+        actor_label: "personal",
+        action: "table.closed_paid_outside_system",
+        payload: { amount },
+      });
+
+      await releaseTableQrIfPaid(admin, t.id as string);
+    }
+    return { ok: true, data: { closedAt: now } };
+  }
 
   const { error: updateError } = await admin
     .from("orders")

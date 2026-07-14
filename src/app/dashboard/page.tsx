@@ -38,7 +38,12 @@ import {
   Wrench,
 } from "lucide-react";
 import { OrderCardMobile } from "@/components/orders/OrderCardMobile";
-import type { CatalogStats, SalesByItem } from "@/features/ventas/interfaces/dashboardStats";
+import { ActiveTablesCard } from "@/features/qr/components/ActiveTablesCard";
+import { useActiveTables } from "@/features/qr/hooks/useActiveTables";
+import type {
+  CatalogStats,
+  SalesByItem,
+} from "@/features/ventas/interfaces/dashboardStats";
 import { getPeriodDates } from "@/features/ventas/helpers/periodDates";
 import { salesByUser } from "@/features/ventas/helpers/salesByUser";
 import { orderContentType } from "@/features/orders/helpers/orderContentType";
@@ -50,13 +55,14 @@ export default function DashboardPage() {
   >("week");
 
   // Fetch the last cutoff to use as date_from when period === "cutoff"
-  const cutoffsKey = activeTenant?.id != null
-    ? `/api/sales-cutoffs?tenant_id=${encodeURIComponent(activeTenant.id)}`
-    : null;
+  const cutoffsKey =
+    activeTenant?.id != null
+      ? `/api/sales-cutoffs?tenant_id=${encodeURIComponent(activeTenant.id)}`
+      : null;
   const { data: cutoffsData } = useSWR<{ period_end: string }[]>(
     cutoffsKey,
     swrFetcher,
-    { fallbackData: [] }
+    { fallbackData: [] },
   );
   const lastCutoffEnd =
     Array.isArray(cutoffsData) && cutoffsData.length > 0
@@ -65,7 +71,10 @@ export default function DashboardPage() {
 
   const { dateFrom, dateTo } =
     period === "cutoff" && lastCutoffEnd
-      ? { dateFrom: lastCutoffEnd, dateTo: new Date().toISOString().slice(0, 10) }
+      ? {
+          dateFrom: lastCutoffEnd,
+          dateTo: new Date().toISOString().slice(0, 10),
+        }
       : getPeriodDates(period === "cutoff" ? "month" : period);
 
   const ordersKey =
@@ -101,14 +110,19 @@ export default function DashboardPage() {
   const { data: catalogStats, isLoading: catalogLoading } =
     useSWR<CatalogStats | null>(statsKey, swrFetcher);
 
-  const subsKey = activeTenant?.id != null
-    ? `/api/subscriptions?tenant_id=${encodeURIComponent(activeTenant.id)}&status=active`
-    : null;
-  const { data: activeSubs } = useSWR<{ id: string; charge_amount: number; type: string; frequency: number; frequency_type: string }[]>(
-    subsKey,
-    swrFetcher,
-    { fallbackData: [], revalidateOnFocus: false },
-  );
+  const subsKey =
+    activeTenant?.id != null
+      ? `/api/subscriptions?tenant_id=${encodeURIComponent(activeTenant.id)}&status=active`
+      : null;
+  const { data: activeSubs } = useSWR<
+    {
+      id: string;
+      charge_amount: number;
+      type: string;
+      frequency: number;
+      frequency_type: string;
+    }[]
+  >(subsKey, swrFetcher, { fallbackData: [], revalidateOnFocus: false });
   const activeSubsList = Array.isArray(activeSubs) ? activeSubs : [];
   const activeSubsCount = activeSubsList.length;
   const mrr = activeSubsList.reduce((sum, s) => {
@@ -118,6 +132,8 @@ export default function DashboardPage() {
         : s.charge_amount / s.frequency;
     return sum + monthlyAmount;
   }, 0);
+
+  const activeTables = useActiveTables(activeTenant?.id ?? null);
 
   if (!activeTenant) {
     return null;
@@ -167,15 +183,9 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto">
       <div className="space-y-5 pb-8 sm:pb-10">
-        {/* Header card: name + period + CTA live together as one composed
-            block, not loose elements floating on the page background. */}
         <div className="space-y-3 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5">
           <PageHeader title={activeTenant.name} description={periodLabel} />
 
-          {/* Own full-width row so the 50/50 split isn't fighting PageHeader's
-              flex/shrink-0 action slot. Desktop: natural width, right-aligned
-              via PageHeader normally would — here both breakpoints just flow
-              left since this card owns the whole width already. */}
           <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
             <PeriodSelector
               value={period}
@@ -267,6 +277,15 @@ export default function DashboardPage() {
             </div>
             <ArrowRight className="h-4 w-4 shrink-0 text-muted" />
           </Link>
+        )}
+
+        {/* Hidden entirely when no table has a customer connected right now —
+            an idle dashboard has no business showing an empty section. */}
+        {activeTables.tables.length > 0 && (
+          <ActiveTablesCard
+            tables={activeTables.tables}
+            tenantSlug={activeTenant.slug}
+          />
         )}
 
         <section>
@@ -397,7 +416,9 @@ export default function DashboardPage() {
                 <p className="mt-1.5 text-2xl font-bold tabular-nums text-foreground">
                   ${mrr.toFixed(2)}
                 </p>
-                <p className="mt-0.5 text-xs text-muted">Ingreso recurrente mensual</p>
+                <p className="mt-0.5 text-xs text-muted">
+                  Ingreso recurrente mensual
+                </p>
               </Link>
               <Link
                 href={`/dashboard/${activeTenant.slug}/suscripciones`}

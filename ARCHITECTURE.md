@@ -1,213 +1,147 @@
 # Architecture — pars_commerce
 
-This document defines **how code must be organized** in this project. It is
-the complement to `DESIGN_SYSTEM.md` (which covers visual rules). Both are
-mandatory reading before adding or modifying features.
+Este documento define cómo se organiza el código **específico de
+pars_commerce**: la forma real de carpetas, las convenciones de este
+repo, y los anti-patrones que ya cazamos aquí. Es el complemento de
+`DESIGN_SYSTEM.md` (reglas visuales).
 
-> If a component contains its own interface, its own `fetch()`, its own
-> formatter helper, and its own service-shaped logic — it is wrong. Split
-> it. Modularization is not optional.
+**Las reglas genéricas de ingeniería (modularización, DRY, cuándo
+comentar, hook vs helper vs util, formularios declarativos, capa de
+datos, performance, seguridad) viven en la skill `clean-code`
+(`.claude/skills/clean-code/SKILL.md`) — léela primero, es de lectura
+obligatoria junto con este archivo.** Este documento solo cubre lo que
+esa skill no puede saber por ser específico de este proyecto: nombres
+reales de carpetas, contratos concretos (`ServiceResult<T>`), reglas de
+Mercado Pago, y los anti-patrones que ya se corrigieron aquí.
 
 ---
 
-## 1. The non-negotiable rules
+## 1. Reglas no negociables (aplican vía `clean-code` + este proyecto)
 
-1. **No inline interfaces** — every prop or domain type lives in
-   `features/{name}/interfaces/*.ts`. The component file imports them with
-   `import type { ... }`.
-2. **No inline `fetch()` in components** — components never call `fetch`,
-   `apiFetch`, or any HTTP. All requests live in
+Ver `clean-code` §"The core question" para el principio general. Aplicado
+a este repo específicamente:
+
+1. No inline interfaces — todo tipo va a `features/{name}/interfaces/*.ts`.
+2. No `fetch()`/`apiFetch()` inline en componentes — todo vive en
    `features/{name}/services/*.ts`.
-3. **No inline business logic in components** — multi-step flows
-   (load → mutate → invalidate, form state, derived totals, etc.) live in
-   `features/{name}/hooks/use*.ts`. Components consume the hook's returned
-   shape.
-4. **No duplicated helpers** — any function used twice (formatters,
-   calculators, key builders) is hoisted to `features/{name}/helpers/*.ts`
-   or `src/lib/*.ts`. The DRY rule applies even when the duplicated
-   function is only three lines.
-5. **No "kitchen-sink" components** — if a component touches more than one
-   concern (data + UI + side-effects), split it. The component file should
-   only describe what it looks like and which handlers it wires.
+3. No lógica de negocio inline en componentes — flujos multi-paso viven
+   en `features/{name}/hooks/use*.ts`.
+4. No helpers duplicados — cualquier función usada 2 veces se promueve
+   (ver `clean-code/examples/modularization.md` para el criterio exacto
+   de cuándo a `features/x/helpers/` vs `src/lib/`).
+5. No componentes "kitchen-sink" — si toca datos + UI + side-effects,
+   se parte.
 
 ---
 
-## 2. Feature folder shape
+## 2. Forma de carpetas del feature (específico de este repo)
 
-Every feature under `src/features/{name}/` MUST follow this exact tree:
+Cada feature en `src/features/{name}/` sigue exactamente esta estructura:
 
 ```
 src/features/{name}/
-├── components/       # Presentational React components. JSX + classes only.
-│                     # Receive props, call handlers. No fetch, no business
-│                     # logic, no inline interfaces beyond local-only ones.
-├── hooks/            # Custom hooks named `use*.ts`. Own SWR/state machines,
-│                     # form state, derived data. Each hook returns a single
-│                     # object: { data, isLoading, error, ...handlers }.
-├── helpers/          # Pure functions. No React imports. Calculators,
-│                     # formatters, SWR key builders, transformations.
-├── constants/        # Tabs, options, status maps, reusable CSS class strings.
-├── interfaces/       # Types and interfaces shared across the feature.
-│                     # Both DTO shapes and component props go here.
-├── services/         # Thin wrappers over `apiFetch`. One service per
-│                     # endpoint or related group. Server-side service
-│                     # logic (admin Supabase ops, business rules) also
-│                     # belongs here as `*Service.ts`.
-└── validations/      # Yup schemas + inferred types.
+├── components/       # Presentacionales. JSX + clases. Sin fetch, sin
+│                     # lógica de negocio, sin interfaces más allá de
+│                     # las locales-only (ver clean-code/modularization.md).
+├── hooks/            # use*.ts — SWR/máquinas de estado/form state.
+├── helpers/          # Funciones puras, sin import de React.
+├── constants/        # Tabs, opciones, mapas de status, clases CSS reusables.
+├── interfaces/       # Tipos compartidos dentro de la feature.
+├── services/         # Wrappers sobre apiFetch + servicios server-side.
+└── validations/       # FieldSchema[] (ver clean-code/examples/forms.md)
 ```
 
-**An empty subfolder is acceptable.** A folder containing files that should
-have been split is not.
+**Una subcarpeta vacía es aceptable.** Una carpeta con archivos que
+debieron partirse, no.
+
+Features actuales: `auth`, `checkout`, `configuracion`, `equipo`,
+`landing`, `onboarding`, `orders`, `prestamos`, `productos`,
+`promociones`, `qr`, `servicios`, `sitio`, `sitio-web`, `suscripciones`,
+`ventas`.
+
+Fuera de features, lo verdaderamente compartido:
+- `src/components/ui/` — primitivas visuales transversales
+  (`ConfirmDialog`, `FormSheet`, `FormInput`, `Notification`, `Toast`,
+  `BottomSheet`, `Skeleton`).
+- `src/components/admin/` — primitivas de pantallas internas del
+  dashboard (`PageHeader`, `MetricsStrip`, `StatusBadge`, `EmptyState`,
+  `AdminListCard`, `actionButtonClasses`). Reglas de composición en
+  `DESIGN_SYSTEM.md §4.7`.
+- `src/lib/` — clientes (`supabase/{client,server,admin}`,
+  `mercadopago`, `swrFetcher`), helpers de errores, fee calculators
+  (`loanUtils`, `uploadUtils`).
+- `src/stores/` — Zustand global (`useTenantStore`, `useSessionStore`).
+- `src/services/apiFetch.ts` — wrapper único sobre `fetch`.
+- `src/types/` — DTOs compartidos entre features.
+- `src/constants/` — `commissionConfig.ts` y otras constantes globales.
 
 ---
 
-## 3. Where each kind of code goes (decision tree)
+## 3. Dónde va cada tipo de código
 
-When adding new code, decide where it lives BEFORE writing it:
-
-| What you're writing                                 | Where it goes                                       |
-| --------------------------------------------------- | --------------------------------------------------- |
-| A `<div>` / JSX block returning visual structure    | `components/SomeName.tsx`                           |
-| A `useState` + a `useEffect` + a derived value      | `hooks/useSomeName.ts`                              |
-| A `fetch('/api/...')` or `apiFetch(...)`            | `services/someClientService.ts`                     |
-| A function with no side-effects (e.g. `format`,    | `helpers/something.ts`                              |
-| `calculate`, `transform`)                           |                                                     |
-| The shape of an API response or a domain entity     | `interfaces/something.ts`                           |
-| The shape of a form's values + validation rules     | `validations/somethingSchema.ts`                    |
-| A literal list (tabs, status colors, options)       | `constants/something.ts`                            |
-| An admin-side Supabase mutation with business rules | `services/somethingService.ts` (server-only)        |
-
-**If you find yourself adding any of the right-column items inside a
-component file (left column), STOP and move it first.**
+El principio general y la tabla de decisión completa viven en
+`clean-code/SKILL.md` — es la misma tabla, adaptada a los nombres reales
+de arriba. No se repite aquí.
 
 ---
 
-## 4. Component contract
+## 4. Contrato de componente
 
-A `*.tsx` component file:
+Ver `clean-code/examples/modularization.md` para el patrón completo
+(bad/good shape) y la regla de "¿esta interface se importaría desde otro
+archivo?". Lo específico de este repo:
 
-- Starts with `"use client"` ONLY if it needs to (hooks, browser APIs).
-- Imports its props type with `import type { ... } from "@/features/.../interfaces/..."`.
-- Imports helpers (`formatCurrency`, `getInitials`, etc.) from
-  `features/.../helpers/...` — never re-declares them.
-- Imports services if it wires a handler that does HTTP, but **never calls
-  them directly**. The hook calls the service; the component calls the
-  hook handler.
-- Local helpers (functions that exist ONLY for this component's JSX, like
-  a `renderRow()` extractor) ARE allowed inside the file. The bar: would
-  any other component plausibly use this? If yes → extract. If no → keep.
-- Stays under ~400 lines per `CLAUDE.md`. Refactor before crossing.
-
-**Bad shape (what we're banning):**
-
-```tsx
-"use client";
-import { useState } from "react";
-
-interface UserCardProps {  // ← interface inline
-  userId: string;
-}
-
-function formatName(n: string) {  // ← helper inline
-  return n.trim().toUpperCase();
-}
-
-export function UserCard({ userId }: UserCardProps) {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {  // ← fetch inline
-    fetch(`/api/users/${userId}`).then(...).then(setUser);
-  }, [userId]);
-
-  return <div>...</div>;
-}
-```
-
-**Good shape:**
-
-```tsx
-// features/users/interfaces/user.ts
-export interface User { id: string; name: string }
-export interface UserCardProps { userId: string }
-
-// features/users/helpers/format.ts
-export function formatName(n: string) { return n.trim().toUpperCase() }
-
-// features/users/services/userService.ts
-export async function getUser(id: string): Promise<User> {
-  return apiFetch(`/api/users/${id}`) as Promise<User>;
-}
-
-// features/users/hooks/useUser.ts
-export function useUser(id: string) {
-  const { data, error, isLoading } = useSWR(`/api/users/${id}`, () => getUser(id));
-  return { user: data, error, isLoading };
-}
-
-// features/users/components/UserCard.tsx
-"use client";
-import { useUser } from "@/features/users/hooks/useUser";
-import { formatName } from "@/features/users/helpers/format";
-import type { UserCardProps } from "@/features/users/interfaces/user";
-
-export function UserCard({ userId }: UserCardProps) {
-  const { user, isLoading } = useUser(userId);
-  if (isLoading) return <Skeleton />;
-  return <div>{formatName(user.name)}</div>;
-}
-```
+- Todo `*.tsx` empieza con `"use client"` solo si lo necesita.
+- Se mantiene bajo ~400 líneas — refactoriza antes de cruzar ese límite.
+- Importa helpers de `features/.../helpers/...` — nunca los redeclara.
 
 ---
 
-## 5. Hook contract
+## 5. Contrato de hook
 
-A hook in `features/.../hooks/use*.ts`:
+Ver `clean-code/SKILL.md` para el contrato genérico (recibe un `params`
+tipado, retorna un objeto único `{ data, isLoading, error, ...handlers }`,
+posee el ciclo de vida — SWR/RHF/useState/useEffect — para que el
+componente se quede puro).
 
-- Receives a typed `params` object (no positional arguments past one).
-- Returns a single named object describing its surface:
-  ```ts
-  return {
-    data, isLoading, error,        // state
-    handleSubmit, retry, dismiss,  // actions
-  };
-  ```
-- Owns SWR (`useSWR`), `react-hook-form`, `useState`, `useEffect` — that
-  way components stay pure and re-mount cleanly.
-- Calls services. Never calls `fetch` directly.
-
-**Reference implementations:**
+**Referencias reales de este proyecto** (léelas antes de escribir un hook
+nuevo — el objetivo es que el décimo hook se vea como el primero):
 - `features/qr/hooks/useTableSession.ts` — resolve + fingerprint + cache
-- `features/qr/hooks/useTableCart.ts` — local cart + send action
-- `features/qr/hooks/useDeviceNaming.ts` — name state + persist
-- `features/qr/hooks/usePaymentFlow.ts` — payment state machine
-- `features/qr/hooks/useBillData.ts` — SWR + fingerprint header
+- `features/qr/hooks/useTableCart.ts` — carrito local + acción de envío
+- `features/qr/hooks/useDeviceNaming.ts` — estado de nombre + persistencia
+- `features/qr/hooks/usePaymentFlow.ts` — máquina de estados de pago
+- `features/qr/hooks/useBillData.ts` — SWR + header de fingerprint
+- `features/qr/hooks/useTableAdminLive.ts` — SWR + múltiples acciones
+  (confirmar/rechazar pago, avanzar fulfillment, cerrar/unir mesa)
 
 ---
 
-## 6. Service contract
+## 6. Contrato de servicio
 
-A client-side service in `features/.../services/*ClientService.ts`:
+Un servicio client-side en `features/.../services/*ClientService.ts`:
 
-- Thin wrapper over `apiFetch` (`@/services/apiFetch`).
-- One function per endpoint, named after the action: `resolveTableSession`,
+- Wrapper delgado sobre `apiFetch` (`@/services/apiFetch`).
+- Una función por endpoint, nombrada por la acción: `resolveTableSession`,
   `sendItems`, `createPaymentIntent`.
-- Takes a single typed `payload` object. Returns a typed promise.
-- Header injection (fingerprint, auth) lives inside the service, not at
-  the call site.
-- No JSON parsing in callers — services return parsed objects.
+- Recibe un `payload` tipado único. Retorna una promesa tipada.
+- Inyección de headers (fingerprint, auth) vive dentro del servicio, no
+  en el call site.
 
-**Reference:** `features/qr/services/tableClientService.ts`.
+**Referencia:** `features/qr/services/tableClientService.ts`.
 
-A server-side service in `features/.../services/*Service.ts`:
+Un servicio server-side en `features/.../services/*Service.ts`:
 
-- Receives an admin Supabase client as the first argument.
-- Returns a `ServiceResult<T> = { ok: true, data: T } | { ok: false, error: ServiceError }`.
-- Encapsulates business rules (validation, state machine transitions,
-  related table writes, audit log inserts).
-- Route handlers under `src/app/api/**` stay thin: parse body → call
-  service → map error to HTTP status with `serviceErrorToResponse`.
+- Recibe un cliente admin de Supabase como primer argumento.
+- Retorna `ServiceResult<T> = { ok: true, data: T } | { ok: false, error: ServiceError }`.
+- Encapsula reglas de negocio (validación, transiciones de estado,
+  escrituras relacionadas, inserts de auditoría).
+- Los route handlers en `src/app/api/**` quedan delgados: parsear body →
+  llamar servicio → mapear error a HTTP con `serviceErrorToResponse`.
+- Queries inline dentro de la función de negocio (ver
+  `clean-code/examples/data-layer.md` para el razonamiento completo de
+  por qué NO se separa en una capa de repositorio/ORM en este proyecto).
 
-**Reference:** `features/qr/services/tablePaymentService.ts`.
+**Referencia:** `features/qr/services/tablePaymentService.ts`.
 
 ---
 
@@ -234,73 +168,75 @@ propinas, mesas, préstamos):
   loguéalo en el servidor con contexto (`orderId`, `amount`, etc.) y
   propágalo al cliente cuando esté disponible — nunca devuelvas un
   genérico *"No se pudo conectar con Mercado Pago"* si tienes el mensaje
-  real.
+  real. (Esto es un caso concreto de la regla general de `clean-code`
+  §Security "no leak internal errors to the end user" — aquí es al
+  revés: SÍ propaga el mensaje real de MP porque es información útil
+  para el usuario, no un detalle interno sensible.)
 - **`external_reference` debe seguir convenciones por flujo** para que el
   webhook (`/api/mercadopago/webhook`) sepa a qué servicio derivar:
   - `qr_table:{order_id}` → pago completo de mesa
   - `qr_table_group:{group_id}` → pago de grupo de split
   - `order:{order_id}:mode:single:attempt:{attempt_id}` → storefront
+  - `loan:{id}` / `bulk_loan:{id}` → préstamos
 
 ---
 
-## 7. Anti-patterns we've explicitly killed
+## 7. Anti-patrones explícitamente cazados en este repo
 
-| Anti-pattern                                          | Where we killed it                          |
-| ----------------------------------------------------- | ------------------------------------------- |
-| `DeviceNamePrompt` building its own hero + sheet      | Now uses `<CustomerScreenLayout>`           |
-| `TableSession` doing inline `fetch()` + `ResolveResponse` interface | Now uses `useTableSession` + `tableClientService.resolveTableSession` + `interfaces/tableSession.ts` |
-| `TableQRClient` with inline `fetch` for name + items + interfaces + helpers | Now uses `useDeviceNaming`, `useTableCart`, `TableHeader`, `TableCtaBar`, `helpers/format` |
-| `formatCurrency` duplicated in 12+ component files    | Now imported from `features/qr/helpers/format` |
-| `MesasPage` dual-rendering `ModalShell` + `BottomSheet` for responsive forms | Now uses `<FormSheet>` (mobile sheet + desktop modal in one) |
-| Inline `<div className="rounded-2xl border border-emerald-200 ...">` banners duplicated across screens | Now use `<Notification tone="success|error|warning|info">` |
-| Inline `<label><input className="...">` blocks duplicated across forms | Now use `<FormInput label icon error optional>` |
-| `PaymentMethodStep` rendering its own back button + duplicate method header card | Now lives inside `<CustomerScreenLayout>` with `<PaymentMethodHero>` as the hero |
-| `METHOD_META` / `METHOD_LABELS` / `METHOD_ICONS` redeclared in `CustomerPayModal`, `PaymentMethodStep`, `PaymentReceipt`, `PendingPaymentsCard` | Now in `features/qr/constants/paymentMethodMeta.ts` — single source of truth |
-| `TableMenuGrid` rendering all products at once (1000+ unusable) | Now uses `useMenuFilter` (search + chunked rendering via IntersectionObserver) + `MenuProductCard` + `MenuSearchBar` |
-| Header `<h1>` + descripción + botón "Nuevo …" copy-pasted en cada página de dashboard | Ahora `<PageHeader title description action>` en `src/components/admin/PageHeader.tsx` |
-| Filtros con pills + count badges reimplementados en `qr/page.tsx`, `mesas/page.tsx`, `TablesFilterTabs.tsx` con el mismo Tailwind | Ahora `<FilterPills value onChange filters>` con `<TablesFilterTabs>` como wrapper delgado |
+| Anti-patrón                                          | Dónde se corrigió                          |
+| ----------------------------------------------------- | -------------------------------------------- |
+| `DeviceNamePrompt` construyendo su propio hero + sheet | Ahora usa `<CustomerScreenLayout>`           |
+| `TableSession` con `fetch()` inline + interface `ResolveResponse` | Ahora usa `useTableSession` + `tableClientService.resolveTableSession` + `interfaces/tableSession.ts` |
+| `TableQRClient` con fetch inline para nombre + items + interfaces + helpers | Ahora usa `useDeviceNaming`, `useTableCart`, `TableHeader`, `TableCtaBar`, `helpers/format` |
+| `formatCurrency` duplicado en 12+ archivos de componente | Ahora se importa de `features/qr/helpers/format` |
+| `MesasPage` renderizando `ModalShell` + `BottomSheet` en paralelo para responsive | Ahora usa `<FormSheet>` (sheet móvil + modal desktop en uno) |
+| `<div className="rounded-2xl border border-emerald-200 ...">` banners duplicados entre pantallas | Ahora usan `<Notification tone="success\|error\|warning\|info">` |
+| `<label><input className="...">` bloques duplicados entre forms | Ahora usan `<FormInput label icon error optional>` |
+| `PaymentMethodStep` renderizando su propio back button + card de header duplicada | Ahora vive dentro de `<CustomerScreenLayout>` con `<PaymentMethodHero>` como hero |
+| `METHOD_META`/`METHOD_LABELS`/`METHOD_ICONS` redeclarado en `CustomerPayModal`, `PaymentMethodStep`, `PaymentReceipt`, `PendingPaymentsCard` | Ahora en `features/qr/constants/paymentMethodMeta.ts` — única fuente de verdad |
+| `TableMenuGrid` renderizando todos los productos a la vez (1000+ inutilizable) | Ahora usa `useMenuFilter` (búsqueda + render por chunks vía IntersectionObserver) + `MenuProductCard` + `MenuSearchBar` |
+| Header `<h1>` + descripción + botón "Nuevo…" copy-pasteado en cada página del dashboard | Ahora `<PageHeader title description action>` en `src/components/admin/PageHeader.tsx` |
+| Filtros con pills + count badges reimplementados en `qr/page.tsx`, `mesas/page.tsx`, `TablesFilterTabs.tsx` con el mismo Tailwind | Ahora `<FilterTabs>` (`@/components/ui/FilterTabs`), con `TablesFilterTabs` como wrapper delgado |
 | Estados vacíos (`border-dashed` + icon circle + h2 + descripción + CTA) replicados en `mesas/page`, `qr/page`, `cuentas-bancarias/page` | Ahora `<EmptyState icon title description action>` |
 | Status pills (`bg-emerald-100 text-emerald-800` + dot) inline en `TableListCard`, `QRCodeCard`, `mesas/[mesaId]`, `BankAccountCard` | Ahora `<StatusBadge tone label>` |
-| Métricas KPI (label + valor grande con tone amber/emerald) duplicadas en `mesas/page` y `mesas/[mesaId]` | Ahora `<MetricsStrip metrics={[{label, value, tone, icon}]}>` |
 | Toast `createPortal` ad-hoc dentro de `cuentas-bancarias/page` | Ahora `<Toast message tone onDone>` en `src/components/ui/Toast.tsx` |
-| Botones pequeños `inline-flex min-h-[36px] rounded-lg border …` copy-pasted en 5+ cards | Ahora `adminActionButtonSecondary \| Primary \| Danger` desde `actionButtonClasses.ts` |
+| Botones pequeños `inline-flex min-h-[36px] rounded-lg border …` copy-pasteados en 5+ cards | Ahora `adminActionButtonSecondary \| Primary \| Danger` desde `actionButtonClasses.ts` |
 | Cards de listado con la misma estructura (icon + title + meta + badge + actions) reescritas en `TableListCard`, `QRCodeCard`, `BankAccountCard` | Ahora extienden `<AdminListCard>` (composición vía props `thumbnail`, `meta`, `badge`, `body`, `actions`) |
+| Detalle de mesa solo accesible navegando a `/mesas/[mesaId]` (round-trip completo para un check rápido) | Ahora `MesaDetailContent` se reusa en un `FormSheet` modal desde la lista Y en la página standalone (fallback para links directos) |
+| Opción "Cobré fuera del sistema" en `CloseTableDialog` solo cancelaba la orden sin marcarla pagada (`paid_total` nunca se actualizaba) | Ahora `closeTableOrder` liquida la orden como `paid` cuando el motivo es `paid_outside_system` — mismo shape de settlement que `payFullOrder` |
+| `useTablesList` con `refreshInterval` de polling continuo para el estado ocupada/libre | Ahora revalida forzado al entrar (bypassa el dedupe de SWR) + `refresh()` manual — el polling de 8s se quitó porque ocupada/libre solo cambia por acciones reales, no cada pocos segundos |
 
-When you spot any of these patterns in new code, refactor BEFORE shipping.
-
----
-
-## 8. Reuse before creating
-
-Before writing a new component, hook, service, or helper:
-
-1. **Search.** Is there already one that does this? Use `Grep` /
-   `Glob` over `src/features/{name}/` and `src/lib/`, `src/components/ui/`.
-2. **Extend.** If something close exists, extend it rather than forking.
-   Add a prop, add an option to the hook — don't create
-   `UserCardV2.tsx` next to `UserCard.tsx`.
-3. **Promote.** If a helper is used in two features, promote it to
-   `src/lib/`. If a UI primitive (button, input, dialog) is used in two
-   features, promote it to `src/components/ui/`.
+Al detectar cualquiera de estos patrones en código nuevo, refactoriza
+ANTES de entregar.
 
 ---
 
-## 9. PR checklist (paste this into every PR description)
+## 8. Reutilizar antes de crear
 
-- [ ] No inline interfaces in `.tsx` files; types live in `interfaces/`.
-- [ ] No `fetch()` / `apiFetch()` calls inside components.
-- [ ] No business logic, `useEffect`, or multi-`useState` blocks inside
-      components beyond trivial UI state.
-- [ ] No duplicated helpers — checked with grep before adding any.
-- [ ] Touch-targets ≥ 48px on customer-facing UI; design follows
-      `DESIGN_SYSTEM.md`.
-- [ ] Customer-facing screens use `<CustomerScreenLayout>`.
-- [ ] Admin pages usan las primitivas de `src/components/admin/`:
-      `PageHeader`, `MetricsStrip`, `FilterPills`, `EmptyState`,
-      `StatusBadge`, `AdminListCard`, `Toast`, y las clases
-      `adminActionButton*`. Cero pills/cards/empty-states inline.
-- [ ] Si tocas un servicio de Mercado Pago, sigues §6.1 (fee absorbido por
-      negocio en QR, `auto_return` solo en HTTPS, error real del SDK
-      propagado, `external_reference` con el prefijo correcto).
+Ver `clean-code` §"reuse" (implícito en la regla de promoción de
+helpers). Regla operativa de este repo: antes de escribir un componente,
+hook, servicio o helper nuevo, `Grep`/`Glob` sobre
+`src/features/{name}/`, `src/lib/`, `src/components/ui/` — si algo
+parecido existe, extiéndelo (agrega una prop, agrega una opción al hook)
+en vez de crear `ComponentV2.tsx` junto al original.
 
-If any box is unchecked, the change is not done — go back and finish.
+---
+
+## 9. Checklist al cerrar un cambio
+
+- [ ] `clean-code` §"Before shipping" completo (bucket correcto,
+      comentarios, formularios declarativos, promoción de helpers,
+      skeletons, performance, security gate).
+- [ ] Estructura del feature respetada (§2 de este archivo).
+- [ ] Pantallas customer-facing usan `<CustomerScreenLayout>` +
+      primitivas (`DESIGN_SYSTEM.md`).
+- [ ] API routes: auth → tenant check → validación → operación →
+      response, con `resolveUserError`.
+- [ ] Servicios server-side devuelven `ServiceResult<T>` y rutas usan
+      `serviceErrorToResponse`.
+- [ ] Si toca Mercado Pago: §6.1 completo (`fee_absorbed_by`,
+      `auto_return` guard, error real propagado, `external_reference`
+      prefijado).
+- [ ] `npx tsc --noEmit` y `npm run lint` limpios.
+
+Si falta una casilla, el cambio no está terminado.

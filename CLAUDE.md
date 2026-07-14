@@ -29,18 +29,21 @@ Alternativa manual: pegar cada `*.sql` en el SQL Editor del dashboard, en orden.
 
 ## Documentos obligatorios antes de tocar código
 
-Hay dos documentos que viven en la raíz del repo y son lectura obligatoria
-antes de modificar cualquier cosa. NO los repliques aquí — léelos.
+Tres documentos son lectura obligatoria antes de modificar cualquier
+cosa. NO los repliques aquí — léelos.
 
-- **`ARCHITECTURE.md`** — reglas duras de modularización (no inline
-  interfaces, no `fetch` en componentes, no helpers duplicados),
-  contrato de componentes/hooks/services, anti-patrones explícitamente
-  prohibidos, y reglas de integración con Mercado Pago. Aplica a TODO
-  cambio de código.
+- **`.claude/skills/clean-code/SKILL.md`** — disciplina de ingeniería
+  agnóstica de stack: modularización, DRY, cuándo comentar, hook vs
+  helper vs util, formularios declarativos, capa de datos, loading
+  states, performance, seguridad. Léela PRIMERO — es la base sobre la
+  que `ARCHITECTURE.md` construye lo específico de este repo.
+- **`ARCHITECTURE.md`** — forma real de carpetas de este proyecto,
+  contratos concretos (`ServiceResult<T>`), reglas de Mercado Pago, y
+  los anti-patrones ya cazados en este repo específicamente.
 - **`DESIGN_SYSTEM.md`** — contrato visual para pantallas customer-facing
   (`/src/app/q/**` y features dirigidas al cliente final). Define hero,
-  tipografía, color, layout canónico (`CustomerScreenLayout`),
-  primitivas obligatorias (`Notification`, `FormSheet`, `FormInput`,
+  tipografía, color, layout canónico (`CustomerScreen`), primitivas
+  obligatorias (`Notification`, `FormSheet`, `FormInput`,
   `ConfirmDialog`).
 
 Si encuentras código que viola estas reglas (ej. `formatCurrency`
@@ -250,19 +253,18 @@ Usar siempre alias `@/` — nunca `../../../`.
 
 ## Anti-patrones explícitamente prohibidos
 
-Lista corta — la versión larga con ejemplos está en `ARCHITECTURE.md §7`:
+Prohibiciones genéricas (interfaces inline, `fetch` en componentes,
+helpers duplicados, `useState` xN con lógica de dominio) están en
+`clean-code/SKILL.md` — no se repiten aquí. Específicos de este repo,
+versión larga con ejemplos en `ARCHITECTURE.md §7`:
 
-- Interfaces inline en `.tsx`
-- `fetch()` / `apiFetch()` dentro de componentes
-- `useState` x N con lógica de dominio en componentes (extraer a hook)
-- Helpers duplicados (especialmente `formatCurrency`)
 - Renderizar `ModalShell` + `BottomSheet` en paralelo para responsive
   (usar `FormSheet`)
 - Banners de status `<div className="rounded-2xl border border-emerald-200 ...">`
   copiados (usar `<Notification>`)
 - `METHOD_META` / `METHOD_LABELS` redeclarado por componente (usar
   `features/qr/constants/paymentMethodMeta.ts`)
-- Pantallas customer-facing sin `<CustomerScreenLayout>`
+- Pantallas customer-facing sin `<CustomerScreen>`
 - Emojis en componentes (solo `lucide-react`)
 - Copy/íconos de comida en customer-facing (`¿Qué se te antoja?`,
   `En preparación`, `ChefHat`, `Coffee`…) — es multinegocio, usa copy
@@ -274,16 +276,16 @@ Lista corta — la versión larga con ejemplos está en `ARCHITECTURE.md §7`:
 
 ## Checklist al cerrar un cambio
 
-- [ ] Estructura del feature respetada (componentes/hooks/helpers/etc.)
-- [ ] Cero interfaces inline, cero `fetch` inline, cero helpers
-      duplicados
-- [ ] Pantallas customer-facing usan `<CustomerScreenLayout>` + las
+- [ ] `clean-code/SKILL.md` §"Before shipping" completo.
+- [ ] Estructura del feature respetada (`ARCHITECTURE.md §2`).
+- [ ] Pantallas customer-facing usan `<CustomerScreen>` + las
       primitivas (`Notification`, `FormInput`, `FormSheet`,
       `ConfirmDialog`)
 - [ ] API routes: auth → tenant check → validación → operación →
       response, con `resolveUserError`
 - [ ] Servicios server-side devuelven `ServiceResult<T>` y rutas usan
       `serviceErrorToResponse`
-- [ ] Si toca Mercado Pago: §6.1 (`fee_absorbed_by`, `auto_return`
-      guard, error real propagado, `external_reference` prefijado)
+- [ ] Si toca Mercado Pago: `ARCHITECTURE.md §6.1` (`fee_absorbed_by`,
+      `auto_return` guard, error real propagado, `external_reference`
+      prefijado)
 - [ ] `npx tsc --noEmit` y `npm run lint` limpios

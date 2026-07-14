@@ -30,7 +30,7 @@ const REASONS: Array<{
   {
     value: "paid_outside_system",
     label: "Cobré fuera del sistema",
-    description: "Recibí el pago aparte (efectivo, otra app, etc.)",
+    description: "Recibí el pago aparte (efectivo, otra app, etc.).",
   },
   {
     value: "opened_by_mistake",
@@ -128,8 +128,9 @@ export function CloseTableDialog({
                 Cerrar mesa manualmente
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                La cuenta no se marcará como pagada. Selecciona el motivo para
-                que quede registrado.
+                {reason === "paid_outside_system"
+                  ? "La cuenta se marcará como pagada con el monto total."
+                  : "La cuenta no se marcará como pagada. Selecciona el motivo para que quede registrado."}
               </p>
             </div>
           </div>
@@ -209,13 +210,21 @@ export function CloseTableDialog({
               type="button"
               onClick={handleConfirm}
               disabled={!canSubmit}
-              className="flex min-h-[48px] w-full cursor-pointer items-center justify-center rounded-xl bg-red-600 px-4 py-3 text-base font-semibold text-white shadow-sm hover:bg-red-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 md:max-w-[200px]"
+              className={`flex min-h-[48px] w-full cursor-pointer items-center justify-center rounded-xl px-4 py-3 text-base font-semibold text-white shadow-sm active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 md:max-w-[200px] ${
+                reason === "paid_outside_system"
+                  ? "bg-emerald-600 hover:bg-emerald-700"
+                  : "bg-red-600 hover:bg-red-700"
+              }`}
             >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Cerrando mesa...
+                  {reason === "paid_outside_system"
+                    ? "Marcando como pagada..."
+                    : "Cerrando mesa..."}
                 </>
+              ) : reason === "paid_outside_system" ? (
+                "Marcar como pagada"
               ) : (
                 "Cerrar mesa"
               )}

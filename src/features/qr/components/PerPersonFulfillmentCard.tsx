@@ -7,6 +7,7 @@ import {
   adminActionButtonSecondary,
 } from "@/components/admin/actionButtonClasses";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { getFulfillmentStatusMeta } from "@/features/qr/constants/fulfillmentStatusMeta";
 
 import type { AdminViewDevice, AdminViewItem } from "@/features/qr/services/tableAdminViewService";
 import type { FulfillmentStatus } from "@/features/qr/services/tableFulfillmentService";
@@ -25,15 +26,6 @@ interface PerPersonFulfillmentCardProps {
   onAdvanceItem: (orderItemId: string, status: FulfillmentStatus) => void;
   onAdvanceAll: (status: FulfillmentStatus) => void;
 }
-
-const STATUS_META: Record<
-  string,
-  { label: string; tone: "neutral" | "warning" | "success" }
-> = {
-  received: { label: "Recibido", tone: "neutral" },
-  in_progress: { label: "En proceso", tone: "warning" },
-  ready: { label: "Listo", tone: "success" },
-};
 
 /**
  * Staff control to advance preparation state PER PRODUCT LINE, grouped by
@@ -123,7 +115,7 @@ export function PerPersonFulfillmentCard({
 
         {devices.map((device) => {
           const deviceStatus = device.fulfillment_status ?? "received";
-          const deviceMeta = STATUS_META[deviceStatus] ?? STATUS_META.received;
+          const deviceMeta = getFulfillmentStatusMeta(deviceStatus);
           const deviceBusy = busyDeviceId === device.id;
           const deviceItems = items.filter(
             (item) => item.added_by_device_id === device.id,
@@ -173,7 +165,7 @@ export function PerPersonFulfillmentCard({
                 )}
                 {deviceItems.map((item) => {
                   const itemStatus = item.fulfillment_status ?? "received";
-                  const itemMeta = STATUS_META[itemStatus] ?? STATUS_META.received;
+                  const itemMeta = getFulfillmentStatusMeta(itemStatus);
                   const itemBusy = busyItemId === item.id;
                   return (
                     <div

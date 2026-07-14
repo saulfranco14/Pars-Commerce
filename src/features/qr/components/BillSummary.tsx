@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { CheckCircle2, Clock, ShoppingBag, User, Users } from "lucide-react";
 
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { getFulfillmentStatusMeta } from "@/features/qr/constants/fulfillmentStatusMeta";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import {
   groupItemsByPerson,
@@ -19,7 +20,6 @@ import type {
   BillItem,
 } from "@/features/qr/interfaces/billSummary";
 import type { SplitGroup } from "@/features/qr/interfaces/splitBill";
-import type { StatusTone } from "@/components/admin/StatusBadge";
 
 interface BillSummaryProps {
   items: BillItem[];
@@ -30,12 +30,6 @@ interface BillSummaryProps {
   /** When false, per-group pay buttons are hidden (order not ready yet). */
   canPay?: boolean;
 }
-
-const ITEM_STATUS_META: Record<string, { label: string; tone: StatusTone }> = {
-  received: { label: "Recibido", tone: "neutral" },
-  in_progress: { label: "En proceso", tone: "warning" },
-  ready: { label: "Listo", tone: "success" },
-};
 
 /**
  * Presentational bill summary: items grouped by person, plus the split-group
@@ -98,9 +92,7 @@ export function BillSummary({
                 )}
                 <ul className="space-y-2.5">
                   {person.items.map((item) => {
-                    const itemMeta =
-                      ITEM_STATUS_META[item.fulfillment_status ?? "received"] ??
-                      ITEM_STATUS_META.received;
+                    const itemMeta = getFulfillmentStatusMeta(item.fulfillment_status);
                     return (
                       <li
                         key={item.id}

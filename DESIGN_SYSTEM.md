@@ -134,19 +134,17 @@ Key props:
 
 ### 4.1.1 Loading states — skeleton screens first
 
-Never show a bare "Cargando..." line. Order of preference:
+General principle + generic example: `clean-code/examples/loading-states.md`.
+Real skeletons already built in this repo, reuse before creating a new one:
 
-1. **Skeleton screens** for full-screen data resolves whose layout is known:
-   mesa → `<TableScreenSkeleton />`, cuenta → `<BillScreenSkeleton />`
-   (`src/features/qr/components/`). They mirror the real layout (accent
-   header, cards) so content replaces them in place with no jump. In-card
-   async blocks use their own skeleton (`OrderTrackerSkeleton`). Compose new
-   ones from the shared `<Skeleton className="h-4 w-24" />` primitive
-   (`src/components/ui/Skeleton.tsx`) — never hand-roll `animate-pulse` divs.
-2. `<CustomerLoading message="..." />` (branded pulsing orb) only where the
-   destination layout is unknown (e.g. QR resolve deciding which screen).
-3. In-place navigation feedback: buttons swap their icon for a `Loader2`
-   spinner + verb ("Abriendo cuenta...", "Enviando...").
+- Full-screen resolve with known layout: mesa → `<TableScreenSkeleton />`,
+  cuenta → `<BillScreenSkeleton />` (`src/features/qr/components/`). In-card
+  async blocks → `<OrderTrackerSkeleton />`. Compose new ones from
+  `<Skeleton className="h-4 w-24" />` (`src/components/ui/Skeleton.tsx`).
+- Destination layout unknown (e.g. QR resolve deciding which screen):
+  `<CustomerLoading message="..." />` (branded pulsing orb).
+- Button-level action feedback: swap icon for `Loader2` + verb ("Abriendo
+  cuenta...", "Enviando...").
 
 ### 4.1.2 Product detail — `ProductDetailSheet`
 

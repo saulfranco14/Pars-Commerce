@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { ConfettiBurst } from "@/features/qr/components/ConfettiBurst";
+import { getFulfillmentStatusMeta } from "@/features/qr/constants/fulfillmentStatusMeta";
 import {
   formatCurrency,
   formatRelativeTime,
@@ -19,7 +21,6 @@ import {
 } from "@/features/qr/helpers/format";
 
 import type { BillDevice, BillItem } from "@/features/qr/hooks/useBillData";
-import type { StatusTone } from "@/components/admin/StatusBadge";
 import type { LucideIcon } from "lucide-react";
 
 interface OrderTrackerCardProps {
@@ -48,12 +49,6 @@ const STEPS: { key: string; label: string; icon: LucideIcon }[] = [
   { key: "in_progress", label: "En proceso", icon: Clock },
   { key: "ready", label: "Listo", icon: PackageCheck },
 ];
-
-const ITEM_STATUS_META: Record<string, { label: string; tone: StatusTone }> = {
-  received: { label: "Recibido", tone: "neutral" },
-  in_progress: { label: "En proceso", tone: "warning" },
-  ready: { label: "Listo", tone: "success" },
-};
 
 function stepStates(fulfillmentStatus: string, paid: boolean): StepState[] {
   if (paid) return ["done", "done", "done"];
@@ -233,6 +228,11 @@ export function OrderTrackerCard({
                       <Check className="relative h-2 w-2 text-white" strokeWidth={3} />
                     </span>
                   )}
+                  {/* Confetti accent — mounted only during the one-shot flash,
+                      unmounts right after so it never lingers or re-fires. */}
+                  {step.key === "in_progress" && justCompletedPulse && (
+                    <ConfettiBurst />
+                  )}
                 </span>
                 <span
                   className={`whitespace-nowrap text-[10px] font-bold ${
@@ -287,9 +287,7 @@ export function OrderTrackerCard({
                 const isMine =
                   !!item.added_by_device_id &&
                   item.added_by_device_id === myDeviceId;
-                const itemMeta =
-                  ITEM_STATUS_META[item.fulfillment_status ?? "received"] ??
-                  ITEM_STATUS_META.received;
+                const itemMeta = getFulfillmentStatusMeta(item.fulfillment_status);
                 return (
                   <li
                     key={item.id}

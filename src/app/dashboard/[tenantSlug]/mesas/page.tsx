@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ClipboardList, Plus, Store } from "lucide-react";
+import { ClipboardList, Plus, RefreshCw, Store } from "lucide-react";
 
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -14,8 +14,10 @@ import { FormSheet } from "@/components/ui/FormSheet";
 import { QrCreateForm } from "@/features/qr/components/QrCreateForm";
 import { CreatedQrSuccess } from "@/features/qr/components/CreatedQrSuccess";
 import { QrPreview } from "@/features/qr/components/QrPreview";
+import { MesaDetailContent } from "@/features/qr/components/MesaDetailContent";
 import { TableListCard } from "@/features/qr/components/TableListCard";
 import { TablesFilterTabs } from "@/features/qr/components/TablesFilterTabs";
+import { useActiveTables } from "@/features/qr/hooks/useActiveTables";
 import { useTablesList } from "@/features/qr/hooks/useTablesList";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
@@ -28,10 +30,25 @@ export default function MesasPage() {
   const activeTenant = useActiveTenant();
 
   const list = useTablesList(activeTenant?.id ?? null);
+  // Total + preparation state per occupied table (drives each card's total
+  // line, status badge, and one-shot "ready" celebration) — separate
+  // polling from the occupied/free list above, which intentionally has
+  // none (see useTablesList).
+  const activeTables = useActiveTables(activeTenant?.id ?? null);
+  const activeByQrId = new Map(
+    activeTables.tables.map((t) => [t.qr_code_id, t]),
+  );
 
   const [showCreate, setShowCreate] = useState(false);
   const [createdTable, setCreatedTable] = useState<QrCode | null>(null);
   const [previewTable, setPreviewTable] = useState<QrCode | null>(null);
+  const [detailTableId, setDetailTableId] = useState<string | null>(null);
+  // Re-resolve from the live list on every render (not a frozen snapshot from
+  // the click moment) so the modal reflects e.g. the table freeing up while
+  // it's open, same as the standalone detail page does via its own SWR read.
+  const detailTable = detailTableId
+    ? (list.tables.find((t) => t.id === detailTableId) ?? null)
+    : null;
 
   if (!activeTenant) {
     return (
@@ -95,11 +112,26 @@ export default function MesasPage() {
         />
 
         {hasTables && (
-          <TablesFilterTabs
-            filter={list.filter}
-            onChange={list.setFilter}
-            counts={list.metrics}
-          />
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <TablesFilterTabs
+                filter={list.filter}
+                onChange={list.setFilter}
+                counts={list.metrics}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => list.refresh()}
+              disabled={list.isRefreshing}
+              aria-label="Actualizar estado de las mesas"
+              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-surface text-muted-foreground transition-colors hover:bg-border-soft/40 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${list.isRefreshing ? "animate-spin" : ""}`}
+              />
+            </button>
+          </div>
         )}
       </div>
 
@@ -140,6 +172,28 @@ export default function MesasPage() {
         )}
       </FormSheet>
 
+      {/* Detail modal — same content as the standalone /mesas/[mesaId] page,
+          opened in place so staff never leave the list (no back-navigation
+          round trip for a quick check). */}
+      <FormSheet
+        isOpen={!!detailTable}
+        onClose={() => setDetailTableId(null)}
+        title=""
+        maxWidth="max-w-2xl"
+      >
+        {detailTable && (
+          <MesaDetailContent
+            qr={detailTable}
+            qrList={list.tables}
+            tenantName={activeTenant.name}
+            orderHref={(orderId) =>
+              `/dashboard/${tenantSlug}/pedidos/nuevo?table_order_id=${orderId}`
+            }
+            onClosed={() => setDetailTableId(null)}
+          />
+        )}
+      </FormSheet>
+
       {list.isLoading && !hasTables ? (
         <p className="text-sm text-muted-foreground">Cargando mesas...</p>
       ) : !hasTables ? (
@@ -168,8 +222,9 @@ export default function MesasPage() {
             <TableListCard
               key={table.id}
               table={table}
-              tenantSlug={tenantSlug}
               onViewQr={setPreviewTable}
+              onViewDetail={setDetailTableId}
+              active={activeByQrId.get(table.id)}
             />
           ))}
         </div>
