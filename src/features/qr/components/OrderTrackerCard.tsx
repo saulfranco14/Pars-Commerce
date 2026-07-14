@@ -114,10 +114,12 @@ export function OrderTrackerCard({
   const readyItemCount = items.filter(
     (i) => i.fulfillment_status === "ready",
   ).length;
+  const receivedItemCount = items.filter(
+    (i) => (i.fulfillment_status ?? "received") === "received",
+  ).length;
+  const inProgressItemCount = items.length - readyItemCount - receivedItemCount;
   const hasNewArrival =
-    !paid &&
-    readyItemCount > 0 &&
-    items.some((i) => (i.fulfillment_status ?? "received") === "received");
+    !paid && readyItemCount > 0 && receivedItemCount > 0;
   const hasPartialProgress =
     !paid && readyItemCount > 0 && readyItemCount < items.length;
 
@@ -137,6 +139,21 @@ export function OrderTrackerCard({
     }
     prevReadyCountRef.current = readyItemCount;
   }, [readyItemCount]);
+
+  // Same one-shot flash, but for a line STARTING preparation (received ->
+  // in_progress) — otherwise the customer has no glanceable cue that staff
+  // began working on their order until they expand the item list.
+  const [justStartedPulse, setJustStartedPulse] = useState(false);
+  const prevInProgressCountRef = useRef(inProgressItemCount);
+  useEffect(() => {
+    if (inProgressItemCount > prevInProgressCountRef.current) {
+      setJustStartedPulse(true);
+      const timer = setTimeout(() => setJustStartedPulse(false), 1200);
+      prevInProgressCountRef.current = inProgressItemCount;
+      return () => clearTimeout(timer);
+    }
+    prevInProgressCountRef.current = inProgressItemCount;
+  }, [inProgressItemCount]);
 
   if (items.length === 0) return null;
 
@@ -202,13 +219,21 @@ export function OrderTrackerCard({
                   {state === "active" && (
                     <span
                       aria-hidden
-                      className="absolute inset-0 animate-ping rounded-full bg-accent/20"
+                      className={`absolute inset-0 rounded-full ${
+                        justStartedPulse
+                          ? "animate-ping bg-amber-400/50"
+                          : "animate-ping bg-accent/20"
+                      }`}
                     />
                   )}
                   {state === "done" ? (
                     <Check className="h-4 w-4" />
                   ) : (
-                    <Icon className="relative h-4 w-4" />
+                    <Icon
+                      className={`relative h-4 w-4 transition-transform duration-300 ${
+                        state === "active" && justStartedPulse ? "scale-125" : ""
+                      }`}
+                    />
                   )}
                   {/* Partial progress marker: at least one line is ready
                       while the order overall is still "en proceso" — a

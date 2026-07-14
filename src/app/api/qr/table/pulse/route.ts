@@ -57,23 +57,33 @@ export async function GET(request: Request) {
     return NextResponse.json({ active: false, order: order ?? null });
   }
 
-  // How many line items exist right now, and how many are ready. The customer
-  // screen compares BOTH to what it last rendered: itemCount alone misses a
-  // per-LINE change (one item flips to "ready" while the order-level summary
-  // stays "in_progress" because another line hasn't caught up yet) — that
-  // needs its own counter to detect. `head: true` = count only, zero rows
-  // transferred either way.
-  const [{ count: itemCount }, { count: readyItemCount }] = await Promise.all([
-    admin
-      .from("order_items")
-      .select("id", { count: "exact", head: true })
-      .eq("order_id", orderId),
-    admin
-      .from("order_items")
-      .select("id", { count: "exact", head: true })
-      .eq("order_id", orderId)
-      .eq("fulfillment_status", "ready"),
-  ]);
+  // How many line items exist right now, and how many are ready/received.
+  // The customer screen compares ALL of these to what it last rendered:
+  // itemCount alone misses a per-LINE transition that doesn't change the
+  // order-level summary — e.g. a second line moving received -> in_progress
+  // while a first line is ALREADY in_progress. The order-level summary
+  // doesn't change (was already in_progress), ready_item_count doesn't
+  // change (still zero), so that transition would go undetected with only
+  // those two signals. received_item_count catches it: any line leaving
+  // "received" changes this count regardless of which status it moves to.
+  // `head: true` = count only, zero rows transferred either way.
+  const [{ count: itemCount }, { count: readyItemCount }, { count: receivedItemCount }] =
+    await Promise.all([
+      admin
+        .from("order_items")
+        .select("id", { count: "exact", head: true })
+        .eq("order_id", orderId),
+      admin
+        .from("order_items")
+        .select("id", { count: "exact", head: true })
+        .eq("order_id", orderId)
+        .eq("fulfillment_status", "ready"),
+      admin
+        .from("order_items")
+        .select("id", { count: "exact", head: true })
+        .eq("order_id", orderId)
+        .eq("fulfillment_status", "received"),
+    ]);
 
   // One devices read → connected count, whether the caller is the owner, and
   // the caller's own preparation state (per-person "ya puedes pagar").
@@ -123,6 +133,11 @@ export async function GET(request: Request) {
        *  even when the order-level summary hasn't caught up (other lines
        *  still in_progress). */
       ready_item_count: readyItemCount ?? 0,
+      /** How many lines are still "received" (untouched) — combined with
+       *  ready_item_count, detects ANY per-line transition, including
+       *  received -> in_progress when another line is already in_progress
+       *  (a change ready_item_count alone can't see). */
+      received_item_count: receivedItemCount ?? 0,
     },
     connected_devices: (devices ?? []).length,
     i_am_owner: myDevice?.is_owner === true,

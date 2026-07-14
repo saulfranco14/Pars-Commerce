@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CreditCard, Link2, PlusCircle, Users } from "lucide-react";
+import { CreditCard, Link2, PlusCircle, RotateCcw, Users } from "lucide-react";
 
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Notification } from "@/components/ui/Notification";
 import { CustomerScreen } from "@/features/qr/components/CustomerScreen";
 import { BillScreenSkeleton } from "@/features/qr/components/BillScreenSkeleton";
@@ -17,6 +18,7 @@ import { MergeRequestBanner } from "@/features/qr/components/MergeRequestBanner"
 import { PaymentReceipt } from "@/features/qr/components/PaymentReceipt";
 
 import { formatCurrency } from "@/features/qr/helpers/format";
+import { getLastOrderId } from "@/features/qr/helpers/deviceFingerprint";
 import { useBillData } from "@/features/qr/hooks/useBillData";
 import { usePaymentFlow } from "@/features/qr/hooks/usePaymentFlow";
 import { useSplitBill } from "@/features/qr/hooks/useSplitBill";
@@ -26,6 +28,7 @@ import type { CustomerPayMethod } from "@/features/qr/components/CustomerPayModa
 
 export default function TableBillPage() {
   const params = useParams();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const token = params.token as string;
   const orderId = searchParams.get("order_id");
@@ -45,6 +48,20 @@ export default function TableBillPage() {
       setTimeout(() => setRefreshing(false), 400);
     }
   };
+
+  // Once THIS device paid THIS order, going back to /q/{token} would scan
+  // the QR again and — since the table is now free — silently open a brand
+  // new order. Only this device (the one whose fingerprint is cached as the
+  // last order for this token) is asked to confirm; any other device
+  // scanning the same QR is a genuinely new customer, no confirmation needed.
+  const [confirmNewOrder, setConfirmNewOrder] = useState(false);
+  function goToQrRoot() {
+    if (orderId && getLastOrderId(token) === orderId) {
+      setConfirmNewOrder(true);
+      return;
+    }
+    router.push(`/q/${token}`);
+  }
 
   const paymentFlow = usePaymentFlow({
     orderId: orderId ?? "",
@@ -273,7 +290,17 @@ export default function TableBillPage() {
     <CustomerScreen
       tone={isPaid ? "success" : "accent"}
       tenantName={data.tenant?.name}
-      backHref={inSplitPicker ? `/q/${token}/table/bill?order_id=${orderId}` : `/q/${token}`}
+      // Paid: no plain link back to /q/{token} — that route re-scans the QR
+      // and, since the table is free now, silently opens a new order. The
+      // dedicated "Ordenar de nuevo" button below (with its own confirm gate)
+      // is the only way back from here.
+      {...(isPaid
+        ? {}
+        : {
+            backHref: inSplitPicker
+              ? `/q/${token}/table/bill?order_id=${orderId}`
+              : `/q/${token}`,
+          })}
       header={
         <BillHero
           tableLabel={data.qr_code?.label}
@@ -345,11 +372,21 @@ export default function TableBillPage() {
         />
 
         {isPaid ? (
-          <Notification
-            tone="success"
-            title="¡Cuenta pagada por completo!"
-            message="Gracias por tu visita."
-          />
+          <>
+            <Notification
+              tone="success"
+              title="¡Cuenta pagada por completo!"
+              message="Gracias por tu visita."
+            />
+            <button
+              type="button"
+              onClick={goToQrRoot}
+              className="flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
+            >
+              <RotateCcw className="h-4 w-4 text-muted-foreground" />
+              Ordenar de nuevo
+            </button>
+          </>
         ) : inSplitPicker ? (
           <BillSplitSection
             mode={splitForm.mode}
@@ -415,6 +452,16 @@ export default function TableBillPage() {
         error={merge.error}
         onLoad={merge.loadCandidates}
         onMerge={merge.requestMerge}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmNewOrder}
+        onClose={() => setConfirmNewOrder(false)}
+        onConfirm={() => router.push(`/q/${token}`)}
+        title="¿Iniciar un nuevo pedido?"
+        description="Ya pagaste esta cuenta. Si continúas, se abrirá un pedido nuevo en esta mesa."
+        confirmLabel="Sí, continuar"
+        cancelLabel="Cancelar"
       />
     </CustomerScreen>
   );

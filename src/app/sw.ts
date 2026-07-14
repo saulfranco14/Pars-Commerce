@@ -1,6 +1,6 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, RuntimeCaching, SerwistGlobalConfig } from "serwist";
-import { NetworkFirst, Serwist } from "serwist";
+import { NetworkFirst, NetworkOnly, Serwist } from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -12,21 +12,27 @@ declare const self: ServiceWorkerGlobalScope;
 
 /**
  * Custom rules for the live QR customer flow, matched BEFORE the stock
- * defaultCache. These routes are real-time (menu, bill, payments), so the
- * stock terminal `NetworkOnly` catch-all was dead-ending them with a cryptic
- * `no-response` error on any network blip. NetworkFirst with a short timeout
- * serves the network normally and, only if it fails, falls back to the last
- * response — the bill polls every few seconds so a one-tick-stale fallback is
- * far better than a crash.
+ * defaultCache.
+ *
+ * `/api/qr/` GETs (pulse, bill, admin-view, resolve) and every mutation
+ * (items, fulfillment, payments, close, merge...) are NetworkOnly — every
+ * one of them is either live polling data or a state-changing action, and
+ * NetworkFirst was caching each successful response in "qr-api" and
+ * occasionally serving that stale copy back on a subsequent request (the
+ * cause of a real bug: a customer's tracker staying on an old
+ * fulfillment_status for a full extra polling cycle after staff advanced
+ * it). A network blip on one of these should surface as a visible error
+ * the UI already handles, not a silent stale read.
+ *
+ * Only the customer-facing DOCUMENT shell (`/q/**` pages) keeps
+ * NetworkFirst — that's static UI chrome, not per-request state, so a
+ * short-lived fallback on a network blip is safe and improves resilience.
  */
 const qrRuntimeCaching: RuntimeCaching[] = [
   {
     matcher: ({ sameOrigin, url }) =>
       sameOrigin && url.pathname.startsWith("/api/qr/"),
-    handler: new NetworkFirst({
-      cacheName: "qr-api",
-      networkTimeoutSeconds: 8,
-    }),
+    handler: new NetworkOnly(),
   },
   {
     matcher: ({ request, sameOrigin, url }) =>

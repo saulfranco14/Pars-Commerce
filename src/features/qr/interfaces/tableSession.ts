@@ -34,6 +34,9 @@ export interface QrSessionOrder {
   /** Live count of "ready" lines from the pulse; drives per-line progress
    *  detection even when the order-level summary hasn't changed. */
   ready_item_count?: number;
+  /** Live count of "received" (untouched) lines from the pulse — combined
+   *  with ready_item_count, detects ANY per-line transition. */
+  received_item_count?: number;
 }
 
 export interface QrSessionMenuItem {
@@ -107,6 +110,10 @@ export interface TablePulseResponse {
     /** Count of "ready" lines; a change means per-line progress happened even
      *  if the order-level summary is unchanged → refresh the tracker. */
     ready_item_count?: number;
+    /** Count of "received" lines; combined with ready_item_count, catches
+     *  ANY per-line transition (see pulse route for the exact gap this
+     *  closes). */
+    received_item_count?: number;
   } | null;
   connected_devices?: number;
   i_am_owner?: boolean;

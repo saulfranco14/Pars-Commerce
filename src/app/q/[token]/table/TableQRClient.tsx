@@ -103,6 +103,7 @@ export function TableQRClient({
     tracker.fulfillmentStatus;
   const liveItemCount = order?.item_count;
   const liveReadyItemCount = order?.ready_item_count;
+  const liveReceivedItemCount = order?.received_item_count;
 
   // Does this session already have a running order? Known from `order` on the
   // FIRST render (it comes from the session resolve, not the async tracker), so
@@ -122,13 +123,17 @@ export function TableQRClient({
   );
 
   // When the pulse reports a fulfillment change, a new batch of items landed,
-  // OR the count of "ready" lines changed (one product got marked ready while
-  // another is still in progress — the order-level summary alone doesn't
-  // change in that case), re-read the tracker so the per-line detail stays in
-  // sync without a full resolve.
+  // OR the distribution of per-line statuses changed, re-read the tracker so
+  // the per-line detail stays in sync without a full resolve. Both
+  // ready_item_count AND received_item_count are tracked (not just ready):
+  // a line moving received -> in_progress while ANOTHER line is already
+  // in_progress changes neither the order-level summary nor ready_item_count
+  // (still zero) — only received_item_count catches that specific
+  // transition. Together the two counters catch any per-line change.
   const prevFulfillmentRef = useRef<string | null>(null);
   const prevItemCountRef = useRef<number | null>(null);
   const prevReadyItemCountRef = useRef<number | null>(null);
+  const prevReceivedItemCountRef = useRef<number | null>(null);
   useEffect(() => {
     if (!order?.id) return;
     const fulfillmentChanged =
@@ -142,18 +147,30 @@ export function TableQRClient({
       typeof liveReadyItemCount === "number" &&
       prevReadyItemCountRef.current !== null &&
       prevReadyItemCountRef.current !== liveReadyItemCount;
-    if (fulfillmentChanged || itemsChanged || readyItemsChanged)
+    const receivedItemsChanged =
+      typeof liveReceivedItemCount === "number" &&
+      prevReceivedItemCountRef.current !== null &&
+      prevReceivedItemCountRef.current !== liveReceivedItemCount;
+    if (
+      fulfillmentChanged ||
+      itemsChanged ||
+      readyItemsChanged ||
+      receivedItemsChanged
+    )
       void reloadTracker();
     prevFulfillmentRef.current = liveFulfillment;
     if (typeof liveItemCount === "number")
       prevItemCountRef.current = liveItemCount;
     if (typeof liveReadyItemCount === "number")
       prevReadyItemCountRef.current = liveReadyItemCount;
+    if (typeof liveReceivedItemCount === "number")
+      prevReceivedItemCountRef.current = liveReceivedItemCount;
   }, [
     order?.id,
     liveFulfillment,
     liveItemCount,
     liveReadyItemCount,
+    liveReceivedItemCount,
     reloadTracker,
   ]);
 
