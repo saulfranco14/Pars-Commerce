@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import useSWR from "swr";
 import { Plus, Scissors, SlidersHorizontal, X } from "lucide-react";
 import { FAB } from "@/components/ui/FAB";
 import { OrdersFilterSheet } from "@/components/orders/OrdersFilterSheet";
+import { OrderFormSheet } from "@/features/orders/components/OrderFormSheet";
 import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { OrderCardMobile } from "@/components/orders/OrderCardMobile";
@@ -48,6 +48,7 @@ export default function OrdenesPage() {
   const [dateTo, setDateTo] = useState("");
   const [dateFiltersOpen, setDateFiltersOpen] = useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const hasDateFilter = Boolean(dateFrom || dateTo);
 
@@ -138,13 +139,14 @@ export default function OrdenesPage() {
               <SlidersHorizontal className="h-5 w-5 shrink-0" aria-hidden />
             </button>
           </div>
-          <Link
-            href={`/dashboard/${tenantSlug}/ordenes/nueva`}
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
             className="hidden min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:w-auto md:inline-flex"
           >
             <Plus className="h-4 w-4 shrink-0" aria-hidden />
             Nueva orden
-          </Link>
+          </button>
         </div>
 
         <OrdersFilterSheet
@@ -331,13 +333,14 @@ export default function OrdenesPage() {
                 : `No hay órdenes${statusFilter ? " con este estado" : ""}${hasDateFilter ? " en las fechas seleccionadas" : ""}.`}{" "}
               Crea una con &quot;Nueva orden&quot;.
             </p>
-            <Link
-              href={`/dashboard/${tenantSlug}/ordenes/nueva`}
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
               className="mt-4 inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               <Plus className="h-4 w-4 shrink-0" aria-hidden />
               Crear primera orden
-            </Link>
+            </button>
           </div>
         ) : (
           <>
@@ -509,12 +512,18 @@ export default function OrdenesPage() {
         )}
       </div>
 
-      <FAB
-        href={`/dashboard/${tenantSlug}/ordenes/nueva`}
-        aria-label="Nueva orden"
-      >
+      <FAB onClick={() => setCreateOpen(true)} aria-label="Nueva orden">
         <Plus className="h-6 w-6 shrink-0" aria-hidden />
       </FAB>
+
+      {activeTenant && (
+        <OrderFormSheet
+          isOpen={createOpen}
+          onClose={() => setCreateOpen(false)}
+          tenantId={activeTenant.id}
+          tenantSlug={tenantSlug}
+        />
+      )}
     </div>
   );
 }

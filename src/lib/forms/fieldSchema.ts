@@ -119,7 +119,16 @@ export function buildYupSchema(
 
     let stringSchema = yup.string();
     if (field.type === "email") {
-      stringSchema = stringSchema.email("Correo inválido");
+      // Blank counts as "absent" for an optional email — same reasoning as
+      // the number transform above: RHF registers an empty input as "", and
+      // .email() rejects "" as an invalid format even for .optional() fields.
+      stringSchema = stringSchema
+        .transform((value, original) =>
+          typeof original === "string" && original.trim() === ""
+            ? undefined
+            : value,
+        )
+        .email("Correo inválido");
     }
     if (field.yupString) stringSchema = field.yupString(stringSchema);
 

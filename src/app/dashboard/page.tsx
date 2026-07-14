@@ -38,6 +38,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { OrderCardMobile } from "@/components/orders/OrderCardMobile";
+import { OrderFormSheet } from "@/features/orders/components/OrderFormSheet";
 import { ActiveTablesCard } from "@/features/qr/components/ActiveTablesCard";
 import { useActiveTables } from "@/features/qr/hooks/useActiveTables";
 import type {
@@ -53,6 +54,7 @@ export default function DashboardPage() {
   const [period, setPeriod] = useState<
     "today" | "week" | "fortnight" | "month" | "cutoff"
   >("week");
+  const [createOrderOpen, setCreateOrderOpen] = useState(false);
 
   // Fetch the last cutoff to use as date_from when period === "cutoff"
   const cutoffsKey =
@@ -202,13 +204,14 @@ export default function DashboardPage() {
                 },
               ]}
             />
-            <Link
-              href={`/dashboard/${activeTenant.slug}/ordenes/nueva`}
+            <button
+              type="button"
+              onClick={() => setCreateOrderOpen(true)}
               className={`${pageHeaderCta} justify-center whitespace-nowrap sm:w-auto`}
             >
               <Plus className="h-4 w-4 shrink-0" aria-hidden />
               Nueva Orden
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -769,6 +772,13 @@ export default function DashboardPage() {
           )}
         </section>
       </div>
+
+      <OrderFormSheet
+        isOpen={createOrderOpen}
+        onClose={() => setCreateOrderOpen(false)}
+        tenantId={activeTenant.id}
+        tenantSlug={activeTenant.slug}
+      />
     </div>
   );
 }
