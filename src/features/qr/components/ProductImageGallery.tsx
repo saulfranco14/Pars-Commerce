@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Image from "next/image";
 
 import { BrandImage } from "@/features/qr/components/BrandImage";
 
@@ -72,14 +73,17 @@ export function ProductImageGallery({
         className="flex h-full w-full snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {images.map((src, i) => (
-          <div key={src} className="h-full w-full shrink-0 snap-center bg-border-soft/30">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+          <div
+            key={src}
+            className="relative h-full w-full shrink-0 snap-center bg-border-soft/30"
+          >
+            <Image
               src={src}
               alt={i === 0 ? alt : `${alt} — foto ${i + 1}`}
+              fill
               loading={i === 0 ? "eager" : "lazy"}
-              decoding="async"
-              className="h-full w-full object-cover"
+              sizes="(max-width: 640px) 100vw, 512px"
+              className="object-cover"
             />
           </div>
         ))}

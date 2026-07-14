@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { formatCurrency, getInitials } from "@/features/qr/helpers/format";
 
 interface TableMenuHeroProps {
@@ -32,13 +34,14 @@ export function TableMenuHero({
     <div className="w-full">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/90">
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/90">
             {tenantLogoUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
+              <Image
                 src={tenantLogoUrl}
                 alt={tenantName ?? tableLabel}
-                className="h-full w-full rounded-xl object-cover"
+                fill
+                sizes="40px"
+                className="rounded-xl object-cover"
               />
             ) : (
               <span className="text-sm font-bold uppercase tracking-tight text-accent">

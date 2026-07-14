@@ -245,51 +245,86 @@ export async function GET(request: Request) {
         return (o?.table_label as string | null) ?? "otra mesa";
       }
 
+      // incoming/outgoing are independent lookups (different orders) — when
+      // BOTH exist, resolve their labels together instead of one after the
+      // other.
+      const [incomingLabel, outgoingLabel] = await Promise.all([
+        incoming ? labelForOrder(incoming.requester_order_id) : null,
+        outgoing ? labelForOrder(outgoing.target_order_id) : null,
+      ]);
+
       response.incoming_merge_request = incoming
         ? {
             id: incoming.id,
-            requester_label: await labelForOrder(incoming.requester_order_id),
+            requester_label: incomingLabel,
             expires_at: incoming.expires_at,
           }
         : null;
       response.outgoing_merge_request = outgoing
         ? {
             id: outgoing.id,
-            target_label: await labelForOrder(outgoing.target_order_id),
+            target_label: outgoingLabel,
             expires_at: outgoing.expires_at,
           }
         : null;
     }
 
-    const { data: menu } = await admin
-      .from("products")
-      .select(
-        "id, name, slug, type, price, image_url, subcatalog_id, description",
-      )
-      .eq("tenant_id", tenant.id)
-      .eq("is_public", true)
-      .is("deleted_at", null)
-      .order("name");
+    // menu and promoRows only depend on tenant.id, not on each other — fetch
+    // both at once instead of paying their latency twice in sequence.
+    const [{ data: menu }, { data: promoRows }] = await Promise.all([
+      admin
+        .from("products")
+        .select(
+          "id, name, slug, type, price, image_url, subcatalog_id, description",
+        )
+        .eq("tenant_id", tenant.id)
+        .eq("is_public", true)
+        .is("deleted_at", null)
+        .order("name"),
+      admin
+        .from("promotions")
+        .select(
+          "id, name, type, value, badge_label, image_url, description, valid_from, valid_until",
+        )
+        .eq("tenant_id", tenant.id)
+        .order("created_at", { ascending: false }),
+    ]);
 
-    // Multi-photo gallery: `product_images` is the source of truth (ordered
-    // by `position`), same pattern as the public storefront
-    // (`/api/public/products`). Falls back to the single `image_url` when a
-    // product has no rows there yet.
+    // Multi-photo gallery + categories both depend on the menu we just
+    // fetched, but NOT on each other — fetch them together too.
     const menuProductIds = (menu ?? []).map((p) => p.id as string);
-    let imagesByProduct = new Map<string, string[]>();
-    if (menuProductIds.length > 0) {
-      const { data: productImages } = await admin
-        .from("product_images")
-        .select("product_id, url, position")
-        .in("product_id", menuProductIds)
-        .order("position", { ascending: true });
-      imagesByProduct = (productImages ?? []).reduce((map, row) => {
-        const list = map.get(row.product_id) ?? [];
-        list.push(row.url);
-        map.set(row.product_id, list);
-        return map;
-      }, new Map<string, string[]>());
-    }
+    const usedCategoryIds = new Set(
+      (menu ?? [])
+        .map((p) => p.subcatalog_id as string | null)
+        .filter((id): id is string => !!id),
+    );
+    const [{ data: productImages }, { data: categories }] = await Promise.all([
+      menuProductIds.length > 0
+        ? admin
+            .from("product_images")
+            .select("product_id, url, position")
+            .in("product_id", menuProductIds)
+            .order("position", { ascending: true })
+        : Promise.resolve({ data: [] }),
+      usedCategoryIds.size > 0
+        ? admin
+            .from("product_subcatalogs")
+            .select("id, name")
+            .eq("tenant_id", tenant.id)
+            .in("id", Array.from(usedCategoryIds))
+            .order("name")
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    // `product_images` is the source of truth (ordered by `position`), same
+    // pattern as the public storefront (`/api/public/products`). Falls back
+    // to the single `image_url` when a product has no rows there yet.
+    const imagesByProduct = (productImages ?? []).reduce((map, row) => {
+      const list = map.get(row.product_id) ?? [];
+      list.push(row.url);
+      map.set(row.product_id, list);
+      return map;
+    }, new Map<string, string[]>());
 
     response.menu = (menu ?? []).map((p) => ({
       ...p,
@@ -299,35 +334,10 @@ export async function GET(request: Request) {
           ? [p.image_url]
           : [],
     }));
-
-    // Categories (subcatalogs) so the menu can group products. Only the ones
-    // that actually have public products are returned — no empty sections.
-    const usedCategoryIds = new Set(
-      (menu ?? [])
-        .map((p) => p.subcatalog_id as string | null)
-        .filter((id): id is string => !!id),
-    );
-    if (usedCategoryIds.size > 0) {
-      const { data: categories } = await admin
-        .from("product_subcatalogs")
-        .select("id, name")
-        .eq("tenant_id", tenant.id)
-        .in("id", Array.from(usedCategoryIds))
-        .order("name");
-      response.categories = categories ?? [];
-    } else {
-      response.categories = [];
-    }
+    response.categories = categories ?? [];
 
     // Active promotions to tease inside the menu (Rappi-style banners). Same
     // active-window rule as the storefront; trimmed to what the banner needs.
-    const { data: promoRows } = await admin
-      .from("promotions")
-      .select(
-        "id, name, type, value, badge_label, image_url, description, valid_from, valid_until",
-      )
-      .eq("tenant_id", tenant.id)
-      .order("created_at", { ascending: false });
     response.promotions = filterActivePromotions(promoRows ?? [], Date.now()).map(
       (p) => ({
         id: p.id,

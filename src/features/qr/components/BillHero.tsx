@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { CheckCircle2, Receipt } from "lucide-react";
 
 import { formatCurrency, getInitials } from "@/features/qr/helpers/format";
@@ -31,13 +32,14 @@ export function BillHero({
   return (
     <div className="w-full">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/90 p-1">
+        <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/90 p-1">
           {tenantLogoUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
+            <Image
               src={tenantLogoUrl}
               alt={tenantName ?? "Negocio"}
-              className="h-full w-full object-contain"
+              fill
+              sizes="40px"
+              className="object-contain"
             />
           ) : tenantName ? (
             <span className="text-sm font-bold uppercase tracking-tight text-accent">

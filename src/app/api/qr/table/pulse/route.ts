@@ -57,6 +57,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ active: false, order: order ?? null });
   }
 
+  // Everything below only depends on `orderId` — none of these five reads
+  // depend on each other's result, so they all go in one Promise.all instead
+  // of paying their latency one after another. (Previously the 3 counts were
+  // already parallel, but devices and the merge-request lookup each waited
+  // for the previous step to finish first for no real reason.)
+  //
   // How many line items exist right now, and how many are ready/received.
   // The customer screen compares ALL of these to what it last rendered:
   // itemCount alone misses a per-LINE transition that doesn't change the
@@ -67,40 +73,39 @@ export async function GET(request: Request) {
   // those two signals. received_item_count catches it: any line leaving
   // "received" changes this count regardless of which status it moves to.
   // `head: true` = count only, zero rows transferred either way.
-  const [{ count: itemCount }, { count: readyItemCount }, { count: receivedItemCount }] =
-    await Promise.all([
-      admin
-        .from("order_items")
-        .select("id", { count: "exact", head: true })
-        .eq("order_id", orderId),
-      admin
-        .from("order_items")
-        .select("id", { count: "exact", head: true })
-        .eq("order_id", orderId)
-        .eq("fulfillment_status", "ready"),
-      admin
-        .from("order_items")
-        .select("id", { count: "exact", head: true })
-        .eq("order_id", orderId)
-        .eq("fulfillment_status", "received"),
-    ]);
-
-  // One devices read → connected count, whether the caller is the owner, and
-  // the caller's own preparation state (per-person "ya puedes pagar").
-  const { data: devices } = await admin
-    .from("order_devices")
-    .select("id, device_fingerprint, is_owner, fulfillment_status")
-    .eq("order_id", orderId);
+  const nowIso = new Date().toISOString();
+  const [
+    { count: itemCount },
+    { count: readyItemCount },
+    { count: receivedItemCount },
+    { data: devices },
+    { incoming, outgoing },
+  ] = await Promise.all([
+    admin
+      .from("order_items")
+      .select("id", { count: "exact", head: true })
+      .eq("order_id", orderId),
+    admin
+      .from("order_items")
+      .select("id", { count: "exact", head: true })
+      .eq("order_id", orderId)
+      .eq("fulfillment_status", "ready"),
+    admin
+      .from("order_items")
+      .select("id", { count: "exact", head: true })
+      .eq("order_id", orderId)
+      .eq("fulfillment_status", "received"),
+    // One devices read → connected count, whether the caller is the owner,
+    // and the caller's own preparation state (per-person "ya puedes pagar").
+    admin
+      .from("order_devices")
+      .select("id, device_fingerprint, is_owner, fulfillment_status")
+      .eq("order_id", orderId),
+    getPendingMergeRequests(admin, orderId, nowIso),
+  ]);
   const myDevice = fingerprint
     ? (devices ?? []).find((d) => d.device_fingerprint === fingerprint)
     : undefined;
-
-  const nowIso = new Date().toISOString();
-  const { incoming, outgoing } = await getPendingMergeRequests(
-    admin,
-    orderId,
-    nowIso,
-  );
 
   // One labels read for whichever "other tables" the requests reference.
   const otherOrderIds = [

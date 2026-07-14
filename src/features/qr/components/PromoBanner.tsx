@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Tag } from "lucide-react";
 
 import { formatPromoLabel } from "@/features/qr/helpers/formatPromoLabel";
@@ -26,15 +27,15 @@ export function PromoBanner({ promotion }: PromoBannerProps) {
       className="flex items-center gap-3 rounded-2xl border border-accent/30 bg-accent/5 p-3"
       aria-label={`Promoción: ${label}`}
     >
-      <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-accent/10 text-accent">
+      <span className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-accent/10 text-accent">
         {promotion.image_url ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
+          <Image
             src={promotion.image_url}
             alt={promotion.name}
+            fill
             loading="lazy"
-            decoding="async"
-            className="h-full w-full rounded-xl object-cover"
+            sizes="56px"
+            className="rounded-xl object-cover"
           />
         ) : (
           <Tag className="h-6 w-6" strokeWidth={2.25} />

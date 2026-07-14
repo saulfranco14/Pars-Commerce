@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Sparkles } from "lucide-react";
 
 import { getInitials } from "@/features/qr/helpers/format";
@@ -16,8 +17,10 @@ import type { BrandImageProps } from "@/features/qr/interfaces/brandImage";
  *   3. `name`     → a colored tile with the business initials.
  *   4. (fallback) → the Pars Commerce mark on an accent gradient.
  *
- * Pure presentational: no fetch, no state. Uses a raw <img> (same as the rest
- * of the repo's menu — no next/image yet), lazy + async decoded.
+ * Pure presentational: no fetch, no state. Uses next/image (configured for
+ * *.supabase.co in next.config.ts) so every photo is served AVIF/WebP at the
+ * tile's real size instead of shipping the original upload — the same 96px
+ * card tile no longer downloads a multi-MB phone-camera photo.
  */
 export function BrandImage({
   src,
@@ -27,20 +30,20 @@ export function BrandImage({
   className = "",
   rounded = "rounded-none",
 }: BrandImageProps) {
-  const tileBase = `flex items-center justify-center overflow-hidden ${rounded} ${className}`;
+  const tileBase = `relative flex items-center justify-center overflow-hidden ${rounded} ${className}`;
   const trimmedName = name?.trim() ?? "";
 
   // Tier 1 — product photo.
   if (src) {
     return (
       <div className={`${tileBase} bg-border-soft/30`}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={src}
           alt={alt}
+          fill
           loading="lazy"
-          decoding="async"
-          className="h-full w-full object-cover"
+          sizes="(max-width: 640px) 96px, 128px"
+          className="object-cover"
         />
       </div>
     );
@@ -52,13 +55,13 @@ export function BrandImage({
   if (logoUrl) {
     return (
       <div className={`${tileBase} bg-border-soft/30`}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={logoUrl}
           alt={alt}
+          fill
           loading="lazy"
-          decoding="async"
-          className={`h-full w-full object-cover ${rounded}`}
+          sizes="(max-width: 640px) 96px, 128px"
+          className={`object-cover ${rounded}`}
         />
       </div>
     );

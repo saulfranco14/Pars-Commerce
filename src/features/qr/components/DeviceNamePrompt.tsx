@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { ArrowRight, User } from "lucide-react";
 
 import { Notification } from "@/components/ui/Notification";
@@ -36,13 +37,14 @@ export function DeviceNamePrompt({
 
   const header = (
     <div className="flex items-center gap-3">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/90 p-1">
+      <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/90 p-1">
         {tenantLogoUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
+          <Image
             src={tenantLogoUrl}
             alt={tenantName}
-            className="h-full w-full object-contain"
+            fill
+            sizes="44px"
+            className="object-contain"
           />
         ) : (
           <span className="text-base font-bold uppercase tracking-tight text-accent">
