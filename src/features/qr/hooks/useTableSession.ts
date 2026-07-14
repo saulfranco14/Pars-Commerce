@@ -126,6 +126,9 @@ export function useTableSession(token: string): UseTableSessionResult {
                       total: pulse.order.total ?? prev.order.total,
                       item_count:
                         pulse.order.item_count ?? prev.order.item_count,
+                      ready_item_count:
+                        pulse.order.ready_item_count ??
+                        prev.order.ready_item_count,
                     }
                   : prev.order,
               connected_devices:

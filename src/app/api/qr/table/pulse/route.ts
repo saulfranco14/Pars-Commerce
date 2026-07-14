@@ -57,14 +57,23 @@ export async function GET(request: Request) {
     return NextResponse.json({ active: false, order: order ?? null });
   }
 
-  // How many line items exist right now. The customer screen compares this to
-  // what it last rendered to detect a NEW batch (another person ordered, or a
-  // second round from the same person) and refresh the tracker without a full
-  // resolve. `head: true` = count only, zero rows transferred.
-  const { count: itemCount } = await admin
-    .from("order_items")
-    .select("id", { count: "exact", head: true })
-    .eq("order_id", orderId);
+  // How many line items exist right now, and how many are ready. The customer
+  // screen compares BOTH to what it last rendered: itemCount alone misses a
+  // per-LINE change (one item flips to "ready" while the order-level summary
+  // stays "in_progress" because another line hasn't caught up yet) — that
+  // needs its own counter to detect. `head: true` = count only, zero rows
+  // transferred either way.
+  const [{ count: itemCount }, { count: readyItemCount }] = await Promise.all([
+    admin
+      .from("order_items")
+      .select("id", { count: "exact", head: true })
+      .eq("order_id", orderId),
+    admin
+      .from("order_items")
+      .select("id", { count: "exact", head: true })
+      .eq("order_id", orderId)
+      .eq("fulfillment_status", "ready"),
+  ]);
 
   // One devices read → connected count, whether the caller is the owner, and
   // the caller's own preparation state (per-person "ya puedes pagar").
@@ -110,6 +119,10 @@ export async function GET(request: Request) {
       my_fulfillment_status: myDevice?.fulfillment_status ?? "received",
       total: Number(order.total ?? 0),
       item_count: itemCount ?? 0,
+      /** How many lines are "ready" right now — detects per-line progress
+       *  even when the order-level summary hasn't caught up (other lines
+       *  still in_progress). */
+      ready_item_count: readyItemCount ?? 0,
     },
     connected_devices: (devices ?? []).length,
     i_am_owner: myDevice?.is_owner === true,

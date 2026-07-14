@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { CheckCircle2, Clock, ShoppingBag, User, Users } from "lucide-react";
 
+import { StatusBadge } from "@/components/admin/StatusBadge";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import {
   groupItemsByPerson,
@@ -18,6 +19,7 @@ import type {
   BillItem,
 } from "@/features/qr/interfaces/billSummary";
 import type { SplitGroup } from "@/features/qr/interfaces/splitBill";
+import type { StatusTone } from "@/components/admin/StatusBadge";
 
 interface BillSummaryProps {
   items: BillItem[];
@@ -28,6 +30,12 @@ interface BillSummaryProps {
   /** When false, per-group pay buttons are hidden (order not ready yet). */
   canPay?: boolean;
 }
+
+const ITEM_STATUS_META: Record<string, { label: string; tone: StatusTone }> = {
+  received: { label: "Recibido", tone: "neutral" },
+  in_progress: { label: "En proceso", tone: "warning" },
+  ready: { label: "Listo", tone: "success" },
+};
 
 /**
  * Presentational bill summary: items grouped by person, plus the split-group
@@ -89,26 +97,38 @@ export function BillSummary({
                   </div>
                 )}
                 <ul className="space-y-2.5">
-                  {person.items.map((item) => (
-                    <li
-                      key={item.id}
-                      className="flex items-start justify-between gap-3 border-b border-border-soft/50 pb-2.5 last:border-0 last:pb-0"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-foreground">
-                          {item.quantity}× {item.product_name}
-                        </p>
-                        {isMerged && item.origin_table_label && (
-                          <span className="mt-1 inline-block rounded-full bg-border-soft/70 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                            {item.origin_table_label}
-                          </span>
-                        )}
-                      </div>
-                      <span className="shrink-0 text-sm font-bold text-foreground">
-                        {formatCurrency(item.subtotal)}
-                      </span>
-                    </li>
-                  ))}
+                  {person.items.map((item) => {
+                    const itemMeta =
+                      ITEM_STATUS_META[item.fulfillment_status ?? "received"] ??
+                      ITEM_STATUS_META.received;
+                    return (
+                      <li
+                        key={item.id}
+                        className="flex items-start justify-between gap-3 border-b border-border-soft/50 pb-2.5 last:border-0 last:pb-0"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-foreground">
+                            {item.quantity}× {item.product_name}
+                          </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                            {isMerged && item.origin_table_label && (
+                              <span className="inline-block rounded-full bg-border-soft/70 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                                {item.origin_table_label}
+                              </span>
+                            )}
+                            <StatusBadge
+                              tone={itemMeta.tone}
+                              label={itemMeta.label}
+                              compact
+                            />
+                          </div>
+                        </div>
+                        <span className="shrink-0 text-sm font-bold text-foreground">
+                          {formatCurrency(item.subtotal)}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Check,
@@ -11,6 +11,7 @@ import {
   Receipt,
 } from "lucide-react";
 
+import { StatusBadge } from "@/components/admin/StatusBadge";
 import {
   formatCurrency,
   formatRelativeTime,
@@ -18,6 +19,7 @@ import {
 } from "@/features/qr/helpers/format";
 
 import type { BillDevice, BillItem } from "@/features/qr/hooks/useBillData";
+import type { StatusTone } from "@/components/admin/StatusBadge";
 import type { LucideIcon } from "lucide-react";
 
 interface OrderTrackerCardProps {
@@ -47,6 +49,12 @@ const STEPS: { key: string; label: string; icon: LucideIcon }[] = [
   { key: "ready", label: "Listo", icon: PackageCheck },
 ];
 
+const ITEM_STATUS_META: Record<string, { label: string; tone: StatusTone }> = {
+  received: { label: "Recibido", tone: "neutral" },
+  in_progress: { label: "En proceso", tone: "warning" },
+  ready: { label: "Listo", tone: "success" },
+};
+
 function stepStates(fulfillmentStatus: string, paid: boolean): StepState[] {
   if (paid) return ["done", "done", "done"];
   if (fulfillmentStatus === "ready") return ["done", "done", "done"];
@@ -56,10 +64,22 @@ function stepStates(fulfillmentStatus: string, paid: boolean): StepState[] {
   return ["done", "pending", "pending"];
 }
 
-function statusMessage(fulfillmentStatus: string, paid: boolean): string {
+function statusMessage(
+  fulfillmentStatus: string,
+  paid: boolean,
+  readyCount: number,
+  totalCount: number,
+  hasNewArrival: boolean,
+): string {
   if (paid) return "Cuenta pagada. ¡Gracias!";
   if (fulfillmentStatus === "ready")
     return "¡Listo! Ya puedes pagar tu cuenta.";
+  if (readyCount > 0 && readyCount < totalCount) {
+    const base = `${readyCount} de ${totalCount} productos ya están listos.`;
+    // Only call out a fresh addition — repeating every state as three
+    // numbers reads as noise, one extra word doesn't.
+    return hasNewArrival ? `${base} Se agregó algo nuevo.` : base;
+  }
   if (fulfillmentStatus === "in_progress")
     return "El negocio está preparando tu pedido.";
   return "El negocio ya recibió tu pedido.";
@@ -90,9 +110,41 @@ export function OrderTrackerCard({
   // more room without hiding the customer's status.
   const [showDetails, setShowDetails] = useState(false);
 
+  const paid = orderStatus === "paid";
+
+  // Some lines can be ready while others aren't (a drink comes out before a
+  // service). The 3-step stepper stays order-level, but this highlights
+  // partial progress right on the "En proceso" step — visible without
+  // expanding the item detail or opening the bill.
+  const readyItemCount = items.filter(
+    (i) => i.fulfillment_status === "ready",
+  ).length;
+  const hasNewArrival =
+    !paid &&
+    readyItemCount > 0 &&
+    items.some((i) => (i.fulfillment_status ?? "received") === "received");
+  const hasPartialProgress =
+    !paid && readyItemCount > 0 && readyItemCount < items.length;
+
+  // Momentary "just delivered" flash (Uber/Didi style) — fires ONCE right
+  // when a line flips to ready, then settles into the plain badge state.
+  // Distinct from a persistent ping: it's a one-shot confirmation, not an
+  // ongoing attention call. Hooks must run unconditionally, so this sits
+  // above the items.length early-return below.
+  const [justCompletedPulse, setJustCompletedPulse] = useState(false);
+  const prevReadyCountRef = useRef(readyItemCount);
+  useEffect(() => {
+    if (readyItemCount > prevReadyCountRef.current) {
+      setJustCompletedPulse(true);
+      const timer = setTimeout(() => setJustCompletedPulse(false), 1200);
+      prevReadyCountRef.current = readyItemCount;
+      return () => clearTimeout(timer);
+    }
+    prevReadyCountRef.current = readyItemCount;
+  }, [readyItemCount]);
+
   if (items.length === 0) return null;
 
-  const paid = orderStatus === "paid";
   const isReady = paid || fulfillmentStatus === "ready";
   const states = stepStates(fulfillmentStatus, paid);
   const deviceById = new Map(devices.map((d) => [d.id, d] as const));
@@ -163,6 +215,24 @@ export function OrderTrackerCard({
                   ) : (
                     <Icon className="relative h-4 w-4" />
                   )}
+                  {/* Partial progress marker: at least one line is ready
+                      while the order overall is still "en proceso" — a
+                      glanceable cue without opening the detail. Pulses ONCE
+                      right when a line just flipped to ready (Uber/Didi-style
+                      delivery confirmation), then settles into a plain dot. */}
+                  {step.key === "in_progress" && hasPartialProgress && (
+                    <span
+                      aria-hidden
+                      className={`absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-surface transition-transform duration-300 ${
+                        justCompletedPulse ? "scale-125" : "scale-100"
+                      }`}
+                    >
+                      {justCompletedPulse && (
+                        <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400" />
+                      )}
+                      <Check className="relative h-2 w-2 text-white" strokeWidth={3} />
+                    </span>
+                  )}
                 </span>
                 <span
                   className={`whitespace-nowrap text-[10px] font-bold ${
@@ -181,11 +251,17 @@ export function OrderTrackerCard({
 
       {/* Status line — reflects the staff-controlled preparation state */}
       <p
-        className={`mt-3 text-center text-xs font-semibold ${
-          isReady ? "text-accent" : "text-muted-foreground"
+        className={`mt-3 text-center text-xs font-semibold transition-colors duration-300 ${
+          isReady || hasPartialProgress ? "text-accent" : "text-muted-foreground"
         }`}
       >
-        {statusMessage(fulfillmentStatus, paid)}
+        {statusMessage(
+          fulfillmentStatus,
+          paid,
+          readyItemCount,
+          items.length,
+          hasNewArrival,
+        )}
       </p>
 
       {/* Sent items — grouped into rounds (tandas); collapsible. */}
@@ -211,6 +287,9 @@ export function OrderTrackerCard({
                 const isMine =
                   !!item.added_by_device_id &&
                   item.added_by_device_id === myDeviceId;
+                const itemMeta =
+                  ITEM_STATUS_META[item.fulfillment_status ?? "received"] ??
+                  ITEM_STATUS_META.received;
                 return (
                   <li
                     key={item.id}
@@ -220,21 +299,30 @@ export function OrderTrackerCard({
                       <p className="text-sm font-medium text-foreground">
                         {item.quantity}× {item.product_name}
                       </p>
-                      {device && (
-                        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <span
-                            aria-hidden
-                            className="h-1.5 w-1.5 rounded-full"
-                            style={{ backgroundColor: device.color_hex }}
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                        {device && (
+                          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <span
+                              aria-hidden
+                              className="h-1.5 w-1.5 rounded-full"
+                              style={{ backgroundColor: device.color_hex }}
+                            />
+                            {device.display_name ?? "Cliente"}
+                            {isMine && (
+                              <span className="font-semibold text-accent">
+                                (tú)
+                              </span>
+                            )}
+                          </p>
+                        )}
+                        {!paid && (
+                          <StatusBadge
+                            tone={itemMeta.tone}
+                            label={itemMeta.label}
+                            compact
                           />
-                          {device.display_name ?? "Cliente"}
-                          {isMine && (
-                            <span className="font-semibold text-accent">
-                              (tú)
-                            </span>
-                          )}
-                        </p>
-                      )}
+                        )}
+                      </div>
                     </div>
                     <span className="shrink-0 text-sm font-bold text-foreground">
                       {formatCurrency(item.subtotal)}

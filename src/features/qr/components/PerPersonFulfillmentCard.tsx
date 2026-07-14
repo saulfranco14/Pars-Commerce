@@ -8,16 +8,21 @@ import {
 } from "@/components/admin/actionButtonClasses";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 
-import type { AdminViewDevice } from "@/features/qr/services/tableAdminViewService";
+import type { AdminViewDevice, AdminViewItem } from "@/features/qr/services/tableAdminViewService";
 import type { FulfillmentStatus } from "@/features/qr/services/tableFulfillmentService";
 
 interface PerPersonFulfillmentCardProps {
   devices: AdminViewDevice[];
+  /** All order lines — filtered per device below (added_by_device_id). */
+  items: AdminViewItem[];
   /** id of the device whose row is mid-request (null = none). */
   busyDeviceId: string | null;
+  /** id of the order_item whose row is mid-request (null = none). */
+  busyItemId: string | null;
   /** true while a whole-table action is running. */
   busyAll: boolean;
   onAdvanceDevice: (deviceId: string, status: FulfillmentStatus) => void;
+  onAdvanceItem: (orderItemId: string, status: FulfillmentStatus) => void;
   onAdvanceAll: (status: FulfillmentStatus) => void;
 }
 
@@ -31,9 +36,13 @@ const STATUS_META: Record<
 };
 
 /**
- * Staff control to advance preparation state PER PERSON. With N people at a
- * table, one person's items can be ready while another's aren't — so each
- * connected client gets its own row + advance buttons. A whole-table shortcut
+ * Staff control to advance preparation state PER PRODUCT LINE, grouped by
+ * person. A single customer can order a fast item (a drink) and a slow one
+ * (a service) in the same batch — one can be ready while the other isn't, so
+ * each line gets its own status + advance buttons. The device's own status
+ * (shown as a badge next to their name) is a DERIVED summary from its
+ * lines — advancing a line updates it automatically via the DB trigger
+ * cascade, no separate action needed for it. A whole-table shortcut still
  * covers the common "everything came out together" case in one tap.
  *
  * Neutral, multi-business copy (no kitchen wording). Buttons reuse the shared
@@ -41,9 +50,12 @@ const STATUS_META: Record<
  */
 export function PerPersonFulfillmentCard({
   devices,
+  items,
   busyDeviceId,
+  busyItemId,
   busyAll,
   onAdvanceDevice,
+  onAdvanceItem,
   onAdvanceAll,
 }: PerPersonFulfillmentCardProps) {
   const hasDevices = devices.length > 0;
@@ -59,8 +71,8 @@ export function PerPersonFulfillmentCard({
         </h2>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Avanza el estado de cada cliente. Podrá pagar su parte cuando lo marques
-        como listo.
+        Avanza cada producto. Un cliente puede pagar su parte cuando TODOS sus
+        productos estén listos.
       </p>
 
       {/* Whole-table shortcut */}
@@ -100,8 +112,8 @@ export function PerPersonFulfillmentCard({
         </div>
       )}
 
-      {/* Per-person rows */}
-      <div className="mt-3 space-y-2">
+      {/* Per-person groups, each expanded into its own product lines */}
+      <div className="mt-3 space-y-3">
         {!hasDevices && (
           <p className="rounded-lg bg-border-soft/40 px-3 py-3 text-center text-xs text-muted-foreground">
             Aún no hay clientes conectados. En cuanto alguien escanee el QR
@@ -110,83 +122,129 @@ export function PerPersonFulfillmentCard({
         )}
 
         {devices.map((device) => {
-          const status = device.fulfillment_status ?? "received";
-          const meta = STATUS_META[status] ?? STATUS_META.received;
-          const busy = busyDeviceId === device.id;
+          const deviceStatus = device.fulfillment_status ?? "received";
+          const deviceMeta = STATUS_META[deviceStatus] ?? STATUS_META.received;
+          const deviceBusy = busyDeviceId === device.id;
+          const deviceItems = items.filter(
+            (item) => item.added_by_device_id === device.id,
+          );
+
           return (
             <div
               key={device.id}
-              className="flex flex-wrap items-center gap-2 rounded-xl border border-border px-3 py-2.5"
+              className="rounded-xl border border-border px-3 py-2.5"
             >
-              <span
-                aria-hidden
-                className="h-6 w-6 shrink-0 rounded-full"
-                style={{ backgroundColor: device.color_hex }}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-foreground">
-                  {device.display_name?.trim() || "Cliente"}
-                </p>
-              </div>
-              <StatusBadge tone={meta.tone} label={meta.label} />
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  aria-hidden
+                  className="h-6 w-6 shrink-0 rounded-full"
+                  style={{ backgroundColor: device.color_hex }}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {device.display_name?.trim() || "Cliente"}
+                  </p>
+                </div>
+                <StatusBadge tone={deviceMeta.tone} label={deviceMeta.label} />
 
-              <div className="flex gap-1.5">
-                {status === "received" && (
+                {deviceStatus === "ready" && (
                   <button
                     type="button"
                     onClick={() => onAdvanceDevice(device.id, "in_progress")}
-                    disabled={busy}
-                    className={adminActionButtonPrimary}
-                  >
-                    {busy ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <ArrowRight className="h-4 w-4" />
-                    )}
-                    Iniciar
-                  </button>
-                )}
-                {status === "in_progress" && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => onAdvanceDevice(device.id, "received")}
-                      disabled={busy}
-                      className={adminActionButtonSecondary}
-                      aria-label="Regresar a recibido"
-                    >
-                      <Undo2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onAdvanceDevice(device.id, "ready")}
-                      disabled={busy}
-                      className={adminActionButtonPrimary}
-                    >
-                      {busy ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <PackageCheck className="h-4 w-4" />
-                      )}
-                      Listo
-                    </button>
-                  </>
-                )}
-                {status === "ready" && (
-                  <button
-                    type="button"
-                    onClick={() => onAdvanceDevice(device.id, "in_progress")}
-                    disabled={busy}
+                    disabled={deviceBusy}
                     className={adminActionButtonSecondary}
                   >
-                    {busy ? (
+                    {deviceBusy ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Undo2 className="h-4 w-4" />
                     )}
-                    Regresar
+                    Regresar todo
                   </button>
                 )}
+              </div>
+
+              {/* Product lines for this person */}
+              <div className="mt-2 space-y-1.5 border-t border-border-soft pt-2">
+                {deviceItems.length === 0 && (
+                  <p className="px-1 text-xs text-muted-foreground">
+                    Sin productos asignados.
+                  </p>
+                )}
+                {deviceItems.map((item) => {
+                  const itemStatus = item.fulfillment_status ?? "received";
+                  const itemMeta = STATUS_META[itemStatus] ?? STATUS_META.received;
+                  const itemBusy = busyItemId === item.id;
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex flex-wrap items-center gap-2 rounded-lg bg-border-soft/30 px-2.5 py-1.5"
+                    >
+                      <p className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
+                        {item.quantity}× {item.product_name}
+                      </p>
+                      <StatusBadge tone={itemMeta.tone} label={itemMeta.label} compact />
+                      <div className="flex gap-1.5">
+                        {itemStatus === "received" && (
+                          <button
+                            type="button"
+                            onClick={() => onAdvanceItem(item.id, "in_progress")}
+                            disabled={itemBusy}
+                            className={adminActionButtonPrimary}
+                          >
+                            {itemBusy ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <ArrowRight className="h-3.5 w-3.5" />
+                            )}
+                            Iniciar
+                          </button>
+                        )}
+                        {itemStatus === "in_progress" && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => onAdvanceItem(item.id, "received")}
+                              disabled={itemBusy}
+                              className={adminActionButtonSecondary}
+                              aria-label="Regresar a recibido"
+                            >
+                              <Undo2 className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onAdvanceItem(item.id, "ready")}
+                              disabled={itemBusy}
+                              className={adminActionButtonPrimary}
+                            >
+                              {itemBusy ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <PackageCheck className="h-3.5 w-3.5" />
+                              )}
+                              Listo
+                            </button>
+                          </>
+                        )}
+                        {itemStatus === "ready" && (
+                          <button
+                            type="button"
+                            onClick={() => onAdvanceItem(item.id, "in_progress")}
+                            disabled={itemBusy}
+                            className={adminActionButtonSecondary}
+                          >
+                            {itemBusy ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Undo2 className="h-3.5 w-3.5" />
+                            )}
+                            Regresar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );

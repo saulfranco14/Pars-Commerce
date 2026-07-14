@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
-import { resetFulfillmentForNewItems } from "@/features/qr/services/tableFulfillmentService";
 import {
   buildOrderItemRows,
   filterValidItems,
@@ -125,14 +124,12 @@ export async function POST(request: Request) {
     );
   }
 
-  // A new batch restarts THIS person's preparation state (received) — the
-  // journey begins again and the payment gate closes until the business marks
-  // the new work ready. Other people at the table are untouched.
-  await resetFulfillmentForNewItems(admin, {
-    orderId: body.order_id,
-    deviceId,
-  });
-
+  // The new line(s) are inserted with fulfillment_status defaulting to
+  // 'received' (column default) — the order_items -> order_devices -> orders
+  // trigger cascade (20260710000004) automatically re-derives this device's
+  // (and the order's) summary to in_progress if it had already reached
+  // ready, without touching the OTHER lines that were already done. Other
+  // people at the table are untouched either way.
   const addedSubtotal = rows.reduce(
     (acc, row) => acc + Number(row?.subtotal ?? 0),
     0,

@@ -185,6 +185,15 @@ export default function TableBillPage() {
       : data.order.fulfillment_status === "ready";
   const isReady = isPaid || myReady;
 
+  // Some lines can be ready while others aren't (a drink comes out before a
+  // service). Distinguish that from "nothing has started yet" so the banner
+  // doesn't read as if the whole order were untouched.
+  const readyItemCount = data.items.filter(
+    (i) => i.fulfillment_status === "ready",
+  ).length;
+  const hasPartialProgress =
+    !isReady && readyItemCount > 0 && readyItemCount < data.items.length;
+
   // The split-picker screen is a distinct sub-view: body shows the controls,
   // the "Confirmar división" CTA lives in the fixed footer below.
   const inSplitPicker = !isPaid && splitEnabled && canSplit;
@@ -317,8 +326,12 @@ export default function TableBillPage() {
         {!isPaid && !isReady && hasItems && (
           <Notification
             tone="info"
-            title="En preparación"
-            message="El negocio está preparando tu pedido. Podrás pagar en cuanto lo marque como listo."
+            title={hasPartialProgress ? "Parte de tu pedido ya está lista" : "En preparación"}
+            message={
+              hasPartialProgress
+                ? `${readyItemCount} de ${data.items.length} productos ya están listos. Revisa el detalle abajo — podrás pagar en cuanto estén todos.`
+                : "El negocio está preparando tu pedido. Podrás pagar en cuanto lo marque como listo."
+            }
           />
         )}
 

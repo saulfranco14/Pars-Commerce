@@ -45,6 +45,8 @@ export interface AdminViewItem {
   added_by_device_id: string | null;
   is_shared: boolean;
   created_at: string;
+  /** Per-line preparation state: received | in_progress | ready. */
+  fulfillment_status: string;
 }
 
 export interface AdminViewSplitGroup {
@@ -139,7 +141,7 @@ export async function getTableAdminView(
     admin
       .from("order_items")
       .select(
-        "id, product_id, quantity, unit_price, subtotal, added_by_device_id, is_shared, created_at",
+        "id, product_id, quantity, unit_price, subtotal, added_by_device_id, is_shared, created_at, fulfillment_status",
       )
       .eq("order_id", orderId)
       .order("created_at", { ascending: true }),
@@ -199,6 +201,7 @@ export async function getTableAdminView(
     added_by_device_id: item.added_by_device_id,
     is_shared: item.is_shared === true,
     created_at: item.created_at,
+    fulfillment_status: item.fulfillment_status ?? "received",
   }));
 
   const groupById = new Map(

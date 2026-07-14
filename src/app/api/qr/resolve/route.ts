@@ -263,13 +263,42 @@ export async function GET(request: Request) {
 
     const { data: menu } = await admin
       .from("products")
-      .select("id, name, slug, type, price, image_url, subcatalog_id, description")
+      .select(
+        "id, name, slug, type, price, image_url, subcatalog_id, description",
+      )
       .eq("tenant_id", tenant.id)
       .eq("is_public", true)
       .is("deleted_at", null)
       .order("name");
 
-    response.menu = menu ?? [];
+    // Multi-photo gallery: `product_images` is the source of truth (ordered
+    // by `position`), same pattern as the public storefront
+    // (`/api/public/products`). Falls back to the single `image_url` when a
+    // product has no rows there yet.
+    const menuProductIds = (menu ?? []).map((p) => p.id as string);
+    let imagesByProduct = new Map<string, string[]>();
+    if (menuProductIds.length > 0) {
+      const { data: productImages } = await admin
+        .from("product_images")
+        .select("product_id, url, position")
+        .in("product_id", menuProductIds)
+        .order("position", { ascending: true });
+      imagesByProduct = (productImages ?? []).reduce((map, row) => {
+        const list = map.get(row.product_id) ?? [];
+        list.push(row.url);
+        map.set(row.product_id, list);
+        return map;
+      }, new Map<string, string[]>());
+    }
+
+    response.menu = (menu ?? []).map((p) => ({
+      ...p,
+      image_urls: imagesByProduct.get(p.id as string)?.length
+        ? imagesByProduct.get(p.id as string)
+        : p.image_url
+          ? [p.image_url]
+          : [],
+    }));
 
     // Categories (subcatalogs) so the menu can group products. Only the ones
     // that actually have public products are returned — no empty sections.

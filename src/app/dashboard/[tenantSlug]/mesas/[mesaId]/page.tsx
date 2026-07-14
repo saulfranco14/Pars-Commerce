@@ -311,13 +311,16 @@ export default function MesaDetailPage() {
             </div>
           </section>
 
-          {/* Preparation state — staff advances each person received → ready */}
+          {/* Preparation state — staff advances each product line received → ready */}
           {data.order && (
             <PerPersonFulfillmentCard
               devices={data.devices}
+              items={data.items}
               busyDeviceId={live.busyDeviceId}
+              busyItemId={live.busyItemId}
               busyAll={live.advancing}
               onAdvanceDevice={live.advanceDevice}
+              onAdvanceItem={live.advanceItem}
               onAdvanceAll={live.advanceAll}
             />
           )}

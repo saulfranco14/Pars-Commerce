@@ -18,6 +18,8 @@ export interface BillItem {
   is_shared: boolean;
   origin_table_label: string | null;
   created_at: string | null;
+  /** Per-line preparation state: received | in_progress | ready. */
+  fulfillment_status?: string;
 }
 
 export interface BillDevice {

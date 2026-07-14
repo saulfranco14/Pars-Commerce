@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 
 import { FormSheet } from "@/components/ui/FormSheet";
-import { BrandImage } from "@/features/qr/components/BrandImage";
+import { ProductImageGallery } from "@/features/qr/components/ProductImageGallery";
 import { formatCurrency } from "@/features/qr/helpers/format";
 
 import type { MenuItem } from "@/features/qr/interfaces/tableCart";
@@ -56,8 +56,14 @@ export function ProductDetailSheet({
   return (
     <FormSheet isOpen={isOpen} onClose={onClose} title="" description="">
       <div className="space-y-4">
-        <BrandImage
-          src={product.image_url}
+        <ProductImageGallery
+          images={
+            product.image_urls?.length
+              ? product.image_urls
+              : product.image_url
+                ? [product.image_url]
+                : []
+          }
           logoUrl={tenantLogoUrl}
           name={tenantName}
           alt={product.name}

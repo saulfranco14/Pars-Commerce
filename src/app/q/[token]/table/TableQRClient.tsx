@@ -102,6 +102,7 @@ export function TableQRClient({
     order?.fulfillment_status ??
     tracker.fulfillmentStatus;
   const liveItemCount = order?.item_count;
+  const liveReadyItemCount = order?.ready_item_count;
 
   // Does this session already have a running order? Known from `order` on the
   // FIRST render (it comes from the session resolve, not the async tracker), so
@@ -120,11 +121,14 @@ export function TableQRClient({
     [tracker.items, menu],
   );
 
-  // When the pulse reports a fulfillment change OR a new batch of items landed
-  // (someone else at the table ordered, or a second round), re-read the tracker
-  // so the list, batches, and totals stay in sync without a full resolve.
+  // When the pulse reports a fulfillment change, a new batch of items landed,
+  // OR the count of "ready" lines changed (one product got marked ready while
+  // another is still in progress — the order-level summary alone doesn't
+  // change in that case), re-read the tracker so the per-line detail stays in
+  // sync without a full resolve.
   const prevFulfillmentRef = useRef<string | null>(null);
   const prevItemCountRef = useRef<number | null>(null);
+  const prevReadyItemCountRef = useRef<number | null>(null);
   useEffect(() => {
     if (!order?.id) return;
     const fulfillmentChanged =
@@ -134,11 +138,24 @@ export function TableQRClient({
       typeof liveItemCount === "number" &&
       prevItemCountRef.current !== null &&
       prevItemCountRef.current !== liveItemCount;
-    if (fulfillmentChanged || itemsChanged) void reloadTracker();
+    const readyItemsChanged =
+      typeof liveReadyItemCount === "number" &&
+      prevReadyItemCountRef.current !== null &&
+      prevReadyItemCountRef.current !== liveReadyItemCount;
+    if (fulfillmentChanged || itemsChanged || readyItemsChanged)
+      void reloadTracker();
     prevFulfillmentRef.current = liveFulfillment;
     if (typeof liveItemCount === "number")
       prevItemCountRef.current = liveItemCount;
-  }, [order?.id, liveFulfillment, liveItemCount, reloadTracker]);
+    if (typeof liveReadyItemCount === "number")
+      prevReadyItemCountRef.current = liveReadyItemCount;
+  }, [
+    order?.id,
+    liveFulfillment,
+    liveItemCount,
+    liveReadyItemCount,
+    reloadTracker,
+  ]);
 
   // The "¡Ya puedes pagar!" moment — announce ONCE per ready-cycle.
   //

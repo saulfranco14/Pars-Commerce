@@ -12,6 +12,7 @@ import {
   unlinkTable,
   advanceOrderFulfillment,
   advanceDeviceFulfillment,
+  advanceItemFulfillment,
   advanceAllFulfillment,
 } from "@/features/qr/services/tableAdminClientService";
 
@@ -47,6 +48,7 @@ export function useTableAdminLive(
   const [merging, setMerging] = useState(false);
   const [advancing, setAdvancing] = useState(false);
   const [busyDeviceId, setBusyDeviceId] = useState<string | null>(null);
+  const [busyItemId, setBusyItemId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function confirmPayment(paymentId: string) {
@@ -177,6 +179,24 @@ export function useTableAdminLive(
     }
   }
 
+  async function advanceItem(orderItemId: string, status: FulfillmentStatus) {
+    if (!orderId) return false;
+    setBusyItemId(orderItemId);
+    setError(null);
+    try {
+      await advanceItemFulfillment({ orderId, orderItemId, status });
+      await swr.mutate();
+      return true;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "No se pudo actualizar el estado",
+      );
+      return false;
+    } finally {
+      setBusyItemId(null);
+    }
+  }
+
   async function advanceAll(status: FulfillmentStatus) {
     if (!orderId) return false;
     setAdvancing(true);
@@ -202,6 +222,7 @@ export function useTableAdminLive(
     merging,
     advancing,
     busyDeviceId,
+    busyItemId,
     error,
     resetError: () => setError(null),
     confirmPayment,
@@ -211,6 +232,7 @@ export function useTableAdminLive(
     unlink,
     advanceFulfillment,
     advanceDevice,
+    advanceItem,
     advanceAll,
   };
 }

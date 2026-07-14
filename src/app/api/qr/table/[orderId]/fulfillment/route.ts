@@ -7,6 +7,7 @@ import {
   advanceAllDevicesFulfillment,
   advanceDeviceFulfillment,
   advanceFulfillment,
+  advanceItemFulfillment,
   type FulfillmentStatus,
 } from "@/features/qr/services/tableFulfillmentService";
 import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
@@ -17,6 +18,8 @@ interface RouteContext {
 
 interface RequestBody {
   status: FulfillmentStatus;
+  /** Advance ONE product line's state (order_items.id). */
+  order_item_id?: string;
   /** Advance ONE person's state (order_devices.id). */
   device_id?: string;
   /** Whole-table shortcut: set every person to `status`. */
@@ -78,6 +81,25 @@ export async function POST(request: Request, context: RouteContext) {
   );
   if (!permission) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // One product line's state → per-item (the DB trigger cascade derives both
+  // the device and order summaries).
+  if (typeof body.order_item_id === "string" && body.order_item_id) {
+    const result = await advanceItemFulfillment(admin, {
+      orderId,
+      orderItemId: body.order_item_id,
+      target: body.status,
+      actorUserId: user.id,
+    });
+    if (!result.ok) return serviceErrorToResponse(result.error);
+    return NextResponse.json({
+      success: true,
+      order_item_id: result.data.orderItemId,
+      item_fulfillment_status: result.data.itemStatus,
+      device_fulfillment_status: result.data.deviceStatus,
+      fulfillment_status: result.data.orderStatus,
+    });
   }
 
   // One person's state → per-device (the DB trigger derives the order summary).

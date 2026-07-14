@@ -37,6 +37,24 @@ export async function advanceDeviceFulfillment(payload: {
   );
 }
 
+/** Advance ONE product line's preparation state (per-item). */
+export async function advanceItemFulfillment(payload: {
+  orderId: string;
+  orderItemId: string;
+  status: FulfillmentStatus;
+}) {
+  return apiFetch(
+    `/api/qr/table/${encodeURIComponent(payload.orderId)}/fulfillment`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        status: payload.status,
+        order_item_id: payload.orderItemId,
+      }),
+    },
+  );
+}
+
 /** Whole-table shortcut: set every person to `status` at once. */
 export async function advanceAllFulfillment(payload: {
   orderId: string;

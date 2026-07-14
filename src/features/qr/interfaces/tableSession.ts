@@ -31,6 +31,9 @@ export interface QrSessionOrder {
   balance_due?: number;
   /** Live line-item count from the pulse; drives new-batch detection. */
   item_count?: number;
+  /** Live count of "ready" lines from the pulse; drives per-line progress
+   *  detection even when the order-level summary hasn't changed. */
+  ready_item_count?: number;
 }
 
 export interface QrSessionMenuItem {
@@ -38,6 +41,8 @@ export interface QrSessionMenuItem {
   name: string;
   price: number;
   image_url?: string | null;
+  /** All product photos, in display order — the detail view lets the customer swipe through these. */
+  image_urls?: string[] | null;
   subcatalog_id?: string | null;
   description?: string | null;
 }
@@ -99,6 +104,9 @@ export interface TablePulseResponse {
     total?: number;
     /** Line-item count; a change means a new batch landed → refresh the tracker. */
     item_count?: number;
+    /** Count of "ready" lines; a change means per-line progress happened even
+     *  if the order-level summary is unchanged → refresh the tracker. */
+    ready_item_count?: number;
   } | null;
   connected_devices?: number;
   i_am_owner?: boolean;

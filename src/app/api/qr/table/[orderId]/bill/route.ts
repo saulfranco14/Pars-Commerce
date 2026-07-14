@@ -55,7 +55,7 @@ export async function GET(request: Request, context: RouteContext) {
       admin
         .from("order_items")
         .select(
-          "id, product_id, quantity, unit_price, subtotal, added_by_device_id, is_shared, origin_table_label, created_at",
+          "id, product_id, quantity, unit_price, subtotal, added_by_device_id, is_shared, origin_table_label, created_at, fulfillment_status",
         )
         .in("order_id", groupOrderIds)
         .order("created_at", { ascending: true }),
@@ -117,6 +117,7 @@ export async function GET(request: Request, context: RouteContext) {
     is_shared: item.is_shared === true,
     origin_table_label: item.origin_table_label ?? null,
     created_at: item.created_at ?? null,
+    fulfillment_status: item.fulfillment_status ?? "received",
   }));
 
   const groups =

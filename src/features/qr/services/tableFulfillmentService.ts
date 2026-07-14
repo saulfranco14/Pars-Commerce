@@ -216,68 +216,115 @@ export async function advanceDeviceFulfillment(
   };
 }
 
+/* -------------------------------------------------------------------------- */
+/*  Per-product-line (order_items) fulfillment                                 */
+/* -------------------------------------------------------------------------- */
+
+export interface AdvanceItemFulfillmentInput {
+  orderId: string;
+  /** The order_items.id whose preparation state to move. */
+  orderItemId: string;
+  target: FulfillmentStatus;
+  actorUserId: string;
+}
+
+export interface AdvanceItemFulfillmentResult {
+  orderId: string;
+  orderItemId: string;
+  /** New per-line state. */
+  itemStatus: FulfillmentStatus;
+  /** Per-device summary AFTER the DB trigger cascade re-derived it. */
+  deviceStatus: FulfillmentStatus | null;
+  /** Order-level summary AFTER the DB trigger cascade re-derived it. */
+  orderStatus: FulfillmentStatus;
+}
+
 /**
- * A new batch of items arrived for a person whose preparation was already
- * advanced (in_progress/ready): their state must RESTART at "received" — there
- * is new work to do, the customer must see the journey begin again, and the
- * payment gate must close until the business marks the new batch ready.
- *
- * Scoped to the ONE device that ordered (n-person tables and merged tables:
- * other people's states are untouched; the DB trigger re-derives the order
- * summary). Best-effort: adding items must never fail because of this.
+ * Advance ONE product line's preparation state (e.g. a drink is ready while
+ * a service on the same order isn't yet). The DB trigger cascade
+ * (`recompute_device_fulfillment` -> `recompute_order_fulfillment`) keeps
+ * both the device and order summaries in sync, so every existing
+ * reader/guard keeps working unchanged. Neutral, multi-business states only.
  */
-export async function resetFulfillmentForNewItems(
+export async function advanceItemFulfillment(
   admin: SupabaseClient,
-  input: { orderId: string; deviceId: string | null },
-): Promise<void> {
-  const now = new Date().toISOString();
+  input: AdvanceItemFulfillmentInput,
+): Promise<ServiceResult<AdvanceItemFulfillmentResult>> {
+  const { data: order } = await admin
+    .from("orders")
+    .select("id, status")
+    .eq("id", input.orderId)
+    .single();
 
-  if (input.deviceId) {
-    const { data: device } = await admin
-      .from("order_devices")
-      .select("id, display_name, fulfillment_status")
-      .eq("id", input.deviceId)
-      .eq("order_id", input.orderId)
-      .maybeSingle();
+  if (!order) return err("not_found", "Orden no encontrada");
+  if (order.status === "paid")
+    return err("conflict", "La orden ya está pagada");
+  if (order.status === "cancelled")
+    return err("conflict", "La orden fue cancelada");
 
-    if (!device || device.fulfillment_status === "received") return;
+  const { data: item } = await admin
+    .from("order_items")
+    .select("id, order_id, product_id, added_by_device_id, fulfillment_status")
+    .eq("id", input.orderItemId)
+    .eq("order_id", input.orderId)
+    .maybeSingle();
 
-    await admin
-      .from("order_devices")
-      .update({ fulfillment_status: "received", updated_at: now })
-      .eq("id", input.deviceId);
+  if (!item) return err("not_found", "Producto no encontrado en esta orden");
+
+  const from = (item.fulfillment_status as FulfillmentStatus) ?? "received";
+
+  if (from !== input.target) {
+    const { error: updateError } = await admin
+      .from("order_items")
+      .update({ fulfillment_status: input.target })
+      .eq("id", input.orderItemId);
+
+    if (updateError) return err("internal", updateError.message);
 
     await admin.from("order_activity_log").insert({
       order_id: input.orderId,
-      actor_type: "device",
-      actor_id: input.deviceId,
-      actor_label: "cliente",
-      action: "fulfillment.device_changed",
+      actor_type: "member",
+      actor_id: input.actorUserId,
+      actor_label: "personal",
+      action: "fulfillment.item_changed",
       payload: {
-        device_id: input.deviceId,
-        device_name: device.display_name ?? null,
-        from: device.fulfillment_status,
-        to: "received",
-        reason: "new_items",
+        order_item_id: input.orderItemId,
+        product_id: item.product_id,
+        device_id: item.added_by_device_id,
+        from,
+        to: input.target,
       },
     });
-    return;
   }
 
-  // No device attributed (rare — e.g. header missing). Only meaningful when
-  // the order has NO device rows: then the order-level column is the source
-  // of truth (with devices, the trigger would re-derive over it).
-  const { count } = await admin
-    .from("order_devices")
-    .select("id", { count: "exact", head: true })
-    .eq("order_id", input.orderId);
-  if ((count ?? 0) > 0) return;
+  // Read back the summaries the trigger cascade derived (device, then order).
+  const [{ data: freshDevice }, { data: freshOrder }] = await Promise.all([
+    item.added_by_device_id
+      ? admin
+          .from("order_devices")
+          .select("fulfillment_status")
+          .eq("id", item.added_by_device_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    admin
+      .from("orders")
+      .select("fulfillment_status")
+      .eq("id", input.orderId)
+      .single(),
+  ]);
 
-  await admin
-    .from("orders")
-    .update({ fulfillment_status: "received", updated_at: now })
-    .eq("id", input.orderId)
-    .neq("fulfillment_status", "received");
+  return {
+    ok: true,
+    data: {
+      orderId: input.orderId,
+      orderItemId: input.orderItemId,
+      itemStatus: input.target,
+      deviceStatus:
+        (freshDevice?.fulfillment_status as FulfillmentStatus) ?? null,
+      orderStatus:
+        (freshOrder?.fulfillment_status as FulfillmentStatus) ?? "received",
+    },
+  };
 }
 
 /**
