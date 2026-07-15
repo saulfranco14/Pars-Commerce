@@ -4,12 +4,12 @@ import type { MsiOption } from "@/constants/commissionConfig";
 import type { RecurringPurchasesConfig } from "@/types/subscriptions";
 
 import { CheckoutFormFields } from "@/features/checkout/components/cart/CheckoutFormFields";
-import { FeesBreakdownCard } from "@/features/checkout/components/cart/FeesBreakdownCard";
-import { FrequencyPicker } from "@/features/checkout/components/cart/FrequencyPicker";
-import { InstallmentsPicker } from "@/features/checkout/components/cart/InstallmentsPicker";
-import { MsiBreakdownCard } from "@/features/checkout/components/cart/MsiBreakdownCard";
-import { MsiPicker } from "@/features/checkout/components/cart/MsiPicker";
-import { PaymentModeTabs } from "@/features/checkout/components/cart/PaymentModeTabs";
+import { FeesBreakdownCard } from "@/features/checkout/components/payment-plan/FeesBreakdownCard";
+import { FrequencyPicker } from "@/features/checkout/components/payment-plan/FrequencyPicker";
+import { InstallmentsPicker } from "@/features/checkout/components/payment-plan/InstallmentsPicker";
+import { MsiBreakdownCard } from "@/features/checkout/components/payment-plan/MsiBreakdownCard";
+import { MsiPicker } from "@/features/checkout/components/payment-plan/MsiPicker";
+import { PaymentModeTabs } from "@/features/checkout/components/payment-plan/PaymentModeTabs";
 import type { CartFrequency } from "@/features/checkout/helpers/cartFrequency";
 import type { FeeBreakdown } from "@/features/checkout/hooks/usePaymentMode";
 import type { PaymentMode } from "@/features/checkout/interfaces/paymentMode";

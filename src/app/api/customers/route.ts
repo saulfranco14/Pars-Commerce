@@ -4,6 +4,9 @@ import type {
   CreateCustomerPayload,
   UpdateCustomerPayload,
 } from "@/types/customers";
+import type { Database } from "@/types/database.types";
+
+type CustomerUpdate = Database["public"]["Tables"]["customers"]["Update"];
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -150,7 +153,7 @@ export async function PUT(request: Request) {
   }
 
   const body: UpdateCustomerPayload = await request.json();
-  const updates: Record<string, unknown> = {
+  const updates: CustomerUpdate = {
     updated_at: new Date().toISOString(),
   };
 

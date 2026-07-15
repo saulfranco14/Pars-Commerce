@@ -4,7 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/auth/requirePermission";
 import { NextResponse } from "next/server";
 
-import type { Json } from "@/types/database.types";
+import type { Database, Json } from "@/types/database.types";
+
+type QrCodeUpdate = Database["public"]["Tables"]["qr_codes"]["Update"];
 
 type QrKind = "payment" | "table";
 
@@ -172,7 +174,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const updates: Record<string, unknown> = {
+  const updates: QrCodeUpdate = {
     updated_at: new Date().toISOString(),
   };
 
@@ -181,7 +183,7 @@ export async function PATCH(request: Request) {
   if (typeof body.print_template === "string")
     updates.print_template = body.print_template;
   if (body.metadata && typeof body.metadata === "object")
-    updates.metadata = body.metadata;
+    updates.metadata = body.metadata as Json;
   if (typeof body.allow_amount_override === "boolean")
     updates.allow_amount_override = body.allow_amount_override;
   if (body.table_capacity !== undefined)
