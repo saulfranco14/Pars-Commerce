@@ -104,7 +104,7 @@ export async function POST(request: Request) {
   // Calcular repeticiones si aplica (installments)
   let repetitions: number | undefined;
   if (loan.payment_plan_type === "installments" && chargeAmount > 0) {
-    repetitions = Math.ceil(loan.amount_pending / chargeAmount);
+    repetitions = Math.ceil((loan.amount_pending ?? 0) / chargeAmount);
   }
   // recurring = sin límite de repeticiones (cobra hasta que se cancele manualmente)
 

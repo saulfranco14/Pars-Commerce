@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/auth/requirePermission";
 import { NextResponse } from "next/server";
 
+import type { Json } from "@/types/database.types";
+
 type QrKind = "payment" | "table";
 
 function normalizeKind(value: unknown): QrKind | null {
@@ -123,7 +125,9 @@ export async function POST(request: Request) {
       print_template:
         typeof body.print_template === "string" ? body.print_template : null,
       metadata:
-        body.metadata && typeof body.metadata === "object" ? body.metadata : null,
+        body.metadata && typeof body.metadata === "object"
+          ? (body.metadata as Json)
+          : null,
       created_by: canWrite?.membershipId ?? membership?.id ?? null,
     })
     .select(

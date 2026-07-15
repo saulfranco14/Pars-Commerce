@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import type { Database } from "@/types/database.types";
+
+type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
 export async function GET() {
   const supabase = await createClient();
@@ -72,7 +75,7 @@ export async function PATCH(request: Request) {
     avatar_url?: string;
   };
 
-  const updates: Record<string, unknown> = {
+  const updates: ProfileUpdate = {
     updated_at: new Date().toISOString(),
   };
   if (display_name !== undefined)

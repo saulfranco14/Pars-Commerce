@@ -287,12 +287,14 @@ export async function POST(request: Request) {
           "pending_subscription",
         ]);
 
-      const { data: existingPayment } = await supabase
-        .from("payments")
-        .select("id")
-        .eq("attempt_id", attemptId)
-        .limit(1)
-        .single();
+      const { data: existingPayment } = attemptId
+        ? await supabase
+            .from("payments")
+            .select("id")
+            .eq("attempt_id", attemptId)
+            .limit(1)
+            .single()
+        : { data: null };
 
       const paymentMetadata = {
         mp_payment_id: paymentId,
@@ -351,12 +353,14 @@ export async function POST(request: Request) {
         `Webhook: order ${orderId} marked as paid (payment ${paymentId})`,
       );
     } else {
-      const { data: existingPayment } = await supabase
-        .from("payments")
-        .select("id")
-        .eq("attempt_id", attemptId)
-        .limit(1)
-        .single();
+      const { data: existingPayment } = attemptId
+        ? await supabase
+            .from("payments")
+            .select("id")
+            .eq("attempt_id", attemptId)
+            .limit(1)
+            .single()
+        : { data: null };
 
       if (existingPayment) {
         await supabase

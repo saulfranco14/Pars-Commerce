@@ -89,7 +89,7 @@ export default async function QrPaymentSuccessPage({
 
   const { data: payment } = await supabase
     .from("payments")
-    .select("id, provider, status, amount, metadata, created_at, processed_at")
+    .select("id, provider, status, amount, metadata, created_at")
     .eq("order_id", order.id)
     .order("created_at", { ascending: false })
     .limit(1)

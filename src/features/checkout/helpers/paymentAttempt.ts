@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { CheckoutMode } from "@/features/checkout/interfaces/publicCheckout";
+import type { Json } from "@/types/database.types";
 
 interface CreatePaymentAttemptInput {
   order_id: string;
@@ -34,7 +35,7 @@ export async function createPaymentAttempt(
       idempotency_key: input.idempotency_key,
       status: "created",
       expires_at: input.expires_at,
-      metadata: input.metadata ?? {},
+      metadata: (input.metadata ?? {}) as Json,
     })
     .select("id, external_reference, provider_reference")
     .single();

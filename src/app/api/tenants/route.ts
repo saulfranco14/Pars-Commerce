@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
+import type { Database } from "@/types/database.types";
+
+type TenantInsert = Database["public"]["Tables"]["tenants"]["Insert"];
 
 export async function GET() {
   const supabase = await createClient();
@@ -119,7 +122,7 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
-  const insertPayload: Record<string, unknown> = {
+  const insertPayload: TenantInsert = {
     name,
     slug: normalizedSlug,
     business_type: business_type ?? null,
