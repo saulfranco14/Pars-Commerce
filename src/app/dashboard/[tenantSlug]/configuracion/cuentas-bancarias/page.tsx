@@ -5,8 +5,8 @@ import { Landmark, Plus } from "lucide-react";
 
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { useBankAccounts } from "@/features/configuracion/hooks/useBankAccounts";
-import { BankAccountCard } from "@/features/configuracion/components/BankAccountCard";
-import { BankAccountFormSheet } from "@/features/configuracion/components/BankAccountForm";
+import { BankAccountCard } from "@/features/configuracion/components/bank-account/BankAccountCard";
+import { BankAccountFormSheet } from "@/features/configuracion/components/bank-account/BankAccountForm";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Toast } from "@/components/ui/Toast";

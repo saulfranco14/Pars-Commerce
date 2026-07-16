@@ -7,8 +7,8 @@ import { ConfirmModal } from "@/components/ConfirmModal";
 import type { OrderItem } from "@/features/orders/interfaces/orderDetail";
 import { Plus, Tag } from "lucide-react";
 import { AddItemModal } from "@/components/orders/AddItemModal";
-import { OrderActionButtons } from "@/features/orders/components/OrderActionButtons";
-import { DiscountModal } from "@/features/orders/components/DiscountModal";
+import { OrderActionButtons } from "@/features/orders/components/order/OrderActionButtons";
+import { DiscountModal } from "@/features/orders/components/payment/DiscountModal";
 
 export function OrderItemsTable() {
   const {

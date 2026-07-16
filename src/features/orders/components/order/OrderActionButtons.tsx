@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useOrder } from "@/features/orders/hooks/useOrder";
 import { useActiveTenant, useTenantStore } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
-import { AssignBeforePaidModal } from "@/features/orders/components/AssignBeforePaidModal";
-import { ConfirmPaymentModal } from "@/features/orders/components/ConfirmPaymentModal";
+import { AssignBeforePaidModal } from "@/features/orders/components/payment/AssignBeforePaidModal";
+import { ConfirmPaymentModal } from "@/features/orders/components/payment/ConfirmPaymentModal";
 import {
   Zap,
   PlayCircle,

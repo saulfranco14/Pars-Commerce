@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Copy, Check, ExternalLink, ChevronDown } from "lucide-react";
 import { calcBuyerTotal, TARIFA_DE_SERVICIO_LABEL } from "@/constants/commissionConfig";
-import type { OrderPayment } from "../interfaces/orderDetail";
+import type { OrderPayment } from "@/features/orders/interfaces/orderDetail";
 
 function DesgloseSummary({ isPaid }: { isPaid: boolean }) {
   return (

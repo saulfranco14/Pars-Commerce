@@ -93,7 +93,7 @@ corregidas a la nueva ruta). `CheckoutFormFields.tsx` se quedó en
 
 ---
 
-### Fase 2 — prestamos ⏳ PENDIENTE
+### Fase 2 — prestamos ✅ DONE
 
 | Archivo | De | A |
 |---|---|---|
@@ -102,42 +102,118 @@ corregidas a la nueva ruta). `CheckoutFormFields.tsx` se quedó en
 | `AddProductCombobox.tsx` | raíz | `loan-items/` |
 | `LoanItemRow.tsx` | raíz | `loan-items/` |
 
+Movidos con `git mv`. Se encontró un quinto archivo no listado en la
+auditoría original, `NewCustomerModal.tsx` — se revisó y NO importa
+ninguno de los 4 movidos (usa un helper de validaciones, no el
+componente), así que no requirió cambios y se queda en la raíz de
+`components/` (no forma parte de ningún grupo de 3+ por ahora).
+
+**Importadores externos actualizados (2 archivos, ambos con 1 línea
+de import cada uno):**
+- `src/app/dashboard/[tenantSlug]/prestamos/nuevo/page.tsx` — importaba
+  `CustomerPicker`, `LoanItemRow`, `AddProductCombobox` (3 imports en
+  este único archivo).
+- `src/features/orders/components/CustomerCard.tsx` — importaba
+  `CustomerFields` (uso cross-feature de prestamos → orders, ya
+  existía antes de este refactor, no es nuevo).
+
 **Nota aparte (no es parte de esta fase, es un hallazgo distinto):**
 `FieldError.tsx` en este feature es genérico (no específico de
 préstamos) — candidato a moverse a `src/components/ui/` en algún
 momento futuro, pero eso es "componente compartido mal ubicado", no
 "componente de feature sin agrupar". Se deja fuera de este plan; si
-se decide moverlo, es su propia fase con su propio blast radius.
+se decide moverlo, es su propia fase con su propio blast radius. Sus
+2 importadores (`CustomerPicker.tsx`, `CustomerFields.tsx`, ambos ya
+movidos a `customer/`) lo referencian por path absoluto
+(`@/features/prestamos/components/FieldError`), así que no requirió
+ningún cambio al moverlos.
+
+**Verificación:** `tsc --noEmit` limpio, `npm run lint` limpio (49
+problemas / 1 error, igual que antes de este cambio — el error es el
+mismo pre-existente de `public/sw.js`, ajeno a este refactor).
 
 ---
 
-### Fase 3 — configuracion ⏳ PENDIENTE
+### Fase 3 — configuracion ✅ DONE
 
 | Archivo | De | A |
 |---|---|---|
-| `SiteContentForm.tsx`, `SiteContentFormSection.tsx`, `SiteContentContactoTab.tsx`, `SiteContentNosotrosTab.tsx`, `SiteContentInicioTab.tsx` | raíz | `site-content/` |
+| `SiteContentForm.tsx`, `SiteContentFormSection.tsx`, `SiteContentContactoTab.tsx`, `SiteContentNosotrosTab.tsx`, `SiteContentInicioTab.tsx`, `CardIconSelector.tsx` | raíz | `site-content/` |
 | `ConfigDireccionSection.tsx`, `ConfigFinanzasSection.tsx`, `ConfigNegocioSection.tsx`, `ConfigTicketSection.tsx`, `ConfigRecurrentesSection.tsx` | raíz | `config-sections/` |
 | `BankAccountCard.tsx`, `BankAccountForm.tsx` | raíz | `bank-account/` |
 
-Queda suelto en raíz: `CardIconSelector.tsx` (sin grupo claro de 3+).
+**Desviación del plan original (decidida con el usuario antes de
+ejecutar):** `CardIconSelector.tsx` iba a quedarse suelto en raíz por
+no tener grupo de 3+, pero al auditar se encontró que su único
+consumidor es `SiteContentInicioTab.tsx` (que sí se mueve a
+`site-content/`), y ese consumidor lo importa con path RELATIVO
+(`./CardIconSelector`, no alias `@/`). Dejarlo suelto habría roto
+ese import relativo. Se decidió moverlo junto a su consumidor real —
+cohesión de uso gana sobre la categoría genérica original.
 
-Antes de ejecutar: correr el mismo tipo de conteo de importadores que
-se hizo para qr/checkout (Grep de cada nombre de archivo en `src/`)
-para confirmar blast radius real por archivo antes de mover.
+`SiteContentForm.tsx` y sus 3 tabs + `SiteContentFormSection.tsx` ya
+se importaban entre sí con paths relativos (`./`) — al moverse todos
+juntos a `site-content/`, esos imports internos siguieron siendo
+válidos sin ningún cambio.
+
+**Importadores externos actualizados (3 archivos, 1-5 líneas cada
+uno):**
+- `app/dashboard/[tenantSlug]/sitio-web/SiteWebConfigSection.tsx` — `SiteContentForm`.
+- `app/dashboard/[tenantSlug]/configuracion/page.tsx` — los 5 `Config*Section`.
+- `app/dashboard/[tenantSlug]/configuracion/cuentas-bancarias/page.tsx` — `BankAccountCard`, `BankAccountForm`.
+
+**Verificación:** `tsc --noEmit` limpio, `npm run lint` sin cambios
+en el conteo de problemas (49 / 1 error, el mismo pre-existente de
+`public/sw.js`).
 
 ---
 
-### Fase 4 — orders ⏳ PENDIENTE
+### Fase 4 — orders ✅ DONE
 
 | Archivo | De | A |
 |---|---|---|
-| `OrderActionButtons.tsx`, `OrderHeader.tsx`, `OrderItemsTable.tsx`, `OrderPaymentPlanCard.tsx`, `CustomerCard.tsx` | raíz | `order/` |
-| `ConfirmPaymentModal.tsx`, `PaymentLinkCard.tsx`, `GenerateLinkModal.tsx`, `AssignBeforePaidModal.tsx`, `AssignmentCard.tsx`, `DiscountModal.tsx` | raíz | `payment/` |
+| `OrderActionButtons.tsx`, `OrderHeader.tsx`, `OrderItemsTable.tsx`, `OrderPaymentPlanCard.tsx`, `CustomerCard.tsx`, `GenerateLinkModal.tsx` | raíz | `order/` |
+| `ConfirmPaymentModal.tsx`, `PaymentLinkCard.tsx`, `AssignBeforePaidModal.tsx`, `AssignmentCard.tsx`, `DiscountModal.tsx` | raíz | `payment/` |
 | `ReceiptPreview.tsx`, `ReceiptActions.tsx` | raíz | `receipt/` |
 
-Antes de ejecutar: mismo conteo de importadores previo (esta feature
-no se auditó a ese nivel de detalle todavía, a diferencia de qr y
-checkout).
+**Hallazgo no contemplado en la auditoría original:** existía un
+archivo extra, `OrderFormSheet.tsx` (formulario de creación de orden
+nueva, usado en `dashboard/page.tsx` y `ordenes/page.tsx` — no en el
+detalle de orden). Sin 3+ hermanos de su mismo propósito, se dejó
+suelto en la raíz de `components/`, mismo criterio aplicado a
+`NewCustomerModal.tsx` en la Fase 2.
+
+**Desviación del plan (decidida con el usuario antes de mover):**
+`GenerateLinkModal.tsx` iba a `payment/` según el plan original, pero
+su único consumidor (`OrderActionButtons.tsx`, que va a `order/`) lo
+importaba con path RELATIVO (`./GenerateLinkModal`). Se movió junto
+a `order/` para no romper ese import — mismo criterio que
+`CardIconSelector.tsx` en la Fase 3.
+
+**Imports internos corregidos tras cruzar de carpeta (4 archivos):**
+- `OrderActionButtons.tsx` (→ `order/`) importaba `AssignBeforePaidModal`
+  y `ConfirmPaymentModal` (→ `payment/`) por alias absoluto — 2 líneas
+  corregidas con el nuevo path.
+- `OrderItemsTable.tsx` (→ `order/`) importaba `OrderActionButtons`
+  (mismo grupo, solo cambia el path) y `DiscountModal` (→ `payment/`)
+  — 2 líneas corregidas.
+- `ReceiptActions.tsx` (→ `receipt/`) importaba `ReceiptPreview`
+  (mismo grupo) — 1 línea corregida.
+- `PaymentLinkCard.tsx` (→ `payment/`) tenía un import relativo hacia
+  fuera de `components/` (`../interfaces/orderDetail`), roto al bajar
+  un nivel de profundidad — corregido a alias absoluto
+  `@/features/orders/interfaces/orderDetail` (más robusto que un
+  relativo frágil ante futuros movimientos).
+
+**Importadores externos actualizados (3 archivos):**
+- `app/dashboard/[tenantSlug]/ordenes/[orderId]/page.tsx` — 8 imports.
+- `src/components/orders/TicketDownloadActions.tsx` — `ReceiptPreview`.
+- `src/features/qr/components/BillPayModal.tsx` — `ConfirmPaymentModal`
+  (uso cross-feature qr → orders, ya existía antes de este refactor).
+
+**Verificación:** `tsc --noEmit` limpio (tras corregir el import roto
+de `PaymentLinkCard.tsx`), `npm run lint` sin cambios en el conteo
+(49 / 1 error, el mismo pre-existente de `public/sw.js`).
 
 ---
 

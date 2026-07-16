@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { ConfirmPaymentModal } from "@/features/orders/components/ConfirmPaymentModal";
+import { ConfirmPaymentModal } from "@/features/orders/components/payment/ConfirmPaymentModal";
 
 import type { SplitGroup } from "@/features/qr/interfaces/splitBill";
 

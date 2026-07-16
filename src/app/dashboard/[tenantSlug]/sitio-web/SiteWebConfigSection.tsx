@@ -7,7 +7,7 @@ import { ArrowRight, Check, Save } from "lucide-react";
 import { useActiveTenant, useTenantStore } from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
 import type { SitePage } from "@/types/tenantSitePages";
-import { SiteContentForm } from "@/features/configuracion/components/SiteContentForm";
+import { SiteContentForm } from "@/features/configuracion/components/site-content/SiteContentForm";
 import {
   update as updateTenant,
   list as listTenants,

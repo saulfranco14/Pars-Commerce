@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import useSWR from "swr";
 import { Printer, Download, Share2 } from "lucide-react";
 import { exportReceiptAsPng } from "@/lib/receiptExport";
-import { ReceiptPreview } from "@/features/orders/components/ReceiptPreview";
+import { ReceiptPreview } from "@/features/orders/components/receipt/ReceiptPreview";
 import type { OrderDetail } from "@/features/orders/interfaces/orderDetail";
 import type { TenantAddress } from "@/types/database";
 import type { TicketSettings } from "@/types/ticketSettings";

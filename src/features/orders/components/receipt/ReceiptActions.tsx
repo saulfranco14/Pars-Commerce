@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Printer, Download, Copy, Check, ChevronDown, Share2 } from "lucide-react";
 import { captureReceiptAsPng, downloadReceiptBlob } from "@/lib/receiptExport";
 import { useOrder } from "@/features/orders/hooks/useOrder";
-import { ReceiptPreview } from "@/features/orders/components/ReceiptPreview";
+import { ReceiptPreview } from "@/features/orders/components/receipt/ReceiptPreview";
 
 export function ReceiptActions() {
   const { order, businessName, businessAddress, ticketOptions, logoUrl, setError } = useOrder();

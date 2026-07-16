@@ -6,7 +6,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useOrder } from "@/features/orders/hooks/useOrder";
 import { User, Mail, Phone, X, Check, Pencil, ChevronDown } from "lucide-react";
 import { orderCustomerSchema } from "@/features/prestamos/validations/loanForm";
-import { CustomerFields, type CustomerFieldValues } from "@/features/prestamos/components/CustomerFields";
+import { CustomerFields, type CustomerFieldValues } from "@/features/prestamos/components/customer/CustomerFields";
 
 export function CustomerCard() {
   const { order, actionLoading, handleSaveCustomer } = useOrder();
