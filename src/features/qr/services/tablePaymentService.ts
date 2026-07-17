@@ -55,7 +55,7 @@ const NOT_READY_ERROR = err(
  * §data-layer: extract a query only once the same literal repeats, named by
  * its domain meaning rather than by table).
  */
-async function areAllSplitGroupsPaid(
+export async function areAllSplitGroupsPaid(
   admin: SupabaseClient,
   orderId: string,
 ): Promise<boolean> {

@@ -241,6 +241,48 @@ contra DB local. Recién ahí se aplica el refactor de
 `webhook`/`tablePaymentService`, y se re-corren AMBOS niveles: si
 siguen verdes, el refactor es seguro para deploy.
 
+> ✅ **T1 DONE.** 27 tests verdes (23 unit + 4 integración), `tsc`
+> limpio. `areAllSplitGroupsPaid` exportado para poder testearlo
+> directo (cambio mínimo, no altera comportamiento).
+>
+> - **T1.1** `areAllSplitGroupsPaid` — 4 casos (todos pagados, uno
+>   pending, cero grupos→true congelado, filtra por order).
+> - **T1.2** `confirmPayment` — 5 casos (not_found, idempotencia de
+>   ya-approved sin writes, último grupo→orden pagada, grupo con otros
+>   pendientes→no paga orden).
+> - **T1.3** `payGroup` — 6 casos (not_found, idempotencia, gate de
+>   fulfillment por orden y por device, último grupo→paga, grupo con
+>   otros pendientes).
+> - **T1.4** despacho del webhook — 6 casos sobre las funciones PURAS
+>   de clasificación (`isQrTableReference`, `parseCheckoutReference`).
+>   El `POST` completo no se unit-testea (depende de `paymentClient`
+>   real + handlers importados; se cubre por verificación manual).
+> - **T1-INT** — `areAllSplitGroupsPaid` contra Postgres real vía el
+>   MISMO cliente supabase-js que producción (2 casos).
+>
+> **DOS hallazgos que solo la capa de integración pudo destapar:**
+>
+> 1. **Grants faltantes → riesgo de pago de más.** Contra la DB local,
+>    `areAllSplitGroupsPaid` devolvía `true` (todos pagados) cuando había
+>    un grupo pending. Causa: el `service_role` vía supabase-js recibía
+>    `permission denied` (42501) sobre `order_split_groups` — las tablas
+>    del QR module definen POLICIES RLS para service_role pero nunca
+>    hicieron el `GRANT` de tabla (capas independientes en Postgres). El
+>    código hace `(groups ?? []).every(...)`, así que un error de query
+>    se traga silenciosamente como "sin grupos" → orden marcada pagada de
+>    más. En prod no se dispara (Supabase remoto sí tiene los grants por
+>    defecto), pero el patrón "error de query → allPaid true" es un riesgo
+>    real que conviene endurecer aparte.
+>    **Fix:** migración `20260717000001_grant_supabase_roles_public_schema.sql`
+>    — GRANTs explícitos e idempotentes a los 3 roles sobre `public`,
+>    replicando el default de Supabase. No-op en prod, necesario en local.
+>
+> 2. (De T0b) el error de sintaxis del `COMMENT` en la migración de
+>    loans.
+>
+> Un fake NUNCA habría mostrado ninguno de los dos. Es exactamente el
+> valor de la capa de integración.
+
 ---
 
 ## Fase T2 — Base escalable al resto del repo (después, gradual)
