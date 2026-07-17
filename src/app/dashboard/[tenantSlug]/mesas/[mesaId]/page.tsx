@@ -8,7 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
-import { MesaDetailContent } from "@/features/qr/components/MesaDetailContent";
+import { MesaDetailContent } from "@/features/qr/components/table/MesaDetailContent";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
 

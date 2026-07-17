@@ -2,7 +2,7 @@
 
 import { CheckCircle2, MessageCircle, Plus } from "lucide-react";
 
-import { QrPreview } from "@/features/qr/components/QrPreview";
+import { QrPreview } from "@/features/qr/components/qr-create/QrPreview";
 import { buildPublicQrUrl } from "@/features/qr/helpers/buildPublicQrUrl";
 import { formatCurrency } from "@/features/qr/helpers/format";
 

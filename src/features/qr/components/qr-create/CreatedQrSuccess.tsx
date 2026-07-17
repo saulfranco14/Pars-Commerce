@@ -2,7 +2,7 @@
 
 import { CheckCircle2 } from "lucide-react";
 
-import { QrPreview } from "@/features/qr/components/QrPreview";
+import { QrPreview } from "@/features/qr/components/qr-create/QrPreview";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
 

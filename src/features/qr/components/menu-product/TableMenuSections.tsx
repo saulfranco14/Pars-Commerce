@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronUp, Search, X } from "lucide-react";
 
-import { MenuPeekRow } from "@/features/qr/components/MenuPeekRow";
-import { MenuProductCard } from "@/features/qr/components/MenuProductCard";
+import { MenuPeekRow } from "@/features/qr/components/menu-product/MenuPeekRow";
+import { MenuProductCard } from "@/features/qr/components/menu-product/MenuProductCard";
 import { PromoBanner } from "@/features/qr/components/PromoBanner";
-import { ReorderRow } from "@/features/qr/components/ReorderRow";
-import { ProductDetailSheet } from "@/features/qr/components/ProductDetailSheet";
+import { ReorderRow } from "@/features/qr/components/menu-product/ReorderRow";
+import { ProductDetailSheet } from "@/features/qr/components/menu-product/ProductDetailSheet";
 import { interleavePromos } from "@/features/qr/helpers/interleavePromos";
 import { useMenuSections } from "@/features/qr/hooks/useMenuSections";
 

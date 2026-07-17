@@ -5,8 +5,8 @@ import { useState } from "react";
 import { QrCode as QrIcon } from "lucide-react";
 
 import { FormSheet } from "@/components/ui/FormSheet";
-import { QrCreateForm } from "@/features/qr/components/QrCreateForm";
-import { CreatedQrSuccess } from "@/features/qr/components/CreatedQrSuccess";
+import { QrCreateForm } from "@/features/qr/components/qr-create/QrCreateForm";
+import { CreatedQrSuccess } from "@/features/qr/components/qr-create/CreatedQrSuccess";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
 

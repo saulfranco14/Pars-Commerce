@@ -217,114 +217,40 @@ de `PaymentLinkCard.tsx`), `npm run lint` sin cambios en el conteo
 
 ---
 
-### Fase 5 — qr (la más grande, dividir en sub-fases) ⏳ PENDIENTE
+### Fase 5 — qr (la más grande) ✅ DONE
 
-47 archivos, 8 dominios. NO se hace en un solo movimiento — cada
-sub-fase es su propio PR, en orden de menor a mayor uso compartido
-(menos importadores externos primero = menor riesgo de romper algo
-en cascada).
+47 componentes sueltos → 8 subcarpetas por dominio, ejecutado en 8
+sub-fases (5a–5h) de menor a mayor blast radius. tsc --noEmit
+verificado en checkpoints; verificación final con tsc, lint y prueba
+en navegador de las 3 rutas críticas.
 
-**Hallazgo a resolver ANTES de mover nada en qr:** `BillPayModal.tsx`
-tiene **0 importadores** en todo `src/`. No se mueve ni se borra
-todavía — primero confirmar con el equipo/`git log` si es código
-muerto real o si se invoca de forma dinámica (ej. lazy import) antes
-de decidir qué hacer con él. Tratarlo como bloqueante de la sub-fase
-`payment/` hasta aclarar.
+**Código muerto eliminado:** BillPayModal.tsx tenía 0 consumidores en
+todo src/ (ni estáticos ni dinámicos, confirmado con grep global +
+git log). Con confirmación del usuario se borró (git rm) — no se movió.
+Total real: 46 componentes reubicados + 1 borrado.
 
-**Ambigüedades a resolver antes de ejecutar cada sub-fase** (ver
-detalle completo en el reporte de investigación, resumen aquí):
-- `PerPersonFulfillmentCard.tsx` → ¿`bill/` o `table/`? Revisar el
-  componente padre real que lo usa antes de decidir.
-- `TableMenuHero.tsx`, `TableMenuSections.tsx` → nombre sugiere
-  `table/`, contenido sugiere `menu-product/`. Definir convención:
-  ¿se agrupa por pantalla o por dominio de UI? Debe decidirse una
-  vez y aplicarse consistente en toda la fase.
-- `BillSplitSection.tsx` → límite entre `bill/` y `split/`.
-- `CustomerPayModal.tsx`, `TipScreen.tsx` → mezclan dominio customer
-  con acción de pago; evaluar si van a `payment/` en vez de
-  `customer/`.
+**Ambigüedades resueltas por DOMINIO REAL (no por nombre), revisando
+qué compone/importa cada uno:**
+- CustomerPayModal, TipScreen → payment/ (no customer/): CustomerPayModal
+  compone PaymentMethodStep y es el origen del tipo CustomerPayMethod
+  que consumen los componentes de pago.
+- TableMenuHero, TableMenuSections → menu-product/ (no table/ pese al
+  prefijo): su contenido es 100% menú de productos.
+- BillSplitSection → split/: orquesta SplitItemsAssigner + SplitModePicker.
+- PerPersonFulfillmentCard → table/: lo usa MesaDetailContent.
 
-**Sub-fase 5a — split/ (3 archivos, menor riesgo)**
-| Archivo | Importadores externos |
-|---|---|
-| `SplitItemsAssigner.tsx` | 3 |
-| `SplitModePicker.tsx` | 1 |
-| `BillSplitSection.tsx` (si se confirma aquí y no en bill/) | 1 |
+**Subcarpetas finales:** split/ (3), order-tracker/ (2), qr-create/ (7),
+menu-product/ (8), customer/ (4), payment/ (5), bill/ (3), table/ (11).
 
-**Sub-fase 5b — order-tracker/ (2 archivos)**
-| Archivo | Importadores externos |
-|---|---|
-| `OrderTrackerCard.tsx` | 1 |
-| `OrderTrackerSkeleton.tsx` | 2 |
+**Quedan sueltos en raíz (transversales):** BrandImage, ConfettiBurst,
+PromoBanner, ServiceWorkerFreshnessGuard.
 
-**Sub-fase 5c — qr-create/ (8 archivos)**
-| Archivo | Importadores externos |
-|---|---|
-| `QrKindSelector.tsx` | 1 |
-| `QrCreateForm.tsx` | 2 |
-| `QrCreateFormSheet.tsx` | 1 |
-| `QRCodeCard.tsx` | 1 |
-| `CreatedQrSuccess.tsx` | 2 |
-| `StaffOrderQrResult.tsx` | 1 |
-| `QrPreview.tsx` | 6 (el más compartido de este grupo — mover al final de la sub-fase) |
-
-**Sub-fase 5d — menu-product/ (7-9 archivos, según se resuelva la
-ambigüedad de TableMenu*)**
-| Archivo | Importadores externos |
-|---|---|
-| `MenuProductCard.tsx` | 2 |
-| `MenuPeekRow.tsx` | 1 |
-| `ProductTile.tsx` | 2 |
-| `ReorderRow.tsx` | 1 |
-| `ProductDetailSheet.tsx` | 1 |
-| `ProductImageGallery.tsx` | 1 |
-| `TableMenuHero.tsx` | 1 (pendiente decisión) |
-| `TableMenuSections.tsx` | 1 (pendiente decisión) |
-
-**Sub-fase 5e — customer/ (5-7 archivos)**
-| Archivo | Importadores externos |
-|---|---|
-| `CustomerScreen.tsx` | 6 |
-| `CustomerLoading.tsx` | 1 |
-| `CustomerMergeSheet.tsx` | 1 |
-| `DeviceNamePrompt.tsx` | 1 |
-| `CustomerPayModal.tsx` | 8 (pendiente decisión: ¿customer/ o payment/?) |
-| `TipScreen.tsx` | 1 (pendiente decisión) |
-
-**Sub-fase 5f — payment/ (4-5 archivos)**
-| Archivo | Importadores externos |
-|---|---|
-| `PaymentMethodStep.tsx` | 1 |
-| `PaymentReceipt.tsx` | 3 |
-| `PendingPaymentsCard.tsx` | 1 |
-| `BillPayModal.tsx` | 0 — **bloqueado, ver hallazgo arriba** |
-
-**Sub-fase 5g — bill/ (4-5 archivos)**
-| Archivo | Importadores externos |
-|---|---|
-| `BillHero.tsx` | 1 |
-| `BillScreenSkeleton.tsx` | 2 |
-| `BillSummary.tsx` | 1 |
-| `PerPersonFulfillmentCard.tsx` | 1 (pendiente decisión) |
-
-**Sub-fase 5h — table/ (la más grande y más usada, al final)**
-| Archivo | Importadores externos |
-|---|---|
-| `ActiveTablesCard.tsx` | 1 |
-| `CloseTableDialog.tsx` | 1 |
-| `MergeTableDialog.tsx` | 1 |
-| `MergeRequestBanner.tsx` | 2 |
-| `MesaDetailContent.tsx` | 2 |
-| `TableCtaBar.tsx` | 1 |
-| `TableListCard.tsx` | 1 |
-| `TableScreenSkeleton.tsx` | 1 |
-| `TableTimeline.tsx` | 1 |
-| `TablesFilterTabs.tsx` | 1 |
-
-**Quedan sueltos en raíz de `qr/components/` (transversales, sin
-dominio de negocio propio — no forman categoría):**
-`BrandImage.tsx`, `ConfettiBurst.tsx`, `PromoBanner.tsx`,
-`ServiceWorkerFreshnessGuard.tsx`.
+**Verificación final:**
+- tsc --noEmit limpio.
+- npm run lint sin cambios (49 / 1 error, el pre-existente de public/sw.js).
+- Navegador: /q/[token] (customer-facing, 969 módulos), /dashboard/x/mesas
+  (1325 mód.) y /dashboard/x/qr (1354 mód.) sirvieron HTTP 200, sin ningún
+  Module not found.
 
 ---
 

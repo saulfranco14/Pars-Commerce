@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { TipScreen } from "@/features/qr/components/TipScreen";
+import { TipScreen } from "@/features/qr/components/payment/TipScreen";
 
 import type { PaymentAmountValues } from "@/features/qr/validations/paymentAmountSchema";
 import type { TenantPaymentMethod } from "@/features/configuracion/interfaces/bankAccount";

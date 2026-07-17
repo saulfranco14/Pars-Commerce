@@ -6,8 +6,8 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 import { Notification } from "@/components/ui/Notification";
-import { CustomerLoading } from "@/features/qr/components/CustomerLoading";
-import { PaymentReceipt } from "@/features/qr/components/PaymentReceipt";
+import { CustomerLoading } from "@/features/qr/components/customer/CustomerLoading";
+import { PaymentReceipt } from "@/features/qr/components/payment/PaymentReceipt";
 import { useBillData } from "@/features/qr/hooks/useBillData";
 
 /**

@@ -4,7 +4,7 @@ import { CheckCircle2, Users } from "lucide-react";
 
 import { TableQRClient } from "./TableQRClient";
 import { Notification } from "@/components/ui/Notification";
-import { TableScreenSkeleton } from "@/features/qr/components/TableScreenSkeleton";
+import { TableScreenSkeleton } from "@/features/qr/components/table/TableScreenSkeleton";
 import { useTableSession } from "@/features/qr/hooks/useTableSession";
 
 interface TableSessionProps {

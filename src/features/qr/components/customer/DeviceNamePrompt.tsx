@@ -5,7 +5,7 @@ import Image from "next/image";
 import { ArrowRight, User } from "lucide-react";
 
 import { Notification } from "@/components/ui/Notification";
-import { CustomerScreen } from "@/features/qr/components/CustomerScreen";
+import { CustomerScreen } from "@/features/qr/components/customer/CustomerScreen";
 import { getInitials } from "@/features/qr/helpers/format";
 
 interface DeviceNamePromptProps {

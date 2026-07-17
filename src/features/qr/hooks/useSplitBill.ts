@@ -5,7 +5,7 @@ import { useState } from "react";
 import { submitSplit } from "@/features/qr/services/tableClientService";
 
 import type { SplitMode } from "@/features/qr/interfaces/splitBill";
-import type { AssignedGroup } from "@/features/qr/components/SplitItemsAssigner";
+import type { AssignedGroup } from "@/features/qr/components/split/SplitItemsAssigner";
 
 interface UseSplitBillOptions {
   orderId: string;

@@ -2,7 +2,7 @@
 
 import { RotateCcw } from "lucide-react";
 
-import { ProductTile } from "@/features/qr/components/ProductTile";
+import { ProductTile } from "@/features/qr/components/menu-product/ProductTile";
 
 import type { MenuItem } from "@/features/qr/interfaces/tableCart";
 

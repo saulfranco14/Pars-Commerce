@@ -8,7 +8,7 @@ import { Notification } from "@/components/ui/Notification";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { swrFetcher } from "@/lib/swrFetcher";
 
-import type { CustomerPayMethod } from "@/features/qr/components/CustomerPayModal";
+import type { CustomerPayMethod } from "@/features/qr/components/payment/CustomerPayModal";
 import type { TenantPaymentMethod } from "@/features/configuracion/interfaces/bankAccount";
 
 interface PaymentMethodStepProps {

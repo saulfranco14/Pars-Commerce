@@ -9,7 +9,7 @@ import {
   PAYMENT_METHOD_META,
   PAYMENT_METHOD_ORDER,
 } from "@/features/qr/constants/paymentMethodMeta";
-import { PaymentMethodStep } from "@/features/qr/components/PaymentMethodStep";
+import { PaymentMethodStep } from "@/features/qr/components/payment/PaymentMethodStep";
 
 export type CustomerPayMethod =
   | "efectivo"

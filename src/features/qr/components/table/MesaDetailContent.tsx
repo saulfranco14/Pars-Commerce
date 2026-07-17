@@ -23,12 +23,12 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { adminActionButtonPrimary } from "@/components/admin/actionButtonClasses";
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
 import { formatCurrency } from "@/features/qr/helpers/format";
-import { QrPreview } from "@/features/qr/components/QrPreview";
-import { TableTimeline } from "@/features/qr/components/TableTimeline";
-import { PendingPaymentsCard } from "@/features/qr/components/PendingPaymentsCard";
-import { CloseTableDialog } from "@/features/qr/components/CloseTableDialog";
-import { MergeTableDialog } from "@/features/qr/components/MergeTableDialog";
-import { PerPersonFulfillmentCard } from "@/features/qr/components/PerPersonFulfillmentCard";
+import { QrPreview } from "@/features/qr/components/qr-create/QrPreview";
+import { TableTimeline } from "@/features/qr/components/table/TableTimeline";
+import { PendingPaymentsCard } from "@/features/qr/components/payment/PendingPaymentsCard";
+import { CloseTableDialog } from "@/features/qr/components/table/CloseTableDialog";
+import { MergeTableDialog } from "@/features/qr/components/table/MergeTableDialog";
+import { PerPersonFulfillmentCard } from "@/features/qr/components/table/PerPersonFulfillmentCard";
 import { useTableAdminLive } from "@/features/qr/hooks/useTableAdminLive";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";

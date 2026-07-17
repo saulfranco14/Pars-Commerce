@@ -15,9 +15,9 @@ import { PageHeader } from "@/components/admin/PageHeader";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { isAbortError } from "@/services/apiFetch";
 import { useActiveTenant } from "@/stores/useTenantStore";
-import { QRCodeCard } from "@/features/qr/components/QRCodeCard";
-import { QrCreateFormSheet } from "@/features/qr/components/QrCreateFormSheet";
-import { QrPreview } from "@/features/qr/components/QrPreview";
+import { QRCodeCard } from "@/features/qr/components/qr-create/QRCodeCard";
+import { QrCreateFormSheet } from "@/features/qr/components/qr-create/QrCreateFormSheet";
+import { QrPreview } from "@/features/qr/components/qr-create/QrPreview";
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
 import { useQrActions } from "@/features/qr/hooks/useQrActions";
 

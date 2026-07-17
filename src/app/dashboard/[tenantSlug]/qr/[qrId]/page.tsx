@@ -9,7 +9,7 @@ import { Archive, ArrowLeft, Power } from "lucide-react";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
-import { QrPreview } from "@/features/qr/components/QrPreview";
+import { QrPreview } from "@/features/qr/components/qr-create/QrPreview";
 import { useQrActions } from "@/features/qr/hooks/useQrActions";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 

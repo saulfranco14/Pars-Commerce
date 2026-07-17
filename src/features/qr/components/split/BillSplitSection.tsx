@@ -1,11 +1,11 @@
 "use client";
 
 import { Notification } from "@/components/ui/Notification";
-import { SplitItemsAssigner } from "@/features/qr/components/SplitItemsAssigner";
-import { SplitModePicker } from "@/features/qr/components/SplitModePicker";
+import { SplitItemsAssigner } from "@/features/qr/components/split/SplitItemsAssigner";
+import { SplitModePicker } from "@/features/qr/components/split/SplitModePicker";
 import { formatCurrency } from "@/features/qr/helpers/format";
 
-import type { AssignedGroup } from "@/features/qr/components/SplitItemsAssigner";
+import type { AssignedGroup } from "@/features/qr/components/split/SplitItemsAssigner";
 import type { SplitMode } from "@/features/qr/interfaces/splitBill";
 
 interface BillItem {

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CheckCircle2, Clock, Receipt, ShieldCheck, XCircle } from "lucide-react";
 
-import { CustomerScreen } from "@/features/qr/components/CustomerScreen";
+import { CustomerScreen } from "@/features/qr/components/customer/CustomerScreen";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { createAdminClient } from "@/lib/supabase/admin";
 

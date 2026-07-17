@@ -7,7 +7,7 @@ import {
   createPaymentIntent,
 } from "@/features/qr/services/tableClientService";
 
-import type { CustomerPayMethod } from "@/features/qr/components/CustomerPayModal";
+import type { CustomerPayMethod } from "@/features/qr/components/payment/CustomerPayModal";
 import type { SplitGroup } from "@/features/qr/interfaces/splitBill";
 
 export type PayTarget =

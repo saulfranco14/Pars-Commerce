@@ -11,12 +11,12 @@ import { PageHeader } from "@/components/admin/PageHeader";
 import { pageHeaderCta } from "@/components/admin/actionButtonClasses";
 import { FabSpeedDial } from "@/components/ui/FabSpeedDial";
 import { FormSheet } from "@/components/ui/FormSheet";
-import { QrCreateForm } from "@/features/qr/components/QrCreateForm";
-import { CreatedQrSuccess } from "@/features/qr/components/CreatedQrSuccess";
-import { QrPreview } from "@/features/qr/components/QrPreview";
-import { MesaDetailContent } from "@/features/qr/components/MesaDetailContent";
-import { TableListCard } from "@/features/qr/components/TableListCard";
-import { TablesFilterTabs } from "@/features/qr/components/TablesFilterTabs";
+import { QrCreateForm } from "@/features/qr/components/qr-create/QrCreateForm";
+import { CreatedQrSuccess } from "@/features/qr/components/qr-create/CreatedQrSuccess";
+import { QrPreview } from "@/features/qr/components/qr-create/QrPreview";
+import { MesaDetailContent } from "@/features/qr/components/table/MesaDetailContent";
+import { TableListCard } from "@/features/qr/components/table/TableListCard";
+import { TablesFilterTabs } from "@/features/qr/components/table/TablesFilterTabs";
 import { useActiveTables } from "@/features/qr/hooks/useActiveTables";
 import { useTablesList } from "@/features/qr/hooks/useTablesList";
 

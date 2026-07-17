@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/Skeleton";
-import { OrderTrackerSkeleton } from "@/features/qr/components/OrderTrackerSkeleton";
+import { OrderTrackerSkeleton } from "@/features/qr/components/order-tracker/OrderTrackerSkeleton";
 
 /**
  * Full-screen placeholder for the mesa screen while `/api/qr/resolve` runs.

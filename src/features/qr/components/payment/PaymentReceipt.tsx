@@ -6,7 +6,7 @@ import { Check, Loader2, RefreshCw } from "lucide-react";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { PAYMENT_METHOD_META } from "@/features/qr/constants/paymentMethodMeta";
 
-import type { CustomerPayMethod } from "@/features/qr/components/CustomerPayModal";
+import type { CustomerPayMethod } from "@/features/qr/components/payment/CustomerPayModal";
 
 interface PaymentReceiptProps {
   amount: number;

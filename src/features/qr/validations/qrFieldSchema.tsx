@@ -1,7 +1,7 @@
 import { Controller } from "react-hook-form";
 import { DollarSign, Tag, Users } from "lucide-react";
 
-import { QrKindSelector } from "@/features/qr/components/QrKindSelector";
+import { QrKindSelector } from "@/features/qr/components/qr-create/QrKindSelector";
 
 import type { FieldSchema } from "@/lib/forms/fieldSchema";
 

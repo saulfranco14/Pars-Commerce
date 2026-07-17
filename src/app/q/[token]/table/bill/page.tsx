@@ -7,15 +7,15 @@ import { CreditCard, Link2, PlusCircle, RotateCcw, Users } from "lucide-react";
 
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Notification } from "@/components/ui/Notification";
-import { CustomerScreen } from "@/features/qr/components/CustomerScreen";
-import { BillScreenSkeleton } from "@/features/qr/components/BillScreenSkeleton";
-import { BillHero } from "@/features/qr/components/BillHero";
-import { BillSummary } from "@/features/qr/components/BillSummary";
-import { BillSplitSection } from "@/features/qr/components/BillSplitSection";
-import { CustomerPayModal } from "@/features/qr/components/CustomerPayModal";
-import { CustomerMergeSheet } from "@/features/qr/components/CustomerMergeSheet";
-import { MergeRequestBanner } from "@/features/qr/components/MergeRequestBanner";
-import { PaymentReceipt } from "@/features/qr/components/PaymentReceipt";
+import { CustomerScreen } from "@/features/qr/components/customer/CustomerScreen";
+import { BillScreenSkeleton } from "@/features/qr/components/bill/BillScreenSkeleton";
+import { BillHero } from "@/features/qr/components/bill/BillHero";
+import { BillSummary } from "@/features/qr/components/bill/BillSummary";
+import { BillSplitSection } from "@/features/qr/components/split/BillSplitSection";
+import { CustomerPayModal } from "@/features/qr/components/payment/CustomerPayModal";
+import { CustomerMergeSheet } from "@/features/qr/components/customer/CustomerMergeSheet";
+import { MergeRequestBanner } from "@/features/qr/components/table/MergeRequestBanner";
+import { PaymentReceipt } from "@/features/qr/components/payment/PaymentReceipt";
 
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { getLastOrderId } from "@/features/qr/helpers/deviceFingerprint";
@@ -24,7 +24,7 @@ import { usePaymentFlow } from "@/features/qr/hooks/usePaymentFlow";
 import { useSplitBill } from "@/features/qr/hooks/useSplitBill";
 import { useCustomerMerge } from "@/features/qr/hooks/useCustomerMerge";
 
-import type { CustomerPayMethod } from "@/features/qr/components/CustomerPayModal";
+import type { CustomerPayMethod } from "@/features/qr/components/payment/CustomerPayModal";
 
 export default function TableBillPage() {
   const params = useParams();

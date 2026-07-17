@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import { OrderCardMobile } from "@/components/orders/OrderCardMobile";
 import { OrderFormSheet } from "@/features/orders/components/OrderFormSheet";
-import { ActiveTablesCard } from "@/features/qr/components/ActiveTablesCard";
+import { ActiveTablesCard } from "@/features/qr/components/table/ActiveTablesCard";
 import { useActiveTables } from "@/features/qr/hooks/useActiveTables";
 import type {
   CatalogStats,

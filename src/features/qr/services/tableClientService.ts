@@ -9,8 +9,8 @@
 
 import { apiFetch } from "@/services/apiFetch";
 
-import type { CustomerPayMethod } from "@/features/qr/components/CustomerPayModal";
-import type { AssignedGroup } from "@/features/qr/components/SplitItemsAssigner";
+import type { CustomerPayMethod } from "@/features/qr/components/payment/CustomerPayModal";
+import type { AssignedGroup } from "@/features/qr/components/split/SplitItemsAssigner";
 import type { BillResponse } from "@/features/qr/hooks/useBillData";
 import type {
   TablePulseResponse,

@@ -17,7 +17,7 @@ import {
 import { Notification } from "@/components/ui/Notification";
 import { formatCurrency, getInitials } from "@/features/qr/helpers/format";
 
-import { CustomerScreen } from "@/features/qr/components/CustomerScreen";
+import { CustomerScreen } from "@/features/qr/components/customer/CustomerScreen";
 import { paymentAmountSchema } from "@/features/qr/validations/paymentAmountSchema";
 import type { PaymentAmountValues } from "@/features/qr/validations/paymentAmountSchema";
 

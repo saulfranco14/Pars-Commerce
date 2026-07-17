@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 
 import { FormSheet } from "@/components/ui/FormSheet";
-import { ProductImageGallery } from "@/features/qr/components/ProductImageGallery";
+import { ProductImageGallery } from "@/features/qr/components/menu-product/ProductImageGallery";
 import { formatCurrency } from "@/features/qr/helpers/format";
 
 import type { MenuItem } from "@/features/qr/interfaces/tableCart";

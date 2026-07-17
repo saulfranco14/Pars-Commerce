@@ -4,15 +4,15 @@ import { useMemo, useState } from "react";
 import { CreditCard, ShoppingBag } from "lucide-react";
 
 import { Notification } from "@/components/ui/Notification";
-import { CustomerScreen } from "@/features/qr/components/CustomerScreen";
-import { BillScreenSkeleton } from "@/features/qr/components/BillScreenSkeleton";
-import { CustomerPayModal } from "@/features/qr/components/CustomerPayModal";
-import { PaymentReceipt } from "@/features/qr/components/PaymentReceipt";
+import { CustomerScreen } from "@/features/qr/components/customer/CustomerScreen";
+import { BillScreenSkeleton } from "@/features/qr/components/bill/BillScreenSkeleton";
+import { CustomerPayModal } from "@/features/qr/components/payment/CustomerPayModal";
+import { PaymentReceipt } from "@/features/qr/components/payment/PaymentReceipt";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { useBillData } from "@/features/qr/hooks/useBillData";
 import { usePaymentFlow } from "@/features/qr/hooks/usePaymentFlow";
 
-import type { CustomerPayMethod } from "@/features/qr/components/CustomerPayModal";
+import type { CustomerPayMethod } from "@/features/qr/components/payment/CustomerPayModal";
 import type { QrSessionTenant } from "@/features/qr/interfaces/tableSession";
 
 interface OrderTicketScreenProps {
