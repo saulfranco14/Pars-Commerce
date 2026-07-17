@@ -23,6 +23,29 @@ No se persigue cobertura total (inviable — 67+ archivos de
 rutas/servicios). Se persigue cubrir lo crítico y dejar el camino
 pavimentado.
 
+## Arquitectura de DOS NIVELES (decisión tomada)
+
+Un solo nivel no basta. Se montan dos capas complementarias:
+
+| Nivel | Contra qué corre | Qué valida | Velocidad | Cuándo se corre |
+|---|---|---|---|---|
+| **Unit (fake)** | `fakeSupabase` en memoria | Lógica de negocio: idempotencia, `allPaid`, despacho del webhook, ramas de error | ms | En cada guardado (watch) + CI en cada push |
+| **Integración** | Postgres real vía `supabase start` (Docker) | RLS, triggers, nombres de columna reales, SQL real, `ServiceResult` de punta a punta | seg | Antes de cada deploy / en CI con Docker |
+
+**Por qué las dos:** el fake es rápido pero *miente* — responde lo que
+le digas, así que no detecta una columna inexistente (como el
+`processed_at` que encontramos en Fase 0), ni una política RLS rota,
+ni un trigger que dejó de disparar. La capa de integración SÍ ejercita
+todo eso contra una DB real idéntica a producción (mismas 49
+migraciones). El fake te dice "mi lógica es coherente"; la integración
+te dice "sube correcto de verdad".
+
+**Prerrequisito operativo:** la capa de integración necesita Docker
+corriendo (`supabase start` levanta Postgres+Auth+Storage locales).
+Docker ya está instalado en la máquina (v28.4.0); solo hay que abrir
+Docker Desktop antes de correr `npm run test:integration`. Los tests
+unit (fake) NO necesitan Docker — corren siempre.
+
 ## Lo que hace esto FACTIBLE (hallazgo clave)
 
 Los servicios de pago ya están diseñados para ser testeables sin
@@ -65,25 +88,86 @@ detectar regresiones.
 - El CLAUDE.md global del usuario ya tiene un filtro `rtk vitest run`
   configurado → señal de que Vitest es el runner esperado.
 - Rápido en watch mode para el loop escribir-test → refactor.
+- Soporta "projects" → misma herramienta corre AMBOS niveles (unit +
+  integración) con un solo runner, distinta config.
 
-**Entregables de T0:**
+**Entregables de T0 (nivel unit / fake):**
 - [ ] `vitest` + `@vitest/coverage-v8` como devDependencies.
-- [ ] `vitest.config.ts` — entorno `node` (los servicios no tocan DOM),
-      alias `@/` apuntando a `src/` (igual que tsconfig), `include`
-      apuntando a `**/*.test.ts`.
-- [ ] Script en `package.json`: `"test": "vitest run"`,
-      `"test:watch": "vitest"`.
-- [ ] Helper de test `src/test/fakeSupabase.ts` — un cliente Supabase
-      falso encadenable (`.from().select().eq().single()` etc.) que
-      devuelve datos preconfigurados por tabla y REGISTRA las
-      escrituras (`.insert`/`.update`) para poder aseverar sobre ellas.
-      Este helper es la pieza reutilizable clave: sirve para pagos HOY
-      y para cualquier servicio del repo mañana.
-- [ ] 1 test trivial de humo (`expect(1+1).toBe(2)`) para confirmar que
-      el runner + alias + TS funcionan de punta a punta antes de
-      escribir tests reales.
+- [ ] `vitest.config.ts` con dos proyectos: `unit` (entorno node,
+      `**/*.test.ts`) e `integration` (`**/*.itest.ts`, setup que
+      conecta a la DB local). Alias `@/` → `src/`.
+- [ ] Scripts en `package.json`:
+      `"test": "vitest run --project unit"` (el rápido, por defecto),
+      `"test:watch": "vitest --project unit"`,
+      `"test:integration": "vitest run --project integration"`,
+      `"test:all": "vitest run"`.
+- [ ] Helper `src/test/fakeSupabase.ts` — cliente Supabase falso
+      encadenable (`.from().select().eq().single()` etc.) que devuelve
+      datos preconfigurados por tabla y REGISTRA las escrituras
+      (`.insert`/`.update`) para aseverar sobre ellas. Pieza
+      reutilizable clave. **Solo vive en tests — nunca se importa en
+      código de producción, no va al bundle.**
+- [ ] 1 test de humo para confirmar runner + alias + TS.
 
-**Criterio de cierre T0:** `npm test` corre verde con el test de humo.
+**Criterio de cierre T0:** `npm test` verde con el test de humo.
+
+> ✅ **T0 DONE** (rama `feat/testing-safety-net-QR`). Instalado
+> `vitest@3.2.7` + `@vitest/coverage-v8`. `vitest.config.ts` con 2
+> proyectos (`unit`/`integration`) y alias `@/`. Scripts `test`,
+> `test:watch`, `test:integration`, `test:all` en package.json.
+> `src/test/fakeSupabase.ts` implementado (lecturas filtradas +
+> registro de escrituras + mutación in-memory). `src/test/smoke.test.ts`
+> con 3 tests verdes (4ms). `tsc --noEmit` limpio. `test:all` no rompe
+> pese a que `integration` aún no tiene tests (stub de setup en
+> `src/test/integration/setup.ts`).
+
+## Fase T0b — Infraestructura de integración (una sola vez, necesita Docker)
+
+- [ ] `src/test/integration/setup.ts` — antes de la suite: conecta un
+      cliente Supabase real a la instancia local (`supabase start` deja
+      la URL y las keys en `supabase status`). Entre tests: limpia/
+      resiembra las tablas tocadas (transacción o `TRUNCATE ... CASCADE`
+      de las tablas del caso) para aislamiento.
+- [ ] Documentar el flujo en el README de tests:
+      `supabase start` → `npm run test:integration` → `supabase stop`.
+- [ ] 1 test de humo de integración: insertar un tenant y leerlo de
+      vuelta contra la DB local, para confirmar que la conexión, las
+      migraciones aplicadas y el aislamiento entre tests funcionan.
+
+**Criterio de cierre T0b:** con Docker arriba, `npm run test:integration`
+inserta y lee contra Postgres real, verde.
+
+> ✅ **T0b DONE.** `supabase start` levanta Postgres local con las 49
+> migraciones. Setup en `src/test/integration/setup.ts`: driver
+> `postgres` directo (rol superusuario, para sembrar/limpiar saltando
+> RLS/grants) + helpers `createTestServiceClient` /
+> `createTestAnonClient` (supabase-js, mismo camino que producción, para
+> tests de comportamiento y RLS). `smoke.itest.ts` con 2 tests verdes
+> (round-trip + aislamiento). `test:all` corre los 2 niveles (5 tests).
+>
+> **Hallazgo de la integración (el tipo de bug que solo esta capa
+> detecta):** la migración `20260311000001_loans_module.sql` tenía un
+> error de sintaxis SQL real en línea 588 (dos string literals
+> adyacentes `'...' '...'` en un `COMMENT ON FUNCTION`, inválido en
+> Postgres). Nunca falló en prod porque se aplicó vía dashboard, pero
+> `supabase start` (validación estricta) lo rechazó. Corregido uniendo
+> los strings — es un metadato, no toca lógica ni datos; en prod ya
+> está aplicado, solo afecta `db reset`/entornos nuevos.
+>
+> **Nota de seguridad:** los tests usan las keys LOCALES de la CLI
+> (defaults públicos, sin valor fuera del Docker). Nunca la
+> service_role de producción.
+>
+> **Descubrimiento sobre RLS:** el `service_role` vía la API REST da
+> `permission denied` en la DB local recién creada (faltan grants de
+> tabla que el Supabase remoto sí configura). Por eso el
+> setup/limpieza usa conexión directa `postgres`, no la API REST. Los
+> tests que quieran ejercitar RLS "como la app" usan los clientes
+> supabase-js.
+
+**Nota de realidad:** T0b tiene más fricción (Docker, ~30-60s de
+arranque de la DB local). Por eso NO corre en cada guardado — corre
+antes de deploy y en CI. El loop rápido del día a día es el nivel unit.
 
 ---
 
@@ -136,9 +220,26 @@ de `/api/qr/resolve`), añadir un test que congele "orden nueva ⇒
 identidad limpia". Es el tipo de regresión que un refactor de pagos
 podría reintroducir sin querer.
 
-**Criterio de cierre T1:** todos verdes CON el código actual. Recién
-ahí se aplica el refactor de `webhook`/`tablePaymentService`, y se
-re-corre: si siguen verdes, el refactor es seguro.
+**T1.1–T1.5 son nivel unit (fake)** — lógica pura, corren en ms.
+
+### T1-INT — los mismos flujos críticos, pero contra DB real
+Un subconjunto de T1 se re-verifica en integración, porque el fake no
+puede probarlos:
+- [ ] `confirmPayment` del último grupo → contra Postgres local,
+      confirmar que la orden queda `paid` Y que cualquier trigger
+      asociado disparó (inventario/comisión si aplica). El fake no ve
+      triggers; esto sí.
+- [ ] Que los `.select("...")` de los servicios de pago usen columnas
+      que EXISTEN (el caso `processed_at`). Un select contra la DB real
+      falla en runtime si la columna no existe — el fake no.
+- [ ] Aislamiento multi-tenant: una query de pagos de un tenant no
+      devuelve filas de otro (ejercita RLS). Solo verificable con DB
+      real + dos tenants sembrados.
+
+**Criterio de cierre T1:** unit verde con código actual + T1-INT verde
+contra DB local. Recién ahí se aplica el refactor de
+`webhook`/`tablePaymentService`, y se re-corren AMBOS niveles: si
+siguen verdes, el refactor es seguro para deploy.
 
 ---
 
@@ -158,19 +259,22 @@ No es bloqueante para nada. Se hace cuando haya espacio.
 
 ## Lo que este plan NO cubre (honestidad de alcance)
 
-- **No es E2E.** No arranca navegador ni prueba la UI real. Para eso
-  queda la verificación manual en navegador que ya venimos haciendo
-  (`/q/[token]`, etc.) y, si algún día se quiere, Playwright — pero eso
-  es otro proyecto.
-- **No prueba RLS ni triggers de Postgres.** El fake client salta la DB
-  real, así que las 56 políticas RLS y 14 triggers NO se ejercitan
-  aquí. Eso solo se valida contra una DB real (staging) — fuera de
-  alcance de esta red de seguridad.
+- **No es E2E de UI.** No arranca navegador ni prueba la interfaz. Para
+  eso queda la verificación manual en navegador que ya venimos haciendo
+  (`/q/[token]`, etc.) y, si algún día se quiere, Playwright — otro
+  proyecto. La capa de integración prueba servicios contra DB real,
+  pero no clicks en pantalla.
+- **RLS/triggers: SÍ se cubren, pero solo en la capa de integración**
+  (T0b/T1-INT), no en unit. Si Docker no está arriba, esa garantía no
+  corre — por eso el criterio de cierre exige AMBOS niveles verdes
+  antes de deploy.
 - **No garantiza "todo el repo".** Cubre pagos. El resto es T2, gradual.
 
 ## Checklist de arranque
 
-- [ ] T0 infraestructura (vitest + fakeSupabase + humo).
-- [ ] T1.1–T1.5 characterization de pagos, VERDES con código actual.
+- [ ] T0 — vitest + fakeSupabase + humo (nivel unit, sin Docker).
+- [ ] T0b — setup de integración + humo contra DB local (con Docker).
+- [ ] T1.1–T1.5 unit de pagos, VERDES con código actual.
+- [ ] T1-INT integración de pagos, VERDE con código actual.
 - [ ] Recién entonces: refactor de `webhook`/`tablePaymentService`.
-- [ ] Re-correr T1 → confirmar verde → deploy seguro.
+- [ ] Re-correr unit + integración → verde → deploy seguro.

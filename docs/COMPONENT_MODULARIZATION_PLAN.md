@@ -309,12 +309,21 @@ contenido/lógica — solo ubicación e imports.
 - [ ] Actualizar este documento marcando la fase como DONE con un
       resumen de lo tocado.
 
-## Actualización de skills (pendiente, después de validar el patrón)
+## Actualización de skills ✅ DONE
 
-Una vez cerradas 2-3 fases reales, agregar a
-`.claude/skills/clean-code/SKILL.md`:
-- Umbral de agrupación: 3+ componentes con dominio/prefijo
-  compartido → subcarpeta.
-- Ejemplo canónico: `features/sitio/components/icons/`.
-- Regla de movimiento: solo imports, cero cambios de contenido.
-- Regla de barrels: nunca crear `index.ts` de reexport al agrupar.
+Tras cerrar las 6 fases, se agregó a `.claude/skills/clean-code/SKILL.md`
+(sección "Grouping inside a folder — subfolders by domain") la regla
+destilada de este trabajo:
+- Umbral de agrupación: 3+ archivos con dominio/prefijo compartido →
+  subcarpeta; por debajo, planos.
+- Agrupar por dominio de USO real, no por prefijo del nombre (la
+  lección de `TableMenuSections` → `menu-product/`).
+- Movimiento = refactor de ubicación: solo imports, cero contenido;
+  preferir alias `@/` sobre relativos frágiles.
+- Nunca barrels.
+- Los transversales sin dominio se quedan en la raíz de la carpeta.
+
+También se reforzó la sección "Data access boundary" con la lección
+del tipado ORM: distinguir duplicación LITERAL (extraer) de escrituras
+que solo comparten tabla (no extraer), y preferir tipos del schema
+sobre `Record<string, unknown>` en payloads de escritura.
