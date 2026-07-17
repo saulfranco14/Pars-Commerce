@@ -3,6 +3,7 @@ import { paymentClient } from "@/lib/mercadopago";
 import { verifyWebhookSignature } from "@/lib/mercadopagoWebhookVerify";
 import { NextResponse } from "next/server";
 import { parseCheckoutReference } from "@/features/orders/helpers/parseCheckoutReference";
+import type { Database } from "@/types/database.types";
 import {
   handleSingleLoanPayment,
   handleBulkLoanPayment,
@@ -13,6 +14,10 @@ import {
   handleQrTableMpPayment,
   isQrTableReference,
 } from "@/features/qr/services/tableMpWebhookService";
+
+type OrderUpdate = Database["public"]["Tables"]["orders"]["Update"];
+type SubscriptionUpdate =
+  Database["public"]["Tables"]["subscriptions"]["Update"];
 
 export async function POST(request: Request) {
   let body: {
@@ -261,7 +266,7 @@ export async function POST(request: Request) {
             ? "partial"
             : "paid";
 
-      const updatePayload: Record<string, string | number | null> = {
+      const updatePayload: OrderUpdate = {
         status: nextStatus,
         paid_total: nextPaidTotal,
         balance_due: nextBalance,
@@ -467,7 +472,7 @@ async function handlePreapprovalStatusChange(
   if (subscription) {
     if (subscription.status === newPlanStatus) return;
 
-    const updatePayload: Record<string, string> = {
+    const updatePayload: SubscriptionUpdate = {
       status: newPlanStatus,
       updated_at: new Date().toISOString(),
     };

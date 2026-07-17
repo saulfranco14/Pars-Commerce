@@ -1,6 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { getMexicoDateBounds } from "@/lib/dateBounds";
 import { NextResponse } from "next/server";
+import type { Database } from "@/types/database.types";
+
+type SalesCommissionUpdate =
+  Database["public"]["Tables"]["sales_commissions"]["Update"];
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -116,7 +120,7 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const updates: Record<string, unknown> = {
+  const updates: SalesCommissionUpdate = {
     updated_at: new Date().toISOString(),
   };
 

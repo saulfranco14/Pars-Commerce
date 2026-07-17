@@ -4,6 +4,7 @@ import type { CreateLoanPayload, UpdateLoanPayload } from "@/types/loans";
 import type { Database } from "@/types/database.types";
 
 type LoanInsert = Database["public"]["Tables"]["loans"]["Insert"];
+type LoanUpdate = Database["public"]["Tables"]["loans"]["Update"];
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -262,7 +263,7 @@ export async function PUT(request: Request) {
   }
 
   const body: UpdateLoanPayload = await request.json();
-  const updates: Record<string, unknown> = {
+  const updates: LoanUpdate = {
     updated_at: new Date().toISOString(),
   };
 

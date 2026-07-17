@@ -2,6 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getMexicoDateBounds } from "@/lib/dateBounds";
 import { NextResponse } from "next/server";
+import type { Database } from "@/types/database.types";
+
+type OrderUpdate = Database["public"]["Tables"]["orders"]["Update"];
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -267,7 +270,7 @@ export async function PATCH(request: Request) {
     }
   }
 
-  const updates: Record<string, unknown> = {
+  const updates: OrderUpdate = {
     updated_at: new Date().toISOString(),
   };
 

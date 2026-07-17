@@ -48,6 +48,24 @@ const NOT_READY_ERROR = err(
   "El negocio aún está preparando tu pedido. Podrás pagar cuando esté listo.",
 );
 
+/**
+ * Whether every split group of an order is paid — the signal to mark the whole
+ * order as paid. The confirm-payment and pay-group flows both need this exact
+ * check, so it lives here instead of being copied into each (per ARCHITECTURE
+ * §data-layer: extract a query only once the same literal repeats, named by
+ * its domain meaning rather than by table).
+ */
+async function areAllSplitGroupsPaid(
+  admin: SupabaseClient,
+  orderId: string,
+): Promise<boolean> {
+  const { data: groups } = await admin
+    .from("order_split_groups")
+    .select("id, payment_status")
+    .eq("order_id", orderId);
+  return (groups ?? []).every((g) => g.payment_status === "paid");
+}
+
 /* -------------------------------------------------------------------------- */
 /* Payment intent — customer signals they want to pay (cash/transfer/in-card) */
 /* -------------------------------------------------------------------------- */
@@ -297,11 +315,7 @@ export async function confirmPayment(
 
   let allPaid = false;
   if (payment.split_group_id) {
-    const { data: allGroups } = await admin
-      .from("order_split_groups")
-      .select("id, payment_status")
-      .eq("order_id", order.id);
-    allPaid = (allGroups ?? []).every((g) => g.payment_status === "paid");
+    allPaid = await areAllSplitGroupsPaid(admin, order.id);
     if (allPaid) {
       await admin
         .from("orders")
@@ -600,11 +614,7 @@ export async function payGroup(
     metadata: { source: "qr_split_checkout", method: input.method },
   });
 
-  const { data: allGroups } = await admin
-    .from("order_split_groups")
-    .select("id, payment_status")
-    .eq("order_id", group.order_id);
-  const allPaid = (allGroups ?? []).every((g) => g.payment_status === "paid");
+  const allPaid = await areAllSplitGroupsPaid(admin, group.order_id);
 
   if (allPaid) {
     await admin

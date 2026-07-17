@@ -90,24 +90,80 @@ error pre-existente en `public/sw.js`, no relacionado).
 
 `tsc --noEmit` y `npm run lint` limpios.
 
-### Fase 4 — QR / mesas: lectura y estado, sin pagos ⏳ PENDIENTE (siguiente)
+### Fase 4 — QR / mesas: lectura y estado, sin pagos ✅ DONE (sin cambios de código)
 Rutas `qr/table/*` de estado (unlink, mergeable, merge-request, close,
 merge, device, respond, active, fulfillment, pulse, items) +
 `features/qr/services/{tableLinkService, tableMergeRequestService,
 tableFulfillmentService, staffOrderService, tableAdminViewService,
 splitOrderService}.ts`.
 
-### Fase 5 — Ventas/comisiones/analytics ⏳ PENDIENTE
-`sales-commissions`, `commission-payments`, `loan-payments` (ya tocado
-parcialmente en Fase 0), `dashboard-sales-by-item`, `sales-cutoffs`,
-`sales-analytics`, `orders`, `order-items`, `loans` (ya tocado
-parcialmente en Fase 0), `features/prestamos/services/
-loanWebhookHandlers.ts` (ya tocado en Fase 0).
+**Resultado: ningún cambio necesario.** Al auditar toda la fase se
+confirmó que:
+- Cero `Record<string, unknown>` en payloads de escritura. Todas las
+  escrituras usan objetos literales inline (o inferidos vía `.map()`,
+  como `splitOrderService.ts:178`), que TypeScript YA valida contra
+  los tipos generados gracias al cliente `<Database>` de la Fase 0.
+  `tsc` limpio = esos literales pasan la validación de `Json` /
+  `Insert` sin cast (los literales bien formados sí son asignables a
+  `Json`, a diferencia de un `Record<string, unknown>` genérico).
+- Las escrituras a `order_activity_log` con `payload: {...}` (repetidas
+  en varios servicios) ya están validadas por inferencia.
+- Las interfaces manuales en `features/qr/interfaces/` (`OrderDevice`,
+  `OrderActivityLogItem`, `QrSessionOrder`, `SplitGroup`, etc.) son
+  DTOs de frontera / view-models, NO espejos 1:1 de tablas —
+  proyecciones parciales o con uniones más estrictas (ej.
+  `OrderActivityLogItem.actor_type` es un union, no `string`).
+  Reemplazarlos por `Database[...]["Row"]` sería una regresión de
+  precisión, no una mejora. Se dejan manuales a propósito.
 
-### Fase 6 — Carrito público / storefront ⏳ PENDIENTE
-`public-cart`, `checkout/services/publicCheckoutOrchestrator.ts`,
-`features/sitio/services/subscriptionWebhookHandlers.ts`,
-`subscriptions`.
+Los 2 `Record<string, unknown>` que existen en
+`tableAdminViewService.ts` (líneas 68 y 216) son de lectura/parsing
+(campo de un DTO de retorno y cast de un `metadata` leído), no
+escritura — fuera del alcance de esta migración.
+
+**Lectura de calidad:** estos servicios de QR (los más nuevos del
+repo) ya estaban escritos con la disciplina que la Fase 0 tuvo que
+imponer a mano en las rutas antiguas de préstamos/MP.
+
+### Fase 5 — Ventas/comisiones/analytics ✅ DONE
+
+**4 `updates: Record<string, unknown>` de handlers PATCH/PUT tipados**
+con el `Update` de su tabla (todos campos escalares, sin columnas
+`Json`, sin bugs destapados — `tsc` limpio a la primera):
+- `sales-commissions/route.ts` → `SalesCommissionUpdate`
+- `commission-payments/route.ts` → `CommissionPaymentUpdate`
+- `orders/route.ts` → `OrderUpdate`
+- `loans/route.ts` → `LoanUpdate` (completa lo que faltaba de Fase 0,
+  que solo había tipado el insert)
+
+**Sin cambios necesarios (ya cubiertos):**
+- `order-items/route.ts` — inserts/updates con objetos literales inline,
+  ya validados por el cliente tipado.
+- `dashboard-sales-by-item`, `sales-cutoffs`, `sales-analytics` — solo
+  lectura.
+- `loan-payments/route.ts`, `loanWebhookHandlers.ts` — ya tocados en
+  Fase 0.
+
+`tsc --noEmit` y `npm run lint` limpios.
+
+### Fase 6 — Carrito público / storefront ✅ DONE
+
+**2 `Record<string, unknown>` de escritura tipados** con
+`SubscriptionUpdate` (campos escalares, sin `Json`, sin bugs):
+- `features/sitio/services/subscriptionWebhookHandlers.ts` (`subUpdate`)
+- `subscriptions/route.ts` (`updateData`)
+
+**Sin cambios necesarios:**
+- `public-cart/route.ts` — 4 escrituras: 3 literales inline (ya
+  validados) + 1 `.upsert(upsertData)` donde `upsertData` ya tiene un
+  tipo inline explícito y seguro (no es un `Record<string, unknown>`).
+- `publicCheckoutOrchestrator.ts` — su `.insert({...})` es literal
+  inline; el único `Record<string, unknown>` del archivo (línea 86)
+  es un cast de LECTURA de `tenant.settings`, no escritura.
+
+`tsc --noEmit` y `npm run lint` limpios.
+
+### Fase 7 — Mercado Pago y pagos QR ⏳ PENDIENTE (siguiente)
 
 ### Fase 7 — Mercado Pago y pagos QR ⏳ PENDIENTE
 `qr/table/payment/[paymentId]/{confirm,reject}`,
@@ -121,54 +177,59 @@ loanWebhookHandlers.ts` (ya tocado en Fase 0).
 `features/checkout/services/{singleCheckoutHandler,
 subscriptionCheckoutHandler, partialCheckoutHandler}.ts`.
 
-### Fase 8 — Núcleo pesado: webhook MP + pagos de mesa ⏳ PENDIENTE
-`api/mercadopago/webhook/route.ts` (ya tocado parcialmente en Fase 0),
-`features/qr/services/tablePaymentService.ts` (el más pesado — 639
-líneas, duplicación ya confirmada de `allPaid` y
-`order_activity_log` insert).
+### Fase 8 — Núcleo pesado: webhook MP + pagos de mesa ✅ DONE
+
+**`api/mercadopago/webhook/route.ts`:**
+- Los 2 `updatePayload` (uno para `orders`, otro para `subscriptions`)
+  estaban tipados como `Record<string, string | number | null>` /
+  `Record<string, string>`. Retipados a `OrderUpdate` y
+  `SubscriptionUpdate` para consistencia con el resto del ORM. `tsc`
+  limpio (los null-handling bugs de este archivo ya se corrigieron en
+  Fase 0).
+- Los 2 `Record<string, unknown>` restantes (líneas ~217, ~340) son
+  casts de LECTURA de `metadata`/`work_metadata`, no escritura — se
+  dejan.
+
+**`features/qr/services/tablePaymentService.ts` (639 líneas):**
+- **Duplicación de `allPaid` extraída a helper** — el bloque
+  `.from("order_split_groups").select("id, payment_status")
+  .eq("order_id", X)` + `.every(g => g.payment_status === "paid")`
+  estaba copiado LITERAL en `confirmPayment` y `payGroup`. Extraído a
+  `areAllSplitGroupsPaid(admin, orderId)` (cruza el umbral de
+  ARCHITECTURE: misma query literal en 2+ sitios, nombrada por dominio).
+- **Los 6 inserts a `order_activity_log` NO se tocaron** — se evaluaron
+  y NO son duplicación real: cada uno tiene `actor_type` / `action` /
+  `payload` distintos por evento de negocio (intent, confirmed,
+  rejected, succeeded-full, succeeded-split). Un helper ahí solo
+  disfrazaría la variación tras 5 parámetros, sin reducir nada. No
+  cruza el umbral.
+- Todas las demás escrituras usan objetos literales inline, ya
+  validados por el cliente tipado.
+
+**Verificación:** `tsc --noEmit` y `npm run lint` limpios. En
+navegador: `/api/mercadopago/webhook` (POST) responde 401 por firma
+inválida (correcto — compiló 567 módulos y ejecutó la validación),
+`/q/[token]/table/bill` (consume `tablePaymentService`) sirvió HTTP
+200 (1146 módulos). Sin "Module not found".
 
 ---
 
-## Frente 2 — Modularización de componentes por feature
+## 🎯 Frente 1 (tipado ORM) COMPLETO — 9/9 fases
 
-Contexto: no se permiten barrel files (confirmado — hoy no existe
-ninguno, la regla ya se respeta). El hallazgo es distinto: varias
-features tienen componentes sueltos directo en `components/` que
-deberían agruparse en subcarpetas por dominio/cohesión, siguiendo la
-única referencia positiva que ya existe en el repo:
-`features/sitio/components/icons/`.
+Todas las escrituras a Supabase del repo (rutas API + servicios
+server-side) están tipadas contra el schema generado, ya sea:
+- explícitamente (`Insert`/`Update` de la tabla) donde había
+  `Record<string, unknown>`, o
+- por inferencia, donde ya se usaban objetos literales inline validados
+  por el cliente `<Database>`.
 
-**Regla a aplicar:** agrupar por dominio cuando hay 3+ archivos con
-prefijo/tema compartido. No forzar subcarpeta en features con 1-2
-archivos sueltos (`auth`, `onboarding`, `productos`, `servicios`,
-`equipo`, `sitio-web` — tamaño trivial, no aplica).
+Los DTOs de frontera / view-models manuales se dejaron a propósito (no
+son espejos de tabla). Bugs latentes de null-handling destapados y
+corregidos en Fase 0. Una duplicación literal real extraída a helper
+(`areAllSplitGroupsPaid`) en Fase 8.
 
-**Importante (pedido explícito del usuario):** al mover archivos,
-actualizar SOLO los imports que apunten a la nueva ruta. No tocar
-ninguna otra cosa del archivo (ni lógica, ni estilo, ni nombres) —
-esto es un refactor de ubicación, no de contenido.
+**Mantenimiento:** regenerar `src/types/database.types.ts` tras cada
+migración nueva (comando al inicio de este doc).
 
-| Feature | Estado actual | Subcarpetas propuestas | Prioridad |
-|---|---|---|---|
-| **qr** | 47 archivos sueltos, 0 subcarpetas | `table/`, `bill/`, `payment/`, `split/`, `customer/`, `menu-product/`, `qr-create/`, `order-tracker/` (quedan sueltos genéricos: `BrandImage`, `ConfettiBurst`, `PromoBanner`, `MergeRequestBanner`, `DeviceNamePrompt`, `PerPersonFulfillmentCard`, `ServiceWorkerFreshnessGuard`) | Alta — peor caso, 8+ dominios mezclados |
-| **checkout** | Todo bajo `cart/` (16 archivos), pero mezcla dominios distintos | Separar `cart/` (ítems) de `payment-plan/` (`FrequencyPicker`, `InstallmentsPicker`, `MsiPicker`, `MsiBreakdownCard`, `FeesBreakdownCard`, `PaymentModeTabs`) y dejar el resto (`CheckoutBody`, `CheckoutFormFields`, `DesktopCheckoutAside`, `MobileCheckoutBar/Sheet`) en la raíz de `checkout/` o en `checkout-flow/` | Alta — es el caso que motivó la revisión |
-| **orders** | 11 sueltos | `order/` (`OrderActionButtons`, `OrderHeader`, `OrderItemsTable`, `OrderPaymentPlanCard`, `CustomerCard`), `payment/` (`ConfirmPaymentModal`, `PaymentLinkCard`, `GenerateLinkModal`, `AssignBeforePaidModal`, `AssignmentCard`, `DiscountModal`), `receipt/` (`ReceiptPreview`, `ReceiptActions`) | Media |
-| **configuracion** | 12 sueltos | `site-content/`, `config-sections/`, `bank-account/` (queda suelto: `CardIconSelector`) | Media |
-| **prestamos** | 5 sueltos | `customer/` (`CustomerFields`, `CustomerPicker`), `loan-items/` (`AddProductCombobox`, `LoanItemRow`) — `FieldError` es candidato a moverse a `src/components/ui/` (genérico, no específico del feature) | Baja |
-| **landing** | 11 sueltos, todos `Landing*` | Opcional — cohesión ya clara por nombre, bajo impacto | Baja / opcional |
-
-**Sin acción:** `sitio` (ya modular, referencia), `sitio-web`, `auth`,
-`onboarding`, `productos`, `servicios`, `equipo` (1-2 archivos,
-trivial), `promociones`/`ventas`/`suscripciones` (sin carpeta
-`components/`).
-
----
-
-## Actualización de skills pendiente
-
-Una vez validado el patrón en al menos 1-2 features reales, agregar a
-`.claude/skills/clean-code/SKILL.md` una regla explícita:
-- Umbral de agrupación: 3+ componentes con dominio/prefijo compartido
-  → subcarpeta.
-- Ejemplo canónico de referencia: `features/sitio/components/icons/`.
-- Al mover: solo tocar imports, cero cambios de contenido/lógica.
+> El Frente 2 (modularización de componentes) vive en su propio
+> documento: `COMPONENT_MODULARIZATION_PLAN.md`.
