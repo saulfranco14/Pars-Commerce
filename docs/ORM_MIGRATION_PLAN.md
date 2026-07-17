@@ -74,11 +74,23 @@ Rutas cubiertas: `site-templates`, `debug-sitio`, `sitio-tenant`,
 `tsc --noEmit` y `npm run lint` limpios tras estos cambios (mismo
 error pre-existente en `public/sw.js`, no relacionado).
 
-### Fase 3 — Tenant/equipo/roles ⏳ PENDIENTE (siguiente)
-`api/team/route.ts`, `api/tenants/route.ts` (ya tocado parcialmente
-en Fase 0).
+### Fase 3 — Tenant/equipo/roles ✅ DONE
+- `api/team/route.ts` — sin cambios necesarios: todos sus inserts /
+  updates / upserts ya usan objetos literales directos (no
+  `Record<string, unknown>`), así que se benefició gratis del tipado
+  de clientes de la Fase 0.
+- `api/tenants/route.ts` — el POST ya estaba tipado (`TenantInsert`,
+  Fase 0). En esta fase se tipó el `updates` del PATCH como
+  `TenantUpdate`; eso destapó que `updates.settings = { ...current,
+  ...settingsPayload }` producía `{ [x:string]: unknown }` en vez de
+  `Json` — resuelto con cast a `Json` post-merge (objeto ya validado
+  en runtime). Los otros dos `Record<string, unknown>` del archivo
+  (líneas ~76 y ~209) son tipos de parsing del body, NO payloads de
+  escritura a Supabase — se dejan como están.
 
-### Fase 4 — QR / mesas: lectura y estado, sin pagos ⏳ PENDIENTE
+`tsc --noEmit` y `npm run lint` limpios.
+
+### Fase 4 — QR / mesas: lectura y estado, sin pagos ⏳ PENDIENTE (siguiente)
 Rutas `qr/table/*` de estado (unlink, mergeable, merge-request, close,
 merge, device, respond, active, fulfillment, pulse, items) +
 `features/qr/services/{tableLinkService, tableMergeRequestService,

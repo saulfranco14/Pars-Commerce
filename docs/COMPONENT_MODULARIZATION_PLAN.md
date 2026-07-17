@@ -254,14 +254,42 @@ PromoBanner, ServiceWorkerFreshnessGuard.
 
 ---
 
-### Fase 6 — landing (opcional, bajo valor) ⏳ PENDIENTE / A DECIDIR
+### Fase 6 — landing ✅ DONE
 
-11 archivos, todos `Landing*` (Cta, Faq, Features, Footer,
-HowItWorks, Logos, Nav, Pricing, Showflow, BentoShowcase, Hero). La
-cohesión ya es evidente por el prefijo compartido en el nombre —
-agruparlos en una subcarpeta `sections/` es opcional y de impacto
-marginal. Decidir si se hace al llegar a esta fase, no es
-bloqueante para nada más.
+Los 11 componentes `Landing*` (Cta, Faq, Features, Footer,
+HowItWorks, Logos, Nav, Pricing, Showflow, BentoShowcase, Hero) →
+subcarpeta `sections/`. El caso más simple de todas las fases pese al
+volumen: un único consumidor (`src/app/page.tsx`, 11 imports) y cero
+imports internos entre ellos. Actualizados los 11 imports en
+`page.tsx` con sed.
+
+**Verificación:** `tsc --noEmit` limpio, `npm run lint` sin cambios
+(49 / 1 error de `public/sw.js`), y en navegador la landing `/`
+compiló 829 módulos y sirvió HTTP 200.
+
+---
+
+## Frente 2 COMPLETO ✅
+
+Las 6 fases de modularización de componentes están cerradas. Estado
+final por feature con `components/` no trivial:
+
+- **checkout** → `cart/` + `payment-plan/`
+- **prestamos** → `customer/` + `loan-items/` (+ `FieldError` suelto,
+  genérico)
+- **configuracion** → `site-content/` + `config-sections/` +
+  `bank-account/`
+- **orders** → `order/` + `payment/` + `receipt/` (+ `OrderFormSheet`
+  suelto)
+- **qr** → 8 subcarpetas (`split/`, `order-tracker/`, `qr-create/`,
+  `menu-product/`, `customer/`, `payment/`, `bill/`, `table/`) + 4
+  transversales sueltos. 1 componente muerto borrado (`BillPayModal`).
+- **landing** → `sections/`
+- **sitio** → `icons/` (ya estaba, fue la referencia positiva inicial)
+
+Sin barrels introducidos en ninguna fase (la regla se respetó). Todos
+los movimientos con `git mv` (historia preservada). Cero cambios de
+contenido/lógica — solo ubicación e imports.
 
 ---
 
