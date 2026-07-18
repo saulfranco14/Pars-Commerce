@@ -2518,6 +2518,44 @@ export type Database = {
           },
         ]
       }
+      tenant_settlement_config: {
+        Row: {
+          commission_override: number | null
+          created_at: string
+          custom_cycle_days: number | null
+          cycle_type: string
+          last_settled_at: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          commission_override?: number | null
+          created_at?: string
+          custom_cycle_days?: number | null
+          cycle_type?: string
+          last_settled_at?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          commission_override?: number | null
+          created_at?: string
+          custom_cycle_days?: number | null
+          cycle_type?: string
+          last_settled_at?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_settlement_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_site_pages: {
         Row: {
           content: Json | null

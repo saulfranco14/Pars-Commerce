@@ -230,7 +230,35 @@ copiando el molde de `commission_payments` pero para plataforma→negocio.
 
 ---
 
-## FASE S4 — Config de ciclo por negocio 🟡 UX
+## FASE S4 — Config de ciclo por negocio ✅ DONE
+
+> Implementada en rama `feat/settlement-config-QR` (75 tests verdes).
+> - **Migración `20260718000004_tenant_settlement_config.sql`:** ciclo
+>   por negocio (`cycle_type`, `custom_cycle_days`, `commission_override`,
+>   `last_settled_at`). Separación de poderes: el owner elige su ciclo;
+>   el `commission_override` (comisión por contrato) SOLO la plataforma.
+>   RLS: owner lee lo suyo, platform_admin todo, service_role gestiona.
+> - **`GET/PUT /api/settlement-config`:** el owner ve su config + un
+>   PREVIEW de lo que cuesta cada ciclo (para comparar antes de elegir),
+>   y cambia su `cycle_type`. El endpoint NO acepta `commission_override`
+>   del owner (no puede bajarse su propia comisión).
+> - **Helpers puros:** `cyclePreview.ts` (preview de comisión por ciclo,
+>   reusa S2) y `cycleDue.ts` (¿venció el ciclo? + período a liquidar,
+>   con `now` inyectable para tests deterministas).
+> - **Scheduler `POST /api/settlement-run`:** el cron. Barre las configs,
+>   evalúa cuáles vencieron, llama `createSettlement` (S3) por cada una,
+>   y estampa `last_settled_at`. Auth por `CRON_SECRET` en header (falla
+>   cerrado si no está configurado). `?now=ISO` para tests.
+> - **Tests:** unit de `cycleDue` (timing del scheduler) + `cyclePreview`
+>   + integración del flujo completo del scheduler contra Postgres real
+>   (liquida un tenant vencido, no liquida uno cuyo ciclo no elapsó).
+> - ⏳ Pendiente operativo (fuera de código): registrar el cron real
+>   (Vercel Cron / scheduler externo) que llame `/api/settlement-run`
+>   con el `CRON_SECRET`, y setear esa env var en prod.
+
+---
+
+## FASE S4 (diseño original) — Config de ciclo por negocio 🟡 UX
 
 **El objetivo:** que cada negocio elija su ciclo (diario/semanal/
 quincenal/mensual/personalizado) y vea su comisión resultante ANTES de
