@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
   public: {
     Tables: {
       commission_payments: {
@@ -1298,6 +1293,24 @@ export type Database = {
           },
         ]
       }
+      platform_admins: {
+        Row: {
+          created_at: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       product_images: {
         Row: {
           alt_text: string | null
@@ -2501,7 +2514,52 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      payment_ledger: {
+        Row: {
+          amount_gross: number | null
+          created_at: string | null
+          external_id: string | null
+          fee_amount: number | null
+          is_platform_custodied: boolean | null
+          kind: string | null
+          net_amount: number | null
+          order_id: string | null
+          payment_method: string | null
+          provider: string | null
+          source_id: string | null
+          source_table: string | null
+          status: string | null
+          tenant_id: string | null
+        }
+        Relationships: []
+      }
+      payment_retry_counts: {
+        Row: {
+          approved_attempts: number | null
+          attempts_total: number | null
+          failed_attempts: number | null
+          last_attempt_at: string | null
+          order_id: string | null
+          retries: number | null
+          tenant_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_payment_attempts_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_payment_attempts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       can_manage_tenant_team: {
@@ -2649,3 +2707,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

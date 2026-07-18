@@ -95,9 +95,57 @@ registra cada intento con su `status`). El ledger expone
 agregación que el negocio quiere ver ("$30mil: $X efectivo, $Y transf,
 $Z MP; 100 movimientos, 5 con reintento, todos OK").
 
+> 🔨 **S1 en progreso** (rama `feat/payment-hardening-QR`):
+> - ✅ Vista `payment_ledger` creada (migración
+>   `20260718000001_payment_ledger_view.sql`) — unifica payments +
+>   loan_payments + subscription_payments (solo cobros confirmados), con
+>   `tenant_id`/`payment_method` vía join a orders, `fee_amount`,
+>   `net_amount`, y `is_platform_custodied` (true solo para dinero MP).
+> - ✅ Vista `payment_retry_counts` — reintentos por orden derivados de
+>   order_payment_attempts (métrica aparte, no filas del ledger).
+> - ✅ 3 tests de integración verdes contra Postgres real: unifica
+>   MP+efectivo con custody flag correcto, incluye loan con fee/neto, y
+>   agrega "cuánto entró por método" (`{efectivo: 30, mercadopago: 100}`).
+> - ✅ Super admin de plataforma: tabla `platform_admins` (migración
+>   `20260718000002`, RLS estricta + seed condicional por email de
+>   `saul.franco1420@gmail.com`), helper `isPlatformAdmin(userId)`
+>   server-only, con test de integración (2 casos).
+> - ✅ Endpoint `GET /api/ledger` — bifurca por rol: super admin ve
+>   TODOS los tenants (filtro opcional por tenant_id); owner ve solo el
+>   suyo (requirePermission). Devuelve rows + summary por método +
+>   total custodiado por la plataforma (MP).
+> - **Seed del super admin:** la migración marca a
+>   `saul.franco1420@gmail.com` como platform admin SOLO si su cuenta ya
+>   existe (por email, sin contraseñas en código). Si aún no te has
+>   registrado, tras crear la cuenta hay que re-ejecutar el INSERT del
+>   seed (o correrlo a mano con service_role).
+> - **Nota de mantenimiento (aprendida):** regenerar tipos tras una
+>   migración con `supabase gen types typescript --db-url "postgresql://
+>   postgres:postgres@127.0.0.1:54322/postgres" --schema public`. El
+>   flag `--local` falló ("config.toml not found") en este entorno;
+>   `--db-url` funciona.
+
 ---
 
-## FASE S2 — Comisión escalonada por frecuencia 🟠 NÚCLEO DEL NEGOCIO
+## FASE S2 — Comisión escalonada por frecuencia ✅ DONE
+
+> Implementada en `src/constants/platformCommission.ts` (11 tests unit
+> verdes). Función pura `calcPlatformCommission(netMpAmount, cycle,
+> overridePercent?)` → `{ netMp, commissionPercent, commissionAmount,
+> amountToTransfer }`.
+> - Escalón por frecuencia (elegido con negocio): `daily 3.5%`,
+>   `weekly 3%`, `biweekly 2.5%`, `monthly 2%`. Constante versionada
+>   `PLATFORM_COMMISSION_BY_CYCLE`.
+> - `custom` NO tiene default: exige `overridePercent` explícito
+>   (comisión por contrato) o lanza error.
+> - Se cobra sobre el NETO de MP. Redondeo a centavos. Rechaza netos
+>   negativos y overrides fuera de 0–1.
+> - El override por-negocio (contrato) queda soportado en la firma; el
+>   DÓNDE se guarda el ciclo/override de cada tenant es S4.
+
+---
+
+## FASE S2 (diseño original) — Comisión escalonada por frecuencia
 
 **El objetivo:** una función pura `calcPlatformCommission(netMpAmount,
 cycle)` que devuelva la comisión de plataforma según el ciclo de

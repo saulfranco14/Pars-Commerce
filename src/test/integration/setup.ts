@@ -32,6 +32,13 @@ const ANON_KEY =
   process.env.SUPABASE_TEST_ANON_KEY ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
 
+// Point the app's own clients (createAdminClient / createClient) at the LOCAL
+// instance so that code under test which builds its own Supabase client (e.g.
+// isPlatformAdmin via createAdminClient) hits the test DB, not production.
+process.env.NEXT_PUBLIC_SUPABASE_URL = API_URL;
+process.env.SUPABASE_SERVICE_ROLE_KEY = SERVICE_KEY;
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = ANON_KEY;
+
 /** Conexión directa a Postgres (superusuario). Para sembrar/limpiar. */
 export const sql = postgres(DB_URL, { max: 4, onnotice: () => {} });
 
