@@ -53,12 +53,15 @@ export async function POST(request: Request) {
       { status: 401 },
     );
   }
-
   if (body.type === "subscription_preapproval" && body.data?.id) {
     try {
       await handlePreapprovalStatusChange(body.data.id);
     } catch (err) {
-      console.error("Webhook: error en subscription_preapproval:", err);
+      console.error(
+        "Webhook: error en subscription_preapproval (500 for retry):",
+        err,
+      );
+      return NextResponse.json({ error: "processing_failed" }, { status: 500 });
     }
     return NextResponse.json({ received: true });
   }
@@ -67,7 +70,11 @@ export async function POST(request: Request) {
     try {
       await handlePreapprovalPayment(body.data.id);
     } catch (err) {
-      console.error("Webhook: error en subscription_authorized_payment:", err);
+      console.error(
+        "Webhook: error en subscription_authorized_payment (500 for retry):",
+        err,
+      );
+      return NextResponse.json({ error: "processing_failed" }, { status: 500 });
     }
     return NextResponse.json({ received: true });
   }
@@ -99,7 +106,6 @@ export async function POST(request: Request) {
     const parsFeeAmount = 0;
     const supabase = createAdminClient();
 
-    // ── Pago bulk de préstamos ───────────────────────────────────────────────
     if (externalRef.startsWith("bulk_loan:")) {
       if (mpStatus === "approved") {
         await handleBulkLoanPayment(
@@ -113,7 +119,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
-    // ── Pago de préstamo individual ──────────────────────────────────────────
     if (externalRef.startsWith("loan:")) {
       if (mpStatus === "approved") {
         await handleSingleLoanPayment(
@@ -128,7 +133,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
-    // ── Pago de QR mesa (full / split group) ─────────────────────────────────
     if (isQrTableReference(externalRef)) {
       if (mpStatus === "approved") {
         await handleQrTableMpPayment({
@@ -141,7 +145,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
-    // ── Pago de orden de checkout (single / partial) ─────────────────────────
     const parsedRef = parseCheckoutReference(externalRef);
     const orderId = parsedRef?.orderId ?? externalRef;
     const checkoutMode = parsedRef?.mode ?? "single";
@@ -392,8 +395,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ received: true });
   } catch (err: unknown) {
-    console.error("Webhook processing error:", err);
-    return NextResponse.json({ received: true });
+    console.error(
+      "Webhook processing error (returning 500 for MP retry):",
+      err,
+    );
+    return NextResponse.json({ error: "processing_failed" }, { status: 500 });
   }
 }
 

@@ -528,7 +528,9 @@ export async function payFullOrder(
       provider: input.method === "mercadopago" ? "mercadopago" : "manual",
       status: "approved",
       amount: oAmount,
-      payment_kind: "full",
+      // 'single' — 'full' is not in the payments.payment_kind CHECK, so this
+      // insert used to fail silently (23514). See tableMpWebhookService.
+      payment_kind: "single",
       metadata: {
         source: "qr_table_pay_full",
         method: input.method,

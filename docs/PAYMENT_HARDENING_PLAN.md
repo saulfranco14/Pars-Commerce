@@ -34,6 +34,50 @@ idempotencia en varias rutas (préstamos, checkout, suscripciones).
 
 ---
 
+## ✅ P1 + P2 (flujo QR) — HECHO en rama `feat/payment-hardening-QR`
+
+Se aplicaron juntos (como exige el plan) sobre el flujo QR de mesa.
+Además de lo previsto, la red de tests destapó DOS bugs graves que
+impedían registrar pagos QR-mesa por MP en producción:
+
+- **`provider_payment_id` → `external_id`.** El insert de `payments` en
+  `tableMpWebhookService` usaba `provider_payment_id`, columna que NO
+  existe en la tabla. Corregido a `external_id` (la columna real, con
+  índice único `idx_payments_provider_external_id`). Además de arreglar
+  el registro, ese índice AHORA da la idempotencia de P2: un webhook
+  reenviado → `23505` → no-op (manejado con `if code !== "23505"`).
+- **`payment_kind: "full"` → `"single"`.** El CHECK de la tabla solo
+  permite `single/subscription/partial/manual_adjustment`; `"full"`
+  fallaba con `23514`. Corregido en los 3 sitios que lo usaban
+  (`tableMpWebhookService`, `tableCloseService`, `tablePaymentService`).
+- **`allPaid` frágil eliminado** de `settleSplitGroup` — usaba la misma
+  `(allGroups ?? []).every(...)` que marcaba pagado de más ante error de
+  query; ahora reutiliza el helper endurecido `areAllSplitGroupsPaid`.
+- **P1 webhook 5xx:** el `catch` global y los 2 catch de preapproval
+  devolvían 200 en fallo → MP no reintentaba → pago perdido. Ahora
+  devuelven `500` ante fallo real de procesamiento, para que MP
+  reintente (seguro porque P2 hizo idempotente el settle).
+
+**Tests que lo respaldan (39 verdes):**
+- unit `tableMpWebhookService.test.ts` (6) — settle full/split +
+  idempotencia + orden inexistente.
+- integración `tableMpWebhookService.itest.ts` (1) — el índice único
+  RECHAZA el segundo insert (`23505`) contra Postgres real.
+- unit `retry.test.ts` (4) — contrato P1: fallo→500, éxito→200,
+  ignorable→200.
+
+**Pendiente de P1/P2 para OTRAS rutas:** loan/checkout webhooks. Ver si
+tienen los mismos bugs de columna/CHECK antes de aplicarles el patrón
+(Fases E1/E3 del plan de expansión, fusionadas con este hardening).
+
+⚠️ **Acción de datos histórica (fuera de código):** como el insert QR
+de MP fallaba, es probable que existan órdenes marcadas `paid` SIN su
+fila en `payments`. Conviene una reconciliación puntual (query de
+órdenes pagadas por MP sin payment asociado) para cuantificar y, si
+aplica, backfill. No bloquea el deploy del fix, pero hay que hacerlo.
+
+---
+
 ## Fase P1 — Webhook reintentar ante fallo (5xx) 🔴 CRÍTICO, quick win
 
 **El problema, hoy:** `webhook/route.ts:394-397`

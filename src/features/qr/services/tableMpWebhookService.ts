@@ -9,6 +9,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { releaseTableQrIfPaid } from "@/features/qr/helpers/releaseTableQrIfPaid";
+import { areAllSplitGroupsPaid } from "@/features/qr/services/tablePaymentService";
 
 export const QR_TABLE_PREFIX = "qr_table:";
 export const QR_TABLE_GROUP_PREFIX = "qr_table_group:";
@@ -74,15 +75,18 @@ async function settleFullOrder(
     })
     .eq("id", order.id);
 
-  await admin.from("payments").insert({
+  const { error: payErr } = await admin.from("payments").insert({
     order_id: order.id,
     provider: "mercadopago",
-    provider_payment_id: args.mpPaymentId,
+    external_id: args.mpPaymentId,
     status: "approved",
     amount: args.amount,
-    payment_kind: "full",
+    payment_kind: "single",
     metadata: { source: "qr_table_mp_webhook" },
   });
+  if (payErr && payErr.code !== "23505") {
+    console.error("qr_table webhook: payment insert failed", payErr);
+  }
 
   await admin.from("order_activity_log").insert({
     order_id: order.id,
@@ -128,24 +132,27 @@ async function settleSplitGroup(
     })
     .eq("id", args.groupId);
 
-  await admin.from("payments").insert({
+  // See settleFullOrder: external_id + the unique index give idempotency
+  // against re-delivered webhooks; swallow 23505, log anything else.
+  const { error: payErr } = await admin.from("payments").insert({
     order_id: group.order_id,
     provider: "mercadopago",
-    provider_payment_id: args.mpPaymentId,
+    external_id: args.mpPaymentId,
     status: "approved",
     amount: args.amount,
     payment_kind: "partial",
     split_group_id: args.groupId,
     metadata: { source: "qr_table_mp_webhook" },
   });
+  if (payErr && payErr.code !== "23505") {
+    console.error("qr_table webhook: split payment insert failed", payErr);
+  }
 
-  const { data: allGroups } = await admin
-    .from("order_split_groups")
-    .select("id, payment_status")
-    .eq("order_id", group.order_id);
-  const allPaid = (allGroups ?? []).every(
-    (g) => g.payment_status === "paid",
-  );
+  // Reuse the hardened helper (treats a failed/empty read as "not all paid")
+  // instead of the old inline `(allGroups ?? []).every(...)`, which marked the
+  // order paid whenever the query failed — the money-path bug fixed in
+  // tablePaymentService.
+  const allPaid = await areAllSplitGroupsPaid(admin, group.order_id);
 
   if (allPaid) {
     await admin

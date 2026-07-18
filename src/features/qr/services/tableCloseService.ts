@@ -54,7 +54,10 @@ export async function closeTableOrder(
     .single();
 
   if (!order) {
-    return { ok: false, error: { code: "not_found", message: "Orden no encontrada" } };
+    return {
+      ok: false,
+      error: { code: "not_found", message: "Orden no encontrada" },
+    };
   }
   if (order.status === "paid") {
     // Order is already paid but the QR may still be stuck pointing to it
@@ -107,7 +110,11 @@ export async function closeTableOrder(
         .from("orders")
         .select("id, total, balance_due")
         .eq("merge_group_id", order.merge_group_id)
-    : { data: [{ id: order.id, total: order.total, balance_due: order.balance_due }] };
+    : {
+        data: [
+          { id: order.id, total: order.total, balance_due: order.balance_due },
+        ],
+      };
 
   const targets = groupOrders ?? [
     { id: order.id, total: order.total, balance_due: order.balance_due },
@@ -136,7 +143,10 @@ export async function closeTableOrder(
         })
         .eq("id", t.id as string);
       if (updateError) {
-        return { ok: false, error: { code: "internal", message: updateError.message } };
+        return {
+          ok: false,
+          error: { code: "internal", message: updateError.message },
+        };
       }
 
       await admin.from("payments").insert({
@@ -144,7 +154,7 @@ export async function closeTableOrder(
         provider: "manual",
         status: "approved",
         amount,
-        payment_kind: "full",
+        payment_kind: "single",
         metadata: { source: "qr_table_close_paid_outside_system" },
       });
 
@@ -173,7 +183,10 @@ export async function closeTableOrder(
     })
     .in("id", targetIds);
   if (updateError) {
-    return { ok: false, error: { code: "internal", message: updateError.message } };
+    return {
+      ok: false,
+      error: { code: "internal", message: updateError.message },
+    };
   }
 
   // Free every QR still pointing at any of the closed orders.
