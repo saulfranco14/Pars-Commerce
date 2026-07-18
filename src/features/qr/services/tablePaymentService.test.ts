@@ -43,9 +43,13 @@ describe("areAllSplitGroupsPaid (T1.1)", () => {
     expect(await areAllSplitGroupsPaid(asClient(db), "o1")).toBe(false);
   });
 
-  it("returns true for zero groups — CURRENT behavior of .every over empty (frozen)", async () => {
+  it("returns FALSE for zero groups — money-path safety (a failed/empty read must not read as 'all paid')", async () => {
+    // Was `true` before the hardening fix (`.every` over [] is true). Changed
+    // on purpose: callers only ask after a split group exists, so zero groups
+    // means an anomaly/failed query, and reporting "all paid" would close the
+    // order without collecting the other groups. See areAllSplitGroupsPaid.
     const db = createFakeSupabase({ order_split_groups: [] });
-    expect(await areAllSplitGroupsPaid(asClient(db), "o1")).toBe(true);
+    expect(await areAllSplitGroupsPaid(asClient(db), "o1")).toBe(false);
   });
 
   it("only counts groups of the given order", async () => {
@@ -56,6 +60,17 @@ describe("areAllSplitGroupsPaid (T1.1)", () => {
       ],
     });
     expect(await areAllSplitGroupsPaid(asClient(db), "o1")).toBe(true);
+  });
+
+  it("returns FALSE when the query errors — the money-path bug this fix closes", async () => {
+    // Before the fix, a failed read (data:null) hit `(groups ?? []).every()`
+    // → true → the order got marked fully paid without verifying any group.
+    // This is exactly the case T1-INT surfaced (permission denied locally).
+    const db = createFakeSupabase(
+      { order_split_groups: [] },
+      { errors: { order_split_groups: { message: "permission denied" } } },
+    );
+    expect(await areAllSplitGroupsPaid(asClient(db), "o1")).toBe(false);
   });
 });
 

@@ -69,10 +69,15 @@ class FakeQuery implements PromiseLike<{ data: unknown; error: unknown }> {
     private table: string,
     private store: Map<string, Row[]>,
     private writes: RecordedWrite[],
+    private errors: Map<string, unknown>,
   ) {}
 
   private rows(): Row[] {
     return this.store.get(this.table) ?? [];
+  }
+
+  private seededError(): unknown {
+    return this.errors.get(this.table) ?? null;
   }
 
   // ---- filters (chainable) ----
@@ -162,22 +167,28 @@ class FakeQuery implements PromiseLike<{ data: unknown; error: unknown }> {
   }
 
   // ---- read terminals ----
-  private resolveList(): { data: Row[]; error: null } {
+  private resolveList(): { data: Row[] | null; error: unknown } {
     this.finalizeWrite();
+    const seeded = this.seededError();
+    // Postgrest returns { data: null, error } on a failed query — mirror that
+    // so tests can exercise the error path (e.g. permission denied).
+    if (seeded) return { data: null, error: seeded };
     let data = this.rows().filter((r) => matches(r, this.filters));
     if (this.limitN != null) data = data.slice(0, this.limitN);
     return { data, error: null };
   }
 
   single(): Promise<{ data: Row | null; error: unknown }> {
-    const { data } = this.resolveList();
-    if (data.length === 0)
+    const { data, error } = this.resolveList();
+    if (error) return Promise.resolve({ data: null, error });
+    if (!data || data.length === 0)
       return Promise.resolve({ data: null, error: { message: "no rows" } });
     return Promise.resolve({ data: data[0], error: null });
   }
-  maybeSingle(): Promise<{ data: Row | null; error: null }> {
-    const { data } = this.resolveList();
-    return Promise.resolve({ data: data[0] ?? null, error: null });
+  maybeSingle(): Promise<{ data: Row | null; error: unknown }> {
+    const { data, error } = this.resolveList();
+    if (error) return Promise.resolve({ data: null, error });
+    return Promise.resolve({ data: data?.[0] ?? null, error: null });
   }
 
   then<R1 = { data: unknown; error: unknown }, R2 = never>(
@@ -198,20 +209,38 @@ export interface FakeSupabase {
   rowsOf(table: string): Row[];
 }
 
+export interface FakeSupabaseOptions {
+  /**
+   * Seed a query error per table. When set, reads on that table return
+   * `{ data: null, error }` (like Postgrest on failure) — lets tests exercise
+   * the error path (e.g. permission denied, connection drop).
+   */
+  errors?: Record<string, unknown>;
+}
+
 /**
  * Build a fake client. Seed with the rows each table should return on read:
  *   const db = createFakeSupabase({ payments: [{ id: "p1", status: "pending" }] });
  *   const res = await confirmPayment(db as unknown as SupabaseClient, { ... });
  *   expect(db.writes).toContainEqual(...);
+ *
+ * To simulate a failing query:
+ *   createFakeSupabase({ order_split_groups: [] }, { errors: { order_split_groups: { message: "boom" } } });
  */
-export function createFakeSupabase(seed: Record<string, Row[]> = {}): FakeSupabase {
+export function createFakeSupabase(
+  seed: Record<string, Row[]> = {},
+  options: FakeSupabaseOptions = {},
+): FakeSupabase {
   const store = new Map<string, Row[]>(
     Object.entries(seed).map(([t, rows]) => [t, rows.map((r) => ({ ...r }))]),
+  );
+  const errors = new Map<string, unknown>(
+    Object.entries(options.errors ?? {}),
   );
   const writes: RecordedWrite[] = [];
   return {
     from(table: string) {
-      return new FakeQuery(table, store, writes);
+      return new FakeQuery(table, store, writes, errors);
     },
     writes,
     rowsOf(table: string) {

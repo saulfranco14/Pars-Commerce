@@ -59,11 +59,22 @@ export async function areAllSplitGroupsPaid(
   admin: SupabaseClient,
   orderId: string,
 ): Promise<boolean> {
-  const { data: groups } = await admin
+  const { data: groups, error } = await admin
     .from("order_split_groups")
     .select("id, payment_status")
     .eq("order_id", orderId);
-  return (groups ?? []).every((g) => g.payment_status === "paid");
+
+  // Safety on the money path: if the query FAILED (`error`) or returned no
+  // groups, do NOT report "all paid". A naive `(groups ?? []).every(...)`
+  // would return true on an empty array — so a failed query would silently
+  // mark the whole order paid without ever verifying a single group. The
+  // callers only ever ask this AFTER establishing a split group exists, so
+  // "no groups" here means an anomaly, never a legitimately group-less order.
+  // Returning false just postpones closing the order to the next attempt;
+  // returning true on a failed read would collect money that isn't there.
+  if (error || !groups || groups.length === 0) return false;
+
+  return groups.every((g) => g.payment_status === "paid");
 }
 
 /* -------------------------------------------------------------------------- */

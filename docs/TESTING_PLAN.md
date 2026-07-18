@@ -283,6 +283,34 @@ siguen verdes, el refactor es seguro para deploy.
 > Un fake NUNCA habría mostrado ninguno de los dos. Es exactamente el
 > valor de la capa de integración.
 
+## Hardening H1 — cerrar el bug de "pago de más" ✅ DONE
+
+Con la red de T1 puesta, se corrigió el riesgo que la integración
+destapó, con seguridad de no romper comportamiento.
+
+**Antes:** `areAllSplitGroupsPaid` hacía
+`return (groups ?? []).every(g => g.payment_status === "paid")`. Si la
+query fallaba (`data: null`), el `?? []` la volvía `[]` y `.every()`
+sobre vacío devuelve `true` → la orden se marcaba **totalmente
+pagada sin verificar un solo grupo**. Riesgo de dinero: un pago
+parcial + un fallo de query transitorio = mesa cerrada como saldada.
+
+**Después:** se captura `error` y se trata `error || sin grupos` como
+`false` (lado seguro: ante la duda NO cobrar de más; solo se pospone
+el cierre al siguiente intento). Los callers solo llaman este helper
+tras confirmar que existe un split group, así que "cero grupos" es
+siempre anomalía, nunca un caso legítimo.
+
+**Tests que lo congelan:**
+- unit: "zero groups → FALSE" (antes era true — cambio a propósito).
+- unit: "query error → FALSE" (el escenario exacto del bug; requirió
+  extender `fakeSupabase` para poder sembrar errores de query por
+  tabla — capacidad reutilizable para T2).
+- integración: sigue verde contra Postgres real.
+
+`tsc` limpio, 28 tests verdes, ruta `/q/[token]/table/bill` compila y
+sirve 200.
+
 ---
 
 ## Fase T2 — Base escalable al resto del repo (después, gradual)
