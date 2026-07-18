@@ -1954,6 +1954,118 @@ export type Database = {
           },
         ]
       }
+      settlement_items: {
+        Row: {
+          created_at: string
+          fee_amount: number
+          gross_amount: number
+          id: string
+          net_amount: number
+          settlement_id: string
+          source_id: string
+          source_table: string
+        }
+        Insert: {
+          created_at?: string
+          fee_amount?: number
+          gross_amount: number
+          id?: string
+          net_amount: number
+          settlement_id: string
+          source_id: string
+          source_table: string
+        }
+        Update: {
+          created_at?: string
+          fee_amount?: number
+          gross_amount?: number
+          id?: string
+          net_amount?: number
+          settlement_id?: string
+          source_id?: string
+          source_table?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlement_items_settlement_id_fkey"
+            columns: ["settlement_id"]
+            isOneToOne: false
+            referencedRelation: "settlements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settlements: {
+        Row: {
+          amount_to_transfer: number
+          commission_percent: number
+          created_at: string
+          cycle_type: string
+          gross_mp_amount: number
+          id: string
+          mp_fees_total: number
+          net_mp_amount: number
+          period_end: string
+          period_start: string
+          platform_commission: number
+          snapshot: Json
+          status: string
+          tenant_id: string
+          transfer_confirmed_at: string | null
+          transfer_confirmed_by: string | null
+          transfer_reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_to_transfer?: number
+          commission_percent?: number
+          created_at?: string
+          cycle_type: string
+          gross_mp_amount?: number
+          id?: string
+          mp_fees_total?: number
+          net_mp_amount?: number
+          period_end: string
+          period_start: string
+          platform_commission?: number
+          snapshot?: Json
+          status?: string
+          tenant_id: string
+          transfer_confirmed_at?: string | null
+          transfer_confirmed_by?: string | null
+          transfer_reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_to_transfer?: number
+          commission_percent?: number
+          created_at?: string
+          cycle_type?: string
+          gross_mp_amount?: number
+          id?: string
+          mp_fees_total?: number
+          net_mp_amount?: number
+          period_end?: string
+          period_start?: string
+          platform_commission?: number
+          snapshot?: Json
+          status?: string
+          tenant_id?: string
+          transfer_confirmed_at?: string | null
+          transfer_confirmed_by?: string | null
+          transfer_reference?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_templates: {
         Row: {
           config: Json | null

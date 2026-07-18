@@ -170,7 +170,34 @@ global + override por tenant. Confirmar antes de la migración.
 
 ---
 
-## FASE S3 — Ciclos de liquidación (settlement runs) 🟠 EL CORAZÓN
+## FASE S3 — Ciclos de liquidación ✅ DONE
+
+> Implementada en rama `feat/settlement-runs-QR` (65 tests verdes).
+> - **Migración `20260718000003_settlements.sql`:** tabla `settlements`
+>   (cabecera con montos + ciclo de vida + snapshot inmutable + UNIQUE
+>   por tenant+periodo) y `settlement_items` (tabla puente elegida por
+>   el usuario, con UNIQUE(source_table, source_id) = un cobro se
+>   liquida una sola vez). RLS: owner lee lo suyo, platform_admin lee
+>   todo, service_role gestiona.
+> - **`createSettlement.ts`:** lee del `payment_ledger` los cobros MP
+>   custodiados del periodo NO liquidados aún, suma gross/fees/net,
+>   aplica la comisión de S2, y escribe header + items. Idempotente por
+>   el UNIQUE (rollback del header si fallan los items).
+> - **`advanceSettlement.ts`:** máquina de estados
+>   `open→closed→transfer_pending→transfer_confirmed` (+ disputed).
+>   `canTransition` pura; confirmar transferencia exige referencia;
+>   guarda contra transición concurrente (update `.eq(status, from)`).
+> - **Tests:** unit de la máquina de estados (6, congela qué
+>   transiciones son legales) + integración end-to-end (4: crea con
+>   comisión correcta, idempotencia de re-liquidación, ciclo de vida
+>   completo con referencia, rechazo de transición ilegal).
+> - ⏳ Pendiente de S3: el JOB que dispara el cierre por ciclo (hoy
+>   `createSettlement` se invoca a mano; el scheduler que lo llama por
+>   tenant según su config es parte de S4).
+
+---
+
+## FASE S3 (diseño original) — Ciclos de liquidación (settlement runs) 🟠 EL CORAZÓN
 
 **El objetivo:** el objeto "liquidación" con su ciclo de vida completo,
 copiando el molde de `commission_payments` pero para plataforma→negocio.
