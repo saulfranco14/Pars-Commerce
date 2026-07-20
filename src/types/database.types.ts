@@ -2013,6 +2013,8 @@ export type Database = {
           tenant_id: string
           transfer_confirmed_at: string | null
           transfer_confirmed_by: string | null
+          transfer_note: string | null
+          transfer_proof_url: string | null
           transfer_reference: string | null
           updated_at: string
         }
@@ -2033,6 +2035,8 @@ export type Database = {
           tenant_id: string
           transfer_confirmed_at?: string | null
           transfer_confirmed_by?: string | null
+          transfer_note?: string | null
+          transfer_proof_url?: string | null
           transfer_reference?: string | null
           updated_at?: string
         }
@@ -2053,6 +2057,8 @@ export type Database = {
           tenant_id?: string
           transfer_confirmed_at?: string | null
           transfer_confirmed_by?: string | null
+          transfer_note?: string | null
+          transfer_proof_url?: string | null
           transfer_reference?: string | null
           updated_at?: string
         }

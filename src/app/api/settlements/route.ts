@@ -38,7 +38,7 @@ export async function GET(request: Request) {
   let query = admin
     .from("settlements")
     .select(
-      "id, tenant_id, cycle_type, period_start, period_end, gross_mp_amount, net_mp_amount, platform_commission, amount_to_transfer, status, transfer_reference, transfer_confirmed_at, created_at",
+      "id, tenant_id, cycle_type, period_start, period_end, gross_mp_amount, net_mp_amount, platform_commission, amount_to_transfer, status, transfer_reference, transfer_note, transfer_proof_url, transfer_confirmed_at, created_at",
     )
     .order("period_end", { ascending: false });
 

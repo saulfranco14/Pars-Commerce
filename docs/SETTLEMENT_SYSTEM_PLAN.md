@@ -300,6 +300,28 @@ De punta a punta, con red de tests en los dos niveles:
   liquida una sola vez).
 - **S4** config de ciclo por negocio + scheduler (cron).
 - **S5** tableros: plataforma (tesorería) y negocio (¿cuándo cobro?).
+- **S6** confirmación de entrega con evidencia (nota + foto).
+
+### S6 — Entrega manual con evidencia ✅ DONE
+Modelo real de operación: el dinero llega a la cuenta MP de la
+plataforma; la plataforma lo saca y lo transfiere fuera del sistema;
+luego CONFIRMA la entrega con evidencia. NO hay transferencia
+automática desde el sistema.
+- **Migración `20260719000001`:** columnas `transfer_note` +
+  `transfer_proof_url` en settlements; bucket PRIVADO
+  `settlement-proofs` (info financiera, no público) — sube solo
+  platform_admin, lee el owner de esa liquidación o un platform_admin.
+- **`advanceSettlement` extendido:** al confirmar acepta nota +
+  URL del comprobante (foto del SPEI/depósito). La referencia sigue
+  siendo obligatoria.
+- **`POST /api/settlements/[id]/confirm`:** endpoint SOLO super admin
+  para registrar la entrega con evidencia → transfer_confirmed.
+- **`GET /api/settlements`** ya expone note + proof al negocio (ve su
+  comprobante).
+- **Cambio de ciclo (diario→mensual) cuando el negocio quiera:** ya
+  funcionaba en S4 — el scheduler lee `cycle_type` EN VIVO de la config
+  en cada run, así que el cambio aplica desde el próximo cierre (sin
+  tocar el dinero ya acumulado). Confirmado, sin código nuevo.
 
 **Pendientes OPERATIVOS (fuera de código, para producción):**
 1. Registrar el cron real que llama `/api/settlement-run` + setear
@@ -313,9 +335,11 @@ De punta a punta, con red de tests en los dos niveles:
    trazabilidad total que eso exigiría; la decisión es de negocio.
 
 **Lo que NO cubre este sistema (por diseño):**
-- La transferencia real al negocio es MANUAL por ahora (se registra la
-  referencia al confirmar). Automatizarla (SPEI / MP disbursements) es
-  una fase futura.
+- La transferencia real al negocio es MANUAL (por decisión de negocio):
+  el dinero llega a MP de la plataforma, se saca y se transfiere fuera
+  del sistema, y se CONFIRMA con evidencia (nota + foto, S6).
+  Automatizarla (SPEI / MP disbursements) sería una fase futura si se
+  decidiera — hoy no está en el alcance a propósito.
 - Contracargos/reversas de MP sobre un pago ya liquidado → existe el
   estado `disputed` pero la lógica de ajuste en el siguiente ciclo es
   trabajo futuro.

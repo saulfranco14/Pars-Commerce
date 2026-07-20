@@ -10,9 +10,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type {
-  ServiceResult,
-} from "@/features/settlement/services/createSettlement";
+import type { ServiceResult } from "@/features/settlement/services/createSettlement";
 
 export type SettlementStatus =
   | "open"
@@ -40,9 +38,9 @@ export function canTransition(
 export interface AdvanceSettlementInput {
   settlementId: string;
   to: SettlementStatus;
-  /** Required when moving to transfer_confirmed: proof of the transfer. */
   transferReference?: string;
-  /** Who confirmed the transfer (auth user id). */
+  transferNote?: string;
+  transferProofUrl?: string;
   confirmedBy?: string;
 }
 
@@ -57,7 +55,10 @@ export async function advanceSettlement(
     .single();
 
   if (readErr || !current) {
-    return { ok: false, error: { code: "not_found", message: "Liquidación no encontrada" } };
+    return {
+      ok: false,
+      error: { code: "not_found", message: "Liquidación no encontrada" },
+    };
   }
 
   const from = current.status as SettlementStatus;
@@ -83,11 +84,20 @@ export async function advanceSettlement(
   }
 
   const now = new Date().toISOString();
-  const updates: Record<string, unknown> = { status: input.to, updated_at: now };
+  const updates: Record<string, unknown> = {
+    status: input.to,
+    updated_at: now,
+  };
   if (input.to === "transfer_confirmed") {
     updates.transfer_reference = input.transferReference!.trim();
     updates.transfer_confirmed_at = now;
     if (input.confirmedBy) updates.transfer_confirmed_by = input.confirmedBy;
+    // Delivery evidence: note is optional free text, proof is the receipt photo
+    // URL (uploaded to the settlement-proofs bucket by the platform).
+    if (input.transferNote?.trim())
+      updates.transfer_note = input.transferNote.trim();
+    if (input.transferProofUrl?.trim())
+      updates.transfer_proof_url = input.transferProofUrl.trim();
   }
 
   const { error: updErr } = await admin

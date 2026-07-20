@@ -96,16 +96,24 @@ describe("createSettlement + advanceSettlement (S3, integration)", () => {
     const noRef = await advanceSettlement(admin, { settlementId: id, to: "transfer_confirmed" });
     expect(noRef.ok).toBe(false);
 
-    // with a reference → confirmed, and it's persisted
+    // with a reference + delivery evidence (note + proof photo) → confirmed,
+    // and all of it is persisted as the "te entregué tu dinero" record.
     const ok = await advanceSettlement(admin, {
       settlementId: id,
       to: "transfer_confirmed",
       transferReference: "SPEI-12345",
+      transferNote: "Entregado en efectivo, recibido por el dueño",
+      transferProofUrl: "settlement-proofs/tenant/receipt.jpg",
     });
     expect(ok.ok).toBe(true);
-    const rows = await sql`select status, transfer_reference from settlements where id = ${id}`;
+    const rows = await sql`
+      select status, transfer_reference, transfer_note, transfer_proof_url, transfer_confirmed_at
+      from settlements where id = ${id}`;
     expect(rows[0].status).toBe("transfer_confirmed");
     expect(rows[0].transfer_reference).toBe("SPEI-12345");
+    expect(rows[0].transfer_note).toBe("Entregado en efectivo, recibido por el dueño");
+    expect(rows[0].transfer_proof_url).toBe("settlement-proofs/tenant/receipt.jpg");
+    expect(rows[0].transfer_confirmed_at).not.toBeNull();
   });
 
   it("rejects an illegal transition (open → transfer_confirmed)", async () => {
