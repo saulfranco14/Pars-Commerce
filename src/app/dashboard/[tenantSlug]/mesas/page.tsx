@@ -19,6 +19,7 @@ import { TableListCard } from "@/features/qr/components/table/TableListCard";
 import { TablesFilterTabs } from "@/features/qr/components/table/TablesFilterTabs";
 import { useActiveTables } from "@/features/qr/hooks/useActiveTables";
 import { useTablesList } from "@/features/qr/hooks/useTablesList";
+import { TablesOnboardingOverlay } from "@/components/onboarding/TablesOnboardingOverlay";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
 
@@ -88,6 +89,7 @@ export default function MesasPage() {
 
   return (
     <div className="space-y-4">
+      <TablesOnboardingOverlay />
       <div className="space-y-1.5">
         <PageHeader
           title="Mesas"
