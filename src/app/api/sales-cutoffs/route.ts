@@ -22,7 +22,7 @@ async function isAdminOrOwner(
     | null
     | undefined;
   const role = Array.isArray(rawRole) ? rawRole[0] : rawRole;
-  return !!(role && (role.name === "owner" || role.name === "admin"));
+  return !!(role && role.name === "owner");
 }
 
 export async function GET(request: Request) {

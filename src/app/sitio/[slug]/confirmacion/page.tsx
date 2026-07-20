@@ -241,7 +241,7 @@ export default async function ConfirmacionPage({
           slug={slug}
           accentColor={accentColor}
           orderId={order.id}
-          customerName={order.customer_name}
+          customerName={order.customer_name ?? ""}
           formattedAddress={formattedAddress}
           phone={address?.phone}
         />

@@ -93,6 +93,33 @@ body {
   overflow-x: clip;
 }
 
+/* One-shot confetti burst — used to celebrate a product line reaching
+   "listo" (Uber/Didi-style delivery confirmation). Each particle travels
+   from the center to its own (--tx, --ty) offset while fading out; the
+   translate/rotate keeps compounding cleanly with a single transform.
+   Respects prefers-reduced-motion: particles just don't move. */
+@keyframes confetti-burst {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0.4);
+    opacity: 0;
+  }
+}
+
+.animate-confetti-burst {
+  animation: confetti-burst 700ms ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-confetti-burst {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 @supports not (overflow: clip) {
   body {
     overflow-x: hidden;

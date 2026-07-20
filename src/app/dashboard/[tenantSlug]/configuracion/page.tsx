@@ -16,11 +16,11 @@ import {
 } from "@/types/ticketSettings";
 import { FilterTabs } from "@/components/ui/FilterTabs";
 import { FormSaveBar } from "@/components/layout/FormSaveBar";
-import { ConfigNegocioSection } from "@/features/configuracion/components/ConfigNegocioSection";
-import { ConfigTicketSection } from "@/features/configuracion/components/ConfigTicketSection";
-import { ConfigFinanzasSection } from "@/features/configuracion/components/ConfigFinanzasSection";
-import { ConfigDireccionSection } from "@/features/configuracion/components/ConfigDireccionSection";
-import { ConfigRecurrentesSection } from "@/features/configuracion/components/ConfigRecurrentesSection";
+import { ConfigNegocioSection } from "@/features/configuracion/components/config-sections/ConfigNegocioSection";
+import { ConfigTicketSection } from "@/features/configuracion/components/config-sections/ConfigTicketSection";
+import { ConfigFinanzasSection } from "@/features/configuracion/components/config-sections/ConfigFinanzasSection";
+import { ConfigDireccionSection } from "@/features/configuracion/components/config-sections/ConfigDireccionSection";
+import { ConfigRecurrentesSection } from "@/features/configuracion/components/config-sections/ConfigRecurrentesSection";
 import {
   CONFIG_TABS,
   type ConfigTab,

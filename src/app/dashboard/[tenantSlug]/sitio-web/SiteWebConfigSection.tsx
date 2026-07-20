@@ -7,7 +7,7 @@ import { ArrowRight, Check, Save } from "lucide-react";
 import { useActiveTenant, useTenantStore } from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
 import type { SitePage } from "@/types/tenantSitePages";
-import { SiteContentForm } from "@/features/configuracion/components/SiteContentForm";
+import { SiteContentForm } from "@/features/configuracion/components/site-content/SiteContentForm";
 import {
   update as updateTenant,
   list as listTenants,
@@ -186,7 +186,7 @@ export function SiteWebConfigSection({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex flex-col xl:h-full xl:min-h-0">
       <div className="shrink-0 p-4 pb-0 sm:p-5 sm:pb-0">
         <div className="flex rounded-xl bg-muted/40 p-1 gap-0.5">
           {SITIO_TABS.map((tab) => {
@@ -213,7 +213,7 @@ export function SiteWebConfigSection({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-6 pt-4 sm:px-5 sm:pb-6 sm:pt-4">
+      <div className="px-4 pb-6 pt-4 sm:px-5 sm:pb-6 sm:pt-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:overscroll-contain">
         {activeTab === "general" && (
           <SiteWebGeneralTab
             tenantSlug={tenantSlug}

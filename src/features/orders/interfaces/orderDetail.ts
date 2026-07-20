@@ -47,7 +47,11 @@ export interface OrderDetail {
   id: string;
   status: string;
   cancelled_from?: string | null;
-  source?: "dashboard" | "public_store" | null;
+  source?: "dashboard" | "public_store" | "qr_payment" | "qr_table" | null;
+  order_type?: "dine_in" | "takeaway" | "qr_payment" | null;
+  qr_code_id?: string | null;
+  table_label?: string | null;
+  diner_count?: number | null;
   customer_id?: string | null;
   customer_name: string | null;
   customer_email: string | null;

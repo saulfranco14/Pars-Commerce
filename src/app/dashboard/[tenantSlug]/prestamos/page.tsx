@@ -4,9 +4,20 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
-import { Plus, AlertTriangle, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, AlertTriangle, SlidersHorizontal } from "lucide-react";
 import { FAB } from "@/components/ui/FAB";
 import { FilterTabs } from "@/components/ui/FilterTabs";
+import { Notification } from "@/components/ui/Notification";
+import { StatusBadge } from "@/components/admin/StatusBadge";
+import { PageHeader } from "@/components/admin/PageHeader";
+import type { StatusTone } from "@/components/admin/StatusBadge";
+import {
+  DateFilterSheet,
+  getSevenDaysAgoStr,
+  getYesterdayStr,
+  type QuickDateRange,
+} from "@/components/ui/DateFilterSheet";
+import { getTodayStr } from "@/lib/dateValidation";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { LoansOnboardingOverlay } from "@/components/onboarding/LoansOnboardingOverlay";
 import {
@@ -21,6 +32,7 @@ import {
 } from "@/components/ui/TableWrapper";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { swrFetcher } from "@/lib/swrFetcher";
+import { isAbortError } from "@/services/apiFetch";
 import {
   LOAN_STATUS_LABEL,
   formatMXN,
@@ -42,46 +54,24 @@ const STATUS_TABS = [
   { label: "Todos", value: "" },
 ];
 
+const LOAN_STATUS_BADGE: Record<string, { tone: StatusTone; label: string }> = {
+  paid: { tone: "success", label: "Pagado" },
+  cancelled: { tone: "neutral", label: "Cancelado" },
+  overdue: { tone: "danger", label: "Vencido" },
+  partial: { tone: "warning", label: "Parcial" },
+  pending: { tone: "warning", label: "Pendiente" },
+};
+
 function LoanStatusBadge({ loan }: { loan: LoanWithCustomer }) {
-  const overdue = isLoanOverdue(loan);
-  if (loan.status === "paid") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-        <CheckCircle2 className="h-3 w-3" />
-        Pagado
-      </span>
-    );
-  }
-  if (loan.status === "cancelled") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
-        <XCircle className="h-3 w-3" />
-        Cancelado
-      </span>
-    );
-  }
-  if (overdue) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-        <AlertTriangle className="h-3 w-3" />
-        Vencido
-      </span>
-    );
-  }
-  if (loan.status === "partial") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-        <Clock className="h-3 w-3" />
-        Parcial
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
-      <Clock className="h-3 w-3" />
-      Pendiente
-    </span>
-  );
+  const key = loan.status === "paid" || loan.status === "cancelled"
+    ? loan.status
+    : isLoanOverdue(loan)
+      ? "overdue"
+      : loan.status === "partial"
+        ? "partial"
+        : "pending";
+  const meta = LOAN_STATUS_BADGE[key];
+  return <StatusBadge tone={meta.tone} label={meta.label} />;
 }
 
 export default function PrestamosPage() {
@@ -91,6 +81,24 @@ export default function PrestamosPage() {
   const activeTenant = useActiveTenant();
   const [statusFilter, setStatusFilter] = useState("active");
   const [overdueOnly, setOverdueOnly] = useState(false);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const hasDateFilter = !!dateFrom || !!dateTo;
+
+  function setQuickDate(range: QuickDateRange) {
+    const today = getTodayStr();
+    if (range === "hoy") {
+      setDateFrom(today);
+      setDateTo(today);
+    } else if (range === "ayer") {
+      setDateFrom(getYesterdayStr());
+      setDateTo(getYesterdayStr());
+    } else {
+      setDateFrom(getSevenDaysAgoStr());
+      setDateTo(today);
+    }
+  }
 
   const loansKey =
     activeTenant?.id
@@ -102,7 +110,15 @@ export default function PrestamosPage() {
     swrFetcher,
     { fallbackData: [] }
   );
-  const loans = Array.isArray(loansData) ? loansData : [];
+  // Date range is applied client-side (the loans API has no date params). Bounds
+  // are inclusive on the calendar day.
+  const loans = (Array.isArray(loansData) ? loansData : []).filter((l) => {
+    if (!hasDateFilter) return true;
+    const day = (l.created_at ?? "").slice(0, 10);
+    if (dateFrom && day < dateFrom) return false;
+    if (dateTo && day > dateTo) return false;
+    return true;
+  });
 
   // Resumen rápido
   const totalPending = loans
@@ -121,30 +137,16 @@ export default function PrestamosPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden gap-4">
       {/* Header */}
-      <div className="shrink-0 flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-2">
-          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">Préstamos</h1>
-          <Link
-            href={`/dashboard/${tenantSlug}/prestamos/nuevo`}
-            className="hidden md:inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-          >
-            <Plus className="h-4 w-4 shrink-0" />
-            Nuevo préstamo
-          </Link>
-        </div>
+      <div className="shrink-0 flex flex-col gap-3">
+        <PageHeader title="Préstamos" />
 
-        {/* Stats rápidas */}
+        {/* Stats rápidas — "activos" ya lo comunica el tab "Activos" de abajo,
+            así que solo se muestran los números que los tabs no cubren. */}
         {(statusFilter === "active" || statusFilter === "") && loans.length > 0 && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className={`grid gap-3 ${overdueCount > 0 ? "grid-cols-2" : "grid-cols-1"}`}>
             <div className="rounded-xl border border-border bg-surface-raised px-4 py-3">
               <p className="text-xs text-muted-foreground">Por cobrar</p>
               <p className="mt-0.5 text-lg font-semibold text-foreground">{formatMXN(totalPending)}</p>
-            </div>
-            <div className="rounded-xl border border-border bg-surface-raised px-4 py-3">
-              <p className="text-xs text-muted-foreground">Préstamos activos</p>
-              <p className="mt-0.5 text-lg font-semibold text-foreground">
-                {loans.filter((l) => l.status !== "paid" && l.status !== "cancelled").length}
-              </p>
             </div>
             {overdueCount > 0 && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
@@ -166,7 +168,7 @@ export default function PrestamosPage() {
             }}
             ariaLabel="Filtrar por estado"
           />
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setOverdueOnly((o) => !o)}
@@ -179,13 +181,48 @@ export default function PrestamosPage() {
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
               Solo vencidos
             </button>
+            <button
+              type="button"
+              onClick={() => setFilterSheetOpen(true)}
+              className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                hasDateFilter
+                  ? "bg-accent/15 text-accent hover:bg-accent/20"
+                  : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
+              }`}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+              {hasDateFilter
+                ? `Fechas: ${dateFrom || "—"} a ${dateTo || "—"}`
+                : "Filtrar por fecha"}
+            </button>
+            {hasDateFilter && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+                className="inline-flex min-h-[36px] items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                Limpiar
+              </button>
+            )}
           </div>
         </div>
 
-        {swrError && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            No se pudieron cargar los préstamos.
-          </div>
+        <DateFilterSheet
+          isOpen={filterSheetOpen}
+          onClose={() => setFilterSheetOpen(false)}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onDateFromChange={setDateFrom}
+          onDateToChange={setDateTo}
+          onQuickDate={setQuickDate}
+          onApply={() => setFilterSheetOpen(false)}
+        />
+
+        {swrError && !isAbortError(swrError) && (
+          <Notification tone="error" message="No se pudieron cargar los préstamos." />
         )}
       </div>
 
@@ -337,7 +374,11 @@ export default function PrestamosPage() {
         )}
       </div>
 
-      <FAB href={`/dashboard/${tenantSlug}/prestamos/nuevo`} aria-label="Nuevo préstamo">
+      <FAB
+        href={`/dashboard/${tenantSlug}/prestamos/nuevo`}
+        aria-label="Nuevo préstamo"
+        alwaysVisible
+      >
         <Plus className="h-6 w-6 shrink-0" />
       </FAB>
 

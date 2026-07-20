@@ -27,6 +27,7 @@ export async function handleSingleCheckout(
     origin,
     idempotencyKey,
     expiresAt,
+    backUrls,
   } = ctx;
 
   const msiOption: MsiOption = (payload.msi_option ?? 1) as MsiOption;
@@ -122,12 +123,14 @@ export async function handleSingleCheckout(
       body: {
         items: mpItems,
         external_reference: externalReference,
-        back_urls: {
+        back_urls: backUrls ?? {
           success: `${origin}/sitio/${tenantSlug}/confirmacion?status=success&order_id=${order.id}&mode=single`,
           failure: `${origin}/sitio/${tenantSlug}/confirmacion?status=failure&order_id=${order.id}&mode=single`,
           pending: `${origin}/sitio/${tenantSlug}/confirmacion?status=pending&order_id=${order.id}&mode=single`,
         },
-        auto_return: "approved",
+        // MP rejects auto_return when back_urls aren't publicly reachable
+        // (e.g. localhost during dev). Only enable it on real HTTPS hosts.
+        ...(origin.startsWith("https://") ? { auto_return: "approved" as const } : {}),
         notification_url: `${origin}/api/mercadopago/webhook`,
         payer: { email: payload.customer_email.trim() },
         // Para contado (msiOption=1) no forzamos installments en MP — el cliente

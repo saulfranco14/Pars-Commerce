@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import type { Database } from "@/types/database.types";
+
+type ProductUpdate = Database["public"]["Tables"]["products"]["Update"];
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -372,7 +375,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const updates: Record<string, unknown> = {
+  const updates: ProductUpdate = {
     updated_at: new Date().toISOString(),
   };
   if (name !== undefined) updates.name = name.trim();

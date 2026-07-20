@@ -5,6 +5,7 @@ import "./globals.css";
 import { SwrProvider } from "@/components/providers/SwrProvider";
 import { Analytics } from "@vercel/analytics/next";
 import { AuthHashRedirect } from "@/components/auth/AuthHashRedirect";
+import { ServiceWorkerFreshnessGuard } from "@/features/qr/components/ServiceWorkerFreshnessGuard";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -69,6 +70,7 @@ export default function RootLayout({
         />
         <SwrProvider>
           <AuthHashRedirect />
+          <ServiceWorkerFreshnessGuard />
           {children}
           <Analytics />
           <div id="ticket-print-portal" aria-hidden="true" />

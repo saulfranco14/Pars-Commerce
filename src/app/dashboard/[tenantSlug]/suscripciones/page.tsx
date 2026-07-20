@@ -1,17 +1,26 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
-import { Repeat, CalendarCheck, ChevronRight, SplitSquareHorizontal, ToggleRight } from "lucide-react";
+import { Repeat, CalendarCheck, ChevronRight, SlidersHorizontal, SplitSquareHorizontal, ToggleRight } from "lucide-react";
 
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { useTenantStore } from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
 import { update as updateTenant, list as listTenants } from "@/services/tenantsService";
 import { FilterTabs } from "@/components/ui/FilterTabs";
+import {
+  DateFilterSheet,
+  getSevenDaysAgoStr,
+  getYesterdayStr,
+  type QuickDateRange,
+} from "@/components/ui/DateFilterSheet";
+import { getTodayStr } from "@/lib/dateValidation";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { PageHeader } from "@/components/admin/PageHeader";
 import { SubscriptionsOnboardingOverlay } from "@/components/onboarding/SubscriptionsOnboardingOverlay";
 import {
   TableWrapper,
@@ -64,19 +73,45 @@ export default function SuscripcionesPage() {
 
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [activating, setActivating] = useState(false);
   const [activateError, setActivateError] = useState<string | null>(null);
+  const hasDateFilter = !!dateFrom || !!dateTo;
+
+  function setQuickDate(range: QuickDateRange) {
+    const today = getTodayStr();
+    if (range === "hoy") {
+      setDateFrom(today);
+      setDateTo(today);
+    } else if (range === "ayer") {
+      setDateFrom(getYesterdayStr());
+      setDateTo(getYesterdayStr());
+    } else {
+      setDateFrom(getSevenDaysAgoStr());
+      setDateTo(today);
+    }
+  }
 
   const settings = (activeTenant?.settings as Record<string, unknown> | null) ?? {};
   const recurringConfig = (settings.recurring_purchases as { installments_enabled?: boolean; recurring_enabled?: boolean } | undefined) ?? {};
   const isRecurringActive = recurringConfig.installments_enabled || recurringConfig.recurring_enabled;
 
   const key = buildSubscriptionsKey(activeTenant?.id, statusFilter, typeFilter);
-  const { data: subscriptions = [], isLoading } = useSWR<SubscriptionRow[]>(
+  const { data: rawSubscriptions = [], isLoading } = useSWR<SubscriptionRow[]>(
     key,
     swrFetcher,
     { fallbackData: [], revalidateOnFocus: false },
   );
+  // Date range applied client-side (created_at), inclusive by calendar day.
+  const subscriptions = rawSubscriptions.filter((s) => {
+    if (!hasDateFilter) return true;
+    const day = (s.created_at ?? "").slice(0, 10);
+    if (dateFrom && day < dateFrom) return false;
+    if (dateTo && day > dateTo) return false;
+    return true;
+  });
 
   async function handleActivateRecurring(mode: "installments" | "recurring" | "both") {
     if (!activeTenant) return;
@@ -111,9 +146,10 @@ export default function SuscripcionesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">Suscripciones</h1>
-      </div>
+      <PageHeader
+        title="Suscripciones"
+        description="Los planes de cuotas y cobros recurrentes se crean desde el checkout del cliente. Aquí das seguimiento a los activos."
+      />
 
       {/* Activation banner */}
       {!isRecurringActive && (
@@ -174,28 +210,80 @@ export default function SuscripcionesPage() {
         </div>
       )}
 
-      <div className="space-y-2">
-        <FilterTabs
-          tabs={SUBSCRIPTION_STATUS_TABS}
-          activeValue={statusFilter}
-          onTabChange={setStatusFilter}
-          ariaLabel="Filtrar por estado"
-        />
-        <FilterTabs
-          tabs={SUBSCRIPTION_TYPE_TABS}
-          activeValue={typeFilter}
-          onTabChange={setTypeFilter}
-          ariaLabel="Filtrar por tipo"
-        />
+      {/* Two filter axes (estado + tipo) — labeled so they don't read as a
+          duplicated filter. */}
+      <div className="space-y-2.5">
+        <div className="space-y-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            Estado
+          </span>
+          <FilterTabs
+            tabs={SUBSCRIPTION_STATUS_TABS}
+            activeValue={statusFilter}
+            onTabChange={setStatusFilter}
+            ariaLabel="Filtrar por estado"
+          />
+        </div>
+        <div className="space-y-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            Tipo
+          </span>
+          <FilterTabs
+            tabs={SUBSCRIPTION_TYPE_TABS}
+            activeValue={typeFilter}
+            onTabChange={setTypeFilter}
+            ariaLabel="Filtrar por tipo"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setFilterSheetOpen(true)}
+            className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+              hasDateFilter
+                ? "bg-accent/15 text-accent hover:bg-accent/20"
+                : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
+            }`}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+            {hasDateFilter
+              ? `Fechas: ${dateFrom || "—"} a ${dateTo || "—"}`
+              : "Filtrar por fecha"}
+          </button>
+          {hasDateFilter && (
+            <button
+              type="button"
+              onClick={() => {
+                setDateFrom("");
+                setDateTo("");
+              }}
+              className="inline-flex min-h-[36px] items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
       </div>
+
+      <DateFilterSheet
+        isOpen={filterSheetOpen}
+        onClose={() => setFilterSheetOpen(false)}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        onQuickDate={setQuickDate}
+        onApply={() => setFilterSheetOpen(false)}
+      />
 
       {isLoading ? (
         <LoadingBlock variant="skeleton" skeletonRows={5} />
       ) : subscriptions.length === 0 ? (
-        <div className="rounded-xl border border-border bg-surface-raised py-12 text-center">
-          <Repeat className="mx-auto h-8 w-8 text-muted" />
-          <p className="mt-2 text-sm text-muted">No hay suscripciones</p>
-        </div>
+        <EmptyState
+          icon={Repeat}
+          title="No hay suscripciones"
+          description="Cuando un cliente contrate un plan de cuotas o cobro recurrente desde el checkout, aparecerá aquí para darle seguimiento."
+        />
       ) : (
         <>
           {/* Desktop table */}

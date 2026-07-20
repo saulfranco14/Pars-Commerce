@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
 import {
   X,
   Download,
@@ -19,6 +20,11 @@ import {
   UsersRound,
   Globe,
   Settings,
+  QrCode,
+  Table2,
+  Landmark,
+  Wallet,
+  Sparkles,
 } from "lucide-react";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 
@@ -52,7 +58,9 @@ function NavLink({
           : "text-muted hover:bg-border-soft/60 hover:text-foreground active:bg-border-soft"
       }`}
     >
-      {Icon && <Icon className={`h-4 w-4 shrink-0 ${active ? "text-accent" : ""}`} />}
+      {Icon && (
+        <Icon className={`h-4 w-4 shrink-0 ${active ? "text-accent" : ""}`} />
+      )}
       {children}
     </Link>
   );
@@ -82,6 +90,7 @@ interface SidebarContentProps {
 
 function SidebarContent(props: SidebarContentProps) {
   const router = useRouter();
+  const isPlatformAdmin = useIsPlatformAdmin();
   const {
     pathname,
     base,
@@ -101,7 +110,11 @@ function SidebarContent(props: SidebarContentProps) {
     (m) => m.tenant_id === activeTenantId,
   );
   const userRole = activeMembership?.role?.name || "member";
-  const canAccessTeamAndSettings = userRole !== "member";
+  const canAccessTeamAndSettings = userRole === "owner";
+  const canAccessQr = userRole === "owner";
+  const canAccessTables =
+    userRole === "owner" || userRole === "cashier" || userRole === "waiter";
+  const canAccessBankAccounts = userRole === "owner";
   return (
     <>
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-border-soft px-4">
@@ -156,7 +169,7 @@ function SidebarContent(props: SidebarContentProps) {
                   : [];
               if (section.length > 0) {
                 router.push(
-                  `/dashboard/${selected.tenant.slug}/${section.join("/")}`
+                  `/dashboard/${selected.tenant.slug}/${section.join("/")}`,
                 );
               } else if (pathname !== "/dashboard") {
                 router.push(`/dashboard/${selected.tenant.slug}`);
@@ -181,6 +194,16 @@ function SidebarContent(props: SidebarContentProps) {
         >
           Inicio
         </NavLink>
+        {isPlatformAdmin && (
+          <NavLink
+            href="/dashboard/plataforma"
+            active={pathname === "/dashboard/plataforma"}
+            icon={Landmark}
+            onNavigate={onNavigate}
+          >
+            Tesorería
+          </NavLink>
+        )}
         {hasTenant && (
           <>
             <NavLink
@@ -227,6 +250,32 @@ function SidebarContent(props: SidebarContentProps) {
             >
               Suscripciones
             </NavLink>
+            {canAccessQr && (
+              <NavLink
+                href={`${base}/qr`}
+                active={
+                  pathname === `${base}/qr` ||
+                  pathname.startsWith(`${base}/qr/`)
+                }
+                icon={QrCode}
+                onNavigate={onNavigate}
+              >
+                Códigos QR
+              </NavLink>
+            )}
+            {canAccessTables && (
+              <NavLink
+                href={`${base}/mesas`}
+                active={
+                  pathname === `${base}/mesas` ||
+                  pathname.startsWith(`${base}/mesas/`)
+                }
+                icon={Table2}
+                onNavigate={onNavigate}
+              >
+                Mesas
+              </NavLink>
+            )}
 
             <div className="pt-2 mt-2 border-t border-border-soft">
               <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
@@ -273,6 +322,17 @@ function SidebarContent(props: SidebarContentProps) {
                   Ventas y Comisiones
                 </NavLink>
                 <NavLink
+                  href={`${base}/liquidaciones`}
+                  active={
+                    pathname === `${base}/liquidaciones` ||
+                    pathname.startsWith(`${base}/liquidaciones/`)
+                  }
+                  icon={Wallet}
+                  onNavigate={onNavigate}
+                >
+                  Mi dinero
+                </NavLink>
+                <NavLink
                   href={`${base}/equipo`}
                   active={
                     pathname === `${base}/equipo` ||
@@ -298,6 +358,27 @@ function SidebarContent(props: SidebarContentProps) {
                   onNavigate={onNavigate}
                 >
                   Configuración
+                </NavLink>
+
+                {canAccessBankAccounts && (
+                  <NavLink
+                    href={`${base}/configuracion/cuentas-bancarias`}
+                    active={
+                      pathname === `${base}/configuracion/cuentas-bancarias`
+                    }
+                    icon={Landmark}
+                    onNavigate={onNavigate}
+                  >
+                    Cuentas bancarias
+                  </NavLink>
+                )}
+                <NavLink
+                  href={`${base}/novedades`}
+                  active={pathname === `${base}/novedades`}
+                  icon={Sparkles}
+                  onNavigate={onNavigate}
+                >
+                  Novedades
                 </NavLink>
               </div>
             )}
@@ -377,9 +458,7 @@ export function Sidebar({
   return (
     <>
       <aside className="hidden h-screen max-h-screen w-56 shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-border-soft bg-surface md:flex">
-        <SidebarContent
-          {...sidebarContentProps}
-        />
+        <SidebarContent {...sidebarContentProps} />
       </aside>
       {mobileOpen && (
         <>
