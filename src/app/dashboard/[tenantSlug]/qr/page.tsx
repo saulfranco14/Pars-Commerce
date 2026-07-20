@@ -20,6 +20,7 @@ import { QrCreateFormSheet } from "@/features/qr/components/qr-create/QrCreateFo
 import { QrPreview } from "@/features/qr/components/qr-create/QrPreview";
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
 import { useQrActions } from "@/features/qr/hooks/useQrActions";
+import { QrOnboardingOverlay } from "@/components/onboarding/QrOnboardingOverlay";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
 
@@ -88,6 +89,7 @@ export default function QrCodesPage() {
 
   return (
     <div className="space-y-5">
+      <QrOnboardingOverlay />
       <PageHeader
         title="Códigos QR"
         description="Genera QR para mesas y cobros libres. Imprime, comparte o escanea desde aquí."
