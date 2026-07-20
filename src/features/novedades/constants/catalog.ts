@@ -5,15 +5,6 @@ import {
   DomicilioMockup,
 } from "@/features/novedades/components/mockups";
 
-/**
- * Catálogo de novedades ("lo que viene"). Vive en código (no en DB) para poder
- * agregar/editar novedades sin migración. `key` es la que se guarda en
- * feature_interest cuando el negocio pulsa "Me interesa".
- *
- * `status`:
- *  - "upcoming": aún no disponible → muestra "Me interesa".
- *  - "new": recién liberada → muestra CTA a la feature (href).
- */
 export type NovedadStatus = "upcoming" | "new";
 
 export interface Novedad {
@@ -22,11 +13,8 @@ export interface Novedad {
   icon: LucideIcon;
   title: string;
   description: string;
-  /** Beneficio corto (bullet destacado). */
   highlight: string;
-  /** Preview visual de la feature (mockup al estilo de la landing). */
   Mockup: () => React.JSX.Element;
-  /** Solo si status === "new": a dónde lleva. */
   href?: string;
 }
 

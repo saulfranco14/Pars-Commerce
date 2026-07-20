@@ -58,7 +58,9 @@ function NavLink({
           : "text-muted hover:bg-border-soft/60 hover:text-foreground active:bg-border-soft"
       }`}
     >
-      {Icon && <Icon className={`h-4 w-4 shrink-0 ${active ? "text-accent" : ""}`} />}
+      {Icon && (
+        <Icon className={`h-4 w-4 shrink-0 ${active ? "text-accent" : ""}`} />
+      )}
       {children}
     </Link>
   );
@@ -111,9 +113,7 @@ function SidebarContent(props: SidebarContentProps) {
   const canAccessTeamAndSettings = userRole === "owner";
   const canAccessQr = userRole === "owner";
   const canAccessTables =
-    userRole === "owner" ||
-    userRole === "cashier" ||
-    userRole === "waiter";
+    userRole === "owner" || userRole === "cashier" || userRole === "waiter";
   const canAccessBankAccounts = userRole === "owner";
   return (
     <>
@@ -169,7 +169,7 @@ function SidebarContent(props: SidebarContentProps) {
                   : [];
               if (section.length > 0) {
                 router.push(
-                  `/dashboard/${selected.tenant.slug}/${section.join("/")}`
+                  `/dashboard/${selected.tenant.slug}/${section.join("/")}`,
                 );
               } else if (pathname !== "/dashboard") {
                 router.push(`/dashboard/${selected.tenant.slug}`);
@@ -254,7 +254,8 @@ function SidebarContent(props: SidebarContentProps) {
               <NavLink
                 href={`${base}/qr`}
                 active={
-                  pathname === `${base}/qr` || pathname.startsWith(`${base}/qr/`)
+                  pathname === `${base}/qr` ||
+                  pathname.startsWith(`${base}/qr/`)
                 }
                 icon={QrCode}
                 onNavigate={onNavigate}
@@ -358,6 +359,19 @@ function SidebarContent(props: SidebarContentProps) {
                 >
                   Configuración
                 </NavLink>
+
+                {canAccessBankAccounts && (
+                  <NavLink
+                    href={`${base}/configuracion/cuentas-bancarias`}
+                    active={
+                      pathname === `${base}/configuracion/cuentas-bancarias`
+                    }
+                    icon={Landmark}
+                    onNavigate={onNavigate}
+                  >
+                    Cuentas bancarias
+                  </NavLink>
+                )}
                 <NavLink
                   href={`${base}/novedades`}
                   active={pathname === `${base}/novedades`}
@@ -366,16 +380,6 @@ function SidebarContent(props: SidebarContentProps) {
                 >
                   Novedades
                 </NavLink>
-                {canAccessBankAccounts && (
-                  <NavLink
-                    href={`${base}/configuracion/cuentas-bancarias`}
-                    active={pathname === `${base}/configuracion/cuentas-bancarias`}
-                    icon={Landmark}
-                    onNavigate={onNavigate}
-                  >
-                    Cuentas bancarias
-                  </NavLink>
-                )}
               </div>
             )}
           </>
@@ -454,9 +458,7 @@ export function Sidebar({
   return (
     <>
       <aside className="hidden h-screen max-h-screen w-56 shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-border-soft bg-surface md:flex">
-        <SidebarContent
-          {...sidebarContentProps}
-        />
+        <SidebarContent {...sidebarContentProps} />
       </aside>
       {mobileOpen && (
         <>
