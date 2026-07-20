@@ -22,6 +22,7 @@ import {
   QrCode,
   Table2,
   Landmark,
+  Wallet,
 } from "lucide-react";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 
@@ -305,6 +306,17 @@ function SidebarContent(props: SidebarContentProps) {
                   onNavigate={onNavigate}
                 >
                   Ventas y Comisiones
+                </NavLink>
+                <NavLink
+                  href={`${base}/liquidaciones`}
+                  active={
+                    pathname === `${base}/liquidaciones` ||
+                    pathname.startsWith(`${base}/liquidaciones/`)
+                  }
+                  icon={Wallet}
+                  onNavigate={onNavigate}
+                >
+                  Mi dinero
                 </NavLink>
                 <NavLink
                   href={`${base}/equipo`}
