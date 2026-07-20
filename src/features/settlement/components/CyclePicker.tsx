@@ -31,10 +31,16 @@ export function CyclePicker({
 }: CyclePickerProps) {
   return (
     <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">
-        Sobre {formatMXN(previewBasis)} netos de Mercado Pago, esto recibirías
-        según la frecuencia. Menos seguido = menor comisión.
-      </p>
+      <div className="flex items-start gap-2 rounded-lg bg-surface-raised px-3 py-2">
+        <span className="mt-0.5 shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+          Ejemplo
+        </span>
+        <p className="text-xs text-muted-foreground">
+          Simulación sobre {formatMXN(previewBasis)} netos de Mercado Pago (no
+          es tu saldo). Así se vería tu comisión según la frecuencia: menos
+          seguido = menor comisión.
+        </p>
+      </div>
       <div className="grid gap-2">
         {preview.map((row) => {
           const isSelected = row.cycle === selected;

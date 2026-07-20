@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
 import {
   X,
   Download,
@@ -23,6 +24,7 @@ import {
   Table2,
   Landmark,
   Wallet,
+  Sparkles,
 } from "lucide-react";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 
@@ -86,6 +88,7 @@ interface SidebarContentProps {
 
 function SidebarContent(props: SidebarContentProps) {
   const router = useRouter();
+  const isPlatformAdmin = useIsPlatformAdmin();
   const {
     pathname,
     base,
@@ -191,6 +194,16 @@ function SidebarContent(props: SidebarContentProps) {
         >
           Inicio
         </NavLink>
+        {isPlatformAdmin && (
+          <NavLink
+            href="/dashboard/plataforma"
+            active={pathname === "/dashboard/plataforma"}
+            icon={Landmark}
+            onNavigate={onNavigate}
+          >
+            Tesorería
+          </NavLink>
+        )}
         {hasTenant && (
           <>
             <NavLink
@@ -344,6 +357,14 @@ function SidebarContent(props: SidebarContentProps) {
                   onNavigate={onNavigate}
                 >
                   Configuración
+                </NavLink>
+                <NavLink
+                  href={`${base}/novedades`}
+                  active={pathname === `${base}/novedades`}
+                  icon={Sparkles}
+                  onNavigate={onNavigate}
+                >
+                  Novedades
                 </NavLink>
                 {canAccessBankAccounts && (
                   <NavLink

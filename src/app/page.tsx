@@ -5,6 +5,7 @@ import { LandingFeatures } from "@/features/landing/components/sections/LandingF
 import { LandingHowItWorks } from "@/features/landing/components/sections/LandingHowItWorks";
 import { LandingBentoShowcase } from "@/features/landing/components/sections/LandingBentoShowcase";
 import { LandingShowflow } from "@/features/landing/components/sections/LandingShowflow";
+import { LandingComingSoon } from "@/features/landing/components/sections/LandingComingSoon";
 import { LandingPricing } from "@/features/landing/components/sections/LandingPricing";
 import { LandingFaq } from "@/features/landing/components/sections/LandingFaq";
 import { LandingCta } from "@/features/landing/components/sections/LandingCta";
@@ -22,6 +23,7 @@ export default function Home() {
         <LandingHowItWorks />
         <LandingBentoShowcase />
         <LandingShowflow />
+        <LandingComingSoon />
         <LandingPricing />
         <LandingFaq />
         <LandingCta />

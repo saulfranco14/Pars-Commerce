@@ -37,7 +37,8 @@ export default function DashboardLayout({
     pathParts[0] === "dashboard" &&
     pathParts[1] &&
     pathParts[1] !== "crear-negocio" &&
-    pathParts[1] !== "perfil"
+    pathParts[1] !== "perfil" &&
+    pathParts[1] !== "plataforma"
       ? pathParts[1]
       : null;
 
@@ -106,7 +107,10 @@ export default function DashboardLayout({
           }`}
         >
           {pathname === "/dashboard/crear-negocio" ||
-          pathname === "/dashboard/perfil" ? (
+          pathname === "/dashboard/perfil" ||
+          // Platform routes are cross-tenant (super admin) — they don't belong
+          // to a business, so they skip the "select a tenant" gate below.
+          pathname === "/dashboard/plataforma" ? (
             children
           ) : !tenantsLoaded ? (
             <LoadingBlock message="Cargando negocios…" />

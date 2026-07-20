@@ -214,6 +214,38 @@ export type Database = {
           },
         ]
       }
+      feature_interest: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          feature_key: string
+          id: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          feature_key: string
+          id?: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          feature_key?: string
+          id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_interest_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_movements: {
         Row: {
           created_at: string

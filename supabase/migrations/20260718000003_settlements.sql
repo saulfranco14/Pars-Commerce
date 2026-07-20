@@ -15,7 +15,7 @@
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.settlements (
-  id                     uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                     uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id              uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
 
   cycle_type             text NOT NULL CHECK (
@@ -60,7 +60,7 @@ COMMENT ON TABLE public.settlements IS
 
 -- Tabla puente: qué cobros del ledger componen cada liquidación.
 CREATE TABLE IF NOT EXISTS public.settlement_items (
-  id                uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   settlement_id     uuid NOT NULL REFERENCES public.settlements(id) ON DELETE CASCADE,
   -- Referencia al movimiento del ledger (payment_ledger no tiene PK propia; se
   -- identifica por source_table + source_id).
