@@ -271,7 +271,58 @@ cuándo cerrar el ciclo de cada tenant.
 
 ---
 
-## FASE S5 — Panel de conciliación para la plataforma 🟡 OPERACIÓN
+## FASE S5 — Panel de conciliación para la plataforma ✅ DONE
+
+> Implementada en rama `feat/settlement-dashboard-QR` (76 tests verdes).
+> Solo agregación sobre S1-S4, sin migración nueva.
+> - **`getPlatformDashboard` (servicio):** resume TODOS los settlements
+>   → por estado (count + monto), total pendiente de liquidar
+>   (outstanding = open/closed/transfer_pending), comisión ya confirmada,
+>   deuda por tenant (mayor primero = a quién pagar next), cola de
+>   trabajo (needs_action) y disputados.
+> - **`GET /api/settlement-dashboard`:** el tablero de tesorería. SOLO
+>   super admin (isPlatformAdmin). La vista "operar miles de negocios".
+> - **`GET /api/settlements`:** el lado del NEGOCIO — sus liquidaciones
+>   con estado + resumen (pendiente de recibir / confirmado recibido).
+>   El "¿cuándo recibo mi dinero?". Owner ve lo suyo; admin cualquiera.
+> - **Test de integración** contra Postgres real: 2 tenants con
+>   settlements en varios estados → verifica outstanding, deuda por
+>   tenant, orden desc, cola de trabajo y comisión confirmada.
+
+---
+
+## 🎯 Sistema de settlement (S1-S5) COMPLETO
+
+De punta a punta, con red de tests en los dos niveles:
+- **S1** ledger unificado + super admin de plataforma.
+- **S2** comisión escalonada por frecuencia (función pura).
+- **S3** settlements con ciclo de vida + tabla puente (un cobro se
+  liquida una sola vez).
+- **S4** config de ciclo por negocio + scheduler (cron).
+- **S5** tableros: plataforma (tesorería) y negocio (¿cuándo cobro?).
+
+**Pendientes OPERATIVOS (fuera de código, para producción):**
+1. Registrar el cron real que llama `/api/settlement-run` + setear
+   `CRON_SECRET`.
+2. Crear la cuenta de super admin (registro normal) y re-ejecutar el
+   seed de `platform_admins` por email.
+3. `supabase db push` de todas las migraciones nuevas a prod cuando se
+   decida (ledger, platform_admins, settlements, config).
+4. **Legal/fiscal:** la figura de custodiar y redistribuir dinero de
+   terceros (posible PSP/agregador ante CNBV). El diseño ya da la
+   trazabilidad total que eso exigiría; la decisión es de negocio.
+
+**Lo que NO cubre este sistema (por diseño):**
+- La transferencia real al negocio es MANUAL por ahora (se registra la
+  referencia al confirmar). Automatizarla (SPEI / MP disbursements) es
+  una fase futura.
+- Contracargos/reversas de MP sobre un pago ya liquidado → existe el
+  estado `disputed` pero la lógica de ajuste en el siguiente ciclo es
+  trabajo futuro.
+
+---
+
+## FASE S5 (diseño original) — Panel de conciliación para la plataforma 🟡 OPERACIÓN
 
 **El objetivo:** la vista de TU lado (plataforma) para operar miles de
 negocios: cuánto debes liquidar hoy, a quién, cuántos movimientos, qué
