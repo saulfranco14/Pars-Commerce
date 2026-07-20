@@ -3,12 +3,21 @@ import { paymentClient } from "@/lib/mercadopago";
 import { verifyWebhookSignature } from "@/lib/mercadopagoWebhookVerify";
 import { NextResponse } from "next/server";
 import { parseCheckoutReference } from "@/features/orders/helpers/parseCheckoutReference";
+import type { Database } from "@/types/database.types";
 import {
   handleSingleLoanPayment,
   handleBulkLoanPayment,
   handlePreapprovalLoanPayment,
 } from "@/features/prestamos/services/loanWebhookHandlers";
 import { handleStoreSubscriptionPayment } from "@/features/sitio/services/subscriptionWebhookHandlers";
+import {
+  handleQrTableMpPayment,
+  isQrTableReference,
+} from "@/features/qr/services/tableMpWebhookService";
+
+type OrderUpdate = Database["public"]["Tables"]["orders"]["Update"];
+type SubscriptionUpdate =
+  Database["public"]["Tables"]["subscriptions"]["Update"];
 
 export async function POST(request: Request) {
   let body: {
@@ -44,12 +53,15 @@ export async function POST(request: Request) {
       { status: 401 },
     );
   }
-
   if (body.type === "subscription_preapproval" && body.data?.id) {
     try {
       await handlePreapprovalStatusChange(body.data.id);
     } catch (err) {
-      console.error("Webhook: error en subscription_preapproval:", err);
+      console.error(
+        "Webhook: error en subscription_preapproval (500 for retry):",
+        err,
+      );
+      return NextResponse.json({ error: "processing_failed" }, { status: 500 });
     }
     return NextResponse.json({ received: true });
   }
@@ -58,7 +70,11 @@ export async function POST(request: Request) {
     try {
       await handlePreapprovalPayment(body.data.id);
     } catch (err) {
-      console.error("Webhook: error en subscription_authorized_payment:", err);
+      console.error(
+        "Webhook: error en subscription_authorized_payment (500 for retry):",
+        err,
+      );
+      return NextResponse.json({ error: "processing_failed" }, { status: 500 });
     }
     return NextResponse.json({ received: true });
   }
@@ -90,7 +106,6 @@ export async function POST(request: Request) {
     const parsFeeAmount = 0;
     const supabase = createAdminClient();
 
-    // ── Pago bulk de préstamos ───────────────────────────────────────────────
     if (externalRef.startsWith("bulk_loan:")) {
       if (mpStatus === "approved") {
         await handleBulkLoanPayment(
@@ -104,7 +119,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
-    // ── Pago de préstamo individual ──────────────────────────────────────────
     if (externalRef.startsWith("loan:")) {
       if (mpStatus === "approved") {
         await handleSingleLoanPayment(
@@ -119,11 +133,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
-    // ── Pago de orden de checkout (single / partial) ─────────────────────────
+    if (isQrTableReference(externalRef)) {
+      if (mpStatus === "approved") {
+        await handleQrTableMpPayment({
+          admin: supabase,
+          externalReference: externalRef,
+          mpPaymentId: String(mpPayment.id ?? paymentId),
+          amount: transactionAmount,
+        });
+      }
+      return NextResponse.json({ received: true });
+    }
+
     const parsedRef = parseCheckoutReference(externalRef);
     const orderId = parsedRef?.orderId ?? externalRef;
     const checkoutMode = parsedRef?.mode ?? "single";
     const attemptId = parsedRef?.attemptId ?? null;
+    const splitGroupId = parsedRef?.splitGroupId ?? null;
 
     if (attemptId) {
       const attemptStatus =
@@ -243,7 +269,7 @@ export async function POST(request: Request) {
             ? "partial"
             : "paid";
 
-      const updatePayload: Record<string, string | number | null> = {
+      const updatePayload: OrderUpdate = {
         status: nextStatus,
         paid_total: nextPaidTotal,
         balance_due: nextBalance,
@@ -269,12 +295,14 @@ export async function POST(request: Request) {
           "pending_subscription",
         ]);
 
-      const { data: existingPayment } = await supabase
-        .from("payments")
-        .select("id")
-        .eq("attempt_id", attemptId)
-        .limit(1)
-        .single();
+      const { data: existingPayment } = attemptId
+        ? await supabase
+            .from("payments")
+            .select("id")
+            .eq("attempt_id", attemptId)
+            .limit(1)
+            .single()
+        : { data: null };
 
       const paymentMetadata = {
         mp_payment_id: paymentId,
@@ -294,6 +322,7 @@ export async function POST(request: Request) {
             status: "approved",
             amount: appliedAmount,
             installment_number: installmentNumber,
+            split_group_id: splitGroupId,
             metadata: paymentMetadata,
             updated_at: new Date().toISOString(),
           })
@@ -305,9 +334,11 @@ export async function POST(request: Request) {
           external_id: String(paymentId),
           status: "approved",
           amount: appliedAmount,
-          payment_kind: checkoutMode === "partial" ? "partial" : "single",
+          payment_kind:
+            checkoutMode === "partial" || splitGroupId ? "partial" : "single",
           attempt_id: attemptId,
           installment_number: installmentNumber,
+          split_group_id: splitGroupId,
           idempotency_key: attemptId ? `payment:${attemptId}` : null,
           metadata: paymentMetadata,
         });
@@ -330,12 +361,14 @@ export async function POST(request: Request) {
         `Webhook: order ${orderId} marked as paid (payment ${paymentId})`,
       );
     } else {
-      const { data: existingPayment } = await supabase
-        .from("payments")
-        .select("id")
-        .eq("attempt_id", attemptId)
-        .limit(1)
-        .single();
+      const { data: existingPayment } = attemptId
+        ? await supabase
+            .from("payments")
+            .select("id")
+            .eq("attempt_id", attemptId)
+            .limit(1)
+            .single()
+        : { data: null };
 
       if (existingPayment) {
         await supabase
@@ -362,8 +395,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ received: true });
   } catch (err: unknown) {
-    console.error("Webhook processing error:", err);
-    return NextResponse.json({ received: true });
+    console.error(
+      "Webhook processing error (returning 500 for MP retry):",
+      err,
+    );
+    return NextResponse.json({ error: "processing_failed" }, { status: 500 });
   }
 }
 
@@ -442,7 +478,7 @@ async function handlePreapprovalStatusChange(
   if (subscription) {
     if (subscription.status === newPlanStatus) return;
 
-    const updatePayload: Record<string, string> = {
+    const updatePayload: SubscriptionUpdate = {
       status: newPlanStatus,
       updated_at: new Date().toISOString(),
     };

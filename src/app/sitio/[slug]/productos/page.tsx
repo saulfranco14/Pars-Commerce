@@ -114,7 +114,7 @@ export default async function ProductosPage({
           <Package className="h-6 w-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 sm:text-3xl">
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
             Productos
           </h1>
           <p className="text-sm text-gray-500">

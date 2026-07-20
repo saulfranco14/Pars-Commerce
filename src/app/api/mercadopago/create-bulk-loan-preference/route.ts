@@ -63,6 +63,13 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!customer.name) {
+    return NextResponse.json(
+      { error: "El cliente no tiene nombre registrado" },
+      { status: 400 },
+    );
+  }
+
   // Obtener y validar cada préstamo
   const loanIds = loanItems.map((l) => l.loan_id);
   const { data: dbLoans, error: loansError } = await supabase
@@ -100,7 +107,7 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    if (item.amount > dbLoan.amount_pending) {
+    if (item.amount > (dbLoan.amount_pending ?? 0)) {
       return NextResponse.json(
         {
           error: `El monto para "${dbLoan.concept}" supera el saldo pendiente`,
@@ -151,7 +158,7 @@ export async function POST(request: Request) {
         items: finalItems,
         payer: buildPayerFromCustomer({
           customerName: customer.name,
-          customerEmail: customer.email ?? undefined,
+          customerEmail: customer.email ?? "",
           customerPhone: customer.phone ?? undefined,
         }),
         back_urls: {

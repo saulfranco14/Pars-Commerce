@@ -10,7 +10,7 @@ export async function sendLoanPaymentEmail(
   loan: {
     id: string;
     concept: string;
-    amount_pending: number;
+    amount_pending: number | null;
     customer: unknown;
     tenant: unknown;
   },
@@ -22,7 +22,7 @@ export async function sendLoanPaymentEmail(
 
   if (!customer?.email || !tenant?.name) return;
 
-  const newPending = Math.max(0, loan.amount_pending - amountPaid);
+  const newPending = Math.max(0, (loan.amount_pending ?? 0) - amountPaid);
 
   try {
     await sendEmail({
@@ -75,7 +75,7 @@ export async function handleSingleLoanPayment(
   const { error: insertError } = await supabase.from("loan_payments").insert({
     loan_id: loanId,
     tenant_id: loan.tenant_id,
-    amount: Math.min(amount, loan.amount_pending),
+    amount: Math.min(amount, loan.amount_pending ?? 0),
     payment_method: "mercadopago",
     source: "mercadopago_webhook",
     mp_payment_id: mpPaymentId,
@@ -123,7 +123,7 @@ export async function handleBulkLoanPayment(
     return;
   }
 
-  const distribution: Record<string, number> = bulk.distribution ?? {};
+  const distribution = (bulk.distribution ?? {}) as Record<string, number>;
 
   for (const [loanId, loanAmount] of Object.entries(distribution)) {
     const { error } = await supabase.from("loan_payments").insert({
@@ -225,7 +225,7 @@ export async function handlePreapprovalLoanPayment(
   const chargeAmount = loan.payment_plan_installment_amount ?? 0;
   if (chargeAmount <= 0) return true;
 
-  const actualAmount = Math.min(chargeAmount, loan.amount_pending);
+  const actualAmount = Math.min(chargeAmount, loan.amount_pending ?? 0);
 
   const { error: insertError } = await supabase.from("loan_payments").insert({
     loan_id: loan.id,

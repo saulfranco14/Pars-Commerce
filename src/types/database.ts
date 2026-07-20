@@ -88,5 +88,17 @@ export type OrderStatus =
   | "in_progress"
   | "completed"
   | "pending_payment"
+  | "pending_pickup"
+  | "pending_subscription"
+  | "installment_active"
+  | "partial"
   | "paid"
   | "cancelled";
+
+export type OrderSource =
+  | "dashboard"
+  | "public_store"
+  | "qr_payment"
+  | "qr_table";
+
+export type OrderType = "dine_in" | "takeaway" | "qr_payment";

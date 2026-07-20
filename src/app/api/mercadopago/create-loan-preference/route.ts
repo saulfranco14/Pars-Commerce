@@ -77,10 +77,12 @@ export async function POST(request: Request) {
     );
   }
 
-  if (amount > loan.amount_pending) {
+  const amountPending = loan.amount_pending ?? 0;
+
+  if (amount > amountPending) {
     return NextResponse.json(
       {
-        error: `El monto ($${amount}) supera el saldo pendiente ($${loan.amount_pending})`,
+        error: `El monto ($${amount}) supera el saldo pendiente ($${amountPending})`,
       },
       { status: 400 },
     );

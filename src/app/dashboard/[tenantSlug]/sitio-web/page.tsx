@@ -30,7 +30,13 @@ export default function SitioWebPage() {
 
       <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-stretch xl:gap-5">
         <div className="min-w-0 xl:flex-1 xl:h-[calc(100vh-220px)] xl:flex xl:flex-col xl:overflow-hidden">
-          <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border/80 bg-surface-raised shadow-sm">
+          {/* Below xl this falls back to normal document flow (no fixed
+              height/overflow-hidden) — only xl: and up opts into the
+              internal-scroll app-shell pattern, matching the parent above.
+              Without this, every viewport narrower than 1280px got clipped
+              content with no way to reach it (h-full/overflow-hidden with
+              no real height ancestor to bound against). */}
+          <div className="flex flex-col rounded-xl border border-border/80 bg-surface-raised shadow-sm xl:h-full xl:min-h-0 xl:overflow-hidden">
             <SiteWebConfigSection tenantSlug={tenantSlug} />
           </div>
         </div>

@@ -1,6 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
+import type { Database } from "@/types/database.types";
+
+type SubscriptionUpdate =
+  Database["public"]["Tables"]["subscriptions"]["Update"];
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -183,7 +187,7 @@ export async function PATCH(request: Request) {
   }
 
   const newStatus = action === "pause" ? "paused" : "cancelled";
-  const updateData: Record<string, unknown> = {
+  const updateData: SubscriptionUpdate = {
     status: newStatus,
     updated_at: new Date().toISOString(),
   };

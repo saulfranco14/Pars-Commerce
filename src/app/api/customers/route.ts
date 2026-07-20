@@ -4,8 +4,10 @@ import type {
   CreateCustomerPayload,
   UpdateCustomerPayload,
 } from "@/types/customers";
+import type { Database } from "@/types/database.types";
 
-// GET /api/customers?tenant_id=&search=&customer_id=
+type CustomerUpdate = Database["public"]["Tables"]["customers"]["Update"];
+
 export async function GET(request: Request) {
   const supabase = await createClient();
   const {
@@ -22,7 +24,6 @@ export async function GET(request: Request) {
   const search = searchParams.get("search")?.trim();
   const withStats = searchParams.get("with_stats") === "true";
 
-  // Obtener un cliente específico con sus tarjetas y stats de préstamos
   if (customerId) {
     const { data: customer, error } = await supabase
       .from("customers")
@@ -51,7 +52,6 @@ export async function GET(request: Request) {
     );
   }
 
-  // Listado de clientes con búsqueda y stats opcionales
   let query = supabase
     .from("customers")
     .select(
@@ -67,7 +67,6 @@ export async function GET(request: Request) {
     .eq("tenant_id", tenantId)
     .order("name", { ascending: true });
 
-  // Búsqueda por nombre o teléfono (para autocomplete al crear préstamo)
   if (search) {
     query = query.or(
       `name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`,
@@ -83,7 +82,6 @@ export async function GET(request: Request) {
   return NextResponse.json(customers ?? []);
 }
 
-// POST /api/customers
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -104,7 +102,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Verificar que el usuario pertenece al tenant
   const { data: membership } = await supabase
     .from("tenant_memberships")
     .select("id")
@@ -136,7 +133,6 @@ export async function POST(request: Request) {
   return NextResponse.json(customer, { status: 201 });
 }
 
-// PUT /api/customers?customer_id=
 export async function PUT(request: Request) {
   const supabase = await createClient();
   const {
@@ -157,7 +153,7 @@ export async function PUT(request: Request) {
   }
 
   const body: UpdateCustomerPayload = await request.json();
-  const updates: Record<string, unknown> = {
+  const updates: CustomerUpdate = {
     updated_at: new Date().toISOString(),
   };
 

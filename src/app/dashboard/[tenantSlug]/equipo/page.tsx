@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { Plus } from "lucide-react";
-import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import { useActiveTenant } from "@/stores/useTenantStore";
 import type { TeamMember } from "@/types/team";
 import type { TenantRoleOption } from "@/services/tenantRolesService";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { FAB } from "@/components/ui/FAB";
+import { PageHeader } from "@/components/admin/PageHeader";
 import {
   TableWrapper,
   tableHeaderRowClass,
@@ -20,15 +21,31 @@ import {
 } from "@/components/ui/TableWrapper";
 import { updateRole, remove as removeMember } from "@/services/teamService";
 import { swrFetcher } from "@/lib/swrFetcher";
-import { btnPrimaryHeader, btnDanger } from "@/components/ui/buttonClasses";
+import { isAbortError } from "@/services/apiFetch";
+import { btnDanger } from "@/components/ui/buttonClasses";
 import { teamKey, tenantRolesKey } from "@/features/equipo/helpers/swrKeys";
+import { TeamMemberFormSheet } from "@/features/equipo/components/TeamMemberFormSheet";
 
 export default function EquipoPage() {
   const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("nuevo") === "1") setCreateOpen(true);
+  }, [searchParams]);
+
+  function closeCreate() {
+    setCreateOpen(false);
+    if (searchParams.get("nuevo") === "1") {
+      router.replace(`/dashboard/${tenantSlug}/equipo`);
+    }
+  }
 
   const teamKeyValue = activeTenant ? teamKey(activeTenant.id) : null;
   const rolesKeyValue = activeTenant ? tenantRolesKey(activeTenant.id) : null;
@@ -49,7 +66,9 @@ export default function EquipoPage() {
   const members = Array.isArray(membersData) ? membersData : [];
   const roles = Array.isArray(rolesData) ? rolesData : [];
 
-  const displayError = error ?? (teamError ? "No se pudo cargar el equipo" : null);
+  const displayError =
+    error ??
+    (teamError && !isAbortError(teamError) ? "No se pudo cargar el equipo" : null);
 
   async function handleRoleChange(membershipId: string, roleId: string) {
     setUpdatingId(membershipId);
@@ -89,18 +108,19 @@ export default function EquipoPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto">
       <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
-          Equipo
-        </h1>
-        <Link
-          href={`/dashboard/${tenantSlug}/equipo/nuevo`}
-          className={btnPrimaryHeader}
-        >
-          <Plus className="h-4 w-4 shrink-0" aria-hidden />
-          Agregar miembro
-        </Link>
-      </div>
+      <PageHeader
+        title="Equipo"
+        description="Administra quién tiene acceso al negocio y con qué rol."
+      />
+
+      {/* Único punto de creación — FAB en móvil y desktop. */}
+      <FAB
+        onClick={() => setCreateOpen(true)}
+        aria-label="Agregar miembro"
+        alwaysVisible
+      >
+        <Plus className="h-6 w-6 shrink-0" aria-hidden />
+      </FAB>
 
       {displayError && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
@@ -223,6 +243,16 @@ export default function EquipoPage() {
         </>
       )}
       </div>
+
+      <TeamMemberFormSheet
+        isOpen={createOpen}
+        tenantId={activeTenant.id}
+        onClose={closeCreate}
+        onAdded={async () => {
+          await mutateTeam();
+          closeCreate();
+        }}
+      />
     </div>
   );
 }

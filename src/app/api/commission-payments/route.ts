@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import type { Database } from "@/types/database.types";
+
+type CommissionPaymentUpdate =
+  Database["public"]["Tables"]["commission_payments"]["Update"];
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -207,7 +211,7 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const updates: Record<string, unknown> = {
+  const updates: CommissionPaymentUpdate = {
     updated_at: new Date().toISOString(),
   };
 

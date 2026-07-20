@@ -12,15 +12,15 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { OrderProvider, useOrder } from "@/features/orders/hooks/useOrder";
-import { OrderHeader } from "@/features/orders/components/OrderHeader";
-import { CustomerCard } from "@/features/orders/components/CustomerCard";
-import { AssignmentCard } from "@/features/orders/components/AssignmentCard";
-import { OrderItemsTable } from "@/features/orders/components/OrderItemsTable";
-import { OrderActionButtons } from "@/features/orders/components/OrderActionButtons";
-import { ReceiptActions } from "@/features/orders/components/ReceiptActions";
-import { PaymentLinkCard } from "@/features/orders/components/PaymentLinkCard";
-import { OrderPaymentPlanCard } from "@/features/orders/components/OrderPaymentPlanCard";
-import { ReceiptPreview } from "@/features/orders/components/ReceiptPreview";
+import { OrderHeader } from "@/features/orders/components/order/OrderHeader";
+import { CustomerCard } from "@/features/orders/components/order/CustomerCard";
+import { AssignmentCard } from "@/features/orders/components/payment/AssignmentCard";
+import { OrderItemsTable } from "@/features/orders/components/order/OrderItemsTable";
+import { OrderActionButtons } from "@/features/orders/components/order/OrderActionButtons";
+import { ReceiptActions } from "@/features/orders/components/receipt/ReceiptActions";
+import { PaymentLinkCard } from "@/features/orders/components/payment/PaymentLinkCard";
+import { OrderPaymentPlanCard } from "@/features/orders/components/order/OrderPaymentPlanCard";
+import { ReceiptPreview } from "@/features/orders/components/receipt/ReceiptPreview";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import type { OrderLoanSummary } from "@/features/orders/interfaces/orderDetail";
 

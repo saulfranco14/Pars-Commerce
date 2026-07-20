@@ -1,6 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
+import type { Database, Json } from "@/types/database.types";
+
+type TenantInsert = Database["public"]["Tables"]["tenants"]["Insert"];
+type TenantUpdate = Database["public"]["Tables"]["tenants"]["Update"];
 
 export async function GET() {
   const supabase = await createClient();
@@ -119,7 +123,7 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
-  const insertPayload: Record<string, unknown> = {
+  const insertPayload: TenantInsert = {
     name,
     slug: normalizedSlug,
     business_type: business_type ?? null,
@@ -241,7 +245,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const updates: Record<string, unknown> = {
+  const updates: TenantUpdate = {
     updated_at: new Date().toISOString(),
   };
   if (name !== undefined) updates.name = name.trim();
@@ -267,7 +271,7 @@ export async function PATCH(request: Request) {
       .eq("id", tenant_id)
       .single();
     const current = (existingTenant?.settings as Record<string, unknown>) ?? {};
-    updates.settings = { ...current, ...settingsPayload };
+    updates.settings = { ...current, ...settingsPayload } as Json;
   }
 
   const { data: tenant, error } = await admin
