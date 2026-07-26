@@ -44,10 +44,16 @@ export function LandingNav() {
 
         <div className="hidden items-center gap-6 md:flex">
           <a
-            href="#funciones"
+            href="#plataforma"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            Funciones
+            Plataforma
+          </a>
+          <a
+            href="#mesas-qr"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Mesas y QR
           </a>
           <a
             href="#como-funciona"

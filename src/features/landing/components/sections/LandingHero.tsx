@@ -1,94 +1,29 @@
-import { Fragment } from "react";
 import Link from "next/link";
-import { ArrowRight, Package, CreditCard, Repeat } from "lucide-react";
+import { ArrowRight, Check, Sparkles } from "lucide-react";
 
-function DashboardMockup() {
-  return (
-    <div className="rounded-xl border border-border bg-surface shadow-card overflow-hidden">
-      <div className="flex items-center gap-1.5 border-b border-border bg-surface-raised px-4 py-2.5">
-        <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" aria-hidden />
-        <span
-          className="h-2.5 w-2.5 rounded-full bg-yellow-400/70"
-          aria-hidden
-        />
-        <span
-          className="h-2.5 w-2.5 rounded-full bg-green-400/70"
-          aria-hidden
-        />
-        <span className="ml-3 h-5 flex-1 rounded-md bg-border/50" aria-hidden />
-      </div>
-      <div className="p-4 space-y-3">
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { label: "Ventas", value: "$12,450", color: "bg-accent/15" },
-            { label: "Ordenes", value: "84", color: "bg-emerald-500/15" },
-            { label: "Productos", value: "36", color: "bg-blue-500/15" },
-          ].map((m) => (
-            <div key={m.label} className={`rounded-lg ${m.color} p-2.5`}>
-              <div className="text-[10px] text-muted-foreground">{m.label}</div>
-              <div className="mt-0.5 text-sm font-bold text-foreground">
-                {m.value}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="rounded-lg border border-border bg-background p-3">
-          <div className="mb-2 text-[10px] font-medium text-muted-foreground">
-            Ventas del mes
-          </div>
-          <div className="flex items-end gap-1 h-16">
-            {[40, 65, 45, 80, 55, 90, 70, 95, 60, 85, 75, 100].map((h, i) => (
-              <div
-                key={i}
-                className="flex-1 rounded-t bg-accent/60"
-                style={{ height: `${h}%` }}
-                aria-hidden
-              />
-            ))}
-          </div>
-        </div>
-        <div className="rounded-lg border border-border overflow-hidden">
-          <div className="grid grid-cols-3 gap-px bg-border text-[10px]">
-            <div className="bg-surface-raised px-2 py-1.5 font-medium text-muted-foreground">
-              Producto
-            </div>
-            <div className="bg-surface-raised px-2 py-1.5 font-medium text-muted-foreground">
-              Estado
-            </div>
-            <div className="bg-surface-raised px-2 py-1.5 font-medium text-muted-foreground">
-              Total
-            </div>
-            {[
-              ["Laptop Pro", "Completado", "$899"],
-              ["Audifonos BT", "En proceso", "$45"],
-              ["Teclado MX", "Pendiente", "$120"],
-            ].map(([name, status, total]) => (
-              <Fragment key={name}>
-                <div className="bg-surface px-2 py-1.5 text-foreground truncate">
-                  {name}
-                </div>
-                <div className="bg-surface px-2 py-1.5 text-muted-foreground">
-                  {status}
-                </div>
-                <div className="bg-surface px-2 py-1.5 font-medium text-foreground">
-                  {total}
-                </div>
-              </Fragment>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { HeroLiveDemo } from "@/features/landing/components/hero/HeroLiveDemo";
 
+/**
+ * Hero de la landing, diseñado MÓVIL PRIMERO (ahí llega la mayoría del tráfico).
+ *
+ * Cuatro reglas que ordenan todo lo de abajo:
+ *
+ *  1. El titular promete un RESULTADO, no un mecanismo. "Acepta tarjeta sin
+ *     terminal" le habla al dueño y le quita su objeción principal; "tu cliente
+ *     pide y paga solo" solo describía cómo funciona por dentro.
+ *  2. Máximo dos líneas de titular en móvil. Un titular de cuatro líneas empuja
+ *     el CTA y la demo fuera de la primera pantalla.
+ *  3. UN solo CTA principal. El secundario ("ver cómo funciona") competía con él
+ *     y además era redundante: la demo en vivo YA es ver cómo funciona.
+ *  4. La demo sube. En móvil el orden es titular → subtítulo → CTA → DEMO, y
+ *     los beneficios y la prueba social van DESPUÉS. Antes la demo quedaba a
+ *     ~600px de scroll, o sea invisible justo para quien más importa.
+ *
+ * En `lg` el grid reparte: texto y beneficios en la columna 1, demo en la 2.
+ */
 export function LandingHero() {
   return (
     <section className="relative overflow-hidden">
-      <div
-        className="absolute inset-0 via-transparent to-transparent"
-        aria-hidden
-      />
       <div
         className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04]"
         style={{
@@ -97,49 +32,73 @@ export function LandingHero() {
         }}
         aria-hidden
       />
-      <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
-        <div className="lg:grid lg:grid-cols-2 lg:gap-16 lg:items-center">
-          <div className="mx-auto max-w-2xl text-center lg:mx-0 lg:text-left">
-            <div className="animate-fade-in-up inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3.5 py-1.5 text-sm font-medium text-accent">
-              <Package className="h-3.5 w-3.5" aria-hidden />
-              Plataforma para comercios
+      <div className="relative mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:py-20">
+        <div className="lg:grid lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-x-12 lg:items-start">
+          {/* ── Bloque 1: promesa + CTA ─────────────────────────── */}
+          <div className="mx-auto max-w-xl text-center lg:col-start-1 lg:row-start-1 lg:mx-0 lg:pt-4 lg:text-left">
+            <div className="animate-fade-in-up inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5 text-[13px] font-semibold text-accent">
+              <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              Gratis para empezar · Sin mensualidad
             </div>
 
-            <h1 className="animate-fade-in-up animation-delay-100 mt-6 text-4xl font-bold tracking-tight leading-[1.1] text-foreground sm:text-5xl md:text-6xl">
-              Tu negocio, tu tienda.{" "}
-              <span className="text-accent">Todo en un solo lugar.</span>
+            <h1 className="animate-fade-in-up animation-delay-100 mt-5 text-[2.25rem] font-bold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-[3.25rem]">
+              Acepta tarjeta{" "}
+              <span className="text-accent">sin terminal.</span>
             </h1>
 
-            <p className="animate-fade-in-up animation-delay-200 mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground lg:mx-0 sm:text-xl">
-              Gestiona productos, ordenes y ventas. Genera tu sitio web
-              automatico y recibe pagos. Diseñado para negocios que quieren
-              vender online sin complicaciones.
+            <p className="animate-fade-in-up animation-delay-200 mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-muted-foreground sm:text-lg lg:mx-0">
+              Tu cliente escanea un QR y paga desde su celular. Tú llevas tus
+              pedidos, tu tienda en línea, tu crédito y tu dinero desde un solo
+              panel.
             </p>
 
-            <div className="animate-fade-in-up animation-delay-300 mt-8 flex flex-col items-center gap-3 sm:flex-row lg:justify-start sm:justify-center">
+            {/* Un solo CTA. El "cómo funciona" lo resuelve la demo de al lado. */}
+            <div className="animate-fade-in-up animation-delay-300 mt-6">
               <Link
                 href="/registro"
-                className="group inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+                className="group inline-flex min-h-13 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background sm:w-auto"
               >
-                Crear cuenta gratis
+                Crear mi cuenta gratis
                 <ArrowRight
                   className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
                   aria-hidden
                 />
               </Link>
-              <Link
-                href="/login"
-                className="inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-6 py-3 text-base font-medium text-foreground transition-colors duration-200 hover:bg-border-soft/50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
-              >
-                Ya tengo cuenta
-              </Link>
+              <p className="mt-2.5 text-[13px] text-muted-foreground">
+                Sin tarjeta de crédito · Listo en 2 minutos
+              </p>
             </div>
+          </div>
 
-            <div className="animate-fade-in-up animation-delay-400 mt-10 flex items-center justify-center gap-3 lg:justify-start">
+          {/* ── Bloque 2: la demo. En móvil va aquí, justo tras el CTA ── */}
+          <div className="animate-fade-in-up animation-delay-400 mt-10 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0">
+            <HeroLiveDemo />
+          </div>
+
+          {/* ── Bloque 3: beneficios + prueba social, después de la demo ── */}
+          <div className="mx-auto max-w-xl lg:col-start-1 lg:row-start-2 lg:mx-0">
+            <ul className="mt-10 flex flex-col gap-2.5 lg:mt-8">
+              {[
+                "Sin terminal ni lector: tu cliente usa su propio celular",
+                "Sin mensualidad ni contrato — solo pagas cuando te pagan",
+                "Todo incluido: pedidos, sitio web, cuotas, crédito y equipo",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2.5">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/12 text-accent">
+                    <Check className="h-3 w-3" aria-hidden strokeWidth={3} />
+                  </span>
+                  <span className="text-sm leading-relaxed text-muted-foreground">
+                    {item}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-7 flex items-center gap-3">
               <div className="flex -space-x-2">
-                {["P", "M", "S", "L"].map((initial, i) => (
+                {["P", "M", "S", "L"].map((initial) => (
                   <div
-                    key={i}
+                    key={initial}
                     className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-accent/15 text-xs font-semibold text-accent"
                   >
                     {initial}
@@ -150,75 +109,9 @@ export function LandingHero() {
                 <span className="font-semibold text-foreground">
                   +50 negocios
                 </span>{" "}
-                ya confian en Pars Commerce
+                ya confían en Pars Commerce
               </p>
             </div>
-          </div>
-
-          <div className="animate-fade-in-up animation-delay-300 mt-12 lg:mt-0">
-            <div className="mx-auto max-w-lg lg:max-w-none">
-              <div className="rotate-1 transition-transform duration-500 hover:rotate-0 lg:rotate-2">
-                <DashboardMockup />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Loans & Subscriptions Feature Cards ─────────────── */}
-        <div className="mt-20 grid gap-6 sm:grid-cols-2 lg:mt-28">
-          {/* Loans card */}
-          <div className="animate-fade-in-up animation-delay-400 group rounded-2xl border border-border bg-surface p-6 transition-all duration-300 hover:shadow-soft sm:p-8">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
-              <CreditCard className="h-6 w-6 text-emerald-500" aria-hidden />
-            </div>
-            <h3 className="text-xl font-bold text-foreground">
-              Préstamos y créditos
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Ofrece crédito a tus clientes directamente desde tu negocio.
-              Define montos, plazos e intereses. Los cobros se hacen
-              automáticamente con MercadoPago.
-            </p>
-            <ul className="mt-4 space-y-2">
-              {[
-                "Crea préstamos en segundos con productos de tu catálogo",
-                "Plazos flexibles: semanal, quincenal o mensual",
-                "Cobro automático vía MercadoPago — sin perseguir pagos",
-                "Seguimiento en tiempo real desde tu dashboard",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <span className="mt-0.5 text-emerald-500 shrink-0">✓</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Subscriptions card */}
-          <div className="animate-fade-in-up animation-delay-500 group rounded-2xl border border-border bg-surface p-6 transition-all duration-300 hover:shadow-soft sm:p-8">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/10">
-              <Repeat className="h-6 w-6 text-violet-500" aria-hidden />
-            </div>
-            <h3 className="text-xl font-bold text-foreground">
-              Suscripciones y pagos recurrentes
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Permite a tus clientes pagar en cuotas o de forma recurrente
-              directamente desde tu tienda online. Ellos eligen, tú cobras.
-            </p>
-            <ul className="mt-4 space-y-2">
-              {[
-                "Pago en cuotas: divide la compra en 2, 3, 6 o hasta 12 pagos",
-                "Suscripción recurrente: cobro periódico sin fecha de fin",
-                "El cliente autoriza su tarjeta una sola vez vía MercadoPago",
-                "Monitorea todo: pagos completados, pendientes y cancelaciones",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <span className="mt-0.5 text-violet-500 shrink-0">✓</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
       </div>

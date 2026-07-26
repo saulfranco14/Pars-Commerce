@@ -265,11 +265,97 @@ body {
   animation-delay: 400ms;
 }
 
+.animation-delay-500 {
+  animation-delay: 500ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in-up {
     animation: none;
     opacity: 1;
     transform: none;
+  }
+}
+
+/* ── Hero live demo (two synchronized devices) ───────────────── */
+/* Flash used when a value on the dashboard updates because the
+   customer just acted on the phone — sells the "en tiempo real". */
+@keyframes hero-sync-flash {
+  0% {
+    background-color: color-mix(in oklab, var(--accent) 22%, transparent);
+  }
+
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-hero-sync-flash {
+  animation: hero-sync-flash 1.1s ease-out both;
+}
+
+/* Row sliding in as the order reaches the dashboard. */
+@keyframes hero-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-hero-row-in {
+  animation: hero-row-in 0.45s ease-out both;
+}
+
+/* Slow ambient pulse for the "en vivo" dot. */
+@keyframes hero-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.35;
+    transform: scale(0.82);
+  }
+}
+
+.animate-hero-live-pulse {
+  animation: hero-live-pulse 2s ease-in-out infinite;
+}
+
+/* Thumb/tap ripple on the phone at the moment of the customer's action. */
+@keyframes hero-tap {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.35);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+.animate-hero-tap {
+  animation: hero-tap 0.7s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-sync-flash,
+  .animate-hero-row-in,
+  .animate-hero-live-pulse,
+  .animate-hero-tap {
+    animation: none;
+  }
+
+  .animate-hero-tap {
+    opacity: 0;
   }
 }
 

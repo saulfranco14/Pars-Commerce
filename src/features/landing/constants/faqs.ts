@@ -1,5 +1,20 @@
 export const FAQS = [
   {
+    question: "¿Mi cliente tiene que descargar una app?",
+    answer:
+      "No. Escanea el QR con la cámara de su celular y se abre todo en el navegador — no descarga nada ni crea cuenta. Tampoco necesitas terminal ni lector: el cliente usa su propio teléfono.",
+  },
+  {
+    question: "¿Y si mi negocio no es un restaurante?",
+    answer:
+      "Funciona igual. Lo usan autolavados, talleres, estéticas, tiendas y negocios de servicios. Tú defines tu catálogo y el flujo es el mismo: tu cliente pide, tú marcas el avance, te paga.",
+  },
+  {
+    question: "¿Puede pagarme antes de que le entregue?",
+    answer:
+      "No, y es a propósito. El pago se habilita solo cuando tu equipo marca el pedido como listo, para que nunca cobres algo que todavía no entregaste. Además solo tu personal autorizado puede mover ese estado.",
+  },
+  {
     question: "Necesito conocimientos tecnicos para usar Pars Commerce?",
     answer:
       "No. Todo es visual e intuitivo. Creas tu cuenta, agregas productos con fotos y precios, y tu tienda se genera automaticamente. No necesitas saber programar.",

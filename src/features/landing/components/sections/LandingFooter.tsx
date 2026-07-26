@@ -77,8 +77,13 @@ export function LandingFooter() {
               <p className="text-sm font-semibold text-foreground">Producto</p>
               <ul className="mt-3 space-y-2">
                 <li>
-                  <a href="#funciones" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                    Funciones
+                  <a href="#plataforma" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                    Plataforma
+                  </a>
+                </li>
+                <li>
+                  <a href="#mesas-qr" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                    Mesas y QR
                   </a>
                 </li>
                 <li>
