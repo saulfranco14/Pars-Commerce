@@ -20,6 +20,6 @@ export const STEPS = [
     step: 3,
     title: "Empieza a vender",
     description: "Agrega productos, configura promociones y comparte tu tienda.",
-    detail: "Sin comision de plataforma",
+    detail: "Sin comisión de plataforma",
   },
 ] as const;

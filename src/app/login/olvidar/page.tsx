@@ -6,6 +6,7 @@ import Link from "next/link";
 import * as yup from "yup";
 import { ArrowRight, Mail } from "lucide-react";
 import { BrandPanel } from "@/features/auth/components/BrandPanel";
+import { AuthBrandMark } from "@/components/brand/AuthBrandMark";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 
@@ -13,7 +14,7 @@ const forgotSchema = yup.object({
   email: yup
     .string()
     .required("El email es obligatorio")
-    .email("Ingresa un email valido"),
+    .email("Ingresa un email válido"),
 });
 
 type FieldErrors = Record<string, string>;
@@ -90,24 +91,8 @@ export default function OlvidarPage() {
             <ThemeToggle />
           </div>
           <div className="w-full max-w-[400px] animate-auth-enter">
-            <div className="mb-8 flex flex-col items-center lg:hidden">
-              <div className="relative mb-3">
-                <div
-                  className="absolute inset-0 scale-150 rounded-3xl bg-accent opacity-25 blur-2xl"
-                  aria-hidden
-                />
-                <Image
-                  src="/android-chrome-192x192.png"
-                  alt=""
-                  width={64}
-                  height={64}
-                  className="relative h-16 w-16 rounded-2xl"
-                  priority
-                />
-              </div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-                Pars Commerce
-              </p>
+            <div className="mb-8 flex justify-center lg:hidden">
+              <AuthBrandMark />
             </div>
 
             <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
@@ -146,24 +131,8 @@ export default function OlvidarPage() {
           <ThemeToggle />
         </div>
         <div className="relative w-full max-w-[400px] animate-auth-enter">
-          <div className="mb-8 flex flex-col items-center lg:hidden">
-            <div className="relative mb-3">
-              <div
-                className="absolute inset-0 scale-150 rounded-3xl bg-accent opacity-25 blur-2xl"
-                aria-hidden
-              />
-              <Image
-                src="/android-chrome-192x192.png"
-                alt=""
-                width={64}
-                height={64}
-                className="relative h-16 w-16 rounded-2xl"
-                priority
-              />
-            </div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-              Pars Commerce
-            </p>
+          <div className="mb-8 flex justify-center lg:hidden">
+            <AuthBrandMark />
           </div>
 
           <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">

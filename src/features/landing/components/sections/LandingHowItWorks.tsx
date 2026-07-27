@@ -10,7 +10,7 @@ export function LandingHowItWorks() {
             Tres pasos para comenzar
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-            Sin configuraciones complejas. En minutos tendras tu tienda en linea.
+            Sin configuraciones complejas. En minutos tendrás tu tienda en línea.
           </p>
         </div>
 

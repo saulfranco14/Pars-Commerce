@@ -96,10 +96,14 @@ export function LandingFooter() {
               <p className="text-sm font-semibold text-foreground">Legal</p>
               <ul className="mt-3 space-y-2">
                 <li>
-                  <span className="text-sm text-muted-foreground">Términos de servicio</span>
+                  <Link href="/terminos" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                    Términos de servicio
+                  </Link>
                 </li>
                 <li>
-                  <span className="text-sm text-muted-foreground">Privacidad</span>
+                  <Link href="/privacidad" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                    Aviso de Privacidad
+                  </Link>
                 </li>
               </ul>
             </div>

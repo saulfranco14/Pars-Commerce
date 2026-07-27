@@ -13,6 +13,7 @@ import {
 import { BrandPanel } from "@/features/auth/components/BrandPanel";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { AuthBrandMark } from "@/components/brand/AuthBrandMark";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { createClient } from "@/lib/supabase/client";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
@@ -27,7 +28,7 @@ const loginSchema = yup.object({
   email: yup
     .string()
     .required("El email es obligatorio")
-    .email("Ingresa un email valido"),
+    .email("Ingresa un email válido"),
   password: yup
     .string()
     .required("La contraseña es obligatoria")
@@ -255,25 +256,8 @@ function LoginForm() {
             <ThemeToggle />
           </div>
           <div className="w-full max-w-[400px] animate-auth-enter">
-            {/* Mobile branded header */}
-            <div className="mb-8 flex flex-col items-center lg:hidden">
-              <div className="relative mb-3">
-                <div
-                  className="absolute inset-0 scale-150 rounded-3xl bg-accent opacity-25 blur-2xl"
-                  aria-hidden
-                />
-                <Image
-                  src="/android-chrome-192x192.png"
-                  alt=""
-                  width={64}
-                  height={64}
-                  className="relative h-16 w-16 rounded-2xl"
-                  priority
-                />
-              </div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-                Pars Commerce
-              </p>
+            <div className="mb-8 flex justify-center lg:hidden">
+              <AuthBrandMark />
             </div>
 
             <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
@@ -499,31 +483,14 @@ function LoginForm() {
           aria-hidden
         />
         <div className="relative w-full max-w-[400px] animate-auth-enter">
-          {/* Mobile branded header */}
-          <div className="mb-8 flex flex-col items-center lg:hidden">
-            <div className="relative mb-3">
-              <div
-                className="absolute inset-0 scale-150 rounded-3xl bg-accent opacity-25 blur-2xl"
-                aria-hidden
-              />
-              <Image
-                src="/android-chrome-192x192.png"
-                alt=""
-                width={64}
-                height={64}
-                className="relative h-16 w-16 rounded-2xl"
-                priority
-              />
-            </div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-              Pars Commerce
-            </p>
+          <div className="mb-8 flex justify-center lg:hidden">
+            <AuthBrandMark />
           </div>
 
           {/* Card */}
           <div className="rounded-2xl border border-border bg-surface p-6  sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
             <h1 className="text-xl font-bold text-foreground sm:text-2xl">
-              Iniciar sesion
+              Iniciar sesión
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Ingresa con tu email y contraseña
@@ -619,7 +586,7 @@ function LoginForm() {
                 href="/registro"
                 className="font-semibold text-accent transition-colors hover:text-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 rounded"
               >
-                Registrate gratis
+                Regístrate gratis
               </Link>
             </p>
           </div>

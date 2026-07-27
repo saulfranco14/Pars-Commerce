@@ -134,7 +134,7 @@ export const HERO_BEATS: HeroBeat[] = [
     key: "prestamos",
     label: "Préstamos",
     caption:
-      "Dale crédito a tus clientes de confianza y el cobro se hace automático.",
+      "Si le fías a un cliente, aquí llevas el control de sus abonos y el cobro se hace solo.",
     icon: Banknote,
     phone: { view: "loan", action: "Pagando su abono" },
     panel: {

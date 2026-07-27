@@ -9,8 +9,8 @@ export const STATS = [
   },
   {
     icon: CreditCard,
-    value: "MercadoPago",
-    label: "pagos integrados",
+    value: "Tarjeta",
+    label: "crédito, débito y meses",
     accent: "bg-blue-500/10 text-blue-500 dark:bg-blue-400/10 dark:text-blue-400",
   },
   {
@@ -22,7 +22,7 @@ export const STATS = [
   {
     icon: TrendingUp,
     value: "$0",
-    label: "comision de plataforma",
+    label: "comisión de plataforma",
     accent: "bg-rose-500/10 text-rose-500 dark:bg-rose-400/10 dark:text-rose-400",
   },
 ] as const;

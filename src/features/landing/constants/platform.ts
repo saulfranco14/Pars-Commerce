@@ -152,7 +152,7 @@ export const PLATFORM_CAPABILITIES: PlatformCapability[] = [
     icon: Banknote,
     title: "Préstamos y crédito",
     owner:
-      "Dale crédito a tus clientes de confianza. Defines monto, plazo e interés y el cobro es automático.",
+      "Si le fías a un cliente de confianza, aquí llevas el control: defines monto, plazo e interés, y el cobro es automático.",
     customer:
       "Se lleva lo que necesita hoy y paga en abonos, sin ir a una financiera.",
   },

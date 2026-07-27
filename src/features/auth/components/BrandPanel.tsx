@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { HIGHLIGHTS } from "@/features/auth/constants/loginHighlights";
 
 type BrandPanelProps = {
@@ -8,7 +8,7 @@ type BrandPanelProps = {
 
 export function BrandPanel({
   title = "Bienvenido de vuelta",
-  subtitle = "Accede a tu dashboard para gestionar tu negocio, revisar ordenes y hacer crecer tus ventas.",
+  subtitle = "Accede a tu panel para gestionar tu negocio, revisar órdenes y hacer crecer tus ventas.",
 }: BrandPanelProps) {
   return (
     <div className="relative hidden lg:flex lg:flex-1 items-center justify-center overflow-hidden">
@@ -27,17 +27,8 @@ export function BrandPanel({
       />
 
       <div className="relative z-10 max-w-sm px-8">
-        <div className="flex items-center gap-3 mb-8">
-          <Image
-            src="/android-chrome-192x192.png"
-            alt=""
-            width={40}
-            height={40}
-            className="h-10 w-10"
-          />
-          <span className="text-xl font-bold text-foreground">
-            Pars Commerce
-          </span>
+        <div className="mb-8">
+          <TlacoLogo size="lg" />
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-foreground">
           {title}
@@ -63,7 +54,7 @@ export function BrandPanel({
         </div>
 
         <p className="mt-8 text-xs text-muted-foreground/60">
-          Mas de 50 negocios ya confian en Pars Commerce
+          Más de 50 negocios ya confían en Tlaco
         </p>
       </div>
     </div>

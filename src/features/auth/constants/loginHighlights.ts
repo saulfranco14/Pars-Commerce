@@ -15,7 +15,7 @@ export const HIGHLIGHTS: {
 }[] = [
   {
     icon: ShoppingBag,
-    text: "Gestiona productos y ordenes",
+    text: "Gestiona productos y órdenes",
     accent: "bg-blue-500/10 text-blue-500 dark:text-blue-400",
   },
   {
@@ -25,12 +25,14 @@ export const HIGHLIGHTS: {
   },
   {
     icon: CreditCard,
-    text: "Pagos integrados con MercadoPago",
+    text: "Cobra con tarjeta, sin terminal",
     accent: "bg-amber-500/10 text-amber-500 dark:text-amber-400",
   },
   {
+    // No prestamos dinero: el negocio le fía a su cliente y aquí lleva el
+    // control. Decir "crédito" hacía creer que el crédito venía de nosotros.
     icon: Banknote,
-    text: "Préstamos y créditos a clientes",
+    text: "Lleva el control de lo que te deben",
     accent: "bg-teal-500/10 text-teal-500 dark:text-teal-400",
   },
   {

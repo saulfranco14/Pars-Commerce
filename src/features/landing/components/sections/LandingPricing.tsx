@@ -52,7 +52,7 @@ export function LandingPricing() {
 
           <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <ShieldCheck className="h-4 w-4" aria-hidden />
-            <span>Sin tarjeta de credito requerida</span>
+            <span>Sin tarjeta de crédito requerida</span>
           </div>
         </div>
       </div>

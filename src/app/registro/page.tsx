@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import * as yup from "yup";
@@ -11,6 +10,8 @@ import {
   Sparkles,
   Mail,
 } from "lucide-react";
+import { AuthBrandMark } from "@/components/brand/AuthBrandMark";
+import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { registroSchema } from "@/features/auth/validations/registroForm";
@@ -40,24 +41,15 @@ function BrandPanel() {
       />
 
       <div className="relative z-10 max-w-sm px-8">
-        <div className="flex items-center gap-3 mb-8">
-          <Image
-            src="/android-chrome-192x192.png"
-            alt=""
-            width={40}
-            height={40}
-            className="h-10 w-10"
-          />
-          <span className="text-xl font-bold text-foreground">
-            Pars Commerce
-          </span>
+        <div className="mb-8">
+          <TlacoLogo size="lg" />
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-foreground">
           Digitaliza tu negocio hoy
         </h2>
         <p className="mt-2 text-muted-foreground leading-relaxed">
-          Crea tu tienda en linea, gestiona productos, recibe pedidos y cobra
-          con MercadoPago. Todo gratis.
+          Crea tu tienda en línea, gestiona productos, recibe pedidos y cobra
+          con tarjeta. Todo gratis.
         </p>
 
         <div className="mt-8 space-y-3">
@@ -82,7 +74,7 @@ function BrandPanel() {
           <div className="space-y-1.5">
             {[
               "Productos ilimitados",
-              "Pagos con MercadoPago",
+              "Cobros con tarjeta",
               "Tu propia tienda web",
             ].map((f) => (
               <div key={f} className="flex items-center gap-2">
@@ -97,7 +89,7 @@ function BrandPanel() {
         </div>
 
         <p className="mt-6 text-xs text-muted-foreground/60">
-          Sin tarjeta de credito. Sin comisiones de plataforma.
+          Sin tarjeta de crédito. Sin comisiones de plataforma.
         </p>
       </div>
     </div>
@@ -204,23 +196,7 @@ export default function RegistroPage() {
 
   const logoBlock = (
     <div className="flex flex-col items-center">
-      <div className="relative mb-3">
-        <div
-          className="absolute inset-0 scale-150 rounded-3xl bg-accent opacity-25 blur-2xl"
-          aria-hidden
-        />
-        <Image
-          src="/android-chrome-192x192.png"
-          alt=""
-          width={64}
-          height={64}
-          className="relative h-16 w-16 rounded-2xl"
-          priority
-        />
-      </div>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-        Pars Commerce
-      </p>
+      <AuthBrandMark />
     </div>
   );
 
@@ -366,6 +342,26 @@ export default function RegistroPage() {
                   />
                 )}
               </button>
+
+              {/* Los términos dicen que la cuenta se crea aceptándolos, así que
+                  el consentimiento tiene que estar visible aquí. */}
+              <p className="mt-4 text-center text-xs leading-relaxed text-muted-foreground">
+                Al crear tu cuenta aceptas los{" "}
+                <Link
+                  href="/terminos"
+                  className="font-medium text-accent underline-offset-2 hover:underline"
+                >
+                  Términos de servicio
+                </Link>{" "}
+                y el{" "}
+                <Link
+                  href="/privacidad"
+                  className="font-medium text-accent underline-offset-2 hover:underline"
+                >
+                  Aviso de Privacidad
+                </Link>
+                .
+              </p>
             </form>
 
             {/* Mobile benefits */}
@@ -390,7 +386,7 @@ export default function RegistroPage() {
                 href="/login"
                 className="font-semibold text-accent transition-colors hover:text-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 rounded"
               >
-                Iniciar sesion
+                Iniciar sesión
               </Link>
             </p>
           </div>
