@@ -30,7 +30,7 @@ function IntroMockup() {
         style={{ top: 8, left: 16, width: 162, transform: "rotate(-2deg)" }}
       >
         <div className="p-3">
-          <p className="text-[9px]" style={{ color: "#a8a29e" }}>
+          <p className="text-[9px]" style={{ color: "#94a3b8" }}>
             Préstamos activos
           </p>
           <p
@@ -62,12 +62,12 @@ function IntroMockup() {
         style={{ top: 62, right: 12, width: 112, transform: "rotate(3.5deg)" }}
       >
         <div className="p-3">
-          <p className="text-[9px]" style={{ color: "#a8a29e" }}>
+          <p className="text-[9px]" style={{ color: "#94a3b8" }}>
             Cobros hoy
           </p>
           <p
             className="text-[24px] font-bold leading-none"
-            style={{ color: "#292524" }}
+            style={{ color: "#0f1c33" }}
           >
             $2,450
           </p>
@@ -85,11 +85,11 @@ function IntroMockup() {
           <div>
             <p
               className="text-[9px] font-semibold"
-              style={{ color: "#292524" }}
+              style={{ color: "#0f1c33" }}
             >
               María Torres
             </p>
-            <p className="text-[8px]" style={{ color: "#a8a29e" }}>
+            <p className="text-[8px]" style={{ color: "#94a3b8" }}>
               Pago recibido vía MP
             </p>
           </div>
@@ -121,7 +121,7 @@ function CrearPrestamoMockup() {
           <div className="mb-2 flex items-center justify-between">
             <p
               className="text-[9px] font-semibold"
-              style={{ color: "#292524" }}
+              style={{ color: "#0f1c33" }}
             >
               Nuevo préstamo
             </p>
@@ -135,7 +135,7 @@ function CrearPrestamoMockup() {
 
           <div
             className="mb-2 rounded-xl p-2"
-            style={{ background: "#faf9f7", border: "1px solid #ede9e4" }}
+            style={{ background: "#f7f9fc", border: "1px solid #dbe4f0" }}
           >
             <div className="flex items-center gap-2">
               <div
@@ -147,11 +147,11 @@ function CrearPrestamoMockup() {
               <div>
                 <p
                   className="text-[8px] font-semibold"
-                  style={{ color: "#292524" }}
+                  style={{ color: "#0f1c33" }}
                 >
                   Juan García
                 </p>
-                <p className="text-[7px]" style={{ color: "#a8a29e" }}>
+                <p className="text-[7px]" style={{ color: "#94a3b8" }}>
                   juan@email.com · 55 1234 5678
                 </p>
               </div>
@@ -160,7 +160,7 @@ function CrearPrestamoMockup() {
 
           <p
             className="mb-1.5 text-[8px] font-semibold"
-            style={{ color: "#292524" }}
+            style={{ color: "#0f1c33" }}
           >
             Productos del préstamo
           </p>
@@ -168,13 +168,13 @@ function CrearPrestamoMockup() {
             <div
               key={item.name}
               className="mb-1 flex items-center justify-between rounded-lg px-2 py-1.5"
-              style={{ background: "#f5f5f4" }}
+              style={{ background: "#eef2f8" }}
             >
               <div>
-                <p className="text-[7px] font-medium" style={{ color: "#292524" }}>
+                <p className="text-[7px] font-medium" style={{ color: "#0f1c33" }}>
                   {item.name}
                 </p>
-                <p className="text-[6px]" style={{ color: "#a8a29e" }}>
+                <p className="text-[6px]" style={{ color: "#94a3b8" }}>
                   Cant: {item.qty}
                 </p>
               </div>
@@ -187,8 +187,8 @@ function CrearPrestamoMockup() {
             </div>
           ))}
 
-          <div className="mt-2 flex items-center justify-between border-t pt-2" style={{ borderColor: "#ede9e4" }}>
-            <span className="text-[8px] font-semibold" style={{ color: "#292524" }}>Total</span>
+          <div className="mt-2 flex items-center justify-between border-t pt-2" style={{ borderColor: "#dbe4f0" }}>
+            <span className="text-[8px] font-semibold" style={{ color: "#0f1c33" }}>Total</span>
             <span className="text-[11px] font-bold" style={{ color: "#10b981" }}>$8,850</span>
           </div>
         </div>
@@ -216,7 +216,7 @@ function PlazosMockup() {
         <div className="p-2.5">
           <p
             className="mb-2 text-[9px] font-semibold"
-            style={{ color: "#292524" }}
+            style={{ color: "#0f1c33" }}
           >
             Elige el plan de pagos
           </p>
@@ -227,24 +227,24 @@ function PlazosMockup() {
                 key={p.n}
                 className="flex items-center justify-between rounded-xl px-3 py-2"
                 style={{
-                  background: p.selected ? "#ecfdf5" : "#faf9f7",
-                  border: p.selected ? "2px solid #10b981" : "1px solid #ede9e4",
+                  background: p.selected ? "#ecfdf5" : "#f7f9fc",
+                  border: p.selected ? "2px solid #10b981" : "1px solid #dbe4f0",
                 }}
               >
                 <div>
                   <p
                     className="text-[8px] font-semibold"
-                    style={{ color: "#292524" }}
+                    style={{ color: "#0f1c33" }}
                   >
                     {p.n}
                   </p>
-                  <p className="text-[7px]" style={{ color: "#a8a29e" }}>
+                  <p className="text-[7px]" style={{ color: "#94a3b8" }}>
                     {p.freq}
                   </p>
                 </div>
                 <p
                   className="text-[10px] font-bold"
-                  style={{ color: p.selected ? "#10b981" : "#292524" }}
+                  style={{ color: p.selected ? "#10b981" : "#0f1c33" }}
                 >
                   {p.amount}/pago
                 </p>
@@ -285,11 +285,11 @@ function MercadoPagoMockup() {
             <div>
               <p
                 className="text-[9px] font-bold"
-                style={{ color: "#292524" }}
+                style={{ color: "#0f1c33" }}
               >
                 Cobro automático
               </p>
-              <p className="text-[7px]" style={{ color: "#a8a29e" }}>
+              <p className="text-[7px]" style={{ color: "#94a3b8" }}>
                 MercadoPago se encarga
               </p>
             </div>
@@ -328,17 +328,17 @@ function MercadoPagoMockup() {
             </div>
             <div
               className="flex items-center justify-between rounded-lg px-2.5 py-2"
-              style={{ background: "#f5f5f4", border: "1px solid #ede9e4" }}
+              style={{ background: "#eef2f8", border: "1px solid #dbe4f0" }}
             >
               <div className="flex items-center gap-1.5">
                 <div className="h-2.5 w-2.5 rounded-full" style={{ background: "#d6d3d1" }} />
-                <span className="text-[7px] font-medium" style={{ color: "#78716c" }}>Pago 4</span>
+                <span className="text-[7px] font-medium" style={{ color: "#64748b" }}>Pago 4</span>
               </div>
-              <span className="text-[8px] font-bold" style={{ color: "#a8a29e" }}>$1,215</span>
+              <span className="text-[8px] font-bold" style={{ color: "#94a3b8" }}>$1,215</span>
             </div>
           </div>
 
-          <p className="mt-2 text-[7px] text-center" style={{ color: "#a8a29e" }}>
+          <p className="mt-2 text-[7px] text-center" style={{ color: "#94a3b8" }}>
             El cliente recibe link de pago por email
           </p>
         </div>
@@ -364,7 +364,7 @@ function SeguimientoMockup() {
         style={{ top: -30, left: 14, right: 14, transform: "rotate(-0.5deg)" }}
       >
         <div className="p-2.5">
-          <p className="mb-2 text-[9px] font-semibold" style={{ color: "#292524" }}>
+          <p className="mb-2 text-[9px] font-semibold" style={{ color: "#0f1c33" }}>
             Tus préstamos
           </p>
           <div className="space-y-1.5">
@@ -372,10 +372,10 @@ function SeguimientoMockup() {
               <div
                 key={l.name}
                 className="rounded-xl p-2"
-                style={{ background: "#faf9f7", border: "1px solid #ede9e4" }}
+                style={{ background: "#f7f9fc", border: "1px solid #dbe4f0" }}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-[8px] font-semibold" style={{ color: "#292524" }}>{l.name}</p>
+                  <p className="text-[8px] font-semibold" style={{ color: "#0f1c33" }}>{l.name}</p>
                   <span
                     className="rounded-full px-2 py-0.5 text-[6px] font-semibold"
                     style={{ background: l.statusBg, color: l.statusColor }}
@@ -384,10 +384,10 @@ function SeguimientoMockup() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[7px]" style={{ color: "#a8a29e" }}>Total: {l.amount}</span>
-                  <span className="text-[7px] font-medium" style={{ color: "#292524" }}>{l.progress}%</span>
+                  <span className="text-[7px]" style={{ color: "#94a3b8" }}>Total: {l.amount}</span>
+                  <span className="text-[7px] font-medium" style={{ color: "#0f1c33" }}>{l.progress}%</span>
                 </div>
-                <div className="h-1.5 rounded-full" style={{ background: "#f5f5f4" }}>
+                <div className="h-1.5 rounded-full" style={{ background: "#eef2f8" }}>
                   <div
                     className="h-1.5 rounded-full"
                     style={{ width: `${l.progress}%`, background: l.statusColor }}
@@ -409,7 +409,7 @@ function ListoMockup() {
     { icon: CalendarDays, name: "Elige plazos", color: "#f59e0b", bg: "#fef3c7" },
     { icon: CreditCard, name: "Cobra con MP", color: "#009ee3", bg: "#e0f2fe" },
     { icon: BarChart3, name: "Da seguimiento", color: "#a855f7", bg: "#ede9fe" },
-    { icon: Banknote, name: "Recibe pagos", color: "#ec4899", bg: "#fce7f3" },
+    { icon: Banknote, name: "Recibe pagos", color: "#3483fa", bg: "#e8f1fe" },
   ];
   return (
     <div className="relative mx-auto h-52 w-72">
@@ -434,7 +434,7 @@ function ListoMockup() {
                   <Icon className="h-5 w-5" style={{ color: s.color }} />
                   <span
                     className="text-center text-[7px] font-medium leading-tight"
-                    style={{ color: "#292524" }}
+                    style={{ color: "#0f1c33" }}
                   >
                     {s.name}
                   </span>

@@ -23,6 +23,10 @@
   --accent-hover: #1f5fd1;
   --coin-face: #e8a33d;
   --coin-edge: #c07f22;
+  /* Paso oscuro obligatorio para texto: --coin-face sobre blanco da ~2.1:1 y
+     no pasa contraste. El oro se usa para superficies y la moneda; el texto
+     encima va en --coin-ink. */
+  --coin-ink: #8a5a12;
   --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
   --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
   --radius: 0.75rem;
@@ -53,6 +57,11 @@
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-foreground: var(--accent-foreground);
+  /* El oro de la moneda como utilidad Tailwind (`bg-coin/10`, `text-coin-ink`).
+     Reservado a momentos de valor — precio $0, sellos, el logo. Nunca botones
+     ni links: un botón oro compite con el azul de acción. */
+  --color-coin: var(--coin-face);
+  --color-coin-ink: var(--coin-ink);
   --color-default: var(--color-default);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
@@ -159,6 +168,9 @@ html.dark {
   --accent-hover: #5b9bff;
   --coin-face: #edb055;
   --coin-edge: #c9871f;
+  /* En oscuro el texto oro va CLARO, no oscuro: sobre #0a0b0e el paso #8a5a12
+     del tema claro no se leería. */
+  --coin-ink: #f0bf74;
   --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.5);
   --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.4);
 }
@@ -472,14 +484,21 @@ body {
   transform-origin: 50% 100%;
 }
 
+/* --tlaco-drop-delay permite retrasar la caída por superficie. En las pantallas
+   de sesión el logo vive dentro de un contenedor con `animate-auth-enter`
+   (320ms): si la moneda arranca antes de que ese contenedor termine, los dos
+   transforms se componen y el rebote se ve sucio. */
 .tlaco-coin--drop {
-  animation: tlaco-coin-drop 1250ms 250ms both;
+  animation: tlaco-coin-drop 1250ms var(--tlaco-drop-delay, 250ms) both;
 }
 
 .tlaco-stem--enter {
-  /* El jolt entra justo cuando la moneda toca: 250ms de delay + 42% de 1250ms. */
+  /* El jolt tiene que caer en el instante del impacto: el primer contacto de la
+     moneda ocurre al 42% de los 1250ms, así que se deriva del mismo retardo en
+     vez de repetir un número fijo (antes 775ms, atado al delay de 250ms). */
   animation: tlaco-stem-in 380ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both,
-    tlaco-stem-jolt 260ms ease-out 775ms both;
+    tlaco-stem-jolt 260ms ease-out calc(var(--tlaco-drop-delay, 250ms) + 525ms)
+      both;
 }
 
 /* Gana por especificidad (0,3,0) a .tlaco-coin--drop (0,1,0), así el giro

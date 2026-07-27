@@ -5,12 +5,12 @@ import { filterActivePromotions } from "@/features/qr/helpers/filterActivePromot
 import { NextResponse } from "next/server";
 
 const DEVICE_COLORS = [
-  "#3b82f6",
-  "#8b5cf6",
-  "#10b981",
-  "#f59e0b",
-  "#ec4899",
-  "#14b8a6",
+  "#8b5cf6", // violeta
+  "#10b981", // esmeralda
+  "#f59e0b", // ámbar
+  "#84cc16", // lima (antes rosa de marca)
+  "#0891b2", // cian
+  "#3b82f6", // azul
 ];
 
 function pickColor(index: number) {
@@ -48,7 +48,10 @@ export async function GET(request: Request) {
     .single();
 
   if (!tenant) {
-    return NextResponse.json({ error: "Negocio no disponible" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Negocio no disponible" },
+      { status: 404 },
+    );
   }
 
   if (!tenant.public_store_enabled) {
@@ -65,14 +68,6 @@ export async function GET(request: Request) {
   };
 
   if (qrCode.kind === "table" || qrCode.kind === "order") {
-    // Note (LINK model): linked tables each keep their own live order + QR, so
-    // scanning any table resolves its own order normally. The shared bill is
-    // aggregated at read-time in the bill route via merge_group_id — no
-    // redirect needed here.
-    //
-    // 'order' kind = a single-use staff-built ticket: the order already exists,
-    // so we resolve it but NEVER auto-create a new one (a spent/closed ticket
-    // returns active:false rather than opening a fresh order).
     const isSingleUseTicket = qrCode.kind === "order";
     let orderId = qrCode.current_order_id as string | null;
     if (orderId) {
@@ -82,7 +77,10 @@ export async function GET(request: Request) {
         .eq("id", orderId)
         .single();
 
-      if (!existingOrder || ["paid", "cancelled"].includes(existingOrder.status)) {
+      if (
+        !existingOrder ||
+        ["paid", "cancelled"].includes(existingOrder.status)
+      ) {
         orderId = null;
       } else {
         response.order = existingOrder;
@@ -90,7 +88,6 @@ export async function GET(request: Request) {
     }
 
     if (!orderId && isSingleUseTicket) {
-      // Spent ticket — nothing to open. Tell the client the session ended.
       return NextResponse.json({ ...response, active: false });
     }
 
@@ -122,7 +119,10 @@ export async function GET(request: Request) {
       response.order = order;
       await admin
         .from("qr_codes")
-        .update({ current_order_id: order.id, updated_at: new Date().toISOString() })
+        .update({
+          current_order_id: order.id,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", qrCode.id);
       await admin.from("order_activity_log").insert({
         order_id: order.id,
@@ -136,15 +136,11 @@ export async function GET(request: Request) {
     if (fingerprint) {
       const now = new Date().toISOString();
 
-      // Check if this device already has a row for THIS order. If not, it
-      // means either (a) brand-new device, or (b) returning device whose
-      // previous order already closed. In both cases the customer must go
-      // through the name prompt again — we never silently revive a stale
-      // identity onto a fresh order. The is_new_session flag tells the
-      // client to clear the cached display_name in localStorage.
       const { data: existing } = await admin
         .from("order_devices")
-        .select("id, display_name, color_hex, joined_at, last_seen_at, is_owner")
+        .select(
+          "id, display_name, color_hex, joined_at, last_seen_at, is_owner",
+        )
         .eq("order_id", orderId)
         .eq("device_fingerprint", fingerprint)
         .maybeSingle();
@@ -165,9 +161,6 @@ export async function GET(request: Request) {
           .eq("order_id", orderId);
         const currentCount = (allDevices ?? []).length;
 
-        // Enforce table capacity: a brand-new device may only join if the
-        // table still has room. Existing devices always pass (checked above),
-        // so a returning customer is never locked out of their own table.
         const capacity = qrCode.table_capacity as number | null;
         if (capacity && capacity > 0 && currentCount >= capacity) {
           return NextResponse.json(
@@ -182,8 +175,6 @@ export async function GET(request: Request) {
         }
 
         const color = pickColor(currentCount);
-        // The first device to join is the table's responsible ("owner"): only
-        // it (or staff) may approve merging another table into this one.
         const isOwner = currentCount === 0;
         const { data: device } = await admin
           .from("order_devices")
@@ -196,17 +187,15 @@ export async function GET(request: Request) {
             last_seen_at: now,
             updated_at: now,
           })
-          .select("id, display_name, color_hex, joined_at, last_seen_at, is_owner")
+          .select(
+            "id, display_name, color_hex, joined_at, last_seen_at, is_owner",
+          )
           .single();
         response.my_device = device ?? null;
       }
 
       response.is_new_session = isNewSession;
 
-      // One devices read gives us the connected count AND the owner check.
-      // Self-heal: every order must have exactly one responsible ("owner") —
-      // races on order re-creation or legacy rows can leave none, which would
-      // block merge approvals forever. Promote the earliest-joined device.
       const { data: allDevs } = await admin
         .from("order_devices")
         .select("id, is_owner")
@@ -220,14 +209,15 @@ export async function GET(request: Request) {
           .from("order_devices")
           .update({ is_owner: true, updated_at: now })
           .eq("id", allDevs[0].id);
-        const mine = response.my_device as { id: string; is_owner?: boolean } | null;
+        const mine = response.my_device as {
+          id: string;
+          is_owner?: boolean;
+        } | null;
         if (mine && mine.id === allDevs[0].id) {
           mine.is_owner = true;
         }
       }
 
-      // Pending merge requests so the mesa/menu screen can surface an invite
-      // without the customer opening the bill. (orderId is always set here.)
       const mergeOrderId = orderId as string;
       const nowIso = new Date().toISOString();
       const { incoming, outgoing } = await getPendingMergeRequests(
@@ -245,9 +235,6 @@ export async function GET(request: Request) {
         return (o?.table_label as string | null) ?? "otra mesa";
       }
 
-      // incoming/outgoing are independent lookups (different orders) — when
-      // BOTH exist, resolve their labels together instead of one after the
-      // other.
       const [incomingLabel, outgoingLabel] = await Promise.all([
         incoming ? labelForOrder(incoming.requester_order_id) : null,
         outgoing ? labelForOrder(outgoing.target_order_id) : null,
@@ -269,8 +256,6 @@ export async function GET(request: Request) {
         : null;
     }
 
-    // menu and promoRows only depend on tenant.id, not on each other — fetch
-    // both at once instead of paying their latency twice in sequence.
     const [{ data: menu }, { data: promoRows }] = await Promise.all([
       admin
         .from("products")
@@ -290,8 +275,6 @@ export async function GET(request: Request) {
         .order("created_at", { ascending: false }),
     ]);
 
-    // Multi-photo gallery + categories both depend on the menu we just
-    // fetched, but NOT on each other — fetch them together too.
     const menuProductIds = (menu ?? []).map((p) => p.id as string);
     const usedCategoryIds = new Set(
       (menu ?? [])
@@ -316,9 +299,6 @@ export async function GET(request: Request) {
         : Promise.resolve({ data: [] }),
     ]);
 
-    // `product_images` is the source of truth (ordered by `position`), same
-    // pattern as the public storefront (`/api/public/products`). Falls back
-    // to the single `image_url` when a product has no rows there yet.
     const imagesByProduct = (productImages ?? []).reduce((map, row) => {
       const list = map.get(row.product_id) ?? [];
       list.push(row.url);
@@ -336,20 +316,19 @@ export async function GET(request: Request) {
     }));
     response.categories = categories ?? [];
 
-    // Active promotions to tease inside the menu (Rappi-style banners). Same
-    // active-window rule as the storefront; trimmed to what the banner needs.
-    response.promotions = filterActivePromotions(promoRows ?? [], Date.now()).map(
-      (p) => ({
-        id: p.id,
-        name: p.name,
-        type: p.type,
-        value: p.value,
-        badge_label: p.badge_label,
-        image_url: p.image_url,
-        description: p.description,
-        valid_until: p.valid_until,
-      }),
-    );
+    response.promotions = filterActivePromotions(
+      promoRows ?? [],
+      Date.now(),
+    ).map((p) => ({
+      id: p.id,
+      name: p.name,
+      type: p.type,
+      value: p.value,
+      badge_label: p.badge_label,
+      image_url: p.image_url,
+      description: p.description,
+      valid_until: p.valid_until,
+    }));
   }
 
   return NextResponse.json(response);

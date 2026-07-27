@@ -4,6 +4,7 @@ import { ShoppingCart } from "lucide-react";
 import CarritoContent from "./CarritoContent";
 import { DEFAULT_RECURRING_CONFIG } from "@/types/subscriptions";
 import type { RecurringPurchasesConfig } from "@/types/subscriptions";
+import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -23,7 +24,7 @@ export default async function CarritoPage({ params }: PageProps) {
     notFound();
   }
 
-  const accentColor = tenant.theme_color?.trim() || "#6366f1";
+  const accentColor = tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT;
   const settings = (tenant.settings as Record<string, unknown> | null) ?? {};
   const recurringConfig = {
     ...DEFAULT_RECURRING_CONFIG,

@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     await sendEmail({
       to: email,
-      subject: "Confirma tu cuenta - Pars Commerce",
+      subject: "Confirma tu cuenta - Tlaco",
       html: confirmationEmailTemplate(confirmUrl),
     });
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import * as yup from "yup";
 import { ArrowRight, Mail } from "lucide-react";
@@ -125,6 +124,7 @@ export default function OlvidarPage() {
       <BrandPanel
         title="Recupera tu cuenta"
         subtitle="Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña."
+        animated
       />
       <div className="relative flex flex-1 items-center justify-center bg-background px-4 py-8">
         <div className="absolute right-4 top-4 z-10">
@@ -132,7 +132,9 @@ export default function OlvidarPage() {
         </div>
         <div className="relative w-full max-w-[400px] animate-auth-enter">
           <div className="mb-8 flex justify-center lg:hidden">
-            <AuthBrandMark />
+            {/* El estado de éxito (arriba) no anima: la moneda cayendo
+                distraería del "revisa tu correo". */}
+            <AuthBrandMark animated />
           </div>
 
           <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">

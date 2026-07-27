@@ -37,8 +37,11 @@ const allSlides: SlideItem[] = [
   {
     id: "bienvenida",
     icon: HandMetal,
-    iconBg: "#dbeafe",
-    iconColor: "#2563eb",
+    // Neutro: es el slide índice, no representa un método que colorear. Además
+    // este componente vive en el storefront del tenant, donde el acento es el
+    // color del negocio — ningún azul fijo es seguro aquí.
+    iconBg: "#f1f5f9",
+    iconColor: "#475569",
     title: "Formas de pago disponibles",
     description:
       "Este negocio ofrece diferentes formas de pago. Te explicamos cada una para que elijas la que más te convenga.",
@@ -58,8 +61,10 @@ const allSlides: SlideItem[] = [
   {
     id: "cuotas",
     icon: SplitSquareHorizontal,
+    // Familia violeta = cuotas. El slide "cuotas-mp" usa un paso más claro de
+    // esta misma familia, así el emparejamiento indica que es su detalle.
     iconBg: "#ede9fe",
-    iconColor: "#7c3aed",
+    iconColor: "#6d28d9",
     title: "Pago en cuotas",
     description:
       "Divide tu compra en varios pagos (2, 3, 6 o más). Se cobra automáticamente a tu tarjeta según la frecuencia que elijas.",
@@ -69,8 +74,10 @@ const allSlides: SlideItem[] = [
   {
     id: "cuotas-mp",
     icon: Lock,
-    iconBg: "#e0f2fe",
-    iconColor: "#0284c7",
+    // Violeta claro: es el detalle de "cuotas", no un método aparte. Antes era
+    // azul, que choca con la marca y con los presets azules del tenant.
+    iconBg: "#f5f3ff",
+    iconColor: "#7c3aed",
     title: "Cuotas seguras con MercadoPago",
     description:
       "Al elegir cuotas, se abrirá MercadoPago para guardar tu tarjeta de forma segura. Los cobros se harán automáticamente cada periodo.",
@@ -80,8 +87,9 @@ const allSlides: SlideItem[] = [
   {
     id: "recurrente",
     icon: Repeat,
-    iconBg: "#fce7f3",
-    iconColor: "#db2777",
+    // Familia teal = recurrente. Era rosa, que ahora está reservado a error.
+    iconBg: "#ccfbf1",
+    iconColor: "#0f766e",
     title: "Compra recurrente",
     description:
       "Se cobra periódicamente sin fecha de fin. Recibes tus productos regularmente sin tener que volver a comprar.",
@@ -91,8 +99,10 @@ const allSlides: SlideItem[] = [
   {
     id: "recurrente-mp",
     icon: Smartphone,
-    iconBg: "#fef3c7",
-    iconColor: "#d97706",
+    // Teal claro: detalle de "recurrente". Era ámbar, que es el token de
+    // warning — gastarlo en decoración le quita significado al de verdad.
+    iconBg: "#f0fdfa",
+    iconColor: "#0d9488",
     title: "Suscripción con MercadoPago",
     description:
       "Autorizas tu tarjeta una sola vez vía MercadoPago. Cada periodo se cobra automáticamente y recibes una notificación.",

@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { LayoutSwitcher } from "./layouts/LayoutSwitcher";
+import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -43,7 +44,7 @@ export default async function SitioLayout({ children, params }: LayoutProps) {
     .order("position", { ascending: true });
 
   const navPages = pages ?? [];
-  const accentColor = tenant.theme_color?.trim() || "#6366f1";
+  const accentColor = tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT;
 
   const layoutTenant = {
     id: tenant.id,

@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useState, useEffect, useCallback } from "react";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import * as yup from "yup";
@@ -32,14 +31,14 @@ const loginSchema = yup.object({
   password: yup
     .string()
     .required("La contraseña es obligatoria")
-    .min(6, "Minimo 6 caracteres"),
+    .min(6, "Mínimo 6 caracteres"),
 });
 
 const setPasswordSchema = yup.object({
   newPassword: yup
     .string()
     .required("La contraseña es obligatoria")
-    .min(6, "Minimo 6 caracteres"),
+    .min(6, "Mínimo 6 caracteres"),
   confirmPassword: yup
     .string()
     .required("Confirma tu contraseña")
@@ -250,6 +249,7 @@ function LoginForm() {
               ? "Crea una nueva contraseña segura para tu cuenta."
               : "Crea una contraseña para acceder a tu cuenta"
           }
+          animated
         />
         <div className="relative flex flex-1 items-center justify-center bg-background px-4 py-8">
           <div className="absolute right-4 top-4 z-10">
@@ -257,7 +257,7 @@ function LoginForm() {
           </div>
           <div className="w-full max-w-[400px] animate-auth-enter">
             <div className="mb-8 flex justify-center lg:hidden">
-              <AuthBrandMark />
+              <AuthBrandMark animated />
             </div>
 
             <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
@@ -360,7 +360,7 @@ function LoginForm() {
                         : inputNormal
                     }
                     autoComplete="new-password"
-                    placeholder="Minimo 6 caracteres"
+                    placeholder="Mínimo 6 caracteres"
                     aria-invalid={!!setPasswordFieldErrors.newPassword}
                   />
                   <FieldError
@@ -446,7 +446,7 @@ function LoginForm() {
                 <button
                   type="submit"
                   disabled={setPasswordLoading}
-                  className="group w-full min-h-[48px] rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
+                  className="group w-full min-h-12 cursor-pointer rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
                 >
                   {setPasswordLoading ? "Guardando..." : "Guardar y entrar"}
                   {!setPasswordLoading && (
@@ -467,7 +467,7 @@ function LoginForm() {
   // Normal login
   return (
     <div className="flex min-h-screen">
-      <BrandPanel />
+      <BrandPanel animated />
       <div className="relative flex flex-1 items-center justify-center bg-background px-4 py-8">
         <div className="absolute right-4 top-4 z-10">
           <ThemeToggle />
@@ -484,7 +484,7 @@ function LoginForm() {
         />
         <div className="relative w-full max-w-[400px] animate-auth-enter">
           <div className="mb-8 flex justify-center lg:hidden">
-            <AuthBrandMark />
+            <AuthBrandMark animated />
           </div>
 
           {/* Card */}
@@ -545,6 +545,7 @@ function LoginForm() {
                       : inputNormal
                   }
                   autoComplete="current-password"
+                  placeholder="Tu contraseña"
                   aria-invalid={!!(touched.password && fieldErrors.password)}
                 />
                 <FieldError
@@ -562,7 +563,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group w-full min-h-[48px] rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
+                className="group w-full min-h-12 cursor-pointer rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
               >
                 {loading ? "Entrando..." : "Entrar"}
                 {!loading && (
@@ -598,7 +599,7 @@ function LoginForm() {
               aria-hidden
             />
             <span className="text-xs text-muted-foreground/50">
-              Conexion segura y cifrada
+              Conexión segura y cifrada
             </span>
           </div>
         </div>

@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
@@ -118,19 +118,11 @@ function SidebarContent(props: SidebarContentProps) {
   return (
     <>
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-border-soft px-4">
-        <Link
-          href="/dashboard"
-          onClick={onNavigate}
-          className="flex items-center gap-2 font-semibold text-foreground"
-        >
-          <Image
-            src="/android-chrome-192x192.png"
-            alt="Pars Commerce"
-            width={32}
-            height={32}
-            className="h-8 w-8 shrink-0 rounded-lg"
-          />
-          <span>Pars Commerce</span>
+        {/* Sin `animated`: es una herramienta de uso diario y una caída de 1.5s
+            en cada carga del panel es ruido. `TlacoLogo` ya trae su propio
+            `sr-only` con el nombre, así que no lleva alt ni aria-label. */}
+        <Link href="/dashboard" onClick={onNavigate} className="flex items-center">
+          <TlacoLogo size="sm" />
         </Link>
         {showCloseButton && onClose && (
           <button

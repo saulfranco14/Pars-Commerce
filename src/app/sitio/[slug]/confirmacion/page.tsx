@@ -4,6 +4,7 @@ import Link from "next/link";
 import { XCircle, Clock, ArrowLeft, Repeat, CalendarCheck } from "lucide-react";
 import { ClearCartOnConfirm } from "./ClearCartOnConfirm";
 import { PaymentSuccessFullScreen } from "./PaymentSuccessFullScreen";
+import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -52,7 +53,7 @@ export default async function ConfirmacionPage({
     notFound();
   }
 
-  const accentColor = tenant.theme_color?.trim() || "#6366f1";
+  const accentColor = tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT;
 
   if (!order_id) {
     return (

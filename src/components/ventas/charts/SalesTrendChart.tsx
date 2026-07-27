@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { ChartHeader } from "./ChartHeader";
+import { COLOR_REVENUE } from "@/features/ventas/constants/chartColors";
 import type { SalesByDayItem } from "@/app/api/sales-analytics/route";
 
 interface SalesTrendChartProps {
@@ -109,7 +110,7 @@ export function SalesTrendChart({
             <Line
               type="monotone"
               dataKey="total_revenue"
-              stroke="#ec4899"
+              stroke={COLOR_REVENUE}
               strokeWidth={2}
               dot={{ r: chartData.length <= 14 ? 4 : 2 }}
               connectNulls

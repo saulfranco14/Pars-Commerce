@@ -7,6 +7,7 @@ import {
 } from "@/features/sitio-web/constants/templateStyles";
 import type { SiteWebGeneralTabProps } from "@/features/sitio-web/interfaces/siteWebGeneralTab";
 import { TemplateSelector } from "@/components/site/TemplateSelector";
+import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
 
 function TemplateMiniPreview({
   variant,
@@ -109,7 +110,7 @@ export function SiteWebGeneralTab({
   appearanceSuccess,
   onSaveAppearance,
 }: SiteWebGeneralTabProps) {
-  const previewColor = themeColor.trim() || "#6366f1";
+  const previewColor = themeColor.trim() || DEFAULT_TENANT_ACCENT;
 
   return (
     <form
@@ -182,7 +183,7 @@ export function SiteWebGeneralTab({
                 value={themeColor}
                 onChange={(e) => onThemeColorChange(e.target.value)}
                 className="h-9 min-w-0 flex-1 rounded-lg border border-border/80 bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30"
-                placeholder="#6366f1"
+                placeholder="#3483fa"
                 maxLength={7}
               />
             </div>

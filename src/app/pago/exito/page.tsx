@@ -75,7 +75,7 @@ export default function PagoExitoPage() {
       <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 shadow-md">
         <div className="mb-6 flex justify-center">
           <span className="text-sm font-semibold text-muted-foreground tracking-wide">
-            Pars Commerce
+            Tlaco
           </span>
         </div>
         <Suspense fallback={null}>

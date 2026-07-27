@@ -41,8 +41,11 @@ export const HIGHLIGHTS: {
     accent: "bg-violet-500/10 text-violet-500 dark:text-violet-400",
   },
   {
+    // Neutro, no rosa (rosa/rojo está reservado a error) y no oro: la lista ya
+    // gasta azul, esmeralda, ámbar, teal y violeta, así que un sexto tono la
+    // volvería arcoíris. El ícono del escudo carga el significado.
     icon: Shield,
     text: "Seguro y confiable, 24/7",
-    accent: "bg-rose-500/10 text-rose-500 dark:text-rose-400",
+    accent: "bg-slate-500/10 text-slate-500 dark:text-slate-400",
   },
 ];

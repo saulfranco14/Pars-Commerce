@@ -3,6 +3,7 @@
 import { Check } from "lucide-react";
 import type { SiteTemplate } from "@/services/siteTemplatesService";
 import { TemplateMiniPreview } from "./TemplateMiniPreview";
+import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
 
 interface TemplateSelectorProps {
   templates: SiteTemplate[];
@@ -17,11 +18,11 @@ export function TemplateSelector({
   templates,
   selectedTemplateId,
   onSelect,
-  themeColor = "#6366f1",
+  themeColor = DEFAULT_TENANT_ACCENT,
   label = "Plantilla",
   compact = false,
 }: TemplateSelectorProps) {
-  const previewColor = themeColor.trim() || "#6366f1";
+  const previewColor = themeColor.trim() || DEFAULT_TENANT_ACCENT;
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
 
   const gridClass = compact

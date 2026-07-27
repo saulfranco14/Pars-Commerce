@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { LandingNav } from "@/features/landing/components/sections/LandingNav";
+import { LegalNav } from "@/features/legal/components/LegalNav";
 import { LegalDocument } from "@/features/legal/components/LegalDocument";
 
 import { PRIVACY } from "@/features/legal/constants/privacy";
@@ -14,8 +14,7 @@ export const metadata: Metadata = {
 export default function PrivacidadPage() {
   return (
     <div className="min-h-screen bg-background">
-      <LandingNav />
-      <div className="h-[52px]" aria-hidden />
+      <LegalNav />
       <main>
         <LegalDocument doc={PRIVACY} />
       </main>

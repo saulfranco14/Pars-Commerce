@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { ChartHeader } from "./ChartHeader";
+import { COLOR_REVENUE } from "@/features/ventas/constants/chartColors";
 import type {
   SalesByWeekItem,
   SalesByDayItem,
@@ -122,7 +123,7 @@ export function SalesByWeekChart({
             />
             <Bar
               dataKey="total_revenue"
-              fill="#ec4899"
+              fill={COLOR_REVENUE}
               radius={[4, 4, 0, 0]}
             />
           </BarChart>

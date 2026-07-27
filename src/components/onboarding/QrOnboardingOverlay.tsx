@@ -11,17 +11,17 @@ function IntroMockup() {
   return (
     <div className="relative mx-auto h-52 w-72">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full bg-linear-to-br from-accent/60 to-pink-300 opacity-20 blur-3xl" />
+        <div className="h-40 w-40 rounded-full bg-linear-to-br from-accent/60 to-blue-300 opacity-20 blur-3xl" />
       </div>
       <MiniCard className="absolute" style={{ top: 26, left: 56, right: 56 }}>
         <div className="flex flex-col items-center p-5">
           <div
             className="flex h-24 w-24 items-center justify-center rounded-xl"
-            style={{ background: "#faf9f7", border: "1px solid #ede9e4" }}
+            style={{ background: "#f7f9fc", border: "1px solid #dbe4f0" }}
           >
-            <QrCode className="h-16 w-16" style={{ color: "#292524" }} />
+            <QrCode className="h-16 w-16" style={{ color: "#0f1c33" }} />
           </div>
-          <p className="mt-2.5 text-[9px] font-bold" style={{ color: "#292524" }}>
+          <p className="mt-2.5 text-[9px] font-bold" style={{ color: "#0f1c33" }}>
             Un código, mil usos
           </p>
         </div>
@@ -39,8 +39,8 @@ function DosTiposMockup() {
       <MiniCard className="absolute" style={{ top: 4, left: 12, width: 118, transform: "rotate(-2deg)" }}>
         <div className="p-3">
           <Store className="h-5 w-5" style={{ color: "#3b82f6" }} />
-          <p className="mt-1.5 text-[9px] font-bold" style={{ color: "#292524" }}>Mesa</p>
-          <p className="text-[7px]" style={{ color: "#a8a29e" }}>
+          <p className="mt-1.5 text-[9px] font-bold" style={{ color: "#0f1c33" }}>Mesa</p>
+          <p className="text-[7px]" style={{ color: "#94a3b8" }}>
             El cliente ve tu menú y ordena
           </p>
         </div>
@@ -48,8 +48,8 @@ function DosTiposMockup() {
       <MiniCard className="absolute" style={{ top: 70, right: 12, width: 118, transform: "rotate(2.5deg)" }}>
         <div className="p-3">
           <CreditCard className="h-5 w-5" style={{ color: "#10b981" }} />
-          <p className="mt-1.5 text-[9px] font-bold" style={{ color: "#292524" }}>Cobro libre</p>
-          <p className="text-[7px]" style={{ color: "#a8a29e" }}>
+          <p className="mt-1.5 text-[9px] font-bold" style={{ color: "#0f1c33" }}>Cobro libre</p>
+          <p className="text-[7px]" style={{ color: "#94a3b8" }}>
             El cliente escanea y paga un monto
           </p>
         </div>
@@ -67,17 +67,17 @@ function CobroMockup() {
       </div>
       <MiniCard className="absolute" style={{ top: 8, left: 44, right: 44 }}>
         <div className="p-4">
-          <p className="text-center text-[8px]" style={{ color: "#a8a29e" }}>Pagar a</p>
-          <p className="text-center text-[11px] font-bold" style={{ color: "#292524" }}>Tu Negocio</p>
+          <p className="text-center text-[8px]" style={{ color: "#94a3b8" }}>Pagar a</p>
+          <p className="text-center text-[11px] font-bold" style={{ color: "#0f1c33" }}>Tu Negocio</p>
           <div className="mt-2.5 flex justify-center gap-1.5">
             {presets.map((p, i) => (
               <span
                 key={p}
                 className="rounded-lg px-2.5 py-1.5 text-[9px] font-bold"
                 style={{
-                  background: i === 1 ? "#d1fae5" : "#faf9f7",
-                  color: i === 1 ? "#059669" : "#292524",
-                  border: `1px solid ${i === 1 ? "#a7f3d0" : "#ede9e4"}`,
+                  background: i === 1 ? "#d1fae5" : "#f7f9fc",
+                  color: i === 1 ? "#059669" : "#0f1c33",
+                  border: `1px solid ${i === 1 ? "#a7f3d0" : "#dbe4f0"}`,
                 }}
               >
                 {p}
@@ -107,20 +107,20 @@ function ComparteMockup() {
         <div className="p-3.5">
           <div className="mb-2.5 flex items-center gap-1.5">
             <Share2 className="h-3.5 w-3.5" style={{ color: "#8b5cf6" }} />
-            <span className="text-[9px] font-bold" style={{ color: "#292524" }}>Compártelo como quieras</span>
+            <span className="text-[9px] font-bold" style={{ color: "#0f1c33" }}>Compártelo como quieras</span>
           </div>
           <div className="space-y-1.5">
             {channels.map((c) => (
               <div
                 key={c}
                 className="rounded-lg px-2.5 py-2 text-[8px] font-medium"
-                style={{ background: "#faf9f7", border: "1px solid #ede9e4", color: "#292524" }}
+                style={{ background: "#f7f9fc", border: "1px solid #dbe4f0", color: "#0f1c33" }}
               >
                 {c}
               </div>
             ))}
           </div>
-          <p className="mt-2 text-center text-[7px]" style={{ color: "#a8a29e" }}>
+          <p className="mt-2 text-center text-[7px]" style={{ color: "#94a3b8" }}>
             Descárgalo en PNG y pégalo donde lo verán
           </p>
         </div>

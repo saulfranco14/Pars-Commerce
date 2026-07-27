@@ -47,9 +47,11 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  /* Tiñe la barra del navegador. Debe seguir a `--background` de globals.css
+     (claro #f7f9fc / oscuro #0a0b0e); antes eran los stone de la marca vieja. */
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#faf9f7" },
-    { media: "(prefers-color-scheme: dark)", color: "#1c1917" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f9fc" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0b0e" },
   ],
 };
 

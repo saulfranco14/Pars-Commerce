@@ -16,7 +16,7 @@ function WelcomeMockup() {
   return (
     <div className="relative mx-auto h-52 w-72">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full bg-linear-to-br from-pink-400 to-orange-300 opacity-20 blur-3xl" />
+        <div className="h-40 w-40 rounded-full bg-linear-to-br from-accent/60 to-orange-300 opacity-20 blur-3xl" />
       </div>
 
       {/* Revenue card – main focus */}
@@ -25,12 +25,12 @@ function WelcomeMockup() {
         style={{ top: 8, left: 16, width: 162, transform: "rotate(-2deg)" }}
       >
         <div className="p-3">
-          <p className="text-[9px]" style={{ color: "#a8a29e" }}>
+          <p className="text-[9px]" style={{ color: "#94a3b8" }}>
             Ventas hoy
           </p>
           <p
             className="text-[22px] font-bold leading-tight"
-            style={{ color: "#ec4899" }}
+            style={{ color: "#3483fa" }}
           >
             $4,250
           </p>
@@ -44,7 +44,7 @@ function WelcomeMockup() {
                 className="flex-1 rounded-sm"
                 style={{
                   height: `${h}%`,
-                  background: i === 5 ? "#ec4899" : "#fce7f3",
+                  background: i === 5 ? "#3483fa" : "#e8f1fe",
                 }}
               />
             ))}
@@ -58,16 +58,16 @@ function WelcomeMockup() {
         style={{ top: 62, right: 12, width: 112, transform: "rotate(3.5deg)" }}
       >
         <div className="p-3">
-          <p className="text-[9px]" style={{ color: "#a8a29e" }}>
+          <p className="text-[9px]" style={{ color: "#94a3b8" }}>
             Órdenes
           </p>
           <p
             className="text-[24px] font-bold leading-none"
-            style={{ color: "#292524" }}
+            style={{ color: "#0f1c33" }}
           >
             12
           </p>
-          <p className="text-[8px]" style={{ color: "#a8a29e" }}>
+          <p className="text-[8px]" style={{ color: "#94a3b8" }}>
             esta semana
           </p>
         </div>
@@ -82,15 +82,15 @@ function WelcomeMockup() {
           <div>
             <p
               className="text-[9px] font-semibold"
-              style={{ color: "#292524" }}
+              style={{ color: "#0f1c33" }}
             >
               Juan García
             </p>
-            <p className="text-[8px]" style={{ color: "#a8a29e" }}>
+            <p className="text-[8px]" style={{ color: "#94a3b8" }}>
               Hace 5 min
             </p>
           </div>
-          <p className="text-[11px] font-bold" style={{ color: "#ec4899" }}>
+          <p className="text-[11px] font-bold" style={{ color: "#3483fa" }}>
             $350
           </p>
         </div>
@@ -104,7 +104,7 @@ function ProductosMockup() {
     { name: "Camisa clásica", price: "$450", bg: "#fef3c7", dot: "#fbbf24" },
     { name: "Pantalón slim", price: "$680", bg: "#dbeafe", dot: "#60a5fa" },
     { name: "Zapatos derby", price: "$890", bg: "#d1fae5", dot: "#34d399" },
-    { name: "Bolsa tote", price: "$320", bg: "#fce7f3", dot: "#f472b6" },
+    { name: "Bolsa tote", price: "$320", bg: "#e8f1fe", dot: "#8fb4f5" },
   ];
   return (
     <div className="relative mx-auto h-52 w-72">
@@ -121,13 +121,13 @@ function ProductosMockup() {
           <div className="mb-2 flex items-center justify-between">
             <p
               className="text-[9px] font-semibold"
-              style={{ color: "#292524" }}
+              style={{ color: "#0f1c33" }}
             >
               Productos
             </p>
             <div
               className="flex h-4 w-4 items-center justify-center rounded-full"
-              style={{ background: "#ec4899" }}
+              style={{ background: "#3483fa" }}
             >
               <span className="text-[8px] font-bold text-white">+</span>
             </div>
@@ -140,8 +140,8 @@ function ProductosMockup() {
                 className="rounded-full px-2 py-0.5 text-[7px] font-medium"
                 style={
                   i === 0
-                    ? { background: "#ec4899", color: "white" }
-                    : { background: "#f5f5f4", color: "#78716c" }
+                    ? { background: "#3483fa", color: "white" }
+                    : { background: "#eef2f8", color: "#64748b" }
                 }
               >
                 {t}
@@ -154,7 +154,7 @@ function ProductosMockup() {
               <div
                 key={p.name}
                 className="overflow-hidden rounded-xl"
-                style={{ border: "1px solid #ede9e4" }}
+                style={{ border: "1px solid #dbe4f0" }}
               >
                 <div
                   className="flex h-12 items-center justify-center"
@@ -168,13 +168,13 @@ function ProductosMockup() {
                 <div className="p-1.5">
                   <p
                     className="text-[7px] font-medium leading-tight"
-                    style={{ color: "#292524" }}
+                    style={{ color: "#0f1c33" }}
                   >
                     {p.name}
                   </p>
                   <p
                     className="text-[9px] font-bold"
-                    style={{ color: "#ec4899" }}
+                    style={{ color: "#3483fa" }}
                   >
                     {p.price}
                   </p>
@@ -208,8 +208,8 @@ function ServiciosMockup() {
       name: "Manicure completo",
       time: "45min",
       price: "$180",
-      bg: "#fce7f3",
-      dot: "#f472b6",
+      bg: "#e8f1fe",
+      dot: "#8fb4f5",
     },
   ];
   return (
@@ -226,13 +226,13 @@ function ServiciosMockup() {
           <div className="mb-2.5 flex items-center justify-between">
             <p
               className="text-[9px] font-semibold"
-              style={{ color: "#292524" }}
+              style={{ color: "#0f1c33" }}
             >
               Servicios
             </p>
             <div
               className="flex h-4 w-4 items-center justify-center rounded-full"
-              style={{ background: "#ec4899" }}
+              style={{ background: "#3483fa" }}
             >
               <span className="text-[8px] font-bold text-white">+</span>
             </div>
@@ -242,7 +242,7 @@ function ServiciosMockup() {
               <div
                 key={s.name}
                 className="flex items-center gap-2 rounded-xl p-2"
-                style={{ background: "#faf9f7", border: "1px solid #ede9e4" }}
+                style={{ background: "#f7f9fc", border: "1px solid #dbe4f0" }}
               >
                 <div
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
@@ -256,17 +256,17 @@ function ServiciosMockup() {
                 <div className="flex-1 min-w-0">
                   <p
                     className="text-[8px] font-semibold truncate"
-                    style={{ color: "#292524" }}
+                    style={{ color: "#0f1c33" }}
                   >
                     {s.name}
                   </p>
-                  <p className="text-[7px]" style={{ color: "#a8a29e" }}>
+                  <p className="text-[7px]" style={{ color: "#94a3b8" }}>
                     {s.time}
                   </p>
                 </div>
                 <p
                   className="text-[9px] font-bold shrink-0"
-                  style={{ color: "#ec4899" }}
+                  style={{ color: "#3483fa" }}
                 >
                   {s.price}
                 </p>
@@ -284,11 +284,11 @@ function ServiciosMockup() {
         <div className="flex items-center gap-1.5 px-3 py-2">
           <div
             className="h-5 w-5 rounded-full flex items-center justify-center"
-            style={{ background: "#ec4899" }}
+            style={{ background: "#3483fa" }}
           >
             <span className="text-[8px] font-bold text-white">+</span>
           </div>
-          <span className="text-[8px] font-medium" style={{ color: "#292524" }}>
+          <span className="text-[8px] font-medium" style={{ color: "#0f1c33" }}>
             Nuevo servicio
           </span>
         </div>
@@ -304,8 +304,8 @@ function OrdenesMockup() {
       name: "Juan García",
       amount: "$350",
       status: "En proceso",
-      statusBg: "#fce7f3",
-      statusColor: "#ec4899",
+      statusBg: "#e8f1fe",
+      statusColor: "#3483fa",
     },
     {
       id: "002",
@@ -347,7 +347,7 @@ function OrdenesMockup() {
             <div className="flex items-center justify-between">
               <span
                 className="text-[8px] font-medium"
-                style={{ color: "#a8a29e" }}
+                style={{ color: "#94a3b8" }}
               >
                 #{o.id}
               </span>
@@ -361,11 +361,11 @@ function OrdenesMockup() {
             <div className="mt-1 flex items-center justify-between">
               <p
                 className="text-[10px] font-semibold"
-                style={{ color: "#292524" }}
+                style={{ color: "#0f1c33" }}
               >
                 {o.name}
               </p>
-              <p className="text-[11px] font-bold" style={{ color: "#ec4899" }}>
+              <p className="text-[11px] font-bold" style={{ color: "#3483fa" }}>
                 {o.amount}
               </p>
             </div>
@@ -376,7 +376,7 @@ function OrdenesMockup() {
       {/* FAB */}
       <div
         className="absolute flex items-center gap-1.5 rounded-2xl px-3 py-2 shadow-lg"
-        style={{ bottom: 4, right: 12, background: "#ec4899" }}
+        style={{ bottom: 4, right: 12, background: "#3483fa" }}
       >
         <span className="text-[8px] font-bold text-white">+ Nueva orden</span>
       </div>
@@ -413,12 +413,12 @@ function VentasMockup() {
         style={{ top: 6, left: 14, width: 168, transform: "rotate(-2deg)" }}
       >
         <div className="p-3">
-          <p className="text-[8px]" style={{ color: "#a8a29e" }}>
+          <p className="text-[8px]" style={{ color: "#94a3b8" }}>
             Ventas del mes
           </p>
           <p
             className="text-[20px] font-bold leading-tight"
-            style={{ color: "#ec4899" }}
+            style={{ color: "#3483fa" }}
           >
             $24,500
           </p>
@@ -433,15 +433,15 @@ function VentasMockup() {
           >
             <defs>
               <linearGradient id="vg" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ec4899" stopOpacity="0.35" />
-                <stop offset="100%" stopColor="#ec4899" stopOpacity="0.02" />
+                <stop offset="0%" stopColor="#3483fa" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#3483fa" stopOpacity="0.02" />
               </linearGradient>
             </defs>
             <path d={area} fill="url(#vg)" />
             <path
               d={d}
               fill="none"
-              stroke="#ec4899"
+              stroke="#3483fa"
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -463,30 +463,30 @@ function VentasMockup() {
         <div className="p-2.5">
           <p
             className="text-[8px] font-semibold mb-2"
-            style={{ color: "#292524" }}
+            style={{ color: "#0f1c33" }}
           >
             Por persona
           </p>
           {team.map((m) => (
             <div key={m.name} className="mb-1.5 last:mb-0">
               <div className="mb-0.5 flex justify-between">
-                <span className="text-[7px]" style={{ color: "#78716c" }}>
+                <span className="text-[7px]" style={{ color: "#64748b" }}>
                   {m.name}
                 </span>
                 <span
                   className="text-[7px] font-medium"
-                  style={{ color: "#292524" }}
+                  style={{ color: "#0f1c33" }}
                 >
                   {m.pct}%
                 </span>
               </div>
               <div
                 className="h-1.5 rounded-full"
-                style={{ background: "#f5f5f4" }}
+                style={{ background: "#eef2f8" }}
               >
                 <div
                   className="h-1.5 rounded-full"
-                  style={{ width: `${m.bar}%`, background: "#ec4899" }}
+                  style={{ width: `${m.bar}%`, background: "#3483fa" }}
                 />
               </div>
             </div>
@@ -504,7 +504,7 @@ function EquipoMockup() {
       name: "Carlos Aguilar",
       role: "Admin",
       pct: "10%",
-      bg: "#ec4899",
+      bg: "#3483fa",
     },
     {
       initials: "ML",
@@ -524,7 +524,7 @@ function EquipoMockup() {
   return (
     <div className="relative mx-auto h-52 w-72">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full bg-linear-to-br from-rose-400 to-fuchsia-400 opacity-20 blur-3xl" />
+        <div className="h-40 w-40 rounded-full bg-linear-to-br from-accent/60 to-blue-300 opacity-20 blur-3xl" />
       </div>
 
       <MiniCard
@@ -535,13 +535,13 @@ function EquipoMockup() {
           <div className="mb-2.5 flex items-center justify-between">
             <p
               className="text-[9px] font-semibold"
-              style={{ color: "#292524" }}
+              style={{ color: "#0f1c33" }}
             >
               Equipo
             </p>
             <div
               className="flex h-4 w-4 items-center justify-center rounded-full"
-              style={{ background: "#ec4899" }}
+              style={{ background: "#3483fa" }}
             >
               <span className="text-[8px] font-bold text-white">+</span>
             </div>
@@ -551,7 +551,7 @@ function EquipoMockup() {
               <div
                 key={m.name}
                 className="flex items-center gap-2 rounded-xl p-2"
-                style={{ background: "#faf9f7", border: "1px solid #ede9e4" }}
+                style={{ background: "#f7f9fc", border: "1px solid #dbe4f0" }}
               >
                 <div
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
@@ -564,18 +564,18 @@ function EquipoMockup() {
                 <div className="flex-1 min-w-0">
                   <p
                     className="text-[8px] font-semibold"
-                    style={{ color: "#292524" }}
+                    style={{ color: "#0f1c33" }}
                   >
                     {m.name}
                   </p>
                   <div className="flex items-center gap-1">
                     <span
                       className="rounded-full px-1.5 py-0.5 text-[6px] font-medium"
-                      style={{ background: "#fce7f3", color: "#ec4899" }}
+                      style={{ background: "#e8f1fe", color: "#3483fa" }}
                     >
                       {m.role}
                     </span>
-                    <span className="text-[7px]" style={{ color: "#a8a29e" }}>
+                    <span className="text-[7px]" style={{ color: "#94a3b8" }}>
                       Comisión {m.pct}
                     </span>
                   </div>
@@ -608,7 +608,7 @@ function SitioMockup() {
         {/* Browser chrome */}
         <div
           className="flex items-center gap-1.5 rounded-t-2xl px-3 py-2"
-          style={{ background: "#f5f5f4", borderBottom: "1px solid #ede9e4" }}
+          style={{ background: "#eef2f8", borderBottom: "1px solid #dbe4f0" }}
         >
           <div className="flex gap-1">
             {["#ef4444", "#f59e0b", "#10b981"].map((c) => (
@@ -623,42 +623,42 @@ function SitioMockup() {
             className="flex flex-1 items-center justify-center rounded-md"
             style={{ background: "white", height: 14 }}
           >
-            <span className="text-[7px]" style={{ color: "#78716c" }}>
-              🌐 pars.co/mi-negocio
+            <span className="text-[7px]" style={{ color: "#64748b" }}>
+              🌐 tlaco.mx/mi-negocio
             </span>
           </div>
         </div>
         {/* Site content */}
         <div
           className="overflow-hidden rounded-b-2xl"
-          style={{ background: "#faf9f7" }}
+          style={{ background: "#f7f9fc" }}
         >
           {/* Hero */}
           <div
             className="px-3 py-3"
-            style={{ background: "linear-gradient(135deg,#fce7f3,#fdf2f8)" }}
+            style={{ background: "linear-gradient(135deg,#e8f1fe,#f7f9fc)" }}
           >
             <div className="flex items-center gap-2">
               <div
                 className="flex h-7 w-7 items-center justify-center rounded-xl"
-                style={{ background: "#ec4899" }}
+                style={{ background: "#3483fa" }}
               >
                 <span className="text-[8px] font-bold text-white">M</span>
               </div>
               <div>
                 <p
                   className="text-[9px] font-bold"
-                  style={{ color: "#292524" }}
+                  style={{ color: "#0f1c33" }}
                 >
                   Mi Negocio
                 </p>
-                <p className="text-[7px]" style={{ color: "#a8a29e" }}>
+                <p className="text-[7px]" style={{ color: "#94a3b8" }}>
                   ★★★★★ · WhatsApp
                 </p>
               </div>
               <div
                 className="ml-auto rounded-lg px-2 py-1"
-                style={{ background: "#ec4899" }}
+                style={{ background: "#3483fa" }}
               >
                 <span className="text-[7px] font-bold text-white">Comprar</span>
               </div>
@@ -668,7 +668,7 @@ function SitioMockup() {
           <div className="p-2.5">
             <p
               className="mb-1.5 text-[8px] font-semibold"
-              style={{ color: "#292524" }}
+              style={{ color: "#0f1c33" }}
             >
               Destacados
             </p>
@@ -677,7 +677,7 @@ function SitioMockup() {
                 <div
                   key={p.name}
                   className="overflow-hidden rounded-xl"
-                  style={{ background: "white", border: "1px solid #ede9e4" }}
+                  style={{ background: "white", border: "1px solid #dbe4f0" }}
                 >
                   <div
                     className="flex h-9 items-center justify-center"
@@ -689,12 +689,12 @@ function SitioMockup() {
                     />
                   </div>
                   <div className="p-1">
-                    <p className="text-[7px]" style={{ color: "#292524" }}>
+                    <p className="text-[7px]" style={{ color: "#0f1c33" }}>
                       {p.name}
                     </p>
                     <p
                       className="text-[8px] font-bold"
-                      style={{ color: "#ec4899" }}
+                      style={{ color: "#3483fa" }}
                     >
                       {p.price}
                     </p>
@@ -715,13 +715,13 @@ function FinishMockup() {
     { emoji: "✂️", name: "Servicios", color: "#a78bfa", bg: "#ede9fe" },
     { emoji: "🧾", name: "Órdenes", color: "#60a5fa", bg: "#dbeafe" },
     { emoji: "📈", name: "Ventas", color: "#34d399", bg: "#d1fae5" },
-    { emoji: "👥", name: "Equipo", color: "#f472b6", bg: "#fce7f3" },
+    { emoji: "👥", name: "Equipo", color: "#8fb4f5", bg: "#e8f1fe" },
     { emoji: "🌐", name: "Sitio web", color: "#818cf8", bg: "#e0e7ff" },
   ];
   return (
     <div className="relative mx-auto h-52 w-72">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full bg-linear-to-br from-pink-400 to-rose-400 opacity-20 blur-3xl" />
+        <div className="h-40 w-40 rounded-full bg-linear-to-br from-accent/60 to-blue-300 opacity-20 blur-3xl" />
       </div>
 
       <MiniCard
@@ -739,7 +739,7 @@ function FinishMockup() {
                 <span className="text-lg">{m.emoji}</span>
                 <span
                   className="text-center text-[7px] font-medium leading-tight"
-                  style={{ color: "#292524" }}
+                  style={{ color: "#0f1c33" }}
                 >
                   {m.name}
                 </span>
@@ -754,11 +754,11 @@ function FinishMockup() {
           </div>
           <div
             className="mt-2.5 rounded-xl py-2 text-center"
-            style={{ background: "linear-gradient(135deg,#fce7f3,#fdf2f8)" }}
+            style={{ background: "linear-gradient(135deg,#e8f1fe,#f7f9fc)" }}
           >
             <span
               className="text-[9px] font-semibold"
-              style={{ color: "#ec4899" }}
+              style={{ color: "#3483fa" }}
             >
               ¡Todo listo para empezar! 🎉
             </span>
@@ -772,67 +772,51 @@ function FinishMockup() {
 // ─── Slides configuration ─────────────────────────────────────
 const slides = [
   {
-    id: "welcome",
-    gradient: "from-pink-500 via-rose-400 to-orange-400",
-    title: "Bienvenido a\nPars Commerce",
+    id: "welcome",    title: "Bienvenido a\nTlaco",
     description:
       "Tu plataforma todo en uno para gestionar tu negocio, equipo y ventas desde cualquier lugar.",
     Mockup: WelcomeMockup,
   },
   {
-    id: "productos",
-    gradient: "from-orange-400 via-amber-400 to-yellow-300",
-    title: "Productos y catálogo",
+    id: "productos",    title: "Productos y catálogo",
     description:
       "Crea tu catálogo con fotos, precios y subcategorías. Tu inventario siempre al día.",
     Mockup: ProductosMockup,
   },
   {
-    id: "servicios",
-    gradient: "from-violet-500 via-purple-500 to-indigo-500",
-    title: "Servicios profesionales",
+    id: "servicios",    title: "Servicios profesionales",
     description:
       "Gestiona los servicios que ofreces con precios y duraciones claras para tus clientes.",
     Mockup: ServiciosMockup,
   },
   {
-    id: "ordenes",
-    gradient: "from-sky-400 via-blue-500 to-indigo-500",
-    title: "Órdenes y tickets",
+    id: "ordenes",    title: "Órdenes y tickets",
     description:
       "Crea tickets de venta en segundos, asígnalos a tu equipo y síguelos en tiempo real.",
     Mockup: OrdenesMockup,
   },
   {
-    id: "ventas",
-    gradient: "from-emerald-400 via-teal-500 to-cyan-500",
-    title: "Ventas y comisiones",
+    id: "ventas",    title: "Ventas y comisiones",
     description:
       "Analiza el rendimiento de tu negocio y calcula las comisiones de tu equipo automáticamente.",
     Mockup: VentasMockup,
   },
   {
-    id: "equipo",
-    gradient: "from-rose-400 via-pink-400 to-fuchsia-500",
-    title: "Tu equipo unido",
+    id: "equipo",    title: "Tu equipo unido",
     description:
       "Agrega miembros, asigna roles y controla el acceso de cada persona a tu negocio.",
     Mockup: EquipoMockup,
   },
   {
-    id: "sitio",
-    gradient: "from-blue-500 via-indigo-500 to-violet-500",
-    title: "Tu presencia digital",
+    id: "sitio",    title: "Tu presencia digital",
     description:
       "Comparte tu catálogo con clientes a través de tu propio sitio web personalizado.",
     Mockup: SitioMockup,
   },
   {
-    id: "listo",
-    gradient: "from-pink-500 via-rose-500 to-pink-600",
-    title: "¡Todo listo\npara empezar!",
+    id: "listo",    title: "¡Todo listo\npara empezar!",
     description:
-      "Explora cada sección y descubre todo lo que Pars Commerce puede hacer por tu negocio.",
+      "Explora cada sección y descubre todo lo que Tlaco puede hacer por tu negocio.",
     Mockup: FinishMockup,
   },
 ] as const;
@@ -938,7 +922,7 @@ export function OnboardingOverlay() {
       className="fixed inset-0 z-9999 flex select-none flex-col overflow-hidden bg-background"
       role="dialog"
       aria-modal="true"
-      aria-label="Tutorial de Pars Commerce"
+      aria-label="Tutorial de Tlaco"
     >
       {/* Skip button */}
       {!isLast && (

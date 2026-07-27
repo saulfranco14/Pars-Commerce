@@ -11,7 +11,7 @@ import {
   Mail,
 } from "lucide-react";
 import { AuthBrandMark } from "@/components/brand/AuthBrandMark";
-import { TlacoLogo } from "@/components/brand/TlacoLogo";
+import { BrandPanel } from "@/features/auth/components/BrandPanel";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { registroSchema } from "@/features/auth/validations/registroForm";
@@ -19,82 +19,41 @@ import { BENEFITS } from "@/features/auth/constants/benefits";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 
 const inputClass =
-  "input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+  "input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
 
-function BrandPanel() {
-  return (
-    <div className="relative hidden lg:flex lg:flex-1 items-center justify-center overflow-hidden">
-      {/* Dot pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.03] dark:opacity-[0.06]"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
-          backgroundSize: "24px 24px",
-        }}
-        aria-hidden
-      />
-      {/* Glow blob */}
-      <div
-        className="absolute bottom-1/3 left-1/2 -translate-x-1/2 translate-y-1/2 h-80 w-80 rounded-full bg-accent/10 blur-[100px]"
-        aria-hidden
-      />
+// Título, lista y remate propios del registro — mismo molde que el panel de
+// login (`BrandPanel`), contenido distinto porque responde a otra pregunta
+// ("por qué registrarme" en vez de "por qué confiar").
+const REGISTRO_BRAND = {
+  title: "Digitaliza tu negocio hoy",
+  subtitle:
+    "Crea tu tienda en línea, gestiona productos, recibe pedidos y cobra con tarjeta. Todo gratis.",
+  items: BENEFITS,
+  footnote: "Sin tarjeta de crédito. Sin comisiones de plataforma.",
+};
 
-      <div className="relative z-10 max-w-sm px-8">
-        <div className="mb-8">
-          <TlacoLogo size="lg" />
-        </div>
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">
-          Digitaliza tu negocio hoy
-        </h2>
-        <p className="mt-2 text-muted-foreground leading-relaxed">
-          Crea tu tienda en línea, gestiona productos, recibe pedidos y cobra
-          con tarjeta. Todo gratis.
-        </p>
-
-        <div className="mt-8 space-y-3">
-          {BENEFITS.map(({ icon: Icon, text }) => (
-            <div key={text} className="flex items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10">
-                <Icon className="h-4 w-4 text-accent" aria-hidden />
-              </div>
-              <span className="text-sm text-foreground">{text}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Pricing highlight */}
-        <div className="mt-8 rounded-xl border border-accent/20 bg-accent/5 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="h-4 w-4 text-accent" aria-hidden />
-            <span className="text-sm font-semibold text-foreground">
-              Plan Gratis — $0/mes
-            </span>
-          </div>
-          <div className="space-y-1.5">
-            {[
-              "Productos ilimitados",
-              "Cobros con tarjeta",
-              "Tu propia tienda web",
-            ].map((f) => (
-              <div key={f} className="flex items-center gap-2">
-                <Check
-                  className="h-3.5 w-3.5 text-accent shrink-0"
-                  aria-hidden
-                />
-                <span className="text-xs text-muted-foreground">{f}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <p className="mt-6 text-xs text-muted-foreground/60">
-          Sin tarjeta de crédito. Sin comisiones de plataforma.
-        </p>
-      </div>
+// Único bloque que login no tiene — se pasa como children al panel
+// compartido en vez de duplicar todo el componente por esta diferencia.
+const registroPricingHighlight = (
+  <div className="mt-8 rounded-xl border border-accent/20 bg-accent/5 p-4">
+    <div className="mb-2 flex items-center gap-2">
+      <Sparkles className="h-4 w-4 text-accent" aria-hidden />
+      <span className="text-sm font-semibold text-foreground">
+        Plan Gratis — $0/mes
+      </span>
     </div>
-  );
-}
+    <div className="space-y-1.5">
+      {["Productos ilimitados", "Cobros con tarjeta", "Tu propia tienda web"].map(
+        (f) => (
+          <div key={f} className="flex items-center gap-2">
+            <Check className="h-3.5 w-3.5 shrink-0 text-accent" aria-hidden />
+            <span className="text-xs text-muted-foreground">{f}</span>
+          </div>
+        ),
+      )}
+    </div>
+  </div>
+);
 
 function SuccessMessage({
   email,
@@ -120,13 +79,14 @@ function SuccessMessage({
       <div className="mt-6 space-y-3">
         <Link
           href="/login"
-          className="block w-full rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
+          className="block w-full cursor-pointer rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
         >
           Ir al login
         </Link>
         <button
+          type="button"
           onClick={onClose}
-          className="block w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-surface-raised"
+          className="block w-full cursor-pointer rounded-xl border border-border bg-surface px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-surface-raised"
         >
           Registrar otra cuenta
         </button>
@@ -194,9 +154,12 @@ export default function RegistroPage() {
     }
   }
 
+  // La moneda solo cae en la carga inicial. Al enviar el formulario, el bloque
+  // de éxito remonta este logo y la animación volvería a dispararse justo
+  // cuando el usuario necesita leer "revisa tu correo".
   const logoBlock = (
     <div className="flex flex-col items-center">
-      <AuthBrandMark />
+      <AuthBrandMark animated={!success} />
     </div>
   );
 
@@ -204,7 +167,7 @@ export default function RegistroPage() {
   if (success) {
     return (
       <div className="flex min-h-screen flex-col lg:flex-row">
-        <BrandPanel />
+        <BrandPanel {...REGISTRO_BRAND}>{registroPricingHighlight}</BrandPanel>
         <div className="relative flex min-h-dvh flex-1 flex-col items-center justify-center bg-background px-4 py-6 sm:py-8">
           <div className="absolute right-4 top-4 z-20">
             <ThemeToggle />
@@ -238,7 +201,9 @@ export default function RegistroPage() {
   // Formulario de registro
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <BrandPanel />
+      <BrandPanel {...REGISTRO_BRAND} animated>
+        {registroPricingHighlight}
+      </BrandPanel>
       <div className="relative flex min-h-dvh flex-1 flex-col items-center justify-center bg-background px-4 py-6 sm:py-8">
         <div className="absolute right-4 top-4 z-20">
           <ThemeToggle />
@@ -332,7 +297,7 @@ export default function RegistroPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group w-full min-h-[48px] rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
+                className="group w-full min-h-12 cursor-pointer rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
               >
                 {loading ? "Creando cuenta..." : "Crear cuenta gratis"}
                 {!loading && (

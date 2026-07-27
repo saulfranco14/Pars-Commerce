@@ -170,7 +170,7 @@ export async function POST(request: Request) {
         notification_url: WEBHOOK_URL,
         // El external_reference identifica este como pago bulk
         external_reference: `bulk_loan:${loanIds.join(",")}`,
-        statement_descriptor: "PARS COMMERCE",
+        statement_descriptor: "TLACO",
         payment_methods: {
           installments: 12,
         },

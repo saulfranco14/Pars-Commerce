@@ -13,7 +13,7 @@ export const STEPS = [
     step: 2,
     title: "Crea tu negocio",
     description: "Dale nombre, slug y tipo. Tu sitio estara listo al instante.",
-    detail: "tutienda.pars.com",
+    detail: "tutienda.tlaco.mx",
   },
   {
     icon: Zap,

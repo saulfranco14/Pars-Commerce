@@ -23,7 +23,7 @@ export const PRIVACY: LegalDoc = {
       id: "responsable",
       title: "1. Responsable",
       body: [
-        `${COMPANY.legalName} (“${COMPANY.brand}”), con domicilio en ${COMPANY.address} y RFC ${COMPANY.rfc}, es responsable del tratamiento de tus datos personales.`,
+        `${COMPANY.legalName}, operando como “${COMPANY.brand}”, con domicilio en ${COMPANY.address}, es responsable del tratamiento de tus datos personales.`,
       ],
     },
     {

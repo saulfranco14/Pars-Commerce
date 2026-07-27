@@ -23,6 +23,10 @@ export const STATS = [
     icon: TrendingUp,
     value: "$0",
     label: "comisión de plataforma",
-    accent: "bg-rose-500/10 text-rose-500 dark:bg-rose-400/10 dark:text-rose-400",
+    // Oro, no rosa: DESIGN_SYSTEM.md §3 reserva rojo/rosa a error y
+    // destructivo, y este es justo el caso que el oro cubre (momento de valor:
+    // el precio). El texto usa el paso --coin-ink porque el oro puro no pasa
+    // contraste sobre blanco.
+    accent: "bg-coin/10 text-coin-ink dark:bg-coin/10 dark:text-coin",
   },
 ] as const;

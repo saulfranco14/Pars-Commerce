@@ -5,6 +5,6 @@ export const FEATURES = [
   "Cobros con tarjeta",
   "Reportes de ventas",
   "Soporte por email",
-  "Equipo de hasta 3 miembros",
+  "Equipo ilimitado de miembros",
   "Promociones y descuentos",
 ] as const;

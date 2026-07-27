@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { LandingNav } from "@/features/landing/components/sections/LandingNav";
+import { LegalNav } from "@/features/legal/components/LegalNav";
 import { LegalDocument } from "@/features/legal/components/LegalDocument";
 
 import { TERMS } from "@/features/legal/constants/terms";
@@ -13,8 +13,7 @@ export const metadata: Metadata = {
 export default function TerminosPage() {
   return (
     <div className="min-h-screen bg-background">
-      <LandingNav />
-      <div className="h-[52px]" aria-hidden />
+      <LegalNav />
       <main>
         <LegalDocument doc={TERMS} />
       </main>

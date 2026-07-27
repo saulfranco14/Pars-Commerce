@@ -10,8 +10,8 @@ import {
   ShoppingBag,
 } from "lucide-react";
 
-// ─── Confetti ──────────────────────────────────────────────────
 const CONFETTI_COLORS = [
+  "#e8a33d",
   "#ec4899",
   "#f472b6",
   "#fb923c",
@@ -207,7 +207,7 @@ export function PaymentSuccessFullScreen({
           >
             <Link
               href={`/sitio/${slug}/productos`}
-              className="group inline-flex w-full min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl px-8 py-3 text-base font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
+              className="group inline-flex w-full min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl px-8 py-3 text-base font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
               style={{ backgroundColor: accentColor }}
             >
               Seguir comprando
@@ -218,7 +218,7 @@ export function PaymentSuccessFullScreen({
             </Link>
             <Link
               href={`/sitio/${slug}/inicio`}
-              className="mt-3 inline-flex w-full min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-8 py-3 text-base font-semibold transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
+              className="mt-3 inline-flex w-full min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-8 py-3 text-base font-semibold transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
               style={{ borderColor: accentColor, color: accentColor }}
             >
               Volver al inicio

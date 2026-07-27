@@ -4,7 +4,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recha
 import type { SalesByPaymentMethod } from "@/app/api/sales-analytics/route";
 import { formatPaymentMethod } from "@/lib/formatPaymentMethod";
 import { ChartHeader } from "./ChartHeader";
-import { COLORS_PAYMENT_METHOD } from "@/features/ventas/constants/chartColors";
+import {
+  COLORS_PAYMENT_METHOD,
+  COLOR_METHOD_FALLBACK,
+} from "@/features/ventas/constants/chartColors";
 
 interface SalesByPaymentMethodChartProps {
   data: SalesByPaymentMethod;
@@ -19,12 +22,16 @@ export function SalesByPaymentMethodChart({
   dateTo,
   loading,
 }: SalesByPaymentMethodChartProps) {
+  // Cada entrada carga su `key` para poder buscar el color por método. Antes se
+  // asignaba por índice DESPUÉS del filtro, así que si un periodo no tenía
+  // efectivo, transferencia heredaba su color: el tono de un método cambiaba
+  // entre periodos y la gráfica no se podía aprender.
   const entries = [
-    { name: formatPaymentMethod("efectivo") || "Efectivo", value: data.efectivo },
-    { name: formatPaymentMethod("transferencia") || "Transferencia", value: data.transferencia },
-    { name: formatPaymentMethod("tarjeta") || "Tarjeta", value: data.tarjeta },
-    { name: formatPaymentMethod("mercadopago") || "Mercado Pago", value: data.mercadopago },
-    { name: "Otro", value: data.other },
+    { key: "efectivo", name: formatPaymentMethod("efectivo") || "Efectivo", value: data.efectivo },
+    { key: "transferencia", name: formatPaymentMethod("transferencia") || "Transferencia", value: data.transferencia },
+    { key: "tarjeta", name: formatPaymentMethod("tarjeta") || "Tarjeta", value: data.tarjeta },
+    { key: "mercadopago", name: formatPaymentMethod("mercadopago") || "Mercado Pago", value: data.mercadopago },
+    { key: "other", name: "Otro", value: data.other },
   ].filter((d) => d.value > 0);
 
   if (loading) {
@@ -84,8 +91,11 @@ export function SalesByPaymentMethodChart({
               dataKey="value"
               nameKey="name"
             >
-              {entries.map((_, i) => (
-                <Cell key={i} fill={COLORS_PAYMENT_METHOD[i % COLORS_PAYMENT_METHOD.length]} />
+              {entries.map((e) => (
+                <Cell
+                  key={e.key}
+                  fill={COLORS_PAYMENT_METHOD[e.key] ?? COLOR_METHOD_FALLBACK}
+                />
               ))}
             </Pie>
             <Tooltip formatter={(v) => `$${Number(v ?? 0).toFixed(2)}`} />
