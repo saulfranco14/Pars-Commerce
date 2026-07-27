@@ -18,12 +18,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pars Commerce",
-  description: "Gestión de ventas y órdenes para tu negocio",
+  title: "Tlaco",
+  description: "Todo tu negocio en un solo lugar: catálogo, pedidos, cobros y tu dinero",
   manifest: "/site.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "Pars Commerce",
+    title: "Tlaco",
   },
   icons: {
     icon: [

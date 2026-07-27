@@ -109,7 +109,7 @@ export function LandingHero() {
                 <span className="font-semibold text-foreground">
                   +50 negocios
                 </span>{" "}
-                ya confían en Pars Commerce
+                ya confían en Tlaco
               </p>
             </div>
           </div>

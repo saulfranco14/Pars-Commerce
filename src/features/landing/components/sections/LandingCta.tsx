@@ -9,7 +9,7 @@ export function LandingCta() {
           ¿Listo para vender en línea?
         </h2>
         <p className="mt-4 text-muted-foreground">
-          Únete a negocios que ya usan Pars Commerce para gestionar sus ventas.
+          Únete a los negocios que ya usan Tlaco para gestionar sus ventas.
         </p>
         <Link
           href="/registro"

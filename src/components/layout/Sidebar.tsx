@@ -52,7 +52,7 @@ function NavLink({
     <Link
       href={href}
       onClick={onNavigate}
-      className={`flex items-center gap-2.5 min-h-[44px] rounded-lg px-3 py-3 text-base font-medium transition-colors sm:min-h-0 sm:py-2 sm:text-sm ${
+      className={`flex items-center gap-2.5 min-h-11 rounded-lg px-3 py-3 text-base font-medium transition-colors sm:min-h-0 sm:py-2 sm:text-sm ${
         active
           ? "bg-border-soft text-foreground"
           : "text-muted hover:bg-border-soft/60 hover:text-foreground active:bg-border-soft"
@@ -175,7 +175,7 @@ function SidebarContent(props: SidebarContentProps) {
                 router.push(`/dashboard/${selected.tenant.slug}`);
               }
             }}
-            className="select-custom w-full min-h-[44px] rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:py-1.5"
+            className="select-custom w-full min-h-11 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:py-1.5"
           >
             {memberships.map((m) => (
               <option key={m.id} value={m.tenant_id}>
@@ -393,7 +393,7 @@ function SidebarContent(props: SidebarContentProps) {
           <button
             type="button"
             onClick={onPwaInstall}
-            className="flex w-full min-h-[44px] items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:bg-accent-hover"
+            className="flex w-full min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:bg-accent-hover"
           >
             <Download className="h-5 w-5" />
             Instalar app
@@ -403,7 +403,7 @@ function SidebarContent(props: SidebarContentProps) {
           <button
             type="button"
             onClick={onSignOut}
-            className="w-full min-h-[44px] rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-border-soft/60"
+            className="w-full min-h-11 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-border-soft/60"
           >
             Cerrar sesión
           </button>
