@@ -4,6 +4,8 @@ import type { MsiOption } from "@/constants/commissionConfig";
 import type { RecurringPurchasesConfig } from "@/types/subscriptions";
 
 import { CheckoutFormFields } from "@/features/checkout/components/cart/CheckoutFormFields";
+import { PickupTimePicker } from "@/features/checkout/components/cart/PickupTimePicker";
+import type { PickupSchedulingConfig } from "@/features/checkout/interfaces/pickupSchedule";
 import { FeesBreakdownCard } from "@/features/checkout/components/payment-plan/FeesBreakdownCard";
 import { FrequencyPicker } from "@/features/checkout/components/payment-plan/FrequencyPicker";
 import { InstallmentsPicker } from "@/features/checkout/components/payment-plan/InstallmentsPicker";
@@ -20,12 +22,19 @@ interface CheckoutBodyProps {
     customer_name: string;
     customer_email: string;
     customer_phone: string;
+    scheduled_for: string;
   };
   fieldErrors: Record<string, string>;
   onFormFieldChange: (
-    field: "customer_name" | "customer_email" | "customer_phone",
+    field:
+      | "customer_name"
+      | "customer_email"
+      | "customer_phone"
+      | "scheduled_for",
     value: string,
   ) => void;
+  /** Ventana de recolección del negocio. Con `enabled: false` no se pinta nada. */
+  pickupScheduling: PickupSchedulingConfig;
   onSubmit: (e: React.FormEvent) => void;
   submitting: boolean;
   submitLabel: string;
@@ -85,6 +94,7 @@ export function CheckoutBody({
   msiBaseAmount,
   viableMsiOptions,
   msiBreakdown,
+  pickupScheduling,
 }: CheckoutBodyProps) {
   const idPrefix = variant === "mobile" ? "m-" : "";
   const formId = `${idPrefix}checkout-form`;
@@ -178,6 +188,15 @@ export function CheckoutBody({
           form={formState}
           fieldErrors={fieldErrors}
           onUpdate={onFormFieldChange}
+        />
+
+        <PickupTimePicker
+          config={pickupScheduling}
+          value={formState.scheduled_for}
+          onChange={(v) => onFormFieldChange("scheduled_for", v)}
+          accentColor={accentColor}
+          disabled={submitting}
+          error={fieldErrors.scheduled_for}
         />
 
         {variant === "desktop" && (

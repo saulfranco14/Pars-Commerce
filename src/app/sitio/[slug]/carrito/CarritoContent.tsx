@@ -13,6 +13,8 @@ import { CartItemsList } from "@/features/checkout/components/cart/CartItemsList
 import { CartSummaryHeader } from "@/features/checkout/components/cart/CartSummaryHeader";
 import { CartTrustBadges } from "@/features/checkout/components/cart/CartTrustBadges";
 import { CheckoutBody } from "@/features/checkout/components/cart/CheckoutBody";
+import { OrdersClosedNotice } from "@/features/checkout/components/cart/OrdersClosedNotice";
+import type { PickupSchedulingConfig } from "@/features/checkout/interfaces/pickupSchedule";
 import { DesktopCheckoutAside } from "@/features/checkout/components/cart/DesktopCheckoutAside";
 import { MobileCheckoutBar } from "@/features/checkout/components/cart/MobileCheckoutBar";
 import { MobileCheckoutSheet } from "@/features/checkout/components/cart/MobileCheckoutSheet";
@@ -28,6 +30,9 @@ interface CarritoContentProps {
   sitioSlug: string;
   accentColor: string;
   recurringConfig: RecurringPurchasesConfig;
+  pickupScheduling: PickupSchedulingConfig;
+  /** `false` = el negocio pausó los pedidos; el catálogo sigue visible. */
+  acceptingOrders: boolean;
 }
 
 export default function CarritoContent({
@@ -35,6 +40,8 @@ export default function CarritoContent({
   sitioSlug,
   accentColor,
   recurringConfig,
+  pickupScheduling,
+  acceptingOrders,
 }: CarritoContentProps) {
   const fingerprint = useFingerprint();
   const { cart, items, subtotal, isLoading, mutate } = useCartContext();
@@ -147,6 +154,7 @@ export default function CarritoContent({
     msiBaseAmount,
     viableMsiOptions,
     msiBreakdown,
+    pickupScheduling,
   };
 
   return (
@@ -157,7 +165,9 @@ export default function CarritoContent({
         </div>
       )}
 
-      {hasRecurringOptions && (
+      {!acceptingOrders && <OrdersClosedNotice />}
+
+      {acceptingOrders && hasRecurringOptions && (
         <CheckoutGuide
           accentColor={accentColor}
           hasInstallments={recurringConfig.installments_enabled}
@@ -183,18 +193,24 @@ export default function CarritoContent({
           <CartTrustBadges />
         </div>
 
-        <DesktopCheckoutAside>
-          <CheckoutBody variant="desktop" {...checkoutBodyProps} />
-        </DesktopCheckoutAside>
+        {/* Con la recepción cerrada desaparece el checkout, no el carrito:
+            los productos y sus cantidades siguen ahí para cuando reabran. */}
+        {acceptingOrders && (
+          <DesktopCheckoutAside>
+            <CheckoutBody variant="desktop" {...checkoutBodyProps} />
+          </DesktopCheckoutAside>
+        )}
       </div>
 
-      <MobileCheckoutBar
-        subtotal={subtotal}
-        accentColor={accentColor}
-        onContinue={sheet.open}
-      />
+      {acceptingOrders && (
+        <MobileCheckoutBar
+          subtotal={subtotal}
+          accentColor={accentColor}
+          onContinue={sheet.open}
+        />
+      )}
 
-      {sheet.mounted && (
+      {acceptingOrders && sheet.mounted && (
         <MobileCheckoutSheet
           visible={sheet.visible}
           items={items}

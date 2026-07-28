@@ -185,6 +185,7 @@ export async function checkoutSubscription(
       frequency: payload.frequency,
       frequency_type: payload.frequency_type,
       msi_option: mode === "partial" ? (payload.msi_option ?? 1) : undefined,
+      scheduled_for: payload.scheduled_for ?? null,
     }),
   });
   const data = await res.json().catch(() => ({}));

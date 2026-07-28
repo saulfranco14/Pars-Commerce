@@ -5,6 +5,7 @@ import CarritoContent from "./CarritoContent";
 import { DEFAULT_RECURRING_CONFIG } from "@/types/subscriptions";
 import type { RecurringPurchasesConfig } from "@/types/subscriptions";
 import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
+import { readPickupScheduling } from "@/features/checkout/helpers/pickupSchedule";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -16,7 +17,7 @@ export default async function CarritoPage({ params }: PageProps) {
 
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
-    .select("id, name, theme_color, settings")
+    .select("id, name, theme_color, settings, accepting_orders")
     .eq("slug", slug)
     .single();
 
@@ -30,6 +31,11 @@ export default async function CarritoPage({ params }: PageProps) {
     ...DEFAULT_RECURRING_CONFIG,
     ...((settings.recurring_purchases as Partial<RecurringPurchasesConfig>) ?? {}),
   };
+  const pickupScheduling = readPickupScheduling(settings);
+  // `!== false` y no `=== true`: si la columna todavía no llegó a esta fila,
+  // el negocio sigue recibiendo. Cerrar la recepción es una decisión que
+  // alguien toma, no un valor por omisión.
+  const acceptingOrders = tenant.accepting_orders !== false;
 
   return (
     <div className="space-y-6">
@@ -50,6 +56,8 @@ export default async function CarritoPage({ params }: PageProps) {
         sitioSlug={slug}
         accentColor={accentColor}
         recurringConfig={recurringConfig}
+        pickupScheduling={pickupScheduling}
+        acceptingOrders={acceptingOrders}
       />
     </div>
   );

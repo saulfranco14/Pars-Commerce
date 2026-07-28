@@ -152,7 +152,9 @@ function DesgloseContent({
   const metadata = mpPayment?.metadata;
   const transactionAmount = mpPayment?.amount ?? Number(order.total);
   const mpFee = metadata?.mp_fee_amount ?? 0;
-  const parsFee = metadata?.pars_fee_amount ?? 0;
+  // Acepta la clave vieja: los pagos anteriores al rebrand la conservan.
+  const platformFee =
+    metadata?.tlaco_fee_amount ?? metadata?.pars_fee_amount ?? 0;
   const vendorReceived = Number(order.total);
 
   if (isPaid) {
@@ -172,7 +174,7 @@ function DesgloseContent({
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">{TARIFA_DE_SERVICIO_LABEL}</span>
-            <span className="tabular-nums">${parsFee.toFixed(2)}</span>
+            <span className="tabular-nums">${platformFee.toFixed(2)}</span>
           </div>
           <div className="flex justify-between border-t border-border pt-2 text-sm font-semibold">
             <span className="text-muted-foreground">Total pagado por el cliente</span>
@@ -183,7 +185,7 @@ function DesgloseContent({
     );
   }
 
-  const { total: buyerTotal, mpFee: estMpFee, parsFee: estParsFee } = calcBuyerTotal(
+  const { total: buyerTotal, mpFee: estMpFee, platformFee: estPlatformFee } = calcBuyerTotal(
     Number(order.total),
   );
 
@@ -206,7 +208,7 @@ function DesgloseContent({
         <div className="flex justify-between">
           <span className="text-muted-foreground">Comisión MP + {TARIFA_DE_SERVICIO_LABEL}</span>
           <span className="tabular-nums text-foreground">
-            ${(estMpFee + estParsFee).toFixed(2)}
+            ${(estMpFee + estPlatformFee).toFixed(2)}
           </span>
         </div>
         <div className="flex justify-between border-t border-border pt-1.5 font-semibold">

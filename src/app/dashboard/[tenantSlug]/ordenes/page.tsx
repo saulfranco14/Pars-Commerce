@@ -7,7 +7,7 @@ import { Plus, Scissors, SlidersHorizontal, X } from "lucide-react";
 import { FAB } from "@/components/ui/FAB";
 import { OrdersFilterSheet } from "@/components/orders/OrdersFilterSheet";
 import { OrderFormSheet } from "@/features/orders/components/OrderFormSheet";
-import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import { useActiveTenant, usePermission } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { OrderCardMobile } from "@/components/orders/OrderCardMobile";
 import { TicketDownloadActions } from "@/components/orders/TicketDownloadActions";
@@ -32,8 +32,12 @@ import { getSourceConfig } from "@/lib/formatSource";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { OrderListItem } from "@/types/orders";
 import { STATUS_TABS } from "@/features/orders/constants/statusTabs";
+import { SCOPE_TABS } from "@/features/orders/constants/scopeTabs";
+import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import { buildOrdersKey } from "@/features/orders/helpers/buildOrdersKey";
 import { orderContentType } from "@/features/orders/helpers/orderContentType";
+
+import type { OrdersScope } from "@/features/orders/interfaces/ordersQuery";
 
 export default function OrdenesPage() {
   const params = useParams();
@@ -41,9 +45,19 @@ export default function OrdenesPage() {
   const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
+  const can = usePermission();
+  const canViewAll = can(ORDER_PERMISSIONS.viewAll);
   const [statusFilter, setStatusFilter] = useState(
     () => searchParams.get("status") ?? "",
   );
+  // `null` = todavía no eligió, así que manda el rol. No se guarda el valor
+  // por omisión en el estado porque el store de negocios hidrata en asíncrono:
+  // en el primer render `canViewAll` aún es false y el default quedaría
+  // congelado en "mine" para todo el mundo.
+  const [chosenScope, setChosenScope] = useState<OrdersScope | null>(null);
+  // Quien recibe los pedidos del negocio entra viéndolos todos, que es su
+  // trabajo; quien solo atiende los suyos entra en "mis pedidos".
+  const scope: OrdersScope = chosenScope ?? (canViewAll ? "all" : "mine");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [dateFiltersOpen, setDateFiltersOpen] = useState(false);
@@ -88,12 +102,13 @@ export default function OrdenesPage() {
     setDateFiltersOpen(false);
   }
 
-  const ordersKey = buildOrdersKey(
-    activeTenant?.id,
-    statusFilter,
+  const ordersKey = buildOrdersKey({
+    tenantId: activeTenant?.id,
+    status: statusFilter,
     dateFrom,
     dateTo,
-  );
+    scope,
+  });
   const {
     data: ordersData,
     error: swrError,
@@ -159,6 +174,17 @@ export default function OrdenesPage() {
           onQuickDate={setQuickDate}
           onApply={() => setFilterSheetOpen(false)}
         />
+
+        {/* Solo para quien puede ver más que lo suyo: sin `orders.view_all`
+            las dos pestañas devuelven lo mismo. */}
+        {canViewAll && (
+          <FilterTabs
+            tabs={SCOPE_TABS}
+            activeValue={scope}
+            onTabChange={(v) => setChosenScope(v as OrdersScope)}
+            ariaLabel="Filtrar por quién atiende"
+          />
+        )}
 
         {/* ── Status tabs: horizontal scroll en móvil, flex-wrap en desktop ── */}
         <div>

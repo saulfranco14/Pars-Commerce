@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
+  }
   public: {
     Tables: {
       commission_payments: {
@@ -1082,12 +1087,14 @@ export type Database = {
           order_type: string | null
           paid_at: string | null
           paid_total: number
+          parent_order_id: string | null
           payment_link: string | null
           payment_method: string | null
           payment_mode: string
           payment_plan_status: string
           promotion_id: string | null
           qr_code_id: string | null
+          scheduled_for: string | null
           source: string
           status: string
           subscription_id: string | null
@@ -1124,12 +1131,14 @@ export type Database = {
           order_type?: string | null
           paid_at?: string | null
           paid_total?: number
+          parent_order_id?: string | null
           payment_link?: string | null
           payment_method?: string | null
           payment_mode?: string
           payment_plan_status?: string
           promotion_id?: string | null
           qr_code_id?: string | null
+          scheduled_for?: string | null
           source?: string
           status?: string
           subscription_id?: string | null
@@ -1166,12 +1175,14 @@ export type Database = {
           order_type?: string | null
           paid_at?: string | null
           paid_total?: number
+          parent_order_id?: string | null
           payment_link?: string | null
           payment_method?: string | null
           payment_mode?: string
           payment_plan_status?: string
           promotion_id?: string | null
           qr_code_id?: string | null
+          scheduled_for?: string | null
           source?: string
           status?: string
           subscription_id?: string | null
@@ -1217,6 +1228,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_parent_order_id_fkey"
+            columns: ["parent_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
@@ -2640,6 +2658,7 @@ export type Database = {
       }
       tenants: {
         Row: {
+          accepting_orders: boolean
           banner_url: string | null
           business_type: string | null
           created_at: string
@@ -2657,6 +2676,7 @@ export type Database = {
           whatsapp_phone: string | null
         }
         Insert: {
+          accepting_orders?: boolean
           banner_url?: string | null
           business_type?: string | null
           created_at?: string
@@ -2674,6 +2694,7 @@ export type Database = {
           whatsapp_phone?: string | null
         }
         Update: {
+          accepting_orders?: boolean
           banner_url?: string | null
           business_type?: string | null
           created_at?: string
@@ -2895,4 +2916,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

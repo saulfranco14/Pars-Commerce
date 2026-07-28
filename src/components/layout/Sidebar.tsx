@@ -12,6 +12,7 @@ import {
   Home,
   Package,
   Scissors,
+  CalendarClock,
   ClipboardList,
   Banknote,
   Users,
@@ -122,7 +123,7 @@ function SidebarContent(props: SidebarContentProps) {
             en cada carga del panel es ruido. `TlacoLogo` ya trae su propio
             `sr-only` con el nombre, así que no lleva alt ni aria-label. */}
         <Link href="/dashboard" onClick={onNavigate} className="flex items-center">
-          <TlacoLogo size="sm" />
+          <TlacoLogo size="md" />
         </Link>
         {showCloseButton && onClose && (
           <button
@@ -147,7 +148,7 @@ function SidebarContent(props: SidebarContentProps) {
               setActiveTenantId(id);
               if (typeof window !== "undefined") {
                 try {
-                  localStorage.setItem("pars_activeTenantId", id);
+                  localStorage.setItem("tlaco_activeTenantId", id);
                 } catch {
                   /* incognito, quota, disabled */
                 }
@@ -230,6 +231,16 @@ function SidebarContent(props: SidebarContentProps) {
               onNavigate={onNavigate}
             >
               Órdenes / Tickets
+            </NavLink>
+            {/* Junto a Órdenes: es la misma mercancía, vista por hora de
+                recolección en vez de por fecha de creación. */}
+            <NavLink
+              href={`${base}/agenda`}
+              active={pathname === `${base}/agenda`}
+              icon={CalendarClock}
+              onNavigate={onNavigate}
+            >
+              Agenda
             </NavLink>
             <NavLink
               href={`${base}/suscripciones`}

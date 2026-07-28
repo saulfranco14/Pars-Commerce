@@ -29,7 +29,7 @@ import {
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { swrFetcher } from "@/lib/swrFetcher";
-import { calcSubscriptionFees, MP_SUB_FEE_PERCENT, MP_SUB_FEE_FIXED_MXN, PARS_SERVICE_FEE_PERCENT } from "@/constants/commissionConfig";
+import { calcSubscriptionFees, MP_SUB_FEE_PERCENT, MP_SUB_FEE_FIXED_MXN, TLACO_SERVICE_FEE_PERCENT } from "@/constants/commissionConfig";
 import {
   LOAN_PAYMENT_METHOD_LABEL,
   formatMXN,
@@ -623,10 +623,10 @@ export default function LoanDetailPage() {
                       </span>
                       <span className="font-medium text-red-600 tabular-nums">−{formatMXN(fees.mpFee)}</span>
                     </div>
-                    {PARS_SERVICE_FEE_PERCENT > 0 && (
+                    {TLACO_SERVICE_FEE_PERCENT > 0 && (
                       <div className="flex justify-between text-xs">
                         <span className="text-muted-foreground">Tarifa de servicio</span>
-                        <span className="font-medium text-red-600 tabular-nums">−{formatMXN(fees.parsFee)}</span>
+                        <span className="font-medium text-red-600 tabular-nums">−{formatMXN(fees.platformFee)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-xs pt-1 border-t border-border/50">

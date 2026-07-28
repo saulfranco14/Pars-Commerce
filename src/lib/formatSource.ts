@@ -1,7 +1,20 @@
 import type { LucideIcon } from "lucide-react";
-import { ClipboardList, Globe, LayoutDashboard, QrCode } from "lucide-react";
+import {
+  ClipboardList,
+  Globe,
+  LayoutDashboard,
+  Link2,
+  QrCode,
+  Smartphone,
+} from "lucide-react";
 
-export type OrderSource = "dashboard" | "public_store" | "staff" | "qr_table";
+export type OrderSource =
+  | "dashboard"
+  | "public_store"
+  | "staff"
+  | "qr_table"
+  | "qr_payment"
+  | "addendum";
 
 const SOURCE_CONFIG: Record<
   OrderSource,
@@ -28,6 +41,18 @@ const SOURCE_CONFIG: Record<
     label: "Mesa QR",
     icon: QrCode,
     iconClass: "text-blue-600",
+  },
+  // Cobro suelto por QR (propinas, montos libres). Sin catálogo de por medio.
+  qr_payment: {
+    label: "Cobro QR",
+    icon: Smartphone,
+    iconClass: "text-cyan-600",
+  },
+  // Pedido complementario de uno ya pagado: "lo que faltó".
+  addendum: {
+    label: "Complemento",
+    icon: Link2,
+    iconClass: "text-amber-600",
   },
 };
 

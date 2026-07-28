@@ -15,6 +15,10 @@ import {
 } from "@/features/checkout/helpers/checkoutRequest";
 import type { CheckoutContext } from "@/features/checkout/helpers/checkoutContext";
 import { ensureCustomer } from "@/features/checkout/helpers/ensureCustomer";
+import {
+  readPickupScheduling,
+  validateScheduledFor,
+} from "@/features/checkout/helpers/pickupSchedule";
 import { createOrderItems } from "@/features/checkout/helpers/orderItems";
 import type {
   CheckoutMode,
@@ -70,7 +74,7 @@ export async function executePublicCheckout({
 
   const { data: tenant } = await admin
     .from("tenants")
-    .select("id, slug, settings")
+    .select("id, slug, settings, accepting_orders")
     .eq("id", payload.tenant_id)
     .eq("public_store_enabled", true)
     .single();
@@ -82,8 +86,32 @@ export async function executePublicCheckout({
     );
   }
 
+  // El negocio cerró la recepción. El catálogo sigue en pie —el sitio lo
+  // muestra con un aviso—, pero aquí no se cobra nada. 409 y no 403: no es
+  // falta de permiso, es que ahora mismo no se puede.
+  if (tenant.accepting_orders === false) {
+    return NextResponse.json(
+      {
+        error:
+          "Este negocio no está recibiendo pedidos en este momento. Vuelve más tarde.",
+      },
+      { status: 409 },
+    );
+  }
+
   const tenantSettings =
     (tenant.settings as Record<string, unknown> | null) ?? {};
+
+  const scheduling = readPickupScheduling(tenantSettings);
+  const schedule = validateScheduledFor(
+    payload.scheduled_for,
+    scheduling,
+    new Date(),
+  );
+  if (!schedule.ok) {
+    return NextResponse.json({ error: schedule.message }, { status: 400 });
+  }
+  const scheduledFor = schedule.value;
   const recurringConfig: RecurringPurchasesConfig = {
     ...DEFAULT_RECURRING_CONFIG,
     ...((tenantSettings.recurring_purchases as Partial<RecurringPurchasesConfig>) ??
@@ -158,6 +186,9 @@ export async function executePublicCheckout({
       paid_total: 0,
       balance_due: subtotal,
       expires_at: expiresAt,
+      scheduled_for: scheduledFor?.toISOString() ?? null,
+      // El cliente pasa por él: es para llevar, no a domicilio.
+      order_type: "takeaway",
       work_metadata: {
         checkout_mode: mode,
         public_cart_id: payload.cart_id,

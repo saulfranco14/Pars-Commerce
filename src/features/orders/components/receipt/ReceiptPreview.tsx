@@ -64,13 +64,17 @@ export function ReceiptPreview({
       (p) => p.provider === "mercadopago",
     );
     const mpFee = mpPayment?.metadata?.mp_fee_amount ?? 0;
-    const parsFee = mpPayment?.metadata?.pars_fee_amount ?? 0;
+    // Acepta la clave vieja: los pagos anteriores al rebrand la conservan.
+    const platformFee =
+      mpPayment?.metadata?.tlaco_fee_amount ??
+      mpPayment?.metadata?.pars_fee_amount ??
+      0;
     const vendorTotal = Number(order.total);
     const storedClientTotal = mpPayment?.amount;
-    const computedClientTotal = vendorTotal + mpFee + parsFee;
+    const computedClientTotal = vendorTotal + mpFee + platformFee;
     if (storedClientTotal && storedClientTotal > vendorTotal)
       return storedClientTotal;
-    if (mpFee > 0 || parsFee > 0) return computedClientTotal;
+    if (mpFee > 0 || platformFee > 0) return computedClientTotal;
     const { total } = calcBuyerTotal(vendorTotal);
     return total;
   })();
@@ -225,14 +229,18 @@ export function ReceiptPreview({
                   order.payments as OrderPayment[] | undefined
                 )?.find((p) => p.provider === "mercadopago");
                 const mpFee = mpPayment?.metadata?.mp_fee_amount ?? 0;
-                const parsFee = mpPayment?.metadata?.pars_fee_amount ?? 0;
+                // Acepta la clave vieja: los pagos anteriores al rebrand la conservan.
+                const platformFee =
+                  mpPayment?.metadata?.tlaco_fee_amount ??
+                  mpPayment?.metadata?.pars_fee_amount ??
+                  0;
                 const vendorTotal = Number(order.total);
-                const { mpFee: estMpFee, parsFee: estParsFee } =
+                const { mpFee: estMpFee, platformFee: estPlatformFee } =
                   calcBuyerTotal(vendorTotal);
-                const showEstimate = mpFee === 0 && parsFee === 0;
+                const showEstimate = mpFee === 0 && platformFee === 0;
                 const combinedFee = showEstimate
-                  ? estMpFee + estParsFee
-                  : mpFee + parsFee;
+                  ? estMpFee + estPlatformFee
+                  : mpFee + platformFee;
                 return (
                   <p className="flex justify-between text-sm">
                     <span className="text-muted-foreground">

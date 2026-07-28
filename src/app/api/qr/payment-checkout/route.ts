@@ -7,6 +7,7 @@ import { resolveUserError } from "@/lib/errors/resolveUserError";
 import { handleSingleCheckout } from "@/features/checkout/services/singleCheckoutHandler";
 import type { CheckoutContext } from "@/features/checkout/helpers/checkoutContext";
 import { ensureCustomer } from "@/features/checkout/helpers/ensureCustomer";
+import { ANONYMOUS_CUSTOMER_EMAIL } from "@/features/qr/constants/anonymousCustomer";
 
 const ATTEMPT_TTL_MS = 60 * 60 * 1000;
 
@@ -43,7 +44,8 @@ export async function POST(request: Request) {
   // to safe defaults so downstream code keeps working without forcing the
   // customer to share PII.
   const customerName = body.customer_name?.trim() || "Cliente";
-  const customerEmail = body.customer_email?.trim() || "anonimo@pars.com.mx";
+  const customerEmail =
+    body.customer_email?.trim() || ANONYMOUS_CUSTOMER_EMAIL;
 
   const admin = createAdminClient();
   const { data: tenant } = await admin

@@ -53,7 +53,7 @@ export function BrandPanel({
         {/* Este panel no tiene entrada propia, así que usa el retardo por
             defecto: la moneda cae sobre un fondo quieto. */}
         <div className="mb-8">
-          <TlacoLogo size="lg" animated={animated} />
+          <TlacoLogo size="xl" animated={animated} />
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-foreground">
           {title}

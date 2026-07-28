@@ -13,6 +13,11 @@ export interface PublicCheckoutPayload {
   frequency?: number;
   frequency_type?: "weeks" | "months";
   msi_option?: MsiOption;
+  /**
+   * Cuándo pasa el cliente por su pedido, en ISO. Opcional: sin valor, lo
+   * recoge cuando esté listo. NO es entrega a domicilio.
+   */
+  scheduled_for?: string | null;
 }
 
 export interface PublicCheckoutResponse {

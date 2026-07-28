@@ -15,6 +15,13 @@ export interface OrderItem {
 
 export interface PaymentMetadata {
   mp_fee_amount?: number;
+  /** Comisión de plataforma. */
+  tlaco_fee_amount?: number;
+  /**
+   * Nombre anterior de la marca. Los pagos guardados antes del rebrand siguen
+   * teniendo esta clave, así que la lectura acepta ambas. No escribir aquí.
+   * @deprecated usar `tlaco_fee_amount`
+   */
   pars_fee_amount?: number;
 }
 
@@ -47,7 +54,14 @@ export interface OrderDetail {
   id: string;
   status: string;
   cancelled_from?: string | null;
-  source?: "dashboard" | "public_store" | "qr_payment" | "qr_table" | null;
+  source?:
+    | "dashboard"
+    | "public_store"
+    | "qr_payment"
+    | "qr_table"
+    | "staff"
+    | "addendum"
+    | null;
   order_type?: "dine_in" | "takeaway" | "qr_payment" | null;
   qr_code_id?: string | null;
   table_label?: string | null;
@@ -78,6 +92,18 @@ export interface OrderDetail {
   payments?: OrderPayment[];
   payment_schedules?: OrderPaymentSchedule[];
   loan?: OrderLoanSummary | null;
+  /** Pedido ya pagado que este complementa. Solo en pedidos complementarios. */
+  parent_order_id?: string | null;
+  /** Pedidos complementarios colgados de este. Solo un nivel de profundidad. */
+  addenda?: OrderAddendumSummary[];
+}
+
+/** Lo mínimo para listar un pedido complementario sin volver a pedirlo. */
+export interface OrderAddendumSummary {
+  id: string;
+  status: string;
+  total: number;
+  created_at: string;
 }
 
 export interface TeamMemberOption {

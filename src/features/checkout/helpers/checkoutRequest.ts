@@ -8,7 +8,7 @@ import type {
 
 const FINGERPRINT_HEADER = "x-fingerprint-id";
 const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://commerce.pars.com.mx";
+  process.env.NEXT_PUBLIC_APP_URL ?? "https://tlaco.mx";
 
 export function getFingerprint(request: Request): string | null {
   return request.headers.get(FINGERPRINT_HEADER)?.trim() || null;
@@ -62,5 +62,8 @@ export function parseBody(raw: unknown): PublicCheckoutPayload | null {
     frequency: body.frequency,
     frequency_type: body.frequency_type,
     msi_option: normalizeMsiOption(body.msi_option),
+    // Se pasa crudo: validarlo aquí exigiría la config del negocio, que este
+    // helper no tiene. Lo valida el orquestador con `validateScheduledFor`.
+    scheduled_for: body.scheduled_for ?? null,
   };
 }

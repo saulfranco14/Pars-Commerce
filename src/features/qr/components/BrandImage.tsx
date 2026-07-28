@@ -83,7 +83,8 @@ export function BrandImage({
 
   // Tier 4 — la moneda de Tlaco. Es la única superficie del producto donde
   // aparece nuestra marca en una tarjeta del cliente, así que va la moneda y
-  // no un ícono genérico: el `Sparkles` con el texto "pars" no decía nada.
+  // no un ícono genérico: el `Sparkles` con el nombre de la marca al lado no
+  // decía nada.
   return (
     <div
       className={`${tileBase} bg-gradient-to-br from-accent/15 to-accent/30`}

@@ -85,7 +85,7 @@ export const MESAS_DEMO_STEPS: MesasDemoStep[] = [
 ];
 
 /**
- * "Lo tengo / no lo tengo" — el problema en palabras del dueño y lo que Pars
+ * "Lo tengo / no lo tengo" — el problema en palabras del dueño y lo que Tlaco
  * hace en su lugar. Sirve para que el prospecto se reconozca antes de que le
  * expliquemos la función.
  */

@@ -2,8 +2,17 @@ export interface OrderListItem {
   id: string;
   status: string;
   cancelled_from?: string | null;
-  source?: "dashboard" | "public_store" | "qr_payment" | "qr_table" | null;
+  source?:
+    | "dashboard"
+    | "public_store"
+    | "qr_payment"
+    | "qr_table"
+    | "staff"
+    | "addendum"
+    | null;
   order_type?: "dine_in" | "takeaway" | "qr_payment" | null;
+  /** Cuándo pasa el cliente por él. `null` = sin agendar. */
+  scheduled_for?: string | null;
   qr_code_id?: string | null;
   table_label?: string | null;
   diner_count?: number | null;

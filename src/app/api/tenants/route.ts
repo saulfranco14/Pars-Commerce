@@ -25,7 +25,7 @@ export async function GET() {
       tenant_id,
       role_id,
       accepted_at,
-      tenant:tenants(id, name, slug, business_type, logo_url, theme_color, description, public_store_enabled, settings, whatsapp_phone, social_links, site_template_id),
+      tenant:tenants(id, name, slug, business_type, logo_url, theme_color, description, public_store_enabled, accepting_orders, settings, whatsapp_phone, social_links, site_template_id),
       role:tenant_roles(id, name, permissions)
     `
     )

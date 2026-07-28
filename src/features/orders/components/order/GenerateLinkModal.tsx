@@ -33,7 +33,7 @@ export function GenerateLinkModal({
   const canGenerate = hasValidName && hasValidEmail;
   if (!isOpen) return null;
 
-  const { total: buyerTotal, mpFee, parsFee } = calcBuyerTotal(vendorTotal);
+  const { total: buyerTotal, mpFee, platformFee } = calcBuyerTotal(vendorTotal);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -106,7 +106,7 @@ export function GenerateLinkModal({
                   <span className="text-muted-foreground">
                     {TARIFA_DE_SERVICIO_LABEL}
                   </span>
-                  <span className="tabular-nums">${parsFee.toFixed(2)}</span>
+                  <span className="tabular-nums">${platformFee.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
                   <span>Total que pagará el cliente</span>

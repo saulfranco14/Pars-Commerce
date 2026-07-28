@@ -104,6 +104,10 @@ async function createCounterOrder(
       source: "staff",
       order_type: "takeaway",
       created_by: input.actorUserId,
+      // Quien lo levanta en el mostrador, lo tiene. Sin esto el pedido nace
+      // sin dueño y quien lo tomó deja de verlo en cuanto su rol se limita a
+      // los suyos (`orders.view_assigned` sin `orders.view_all`).
+      assigned_to: input.actorUserId,
       customer_name: input.customerName ?? null,
       customer_phone: input.customerPhone ?? null,
     })

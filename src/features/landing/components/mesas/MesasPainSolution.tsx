@@ -3,7 +3,7 @@ import { ArrowRight, Check } from "lucide-react";
 import { MESAS_PAINS } from "@/features/landing/constants/mesas";
 
 /**
- * "Esto me pasa / esto hace Pars". El prospecto tiene que reconocerse en la
+ * "Esto me pasa / esto hace Tlaco". El prospecto tiene que reconocerse en la
  * columna izquierda antes de que le expliquemos la función — sin eso, la demo
  * es sólo una pantalla bonita.
  */

@@ -89,6 +89,24 @@ export interface ConfigRecurrentesSectionProps {
   onMaxInstallmentsChange: (v: string) => void;
 }
 
+export interface ConfigAgendaSectionProps {
+  /** Si el sitio ofrece elegir hora de recolección. */
+  enabled: boolean;
+  onEnabledChange: (v: boolean) => void;
+  /** Anticipación mínima en minutos, como texto porque viene de un input. */
+  minLeadMinutes: string;
+  onMinLeadMinutesChange: (v: string) => void;
+  /** Días hacia adelante que se pueden agendar. */
+  maxDaysAhead: string;
+  onMaxDaysAheadChange: (v: string) => void;
+  /** Estado de la recepción de pedidos. */
+  acceptingOrders: boolean;
+  onAcceptingOrdersChange: (v: boolean) => void;
+  /** `false` oculta el interruptor de recepción (sin `orders.schedule_config`). */
+  canConfigureReception: boolean;
+  tenantId: string;
+}
+
 export interface SiteContentFormProps {
   tenantId: string;
   tenantSlug: string;

@@ -12,7 +12,7 @@ import type {
 } from "@/types/loans";
 
 const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://commerce.pars.com.mx";
+  process.env.NEXT_PUBLIC_APP_URL ?? "https://tlaco.mx";
 const WEBHOOK_URL = `${APP_URL}/api/mercadopago/webhook`;
 
 // POST /api/mercadopago/create-loan-preference

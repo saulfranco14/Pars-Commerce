@@ -98,7 +98,7 @@ export default function CrearNegocioPage() {
       setActiveTenantId(tenant.id);
       if (typeof window !== "undefined") {
         try {
-          localStorage.setItem("pars_activeTenantId", tenant.id);
+          localStorage.setItem("tlaco_activeTenantId", tenant.id);
         } catch {
           console.error("Error al guardar el ID del negocio en localStorage");
         }

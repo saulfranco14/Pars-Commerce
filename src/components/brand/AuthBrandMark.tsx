@@ -19,7 +19,7 @@ interface AuthBrandMarkProps {
 }
 
 export function AuthBrandMark({
-  size = "lg",
+  size = "xl",
   animated = false,
   className = "",
 }: AuthBrandMarkProps) {

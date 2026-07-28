@@ -4,6 +4,7 @@ import { CheckCircle2, Clock, Receipt, ShieldCheck, XCircle } from "lucide-react
 
 import { CustomerScreen } from "@/features/qr/components/customer/CustomerScreen";
 import { formatCurrency } from "@/features/qr/helpers/format";
+import { isAnonymousCustomerEmail } from "@/features/qr/constants/anonymousCustomer";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 interface PageProps {
@@ -141,7 +142,7 @@ export default async function QrPaymentSuccessPage({
         order.customer_name && order.customer_name !== "Cliente"
           ? { label: "De parte de", value: order.customer_name }
           : null,
-        order.customer_email && order.customer_email !== "anonimo@pars.com.mx"
+        order.customer_email && !isAnonymousCustomerEmail(order.customer_email)
           ? { label: "Correo", value: order.customer_email }
           : null,
         {

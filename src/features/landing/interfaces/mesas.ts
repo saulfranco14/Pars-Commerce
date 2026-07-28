@@ -19,7 +19,7 @@ export interface MesasPain {
   key: string;
   /** The complaint in the owner's own words. */
   pain: string;
-  /** What Pars does about it. */
+  /** What Tlaco does about it. */
   solution: string;
   icon: LucideIcon;
 }

@@ -56,7 +56,7 @@ export default function DashboardLayout({
       setActiveTenantId(match.tenant_id);
       if (typeof window !== "undefined") {
         try {
-          localStorage.setItem("pars_activeTenantId", match.tenant_id);
+          localStorage.setItem("tlaco_activeTenantId", match.tenant_id);
         } catch {
           /* ignore */
         }
@@ -94,7 +94,7 @@ export default function DashboardLayout({
           style={{ paddingLeft: "max(1rem, env(safe-area-inset-left, 1rem))" }}
         >
           <Link href="/dashboard" className="flex items-center md:hidden">
-            <TlacoLogo size="sm" />
+            <TlacoLogo size="md" />
           </Link>
           <div className="flex-1" />
           <ThemeToggle />

@@ -36,7 +36,7 @@ const PERSPECTIVES: {
 
 /**
  * "Una plataforma, todo tu negocio" — el inventario completo de lo que hace
- * Pars, espejo del Sidebar del dashboard.
+ * Tlaco, espejo del Sidebar del dashboard.
  *
  * El switch dueño/cliente es lo que la vuelve distinta de una tabla de
  * features: la competencia solo cuenta lo que gana el dueño. Aquí el prospecto

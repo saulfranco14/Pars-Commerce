@@ -20,7 +20,7 @@ import { useId } from "react";
  * el mouse pueda ganarle por especificidad a la caída inicial.
  */
 
-export type TlacoLogoSize = "sm" | "md" | "lg";
+export type TlacoLogoSize = "sm" | "md" | "lg" | "xl";
 
 interface TlacoLogoProps {
   size?: TlacoLogoSize;
@@ -36,6 +36,10 @@ const SIZES: Record<
   sm: { text: "text-lg", coin: "h-[0.62em] w-[0.62em]", drop: "-mb-[0.04em]" },
   md: { text: "text-2xl", coin: "h-[0.60em] w-[0.60em]", drop: "-mb-[0.03em]" },
   lg: { text: "text-4xl", coin: "h-[0.58em] w-[0.58em]", drop: "-mb-[0.03em]" },
+  // `xl` es el logotipo actuando como marca principal de una pantalla (login,
+  // registro), no como firma de un header. Ahí compite con el formulario por
+  // atención, así que necesita el salto de tamaño.
+  xl: { text: "text-5xl", coin: "h-[0.57em] w-[0.57em]", drop: "-mb-[0.025em]" },
 };
 
 export function TlacoLogo({

@@ -1,6 +1,6 @@
 "use client";
 
-const STORAGE_PREFIX = "pars_qr_fingerprint_";
+const STORAGE_PREFIX = "tlaco_qr_fingerprint_";
 
 /**
  * Returns (and persists) a per-QR fingerprint. Each scanned QR token gets its
@@ -18,8 +18,8 @@ export function getOrCreateFingerprint(token: string): string {
   return value;
 }
 
-const NAME_KEY = "pars_qr_device_name_";
-const LAST_ORDER_KEY = "pars_qr_last_order_";
+const NAME_KEY = "tlaco_qr_device_name_";
+const LAST_ORDER_KEY = "tlaco_qr_last_order_";
 
 export function getDeviceName(token: string): string | null {
   if (typeof window === "undefined") return null;
@@ -51,7 +51,7 @@ export function setLastOrderId(token: string, orderId: string): void {
   window.localStorage.setItem(LAST_ORDER_KEY + token, orderId);
 }
 
-const READY_SEEN_KEY = "pars_qr_ready_seen_";
+const READY_SEEN_KEY = "tlaco_qr_ready_seen_";
 
 /**
  * Whether the "your order is ready" celebration was ALREADY shown for this

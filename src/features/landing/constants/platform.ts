@@ -2,13 +2,11 @@ import {
   BarChart3,
   Banknote,
   ClipboardList,
-  Globe,
   Landmark,
   Package,
   QrCode,
   Repeat,
   Scissors,
-  Sparkles,
   Table2,
   Users,
   UsersRound,
@@ -16,28 +14,14 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-/**
- * Inventario real de la plataforma. Es el espejo del Sidebar del dashboard
- * (`src/components/layout/Sidebar.tsx`) — si ahí aparece un módulo, aquí debe
- * estar, y si aquí prometemos algo, ahí debe existir.
- *
- * Cada capacidad se cuenta DOS veces a propósito: `owner` es lo que gana el
- * dueño y `customer` es lo que vive su cliente. Vender solo el lado del dueño
- * es lo que hace la competencia (una lista de features); el prospecto compra
- * cuando entiende que sus clientes también van a tener una mejor experiencia.
- */
-
 export type PlatformGroupKey = "vender" | "cobrar" | "crecer";
 
 export interface PlatformCapability {
   key: string;
   group: PlatformGroupKey;
   icon: LucideIcon;
-  /** Nombre del módulo — mismo lenguaje que el Sidebar. */
   title: string;
-  /** Lo que gana el dueño. */
   owner: string;
-  /** Lo que vive su cliente. `null` cuando el módulo es puramente interno. */
   customer: string | null;
 }
 
@@ -103,16 +87,6 @@ export const PLATFORM_CAPABILITIES: PlatformCapability[] = [
       "Cada pedido queda registrado con hora, productos, total y quién lo atendió. Historial completo.",
     customer:
       "Recibe su ticket y puede seguir su pedido de recibido a en proceso y listo.",
-  },
-  {
-    key: "sitio-web",
-    group: "vender",
-    icon: Globe,
-    title: "Sitio web automático",
-    owner:
-      "Tu tienda en línea se genera sola con tu logo, colores y catálogo. Sin programar ni contratar a nadie.",
-    customer:
-      "Te compra desde su casa en tu propia página, no en un chat perdido de WhatsApp.",
   },
 
   // ── Cobrar ────────────────────────────────────────────────────
@@ -204,14 +178,5 @@ export const PLATFORM_CAPABILITIES: PlatformCapability[] = [
       "Invita a tu personal con permisos por rol: quién cobra, quién atiende y quién ve el dinero.",
     customer:
       "Lo atiende cualquiera de tu equipo y su pedido no se pierde en el cambio de turno.",
-  },
-  {
-    key: "novedades",
-    group: "crecer",
-    icon: Sparkles,
-    title: "Novedades",
-    owner:
-      "Facturación al SAT y entrega a domicilio vienen en camino. Nos dices qué te interesa y lo priorizamos.",
-    customer: null,
   },
 ];

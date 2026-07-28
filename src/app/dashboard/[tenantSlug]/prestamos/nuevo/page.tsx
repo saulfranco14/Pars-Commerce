@@ -15,7 +15,7 @@ import { FieldError } from "@/features/prestamos/components/FieldError";
 import { inputBase, inputError } from "@/features/prestamos/constants/formClasses";
 import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
 import { formatMXN } from "@/lib/loanUtils";
-import { calcSubscriptionFees, MP_SUB_FEE_PERCENT, MP_SUB_FEE_FIXED_MXN, PARS_SERVICE_FEE_PERCENT } from "@/constants/commissionConfig";
+import { calcSubscriptionFees, MP_SUB_FEE_PERCENT, MP_SUB_FEE_FIXED_MXN, TLACO_SERVICE_FEE_PERCENT } from "@/constants/commissionConfig";
 import type { Customer } from "@/types/customers";
 import type { PaymentPlanType, MpFeeAbsorbedBy } from "@/types/loans";
 
@@ -709,10 +709,10 @@ export default function NuevoPrestamo() {
                       </span>
                       <span className="font-medium text-red-600 tabular-nums">−{formatMXN(fees.mpFee)}</span>
                     </div>
-                    {PARS_SERVICE_FEE_PERCENT > 0 && (
+                    {TLACO_SERVICE_FEE_PERCENT > 0 && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Tarifa de servicio</span>
-                        <span className="font-medium text-red-600 tabular-nums">−{formatMXN(fees.parsFee)}</span>
+                        <span className="font-medium text-red-600 tabular-nums">−{formatMXN(fees.platformFee)}</span>
                       </div>
                     )}
                     <div className="flex justify-between border-t border-accent/10 pt-1.5">
