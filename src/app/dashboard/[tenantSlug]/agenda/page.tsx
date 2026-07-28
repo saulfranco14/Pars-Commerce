@@ -18,6 +18,9 @@ import { StatusBadge } from "@/components/orders/StatusBadge";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
 import { AcceptingOrdersToggle } from "@/features/orders/components/agenda/AcceptingOrdersToggle";
+import { BusinessHoursNotice } from "@/features/configuracion/components/BusinessHoursNotice";
+import { readBusinessHours } from "@/features/configuracion/helpers/businessHours";
+import { readPickupScheduling } from "@/features/checkout/helpers/pickupSchedule";
 
 import { useActiveTenant, usePermission } from "@/stores/useTenantStore";
 import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
@@ -94,6 +97,18 @@ export default function AgendaPage() {
             />
           ) : undefined
         }
+      />
+
+      <BusinessHoursNotice
+        hours={readBusinessHours(
+          activeTenant.settings as Record<string, unknown> | null,
+        )}
+        schedulingEnabled={
+          readPickupScheduling(
+            activeTenant.settings as Record<string, unknown> | null,
+          ).enabled
+        }
+        tenantSlug={tenantSlug}
       />
 
       {!accepting && (

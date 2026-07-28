@@ -19,6 +19,7 @@ import {
   readPickupScheduling,
   validateScheduledFor,
 } from "@/features/checkout/helpers/pickupSchedule";
+import { readBusinessHours } from "@/features/configuracion/helpers/businessHours";
 import { createOrderItems } from "@/features/checkout/helpers/orderItems";
 import type {
   CheckoutMode,
@@ -107,6 +108,7 @@ export async function executePublicCheckout({
     payload.scheduled_for,
     scheduling,
     new Date(),
+    readBusinessHours(tenantSettings),
   );
   if (!schedule.ok) {
     return NextResponse.json({ error: schedule.message }, { status: 400 });

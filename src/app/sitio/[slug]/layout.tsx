@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { LayoutSwitcher } from "./layouts/LayoutSwitcher";
 import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
+import { OrdersClosedNotice } from "@/features/checkout/components/cart/OrdersClosedNotice";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,7 +16,7 @@ export default async function SitioLayout({ children, params }: LayoutProps) {
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
     .select(
-      "id, name, description, logo_url, theme_color, slug, whatsapp_phone, social_links, site_template_id",
+      "id, name, description, logo_url, theme_color, slug, whatsapp_phone, social_links, site_template_id, accepting_orders",
     )
     .eq("slug", slug)
     .single();
@@ -64,6 +65,14 @@ export default async function SitioLayout({ children, params }: LayoutProps) {
       navPages={navPages}
       accentColor={accentColor}
     >
+      {/* En todas las páginas y no solo en el carrito: si el aviso viviera
+          solo en el checkout, el cliente armaría su pedido entero antes de
+          enterarse de que no se puede. */}
+      {tenant.accepting_orders === false && (
+        <div className="mb-4">
+          <OrdersClosedNotice businessName={tenant.name} />
+        </div>
+      )}
       {children}
     </LayoutSwitcher>
   );

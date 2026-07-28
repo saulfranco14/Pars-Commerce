@@ -12,8 +12,8 @@ import {
 
 const CONFETTI_COLORS = [
   "#e8a33d",
-  "#ec4899",
-  "#f472b6",
+  "#3483fa",
+  "#7cb3ff",
   "#fb923c",
   "#fbbf24",
   "#34d399",

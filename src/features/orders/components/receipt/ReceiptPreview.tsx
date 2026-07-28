@@ -4,6 +4,7 @@ import type { TenantAddress } from "@/types/database";
 import type { OrderPayment } from "@/features/orders/interfaces/orderDetail";
 import type { ReceiptPreviewProps } from "@/features/orders/interfaces/receiptPreview";
 import { formatOrderDateFull } from "@/lib/formatDate";
+import { formatPickupTime } from "@/features/checkout/helpers/pickupSchedule";
 import {
   formatPaymentMethod,
   getPaymentMethodConfig,
@@ -139,6 +140,21 @@ export function ReceiptPreview({
               )}
             </div>
           )}
+        {order.scheduled_for && (
+          <div className="mt-4 rounded border-2 border-dashed border-foreground/40 px-3 py-2.5 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Pasa por tu pedido
+            </p>
+            <p className="mt-0.5 text-sm font-bold text-foreground">
+              {formatPickupTime(new Date(order.scheduled_for))}
+            </p>
+          </div>
+        )}
+        {order.parent_order_id && (
+          <p className="mt-3 text-center text-xs text-muted">
+            Complementa al pedido {order.parent_order_id.slice(0, 8).toUpperCase()}
+          </p>
+        )}
         {shouldShow(opts.showItems) && (
           <>
             <div className="my-5 h-px bg-border" />

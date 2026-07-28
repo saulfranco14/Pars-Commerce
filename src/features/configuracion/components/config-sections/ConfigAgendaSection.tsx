@@ -8,6 +8,7 @@ import {
   formatPickupTime,
 } from "@/features/checkout/helpers/pickupSchedule";
 import { checkboxItemClass } from "@/features/configuracion/constants/formClasses";
+import { Notification } from "@/components/ui/Notification";
 
 import type { ConfigAgendaSectionProps } from "@/features/configuracion/interfaces/sections";
 
@@ -48,6 +49,7 @@ export function ConfigAgendaSection({
   onAcceptingOrdersChange,
   canConfigureReception,
   tenantId,
+  hours,
 }: ConfigAgendaSectionProps) {
   const preview = useMemo(() => {
     const now = new Date();
@@ -58,8 +60,9 @@ export function ConfigAgendaSection({
         maxDaysAhead: Number(maxDaysAhead) || 0,
       },
       now,
+      hours,
     );
-  }, [minLeadMinutes, maxDaysAhead]);
+  }, [minLeadMinutes, maxDaysAhead, hours]);
 
   return (
     <div className="space-y-6">
@@ -88,6 +91,14 @@ export function ConfigAgendaSection({
           </p>
         </div>
       </label>
+
+      {enabled && hours === null && (
+        <Notification
+          tone="warning"
+          title="Falta dar de alta tus horarios"
+          message="Sin horarios, tus clientes podrán agendar a cualquier hora. Ve a la pestaña Horarios y elige 24/7 o marca tus días."
+        />
+      )}
 
       {enabled && (
         <>

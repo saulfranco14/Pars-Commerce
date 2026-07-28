@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { ChevronDown, User, Package, Wrench } from "lucide-react";
 import { StatusBadge } from "@/components/orders/StatusBadge";
+import { PickupBadge } from "@/features/orders/components/order/PickupBadge";
 import { TicketDownloadActions } from "@/components/orders/TicketDownloadActions";
 import { formatOrderDate, formatOrderDateFull } from "@/lib/formatDate";
 import { getPaymentMethodConfig } from "@/lib/formatPaymentMethod";
@@ -149,6 +150,10 @@ export function OrderCardMobile({
             </div>
             <div className="flex flex-col items-end gap-1.5 pt-0.5">
               <StatusBadge status={order.status} cancelledFrom={order.cancelled_from} />
+              <PickupBadge
+                scheduledFor={order.scheduled_for}
+                status={order.status}
+              />
               <span className="text-[10px] font-mono tabular-nums text-muted-foreground/60">
                 #{order.id.slice(0, 8)}
               </span>

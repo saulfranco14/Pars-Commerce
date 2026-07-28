@@ -7,6 +7,8 @@
  * "hoy" y "mañana" para quien atiende el mostrador.
  */
 
+import { mexicoMoment } from "@/features/configuracion/helpers/businessHours";
+
 import type {
   AgendaBucket,
   AgendaBucketKey,
@@ -17,15 +19,11 @@ import type { OrderListItem } from "@/types/orders";
 /** Estados en los que el pedido ya no espera a nadie en el mostrador. */
 const CLOSED_STATUSES = ["cancelled", "completed"];
 
-function startOfDay(d: Date): Date {
-  const copy = new Date(d);
-  copy.setHours(0, 0, 0, 0);
-  return copy;
-}
-
+/** Días de calendario entre dos instantes, contados en la zona del negocio. */
 function daysApart(target: Date, now: Date): number {
-  const ms = startOfDay(target).getTime() - startOfDay(now).getTime();
-  return Math.round(ms / 86_400_000);
+  const a = Date.parse(`${mexicoMoment(target).dateStr}T00:00:00Z`);
+  const b = Date.parse(`${mexicoMoment(now).dateStr}T00:00:00Z`);
+  return Math.round((a - b) / 86_400_000);
 }
 
 export function bucketOf(
@@ -98,9 +96,15 @@ export function countAgenda(
   return counts;
 }
 
-/** La hora de recolección, como se lee en la agenda. */
+/**
+ * Horas de la agenda, siempre en la zona del negocio: sin fijarla saldrían en
+ * la del proceso, que en el servidor es UTC.
+ */
+const MEXICO_TZ = "America/Mexico_City";
+
 export function formatAgendaTime(iso: string): string {
   return new Intl.DateTimeFormat("es-MX", {
+    timeZone: MEXICO_TZ,
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(iso));
@@ -109,6 +113,7 @@ export function formatAgendaTime(iso: string): string {
 /** Día y hora completos, para los grupos que abarcan varios días. */
 export function formatAgendaDateTime(iso: string): string {
   return new Intl.DateTimeFormat("es-MX", {
+    timeZone: MEXICO_TZ,
     weekday: "short",
     day: "numeric",
     month: "short",

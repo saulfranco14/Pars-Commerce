@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { StatusBadge } from "@/components/orders/StatusBadge";
+import { PickupBadge } from "@/features/orders/components/order/PickupBadge";
 import { formatOrderDateFull } from "@/lib/formatDate";
 import { getPaymentMethodConfig } from "@/lib/formatPaymentMethod";
 import { getSourceConfig } from "@/lib/formatSource";
@@ -58,6 +59,10 @@ export function OrderHeader() {
         <StatusBadge
           status={order.status}
           cancelledFrom={order.cancelled_from}
+        />
+        <PickupBadge
+          scheduledFor={order.scheduled_for}
+          status={order.status}
         />
         {order.assigned_user && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-border-soft px-2.5 py-0.5 text-xs font-medium text-muted-foreground">

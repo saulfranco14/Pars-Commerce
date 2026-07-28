@@ -30,6 +30,8 @@ export interface OrderListItem {
   } | null;
   products_count?: number;
   services_count?: number;
+  /** Cuántos pedidos complementarios cuelgan de este. */
+  addenda_count?: number;
   subscription_id?: string | null;
   subscription_installment?: number | null;
 }

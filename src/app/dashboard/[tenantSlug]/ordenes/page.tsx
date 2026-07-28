@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import useSWR from "swr";
-import { Plus, Scissors, SlidersHorizontal, X } from "lucide-react";
+import { Link2, Plus, Scissors, SlidersHorizontal, X } from "lucide-react";
 import { FAB } from "@/components/ui/FAB";
 import { OrdersFilterSheet } from "@/components/orders/OrdersFilterSheet";
 import { OrderFormSheet } from "@/features/orders/components/OrderFormSheet";
@@ -35,6 +35,7 @@ import { STATUS_TABS } from "@/features/orders/constants/statusTabs";
 import { SCOPE_TABS } from "@/features/orders/constants/scopeTabs";
 import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import { buildOrdersKey } from "@/features/orders/helpers/buildOrdersKey";
+import { PickupBadge } from "@/features/orders/components/order/PickupBadge";
 import { orderContentType } from "@/features/orders/helpers/orderContentType";
 
 import type { OrdersScope } from "@/features/orders/interfaces/ordersQuery";
@@ -400,7 +401,13 @@ export default function OrdenesPage() {
                           }
                         >
                           <td className={tableBodyCellMutedClass}>
-                            {formatOrderDate(o.created_at)}
+                            <div className="flex flex-col items-start gap-1">
+                              {formatOrderDate(o.created_at)}
+                              <PickupBadge
+                                scheduledFor={o.scheduled_for}
+                                status={o.status}
+                              />
+                            </div>
                           </td>
                           <td className={tableBodyCellClass}>
                             {o.customer_name || o.customer_email ? (
@@ -427,6 +434,15 @@ export default function OrdenesPage() {
                             {tipo === "mixto" && (
                               <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800">
                                 Mixto
+                              </span>
+                            )}
+                            {(o.addenda_count ?? 0) > 0 && (
+                              <span
+                                className="ml-1 inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800"
+                                title="Este pedido tiene complementos: el cobro está repartido"
+                              >
+                                <Link2 className="h-3 w-3 shrink-0" aria-hidden />
+                                +{o.addenda_count}
                               </span>
                             )}
                           </td>

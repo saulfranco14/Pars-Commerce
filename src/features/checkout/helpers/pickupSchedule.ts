@@ -11,6 +11,15 @@ import {
   DEFAULT_PICKUP_SCHEDULING,
   type PickupSchedulingConfig,
 } from "@/features/checkout/interfaces/pickupSchedule";
+import {
+  isOpenAt,
+  mexicoMoment,
+  nextOpening,
+} from "@/features/configuracion/helpers/businessHours";
+
+const MEXICO_TZ = "America/Mexico_City";
+
+import type { BusinessHours } from "@/features/configuracion/interfaces/businessHours";
 
 const MINUTE_MS = 60_000;
 const DAY_MS = 24 * 60 * MINUTE_MS;
@@ -48,7 +57,8 @@ export type ScheduleRejection =
   | "disabled"
   | "invalid"
   | "too_soon"
-  | "too_far";
+  | "too_far"
+  | "closed";
 
 export type ScheduleValidation =
   | { ok: true; value: Date | null }
@@ -62,6 +72,8 @@ export function validateScheduledFor(
   raw: string | null | undefined,
   config: PickupSchedulingConfig,
   now: Date,
+  /** `null` = el negocio no dio de alta horarios; no se restringe por hora. */
+  hours: BusinessHours | null = null,
 ): ScheduleValidation {
   if (!raw) return { ok: true, value: null };
 
@@ -103,6 +115,17 @@ export function validateScheduledFor(
     };
   }
 
+  if (hours && !isOpenAt(hours, when)) {
+    const reopens = nextOpening(hours, when);
+    return {
+      ok: false,
+      reason: "closed",
+      message: reopens
+        ? `El negocio está cerrado a esa hora. Abre el ${formatPickupTime(reopens)}.`
+        : "El negocio está cerrado a esa hora.",
+    };
+  }
+
   return { ok: true, value: when };
 }
 
@@ -120,36 +143,93 @@ export interface PickupPreset {
 }
 
 /**
- * Opciones rápidas de recolección. Se ofrecen primero porque casi siempre es
- * una de ellas; el selector exacto solo aparece si el cliente pide otra hora.
+ * Opciones rápidas de recolección. Se descartan las que caen fuera de la
+ * ventana del negocio o de su horario de atención: mostrarlas y rechazarlas
+ * al enviar es peor que no ofrecerlas.
  *
- * Se descartan las que caigan fuera de la ventana del negocio, así que un
- * negocio con 4 horas de anticipación mínima simplemente no muestra "en 1
- * hora" en vez de mostrarla y rechazarla después.
+ * La opción "al abrir" sale del horario real. Antes estaba fija en las 10:00,
+ * que era una hora inventada para cualquier negocio que no abriera a esa hora.
  */
 export function buildPickupPresets(
   config: PickupSchedulingConfig,
   now: Date,
+  hours: BusinessHours | null = null,
 ): PickupPreset[] {
   const { earliest, latest } = scheduleBounds(config, now);
 
-  const candidates: Array<{ id: string; label: string; value: Date }> = [
+  const relative: PickupPreset[] = [
     { id: "1h", label: "En 1 hora", value: new Date(now.getTime() + 60 * MINUTE_MS) },
     { id: "2h", label: "En 2 horas", value: new Date(now.getTime() + 120 * MINUTE_MS) },
     { id: "4h", label: "En 4 horas", value: new Date(now.getTime() + 240 * MINUTE_MS) },
-    { id: "manana", label: "Mañana a las 10:00", value: tomorrowAt(now, 10) },
   ];
 
-  return candidates.filter(
-    (c) => c.value >= earliest && c.value <= latest,
+  const presets = relative.filter(
+    (c) =>
+      c.value >= earliest &&
+      c.value <= latest &&
+      (!hours || isOpenAt(hours, c.value)),
   );
+
+  const reopening = openingPreset(config, now, hours, earliest, latest);
+  if (reopening) presets.push(reopening);
+
+  return presets;
 }
 
-function tomorrowAt(now: Date, hour: number): Date {
-  const d = new Date(now);
-  d.setDate(d.getDate() + 1);
-  d.setHours(hour, 0, 0, 0);
-  return d;
+/**
+ * "En cuanto abra" / "Mañana al abrir": el primer hueco de atención que queda
+ * después de la anticipación mínima, y solo si ninguna opción relativa ya lo
+ * cubre.
+ */
+function openingPreset(
+  config: PickupSchedulingConfig,
+  now: Date,
+  hours: BusinessHours | null,
+  earliest: Date,
+  latest: Date,
+): PickupPreset | null {
+  if (!hours || hours.mode === "always") {
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(10, 0, 0, 0);
+    return tomorrow >= earliest && tomorrow <= latest
+      ? { id: "manana", label: "Mañana a las 10:00", value: tomorrow }
+      : null;
+  }
+
+  const opens = nextOpening(hours, earliest);
+  if (!opens || opens > latest) return null;
+
+  // Se compara el día CALENDARIO mexicano, no `toDateString()`: ese usa la
+  // zona del proceso, y en el servidor (UTC) el lunes por la noche ya cuenta
+  // como martes, así que el chip decía "Hoy" señalando a mañana.
+  const sameDay = mexicoMoment(opens).dateStr === mexicoMoment(now).dateStr;
+  return {
+    id: "abre",
+    label: sameDay
+      ? `Hoy al abrir (${formatClock(opens)})`
+      : `${capitalize(formatWeekday(opens))} al abrir (${formatClock(opens)})`,
+    value: opens,
+  };
+}
+
+function formatClock(date: Date): string {
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: MEXICO_TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function formatWeekday(date: Date): string {
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: MEXICO_TZ,
+    weekday: "long",
+  }).format(date);
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 /**
@@ -165,9 +245,13 @@ export function toDatetimeLocalValue(date: Date): string {
   );
 }
 
-/** Cómo se le lee al cliente la hora que eligió. */
+/**
+ * Cómo se le lee al cliente la hora que eligió. Fija la zona del negocio
+ * porque esto también se renderiza en servidor, y ahí sin zona saldría en UTC.
+ */
 export function formatPickupTime(date: Date): string {
   return new Intl.DateTimeFormat("es-MX", {
+    timeZone: MEXICO_TZ,
     weekday: "long",
     day: "numeric",
     month: "long",

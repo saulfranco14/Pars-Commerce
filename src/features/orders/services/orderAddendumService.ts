@@ -1,26 +1,11 @@
 /**
- * Orden ligada: el pedido que recoge "lo que faltó" de uno ya pagado.
+ * Orden ligada: recoge "lo que faltó" de un pedido ya pagado.
  *
- * El caso real: el cliente pagó y la orden se cerró, pero se le entregó un
- * producto que nadie alcanzó a registrar. Reabrir la orden pagada falsearía el
- * cobro que ya ocurrió, y abrir una orden normal en el mismo QR volvería a
- * ocupar la mesa — que a esa hora puede tener ya a otro cliente.
- *
- * La pieza que hace que esto funcione es una omisión: el hijo NO escribe
- * `qr_codes.current_order_id` y NO copia `qr_code_id`. Eso lo deja fuera del
- * circuito del cliente por construcción, no por una comprobación que alguien
- * pueda olvidar más adelante:
- *
- *   * `/api/qr/resolve` busca el pedido activo por `current_order_id`, nunca
- *     por `qr_code_id`, así que el hijo no aparece en ningún escaneo;
- *   * `releaseTableQrIfPaid` se rinde si `current_order_id` no apunta a ese
- *     pedido, así que cobrar el hijo no puede cerrarle la sesión al cliente
- *     que esté ocupando la mesa ahora mismo.
- *
- * Del padre solo se hereda lo que hace legible el ticket (cliente,
- * `table_label`). Se copia `table_label` pero no `qr_code_id` a propósito:
- * el primero es texto para el recibo, el segundo es el vínculo real con un QR
- * físico, y el hijo justamente no lo tiene.
+ * Lo que hace que funcione es una OMISIÓN: el hijo no escribe
+ * `qr_codes.current_order_id` ni copia `qr_code_id`, así que la mesa no se
+ * re-ocupa. `/api/qr/resolve` busca el pedido activo por `current_order_id`
+ * (nunca por `qr_code_id`) y `releaseTableQrIfPaid` se rinde si no apunta a
+ * ese pedido. No le pongas `qr_code_id` al hijo.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -78,8 +63,8 @@ export async function createOrderAddendum(
     );
   }
 
-  // Un solo nivel. La base también lo impide con un trigger, pero aquí el
-  // mensaje puede explicar qué hacer; el del trigger solo puede fallar.
+  // El trigger de la base también lo impide; aquí el mensaje puede decir qué
+  // hacer en vez de solo fallar.
   if (parent.parent_order_id) {
     return err(
       "conflict",
@@ -95,7 +80,7 @@ export async function createOrderAddendum(
     .in("id", productIds)
     .is("deleted_at", null);
 
-  // Los precios se resuelven contra la tabla, nunca se toman del cliente.
+  // Precios de la tabla, nunca del cliente.
   const priceByProduct = new Map<string, number>();
   for (const p of products ?? []) priceByProduct.set(p.id, Number(p.price));
 
@@ -118,8 +103,7 @@ export async function createOrderAddendum(
       customer_phone: parent.customer_phone,
       created_by: input.actorUserId,
       assigned_to: input.actorUserId,
-      // El personal ya entregó el producto: no hay nada que preparar, así que
-      // nace cobrable en vez de esperar el paso de preparación.
+      // Ya se entregó: no hay nada que preparar, nace cobrable.
       fulfillment_status: "ready",
     })
     .select("id")
@@ -141,8 +125,7 @@ export async function createOrderAddendum(
   });
 
   if (rows.length === 0) {
-    // Ningún producto era de este negocio. Se borra el cascarón en vez de
-    // dejar un pedido de $0 colgando del original.
+    // No dejar un pedido de $0 colgando del original.
     await admin.from("orders").delete().eq("id", child.id);
     return err("validation", "Ningún producto coincide con el negocio");
   }
@@ -164,9 +147,8 @@ export async function createOrderAddendum(
     })
     .eq("id", child.id);
 
-  // Se registra en AMBOS pedidos: en el hijo para saber de dónde salió, y en
-  // el padre para que quien audite el cobro original vea que se complementó
-  // después sin tener que buscarlo.
+  // En AMBOS: quien audite el cobro original tiene que ver que se complementó
+  // después sin ir a buscarlo.
   await admin.from("order_activity_log").insert([
     {
       order_id: child.id,

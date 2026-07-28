@@ -13,8 +13,8 @@ import { CartItemsList } from "@/features/checkout/components/cart/CartItemsList
 import { CartSummaryHeader } from "@/features/checkout/components/cart/CartSummaryHeader";
 import { CartTrustBadges } from "@/features/checkout/components/cart/CartTrustBadges";
 import { CheckoutBody } from "@/features/checkout/components/cart/CheckoutBody";
-import { OrdersClosedNotice } from "@/features/checkout/components/cart/OrdersClosedNotice";
 import type { PickupSchedulingConfig } from "@/features/checkout/interfaces/pickupSchedule";
+import type { BusinessHours } from "@/features/configuracion/interfaces/businessHours";
 import { DesktopCheckoutAside } from "@/features/checkout/components/cart/DesktopCheckoutAside";
 import { MobileCheckoutBar } from "@/features/checkout/components/cart/MobileCheckoutBar";
 import { MobileCheckoutSheet } from "@/features/checkout/components/cart/MobileCheckoutSheet";
@@ -31,6 +31,7 @@ interface CarritoContentProps {
   accentColor: string;
   recurringConfig: RecurringPurchasesConfig;
   pickupScheduling: PickupSchedulingConfig;
+  businessHours: BusinessHours | null;
   /** `false` = el negocio pausó los pedidos; el catálogo sigue visible. */
   acceptingOrders: boolean;
 }
@@ -41,6 +42,7 @@ export default function CarritoContent({
   accentColor,
   recurringConfig,
   pickupScheduling,
+  businessHours,
   acceptingOrders,
 }: CarritoContentProps) {
   const fingerprint = useFingerprint();
@@ -155,6 +157,7 @@ export default function CarritoContent({
     viableMsiOptions,
     msiBreakdown,
     pickupScheduling,
+    businessHours,
   };
 
   return (
@@ -165,8 +168,7 @@ export default function CarritoContent({
         </div>
       )}
 
-      {!acceptingOrders && <OrdersClosedNotice />}
-
+      {/* El aviso lo pone el layout del sitio, que sale en todas las páginas. */}
       {acceptingOrders && hasRecurringOptions && (
         <CheckoutGuide
           accentColor={accentColor}

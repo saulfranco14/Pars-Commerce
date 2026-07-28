@@ -8,6 +8,10 @@ import {
   scheduleBounds,
   toDatetimeLocalValue,
 } from "@/features/checkout/helpers/pickupSchedule";
+import {
+  isOpenAt,
+  nextOpening,
+} from "@/features/configuracion/helpers/businessHours";
 
 import type { PickupTimePickerProps } from "@/features/checkout/interfaces/pickupTimePicker";
 
@@ -24,6 +28,7 @@ import type { PickupTimePickerProps } from "@/features/checkout/interfaces/picku
  */
 export function PickupTimePicker({
   config,
+  businessHours,
   value,
   onChange,
   accentColor,
@@ -36,16 +41,27 @@ export function PickupTimePicker({
   // presets bajo el dedo del cliente mientras escribe su correo.
   const now = useMemo(() => new Date(), []);
   const presets = useMemo(
-    () => buildPickupPresets(config, now),
-    [config, now],
+    () => buildPickupPresets(config, now, businessHours),
+    [config, now, businessHours],
   );
   const bounds = useMemo(() => scheduleBounds(config, now), [config, now]);
+
+  const closedWarning = useMemo(() => {
+    if (!value || !businessHours) return null;
+    const when = new Date(value);
+    if (Number.isNaN(when.getTime()) || isOpenAt(businessHours, when)) return null;
+    const reopens = nextOpening(businessHours, when);
+    return reopens
+      ? `El negocio está cerrado a esa hora. Abre el ${formatPickupTime(reopens)}.`
+      : "El negocio está cerrado a esa hora.";
+  }, [value, businessHours]);
 
   if (!config.enabled) return null;
 
   const selectedPreset = presets.find((p) => p.value.toISOString() === value);
-  // Hay hora elegida pero no coincide con ningún chip: la puso a mano.
-  const isCustom = !!value && !selectedPreset;
+  // Los chips son un grupo excluyente. Entrar a "Otra hora" suelta el preset
+  // aunque la hora siga coincidiendo con él, o se verían dos activos a la vez.
+  const customActive = showExact || (!!value && !selectedPreset);
 
   return (
     <div>
@@ -56,7 +72,7 @@ export function PickupTimePicker({
       <div className="mt-2 flex flex-wrap gap-2">
         <Chip
           label="Cuando esté listo"
-          active={!value}
+          active={!value && !showExact}
           accentColor={accentColor}
           disabled={disabled}
           onClick={() => {
@@ -68,7 +84,7 @@ export function PickupTimePicker({
           <Chip
             key={preset.id}
             label={preset.label}
-            active={selectedPreset?.id === preset.id}
+            active={!customActive && selectedPreset?.id === preset.id}
             accentColor={accentColor}
             disabled={disabled}
             onClick={() => {
@@ -79,14 +95,14 @@ export function PickupTimePicker({
         ))}
         <Chip
           label="Otra hora"
-          active={isCustom || showExact}
+          active={customActive}
           accentColor={accentColor}
           disabled={disabled}
           onClick={() => setShowExact(true)}
         />
       </div>
 
-      {(showExact || isCustom) && (
+      {customActive && (
         <input
           type="datetime-local"
           // `min`/`max` en hora local, que es lo que el input entiende: con un
@@ -108,10 +124,16 @@ export function PickupTimePicker({
         />
       )}
 
-      {value && (
-        <p className="mt-2 text-sm text-gray-600">
-          Pasas por él el {formatPickupTime(new Date(value))}.
-        </p>
+      {/* Se avisa aquí y no al enviar: descubrir que el negocio está cerrado
+          después de llenar el formulario obliga a rehacerlo todo. */}
+      {closedWarning ? (
+        <p className="mt-2 text-sm text-amber-700">{closedWarning}</p>
+      ) : (
+        value && (
+          <p className="mt-2 text-sm text-gray-600">
+            Pasas por él el {formatPickupTime(new Date(value))}.
+          </p>
+        )
       )}
 
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}

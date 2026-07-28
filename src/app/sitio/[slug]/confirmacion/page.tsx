@@ -5,6 +5,7 @@ import { XCircle, Clock, ArrowLeft, Repeat, CalendarCheck } from "lucide-react";
 import { ClearCartOnConfirm } from "./ClearCartOnConfirm";
 import { PaymentSuccessFullScreen } from "./PaymentSuccessFullScreen";
 import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
+import { formatPickupTime } from "@/features/checkout/helpers/pickupSchedule";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -75,7 +76,7 @@ export default async function ConfirmacionPage({
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, status, total, paid_total, balance_due, payment_mode, payment_link, payment_plan_status, customer_name, created_at")
+    .select("id, status, total, paid_total, balance_due, payment_mode, payment_link, payment_plan_status, customer_name, created_at, scheduled_for")
     .eq("id", order_id)
     .eq("tenant_id", tenant.id)
     .single();
@@ -189,6 +190,26 @@ export default async function ConfirmacionPage({
               </div>
             )}
 
+            {order.scheduled_for && paymentStatus !== "failure" && (
+              <div
+                className="mx-auto mt-6 max-w-xs rounded-xl border-2 p-4 text-center"
+                style={{
+                  borderColor: accentColor,
+                  backgroundColor: `${accentColor}08`,
+                }}
+              >
+                <p className="text-xs font-medium text-gray-500">
+                  Pasa por tu pedido
+                </p>
+                <p
+                  className="mt-1 text-base font-bold"
+                  style={{ color: accentColor }}
+                >
+                  {formatPickupTime(new Date(order.scheduled_for))}
+                </p>
+              </div>
+            )}
+
             {formattedAddress !== "Dirección no configurada" && (
               <div className="mx-auto mt-6 max-w-xs rounded-xl border border-gray-100 bg-gray-50 p-3">
                 <p className="text-center text-xs font-medium text-gray-600">
@@ -245,6 +266,7 @@ export default async function ConfirmacionPage({
           customerName={order.customer_name ?? ""}
           formattedAddress={formattedAddress}
           phone={address?.phone}
+          scheduledFor={order.scheduled_for}
         />
       </>
     );

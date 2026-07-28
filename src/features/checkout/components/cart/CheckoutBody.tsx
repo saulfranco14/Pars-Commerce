@@ -6,6 +6,7 @@ import type { RecurringPurchasesConfig } from "@/types/subscriptions";
 import { CheckoutFormFields } from "@/features/checkout/components/cart/CheckoutFormFields";
 import { PickupTimePicker } from "@/features/checkout/components/cart/PickupTimePicker";
 import type { PickupSchedulingConfig } from "@/features/checkout/interfaces/pickupSchedule";
+import type { BusinessHours } from "@/features/configuracion/interfaces/businessHours";
 import { FeesBreakdownCard } from "@/features/checkout/components/payment-plan/FeesBreakdownCard";
 import { FrequencyPicker } from "@/features/checkout/components/payment-plan/FrequencyPicker";
 import { InstallmentsPicker } from "@/features/checkout/components/payment-plan/InstallmentsPicker";
@@ -35,6 +36,8 @@ interface CheckoutBodyProps {
   ) => void;
   /** Ventana de recolección del negocio. Con `enabled: false` no se pinta nada. */
   pickupScheduling: PickupSchedulingConfig;
+  /** `null` = el negocio no dio de alta horarios. */
+  businessHours: BusinessHours | null;
   onSubmit: (e: React.FormEvent) => void;
   submitting: boolean;
   submitLabel: string;
@@ -95,6 +98,7 @@ export function CheckoutBody({
   viableMsiOptions,
   msiBreakdown,
   pickupScheduling,
+  businessHours,
 }: CheckoutBodyProps) {
   const idPrefix = variant === "mobile" ? "m-" : "";
   const formId = `${idPrefix}checkout-form`;
@@ -192,6 +196,7 @@ export function CheckoutBody({
 
         <PickupTimePicker
           config={pickupScheduling}
+          businessHours={businessHours}
           value={formState.scheduled_for}
           onChange={(v) => onFormFieldChange("scheduled_for", v)}
           accentColor={accentColor}

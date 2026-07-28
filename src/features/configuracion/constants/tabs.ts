@@ -4,6 +4,8 @@ export const CONFIG_TABS = [
   { value: "finanzas", label: "Finanzas" },
   { value: "direccion", label: "Dirección" },
   { value: "recurrentes", label: "Recurrentes" },
+  { value: "horarios", label: "Horarios" },
+  { value: "agenda", label: "Pedidos y agenda" },
 ] as const;
 
 export type ConfigTab = (typeof CONFIG_TABS)[number]["value"];

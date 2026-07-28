@@ -43,7 +43,7 @@ export async function GET(request: Request) {
       .select(
         `
         id, tenant_id, status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_id, customer_name, customer_email, customer_phone, parent_order_id,
-        subtotal, discount, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, updated_at,
+        subtotal, discount, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, updated_at, scheduled_for,
         created_by, assigned_to, completed_by, completed_at, paid_at,
         payment_method, payment_link, mp_preference_id,
         assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email),
@@ -188,10 +188,25 @@ export async function GET(request: Request) {
     }
   }
 
+  // Complementos de los pedidos listados, en una sola consulta. Sin esto, un
+  // pedido cuyo cobro se repartió en dos se lee en la lista como si se hubiera
+  // cobrado de menos.
+  const { data: addenda } = await supabase
+    .from("orders")
+    .select("parent_order_id")
+    .in("parent_order_id", orderIds);
+
+  const addendaCountByOrder: Record<string, number> = {};
+  for (const a of addenda ?? []) {
+    const pid = (a as { parent_order_id: string }).parent_order_id;
+    addendaCountByOrder[pid] = (addendaCountByOrder[pid] ?? 0) + 1;
+  }
+
   const withType = list.map((o) => ({
     ...o,
     products_count: productsCountByOrder[o.id] ?? 0,
     services_count: servicesCountByOrder[o.id] ?? 0,
+    addenda_count: addendaCountByOrder[o.id] ?? 0,
   }));
 
   return NextResponse.json(withType);

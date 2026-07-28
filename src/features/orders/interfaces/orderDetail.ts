@@ -79,6 +79,8 @@ export interface OrderDetail {
   payment_plan_status?: string | null;
   created_at: string;
   paid_at: string | null;
+  /** Cuándo pasa el cliente por él. `null` = sin agendar. */
+  scheduled_for?: string | null;
   assigned_to: string | null;
   assigned_user?: {
     id: string;
