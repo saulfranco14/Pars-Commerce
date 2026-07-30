@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Loader2, X } from "lucide-react";
+import { Check, Loader2, RefreshCw, X } from "lucide-react";
 
 import {
   adminActionButtonConfirm,
@@ -17,6 +17,8 @@ interface PendingPaymentsCardProps {
   busyPaymentId: string | null;
   onConfirm: (paymentId: string) => void;
   onReject: (paymentId: string) => void;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
 function resolveMethodMeta(method: string) {
@@ -31,12 +33,15 @@ export function PendingPaymentsCard({
   busyPaymentId,
   onConfirm,
   onReject,
+  onRefresh,
+  refreshing = false,
 }: PendingPaymentsCardProps) {
   if (payments.length === 0) return null;
 
   return (
     <section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-      <div className="flex items-center gap-2">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
         <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-amber-200 text-amber-800">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
         </span>
@@ -48,6 +53,18 @@ export function PendingPaymentsCard({
             Confirma o rechaza cada pago para liberar la cuenta.
           </p>
         </div>
+        </div>
+        {onRefresh && (
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={refreshing}
+            className="inline-flex min-h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-amber-300 bg-surface px-3 text-xs font-bold text-amber-900 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            Actualizar
+          </button>
+        )}
       </div>
 
       <ul className="mt-3 space-y-2">

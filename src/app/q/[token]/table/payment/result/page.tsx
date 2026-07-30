@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 
 import { Notification } from "@/components/ui/Notification";
 import { CustomerLoading } from "@/features/qr/components/customer/CustomerLoading";
@@ -26,7 +26,7 @@ export default function TablePaymentResultPage() {
   const orderId = searchParams.get("order_id");
   const groupId = searchParams.get("group_id");
 
-  const { data, isLoading, error } = useBillData(token, orderId, {
+  const { data, isLoading, error, mutate } = useBillData(token, orderId, {
     refreshIntervalMs: 2000,
   });
 
@@ -125,12 +125,14 @@ export default function TablePaymentResultPage() {
             />
           </div>
         )}
-        <Link
-          href={`/q/${token}/table/bill?order_id=${orderId}`}
-          className="mt-5 inline-flex min-h-12 cursor-pointer items-center justify-center rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
+        <button
+          type="button"
+          onClick={() => void mutate()}
+          className="mt-5 inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40 active:scale-[0.99]"
         >
-          Ir a la cuenta
-        </Link>
+          <RefreshCw className="h-4 w-4" />
+          Verificar de nuevo
+        </button>
       </div>
     </main>
   );

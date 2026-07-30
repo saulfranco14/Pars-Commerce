@@ -110,7 +110,15 @@ export function useBillData(
   options: UseBillDataOptions = {},
 ) {
   const refreshInterval = options.refreshIntervalMs ?? 3000;
-  const [cachedReceipt] = useState(() => readCachedReceipt(token, orderId));
+  // Browser storage cannot be read while the server renders. Waiting until the
+  // first client effect keeps the server and client HTML identical.
+  const [cachedReceipt, setCachedReceipt] = useState<BillResponse>();
+  const [cacheReady, setCacheReady] = useState(false);
+
+  useEffect(() => {
+    setCachedReceipt(readCachedReceipt(token, orderId));
+    setCacheReady(true);
+  }, [token, orderId]);
 
   const [fingerprint, setFingerprint] = useState<string>("");
   useEffect(() => {
@@ -119,7 +127,7 @@ export function useBillData(
   }, [token]);
 
   const key =
-    orderId && fingerprint
+    orderId && fingerprint && cacheReady
       ? [`/api/qr/table/${encodeURIComponent(orderId)}/bill`, fingerprint]
       : null;
 
@@ -152,5 +160,8 @@ export function useBillData(
   return {
     fingerprint,
     ...swr,
+    // Before the post-hydration cache read, preserve the skeleton instead of
+    // rendering an error state with server/client-divergent data.
+    isLoading: !cacheReady || swr.isLoading,
   };
 }

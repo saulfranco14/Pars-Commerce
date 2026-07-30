@@ -31,14 +31,17 @@ Orden de la información:
 1. Confirmación breve del pago.
 2. Seguimiento del pedido y mensaje de actualización automática.
 3. Comprobante digital descargable dentro del mismo flujo.
-4. Detalle de compra plegable.
+4. Carrusel de recompra con `ProductTile` y detalle en `ProductDetailSheet`.
+5. Detalle de compra plegable.
 
 Reglas:
 
 - El seguimiento siempre aparece antes que las recomendaciones.
-- No desviar al cliente al sitio público desde un comprobante. Cualquier
-  siguiente compra se diseña como un flujo separado, nunca como un carrusel
-  recortado dentro de esta pantalla.
+- El carrusel reutiliza `ProductTile`, el patrón ya probado del menú QR:
+  foto cuadrada, nombre, precio y botón `+` visible. No crear cards anchas ni
+  enlaces que saquen al usuario del flujo.
+- Al tocar una tarjeta, abrir `ProductDetailSheet` dentro de la misma UI; al
+  agregar, guardar el producto para una nueva compra y confirmar con un toast.
 - El comprobante es una tarjeta visible con folio, total, método, fecha y un
   botón de descarga; no una acción escondida o un enlace externo.
 - El detalle queda abierto antes de pagar y plegado después del pago.
@@ -51,3 +54,11 @@ Implementación canónica actual:
 - `src/app/q/[token]/order/OrderTicketScreen.tsx`
 - `src/features/qr/components/order-ticket/PostPurchaseRecommendations.tsx`
 - `src/features/qr/components/order-tracker/PickupTrackerCard.tsx`
+
+## Patrón: mesa con pedido activo
+
+Al volver a una mesa que ya tiene pedido, iniciar en recompra: un CTA azul de
+56 px, **"Pedir algo más"**, abre el menú completo de forma inequívoca. Debajo
+quedan las sugerencias y la fila **"Vuelve a pedir"** para repetir una ronda en
+un toque. En el menú abierto, el retorno a sugerencias es una tarjeta táctil de
+48 px; nunca un enlace pequeño de "Ocultar".

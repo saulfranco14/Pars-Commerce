@@ -91,7 +91,9 @@ export function OrderTrackerCard({
   // Collapsed by default: the stepper + total (the glanceable part) stay
   // visible, and the item detail expands on demand — giving the menu below
   // more room without hiding the customer's status.
-  const [showDetails, setShowDetails] = useState(false);
+  // Products are shown immediately on mobile; the header still lets a user
+  // collapse a long order after reviewing it.
+  const [showDetails, setShowDetails] = useState(true);
 
   const paid = orderStatus === "paid";
 

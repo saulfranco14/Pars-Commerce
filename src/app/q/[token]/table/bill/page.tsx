@@ -16,6 +16,7 @@ import { CustomerPayModal } from "@/features/qr/components/payment/CustomerPayMo
 import { CustomerMergeSheet } from "@/features/qr/components/customer/CustomerMergeSheet";
 import { MergeRequestBanner } from "@/features/qr/components/table/MergeRequestBanner";
 import { PaymentReceipt } from "@/features/qr/components/payment/PaymentReceipt";
+import { OrderReceiptCard } from "@/features/qr/components/order-ticket/OrderReceiptCard";
 
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { getLastOrderId } from "@/features/qr/helpers/deviceFingerprint";
@@ -147,6 +148,14 @@ export default function TableBillPage() {
           onClose={paymentFlow.dismissPending}
           onRefresh={refresh}
           refreshing={refreshing}
+          showSecondaryAction={false}
+        />
+        <BillSummary
+          items={data.items}
+          devices={data.devices}
+          groups={data.groups}
+          currentDeviceId={data.my_device_id}
+          canPay={false}
         />
       </main>
     );
@@ -173,6 +182,14 @@ export default function TableBillPage() {
           }}
           onRefresh={refresh}
           refreshing={refreshing}
+          showSecondaryAction={false}
+        />
+        <BillSummary
+          items={data.items}
+          devices={data.devices}
+          groups={data.groups}
+          currentDeviceId={data.my_device_id}
+          canPay={false}
         />
         <p className="max-w-md text-center text-xs text-muted-foreground">
           Alguien más de esta mesa ya marcó el pago. Esperamos la
@@ -284,6 +301,17 @@ export default function TableBillPage() {
           )}
       </div>
     );
+  } else {
+    footer = (
+      <button
+        type="button"
+        onClick={goToQrRoot}
+        className="flex min-h-13.5 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
+      >
+        <RotateCcw className="h-5 w-5" />
+        Ordenar de nuevo
+      </button>
+    );
   }
 
   return (
@@ -373,19 +401,20 @@ export default function TableBillPage() {
 
         {isPaid ? (
           <>
+            <OrderReceiptCard
+              businessName={data.tenant?.name ?? "Comprobante"}
+              orderId={data.order.id}
+              orderNumber={null}
+              amount={Number(data.order.paid_total || data.order.total)}
+              paidAt={data.order.created_at}
+              paymentMethod={data.order.payment_method}
+              itemCount={data.items.length}
+            />
             <Notification
               tone="success"
               title="¡Cuenta pagada por completo!"
               message="Gracias por tu visita."
             />
-            <button
-              type="button"
-              onClick={goToQrRoot}
-              className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
-            >
-              <RotateCcw className="h-4 w-4 text-muted-foreground" />
-              Ordenar de nuevo
-            </button>
           </>
         ) : inSplitPicker ? (
           <BillSplitSection

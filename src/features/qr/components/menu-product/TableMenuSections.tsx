@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronUp, Search, X } from "lucide-react";
+import { PanelTopClose, Search, X } from "lucide-react";
 
 import { BrandImage } from "@/features/qr/components/BrandImage";
 import { MenuPeekRow } from "@/features/qr/components/menu-product/MenuPeekRow";
@@ -135,6 +135,14 @@ export function TableMenuSections({
           products. No lone button over empty space. */}
       {!expanded && (
         <div className="space-y-3">
+          <MenuPeekRow
+            products={peekProducts}
+            onAdd={onAdd}
+            onOpenDetail={setDetail}
+            onExpand={() => setExpanded(true)}
+            tenantLogoUrl={tenantLogoUrl}
+            tenantName={tenantName}
+          />
           {reorderProducts && reorderProducts.length > 0 && (
             <ReorderRow
               products={reorderProducts}
@@ -144,14 +152,6 @@ export function TableMenuSections({
               tenantName={tenantName}
             />
           )}
-          <MenuPeekRow
-            products={peekProducts}
-            onAdd={onAdd}
-            onOpenDetail={setDetail}
-            onExpand={() => setExpanded(true)}
-            tenantLogoUrl={tenantLogoUrl}
-            tenantName={tenantName}
-          />
         </div>
       )}
 
@@ -164,12 +164,12 @@ export function TableMenuSections({
         <button
           type="button"
           onClick={() => setExpanded(false)}
-          className="mb-3 flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl bg-border-soft/50 px-3 text-left transition-colors hover:bg-border-soft active:scale-[0.99]"
+          className="mb-3 flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 text-left shadow-sm transition-colors hover:border-accent/40 hover:bg-accent/5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
         >
           <span className="text-sm font-bold text-foreground">Menú</span>
           <span className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-            Ocultar
-            <ChevronUp className="h-4 w-4" />
+            Volver a sugerencias
+            <PanelTopClose className="h-4 w-4" strokeWidth={2.5} />
           </span>
         </button>
       )}

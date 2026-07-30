@@ -249,6 +249,8 @@ export function MesaDetailContent({
               busyPaymentId={live.busyPaymentId}
               onConfirm={live.confirmPayment}
               onReject={live.rejectPayment}
+              onRefresh={() => void live.mutate()}
+              refreshing={live.isValidating}
             />
           )}
 

@@ -11,6 +11,7 @@ import { CustomerPayModal } from "@/features/qr/components/payment/CustomerPayMo
 import { PaymentReceipt } from "@/features/qr/components/payment/PaymentReceipt";
 import { PickupTrackerCard } from "@/features/qr/components/order-tracker/PickupTrackerCard";
 import { OrderReceiptCard } from "@/features/qr/components/order-ticket/OrderReceiptCard";
+import { PostPurchaseRecommendations } from "@/features/qr/components/order-ticket/PostPurchaseRecommendations";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { useBillData } from "@/features/qr/hooks/useBillData";
 import { usePaymentFlow } from "@/features/qr/hooks/usePaymentFlow";
@@ -257,6 +258,15 @@ export function OrderTicketScreen({
             paidAt={data.order.created_at}
             paymentMethod={data.order.payment_method}
             itemCount={data.items.length}
+          />
+        )}
+
+        {isPaid && data.tenant && (
+          <PostPurchaseRecommendations
+            tenantId={data.tenant.id}
+            tenantName={data.tenant.name}
+            tenantLogoUrl={data.tenant.logo_url}
+            purchasedProductIds={data.items.map((item) => item.product_id)}
           />
         )}
 
