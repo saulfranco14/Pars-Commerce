@@ -37,6 +37,7 @@ export function PendingPaymentsCard({
   refreshing = false,
 }: PendingPaymentsCardProps) {
   if (payments.length === 0) return null;
+  const actionsLocked = busyPaymentId !== null;
 
   return (
     <section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -58,7 +59,7 @@ export function PendingPaymentsCard({
           <button
             type="button"
             onClick={onRefresh}
-            disabled={refreshing}
+            disabled={refreshing || actionsLocked}
             className="inline-flex min-h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-amber-300 bg-surface px-3 text-xs font-bold text-amber-900 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
@@ -92,12 +93,12 @@ export function PendingPaymentsCard({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                 <button
                   type="button"
                   onClick={() => onReject(p.id)}
-                  disabled={isBusy}
-                  className={adminActionButtonDanger}
+                  disabled={actionsLocked}
+                  className={`${adminActionButtonDanger} w-full justify-center sm:w-auto`}
                 >
                   <X className="h-4 w-4" />
                   Rechazar
@@ -105,8 +106,8 @@ export function PendingPaymentsCard({
                 <button
                   type="button"
                   onClick={() => onConfirm(p.id)}
-                  disabled={isBusy}
-                  className={adminActionButtonConfirm}
+                  disabled={actionsLocked}
+                  className={`${adminActionButtonConfirm} w-full justify-center sm:w-auto`}
                 >
                   {isBusy ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

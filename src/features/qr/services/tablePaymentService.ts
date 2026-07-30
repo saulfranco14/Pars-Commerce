@@ -133,17 +133,20 @@ export async function createPaymentIntent(
     deviceStatus = device?.fulfillment_status ?? null;
   }
 
-  // Payment gate: if we know the paying person, gate on their state; otherwise
-  // fall back to the order-level summary (derived from all people).
+  const requestedGroupId = input.groupId ?? null;
+
+  // A full-table payment must wait for EVERY person. A group payment can use
+  // the paying person's readiness, but only after that group already exists.
+  // Never let a ready device materialize and pay the entire table's balance.
   if (gateOnReady) {
-    if (deviceStatus !== null) {
-      if (deviceStatus !== "ready") return NOT_READY_ERROR;
-    } else if (order.fulfillment_status !== "ready") {
-      return NOT_READY_ERROR;
-    }
+    const canPayTargetGroup =
+      requestedGroupId !== null && deviceStatus === "ready";
+    const canPayWholeOrder =
+      requestedGroupId === null && order.fulfillment_status === "ready";
+    if (!canPayTargetGroup && !canPayWholeOrder) return NOT_READY_ERROR;
   }
 
-  let targetGroupId = input.groupId ?? null;
+  let targetGroupId = requestedGroupId;
 
   if (!targetGroupId) {
     // Pay the whole order: materialize a single "Cuenta total" group.

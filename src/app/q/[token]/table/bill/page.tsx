@@ -217,7 +217,8 @@ export default function TableBillPage() {
     data.my_fulfillment_status != null
       ? data.my_fulfillment_status === "ready"
       : data.order.fulfillment_status === "ready";
-  const isReady = isPaid || myReady;
+  const tableReady = data.order.fulfillment_status === "ready";
+  const isReady = isPaid || tableReady;
 
   // Some lines can be ready while others aren't (a drink comes out before a
   // service). Distinguish that from "nothing has started yet" so the banner
@@ -232,8 +233,13 @@ export default function TableBillPage() {
   // the "Confirmar división" CTA lives in the fixed footer below.
   const inSplitPicker = !isPaid && splitEnabled && canSplit;
 
-  const showPay = !isPaid && !hasSplitGroups && hasItems && isReady;
+  const showPay = !isPaid && !hasSplitGroups && hasItems && tableReady;
   const showSplitButton = !isPaid && hasItems && canSplit;
+  const showPersonalSplit =
+    !isPaid && !hasSplitGroups && hasItems && canSplit && myReady && !tableReady;
+  const myItemsTotal = data.items
+    .filter((item) => item.added_by_device_id === data.my_device_id)
+    .reduce((sum, item) => sum + Number(item.subtotal), 0);
 
   /* ---------- Footer (fixed) — CTA stays visible regardless of list length -- */
   let footer: React.ReactNode = null;
@@ -267,9 +273,16 @@ export default function TableBillPage() {
             Pagar {formatCurrency(data.order.balance_due)}
           </button>
         )}
-        <div
-          className={`grid gap-2 ${showSplitButton ? "grid-cols-2" : "grid-cols-1"}`}
-        >
+        {showPersonalSplit && (
+          <Link
+            href={`/q/${token}/table/bill?order_id=${orderId}&split=1`}
+            className="flex min-h-13.5 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
+          >
+            <CreditCard className="h-5 w-5" />
+            Pagar mi parte · {formatCurrency(myItemsTotal)}
+          </Link>
+        )}
+        <div className="grid grid-cols-1 gap-2">
           <Link
             href={`/q/${token}`}
             className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
@@ -387,6 +400,14 @@ export default function TableBillPage() {
                 ? `${readyItemCount} de ${data.items.length} productos ya están listos. Revisa el detalle abajo — podrás pagar en cuanto estén todos.`
                 : "El negocio está preparando tu pedido. Podrás pagar en cuanto lo marque como listo."
             }
+          />
+        )}
+
+        {!isPaid && myReady && !tableReady && hasItems && (
+          <Notification
+            tone="info"
+            title="Tu parte estÃ¡ lista"
+            message="La mesa sigue en preparaciÃ³n. Puedes dividir la cuenta y pagar sÃ³lo tus productos."
           />
         )}
 

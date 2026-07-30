@@ -53,6 +53,8 @@ export function PerPersonFulfillmentCard({
   const hasDevices = devices.length > 0;
   const allReady =
     hasDevices && devices.every((d) => d.fulfillment_status === "ready");
+  const actionsLocked =
+    busyAll || busyDeviceId !== null || busyItemId !== null;
 
   return (
     <section className="rounded-xl border border-border bg-surface p-4">
@@ -69,18 +71,18 @@ export function PerPersonFulfillmentCard({
 
       {/* Whole-table shortcut */}
       {hasDevices && (
-        <div className="mt-3 flex items-center justify-between gap-2 rounded-lg bg-border-soft/50 px-3 py-2">
+        <div className="mt-3 rounded-lg bg-border-soft/50 p-3">
           <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
             <Users className="h-3.5 w-3.5" />
             Toda la mesa
           </span>
-          <div className="flex gap-2">
+          <div className="mt-3">
             {!allReady ? (
               <button
                 type="button"
                 onClick={() => onAdvanceAll("ready")}
-                disabled={busyAll}
-                className={adminActionButtonPrimary}
+                disabled={actionsLocked}
+                className={`${adminActionButtonPrimary} w-full justify-center`}
               >
                 {busyAll ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -93,8 +95,8 @@ export function PerPersonFulfillmentCard({
               <button
                 type="button"
                 onClick={() => onAdvanceAll("in_progress")}
-                disabled={busyAll}
-                className={adminActionButtonSecondary}
+                disabled={actionsLocked}
+                className={`${adminActionButtonSecondary} w-full justify-center`}
               >
                 <Undo2 className="h-4 w-4" />
                 Regresar todo
@@ -143,8 +145,8 @@ export function PerPersonFulfillmentCard({
                   <button
                     type="button"
                     onClick={() => onAdvanceDevice(device.id, "in_progress")}
-                    disabled={deviceBusy}
-                    className={adminActionButtonSecondary}
+                    disabled={actionsLocked || deviceBusy}
+                    className={`${adminActionButtonSecondary} w-full justify-center sm:w-auto`}
                   >
                     {deviceBusy ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -170,19 +172,19 @@ export function PerPersonFulfillmentCard({
                   return (
                     <div
                       key={item.id}
-                      className="flex flex-wrap items-center gap-2 rounded-lg bg-border-soft/30 px-2.5 py-1.5"
+                      className="flex flex-col items-stretch gap-2 rounded-lg bg-border-soft/30 px-2.5 py-2 sm:flex-row sm:items-center"
                     >
                       <p className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
                         {item.quantity}× {item.product_name}
                       </p>
                       <StatusBadge tone={itemMeta.tone} label={itemMeta.label} compact />
-                      <div className="flex gap-1.5">
+                      <div className="flex w-full gap-1.5 sm:w-auto">
                         {itemStatus === "received" && (
                           <button
                             type="button"
                             onClick={() => onAdvanceItem(item.id, "in_progress")}
-                            disabled={itemBusy}
-                            className={adminActionButtonPrimary}
+                            disabled={actionsLocked || itemBusy}
+                            className={`${adminActionButtonPrimary} w-full justify-center`}
                           >
                             {itemBusy ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -197,8 +199,8 @@ export function PerPersonFulfillmentCard({
                             <button
                               type="button"
                               onClick={() => onAdvanceItem(item.id, "received")}
-                              disabled={itemBusy}
-                              className={adminActionButtonSecondary}
+                              disabled={actionsLocked || itemBusy}
+                              className={`${adminActionButtonSecondary} flex-1 justify-center sm:flex-none`}
                               aria-label="Regresar a recibido"
                             >
                               <Undo2 className="h-3.5 w-3.5" />
@@ -206,8 +208,8 @@ export function PerPersonFulfillmentCard({
                             <button
                               type="button"
                               onClick={() => onAdvanceItem(item.id, "ready")}
-                              disabled={itemBusy}
-                              className={adminActionButtonPrimary}
+                              disabled={actionsLocked || itemBusy}
+                              className={`${adminActionButtonPrimary} flex-1 justify-center sm:flex-none`}
                             >
                               {itemBusy ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -222,8 +224,8 @@ export function PerPersonFulfillmentCard({
                           <button
                             type="button"
                             onClick={() => onAdvanceItem(item.id, "in_progress")}
-                            disabled={itemBusy}
-                            className={adminActionButtonSecondary}
+                            disabled={actionsLocked || itemBusy}
+                            className={`${adminActionButtonSecondary} w-full justify-center`}
                           >
                             {itemBusy ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
