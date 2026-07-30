@@ -200,7 +200,7 @@ export async function GET(request: Request, context: RouteContext) {
         : order.status
     : order.status;
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     order: {
       id: order.id,
       order_number: order.order_number ?? null,
@@ -231,4 +231,16 @@ export async function GET(request: Request, context: RouteContext) {
     incoming_merge_request: incomingPayload,
     outgoing_merge_request: outgoingPayload,
   });
+
+  // A paid + ready receipt is terminal. Keep a short private browser cache so
+  // reloads/back-navigation do not recalculate the aggregate, while preventing
+  // shared/CDN caches from serving one customer's receipt to another.
+  if (
+    groupStatus === "paid" &&
+    (order.fulfillment_status ?? "received") === "ready"
+  ) {
+    response.headers.set("Cache-Control", "private, max-age=300");
+  }
+
+  return response;
 }

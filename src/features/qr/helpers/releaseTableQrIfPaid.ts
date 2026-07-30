@@ -51,7 +51,9 @@ export async function releaseTableQrIfPaid(
   await admin
     .from("qr_codes")
     .update({
-      current_order_id: null,
+      // Single-use tickets become read-only but keep the order pointer so the
+      // same unguessable token can reopen its historical receipt.
+      current_order_id: isSingleUse ? orderId : null,
       updated_at: now,
       ...(isSingleUse ? { is_active: false, archived_at: now } : {}),
     })

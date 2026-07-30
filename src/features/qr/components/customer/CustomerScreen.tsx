@@ -62,7 +62,7 @@ export function CustomerScreen({
     ) : null;
 
   return (
-    <div className="min-h-525vh bg-background">
+    <div className="min-h-dvh bg-background">
       <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col">
         {/* Compact accent header */}
         <header

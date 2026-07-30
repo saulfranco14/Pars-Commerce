@@ -73,12 +73,44 @@ interface UseBillDataOptions {
   refreshIntervalMs?: number;
 }
 
+function receiptCacheKey(token: string, orderId: string): string {
+  return `tlaco:receipt:${token}:${orderId}`;
+}
+
+function readCachedReceipt(token: string, orderId: string | null): BillResponse | undefined {
+  if (!orderId || typeof window === "undefined") return undefined;
+  try {
+    const raw = window.localStorage.getItem(receiptCacheKey(token, orderId));
+    return raw ? (JSON.parse(raw) as BillResponse) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function cacheTerminalReceipt(token: string, data: BillResponse): void {
+  if (
+    typeof window === "undefined" ||
+    data.order.status !== "paid" ||
+    data.order.fulfillment_status !== "ready"
+  )
+    return;
+  try {
+    window.localStorage.setItem(
+      receiptCacheKey(token, data.order.id),
+      JSON.stringify(data),
+    );
+  } catch {
+    // The live receipt remains available even when browser storage is blocked.
+  }
+}
+
 export function useBillData(
   token: string,
   orderId: string | null,
   options: UseBillDataOptions = {},
 ) {
   const refreshInterval = options.refreshIntervalMs ?? 3000;
+  const [cachedReceipt] = useState(() => readCachedReceipt(token, orderId));
 
   const [fingerprint, setFingerprint] = useState<string>("");
   useEffect(() => {
@@ -98,7 +130,23 @@ export function useBillData(
       if (!res.ok) throw new Error("No se pudo cargar la cuenta");
       return res.json();
     },
-    { refreshInterval, dedupingInterval: refreshInterval },
+    {
+      // The full bill is an expensive aggregate. Once payment is final it is
+      // immutable here; live fulfillment moves to the lightweight QR pulse.
+      refreshInterval: (latest) =>
+        latest &&
+        ["paid", "completed", "cancelled"].includes(latest.order.status)
+          ? 0
+          : refreshInterval,
+      dedupingInterval: refreshInterval,
+      fallbackData: cachedReceipt,
+      // A terminal receipt is immutable for the customer. Reuse its local copy
+      // on re-entry instead of paying for the full aggregate again.
+      revalidateOnMount: !cachedReceipt,
+      revalidateIfStale: !cachedReceipt,
+      revalidateOnFocus: false,
+      onSuccess: (latest) => cacheTerminalReceipt(token, latest),
+    },
   );
 
   return {

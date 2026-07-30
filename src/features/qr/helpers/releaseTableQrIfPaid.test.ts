@@ -84,7 +84,7 @@ describe("releaseTableQrIfPaid", () => {
     const write = qrUpdate(db);
     expect(write).toBeDefined();
     expect(write?.values).toMatchObject({
-      current_order_id: null,
+      current_order_id: "o1",
       is_active: false,
     });
   });

@@ -31,14 +31,18 @@ export async function GET(request: Request) {
   // Both 'table' and single-use 'order' tickets carry a live order to poll.
   const { data: qrCode } = await admin
     .from("qr_codes")
-    .select("id, current_order_id, kind")
+    .select("id, current_order_id, kind, is_active, archived_at")
     .eq("token", token)
     .in("kind", ["table", "order"])
-    .is("archived_at", null)
-    .eq("is_active", true)
-    .single();
+    .maybeSingle();
 
   if (!qrCode) {
+    return NextResponse.json({ error: "QR no encontrado" }, { status: 404 });
+  }
+  if (
+    qrCode.kind !== "order" &&
+    (qrCode.is_active !== true || qrCode.archived_at !== null)
+  ) {
     return NextResponse.json({ error: "QR no encontrado" }, { status: 404 });
   }
 
@@ -52,6 +56,24 @@ export async function GET(request: Request) {
     .select("id, status, fulfillment_status, total")
     .eq("id", orderId)
     .single();
+
+  // A single-use ticket only needs preparation progress. Keep this hot path at
+  // two small reads (QR + order): no device counts or merge queries. Payment
+  // may happen before preparation, so "paid" is still live until it is ready.
+  if (qrCode.kind === "order" && order) {
+    const fulfillmentStatus = order.fulfillment_status ?? "received";
+    return NextResponse.json({
+      active:
+        order.status !== "cancelled" &&
+        !(order.status === "paid" && fulfillmentStatus === "ready"),
+      order: {
+        id: order.id,
+        status: order.status,
+        fulfillment_status: fulfillmentStatus,
+        total: Number(order.total ?? 0),
+      },
+    });
+  }
 
   if (!order || ["paid", "cancelled"].includes(order.status)) {
     return NextResponse.json({ active: false, order: order ?? null });

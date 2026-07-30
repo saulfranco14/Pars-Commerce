@@ -20,6 +20,8 @@ interface QrResolveResponse {
   order?: {
     id: string;
     status: string;
+    fulfillment_status?: string;
+    total?: number;
   };
   menu?: Array<{
     id: string;
@@ -127,9 +129,10 @@ export default async function QrPage({ params }: QrPageProps) {
   }
 
   // Single-use staff 'order' ticket: the order is already built — show the lean
-  // review-and-pay screen. A spent/closed ticket resolves active:false.
+  // review-and-pay screen. A spent ticket keeps its order as a read-only
+  // receipt even though it resolves active:false.
   if (session.kind === "order") {
-    if (session.active === false || !session.order) {
+    if (!session.order) {
       return (
         <QrUnavailable message="Este pedido ya fue pagado o ya no está disponible." />
       );
@@ -139,6 +142,7 @@ export default async function QrPage({ params }: QrPageProps) {
         token={token}
         tenant={session.tenant}
         orderId={session.order.id}
+        initialOrder={session.order}
       />
     );
   }

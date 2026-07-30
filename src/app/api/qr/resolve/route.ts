@@ -34,11 +34,21 @@ export async function GET(request: Request) {
       "id, tenant_id, token, kind, label, table_capacity, preset_amount, preset_concept, allow_amount_override, is_active, archived_at, current_order_id",
     )
     .eq("token", token)
-    .is("archived_at", null)
-    .eq("is_active", true)
-    .single();
+    .maybeSingle();
 
   if (qrError || !qrCode) {
+    return NextResponse.json({ error: "QR no encontrado" }, { status: 404 });
+  }
+
+  // A spent single-use order QR is no longer actionable, but its token remains
+  // the customer's receipt key. Other inactive QR kinds stay unavailable.
+  const isHistoricalOrderTicket =
+    qrCode.kind === "order" &&
+    (qrCode.is_active !== true || qrCode.archived_at !== null);
+  if (
+    !isHistoricalOrderTicket &&
+    (qrCode.is_active !== true || qrCode.archived_at !== null)
+  ) {
     return NextResponse.json({ error: "QR no encontrado" }, { status: 404 });
   }
 
@@ -55,7 +65,7 @@ export async function GET(request: Request) {
     );
   }
 
-  if (!tenant.public_store_enabled) {
+  if (!tenant.public_store_enabled && !isHistoricalOrderTicket) {
     return NextResponse.json(
       { error: "La tienda pública de este negocio no está activa" },
       { status: 403 },
@@ -71,14 +81,39 @@ export async function GET(request: Request) {
   if (qrCode.kind === "table" || qrCode.kind === "order") {
     const isSingleUseTicket = qrCode.kind === "order";
     let orderId = qrCode.current_order_id as string | null;
+    let existingOrder: {
+      id: string;
+      status: string;
+      fulfillment_status: string | null;
+      source: string | null;
+      subtotal: number | null;
+      total: number | null;
+      paid_total: number | null;
+      balance_due: number | null;
+    } | null = null;
+    if (!orderId && isSingleUseTicket) {
+      // Compatibility with tickets archived before current_order_id was
+      // preserved: the order still has the immutable qr_code_id relation.
+      const { data } = await admin
+        .from("orders")
+        .select(
+          "id, status, fulfillment_status, source, subtotal, total, paid_total, balance_due",
+        )
+        .eq("qr_code_id", qrCode.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      orderId = data?.id ?? null;
+    }
     if (orderId) {
-      const { data: existingOrder } = await admin
+      const { data } = await admin
         .from("orders")
         .select(
           "id, status, fulfillment_status, source, subtotal, total, paid_total, balance_due",
         )
         .eq("id", orderId)
-        .single();
+        .maybeSingle();
+      existingOrder = data;
 
       // Un ticket pagado por adelantado se sigue abriendo mientras el trabajo no
       // termine: ahí el cliente ve su avance. Para una MESA esto no aplica —
@@ -88,20 +123,35 @@ export async function GET(request: Request) {
         existingOrder?.status === "paid" &&
         !requiresReadyBeforePayment(existingOrder.source) &&
         (existingOrder.fulfillment_status ?? "received") !== "ready";
+      const hasHistoricalReceipt =
+        isSingleUseTicket && existingOrder?.status === "paid";
 
       if (
         !existingOrder ||
         (["paid", "cancelled"].includes(existingOrder.status) &&
-          !stillFollowable)
+          !stillFollowable &&
+          !hasHistoricalReceipt)
       ) {
         orderId = null;
       } else {
         response.order = existingOrder;
+        if (isSingleUseTicket) {
+          response.active =
+            existingOrder.status !== "cancelled" &&
+            (existingOrder.status !== "paid" || stillFollowable);
+        }
       }
     }
 
     if (!orderId && isSingleUseTicket) {
       return NextResponse.json({ ...response, active: false });
+    }
+
+    if (isSingleUseTicket) {
+      // Ticket screens do not consume the table menu/device/merge payload.
+      // Returning here avoids all of those reads for both live and historical
+      // receipts.
+      return NextResponse.json(response);
     }
 
     if (!orderId) {
