@@ -103,7 +103,7 @@ export function ReceiptPreview({
               alt=""
               width={72}
               height={72}
-              className="h-[72px] w-[72px] object-contain"
+              className="h-18 w-18 object-contain"
             />
           </div>
         )}

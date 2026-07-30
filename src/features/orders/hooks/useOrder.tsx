@@ -18,6 +18,7 @@ import type {
   TeamMemberOption,
 } from "@/features/orders/interfaces/orderDetail";
 import { teamKey } from "@/features/equipo/helpers/swrKeys";
+import { ORDER_DETAIL_REFRESH_MS } from "@/features/orders/constants/refresh";
 import type { OrderContextType } from "@/features/orders/interfaces/orderContext";
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -48,9 +49,11 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     : null;
   const teamKeyValue = activeTenant?.id ? teamKey(activeTenant.id) : null;
 
+  // Se refresca solo: el cliente puede declarar su pago desde el celular
+  // mientras el mostrador tiene este detalle abierto.
   const { data: orderData, error: orderError, isLoading, mutate } = useSWR<
     OrderDetail | null
-  >(orderKey, swrFetcher);
+  >(orderKey, swrFetcher, { refreshInterval: ORDER_DETAIL_REFRESH_MS });
 
   const { data: teamData } = useSWR<TeamMember[]>(teamKeyValue, swrFetcher);
 

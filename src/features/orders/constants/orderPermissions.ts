@@ -1,7 +1,5 @@
-/**
- * Espejo de `20260727000001_orders_role_scoping.sql`. Si aquí se agrega uno,
- * allá hay que sembrarlo o nadie lo tendrá nunca.
- */
+// Mirrors `20260727000001_orders_role_scoping.sql`: a permission added here
+// must be seeded there or nobody will ever hold it.
 export const ORDER_PERMISSIONS = {
   read: "orders.read",
   write: "orders.write",

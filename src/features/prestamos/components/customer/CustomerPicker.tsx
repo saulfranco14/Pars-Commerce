@@ -53,7 +53,7 @@ export function CustomerPicker({ activeTenantId, selected, onSelect, onClear, er
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
           autoFocus
-          className="input-form w-full min-h-[44px] rounded-xl border border-border bg-surface pl-9 pr-3 py-2.5 text-base placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+          className="input-form w-full min-h-11 rounded-xl border border-border bg-surface pl-9 pr-3 py-2.5 text-base placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
         />
       </div>
 
@@ -207,7 +207,7 @@ export function CustomerPicker({ activeTenantId, selected, onSelect, onClear, er
         <button
           type="button"
           onClick={() => setSheetOpen(true)}
-          className="w-full flex items-center gap-3 min-h-[44px] rounded-xl border border-border bg-surface px-4 py-3 text-base text-muted hover:bg-border-soft transition-colors duration-150 cursor-pointer"
+          className="w-full flex items-center gap-3 min-h-11 rounded-xl border border-border bg-surface px-4 py-3 text-base text-muted hover:bg-border-soft transition-colors duration-150 cursor-pointer"
         >
           <Search className="h-4 w-4 shrink-0" aria-hidden />
           Buscar o crear cliente...

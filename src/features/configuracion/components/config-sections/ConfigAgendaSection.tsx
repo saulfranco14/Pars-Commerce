@@ -29,15 +29,8 @@ const DAYS_OPTIONS = [
   { value: "30", label: "1 mes" },
 ];
 
-/**
- * Ventana de recolección: si el cliente puede elegir hora, con cuánta
- * anticipación y hasta qué tan lejos.
- *
- * Muestra en vivo los chips que verá el cliente con la configuración actual.
- * Sin esa vista previa, "30 minutos de anticipación" es un número abstracto:
- * el dueño no tiene forma de saber que acaba de borrar la opción "en 15
- * minutos" de su propio sitio.
- */
+// Previews the chips the customer will see: without it, "30 minutes of lead
+// time" is an abstract number.
 export function ConfigAgendaSection({
   enabled,
   onEnabledChange,

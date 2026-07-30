@@ -198,7 +198,7 @@ export default function EditarServicioPage() {
         {fetchError}{" "}
         <Link
           href={`/dashboard/${tenantSlug}/servicios`}
-          className="inline-flex min-h-[44px] items-center gap-2 font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex min-h-11 items-center gap-2 font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver a servicios
@@ -216,7 +216,7 @@ export default function EditarServicioPage() {
       <div className="shrink-0 pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/servicios`}
-          className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver a servicios
@@ -253,7 +253,7 @@ export default function EditarServicioPage() {
                         type="text"
                         value={name}
                         onChange={handleNameChange}
-                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                         placeholder="Ej. Lavado básico"
                       />
                       {fieldErrors.name && (
@@ -274,7 +274,7 @@ export default function EditarServicioPage() {
                         type="text"
                         value={slug}
                         onChange={(e) => setSlug(e.target.value)}
-                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                         placeholder="lavado-basico"
                       />
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -301,7 +301,7 @@ export default function EditarServicioPage() {
                       inputMode="decimal"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="0.00"
                     />
                     {fieldErrors.price && (
@@ -323,7 +323,7 @@ export default function EditarServicioPage() {
                       inputMode="decimal"
                       value={costPrice}
                       onChange={(e) => setCostPrice(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="0.00"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -347,7 +347,7 @@ export default function EditarServicioPage() {
                       type="text"
                       value={sku}
                       onChange={(e) => setSku(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="Ej. SVC-001"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -389,7 +389,7 @@ export default function EditarServicioPage() {
                       inputMode="decimal"
                       value={commissionAmount}
                       onChange={(e) => setCommissionAmount(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="0.00"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -428,7 +428,7 @@ export default function EditarServicioPage() {
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       rows={2}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="Descripción del servicio"
                     />
                   </div>

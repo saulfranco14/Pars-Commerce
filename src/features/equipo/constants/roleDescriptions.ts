@@ -1,18 +1,6 @@
-/**
- * Qué podrá hacer una persona con el rol que le estás por dar.
- *
- * Antes era un `Record<nombreDelRol, string>`. El problema: un rol
- * personalizado se quedaba sin descripción, y si alguien editaba los permisos
- * de un rol de sistema el texto seguía diciendo lo de antes. Ahora la frase se
- * compone de los permisos REALES del rol, así que no puede despegarse de lo
- * que la autorización hace de verdad.
- *
- * Solo se nombran los permisos que cambian el trabajo diario de la persona.
- * Los de lectura (`*.read`) se omiten a propósito: listarlos convierte el hint
- * en un párrafo que nadie lee y esconde lo que sí importa.
- */
+// Composed from the role's real permissions, not its name, so custom roles get
+// a description and it can't drift from what authorization actually does.
 
-/** Nombres de los roles de sistema en español, para el selector. */
 export const ROLE_LABELS: Record<string, string> = {
   owner: "Propietario",
   member: "Colaborador",
@@ -20,23 +8,18 @@ export const ROLE_LABELS: Record<string, string> = {
   waiter: "Mesero",
 };
 
-/** El nombre en español si es un rol de sistema; si no, el nombre tal cual. */
 export function roleLabel(name: string): string {
   return ROLE_LABELS[name] ?? name;
 }
 
-/**
- * Permiso → capacidad. El orden del array manda: primero lo que la persona
- * hará todo el día, al final lo administrativo.
- */
+// Array order matters: daily work first, admin last.
 const CAPABILITIES: ReadonlyArray<readonly [permission: string, phrase: string]> =
   [
     ["order.take", "levantar pedidos"],
     ["orders.view_all", "ver todos los pedidos del negocio"],
     ["orders.view_assigned", "ver los pedidos que tenga asignados"],
     ["orders.write", "editar pedidos"],
-    // Sin "y" dentro de las frases: `joinPhrases` ya pone una al final, y dos
-    // seguidas ("... y asignar y reasignar pedidos") se leen mal.
+    // No "y" inside a phrase: `joinPhrases` adds the final one.
     ["orders.assign", "repartir pedidos entre el equipo"],
     ["orders.close", "cerrar o cancelar pedidos"],
     ["qr.fulfill", "avanzar la preparación (recibido → listo)"],
@@ -52,26 +35,18 @@ const CAPABILITIES: ReadonlyArray<readonly [permission: string, phrase: string]>
     ["settings.write", "cambiar la configuración del negocio"],
   ];
 
-/**
- * `orders.view_all` ya incluye lo que dice `orders.view_assigned`, así que
- * nombrar los dos produce "ver todos los pedidos y ver los que tenga
- * asignados", que se lee como una contradicción.
- */
+// `view_all` already covers `view_assigned`; naming both reads as a
+// contradiction.
 const SUPERSEDED: Record<string, string> = {
   "orders.view_all": "orders.view_assigned",
 };
 
-/** Une frases en una lista natural: "a, b y c". */
 function joinPhrases(phrases: string[]): string {
   if (phrases.length <= 1) return phrases[0] ?? "";
   return `${phrases.slice(0, -1).join(", ")} y ${phrases[phrases.length - 1]}`;
 }
 
-/**
- * Frase en español de lo que podrá hacer alguien con estos permisos.
- * El `owner` se describe aparte: enumerarle los casi treinta permisos no
- * informa de nada.
- */
+// `owner` is described apart: listing ~30 permissions informs nobody.
 export function describeRole(
   roleName: string,
   permissions: readonly string[],

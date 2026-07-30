@@ -2,18 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import {
-  Check,
-  ChevronDown,
-  Clock,
-  Loader2,
-  PackageCheck,
-  Receipt,
-} from "lucide-react";
+import { Check, ChevronDown, Loader2, Receipt } from "lucide-react";
 
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ConfettiBurst } from "@/features/qr/components/ConfettiBurst";
-import { getFulfillmentStatusMeta } from "@/features/qr/constants/fulfillmentStatusMeta";
+import {
+  FULFILLMENT_STEPS,
+  getFulfillmentStatusMeta,
+} from "@/features/qr/constants/fulfillmentStatusMeta";
 import {
   formatCurrency,
   formatRelativeTime,
@@ -21,7 +17,6 @@ import {
 } from "@/features/qr/helpers/format";
 
 import type { BillDevice, BillItem } from "@/features/qr/hooks/useBillData";
-import type { LucideIcon } from "lucide-react";
 
 interface OrderTrackerCardProps {
   items: BillItem[];
@@ -42,13 +37,6 @@ interface OrderTrackerCardProps {
 }
 
 type StepState = "done" | "active" | "pending";
-
-// Neutral, multi-business copy — NO food/restaurant labels or icons.
-const STEPS: { key: string; label: string; icon: LucideIcon }[] = [
-  { key: "received", label: "Recibido", icon: Receipt },
-  { key: "in_progress", label: "En proceso", icon: Clock },
-  { key: "ready", label: "Listo", icon: PackageCheck },
-];
 
 function stepStates(fulfillmentStatus: string, paid: boolean): StepState[] {
   if (paid) return ["done", "done", "done"];
@@ -190,12 +178,12 @@ export function OrderTrackerCard({
 
       {/* Journey stepper */}
       <div className="mt-3 flex items-center">
-        {STEPS.map((step, i) => {
+        {FULFILLMENT_STEPS.map((step, i) => {
           const state = states[i];
           const Icon = step.icon;
           return (
             <div
-              key={step.key}
+              key={step.status}
               className={`flex items-center ${i > 0 ? "flex-1" : ""}`}
             >
               {i > 0 && (
@@ -240,7 +228,7 @@ export function OrderTrackerCard({
                       glanceable cue without opening the detail. Pulses ONCE
                       right when a line just flipped to ready (Uber/Didi-style
                       delivery confirmation), then settles into a plain dot. */}
-                  {step.key === "in_progress" && hasPartialProgress && (
+                  {step.status === "in_progress" && hasPartialProgress && (
                     <span
                       aria-hidden
                       className={`absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-surface transition-transform duration-300 ${
@@ -255,7 +243,7 @@ export function OrderTrackerCard({
                   )}
                   {/* Confetti accent — mounted only during the one-shot flash,
                       unmounts right after so it never lingers or re-fires. */}
-                  {step.key === "in_progress" && justCompletedPulse && (
+                  {step.status === "in_progress" && justCompletedPulse && (
                     <ConfettiBurst />
                   )}
                 </span>
@@ -364,7 +352,7 @@ export function OrderTrackerCard({
       {!paid && (
         <Link
           href={`/q/${token}/table/bill?order_id=${orderId}`}
-          className="mt-4 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
+          className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
         >
           <Receipt className="h-4 w-4" />
           Ver cuenta completa

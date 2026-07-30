@@ -59,7 +59,7 @@ function DeviceLabel({
  */
 function PanelEcho({ beat }: { beat: HeroBeat }) {
   return (
-    <div className="w-full max-w-[264px]">
+    <div className="w-full max-w-66">
       {/* Flecha que conecta el celular con el panel: sin ella son dos tarjetas
           sueltas y se pierde el "esto pasó por lo que hizo tu cliente". */}
       <div className="flex flex-col items-center py-1.5" aria-hidden>

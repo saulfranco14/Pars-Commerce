@@ -123,7 +123,7 @@ export function SiteWebGeneralTab({
           <div className="flex items-center gap-3">
             <label
               htmlFor="publicStore"
-              className="flex min-h-[44px] min-w-[44px] shrink-0 cursor-pointer items-center justify-center"
+              className="flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center"
               aria-label="Activar tienda pública"
             >
               <input
@@ -154,7 +154,7 @@ export function SiteWebGeneralTab({
               href={`/sitio/${tenantSlug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 cursor-pointer"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 cursor-pointer"
             >
               <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
               Ver mi sitio

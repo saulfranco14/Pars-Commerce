@@ -29,7 +29,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <LandingNav />
-      <div className="h-[52px]" aria-hidden />
+      <div className="h-13" aria-hidden />
       <main>
         <LandingHero />
         <LandingLogos />

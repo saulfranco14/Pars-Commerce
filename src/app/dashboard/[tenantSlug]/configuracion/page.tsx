@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useId } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Check } from "lucide-react";
 import {
@@ -27,6 +27,8 @@ import { ConfigDireccionSection } from "@/features/configuracion/components/conf
 import { ConfigRecurrentesSection } from "@/features/configuracion/components/config-sections/ConfigRecurrentesSection";
 import { ConfigAgendaSection } from "@/features/configuracion/components/config-sections/ConfigAgendaSection";
 import { ConfigHorariosSection } from "@/features/configuracion/components/config-sections/ConfigHorariosSection";
+import { ConfigDispositivosSection } from "@/features/dispositivos/components/ConfigDispositivosSection";
+import { DEVICE_PERMISSIONS } from "@/features/dispositivos/constants/devicePermissions";
 import { readBusinessHours } from "@/features/configuracion/helpers/businessHours";
 import type { BusinessHours } from "@/features/configuracion/interfaces/businessHours";
 import { readPickupScheduling } from "@/features/checkout/helpers/pickupSchedule";
@@ -40,8 +42,6 @@ import type { RecurringPurchasesConfig } from "@/types/subscriptions";
 
 export default function ConfiguracionPage() {
   const formId = useId();
-  const params = useParams();
-  const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
   const can = usePermission();
   const setMemberships = useTenantStore((s) => s.setMemberships);
@@ -257,7 +257,7 @@ export default function ConfiguracionPage() {
       <div className="shrink-0 space-y-4 pb-4">
         <Link
           href="/dashboard"
-          className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver al inicio
@@ -364,6 +364,12 @@ export default function ConfiguracionPage() {
                 onMaxInstallmentsChange={setRcMaxInstallments}
               />
             )}
+            {activeTab === "dispositivos" && (
+              <ConfigDispositivosSection
+                tenantId={activeTenant.id}
+                canManage={can(DEVICE_PERMISSIONS.manage)}
+              />
+            )}
             {activeTab === "horarios" && (
               <ConfigHorariosSection
                 hours={businessHours}
@@ -402,17 +408,21 @@ export default function ConfiguracionPage() {
               />
             )}
           </div>
-          <FormSaveBar align="end">
+          {/* Las pantallas se aprueban al instante; un "Guardar" ahí solo
+              haría dudar de si el cambio se aplicó. */}
+          {activeTab !== "dispositivos" && (
+            <FormSaveBar align="end">
             <button
               type="submit"
               form={formId}
               disabled={loading}
-              className="inline-flex w-full min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto md:min-w-[140px]"
+              className="inline-flex w-full min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto md:min-w-35"
             >
               <Check className="h-4 w-4 shrink-0" aria-hidden />
               {loading ? "Guardando…" : "Guardar"}
-            </button>
-          </FormSaveBar>
+              </button>
+            </FormSaveBar>
+          )}
         </form>
       </div>
     </div>

@@ -84,7 +84,7 @@ export function SubcatalogSelect({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-labelledby={`${id}-label`}
-        className="flex min-h-[44px] w-full items-center justify-between gap-2 rounded-xl border border-border bg-surface px-3 py-2.5 text-left text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50"
+        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-border bg-surface px-3 py-2.5 text-left text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50"
       >
         <span className={value ? "text-foreground" : "text-muted"}>
           {displayValue}
@@ -108,7 +108,7 @@ export function SubcatalogSelect({
               aria-selected={opt.id === value}
               onMouseEnter={() => setHighlightIndex(i)}
               onClick={() => handleSelect(opt.id)}
-              className={`flex min-h-[44px] cursor-pointer items-center px-3 py-2.5 text-sm sm:min-h-[40px] sm:py-2 ${
+              className={`flex min-h-11 cursor-pointer items-center px-3 py-2.5 text-sm sm:min-h-10 sm:py-2 ${
                 i === highlightIndex
                   ? "bg-accent/10 text-foreground"
                   : "text-foreground hover:bg-border-soft/60"

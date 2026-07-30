@@ -9,14 +9,8 @@ import { StatusBadge } from "@/components/orders/StatusBadge";
 import { formatOrderDate } from "@/lib/formatDate";
 import { formatCurrency } from "@/features/qr/helpers/format";
 
-/**
- * El vínculo entre un pedido y sus complementos, en las dos direcciones.
- *
- * Importa mostrarlo porque el cobro de una mesa queda repartido en dos
- * pedidos: quien audite el total sin ver el vínculo concluiría que se cobró de
- * menos. Aparece en el padre (lista de complementos y suma) y en el hijo
- * (vuelta al original).
- */
+// A table's charge can be split across two orders; without this link an audit
+// would read it as undercharged.
 export function LinkedOrdersCard() {
   const { order } = useOrder();
   const params = useParams();

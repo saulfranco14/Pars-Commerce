@@ -28,7 +28,7 @@ export function TouchStepper({
   const btnClass = `flex shrink-0 items-center justify-center rounded-xl border border-border bg-surface-raised text-foreground transition-colors hover:bg-border-soft disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
     compact
       ? "h-9 w-9 text-sm"
-      : "min-h-(--touch-target,44px) min-w-(--touch-target,44px)"
+      : "min-h-212--touch-target,44px) min-w-(--touch-target,44px)"
   }`;
 
   return (

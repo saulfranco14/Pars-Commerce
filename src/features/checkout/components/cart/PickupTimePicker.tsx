@@ -15,17 +15,8 @@ import {
 
 import type { PickupTimePickerProps } from "@/features/checkout/interfaces/pickupTimePicker";
 
-/**
- * A qué hora pasa el cliente por su pedido.
- *
- * Chips primero y selector exacto solo si toca "Otra hora", que es el patrón
- * que ya usan las propinas: casi siempre la respuesta es una de las opciones
- * rápidas, y abrir con un `datetime-local` obliga a todo el mundo a pelearse
- * con un calendario para decir "en dos horas".
- *
- * Los presets que no caben en la ventana del negocio no se muestran, en vez de
- * mostrarse y rebotar al enviar.
- */
+// Presets first, exact picker only on demand — same pattern as tips. Presets
+// outside the business window are dropped instead of rejected on submit.
 export function PickupTimePicker({
   config,
   businessHours,

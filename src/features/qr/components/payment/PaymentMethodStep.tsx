@@ -131,7 +131,7 @@ export function PaymentMethodStep({
           <button
             type="button"
             onClick={onBack}
-            className="flex min-h-[56px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] transition-transform"
+            className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] transition-transform"
           >
             Elegir otro método de pago
           </button>
@@ -141,7 +141,7 @@ export function PaymentMethodStep({
           type="button"
           onClick={() => onConfirm(askPhone ? phone : undefined)}
           disabled={!canConfirm}
-          className="flex min-h-[56px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 transition-all"
+          className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 transition-all"
         >
           {loading ? (
             <>

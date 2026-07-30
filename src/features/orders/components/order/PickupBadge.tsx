@@ -8,10 +8,7 @@ import type { PickupBadgeProps } from "@/features/orders/interfaces/pickupBadge"
 
 const CLOSED_STATUSES = ["cancelled", "completed", "paid"];
 
-/**
- * Hora de recolección de un pedido. Se pinta en rojo si ya pasó y el pedido
- * sigue abierto: es el único caso que exige actuar.
- */
+// Red only when past due and still open — the case that demands action.
 export function PickupBadge({ scheduledFor, status, className = "" }: PickupBadgeProps) {
   if (!scheduledFor) return null;
 

@@ -73,7 +73,7 @@ export function PaymentLinkCard() {
         onToggle={(e) => setDesktopOpen((e.target as HTMLDetailsElement).open)}
         className="group hidden md:block [&>summary::-webkit-details-marker]:hidden"
       >
-        <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-2 px-4 py-2">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-4 py-2">
           <DesgloseSummary isPaid={isPaid} />
           <div className="flex shrink-0 items-center gap-2">
             {isPaid ? (
@@ -102,7 +102,7 @@ export function PaymentLinkCard() {
         onToggle={(e) => setMobileOpen((e.target as HTMLDetailsElement).open)}
         className="group border-t-0 md:hidden [&>summary::-webkit-details-marker]:hidden"
       >
-        <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-2 px-3 py-2">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2">
           <DesgloseSummary isPaid={isPaid} />
           <div className="flex shrink-0 items-center gap-2">
             {isPaid ? (
@@ -231,7 +231,7 @@ function DesgloseContent({
             <button
               type="button"
               onClick={onCopy}
-              className="inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
               title="Copiar link"
               aria-label={copied ? "Link copiado" : "Copiar link de pago"}
             >
@@ -251,7 +251,7 @@ function DesgloseContent({
               href={order.payment_link}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft hover:border-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft hover:border-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
               title="Abrir link en nueva pestaña"
               aria-label="Abrir link de pago en nueva pestaña"
             >

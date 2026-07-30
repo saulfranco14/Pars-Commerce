@@ -57,7 +57,7 @@ export function MesasDemoSimulator() {
                 <button
                   type="button"
                   onClick={restart}
-                  className="group inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-surface px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+                  className="group inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-surface px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
                 >
                   <RotateCcw className="h-4 w-4" aria-hidden />
                   Ver el flujo otra vez
@@ -66,7 +66,7 @@ export function MesasDemoSimulator() {
                 <button
                   type="button"
                   onClick={next}
-                  className="group inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background sm:w-auto"
+                  className="group inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background sm:w-auto"
                 >
                   {step.action}
                   <ArrowRight
@@ -95,7 +95,7 @@ export function MesasDemoSimulator() {
                   type="button"
                   onClick={() => goTo(i)}
                   aria-current={active ? "step" : undefined}
-                  className={`flex w-full min-h-[52px] cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background ${
+                  className={`flex w-full min-h-13 cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background ${
                     active
                       ? "border-accent bg-accent/5"
                       : "border-border bg-surface hover:border-accent/40"

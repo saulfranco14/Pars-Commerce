@@ -1,12 +1,5 @@
-/**
- * Orden ligada: recoge "lo que faltó" de un pedido ya pagado.
- *
- * Lo que hace que funcione es una OMISIÓN: el hijo no escribe
- * `qr_codes.current_order_id` ni copia `qr_code_id`, así que la mesa no se
- * re-ocupa. `/api/qr/resolve` busca el pedido activo por `current_order_id`
- * (nunca por `qr_code_id`) y `releaseTableQrIfPaid` se rinde si no apunta a
- * ese pedido. No le pongas `qr_code_id` al hijo.
- */
+// Addendum for an already-paid order. The child must NOT set `qr_code_id`
+// nor `qr_codes.current_order_id`, or the table gets re-occupied.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -31,10 +24,7 @@ function err(
   return { ok: false, error: { code, message } };
 }
 
-/**
- * Solo se complementa lo que el cliente ya cerró. Sobre un pedido todavía
- * abierto no hace falta nada de esto: se le agregan los ítems y ya.
- */
+// An open order needs none of this: just add the items to it.
 const COMPLEMENTABLE_STATUSES = ["paid", "completed"];
 
 export async function createOrderAddendum(
@@ -63,8 +53,7 @@ export async function createOrderAddendum(
     );
   }
 
-  // El trigger de la base también lo impide; aquí el mensaje puede decir qué
-  // hacer en vez de solo fallar.
+  // The DB trigger blocks this too; here the message can say what to do.
   if (parent.parent_order_id) {
     return err(
       "conflict",
@@ -80,7 +69,7 @@ export async function createOrderAddendum(
     .in("id", productIds)
     .is("deleted_at", null);
 
-  // Precios de la tabla, nunca del cliente.
+  // Prices from the table, never from the client.
   const priceByProduct = new Map<string, number>();
   for (const p of products ?? []) priceByProduct.set(p.id, Number(p.price));
 
@@ -95,7 +84,7 @@ export async function createOrderAddendum(
       discount: 0,
       source: "addendum",
       order_type: parent.order_type,
-      // `table_label` sí; `qr_code_id` NO — ver la cabecera del archivo.
+      // `table_label` yes, `qr_code_id` NO — see the file header.
       table_label: parent.table_label,
       customer_id: parent.customer_id,
       customer_name: parent.customer_name,
@@ -103,7 +92,7 @@ export async function createOrderAddendum(
       customer_phone: parent.customer_phone,
       created_by: input.actorUserId,
       assigned_to: input.actorUserId,
-      // Ya se entregó: no hay nada que preparar, nace cobrable.
+      // Already handed over: nothing to prepare, born payable.
       fulfillment_status: "ready",
     })
     .select("id")
@@ -125,7 +114,7 @@ export async function createOrderAddendum(
   });
 
   if (rows.length === 0) {
-    // No dejar un pedido de $0 colgando del original.
+    // Don't leave a $0 order hanging off the original.
     await admin.from("orders").delete().eq("id", child.id);
     return err("validation", "Ningún producto coincide con el negocio");
   }
@@ -147,8 +136,7 @@ export async function createOrderAddendum(
     })
     .eq("id", child.id);
 
-  // En AMBOS: quien audite el cobro original tiene que ver que se complementó
-  // después sin ir a buscarlo.
+  // On BOTH: auditing the original charge must reveal the later addendum.
   await admin.from("order_activity_log").insert([
     {
       order_id: child.id,

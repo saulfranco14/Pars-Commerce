@@ -231,13 +231,13 @@ function SplitGroupRow({
           <button
             type="button"
             onClick={() => onPayGroup?.(group)}
-            className="inline-flex min-h-[36px] cursor-pointer items-center rounded-xl bg-accent px-3 py-1.5 text-xs font-bold text-accent-foreground transition-transform hover:bg-accent/90 active:scale-95"
+            className="inline-flex min-h-9 cursor-pointer items-center rounded-xl bg-accent px-3 py-1.5 text-xs font-bold text-accent-foreground transition-transform hover:bg-accent/90 active:scale-95"
           >
             Pagar
           </button>
         )}
         {state.isPending && (
-          <span className="inline-flex min-h-[36px] items-center rounded-xl bg-amber-100 px-3 py-1.5 text-[11px] font-bold text-amber-800">
+          <span className="inline-flex min-h-9 items-center rounded-xl bg-amber-100 px-3 py-1.5 text-[11px] font-bold text-amber-800">
             Por validar
           </span>
         )}

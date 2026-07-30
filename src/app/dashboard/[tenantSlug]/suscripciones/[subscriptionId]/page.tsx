@@ -135,7 +135,7 @@ export default function SubscriptionDetailPage() {
       <div className="flex items-center gap-3">
         <Link
           href={`/dashboard/${tenantSlug}/suscripciones`}
-          className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-muted hover:bg-border-soft hover:text-foreground"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted hover:bg-border-soft hover:text-foreground"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>

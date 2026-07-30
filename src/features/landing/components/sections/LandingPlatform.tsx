@@ -11,7 +11,6 @@ import {
 
 import type { PlatformGroupKey } from "@/features/landing/constants/platform";
 
-/** Qué lado de la historia está viendo el visitante. */
 type Perspective = "owner" | "customer";
 
 const PERSPECTIVES: {
@@ -34,15 +33,6 @@ const PERSPECTIVES: {
   },
 ];
 
-/**
- * "Una plataforma, todo tu negocio" — el inventario completo de lo que hace
- * Tlaco, espejo del Sidebar del dashboard.
- *
- * El switch dueño/cliente es lo que la vuelve distinta de una tabla de
- * features: la competencia solo cuenta lo que gana el dueño. Aquí el prospecto
- * puede ver, capacidad por capacidad, qué mejora para él Y qué mejora para su
- * cliente — que es la razón real por la que un negocio cambia de sistema.
- */
 export function LandingPlatform() {
   const [perspective, setPerspective] = useState<Perspective>("owner");
   const [group, setGroup] = useState<PlatformGroupKey>("vender");
@@ -50,7 +40,6 @@ export function LandingPlatform() {
   const activeGroup =
     PLATFORM_GROUPS.find((g) => g.key === group) ?? PLATFORM_GROUPS[0];
 
-  // En la vista "cliente" solo tienen sentido los módulos que el cliente vive.
   const visible = PLATFORM_CAPABILITIES.filter(
     (c) => c.group === group && (perspective === "owner" || c.customer),
   );
@@ -59,10 +48,7 @@ export function LandingPlatform() {
   ).length;
 
   return (
-    <section
-      id="plataforma"
-      className="border-t border-border py-16 sm:py-24"
-    >
+    <section id="plataforma" className="border-t border-border py-16 sm:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="text-center">
           <div
@@ -96,7 +82,7 @@ export function LandingPlatform() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setPerspective(key)}
-                  className={`inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:px-5 ${
+                  className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:px-5 ${
                     active
                       ? "bg-accent text-accent-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -126,7 +112,7 @@ export function LandingPlatform() {
                 type="button"
                 onClick={() => setGroup(key)}
                 aria-pressed={active}
-                className={`inline-flex min-h-[44px] cursor-pointer items-center rounded-full border px-5 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                className={`inline-flex min-h-11 cursor-pointer items-center rounded-full border px-5 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                   active
                     ? "border-accent bg-accent/10 text-accent"
                     : "border-border bg-surface text-muted-foreground hover:border-accent/40 hover:text-foreground"
@@ -159,7 +145,7 @@ export function LandingPlatform() {
             >
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-                  <Icon className="h-[18px] w-[18px]" aria-hidden />
+                  <Icon className="h-4.5 w-4.5" aria-hidden />
                 </div>
                 <h4 className="text-sm font-bold text-foreground">{title}</h4>
               </div>
@@ -207,7 +193,7 @@ export function LandingPlatform() {
             </div>
             <Link
               href="/registro"
-              className="group mt-6 inline-flex min-h-[44px] w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-base font-semibold text-accent-foreground transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background lg:mt-0 lg:w-auto"
+              className="group mt-6 inline-flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-base font-semibold text-accent-foreground transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background lg:mt-0 lg:w-auto"
             >
               Empezar gratis
               <ArrowRight

@@ -63,7 +63,7 @@ export function TableMenuHero({
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/25 text-[10px] font-bold">
             {getInitials(deviceName)}
           </span>
-          <span className="max-w-[80px] truncate text-xs font-semibold">
+          <span className="max-w-20 truncate text-xs font-semibold">
             {deviceName}
           </span>
         </span>

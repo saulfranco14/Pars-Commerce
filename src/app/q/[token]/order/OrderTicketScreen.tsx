@@ -8,6 +8,7 @@ import { CustomerScreen } from "@/features/qr/components/customer/CustomerScreen
 import { BillScreenSkeleton } from "@/features/qr/components/bill/BillScreenSkeleton";
 import { CustomerPayModal } from "@/features/qr/components/payment/CustomerPayModal";
 import { PaymentReceipt } from "@/features/qr/components/payment/PaymentReceipt";
+import { PickupTrackerCard } from "@/features/qr/components/order-tracker/PickupTrackerCard";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { useBillData } from "@/features/qr/hooks/useBillData";
 import { usePaymentFlow } from "@/features/qr/hooks/usePaymentFlow";
@@ -96,6 +97,7 @@ export function OrderTicketScreen({
           onClose={paymentFlow.dismissPending}
           onRefresh={refresh}
           refreshing={refreshing}
+          showSecondaryAction={false}
         />
       </main>
     );
@@ -117,6 +119,7 @@ export function OrderTicketScreen({
           onClose={refresh}
           onRefresh={refresh}
           refreshing={refreshing}
+          showSecondaryAction={false}
         />
       </main>
     );
@@ -128,7 +131,7 @@ export function OrderTicketScreen({
       onClick={() =>
         paymentFlow.pickTarget({ kind: "full", amount: data.order.balance_due })
       }
-      className="flex min-h-[56px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
+      className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
     >
       <CreditCard className="h-5 w-5" />
       Pagar {formatCurrency(data.order.balance_due)}
@@ -164,6 +167,15 @@ export function OrderTicketScreen({
             message="Gracias por tu compra."
           />
         )}
+
+        {/* Pagar es el principio, no el final: aquí el cliente ve avanzar su
+            pedido sin recargar, igual que en una mesa. */}
+        <PickupTrackerCard
+          fulfillmentStatus={data.order.fulfillment_status}
+          orderStatus={data.order.status}
+          orderNumber={data.order.order_number}
+          loading={isLoading}
+        />
 
         <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <div className="mb-3 flex items-center gap-2">

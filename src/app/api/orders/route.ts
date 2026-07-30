@@ -7,6 +7,7 @@ import {
   canAccessOrder,
   resolveOrderAccess,
 } from "@/features/orders/services/orderAccessService";
+import { orderSearchFilter } from "@/features/orders/helpers/orderSearchFilter";
 import { requirePermission } from "@/lib/auth/requirePermission";
 import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
@@ -33,6 +34,7 @@ export async function GET(request: Request) {
   const dateFrom = searchParams.get("date_from");
   const dateTo = searchParams.get("date_to");
   const scope = searchParams.get("scope");
+  const searchTerm = searchParams.get("q");
   // `scheduled=1` es la vista de agenda: solo pedidos con hora de recolección,
   // y ordenados por esa hora en vez de por cuándo se crearon.
   const scheduledOnly = searchParams.get("scheduled") === "1";
@@ -42,13 +44,13 @@ export async function GET(request: Request) {
       .from("orders")
       .select(
         `
-        id, tenant_id, status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_id, customer_name, customer_email, customer_phone, parent_order_id,
+        id, order_number, tenant_id, status, fulfillment_status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_id, customer_name, customer_email, customer_phone, parent_order_id,
         subtotal, discount, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, updated_at, scheduled_for,
         created_by, assigned_to, completed_by, completed_at, paid_at,
         payment_method, payment_link, mp_preference_id,
         assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email),
         items:order_items(id, quantity, unit_price, subtotal, is_wholesale, wholesale_savings, product:products(id, name, type, image_url)),
-        payments(provider, status, amount, metadata),
+        payments(id, provider, status, amount, metadata, created_at),
         payment_schedules:order_payment_schedules(id, installment_number, due_date, amount_due, amount_paid, status, paid_at),
         loan:loans!loans_order_id_fkey(id, status, amount, amount_pending, concept)
       `
@@ -106,7 +108,7 @@ export async function GET(request: Request) {
     .from("orders")
     .select(
       `
-      id, status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_name, customer_email, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, paid_at, scheduled_for, assigned_to, created_by, payment_method,
+      id, order_number, status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_name, customer_email, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, paid_at, scheduled_for, assigned_to, created_by, payment_method,
       assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email)
       `
     )
@@ -130,6 +132,14 @@ export async function GET(request: Request) {
   // filtro más adelante.
   if (!access.data.canViewAll || scope === "mine") {
     query = query.or(assignedToMeFilter(access.data));
+  }
+
+  if (searchTerm) {
+    const filter = orderSearchFilter(searchTerm);
+    // Un término que quedó vacío al sanearlo (solo signos) no debe devolver
+    // todo el negocio como si nadie hubiera buscado nada.
+    if (!filter) return NextResponse.json([]);
+    query = query.or(filter);
   }
 
   if (status?.trim()) {

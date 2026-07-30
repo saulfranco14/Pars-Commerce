@@ -21,16 +21,8 @@ import type {
   DraftItem,
 } from "@/features/orders/interfaces/addendumSheet";
 
-/**
- * "Agregar lo que faltó": arma el pedido complementario de uno ya pagado.
- *
- * Se puede poner más de un producto antes de confirmar porque el caso real
- * rara vez es uno solo, y crear un pedido complementario por producto llenaría
- * la lista de pedidos de $50 sueltos.
- *
- * No re-ocupa la mesa: eso lo garantiza el servidor
- * (`orderAddendumService`), no esta pantalla.
- */
+// Builds the addendum for an already-paid order. Not re-occupying the table is
+// guaranteed by `orderAddendumService`, not here.
 export function AddendumSheet({
   isOpen,
   onClose,

@@ -16,7 +16,7 @@ export function LandingHowItWorks() {
 
         <div className="relative mt-12 grid gap-8 sm:grid-cols-3">
           <div
-            className="absolute top-[60px] left-[16.67%] right-[16.67%] hidden border-t border-dashed border-border sm:block"
+            className="absolute top-15 left-[16.67%] right-[16.67%] hidden border-t border-dashed border-border sm:block"
             aria-hidden
           />
 

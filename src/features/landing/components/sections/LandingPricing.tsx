@@ -43,7 +43,7 @@ export function LandingPricing() {
 
               <Link
                 href="/registro"
-                className="mt-8 flex min-h-[44px] w-full cursor-pointer items-center justify-center rounded-xl bg-accent px-6 py-3 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+                className="mt-8 flex min-h-11 w-full cursor-pointer items-center justify-center rounded-xl bg-accent px-6 py-3 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
               >
                 Empezar gratis
               </Link>

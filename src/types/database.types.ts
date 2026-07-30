@@ -1077,6 +1077,7 @@ export type Database = {
           customer_id: string | null
           customer_name: string | null
           customer_phone: string | null
+          device_id: string | null
           diner_count: number | null
           discount: number
           expires_at: string | null
@@ -1084,6 +1085,7 @@ export type Database = {
           id: string
           merge_group_id: string | null
           mp_preference_id: string | null
+          order_number: string | null
           order_type: string | null
           paid_at: string | null
           paid_total: number
@@ -1121,6 +1123,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          device_id?: string | null
           diner_count?: number | null
           discount?: number
           expires_at?: string | null
@@ -1128,6 +1131,7 @@ export type Database = {
           id?: string
           merge_group_id?: string | null
           mp_preference_id?: string | null
+          order_number?: string | null
           order_type?: string | null
           paid_at?: string | null
           paid_total?: number
@@ -1165,6 +1169,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          device_id?: string | null
           diner_count?: number | null
           discount?: number
           expires_at?: string | null
@@ -1172,6 +1177,7 @@ export type Database = {
           id?: string
           merge_group_id?: string | null
           mp_preference_id?: string | null
+          order_number?: string | null
           order_type?: string | null
           paid_at?: string | null
           paid_total?: number
@@ -1228,6 +1234,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_devices"
             referencedColumns: ["id"]
           },
           {
@@ -2396,6 +2409,81 @@ export type Database = {
           },
         ]
       }
+      tenant_devices: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          claimed_at: string | null
+          created_at: string
+          enroll_code: string
+          id: string
+          install_id: string
+          kind: string
+          last_seen_at: string | null
+          name: string | null
+          requested_at: string
+          screen_info: string | null
+          status: string
+          tenant_id: string
+          token_hash: string | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          claimed_at?: string | null
+          created_at?: string
+          enroll_code: string
+          id?: string
+          install_id: string
+          kind?: string
+          last_seen_at?: string | null
+          name?: string | null
+          requested_at?: string
+          screen_info?: string | null
+          status?: string
+          tenant_id: string
+          token_hash?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          claimed_at?: string | null
+          created_at?: string
+          enroll_code?: string
+          id?: string
+          install_id?: string
+          kind?: string
+          last_seen_at?: string | null
+          name?: string | null
+          requested_at?: string
+          screen_info?: string | null
+          status?: string
+          tenant_id?: string
+          token_hash?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_devices_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_devices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_memberships: {
         Row: {
           accepted_at: string | null
@@ -2664,6 +2752,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          kiosk_enroll_key: string | null
           logo_url: string | null
           name: string
           public_store_enabled: boolean
@@ -2682,6 +2771,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          kiosk_enroll_key?: string | null
           logo_url?: string | null
           name: string
           public_store_enabled?: boolean
@@ -2700,6 +2790,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          kiosk_enroll_key?: string | null
           logo_url?: string | null
           name?: string
           public_store_enabled?: boolean

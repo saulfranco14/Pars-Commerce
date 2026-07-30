@@ -65,7 +65,7 @@ export function ConfirmDialog({
         await onConfirm();
       }}
       disabled={loading}
-      className={`flex min-h-[48px] w-full cursor-pointer items-center justify-center rounded-xl px-4 py-3 text-base font-semibold shadow-sm transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:max-w-[200px]
+      className={`flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xl px-4 py-3 text-base font-semibold shadow-sm transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:max-w-50
         ${isDanger
           ? "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500"
           : "bg-accent text-accent-foreground hover:bg-accent/90 focus-visible:ring-accent"}
@@ -80,7 +80,7 @@ export function ConfirmDialog({
       type="button"
       onClick={onClose}
       disabled={loading}
-      className="flex min-h-[48px] w-full cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-4 py-3 text-base font-medium text-foreground hover:bg-border-soft/60 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:max-w-[140px]"
+      className="flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-4 py-3 text-base font-medium text-foreground hover:bg-border-soft/60 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:max-w-35"
     >
       {cancelLabel}
     </button>

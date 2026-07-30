@@ -1,11 +1,5 @@
-/**
- * Reglas de la hora de recolección. Puras, sin I/O, para que el formulario del
- * cliente y la validación del servidor apliquen EXACTAMENTE las mismas.
- *
- * Que estén juntas no es cosmético: si el navegador ofrece "en 2 horas" y el
- * servidor exige 3 de anticipación, el cliente elige un hueco que después le
- * rebotan sin entender por qué.
- */
+// Shared by the browser form and the server validation: if one offers a slot
+// the other rejects, the customer can't tell why.
 
 import {
   DEFAULT_PICKUP_SCHEDULING,
@@ -17,22 +11,19 @@ import {
   nextOpening,
 } from "@/features/configuracion/helpers/businessHours";
 
-const MEXICO_TZ = "America/Mexico_City";
-
 import type { BusinessHours } from "@/features/configuracion/interfaces/businessHours";
 
+const MEXICO_TZ = "America/Mexico_City";
 const MINUTE_MS = 60_000;
 const DAY_MS = 24 * 60 * MINUTE_MS;
 
-/** Lee la config de `tenants.settings`, rellenando lo que falte. */
 export function readPickupScheduling(
   settings: Record<string, unknown> | null | undefined,
 ): PickupSchedulingConfig {
   const raw = (settings?.pickup_scheduling ?? {}) as Partial<PickupSchedulingConfig>;
   return {
     enabled: raw.enabled ?? DEFAULT_PICKUP_SCHEDULING.enabled,
-    // `??` y no `||`: un 0 explícito ("sin anticipación mínima") es una
-    // respuesta válida y `||` lo tomaría por ausencia.
+    // `??` not `||`: an explicit 0 lead time is a valid answer.
     minLeadMinutes: raw.minLeadMinutes ?? DEFAULT_PICKUP_SCHEDULING.minLeadMinutes,
     maxDaysAhead: raw.maxDaysAhead ?? DEFAULT_PICKUP_SCHEDULING.maxDaysAhead,
   };
@@ -64,15 +55,12 @@ export type ScheduleValidation =
   | { ok: true; value: Date | null }
   | { ok: false; reason: ScheduleRejection; message: string };
 
-/**
- * Valida la hora que eligió el cliente. `null`/vacío es válido y significa
- * "sin agendar": agendar es opcional aunque el negocio lo ofrezca.
- */
+// Empty is valid and means "not scheduled".
 export function validateScheduledFor(
   raw: string | null | undefined,
   config: PickupSchedulingConfig,
   now: Date,
-  /** `null` = el negocio no dio de alta horarios; no se restringe por hora. */
+  /** `null` = no hours registered; no time-of-day restriction. */
   hours: BusinessHours | null = null,
 ): ScheduleValidation {
   if (!raw) return { ok: true, value: null };
@@ -96,9 +84,7 @@ export function validateScheduledFor(
 
   const { earliest, latest } = scheduleBounds(config, now);
 
-  // Un minuto de holgura: entre que el cliente toca "en 2 horas" y el servidor
-  // recibe la petición pasan segundos, y sin el margen el propio preset del
-  // negocio se cae por unos milisegundos.
+  // One minute of slack so the business's own preset survives the round-trip.
   if (when.getTime() < earliest.getTime() - MINUTE_MS) {
     return {
       ok: false,
@@ -136,20 +122,13 @@ function formatLead(minutes: number): string {
 }
 
 export interface PickupPreset {
-  /** Clave estable para el `key` de React y para las pruebas. */
   id: string;
   label: string;
   value: Date;
 }
 
-/**
- * Opciones rápidas de recolección. Se descartan las que caen fuera de la
- * ventana del negocio o de su horario de atención: mostrarlas y rechazarlas
- * al enviar es peor que no ofrecerlas.
- *
- * La opción "al abrir" sale del horario real. Antes estaba fija en las 10:00,
- * que era una hora inventada para cualquier negocio que no abriera a esa hora.
- */
+// Presets outside the business window or opening hours are dropped: offering
+// then rejecting them is worse than not offering them.
 export function buildPickupPresets(
   config: PickupSchedulingConfig,
   now: Date,
@@ -176,11 +155,7 @@ export function buildPickupPresets(
   return presets;
 }
 
-/**
- * "En cuanto abra" / "Mañana al abrir": el primer hueco de atención que queda
- * después de la anticipación mínima, y solo si ninguna opción relativa ya lo
- * cubre.
- */
+// First opening slot after the minimum lead time.
 function openingPreset(
   config: PickupSchedulingConfig,
   now: Date,
@@ -200,9 +175,8 @@ function openingPreset(
   const opens = nextOpening(hours, earliest);
   if (!opens || opens > latest) return null;
 
-  // Se compara el día CALENDARIO mexicano, no `toDateString()`: ese usa la
-  // zona del proceso, y en el servidor (UTC) el lunes por la noche ya cuenta
-  // como martes, así que el chip decía "Hoy" señalando a mañana.
+  // Mexico calendar day, not `toDateString()`: on a UTC server Monday night
+  // already counts as Tuesday.
   const sameDay = mexicoMoment(opens).dateStr === mexicoMoment(now).dateStr;
   return {
     id: "abre",
@@ -232,11 +206,7 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/**
- * Convierte un `Date` al formato que espera `<input type="datetime-local">`,
- * que es hora LOCAL sin zona. `toISOString()` daría UTC y el input mostraría
- * una hora corrida — en México, seis adelante.
- */
+// `datetime-local` wants LOCAL wall time; `toISOString()` would shift it.
 export function toDatetimeLocalValue(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return (
@@ -245,10 +215,7 @@ export function toDatetimeLocalValue(date: Date): string {
   );
 }
 
-/**
- * Cómo se le lee al cliente la hora que eligió. Fija la zona del negocio
- * porque esto también se renderiza en servidor, y ahí sin zona saldría en UTC.
- */
+// Pins the business timezone: this also renders server-side.
 export function formatPickupTime(date: Date): string {
   return new Intl.DateTimeFormat("es-MX", {
     timeZone: MEXICO_TZ,

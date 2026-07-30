@@ -13,7 +13,7 @@ export default function OfflinePage() {
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="mt-6 min-h-[44px] rounded-xl bg-accent px-6 py-3 text-sm font-medium text-accent-foreground hover:bg-accent-hover"
+          className="mt-6 min-h-11 rounded-xl bg-accent px-6 py-3 text-sm font-medium text-accent-foreground hover:bg-accent-hover"
         >
           Reintentar
         </button>

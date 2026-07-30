@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 const baseInputClass =
-  "input-form block w-full min-h-[44px] rounded-xl border px-3 py-2.5 pr-12 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+  "input-form block w-full min-h-11 rounded-xl border px-3 py-2.5 pr-12 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
 
 interface PasswordInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {

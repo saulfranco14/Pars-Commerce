@@ -14,6 +14,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { releaseTableQrIfPaid } from "@/features/qr/helpers/releaseTableQrIfPaid";
+import {
+  NOT_READY_MESSAGE,
+  requiresReadyBeforePayment,
+} from "@/features/qr/helpers/paymentReadiness";
 
 export type IntentMethod = "efectivo" | "transferencia" | "tarjeta";
 export type CheckoutMethod = IntentMethod | "mercadopago";
@@ -43,10 +47,7 @@ function err(
  * The customer can only pay once the business marks the order as ready
  * (fulfillment_status = "ready"). Shared across every payment entry point.
  */
-const NOT_READY_ERROR = err(
-  "conflict",
-  "El negocio aún está preparando tu pedido. Podrás pagar cuando esté listo.",
-);
+const NOT_READY_ERROR = err("conflict", NOT_READY_MESSAGE);
 
 /**
  * Whether every split group of an order is paid — the signal to mark the whole
@@ -103,7 +104,9 @@ export async function createPaymentIntent(
 ): Promise<ServiceResult<CreatePaymentIntentResult>> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, tenant_id, status, fulfillment_status, total, balance_due")
+    .select(
+      "id, tenant_id, status, fulfillment_status, source, total, balance_due",
+    )
     .eq("id", input.orderId)
     .single();
 
@@ -112,6 +115,8 @@ export async function createPaymentIntent(
     return err("conflict", "La orden ya está pagada");
   if (order.status === "cancelled")
     return err("conflict", "La orden fue cancelada");
+
+  const gateOnReady = requiresReadyBeforePayment(order.source);
 
   // Locate device id so the activity log records who paid AND so we can gate
   // payment on THAT person's readiness (per-person), not the whole table.
@@ -130,10 +135,12 @@ export async function createPaymentIntent(
 
   // Payment gate: if we know the paying person, gate on their state; otherwise
   // fall back to the order-level summary (derived from all people).
-  if (deviceStatus !== null) {
-    if (deviceStatus !== "ready") return NOT_READY_ERROR;
-  } else if (order.fulfillment_status !== "ready") {
-    return NOT_READY_ERROR;
+  if (gateOnReady) {
+    if (deviceStatus !== null) {
+      if (deviceStatus !== "ready") return NOT_READY_ERROR;
+    } else if (order.fulfillment_status !== "ready") {
+      return NOT_READY_ERROR;
+    }
   }
 
   let targetGroupId = input.groupId ?? null;
@@ -340,6 +347,38 @@ export async function confirmPayment(
         })
         .eq("id", order.id);
     }
+  } else {
+    // Sin grupo de split: un ticket de mostrador o de pantalla de autoservicio.
+    // Antes solo se liquidaba la rama de mesas, así que el pago quedaba
+    // aprobado y el pedido abierto para siempre.
+    //
+    // El total pagado se recalcula sumando los pagos aprobados en vez de
+    // acumular sobre el valor anterior: así confirmar dos veces no puede
+    // abonar de más.
+    const { data: approved } = await admin
+      .from("payments")
+      .select("amount")
+      .eq("order_id", order.id)
+      .eq("status", "approved");
+
+    const paidTotal = (approved ?? []).reduce(
+      (sum, p) => sum + Number(p.amount ?? 0),
+      0,
+    );
+    const orderTotal = Number(order.total);
+    allPaid = paidTotal >= orderTotal;
+
+    await admin
+      .from("orders")
+      .update({
+        status: allPaid ? "paid" : "partial",
+        paid_at: allPaid ? now : null,
+        paid_total: paidTotal,
+        balance_due: Math.max(0, orderTotal - paidTotal),
+        payment_method: method,
+        updated_at: now,
+      })
+      .eq("id", order.id);
   }
 
   await admin.from("order_activity_log").insert({
@@ -445,7 +484,7 @@ export async function payFullOrder(
   const { data: order } = await admin
     .from("orders")
     .select(
-      "id, status, fulfillment_status, total, paid_total, balance_due, merge_group_id",
+      "id, status, fulfillment_status, source, total, paid_total, balance_due, merge_group_id",
     )
     .eq("id", input.orderId)
     .single();
@@ -467,7 +506,12 @@ export async function payFullOrder(
       "Esta cuenta fue cancelada y no puede pagarse",
     );
   }
-  if (order.fulfillment_status !== "ready") return NOT_READY_ERROR;
+  if (
+    requiresReadyBeforePayment(order.source) &&
+    order.fulfillment_status !== "ready"
+  ) {
+    return NOT_READY_ERROR;
+  }
 
   // Linked tables pay as one: settle every order in the merge group and
   // release every QR. Not linked → just this order.
@@ -583,25 +627,27 @@ export async function payGroup(
     return { ok: true, data: { allPaid: false, amount: 0 } };
   }
 
+  const { data: groupOrder } = await admin
+    .from("orders")
+    .select("fulfillment_status, source")
+    .eq("id", group.order_id)
+    .single();
+
   // Per-person gating: a group tied to a device is payable as soon as THAT
   // person is ready, even if the rest of the table isn't. Groups without a
   // device (e.g. "cuenta total") fall back to the order-level summary.
-  if (group.device_id) {
-    const { data: device } = await admin
-      .from("order_devices")
-      .select("fulfillment_status")
-      .eq("id", group.device_id)
-      .maybeSingle();
-    if (device && device.fulfillment_status !== "ready")
+  if (requiresReadyBeforePayment(groupOrder?.source)) {
+    if (group.device_id) {
+      const { data: device } = await admin
+        .from("order_devices")
+        .select("fulfillment_status")
+        .eq("id", group.device_id)
+        .maybeSingle();
+      if (device && device.fulfillment_status !== "ready")
+        return NOT_READY_ERROR;
+    } else if (groupOrder && groupOrder.fulfillment_status !== "ready") {
       return NOT_READY_ERROR;
-  } else {
-    const { data: groupOrder } = await admin
-      .from("orders")
-      .select("fulfillment_status")
-      .eq("id", group.order_id)
-      .single();
-    if (groupOrder && groupOrder.fulfillment_status !== "ready")
-      return NOT_READY_ERROR;
+    }
   }
 
   const now = new Date().toISOString();

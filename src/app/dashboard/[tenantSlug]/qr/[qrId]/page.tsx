@@ -148,7 +148,7 @@ export default function QrDetailPage() {
           type="button"
           onClick={requestToggle}
           disabled={busy}
-          className={`inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-border-soft/40 disabled:cursor-not-allowed disabled:opacity-60 ${
+          className={`inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-border-soft/40 disabled:cursor-not-allowed disabled:opacity-60 ${
             qr.is_active
               ? "border-amber-200 text-amber-800"
               : "border-emerald-200 text-emerald-700"
@@ -161,7 +161,7 @@ export default function QrDetailPage() {
           type="button"
           onClick={requestArchive}
           disabled={busy}
-          className="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-lg border border-red-200 bg-surface px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border border-red-200 bg-surface px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Archive className="h-4 w-4" />
           Archivar

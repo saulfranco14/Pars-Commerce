@@ -65,13 +65,13 @@ export function LandingNav() {
         <div className="flex items-center gap-2">
           <Link
             href="/login"
-            className="hidden min-h-[44px] cursor-pointer items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 sm:inline-flex"
+            className="hidden min-h-11 cursor-pointer items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 sm:inline-flex"
           >
             Iniciar sesión
           </Link>
           <Link
             href="/registro"
-            className="inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+            className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
           >
             Registrarse
           </Link>

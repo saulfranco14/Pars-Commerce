@@ -6,11 +6,8 @@ import { Notification } from "@/components/ui/Notification";
 
 import type { BusinessHoursNoticeProps } from "@/features/configuracion/interfaces/businessHoursNotice";
 
-/**
- * Avisa que faltan los horarios. Solo aparece cuando ya importan: si el
- * negocio no está agendando recolecciones, sus horarios no cambian nada y el
- * aviso sería ruido.
- */
+// Only shown once hours actually matter: without scheduling enabled they
+// change nothing.
 export function BusinessHoursNotice({
   hours,
   schedulingEnabled,

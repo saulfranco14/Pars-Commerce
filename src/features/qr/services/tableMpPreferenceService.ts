@@ -2,6 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { preferenceClient } from "@/lib/mercadopago";
 import {
+  NOT_READY_MESSAGE,
+  requiresReadyBeforePayment,
+} from "@/features/qr/helpers/paymentReadiness";
+import {
   QR_TABLE_PREFIX,
   QR_TABLE_GROUP_PREFIX,
 } from "@/features/qr/services/tableMpWebhookService";
@@ -27,7 +31,9 @@ export async function createTableMpPreference(
 ): Promise<ServiceResult<CreatePreferenceResult>> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, tenant_id, status, fulfillment_status, total, balance_due")
+    .select(
+      "id, tenant_id, status, fulfillment_status, source, total, balance_due",
+    )
     .eq("id", input.orderId)
     .single();
 
@@ -46,13 +52,15 @@ export async function createTableMpPreference(
       ok: false,
       error: { code: "conflict", message: "La orden fue cancelada" },
     };
-  if (order.fulfillment_status !== "ready")
+  if (
+    requiresReadyBeforePayment(order.source) &&
+    order.fulfillment_status !== "ready"
+  )
     return {
       ok: false,
       error: {
         code: "conflict",
-        message:
-          "El negocio aún está preparando tu pedido. Podrás pagar cuando esté listo.",
+        message: NOT_READY_MESSAGE,
       },
     };
 

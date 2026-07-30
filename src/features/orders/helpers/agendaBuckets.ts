@@ -1,11 +1,5 @@
-/**
- * Agrupa los pedidos agendados en Atrasados / Hoy / Mañana / Después.
- *
- * Puro y sin I/O para poder razonarlo y probarlo sin montar la pantalla. Las
- * comparaciones son por DÍA CALENDARIO local, no por diferencia de horas: un
- * pedido a las 23:00 y otro a la 01:00 están separados por dos horas pero son
- * "hoy" y "mañana" para quien atiende el mostrador.
- */
+// Buckets scheduled orders by Mexico calendar day, not by hour difference:
+// 23:00 and 01:00 are two hours apart but different days at the counter.
 
 import { mexicoMoment } from "@/features/configuracion/helpers/businessHours";
 
@@ -16,10 +10,10 @@ import type {
 } from "@/features/orders/interfaces/agenda";
 import type { OrderListItem } from "@/types/orders";
 
-/** Estados en los que el pedido ya no espera a nadie en el mostrador. */
+/** Statuses where nobody is waiting at the counter any more. */
 const CLOSED_STATUSES = ["cancelled", "completed"];
 
-/** Días de calendario entre dos instantes, contados en la zona del negocio. */
+/** Calendar days apart, counted in the business timezone. */
 function daysApart(target: Date, now: Date): number {
   const a = Date.parse(`${mexicoMoment(target).dateStr}T00:00:00Z`);
   const b = Date.parse(`${mexicoMoment(now).dateStr}T00:00:00Z`);
@@ -38,14 +32,13 @@ export function bucketOf(
   if (diff > 1) return "despues";
   if (diff === 1) return "manana";
 
-  // Hoy pero ya pasó la hora: se separa aparte porque es el único grupo que
-  // exige hacer algo ya. Un pedido cancelado o entregado no está atrasado.
+  // Today but past due — the only bucket that demands action now.
   if (diff === 0) {
     const late = when.getTime() < now.getTime();
     return late && !CLOSED_STATUSES.includes(order.status) ? "atrasados" : "hoy";
   }
 
-  // Días anteriores: atrasado, salvo que ya se haya cerrado.
+  // Earlier days: late unless already closed.
   return CLOSED_STATUSES.includes(order.status) ? "despues" : "atrasados";
 }
 
@@ -58,7 +51,7 @@ const LABELS: Record<AgendaBucketKey, string> = {
 
 const ORDER: AgendaBucketKey[] = ["atrasados", "hoy", "manana", "despues"];
 
-/** Los grupos con al menos un pedido, en orden de urgencia. */
+/** Non-empty buckets, in order of urgency. */
 export function groupAgenda(
   orders: OrderListItem[],
   now: Date,
@@ -96,10 +89,7 @@ export function countAgenda(
   return counts;
 }
 
-/**
- * Horas de la agenda, siempre en la zona del negocio: sin fijarla saldrían en
- * la del proceso, que en el servidor es UTC.
- */
+// Always the business timezone; unpinned it would follow the process (UTC).
 const MEXICO_TZ = "America/Mexico_City";
 
 export function formatAgendaTime(iso: string): string {
@@ -110,7 +100,7 @@ export function formatAgendaTime(iso: string): string {
   }).format(new Date(iso));
 }
 
-/** Día y hora completos, para los grupos que abarcan varios días. */
+/** Full day and time, for buckets spanning several days. */
 export function formatAgendaDateTime(iso: string): string {
   return new Intl.DateTimeFormat("es-MX", {
     timeZone: MEXICO_TZ,

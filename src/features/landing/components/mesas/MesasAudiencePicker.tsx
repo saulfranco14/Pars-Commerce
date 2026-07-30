@@ -34,7 +34,7 @@ export function MesasAudiencePicker() {
               role="tab"
               aria-selected={isActive}
               onClick={() => setActiveKey(key)}
-              className={`inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background ${
+              className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background ${
                 isActive
                   ? "border-accent bg-accent text-accent-foreground"
                   : "border-border bg-surface text-muted-foreground hover:border-accent/40 hover:text-foreground"

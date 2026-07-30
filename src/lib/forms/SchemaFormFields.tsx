@@ -83,7 +83,7 @@ export function SchemaFormFields<T extends FieldValues>({
           return (
             <label
               key={field.name}
-              className="flex min-h-[44px] cursor-pointer items-center gap-2"
+              className="flex min-h-11 cursor-pointer items-center gap-2"
             >
               <input
                 type="checkbox"

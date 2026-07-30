@@ -36,7 +36,7 @@ export function LandingFooter() {
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
               href="/registro"
-              className="group inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+              className="group inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
             >
               Crear cuenta gratis
               <ArrowRight
@@ -46,7 +46,7 @@ export function LandingFooter() {
             </Link>
             <Link
               href="/login"
-              className="inline-flex min-h-[48px] cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-6 py-3.5 text-base font-medium text-foreground transition-colors duration-200 hover:bg-border-soft/50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+              className="inline-flex min-h-12 cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-6 py-3.5 text-base font-medium text-foreground transition-colors duration-200 hover:bg-border-soft/50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
             >
               Ya tengo cuenta
             </Link>

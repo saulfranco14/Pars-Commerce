@@ -11,11 +11,11 @@ export default function SitioWebPage() {
   const tenantSlug = params.tenantSlug as string;
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-[1600px] overflow-x-hidden">
+    <div className="mx-auto w-full min-w-0 max-w-400 overflow-x-hidden">
       <div className="mb-5 border-b border-border pb-3">
         <Link
           href="/dashboard"
-          className="inline-flex min-h-[40px] items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex min-h-10 items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
           Volver al inicio
@@ -41,7 +41,7 @@ export default function SitioWebPage() {
           </div>
         </div>
 
-        <div className="hidden min-h-[400px] min-w-0 xl:flex-1 xl:block">
+        <div className="hidden min-h-100 min-w-0 xl:flex-1 xl:block">
           <div className="sticky top-20 flex h-[calc(100vh-224px)] flex-col">
             <SitePreviewPanel tenantSlug={tenantSlug} />
           </div>

@@ -70,7 +70,7 @@ export function ReceiptActions() {
       {/* Hidden element for capture */}
       <div
         ref={previewRef}
-        className={`w-[400px] bg-white p-6 ${
+        className={`w-100 bg-white p-6 ${
           loading
             ? "fixed left-0 top-0 z-[-9999] opacity-100"
             : "absolute left-[-9999px] top-[-9999px] opacity-0 pointer-events-none"
@@ -92,7 +92,7 @@ export function ReceiptActions() {
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className="flex min-h-[44px] w-full items-center justify-between gap-2 px-4 py-2 text-left sm:px-5 sm:py-3"
+          className="flex min-h-11 w-full items-center justify-between gap-2 px-4 py-2 text-left sm:px-5 sm:py-3"
         >
           <div className="text-left">
             <h2 className="text-sm font-semibold text-foreground">
@@ -117,7 +117,7 @@ export function ReceiptActions() {
                   setLoading(true);
                 }}
                 disabled={loading}
-                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border-soft/80 disabled:opacity-50 transition-colors"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border-soft/80 disabled:opacity-50 transition-colors"
               >
                 <Share2 className="h-4 w-4" />
                 {loading && exportMode === "share" ? "Preparando…" : "Compartir"}
@@ -126,7 +126,7 @@ export function ReceiptActions() {
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border-soft/80 transition-colors"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border-soft/80 transition-colors"
               >
                 <Printer className="h-4 w-4" />
                 Imprimir
@@ -139,7 +139,7 @@ export function ReceiptActions() {
                   setLoading(true);
                 }}
                 disabled={loading}
-                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border-soft/80 disabled:opacity-50 transition-colors"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border-soft/80 disabled:opacity-50 transition-colors"
               >
                 <Download className="h-4 w-4" />
                 {loading && exportMode === "download" ? "Generando..." : "Descargar"}
@@ -152,7 +152,7 @@ export function ReceiptActions() {
                   setLoading(true);
                 }}
                 disabled={loading}
-                className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium transition-all ${
+                className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium transition-all ${
                   copied ? "text-green-600 border-green-200 bg-green-50" : "text-foreground hover:bg-border-soft/80"
                 } disabled:opacity-50`}
               >

@@ -241,7 +241,7 @@ Las pantallas internas del dashboard (`/src/app/dashboard/**`) NO usan
   <MetricsStrip metrics={[ …KPIs… ]} />     // si aplica
 
   <FilterTabs tabs={[…]} activeValue={filter} onTabChange={setFilter}
-              ariaLabel="…" />                // FilterPills quedó obsoleto
+              ariaLabel="…" />                // reemplazó a FilterPills
 
   {hasItems ? (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -268,8 +268,11 @@ Las pantallas internas del dashboard (`/src/app/dashboard/**`) NO usan
   productos, mesas, QR. `FilterTabs` no tiene slot de count-badge: si
   necesitas contador, pliégalo en el label (`Todas 2`). Si tu feature tiene
   un wrapper (p.ej. `TablesFilterTabs`), ese wrapper SOLO traduce los filtros
-  del dominio a `FilterTabItem[]` y delega. (`FilterPills` queda obsoleto para
-  filtros de listado — no usarlo en pantallas nuevas.)
+  del dominio a `FilterTabItem[]` y delega. (`FilterPills` se eliminó al quedar
+  sin consumidores.)
+- `FilterTabs` acepta `density="touch"` para mantener los 44px también en
+  pantallas anchas. La densidad normal los baja a partir de `md` asumiendo
+  ratón, y en una tablet de 820px eso deja las pestañas en 32px.
 - Estados vacíos → `<EmptyState icon title description action>` siempre.
   Cero `<div className="border-dashed">` ad-hoc.
 - Cards de listado → `<AdminListCard icon title meta badge thumbnail
@@ -386,7 +389,6 @@ These are the canonical references — match their pattern:
 | -------------------------------------------- | ---------------------------------------------------------------- |
 | `PageHeader` (title + description + action)  | `src/components/admin/PageHeader.tsx`                            |
 | `MetricsStrip` (KPI grid, tone-aware)        | `src/components/admin/MetricsStrip.tsx`                          |
-| `FilterPills` (pill tabs with count badges)  | `src/components/admin/FilterPills.tsx`                           |
 | `StatusBadge` (colored dot + label pill)     | `src/components/admin/StatusBadge.tsx`                           |
 | `EmptyState` (dashed card + icon + CTA)      | `src/components/admin/EmptyState.tsx`                            |
 | `AdminListCard` (icon + title + meta + actions) | `src/components/admin/AdminListCard.tsx`                      |

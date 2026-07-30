@@ -16,7 +16,7 @@ export async function GET(request: Request, context: RouteContext) {
   const { data: order } = await admin
     .from("orders")
     .select(
-      "id, tenant_id, status, fulfillment_status, total, paid_total, balance_due, created_at, qr_code_id, payment_method, merge_group_id",
+      "id, order_number, tenant_id, status, fulfillment_status, total, paid_total, balance_due, created_at, qr_code_id, payment_method, merge_group_id",
     )
     .eq("id", orderId)
     .single();
@@ -203,6 +203,7 @@ export async function GET(request: Request, context: RouteContext) {
   return NextResponse.json({
     order: {
       id: order.id,
+      order_number: order.order_number ?? null,
       status: groupStatus,
       fulfillment_status: order.fulfillment_status ?? "received",
       total: groupTotal,

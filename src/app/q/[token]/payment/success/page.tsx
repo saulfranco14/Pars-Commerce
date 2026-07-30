@@ -247,7 +247,7 @@ function PaymentStatusShell({
           href={receiptUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-all hover:bg-border-soft/40 active:scale-[0.99]"
+          className="flex min-h-13 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-all hover:bg-border-soft/40 active:scale-[0.99]"
         >
           <Receipt className="h-4 w-4" />
           Ver comprobante de Mercado Pago
@@ -257,7 +257,7 @@ function PaymentStatusShell({
       {variant !== "success" && (
         <Link
           href={`/q/${token}`}
-          className="flex min-h-[54px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
+          className="flex min-h-13.5 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
         >
           Intentar de nuevo
         </Link>
@@ -265,7 +265,7 @@ function PaymentStatusShell({
 
       <Link
         href={`/q/${token}`}
-        className={`flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-2xl px-4 text-sm font-bold transition-all active:scale-[0.99] ${
+        className={`flex min-h-13 w-full cursor-pointer items-center justify-center rounded-2xl px-4 text-sm font-bold transition-all active:scale-[0.99] ${
           variant === "success"
             ? "bg-accent text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90"
             : "border border-border bg-surface text-foreground hover:bg-border-soft/40"

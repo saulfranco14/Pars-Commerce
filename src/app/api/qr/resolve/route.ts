@@ -2,6 +2,7 @@ import { resolveUserError } from "@/lib/errors/resolveUserError";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPendingMergeRequests } from "@/features/qr/services/tableMergeRequestService";
 import { filterActivePromotions } from "@/features/qr/helpers/filterActivePromotions";
+import { requiresReadyBeforePayment } from "@/features/qr/helpers/paymentReadiness";
 import { NextResponse } from "next/server";
 
 const DEVICE_COLORS = [
@@ -73,13 +74,25 @@ export async function GET(request: Request) {
     if (orderId) {
       const { data: existingOrder } = await admin
         .from("orders")
-        .select("id, status, subtotal, total, paid_total, balance_due")
+        .select(
+          "id, status, fulfillment_status, source, subtotal, total, paid_total, balance_due",
+        )
         .eq("id", orderId)
         .single();
 
+      // Un ticket pagado por adelantado se sigue abriendo mientras el trabajo no
+      // termine: ahí el cliente ve su avance. Para una MESA esto no aplica —
+      // pagada significa cerrada y el QR rueda a una orden nueva.
+      const stillFollowable =
+        isSingleUseTicket &&
+        existingOrder?.status === "paid" &&
+        !requiresReadyBeforePayment(existingOrder.source) &&
+        (existingOrder.fulfillment_status ?? "received") !== "ready";
+
       if (
         !existingOrder ||
-        ["paid", "cancelled"].includes(existingOrder.status)
+        (["paid", "cancelled"].includes(existingOrder.status) &&
+          !stillFollowable)
       ) {
         orderId = null;
       } else {

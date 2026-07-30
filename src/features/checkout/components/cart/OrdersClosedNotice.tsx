@@ -2,13 +2,8 @@
 
 import { Clock } from "lucide-react";
 
-/**
- * Aviso de "ahora no estamos recibiendo pedidos".
- *
- * Aparece EN LUGAR del checkout, no encima del catálogo: el negocio cerró la
- * caja, no la tienda. El cliente sigue viendo lo que hay y lo que ya puso en
- * el carrito, que es lo que hace que vuelva mañana en vez de irse.
- */
+// Replaces the checkout, not the catalog: the business closed the till, not
+// the shop.
 export function OrdersClosedNotice({ businessName }: { businessName?: string }) {
   return (
     <div

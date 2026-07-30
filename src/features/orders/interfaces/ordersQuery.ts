@@ -14,4 +14,6 @@ export interface OrdersQuery {
   dateFrom: string;
   dateTo: string;
   scope: OrdersScope;
+  /** Número de pedido, nombre, teléfono o correo. Vacío = sin filtrar. */
+  search?: string;
 }

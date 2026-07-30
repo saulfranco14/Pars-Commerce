@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronUp, Search, X } from "lucide-react";
 
+import { BrandImage } from "@/features/qr/components/BrandImage";
 import { MenuPeekRow } from "@/features/qr/components/menu-product/MenuPeekRow";
 import { MenuProductCard } from "@/features/qr/components/menu-product/MenuProductCard";
 import { PromoBanner } from "@/features/qr/components/PromoBanner";
 import { ReorderRow } from "@/features/qr/components/menu-product/ReorderRow";
 import { ProductDetailSheet } from "@/features/qr/components/menu-product/ProductDetailSheet";
 import { interleavePromos } from "@/features/qr/helpers/interleavePromos";
+import { sectionThumbnail } from "@/features/qr/helpers/sectionThumbnail";
 import { useMenuSections } from "@/features/qr/hooks/useMenuSections";
 
 import type { MenuItem } from "@/features/qr/interfaces/tableCart";
@@ -162,7 +164,7 @@ export function TableMenuSections({
         <button
           type="button"
           onClick={() => setExpanded(false)}
-          className="mb-3 flex min-h-[44px] w-full cursor-pointer items-center justify-between gap-2 rounded-xl bg-border-soft/50 px-3 text-left transition-colors hover:bg-border-soft active:scale-[0.99]"
+          className="mb-3 flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl bg-border-soft/50 px-3 text-left transition-colors hover:bg-border-soft active:scale-[0.99]"
         >
           <span className="text-sm font-bold text-foreground">Menú</span>
           <span className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
@@ -197,7 +199,8 @@ export function TableMenuSections({
         </div>
       )}
 
-      {/* Sticky category pills */}
+      {/* Sticky category nav — thumbnail + name. A row of bare text pills reads
+          as chrome; the photo is what makes someone tap it. */}
       {showPills && (
         <div className="sticky top-0 z-20 -mx-5 mb-3 border-b border-border bg-background/95 px-5 py-2 backdrop-blur-sm">
           <div className="flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -208,12 +211,21 @@ export function TableMenuSections({
                   key={s.id}
                   type="button"
                   onClick={() => scrollTo(s.id)}
-                  className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors ${
+                  className={`flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-full border py-1 pl-1 pr-3.5 text-xs font-bold transition-all active:scale-[0.97] ${
                     active
-                      ? "bg-accent text-accent-foreground"
-                      : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft"
+                      ? "border-accent bg-accent text-accent-foreground"
+                      : "border-border bg-surface text-muted-foreground hover:border-accent/40"
                   }`}
                 >
+                  <BrandImage
+                    src={sectionThumbnail(s.products)}
+                    logoUrl={tenantLogoUrl}
+                    name={tenantName}
+                    alt={s.name || "Menú"}
+                    className="h-8 w-8 shrink-0"
+                    rounded="rounded-full"
+                    sizes="32px"
+                  />
                   {s.name || "Menú"}
                 </button>
               );

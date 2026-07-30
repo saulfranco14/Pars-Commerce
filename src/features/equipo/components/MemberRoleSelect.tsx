@@ -7,16 +7,8 @@ import {
 
 import type { MemberRoleSelectProps } from "@/features/equipo/interfaces/memberRoleSelect";
 
-/**
- * Selector de rol de un miembro del equipo, con la descripción de lo que ese
- * rol podrá hacer justo debajo.
- *
- * Existe porque la pantalla de equipo pinta la misma tabla dos veces (una para
- * móvil, otra para escritorio) y el select estaba copiado en ambas mostrando
- * el nombre crudo del rol (`cashier`, `waiter`) y sin decir qué implica
- * elegirlo. Cambiarle el rol a alguien es un cambio de permisos: quien lo hace
- * tiene que ver la consecuencia antes de guardarla, igual que al invitar.
- */
+// Changing someone's role changes their permissions, so the consequence is
+// shown before saving.
 export function MemberRoleSelect({
   roles,
   value,

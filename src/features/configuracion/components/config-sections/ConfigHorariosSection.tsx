@@ -13,14 +13,8 @@ import { emptyRange } from "@/features/configuracion/helpers/businessHours";
 
 import type { ConfigHorariosSectionProps } from "@/features/configuracion/interfaces/sections";
 
-/**
- * Horarios de atención. El negocio elige 24/7 o una semana con franjas.
- *
- * Se permiten varias franjas por día porque el horario partido (abrir, cerrar
- * a comer, reabrir) es lo normal en buena parte de los negocios de aquí, y con
- * una sola franja tendrían que declarar que están abiertos a la hora de la
- * comida.
- */
+// Several ranges per day: split hours (open, close for lunch, reopen) are the
+// norm here.
 export function ConfigHorariosSection({
   hours,
   onChange,

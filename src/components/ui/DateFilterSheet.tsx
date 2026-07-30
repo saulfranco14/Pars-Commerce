@@ -64,7 +64,7 @@ export function DateFilterSheet({
     "flex items-center gap-3 rounded-xl border border-border bg-background px-3 transition-[border-color,box-shadow] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20";
 
   const dateInputClass =
-    "min-h-(--input-height,44px) w-full bg-transparent py-2.5 text-base text-foreground outline-none [color-scheme:light]";
+    "min-h-558--input-height,44px) w-full bg-transparent py-2.5 text-base text-foreground outline-none [color-scheme:light]";
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Filtrar por fecha">

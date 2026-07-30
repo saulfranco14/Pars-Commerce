@@ -48,7 +48,7 @@ export function TableSession({ token }: TableSessionProps) {
         <button
           type="button"
           onClick={refresh}
-          className="flex min-h-[52px] w-full max-w-xs cursor-pointer items-center justify-center rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
+          className="flex min-h-13 w-full max-w-xs cursor-pointer items-center justify-center rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
         >
           Comenzar un pedido nuevo
         </button>

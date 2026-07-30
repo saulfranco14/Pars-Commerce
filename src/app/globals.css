@@ -718,6 +718,46 @@ body {
   }
 }
 
+/* ── Pantalla de autoservicio (kiosco) ───────────────────────── */
+
+/* La tira lleva el carrete dos veces, así que a -50% el corte cae en un
+   fotograma idéntico al inicial y el desfile no salta. */
+@keyframes kiosk-marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.kiosk-marquee {
+  animation: kiosk-marquee 40s linear infinite;
+}
+
+@keyframes kiosk-attract-cta {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.kiosk-attract-cta {
+  animation: kiosk-attract-cta 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kiosk-marquee,
+  .kiosk-attract-cta {
+    animation: none;
+  }
+}
+
 @media print {
   .no-print {
     display: none !important;

@@ -31,7 +31,7 @@ export function InstallmentsPicker({
               key={n}
               type="button"
               onClick={() => onSelect(n)}
-              className={`min-h-[40px] cursor-pointer rounded-lg border-2 px-3 py-1.5 text-xs font-semibold tabular-nums transition-colors ${
+              className={`min-h-10 cursor-pointer rounded-lg border-2 px-3 py-1.5 text-xs font-semibold tabular-nums transition-colors ${
                 isActive
                   ? "border-current bg-current/5"
                   : "border-gray-200 text-gray-600 hover:border-gray-300"

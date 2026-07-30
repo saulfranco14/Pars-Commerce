@@ -16,6 +16,9 @@ import { OrderHeader } from "@/features/orders/components/order/OrderHeader";
 import { CustomerCard } from "@/features/orders/components/order/CustomerCard";
 import { AssignmentCard } from "@/features/orders/components/payment/AssignmentCard";
 import { LinkedOrdersCard } from "@/features/orders/components/order/LinkedOrdersCard";
+import { PendingCashCard } from "@/features/orders/components/payment/PendingCashCard";
+import { CounterPaymentCard } from "@/features/orders/components/payment/CounterPaymentCard";
+import { OrderFulfillmentCard } from "@/features/orders/components/order/OrderFulfillmentCard";
 import { OrderItemsTable } from "@/features/orders/components/order/OrderItemsTable";
 import { OrderActionButtons } from "@/features/orders/components/order/OrderActionButtons";
 import { ReceiptActions } from "@/features/orders/components/receipt/ReceiptActions";
@@ -176,6 +179,17 @@ function OrderDetailContent() {
         <div className="mt-0 lg:mt-4 flex min-h-0 min-w-0 flex-1 flex-col gap-2">
           <div className="order-1 min-h-0 min-w-0 flex-1 md:order-3">
             <OrderItemsTable />
+          </div>
+          {/* Si hay dinero esperando confirmación, es lo primero que el
+              mostrador tiene que resolver. */}
+          <div className="order-2 min-w-0 shrink-0 md:order-0">
+            <PendingCashCard />
+          </div>
+          <div className="order-2 min-w-0 shrink-0 md:order-0">
+            <CounterPaymentCard />
+          </div>
+          <div className="order-2 min-w-0 shrink-0 md:order-0">
+            <OrderFulfillmentCard />
           </div>
           <div className="order-2 min-w-0 shrink-0 md:order-0">
             <LinkedOrdersCard />

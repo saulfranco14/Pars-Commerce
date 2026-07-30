@@ -32,6 +32,7 @@ import {
 } from "@/features/orders/helpers/agendaBuckets";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { formatCurrency } from "@/features/qr/helpers/format";
+import { AGENDA_REFRESH_MS } from "@/features/orders/constants/refresh";
 
 import type { Metric } from "@/components/admin/MetricsStrip";
 import type { OrderListItem } from "@/types/orders";
@@ -51,6 +52,7 @@ export default function AgendaPage() {
     : null;
   const { data, error, isLoading } = useSWR<OrderListItem[]>(key, swrFetcher, {
     fallbackData: [],
+    refreshInterval: AGENDA_REFRESH_MS,
   });
 
   const orders = useMemo(() => (Array.isArray(data) ? data : []), [data]);

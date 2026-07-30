@@ -148,7 +148,7 @@ export function DiscountModal({
               onKeyDown={(e) => e.key === "Enter" && handleApply()}
               disabled={loading}
               placeholder="0.00"
-              className="min-h-[40px] w-full bg-transparent px-2 text-sm tabular-nums text-foreground outline-none placeholder:text-muted-foreground/50 disabled:opacity-50"
+              className="min-h-10 w-full bg-transparent px-2 text-sm tabular-nums text-foreground outline-none placeholder:text-muted-foreground/50 disabled:opacity-50"
               autoFocus
             />
           </div>
@@ -197,7 +197,7 @@ export function DiscountModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-base font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:max-w-[140px] md:border md:border-border"
+            className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-base font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:max-w-35 md:border md:border-border"
           >
             Cancelar
           </button>
@@ -205,7 +205,7 @@ export function DiscountModal({
             type="button"
             onClick={handleApply}
             disabled={!isValid || loading}
-            className="flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-base font-semibold text-accent-foreground shadow-sm transition-all duration-200 hover:bg-accent/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+            className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-base font-semibold text-accent-foreground shadow-sm transition-all duration-200 hover:bg-accent/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {loading ? (
               "Aplicando..."

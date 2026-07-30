@@ -226,7 +226,7 @@ export default async function ConfirmacionPage({
               {paymentStatus !== "success" && order.payment_link && (
                 <a
                   href={order.payment_link}
-                  className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
+                  className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
                   style={{ backgroundColor: accentColor }}
                 >
                   Reintentar pago
@@ -234,14 +234,14 @@ export default async function ConfirmacionPage({
               )}
               <Link
                 href={`/sitio/${slug}/productos`}
-                className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
+                className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
                 style={{ backgroundColor: accentColor }}
               >
                 Seguir comprando
               </Link>
               <Link
                 href={paymentStatus === "failure" ? `/sitio/${slug}/carrito` : `/sitio/${slug}/inicio`}
-                className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-6 py-4 font-semibold transition-opacity hover:opacity-90"
+                className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-6 py-4 font-semibold transition-opacity hover:opacity-90"
                 style={{ borderColor: accentColor, color: accentColor }}
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -301,7 +301,7 @@ export default async function ConfirmacionPage({
             {order.payment_link && (
               <a
                 href={order.payment_link}
-                className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
+                className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
                 style={{ backgroundColor: accentColor }}
               >
                 Reintentar en Mercado Pago
@@ -309,14 +309,14 @@ export default async function ConfirmacionPage({
             )}
             <Link
               href={`/sitio/${slug}/carrito`}
-              className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
+              className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: accentColor }}
             >
               Volver al carrito
             </Link>
             <Link
               href={`/sitio/${slug}/inicio`}
-              className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-6 py-4 font-semibold transition-opacity hover:opacity-90"
+              className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-6 py-4 font-semibold transition-opacity hover:opacity-90"
               style={{ borderColor: accentColor, color: accentColor }}
             >
               <ArrowLeft className="h-4 w-4" />
@@ -348,7 +348,7 @@ export default async function ConfirmacionPage({
           {order.payment_link && (
             <a
               href={order.payment_link}
-              className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
+              className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: accentColor }}
             >
               Reintentar en Mercado Pago
@@ -356,14 +356,14 @@ export default async function ConfirmacionPage({
           )}
           <Link
             href={`/sitio/${slug}/carrito`}
-            className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
+            className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: accentColor }}
           >
             Intentar nuevamente
           </Link>
           <Link
             href={`/sitio/${slug}/inicio`}
-            className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-6 py-4 font-semibold transition-opacity hover:opacity-90"
+            className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-6 py-4 font-semibold transition-opacity hover:opacity-90"
             style={{ borderColor: accentColor, color: accentColor }}
           >
             <ArrowLeft className="h-4 w-4" />

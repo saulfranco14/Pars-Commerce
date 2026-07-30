@@ -8,14 +8,8 @@ import { setAcceptingOrders } from "@/features/orders/services/acceptingOrdersSe
 
 import type { AcceptingOrdersToggleProps } from "@/features/orders/interfaces/acceptingOrders";
 
-/**
- * Abre y cierra la recepción de pedidos del sitio.
- *
- * Va detrás de una confirmación porque cerrar deja de vender de inmediato y el
- * botón vive junto a otros que no tienen consecuencia. La confirmación dice
- * qué NO pasa (el catálogo sigue arriba), que es la duda real de quien lo
- * toca la primera vez.
- */
+// Confirmed because closing stops sales immediately; the dialog says what does
+// NOT happen (the catalog stays up).
 export function AcceptingOrdersToggle({
   tenantId,
   accepting,

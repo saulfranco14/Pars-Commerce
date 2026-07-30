@@ -61,7 +61,7 @@ export function LandingMesas() {
         <div className="mt-14 flex flex-col items-center gap-3 text-center">
           <Link
             href="/registro"
-            className="group inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-base font-semibold text-accent-foreground transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background sm:w-auto"
+            className="group inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-base font-semibold text-accent-foreground transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background sm:w-auto"
           >
             Crear mi QR gratis
             <ArrowRight

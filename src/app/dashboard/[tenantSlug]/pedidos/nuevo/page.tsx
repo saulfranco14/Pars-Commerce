@@ -2,25 +2,22 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { ArrowLeft, Loader2, Search, ShoppingBag, User } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, Search, ShoppingBag, User } from "lucide-react";
 import Link from "next/link";
 import useSWR from "swr";
 
-import { useActiveTenant } from "@/stores/useTenantStore";
-import { PageHeader } from "@/components/admin/PageHeader";
+import { useActiveTenant, usePermission } from "@/stores/useTenantStore";
 import { EmptyState } from "@/components/admin/EmptyState";
-import { FilterPills } from "@/components/admin/FilterPills";
+import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
+import { FilterTabs } from "@/components/ui/FilterTabs";
 import { FormInput } from "@/components/ui/FormInput";
 import { MenuProductCard } from "@/features/qr/components/menu-product/MenuProductCard";
+import { StaffOrderCartPanel } from "@/features/qr/components/menu-product/StaffOrderCartPanel";
 import { StaffOrderQrResult } from "@/features/qr/components/qr-create/StaffOrderQrResult";
 import { useStaffOrderBuilder } from "@/features/qr/hooks/useStaffOrderBuilder";
 import { listByTenant } from "@/services/productsService";
-import { formatCurrency } from "@/features/qr/helpers/format";
 
 import type { ProductListItem } from "@/types/products";
-
-const primaryCta =
-  "inline-flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] transition-all disabled:cursor-not-allowed disabled:opacity-60";
 
 export default function NuevoPedidoStaffPage() {
   const params = useParams();
@@ -28,6 +25,7 @@ export default function NuevoPedidoStaffPage() {
   const searchParams = useSearchParams();
   const tableOrderId = searchParams.get("table_order_id") ?? undefined;
   const activeTenant = useActiveTenant();
+  const can = usePermission();
   const tenantId = activeTenant?.id ?? null;
 
   const [query, setQuery] = useState("");
@@ -43,8 +41,6 @@ export default function NuevoPedidoStaffPage() {
     tableOrderId,
   });
 
-  // Category pills derived from the products' subcatalogs (same pattern as the
-  // customer menu / products page).
   const categoryFilters = useMemo(() => {
     const byId = new Map<string, string>();
     for (const p of products ?? []) {
@@ -68,7 +64,6 @@ export default function NuevoPedidoStaffPage() {
     return list;
   }, [products, query, category]);
 
-  // MenuProductCard reports a productId; the builder wants the full product.
   const productById = useMemo(
     () => new Map((products ?? []).map((p) => [p.id, p] as const)),
     [products],
@@ -90,8 +85,18 @@ export default function NuevoPedidoStaffPage() {
     );
   }
 
-  // After confirm → show the QR / linked notice. The result component owns its
-  // own "Pedido creado" heading — no PageHeader on top (it read duplicated).
+  // Checked here too, not just on the endpoint: otherwise the whole order gets
+  // built before the 403.
+  if (!can(ORDER_PERMISSIONS.take)) {
+    return (
+      <EmptyState
+        icon={Lock}
+        title="Tu rol no puede levantar pedidos"
+        description="Pide a la persona dueña del negocio que te asigne un rol con permiso para tomar pedidos."
+      />
+    );
+  }
+
   if (builder.result) {
     return (
       <StaffOrderQrResult
@@ -105,134 +110,112 @@ export default function NuevoPedidoStaffPage() {
   }
 
   return (
-    <div className="space-y-5 pb-40">
-      <div className="flex items-center gap-2">
-        <Link
-          href={`/dashboard/${tenantSlug}/mesas`}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface text-muted-foreground hover:bg-border-soft/40"
-          aria-label="Volver"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
-        <PageHeader
-          title="Tomar pedido"
-          description={
-            tableOrderId
-              ? "Se agregará a la cuenta de la mesa."
-              : "Se generará un código QR para que el cliente pague."
-          }
-        />
-      </div>
-
-      {/* Customer name (optional) — icon + FormInput so it doesn't read as
-          a second search box next to the product search below. */}
-      <FormInput
-        label="Cliente"
-        icon={User}
-        optional
-        value={builder.customerName}
-        onChange={(e) => builder.setCustomerName(e.target.value)}
-        placeholder="Nombre del cliente"
-      />
-
-      {/* Product search — visually its own section (eyebrow + divider) so
-          it doesn't blend into the customer-name field above it. */}
-      <div className="border-t border-border-soft pt-4">
-        <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-          Productos
-        </span>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar producto..."
-            className="block w-full rounded-2xl border-2 border-border bg-background py-3 pl-11 pr-4 text-sm font-medium text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none transition-colors"
-          />
-        </div>
-      </div>
-
-      {/* Category pills — only when there's more than one real category */}
-      {categoryFilters.length > 2 && (
-        <FilterPills
-          filters={categoryFilters}
-          value={category}
-          onChange={setCategory}
-          ariaLabel="Filtrar por categoría"
-        />
-      )}
-
-      {/* Product list — the SAME card the customer menu uses (MenuProductCard):
-          photo-led, price anchored, floating + / stepper. One visual language. */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-10 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={ShoppingBag}
-          title="Sin productos"
-          description="No hay productos que coincidan con tu búsqueda."
-        />
-      ) : (
-        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
-          {filtered.map((product) => (
-            <MenuProductCard
-              key={product.id}
-              product={product}
-              quantity={builder.qtyByProduct[product.id] ?? 0}
-              onAdd={addById}
-              onDecrement={builder.decrement}
-              tenantLogoUrl={activeTenant.logo_url}
-              tenantName={activeTenant.name}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Fixed summary + confirm bar */}
-      {builder.itemCount > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur-sm">
-          <div className="mx-auto max-w-3xl space-y-2 px-4 py-3">
-            <div className="max-h-24 space-y-1 overflow-y-auto">
-              {builder.lines.map((l) => (
-                <div
-                  key={l.product.id}
-                  className="flex items-center justify-between text-xs"
-                >
-                  <span className="text-muted-foreground">
-                    {l.quantity}× {l.product.name}
-                  </span>
-                  <span className="font-semibold text-foreground">
-                    {formatCurrency(Number(l.product.price) * l.quantity)}
-                  </span>
-                </div>
-              ))}
-            </div>
-            {builder.error && (
-              <p className="text-xs font-medium text-red-600">{builder.error}</p>
-            )}
-            <button
-              type="button"
-              onClick={builder.submit}
-              disabled={builder.submitting}
-              className={primaryCta}
-            >
-              {builder.submitting ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Creando pedido...
-                </>
-              ) : (
-                <>
-                  Confirmar pedido · {formatCurrency(builder.total)}
-                </>
-              )}
-            </button>
+    // Subtracts the dashboard chrome: h-14 header + main's vertical padding.
+    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col overflow-hidden sm:h-[calc(100dvh-6.5rem)]">
+      <div className="shrink-0 space-y-3 pb-3">
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/dashboard/${tenantSlug}/mesas`}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-surface text-muted-foreground transition-colors hover:bg-border-soft/40"
+            aria-label="Volver"
+          >
+            <ArrowLeft className="h-5 w-5" aria-hidden />
+          </Link>
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold text-foreground">
+              Tomar pedido
+            </h1>
+            <p className="truncate text-sm text-muted-foreground">
+              {tableOrderId
+                ? "Se agregará a la cuenta de la mesa."
+                : "Se generará un código QR para que el cliente pague."}
+            </p>
           </div>
         </div>
-      )}
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FormInput
+            label="Cliente"
+            icon={User}
+            optional
+            value={builder.customerName}
+            onChange={(e) => builder.setCustomerName(e.target.value)}
+            placeholder="Nombre del cliente"
+          />
+          <div>
+            <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              Buscar
+            </span>
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Nombre del producto…"
+                className="block min-h-12 w-full rounded-2xl border-2 border-border bg-background py-3 pl-11 pr-4 text-base font-medium text-foreground transition-colors placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
+                aria-label="Buscar producto"
+              />
+            </div>
+          </div>
+        </div>
+
+        {categoryFilters.length > 2 && (
+          <FilterTabs
+            tabs={categoryFilters}
+            activeValue={category}
+            onTabChange={setCategory}
+            ariaLabel="Filtrar por categoría"
+            density="touch"
+          />
+        )}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto pb-3">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-10 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+          </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={ShoppingBag}
+            title="Sin productos"
+            description="No hay productos que coincidan con tu búsqueda."
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2 2xl:grid-cols-3">
+            {filtered.map((product) => (
+              <MenuProductCard
+                key={product.id}
+                product={product}
+                quantity={builder.qtyByProduct[product.id] ?? 0}
+                onAdd={addById}
+                onDecrement={builder.decrement}
+                tenantLogoUrl={activeTenant.logo_url}
+                tenantName={activeTenant.name}
+                density="touch"
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="shrink-0">
+        <StaffOrderCartPanel
+          lines={builder.lines}
+          total={builder.total}
+          itemCount={builder.itemCount}
+          onAdd={addById}
+          onDecrement={builder.decrement}
+          onSubmit={builder.submit}
+          submitting={builder.submitting}
+          error={builder.error}
+          appendingToTable={!!tableOrderId}
+        />
+      </div>
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions"
 
 import type { AssignmentPickerProps } from "@/features/orders/interfaces/assignment";
 
-/** Estados en los que todavía tiene sentido hablar de quién atiende el pedido. */
+/** Statuses where who serves the order still matters. */
 const ASSIGNABLE_STATUSES = [
   "draft",
   "assigned",
@@ -18,11 +18,8 @@ const ASSIGNABLE_STATUSES = [
   "paid",
 ];
 
-/**
- * Selector de a quién se le pasa el pedido. Se extrajo del cuerpo de la
- * tarjeta porque antes estaba escrito tres veces —una por cada combinación de
- * móvil/escritorio y pagado/sin pagar— y las tres se habían ido separando.
- */
+// Extracted because it used to be written three times (mobile/desktop ×
+// paid/unpaid) and the three had drifted apart.
 function AssignmentPicker({
   team,
   assignedTo,
@@ -62,23 +59,8 @@ function AssignmentPicker({
   );
 }
 
-/**
- * Quién atiende el pedido, y el control para cambiarlo.
- *
- * Dos reglas que antes no se cumplían:
- *
- * 1. Se decide por PERMISO, no por nombre de rol. Antes preguntaba
- *    `activeRole?.name === "owner"`, así que un rol personalizado con
- *    `orders.assign` no podía asignar.
- * 2. Un pedido ya asignado se puede REASIGNAR. Antes, en cuanto tenía dueño la
- *    tarjeta se volvía de solo lectura para todos, lo que dejaba sin salida el
- *    caso normal: alguien recibe el pedido y luego se lo pasa a quien lo
- *    atendió de verdad.
- *
- * Sobre un pedido ya pagado se pide además `orders.addendum` (solo el dueño
- * del negocio), porque reasignarlo reescribe a quién se le atribuye la venta.
- * Es la misma regla que aplica el PATCH de `/api/orders`.
- */
+// Gated by permission, not role name. On a paid order it also needs
+// `orders.addendum`: reassigning rewrites who the sale is credited to.
 export function AssignmentCard() {
   const { order, team, actionLoading, assignmentSuccess, handleAssign } =
     useOrder();

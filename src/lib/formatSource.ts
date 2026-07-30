@@ -4,6 +4,7 @@ import {
   Globe,
   LayoutDashboard,
   Link2,
+  Monitor,
   QrCode,
   Smartphone,
 } from "lucide-react";
@@ -12,6 +13,7 @@ export type OrderSource =
   | "dashboard"
   | "public_store"
   | "staff"
+  | "kiosk"
   | "qr_table"
   | "qr_payment"
   | "addendum";
@@ -35,6 +37,12 @@ const SOURCE_CONFIG: Record<
     label: "Mostrador",
     icon: ClipboardList,
     iconClass: "text-violet-600",
+  },
+  // El cliente lo armó solo en la pantalla grande. Nadie lo atendió.
+  kiosk: {
+    label: "Autoservicio",
+    icon: Monitor,
+    iconClass: "text-indigo-600",
   },
   // Customer-initiated table order via the table's QR.
   qr_table: {

@@ -147,7 +147,7 @@ export function OrderActionButtons({
   }
 
   const btnBase =
-    "inline-flex min-h-[48px] min-w-0 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 active:scale-[0.98]";
+    "inline-flex min-h-12 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 active:scale-[0.98]";
   const btnPrimary = `${btnBase} bg-accent text-accent-foreground hover:bg-accent/90 focus-visible:ring-accent`;
   const btnSuccess = `${btnBase} bg-emerald-600 text-white shadow-sm hover:bg-emerald-500 focus-visible:ring-emerald-500`;
   const btnBlue = `${btnBase} bg-blue-600 text-white hover:bg-blue-500 focus-visible:ring-blue-500`;

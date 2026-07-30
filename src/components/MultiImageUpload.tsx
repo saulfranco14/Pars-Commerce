@@ -167,7 +167,7 @@ export const MultiImageUpload = forwardRef<MultiImageUploadRef, MultiImageUpload
                 <button
                   type="button"
                   onClick={() => removeAt(i)}
-                  className="absolute right-2 top-2 flex min-h-[36px] min-w-[36px] cursor-pointer items-center justify-center rounded-lg bg-red-500/90 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 hover:bg-red-600"
+                  className="absolute right-2 top-2 flex min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-lg bg-red-500/90 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 hover:bg-red-600"
                   aria-label="Quitar imagen"
                 >
                   <X className="h-4 w-4" aria-hidden />

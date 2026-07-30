@@ -15,7 +15,7 @@ export default function CartBadge({ sitioSlug, accentColor }: CartBadgeProps) {
   return (
     <Link
       href={`/sitio/${sitioSlug}/carrito`}
-      className="relative flex min-h-[44px] min-w-[44px] shrink-0 cursor-pointer items-center justify-center overflow-visible rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
+      className="relative flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center overflow-visible rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
       aria-label={`Carrito${itemsCount > 0 ? ` con ${itemsCount} productos` : ""}`}
     >
       {isLoading ? (

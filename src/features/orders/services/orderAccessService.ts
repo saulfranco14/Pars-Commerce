@@ -1,10 +1,5 @@
-/**
- * Alcance de un usuario sobre los pedidos de un negocio.
- *
- * La RLS de `orders` solo comprueba membresía, así que el aislamiento ENTRE
- * negocios ya está cubierto por la base. Lo que resuelve este módulo es el
- * alcance DENTRO de un mismo negocio, que la base no sabe.
- */
+// `orders` RLS only checks membership, so cross-tenant isolation is already
+// covered. This module adds the per-role scope within one tenant.
 
 import { requirePermission } from "@/lib/auth/requirePermission";
 import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
@@ -22,10 +17,7 @@ export interface OrderAccess {
   canWrite: boolean;
   canAssign: boolean;
   canClose: boolean;
-  /**
-   * Tocar un pedido YA PAGADO. Reasignar uno pagado reescribe a quién se le
-   * atribuye la venta, así que pide el mismo permiso que la orden ligada.
-   */
+  /** Touch an already-paid order: reassigning rewrites the sale's credit. */
   canTouchPaid: boolean;
 }
 
@@ -45,8 +37,8 @@ export async function resolveOrderAccess(
   );
   if (!membership) return { ok: false, error: FORBIDDEN };
 
-  // Se repite el criterio de `requirePermission` para que los flags no
-  // dependan de que la migración le sembrara todo al owner.
+  // Mirrors `requirePermission` so the flags don't depend on the migration
+  // having seeded everything to the owner.
   const isOwner = membership.roleName === "owner";
   const has = (permission: string) =>
     isOwner || membership.permissions.includes(permission);
@@ -66,10 +58,8 @@ export async function resolveOrderAccess(
   };
 }
 
-/**
- * "Suyo" incluye `created_by` y no solo `assigned_to`: quien levanta un pedido
- * debe seguir viéndolo aunque nadie se lo haya asignado.
- */
+// "Theirs" includes `created_by`, not just `assigned_to`: whoever took an
+// order keeps seeing it even when nobody is assigned yet.
 export function canAccessOrder(
   access: OrderAccess,
   order: { assigned_to?: string | null; created_by?: string | null },
@@ -80,7 +70,7 @@ export function canAccessOrder(
   );
 }
 
-/** Equivalente de `canAccessOrder` en PostgREST, para recortar en la consulta. */
+/** `canAccessOrder` as a PostgREST filter, to narrow in the query. */
 export function assignedToMeFilter(access: OrderAccess): string {
   return `assigned_to.eq.${access.userId},created_by.eq.${access.userId}`;
 }

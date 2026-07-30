@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { requiresReadyBeforePayment } from "@/features/qr/helpers/paymentReadiness";
+
 /**
  * If the order is fully paid, clear qr_codes.current_order_id so the table
  * becomes free again automatically. Logs `table.closed_automatic` to the
@@ -13,7 +15,7 @@ export async function releaseTableQrIfPaid(
 ): Promise<void> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, status, qr_code_id, order_type")
+    .select("id, status, qr_code_id, order_type, source, fulfillment_status")
     .eq("id", orderId)
     .single();
 
@@ -30,10 +32,22 @@ export async function releaseTableQrIfPaid(
 
   if (!qr || qr.current_order_id !== orderId) return;
 
+  const isSingleUse = qr.kind === "order";
+
+  // Un ticket que se paga POR ADELANTADO no se gasta al cobrar: es la única
+  // pantalla donde el cliente sigue su pedido, y archivarla ahí lo dejaba con un
+  // QR muerto. Se gasta cuando el trabajo queda listo, que es cuando ya recogió.
+  if (
+    isSingleUse &&
+    !requiresReadyBeforePayment(order.source) &&
+    (order.fulfillment_status ?? "received") !== "ready"
+  ) {
+    return;
+  }
+
   const now = new Date().toISOString();
   // A single-use 'order' ticket is spent once paid → archive it so it can't be
   // rescanned. A persistent 'table'/'payment' QR just frees up for the next use.
-  const isSingleUse = qr.kind === "order";
   await admin
     .from("qr_codes")
     .update({

@@ -602,7 +602,7 @@ export default function NuevoPrestamo() {
                           key={label}
                           type="button"
                           onClick={() => { setPlanFrequency(freq); setPlanFrequencyType(type); }}
-                          className={`flex-1 min-h-[36px] rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                          className={`flex-1 min-h-9 rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                             isSelected
                               ? "border-accent bg-accent/10 text-accent"
                               : "border-border bg-surface text-foreground hover:bg-surface-raised"
@@ -652,7 +652,7 @@ export default function NuevoPrestamo() {
                         key={value}
                         type="button"
                         onClick={() => setPlanType(value)}
-                        className={`flex-1 min-h-[36px] rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                        className={`flex-1 min-h-9 rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                           planType === value
                             ? "border-accent bg-accent/10 text-accent"
                             : "border-border bg-surface text-foreground hover:bg-surface-raised"
@@ -672,7 +672,7 @@ export default function NuevoPrestamo() {
                   <button
                     type="button"
                     onClick={() => setFeeAbsorbedBy("business")}
-                    className={`flex-1 min-h-[36px] rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    className={`flex-1 min-h-9 rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                       feeAbsorbedBy === "business"
                         ? "border-accent bg-accent/10 text-accent"
                         : "border-border bg-surface text-foreground hover:bg-surface-raised"
@@ -683,7 +683,7 @@ export default function NuevoPrestamo() {
                   <button
                     type="button"
                     onClick={() => setFeeAbsorbedBy("customer")}
-                    className={`flex-1 min-h-[36px] rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    className={`flex-1 min-h-9 rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                       feeAbsorbedBy === "customer"
                         ? "border-accent bg-accent/10 text-accent"
                         : "border-border bg-surface text-foreground hover:bg-surface-raised"

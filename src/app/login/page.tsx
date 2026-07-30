@@ -15,6 +15,7 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 import { AuthBrandMark } from "@/components/brand/AuthBrandMark";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { createClient } from "@/lib/supabase/client";
+import { safeNextPath } from "@/lib/auth/safeNextPath";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 
 function parseHashParams() {
@@ -48,7 +49,7 @@ const setPasswordSchema = yup.object({
 type FieldErrors = Record<string, string>;
 
 const inputBase =
-  "input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2";
+  "input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2";
 const inputNormal = `${inputBase} focus:border-accent focus:ring-accent/20`;
 const inputError = `${inputBase} border-red-400 focus:border-red-400 focus:ring-red-400/20`;
 
@@ -64,7 +65,7 @@ function FieldError({ message }: { message?: string }) {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = safeNextPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -255,7 +256,7 @@ function LoginForm() {
           <div className="absolute right-4 top-4 z-10">
             <ThemeToggle />
           </div>
-          <div className="w-full max-w-[400px] animate-auth-enter">
+          <div className="w-full max-w-100 animate-auth-enter">
             <div className="mb-8 flex justify-center lg:hidden">
               <AuthBrandMark animated />
             </div>
@@ -482,7 +483,7 @@ function LoginForm() {
           }}
           aria-hidden
         />
-        <div className="relative w-full max-w-[400px] animate-auth-enter">
+        <div className="relative w-full max-w-100 animate-auth-enter">
           <div className="mb-8 flex justify-center lg:hidden">
             <AuthBrandMark animated />
           </div>

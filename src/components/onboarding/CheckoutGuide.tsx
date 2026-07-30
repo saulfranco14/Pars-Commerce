@@ -268,7 +268,7 @@ export function CheckoutGuide({
             )}
             <button
               onClick={next}
-              className="flex h-9 min-w-[90px] items-center justify-center gap-1.5 rounded-xl px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              className="flex h-9 min-w-22.5 items-center justify-center gap-1.5 rounded-xl px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: accentColor }}
             >
               {isLast ? "¡Listo!" : "Siguiente"}

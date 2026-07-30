@@ -54,7 +54,7 @@ export function VentasPagosTab({
             return (
               <div
                 key={member.id}
-                className="flex min-w-[250px] flex-1 items-center justify-between rounded-xl border border-border bg-border-soft/60 p-4"
+                className="flex min-w-62.5 flex-1 items-center justify-between rounded-xl border border-border bg-border-soft/60 p-4"
               >
                 <div>
                   <p className="text-sm font-medium text-foreground">
@@ -70,7 +70,7 @@ export function VentasPagosTab({
                 <button
                   onClick={() => onGeneratePayment(member.id)}
                   disabled={actionLoading}
-                  className="min-h-[44px] shrink-0 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
+                  className="min-h-11 shrink-0 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
                 >
                   Generar
                 </button>
@@ -143,13 +143,13 @@ export function VentasPagosTab({
                   <div className="mt-3 flex gap-2 border-t border-border-soft pt-3">
                     <button
                       onClick={() => onEditPayment(p)}
-                      className="min-h-[44px] flex-1 rounded-xl border border-border px-4 text-sm font-medium text-muted-foreground hover:bg-border-soft/60"
+                      className="min-h-11 flex-1 rounded-xl border border-border px-4 text-sm font-medium text-muted-foreground hover:bg-border-soft/60"
                     >
                       Editar
                     </button>
                     <button
                       onClick={() => onPayPayment(p)}
-                      className="min-h-[44px] flex-1 rounded-xl bg-accent px-4 text-sm font-medium text-accent-foreground hover:opacity-90"
+                      className="min-h-11 flex-1 rounded-xl bg-accent px-4 text-sm font-medium text-accent-foreground hover:opacity-90"
                     >
                       Pagar
                     </button>

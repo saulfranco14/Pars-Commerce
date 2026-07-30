@@ -175,7 +175,7 @@ export default function SuscripcionesPage() {
                   type="button"
                   onClick={() => handleActivateRecurring("installments")}
                   disabled={activating}
-                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border-2 border-accent bg-accent/5 px-4 py-2.5 text-sm font-medium text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl border-2 border-accent bg-accent/5 px-4 py-2.5 text-sm font-medium text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
                 >
                   <SplitSquareHorizontal className="h-4 w-4" />
                   Activar cuotas
@@ -184,7 +184,7 @@ export default function SuscripcionesPage() {
                   type="button"
                   onClick={() => handleActivateRecurring("recurring")}
                   disabled={activating}
-                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border-2 border-accent bg-accent/5 px-4 py-2.5 text-sm font-medium text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl border-2 border-accent bg-accent/5 px-4 py-2.5 text-sm font-medium text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
                 >
                   <Repeat className="h-4 w-4" />
                   Activar recurrente
@@ -193,7 +193,7 @@ export default function SuscripcionesPage() {
                   type="button"
                   onClick={() => handleActivateRecurring("both")}
                   disabled={activating}
-                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-50"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-50"
                 >
                   Activar ambos
                 </button>
@@ -239,7 +239,7 @@ export default function SuscripcionesPage() {
           <button
             type="button"
             onClick={() => setFilterSheetOpen(true)}
-            className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+            className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
               hasDateFilter
                 ? "bg-accent/15 text-accent hover:bg-accent/20"
                 : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
@@ -257,7 +257,7 @@ export default function SuscripcionesPage() {
                 setDateFrom("");
                 setDateTo("");
               }}
-              className="inline-flex min-h-[36px] items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+              className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
             >
               Limpiar
             </button>
@@ -317,7 +317,7 @@ export default function SuscripcionesPage() {
                         </Link>
                       </td>
                       <td className={tableBodyCellMutedClass}>
-                        <span className="line-clamp-1 max-w-[200px]">
+                        <span className="line-clamp-1 max-w-50">
                           {sub.concept || "—"}
                         </span>
                       </td>

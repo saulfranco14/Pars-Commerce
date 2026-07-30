@@ -1,15 +1,12 @@
+import type { OrderSource } from "@/lib/formatSource";
+
 export interface OrderListItem {
   id: string;
+  /** Los 8 del id en mayúsculas. Es el número que el cliente canta al pagar. */
+  order_number?: string | null;
   status: string;
   cancelled_from?: string | null;
-  source?:
-    | "dashboard"
-    | "public_store"
-    | "qr_payment"
-    | "qr_table"
-    | "staff"
-    | "addendum"
-    | null;
+  source?: OrderSource | null;
   order_type?: "dine_in" | "takeaway" | "qr_payment" | null;
   /** Cuándo pasa el cliente por él. `null` = sin agendar. */
   scheduled_for?: string | null;

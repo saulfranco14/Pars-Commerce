@@ -1,11 +1,5 @@
-/**
- * Horarios de atención. Puro, sin I/O.
- *
- * Todo se evalúa en hora de Ciudad de México y NUNCA con `getHours()`: estas
- * funciones corren también en el servidor, que va en UTC, y ahí `getHours()`
- * daría seis horas de más — lo bastante para leer el día equivocado de
- * madrugada.
- */
+// Never use `getHours()` here: this also runs server-side in UTC, which would
+// read the wrong day after 18:00 Mexico time.
 
 import {
   WEEKDAY_LABELS,
@@ -37,13 +31,12 @@ const WEEKDAY_INDEX: Record<string, Weekday> = {
 
 export interface MexicoMoment {
   weekday: Weekday;
-  /** Minutos desde la medianoche local. */
+  /** Minutes since local midnight. */
   minutes: number;
-  /** `YYYY-MM-DD` local. */
+  /** Local `YYYY-MM-DD`. */
   dateStr: string;
 }
 
-/** Qué día y qué hora es en México en ese instante. */
 export function mexicoMoment(date: Date): MexicoMoment {
   const parts = PARTS.formatToParts(date);
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
@@ -54,7 +47,7 @@ export function mexicoMoment(date: Date): MexicoMoment {
   };
 }
 
-/** Instante absoluto de una hora de pared mexicana. */
+/** Absolute instant of a Mexican wall-clock time. */
 export function mexicoDateAt(dateStr: string, minutes: number): Date {
   const h = String(Math.floor(minutes / 60) % 24).padStart(2, "0");
   const m = String(minutes % 60).padStart(2, "0");
@@ -78,7 +71,7 @@ export function toHHmm(minutes: number): string {
   return `${h}:${m}`;
 }
 
-/** `null` = el negocio todavía no dio de alta sus horarios. */
+/** `null` = hours not registered yet. */
 export function readBusinessHours(
   settings: Record<string, unknown> | null | undefined,
 ): BusinessHours | null {
@@ -95,11 +88,8 @@ export function readBusinessHours(
   };
 }
 
-/**
- * Franjas que cubren un día, incluidas las que vienen de la noche anterior.
- * Un `close` menor que el `open` significa que la franja cruza la medianoche
- * (una taquería de 18:00 a 02:00), y esa cola pertenece al día siguiente.
- */
+// A `close` earlier than `open` crosses midnight (18:00–02:00); that tail
+// belongs to the next day.
 function activeRanges(
   hours: BusinessHours,
   weekday: Weekday,
@@ -135,11 +125,7 @@ export function isOpenAt(hours: BusinessHours, date: Date): boolean {
   );
 }
 
-/**
- * Cuándo vuelve a abrir a partir de `from`. Devuelve `from` si ya está
- * abierto. `null` si no abre en toda la semana siguiente — que es el caso de
- * un negocio con los siete días cerrados.
- */
+// Returns `from` if already open, `null` if closed all week.
 export function nextOpening(hours: BusinessHours, from: Date): Date | null {
   if (hours.mode === "always") return from;
   if (isOpenAt(hours, from)) return from;
@@ -161,16 +147,12 @@ export function nextOpening(hours: BusinessHours, from: Date): Date | null {
   return null;
 }
 
-/** Resumen legible de un día: "9:00–14:00 y 16:00–20:00" o "Cerrado". */
 export function describeDay(day: DayHours): string {
   if (day.closed || day.ranges.length === 0) return "Cerrado";
   return day.ranges.map((r) => `${r.open}–${r.close}`).join(" y ");
 }
 
-/**
- * Resumen de una semana, agrupando días seguidos con el mismo horario. Se
- * recorre de lunes a domingo, que es como se lee una semana aquí.
- */
+// Monday to Sunday, which is how a week reads here.
 export function describeWeek(hours: BusinessHours): string[] {
   if (hours.mode === "always") return ["Abierto las 24 horas, todos los días"];
 
@@ -193,7 +175,6 @@ export function describeWeek(hours: BusinessHours): string[] {
   return lines;
 }
 
-/** Franja vacía lista para editar. */
 export function emptyRange(): TimeRange {
   return { open: "09:00", close: "18:00" };
 }

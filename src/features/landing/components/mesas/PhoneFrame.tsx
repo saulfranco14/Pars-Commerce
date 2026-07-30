@@ -10,14 +10,14 @@ interface PhoneFrameProps {
  */
 export function PhoneFrame({ children, screenKey }: PhoneFrameProps) {
   return (
-    <div className="mx-auto w-full max-w-[260px] sm:max-w-[280px]">
+    <div className="mx-auto w-full max-w-65 sm:max-w-70">
       <div className="rounded-[2.25rem] border border-border bg-surface-raised p-2 shadow-card">
         <div className="relative overflow-hidden rounded-[1.75rem] border border-border bg-surface">
           <span
             className="absolute left-1/2 top-2 z-10 h-1.5 w-16 -translate-x-1/2 rounded-full bg-foreground/15"
             aria-hidden
           />
-          <div key={screenKey} className="animate-fade-in-up h-[420px] pt-3">
+          <div key={screenKey} className="animate-fade-in-up h-105 pt-3">
             {children}
           </div>
         </div>

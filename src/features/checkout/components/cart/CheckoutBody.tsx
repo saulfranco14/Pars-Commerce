@@ -65,12 +65,6 @@ interface CheckoutBodyProps {
   } | null;
 }
 
-/**
- * Cuerpo común del checkout — usado tanto en el aside de desktop como en el
- * bottom-sheet de mobile. Compone subtotal, selector de modo, MSI,
- * frecuencia, desgloses y formulario, sincronizando todos los IDs y `form`
- * para que los handlers funcionen con submit nativo.
- */
 export function CheckoutBody({
   variant,
   formState,
@@ -208,7 +202,7 @@ export function CheckoutBody({
           <button
             type="submit"
             disabled={submitting}
-            className="w-full min-h-[48px] cursor-pointer rounded-xl px-6 py-4 font-semibold text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
+            className="w-full min-h-12 cursor-pointer rounded-xl px-6 py-4 font-semibold text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
             style={{ backgroundColor: accentColor }}
           >
             {submitLabel}

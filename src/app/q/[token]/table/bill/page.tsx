@@ -226,7 +226,7 @@ export default function TableBillPage() {
         type="button"
         onClick={splitForm.submit}
         disabled={splitForm.submitting}
-        className="flex min-h-[54px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex min-h-13.5 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Users className="h-5 w-5" />
         {splitForm.submitting ? "Dividiendo..." : "Confirmar división"}
@@ -244,7 +244,7 @@ export default function TableBillPage() {
                 amount: data.order.balance_due,
               })
             }
-            className="flex min-h-[54px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
+            className="flex min-h-13.5 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
           >
             <CreditCard className="h-5 w-5" />
             Pagar {formatCurrency(data.order.balance_due)}
@@ -255,7 +255,7 @@ export default function TableBillPage() {
         >
           <Link
             href={`/q/${token}`}
-            className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
+            className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
           >
             <PlusCircle className="h-4 w-4 text-muted-foreground" />
             Agregar más
@@ -263,7 +263,7 @@ export default function TableBillPage() {
           {showSplitButton && (
             <Link
               href={`/q/${token}/table/bill?order_id=${orderId}&split=1`}
-              className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
+              className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
             >
               <Users className="h-4 w-4 text-muted-foreground" />
               Dividir
@@ -276,7 +276,7 @@ export default function TableBillPage() {
             <button
               type="button"
               onClick={() => setMergeOpen(true)}
-              className="inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl px-4 text-xs font-semibold text-muted-foreground transition-colors hover:text-accent"
+              className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl px-4 text-xs font-semibold text-muted-foreground transition-colors hover:text-accent"
             >
               <Link2 className="h-3.5 w-3.5" />
               Unir con otra mesa
@@ -381,7 +381,7 @@ export default function TableBillPage() {
             <button
               type="button"
               onClick={goToQrRoot}
-              className="flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
+              className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
             >
               <RotateCcw className="h-4 w-4 text-muted-foreground" />
               Ordenar de nuevo

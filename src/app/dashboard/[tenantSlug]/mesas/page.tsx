@@ -100,7 +100,7 @@ export default function MesasPage() {
             <div className="hidden flex-wrap items-center gap-2 md:flex">
               <Link
                 href={`/dashboard/${tenantSlug}/pedidos/nuevo`}
-                className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-2 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
+                className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-2 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
               >
                 <ClipboardList className="h-4 w-4" />
                 Tomar pedido

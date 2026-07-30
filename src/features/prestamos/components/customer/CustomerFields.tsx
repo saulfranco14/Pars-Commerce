@@ -31,10 +31,10 @@ export function CustomerFields({
   disabled = false,
 }: CustomerFieldsProps) {
   const baseClass = compact
-    ? inputBase.replace("min-h-[44px]", "min-h-[38px]").replace("text-base", "text-sm")
+    ? inputBase.replace("min-h-11", "min-h-9.5").replace("text-base", "text-sm")
     : inputBase;
   const errClass = compact
-    ? inputError.replace("min-h-[44px]", "min-h-[38px]").replace("text-base", "text-sm")
+    ? inputError.replace("min-h-11", "min-h-9.5").replace("text-base", "text-sm")
     : inputError;
 
   const labelClass = compact

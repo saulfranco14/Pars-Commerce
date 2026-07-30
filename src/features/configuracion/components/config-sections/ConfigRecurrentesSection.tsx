@@ -102,7 +102,7 @@ export function ConfigRecurrentesSection({
             </p>
             <div className="flex gap-3">
               <label
-                className={`flex flex-1 min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex flex-1 min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-medium transition-colors ${
                   feeAbsorbedBy === "customer"
                     ? "border-accent bg-accent/5 text-accent"
                     : "border-border text-muted-foreground hover:border-muted"
@@ -119,7 +119,7 @@ export function ConfigRecurrentesSection({
                 Cliente la paga
               </label>
               <label
-                className={`flex flex-1 min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex flex-1 min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-medium transition-colors ${
                   feeAbsorbedBy === "business"
                     ? "border-accent bg-accent/5 text-accent"
                     : "border-border text-muted-foreground hover:border-muted"
@@ -152,7 +152,7 @@ export function ConfigRecurrentesSection({
                   key={opt.value}
                   type="button"
                   onClick={() => toggleFrequency(opt.value)}
-                  className={`min-h-[44px] cursor-pointer rounded-xl border-2 px-4 py-2 text-sm font-medium transition-colors ${
+                  className={`min-h-11 cursor-pointer rounded-xl border-2 px-4 py-2 text-sm font-medium transition-colors ${
                     allowedFrequencies.includes(opt.value)
                       ? "border-accent bg-accent/5 text-accent"
                       : "border-border text-muted-foreground hover:border-muted"
@@ -180,7 +180,7 @@ export function ConfigRecurrentesSection({
                     key={v}
                     type="button"
                     onClick={() => onSubscriptionDiscountPercentChange(v)}
-                    className={`min-h-[44px] cursor-pointer rounded-xl border-2 px-4 py-2 text-sm font-medium transition-colors ${
+                    className={`min-h-11 cursor-pointer rounded-xl border-2 px-4 py-2 text-sm font-medium transition-colors ${
                       subscriptionDiscountPercent === v
                         ? "border-accent bg-accent/5 text-accent"
                         : "border-border text-muted-foreground hover:border-muted"
@@ -200,7 +200,7 @@ export function ConfigRecurrentesSection({
                   onChange={(e) =>
                     onSubscriptionDiscountPercentChange(e.target.value)
                   }
-                  className="min-h-[44px] w-20 rounded-xl border border-border px-3 py-2 text-center text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                  className="min-h-11 w-20 rounded-xl border border-border px-3 py-2 text-center text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                   placeholder="%"
                 />
               </div>
@@ -222,7 +222,7 @@ export function ConfigRecurrentesSection({
                     key={v}
                     type="button"
                     onClick={() => onMaxInstallmentsChange(v)}
-                    className={`min-h-[44px] cursor-pointer rounded-xl border-2 px-4 py-2 text-sm font-medium transition-colors ${
+                    className={`min-h-11 cursor-pointer rounded-xl border-2 px-4 py-2 text-sm font-medium transition-colors ${
                       maxInstallments === v
                         ? "border-accent bg-accent/5 text-accent"
                         : "border-border text-muted-foreground hover:border-muted"
@@ -247,7 +247,7 @@ export function ConfigRecurrentesSection({
               </p>
               <div className="flex gap-3">
                 <label
-                  className={`flex flex-1 min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`flex flex-1 min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-medium transition-colors ${
                     deliveryOn === "first_payment"
                       ? "border-accent bg-accent/5 text-accent"
                       : "border-border text-muted-foreground hover:border-muted"
@@ -264,7 +264,7 @@ export function ConfigRecurrentesSection({
                   Al primer cobro
                 </label>
                 <label
-                  className={`flex flex-1 min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`flex flex-1 min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-medium transition-colors ${
                     deliveryOn === "full_payment"
                       ? "border-accent bg-accent/5 text-accent"
                       : "border-border text-muted-foreground hover:border-muted"

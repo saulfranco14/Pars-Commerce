@@ -74,7 +74,7 @@ export default function TablePaymentResultPage() {
         />
         <Link
           href={`/q/${token}/table/bill?order_id=${orderId}`}
-          className="inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
+          className="inline-flex min-h-13 items-center justify-center rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
         >
           Ir a la cuenta
         </Link>
@@ -127,7 +127,7 @@ export default function TablePaymentResultPage() {
         )}
         <Link
           href={`/q/${token}/table/bill?order_id=${orderId}`}
-          className="mt-5 inline-flex min-h-[48px] cursor-pointer items-center justify-center rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
+          className="mt-5 inline-flex min-h-12 cursor-pointer items-center justify-center rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
         >
           Ir a la cuenta
         </Link>

@@ -246,7 +246,7 @@ export function OrderCardMobile({
         role="region"
         aria-labelledby={`order-${order.id}-items-trigger`}
         className={`overflow-hidden border-t border-border/40 bg-background/30 transition-[max-height,opacity] duration-300 ease-out ${
-          expanded ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+          expanded ? "max-h-100 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="space-y-2 p-3">
@@ -309,7 +309,7 @@ export function OrderCardMobile({
       {/* ── Receipt footer ── */}
       {(isPaid || order.status === "pending_pickup") && (
         <div
-          className="flex min-h-[52px] items-center justify-between gap-3 border-t border-border/40 bg-background/20 pl-4 pr-3 py-2"
+          className="flex min-h-13 items-center justify-between gap-3 border-t border-border/40 bg-background/20 pl-4 pr-3 py-2"
           onClick={(e) => e.stopPropagation()}
           role="group"
         >

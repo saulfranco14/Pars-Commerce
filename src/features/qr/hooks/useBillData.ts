@@ -18,7 +18,6 @@ export interface BillItem {
   is_shared: boolean;
   origin_table_label: string | null;
   created_at: string | null;
-  /** Per-line preparation state: received | in_progress | ready. */
   fulfillment_status?: string;
 }
 
@@ -26,13 +25,14 @@ export interface BillDevice {
   id: string;
   display_name: string | null;
   color_hex: string;
-  /** Per-person preparation state: received | in_progress | ready. */
   fulfillment_status?: string;
 }
 
 export interface BillResponse {
   order: {
     id: string;
+    /** El número que el cliente canta en el mostrador. */
+    order_number: string | null;
     status: string;
     fulfillment_status: string;
     total: number;
@@ -73,15 +73,6 @@ interface UseBillDataOptions {
   refreshIntervalMs?: number;
 }
 
-/**
- * Encapsulates fetching the customer's bill + auto-refresh. Owns:
- *  - device fingerprint resolution (localStorage)
- *  - SWR cache keyed by (url, fingerprint)
- *  - fetcher that adds the x-fingerprint-id header
- *
- * Components only consume `{ data, isLoading, error, mutate }` and stay
- * free of fetch wiring.
- */
 export function useBillData(
   token: string,
   orderId: string | null,
@@ -107,7 +98,7 @@ export function useBillData(
       if (!res.ok) throw new Error("No se pudo cargar la cuenta");
       return res.json();
     },
-    { refreshInterval },
+    { refreshInterval, dedupingInterval: refreshInterval },
   );
 
   return {
