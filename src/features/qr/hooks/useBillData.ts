@@ -19,6 +19,7 @@ export interface BillItem {
   origin_table_label: string | null;
   created_at: string | null;
   fulfillment_status?: string;
+  split_group_id?: string | null;
 }
 
 export interface BillDevice {
@@ -40,6 +41,7 @@ export interface BillResponse {
     balance_due: number;
     created_at: string;
     payment_method: string | null;
+    tip_available?: boolean;
   };
   tenant?: {
     id: string;
@@ -74,7 +76,9 @@ interface UseBillDataOptions {
 }
 
 function receiptCacheKey(token: string, orderId: string): string {
-  return `tlaco:receipt:${token}:${orderId}`;
+  // v2 adds payment capability metadata, so older cached receipts cannot
+  // incorrectly show an unavailable action.
+  return `tlaco:receipt:v2:${token}:${orderId}`;
 }
 
 function readCachedReceipt(token: string, orderId: string | null): BillResponse | undefined {

@@ -74,6 +74,29 @@ describe("releaseTableQrIfPaid", () => {
     expect(qrUpdate(db)).toBeUndefined();
   });
 
+  it("kiosko vinculado tarde a una mesa conserva ticket y mesa mientras se prepara", async () => {
+    const db = createFakeSupabase({
+      orders: [
+        {
+          id: "o1",
+          status: "paid",
+          source: "kiosk",
+          order_type: "dine_in",
+          fulfillment_status: "in_progress",
+        },
+      ],
+      qr_codes: [
+        { id: "ticket", current_order_id: "o1", kind: "order", is_active: true },
+        { id: "mesa", current_order_id: "o1", kind: "table", is_active: true },
+      ],
+      order_activity_log: [],
+    });
+
+    await releaseTableQrIfPaid(asClient(db), "o1");
+
+    expect(qrUpdate(db)).toBeUndefined();
+  });
+
   it("ticket de autoservicio LISTO: ahí sí se gasta", async () => {
     const db = scenario({
       kind: "order",

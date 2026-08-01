@@ -20,6 +20,11 @@ export const NOT_READY_MESSAGE =
 
 export function requiresReadyBeforePayment(
   source: string | null | undefined,
+  orderType?: string | null,
 ): boolean {
+  // Source is immutable audit data; once a kiosk customer deliberately sits at
+  // a table, the service context becomes dine-in and follows table payment
+  // rules even though the order still originated at a kiosk.
+  if (orderType === "dine_in") return true;
   return !PAY_ON_PICKUP.has((source ?? "").trim());
 }

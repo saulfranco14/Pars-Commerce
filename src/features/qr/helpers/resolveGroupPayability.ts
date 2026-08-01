@@ -44,7 +44,7 @@ export function resolveGroupPayability(
     isMine,
     ready,
     showPreparing: !isPaid && !isPending && !ready && !!group.device_id,
-    showPay: !isPaid && !isPending && ready && hasPayHandler,
+    showPay: isMine && !isPaid && !isPending && ready && hasPayHandler,
   };
 }
 

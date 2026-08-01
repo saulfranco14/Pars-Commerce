@@ -5,7 +5,8 @@ import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
-import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import { useSWRConfig } from "swr";
+import { useActiveTenant } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
 import { ArrowLeft, X, Check } from "lucide-react";
 import {
@@ -32,6 +33,7 @@ export default function EditarProductoPage() {
   }, []);
   const params = useParams();
   const router = useRouter();
+  const { mutate: globalMutate } = useSWRConfig();
   const productId = params.productId as string;
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
@@ -245,6 +247,16 @@ export default function EditarProductoPage() {
         wholesale_price: hasWholesaleMin ? (wholesalePriceNum as number) : null,
       });
       await mutate();
+      if (activeTenant) {
+        await globalMutate(
+          (cacheKey) =>
+            typeof cacheKey === "string" &&
+            cacheKey.startsWith("/api/products?") &&
+            cacheKey.includes(
+              `tenant_id=${encodeURIComponent(activeTenant.id)}`,
+            ),
+        );
+      }
       router.push(`/dashboard/${tenantSlug}/productos`);
       router.refresh();
     } catch (e) {

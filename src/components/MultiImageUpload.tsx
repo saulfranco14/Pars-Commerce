@@ -46,7 +46,7 @@ export const MultiImageUpload = forwardRef<MultiImageUploadRef, MultiImageUpload
         const { uploadProductImage } = await import("@/lib/supabase/storage");
         const uploadedUrls: string[] = [];
         for (const { file, previewUrl } of pendingFiles) {
-          const url = await uploadProductImage(file, tenantId, realProductId + "-" + uploadedUrls.length);
+          const url = await uploadProductImage(file, tenantId, realProductId);
           uploadedUrls.push(url);
           URL.revokeObjectURL(previewUrl);
         }
@@ -109,7 +109,7 @@ export const MultiImageUpload = forwardRef<MultiImageUploadRef, MultiImageUpload
       onChange(newUrls);
       try {
         const { deleteFileByUrl } = await import("@/lib/supabase/storage");
-        await deleteFileByUrl(urlToRemove);
+        await deleteFileByUrl(urlToRemove, tenantId);
       } catch {
         // Silently ignore deletion errors — the URL is already removed from state
       }

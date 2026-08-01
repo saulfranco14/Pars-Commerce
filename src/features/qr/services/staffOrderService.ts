@@ -19,6 +19,7 @@ import {
   filterValidItems,
   type RequestedItem,
 } from "@/features/qr/helpers/buildOrderItemRows";
+import { validateOrderStock } from "@/features/inventory/services/orderStockValidationService";
 
 import type {
   ServiceError,
@@ -43,6 +44,8 @@ export interface CreateStaffOrderInput {
   customerPhone?: string | null;
   /** When present, append to this existing (table) order instead of a new one. */
   tableOrderId?: string | null;
+  /** Connected table user who owns the lines added by staff. */
+  deviceId?: string | null;
 }
 
 export interface CreateStaffOrderResult {
@@ -74,6 +77,13 @@ export async function createStaffOrder(
 
   const priceByProduct = new Map<string, number>();
   for (const p of products ?? []) priceByProduct.set(p.id, Number(p.price));
+
+  const stockValidation = await validateOrderStock(
+    admin,
+    input.tenantId,
+    valid,
+  );
+  if (!stockValidation.ok) return err("conflict", stockValidation.message);
 
   if (input.tableOrderId) {
     return appendToTableOrder(admin, input, valid, priceByProduct);
@@ -220,11 +230,24 @@ async function appendToTableOrder(
     return err("conflict", "La orden ya no acepta nuevos productos");
   }
 
+  if (input.deviceId) {
+    const { data: device } = await admin
+      .from("order_devices")
+      .select("id")
+      .eq("id", input.deviceId)
+      .eq("order_id", order.id)
+      .maybeSingle();
+    if (!device) {
+      return err("validation", "La persona seleccionada ya no est\u00e1 en esta mesa");
+    }
+  }
+
   const rows = buildOrderItemRows({
     orderId: order.id,
     items,
     priceByProduct,
     addedByMemberId: input.actorMembershipId,
+    addedByDeviceId: input.deviceId ?? null,
     originTableLabel: order.table_label ?? null,
   });
   if (rows.length === 0) {

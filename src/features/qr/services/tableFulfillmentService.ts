@@ -49,13 +49,13 @@ export async function assertOrderReadyForPayment(
 ): Promise<ServiceError | null> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, fulfillment_status, source")
+    .select("id, fulfillment_status, source, order_type")
     .eq("id", orderId)
     .single();
 
   if (!order) return { code: "not_found", message: "Orden no encontrada" };
   if (
-    requiresReadyBeforePayment(order.source) &&
+    requiresReadyBeforePayment(order.source, order.order_type) &&
     order.fulfillment_status !== "ready"
   ) {
     return { code: "conflict", message: NOT_READY_MESSAGE };
@@ -80,7 +80,7 @@ export async function advanceFulfillment(
 ): Promise<ServiceResult<AdvanceFulfillmentResult>> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, status, fulfillment_status, source")
+    .select("id, status, fulfillment_status, source, order_type")
     .eq("id", input.orderId)
     .single();
 
@@ -92,7 +92,10 @@ export async function advanceFulfillment(
   // mover su preparación después no tiene sentido. Donde el cliente paga por
   // adelantado es lo contrario: paga y su pedido queda POR HACER, y este es el
   // único lugar donde el personal puede avanzarlo.
-  if (order.status === "paid" && requiresReadyBeforePayment(order.source)) {
+  if (
+    order.status === "paid" &&
+    requiresReadyBeforePayment(order.source)
+  ) {
     return err("conflict", "La orden ya está pagada");
   }
 
@@ -168,12 +171,15 @@ export async function advanceDeviceFulfillment(
 ): Promise<ServiceResult<AdvanceDeviceFulfillmentResult>> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, status")
+    .select("id, status, source, order_type")
     .eq("id", input.orderId)
     .single();
 
   if (!order) return err("not_found", "Orden no encontrada");
-  if (order.status === "paid")
+  if (
+    order.status === "paid" &&
+    requiresReadyBeforePayment(order.source)
+  )
     return err("conflict", "La orden ya está pagada");
   if (order.status === "cancelled")
     return err("conflict", "La orden fue cancelada");
@@ -270,12 +276,15 @@ export async function advanceItemFulfillment(
 ): Promise<ServiceResult<AdvanceItemFulfillmentResult>> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, status")
+    .select("id, status, source, order_type")
     .eq("id", input.orderId)
     .single();
 
   if (!order) return err("not_found", "Orden no encontrada");
-  if (order.status === "paid")
+  if (
+    order.status === "paid" &&
+    requiresReadyBeforePayment(order.source)
+  )
     return err("conflict", "La orden ya está pagada");
   if (order.status === "cancelled")
     return err("conflict", "La orden fue cancelada");
@@ -356,12 +365,15 @@ export async function advanceAllDevicesFulfillment(
 ): Promise<ServiceResult<AdvanceFulfillmentResult>> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, status")
+    .select("id, status, source, order_type")
     .eq("id", input.orderId)
     .single();
 
   if (!order) return err("not_found", "Orden no encontrada");
-  if (order.status === "paid")
+  if (
+    order.status === "paid" &&
+    requiresReadyBeforePayment(order.source)
+  )
     return err("conflict", "La orden ya está pagada");
   if (order.status === "cancelled")
     return err("conflict", "La orden fue cancelada");
@@ -371,8 +383,15 @@ export async function advanceAllDevicesFulfillment(
     .select("id")
     .eq("order_id", input.orderId);
 
-  // No people connected yet → keep the order-level shortcut behaviour.
+  // No people connected yet (e.g. a kiosk ticket before it reaches a table):
+  // advance its actual lines too, otherwise the accordion would keep showing
+  // stale per-item states below an updated order summary.
   if (!devices || devices.length === 0) {
+    const { error: itemsError } = await admin
+      .from("order_items")
+      .update({ fulfillment_status: input.target })
+      .eq("order_id", input.orderId);
+    if (itemsError) return err("internal", itemsError.message);
     return advanceFulfillment(admin, input);
   }
 

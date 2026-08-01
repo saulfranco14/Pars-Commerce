@@ -133,22 +133,7 @@ export function TableCtaBar({
             </p>
           )
         ) : (
-          <>
-            {orderId && (
-              <button
-                type="button"
-                onClick={goToBill}
-                disabled={navigating}
-                className="inline-flex h-13.5 w-13.5 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-border bg-surface text-foreground transition-colors hover:bg-border-soft/40 disabled:opacity-70"
-                aria-label="Ver cuenta"
-              >
-                {navigating ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Receipt className="h-5 w-5" />
-                )}
-              </button>
-            )}
+          <div className="w-full space-y-2">
             <button
               type="button"
               onClick={onSend}
@@ -170,7 +155,18 @@ export function TableCtaBar({
                 </>
               )}
             </button>
-          </>
+            {orderId && (
+              <button
+                type="button"
+                onClick={goToBill}
+                disabled={navigating}
+                className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40 disabled:opacity-70"
+              >
+                {navigating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Receipt className="h-4 w-4" />}
+                Revisar detalle de compra
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

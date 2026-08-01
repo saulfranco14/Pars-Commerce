@@ -7,6 +7,7 @@ import {
   buildOrderItemRows,
   filterValidItems,
 } from "@/features/qr/helpers/buildOrderItemRows";
+import { validateOrderStock } from "@/features/inventory/services/orderStockValidationService";
 
 import type {
   CreateAddendumInput,
@@ -72,6 +73,13 @@ export async function createOrderAddendum(
   // Prices from the table, never from the client.
   const priceByProduct = new Map<string, number>();
   for (const p of products ?? []) priceByProduct.set(p.id, Number(p.price));
+
+  const stockValidation = await validateOrderStock(
+    admin,
+    parent.tenant_id,
+    valid,
+  );
+  if (!stockValidation.ok) return err("conflict", stockValidation.message);
 
   const { data: child, error: childErr } = await admin
     .from("orders")

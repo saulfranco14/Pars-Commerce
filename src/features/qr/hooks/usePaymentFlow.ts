@@ -76,6 +76,7 @@ export function usePaymentFlow({
           orderId,
           groupId: target.kind === "group" ? target.group.id : null,
           qrToken,
+          fingerprint,
         });
         // Hard redirect to Mercado Pago checkout. The customer comes back to
         // /q/{token}/table/payment/result?... which polls until paid.

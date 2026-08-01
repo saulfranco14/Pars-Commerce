@@ -20,6 +20,7 @@ interface QrResolveResponse {
   order?: {
     id: string;
     status: string;
+    source?: string | null;
     fulfillment_status?: string;
     total?: number;
   };

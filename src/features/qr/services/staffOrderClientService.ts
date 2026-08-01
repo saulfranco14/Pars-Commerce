@@ -21,6 +21,7 @@ export async function createStaffOrder(payload: {
   customerName?: string;
   customerPhone?: string;
   tableOrderId?: string;
+  deviceId?: string;
 }): Promise<CreateStaffOrderResponse> {
   return apiFetch("/api/qr/staff-order", {
     method: "POST",
@@ -30,6 +31,7 @@ export async function createStaffOrder(payload: {
       customer_name: payload.customerName,
       customer_phone: payload.customerPhone,
       table_order_id: payload.tableOrderId,
+      device_id: payload.deviceId,
     }),
   }) as Promise<CreateStaffOrderResponse>;
 }

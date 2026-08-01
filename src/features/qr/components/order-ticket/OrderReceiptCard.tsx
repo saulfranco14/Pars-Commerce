@@ -6,8 +6,10 @@ import { CheckCircle2, Download, Loader2, ReceiptText } from "lucide-react";
 import { PAYMENT_METHOD_META } from "@/features/qr/constants/paymentMethodMeta";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { exportReceiptAsPng } from "@/lib/receiptExport";
+import { ReceiptPreview } from "@/features/orders/components/receipt/ReceiptPreview";
 
 import type { CustomerPayMethod } from "@/features/qr/components/payment/CustomerPayModal";
+import type { OrderDetail, OrderItem } from "@/features/orders/interfaces/orderDetail";
 
 interface OrderReceiptCardProps {
   businessName: string;
@@ -16,7 +18,15 @@ interface OrderReceiptCardProps {
   amount: number;
   paidAt: string;
   paymentMethod: string | null;
-  itemCount: number;
+  items: Array<{
+    id: string;
+    product_id: string;
+    product_name: string;
+    quantity: number;
+    unit_price: number;
+    subtotal: number;
+  }>;
+  logoUrl?: string | null;
 }
 
 function formatDate(iso: string): string {
@@ -37,7 +47,8 @@ export function OrderReceiptCard({
   amount,
   paidAt,
   paymentMethod,
-  itemCount,
+  items,
+  logoUrl = null,
 }: OrderReceiptCardProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
@@ -46,6 +57,35 @@ export function OrderReceiptCard({
     PAYMENT_METHOD_META[(paymentMethod as CustomerPayMethod) ?? "efectivo"] ??
     PAYMENT_METHOD_META.efectivo;
   const MethodIcon = method.icon;
+  const receiptOrder: OrderDetail = {
+    id: orderId,
+    order_number: orderNumber,
+    status: "paid",
+    fulfillment_status: null,
+    customer_id: null,
+    customer_name: null,
+    customer_email: null,
+    customer_phone: null,
+    subtotal: amount,
+    discount: 0,
+    total: amount,
+    created_at: paidAt,
+    paid_at: paidAt,
+    assigned_to: null,
+    payment_method: paymentMethod,
+    items: [],
+  };
+  const receiptItems: OrderItem[] = items.map((item) => ({
+    id: item.id,
+    quantity: item.quantity,
+    unit_price: item.unit_price,
+    subtotal: item.subtotal,
+    product: {
+      id: item.product_id,
+      name: item.product_name,
+      type: "product",
+    },
+  }));
 
   async function downloadReceipt() {
     if (!receiptRef.current || downloading) return;
@@ -65,7 +105,18 @@ export function OrderReceiptCard({
       aria-labelledby="receipt-title"
       className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm"
     >
-      <div ref={receiptRef}>
+      <div
+        ref={receiptRef}
+        className="pointer-events-none fixed left-[-9999px] top-0 w-100 bg-white p-6"
+        aria-hidden
+      >
+        <ReceiptPreview
+          order={receiptOrder}
+          businessName={businessName}
+          items={receiptItems}
+          logoUrl={logoUrl}
+        />
+      </div>
       <div className="flex items-start gap-3 p-4">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
           <ReceiptText className="h-5 w-5" aria-hidden />
@@ -112,9 +163,8 @@ export function OrderReceiptCard({
       </dl>
 
       <div className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-muted-foreground">
-        <span>{itemCount} artículo{itemCount === 1 ? "" : "s"}</span>
+        <span>{items.length} artículo{items.length === 1 ? "" : "s"}</span>
         <span>{formatDate(paidAt)}</span>
-      </div>
       </div>
 
       <div className="border-t border-border-soft/60 p-3">
@@ -122,7 +172,7 @@ export function OrderReceiptCard({
           type="button"
           onClick={() => void downloadReceipt()}
           disabled={downloading}
-          className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground shadow-sm shadow-accent/20 transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {downloading ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

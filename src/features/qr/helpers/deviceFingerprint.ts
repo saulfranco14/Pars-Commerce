@@ -1,6 +1,61 @@
 "use client";
 
 const STORAGE_PREFIX = "tlaco_qr_fingerprint_";
+const KIOSK_HANDOFF_KEY = "tlaco_qr_kiosk_handoff_v1";
+const KIOSK_HANDOFF_TTL_MS = 12 * 60 * 60 * 1000;
+
+export interface KioskHandoff {
+  ticketToken: string;
+  orderId: string;
+  tenantId: string;
+  createdAt: number;
+}
+
+/**
+ * The kiosk ticket is an opaque, unguessable proof the customer already has
+ * in their browser. Keep only one short-lived handoff so scanning a table on
+ * the same phone can OFFER to attach the order without identifying people
+ * across unrelated QR codes.
+ */
+export function saveKioskHandoff(handoff: Omit<KioskHandoff, "createdAt">): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      KIOSK_HANDOFF_KEY,
+      JSON.stringify({ ...handoff, createdAt: Date.now() }),
+    );
+  } catch {
+    // Storage is an enhancement; the ticket itself still works without it.
+  }
+}
+
+export function getKioskHandoff(tenantId?: string): KioskHandoff | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(KIOSK_HANDOFF_KEY);
+    if (!raw) return null;
+    const handoff = JSON.parse(raw) as KioskHandoff;
+    const valid =
+      typeof handoff.ticketToken === "string" &&
+      typeof handoff.orderId === "string" &&
+      typeof handoff.tenantId === "string" &&
+      typeof handoff.createdAt === "number" &&
+      Date.now() - handoff.createdAt < KIOSK_HANDOFF_TTL_MS &&
+      (!tenantId || handoff.tenantId === tenantId);
+    if (!valid) {
+      window.localStorage.removeItem(KIOSK_HANDOFF_KEY);
+      return null;
+    }
+    return handoff;
+  } catch {
+    return null;
+  }
+}
+
+export function clearKioskHandoff(): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(KIOSK_HANDOFF_KEY);
+}
 
 /**
  * Returns (and persists) a per-QR fingerprint. Each scanned QR token gets its

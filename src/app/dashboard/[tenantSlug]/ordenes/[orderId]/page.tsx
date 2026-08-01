@@ -19,6 +19,7 @@ import { LinkedOrdersCard } from "@/features/orders/components/order/LinkedOrder
 import { PendingCashCard } from "@/features/orders/components/payment/PendingCashCard";
 import { CounterPaymentCard } from "@/features/orders/components/payment/CounterPaymentCard";
 import { OrderFulfillmentCard } from "@/features/orders/components/order/OrderFulfillmentCard";
+import { KioskFulfillmentCard } from "@/features/orders/components/order/KioskFulfillmentCard";
 import { OrderItemsTable } from "@/features/orders/components/order/OrderItemsTable";
 import { OrderActionButtons } from "@/features/orders/components/order/OrderActionButtons";
 import { ReceiptActions } from "@/features/orders/components/receipt/ReceiptActions";
@@ -189,7 +190,11 @@ function OrderDetailContent() {
             <CounterPaymentCard />
           </div>
           <div className="order-2 min-w-0 shrink-0 md:order-0">
-            <OrderFulfillmentCard />
+            {order.source === "kiosk" ? (
+              <KioskFulfillmentCard />
+            ) : (
+              <OrderFulfillmentCard />
+            )}
           </div>
           <div className="order-2 min-w-0 shrink-0 md:order-0">
             <LinkedOrdersCard />

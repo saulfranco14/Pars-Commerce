@@ -59,7 +59,7 @@ export function SiteContentInicioTab({
     setHeroDeleting(true);
     try {
       const { deleteHeroImage } = await import("@/lib/supabase/storage");
-      await deleteHeroImage(content.hero_image_url);
+      await deleteHeroImage(content.hero_image_url, tenantId);
       onChange({ ...content, hero_image_url: undefined });
     } catch (err: unknown) {
       setHeroError(handleUploadError(err, "Error al eliminar la imagen."));

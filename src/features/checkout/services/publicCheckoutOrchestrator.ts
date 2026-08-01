@@ -21,6 +21,7 @@ import {
 } from "@/features/checkout/helpers/pickupSchedule";
 import { readBusinessHours } from "@/features/configuracion/helpers/businessHours";
 import { createOrderItems } from "@/features/checkout/helpers/orderItems";
+import { validateOrderStock } from "@/features/inventory/services/orderStockValidationService";
 import type {
   CheckoutMode,
   PublicCheckoutResponse,
@@ -169,6 +170,15 @@ export async function executePublicCheckout({
     payload.frequency && payload.frequency > 0 ? payload.frequency : 1;
   const frequencyType = payload.frequency_type ?? "months";
   const expiresAt = new Date(Date.now() + ATTEMPT_TTL_MS).toISOString();
+
+  const stockValidation = await validateOrderStock(
+    admin,
+    payload.tenant_id,
+    normalizedItems,
+  );
+  if (!stockValidation.ok) {
+    return NextResponse.json({ error: stockValidation.message }, { status: 409 });
+  }
 
   const { data: order, error: orderError } = await admin
     .from("orders")

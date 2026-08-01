@@ -140,6 +140,7 @@ export async function POST(request: Request) {
           externalReference: externalRef,
           mpPaymentId: String(mpPayment.id ?? paymentId),
           amount: transactionAmount,
+          feeAmount: mpFeeAmount,
         });
       }
       return NextResponse.json({ received: true });

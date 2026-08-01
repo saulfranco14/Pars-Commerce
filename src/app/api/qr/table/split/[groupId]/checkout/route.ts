@@ -41,7 +41,18 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const admin = createAdminClient();
-  const result = await payGroup(admin, { groupId, method: body.method });
+  const fingerprint = request.headers.get("x-fingerprint-id")?.trim() || null;
+  if (!fingerprint) {
+    return NextResponse.json(
+      { error: "Identifica tu dispositivo para pagar esta parte" },
+      { status: 403 },
+    );
+  }
+  const result = await payGroup(admin, {
+    groupId,
+    method: body.method,
+    fingerprint,
+  });
   if (!result.ok) return serviceErrorToResponse(result.error);
 
   return NextResponse.json({

@@ -16,7 +16,7 @@ export async function GET(request: Request, context: RouteContext) {
   const { data: order } = await admin
     .from("orders")
     .select(
-      "id, order_number, tenant_id, status, fulfillment_status, total, paid_total, balance_due, created_at, qr_code_id, payment_method, merge_group_id",
+      "id, order_number, tenant_id, status, fulfillment_status, total, paid_total, balance_due, created_at, qr_code_id, payment_method, merge_group_id, assigned_to",
     )
     .eq("id", orderId)
     .single();
@@ -106,6 +106,23 @@ export async function GET(request: Request, context: RouteContext) {
     );
   }
 
+  const { data: groupItemMappings } =
+    splitGroups && splitGroups.length > 0
+      ? await admin
+          .from("order_split_group_items")
+          .select("split_group_id, order_item_id")
+          .in(
+            "split_group_id",
+            splitGroups.map((group) => group.id),
+          )
+      : { data: [] };
+  const splitGroupIdByItemId = new Map(
+    (groupItemMappings ?? []).map((mapping) => [
+      mapping.order_item_id as string,
+      mapping.split_group_id as string,
+    ]),
+  );
+
   const enrichedItems = (items ?? []).map((item) => ({
     id: item.id,
     product_id: item.product_id,
@@ -118,6 +135,7 @@ export async function GET(request: Request, context: RouteContext) {
     origin_table_label: item.origin_table_label ?? null,
     created_at: item.created_at ?? null,
     fulfillment_status: item.fulfillment_status ?? "received",
+    split_group_id: splitGroupIdByItemId.get(item.id as string) ?? null,
   }));
 
   const groups =
@@ -211,6 +229,9 @@ export async function GET(request: Request, context: RouteContext) {
       balance_due: groupBalance,
       created_at: order.created_at,
       payment_method: order.payment_method ?? null,
+      // Do not expose the staff id. The client only needs to know whether a
+      // tip has a real recipient before offering the payment journey.
+      tip_available: Boolean(order.assigned_to),
     },
     tenant: tenant ?? null,
     qr_code: qrCode ?? null,

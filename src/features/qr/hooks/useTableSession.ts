@@ -4,13 +4,16 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   clearDeviceName,
+  clearKioskHandoff,
   getDeviceName,
+  getKioskHandoff,
   getLastOrderId,
   getOrCreateFingerprint,
   setLastOrderId,
 } from "@/features/qr/helpers/deviceFingerprint";
 import {
   fetchTablePulse,
+  attachKioskOrderToTable,
   resolveTableSession,
 } from "@/features/qr/services/tableClientService";
 
@@ -29,6 +32,9 @@ interface UseTableSessionResult {
   ended: boolean;
   /** Full re-resolve (starts a fresh session — e.g. "Comenzar de nuevo"). */
   refresh: () => Promise<void>;
+  attachingKiosk: boolean;
+  attachKiosk: () => Promise<void>;
+  dismissKioskHandoff: () => Promise<void>;
 }
 
 /**
@@ -53,6 +59,7 @@ export function useTableSession(token: string): UseTableSessionResult {
   const [fingerprint, setFingerprint] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [ended, setEnded] = useState(false);
+  const [attachingKiosk, setAttachingKiosk] = useState(false);
 
   // Shared by first load and manual refresh: apply the session-isolation
   // rules (never revive a previous customer's name on a fresh order).
@@ -78,7 +85,12 @@ export function useTableSession(token: string): UseTableSessionResult {
     const fp = getOrCreateFingerprint(token);
     setFingerprint(fp);
 
-    resolveTableSession({ token, fingerprint: fp })
+    const handoff = getKioskHandoff();
+    resolveTableSession({
+      token,
+      fingerprint: fp,
+      kioskTicketToken: handoff?.ticketToken ?? null,
+    })
       .then(applySession)
       .catch((err: unknown) => {
         setError(
@@ -154,11 +166,48 @@ export function useTableSession(token: string): UseTableSessionResult {
   const refresh = async () => {
     if (!token || !fingerprint) return;
     try {
-      const body = await resolveTableSession({ token, fingerprint });
+      const handoff = getKioskHandoff();
+      const body = await resolveTableSession({
+        token,
+        fingerprint,
+        kioskTicketToken: handoff?.ticketToken ?? null,
+      });
       applySession(body);
     } catch {
       /* keep last good data */
     }
+  };
+
+  const attachKiosk = async () => {
+    if (!token || !fingerprint || !data?.kiosk_handoff) return;
+    const handoff = getKioskHandoff(data.tenant.id);
+    if (!handoff || handoff.orderId !== data.kiosk_handoff.order_id) {
+      setError("No encontramos el ticket de autoservicio en este teléfono.");
+      return;
+    }
+    setAttachingKiosk(true);
+    setError(null);
+    try {
+      await attachKioskOrderToTable({
+        tableToken: token,
+        ticketToken: handoff.ticketToken,
+        fingerprint,
+      });
+      clearKioskHandoff();
+      const body = await resolveTableSession({ token, fingerprint });
+      applySession(body);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "No se pudo usar esta mesa.",
+      );
+    } finally {
+      setAttachingKiosk(false);
+    }
+  };
+
+  const dismissKioskHandoff = async () => {
+    clearKioskHandoff();
+    await refresh();
   };
 
   const storedName = data ? getDeviceName(token) : null;
@@ -173,5 +222,8 @@ export function useTableSession(token: string): UseTableSessionResult {
     isLoading: !data && !error,
     ended,
     refresh,
+    attachingKiosk,
+    attachKiosk,
+    dismissKioskHandoff,
   };
 }

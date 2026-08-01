@@ -78,6 +78,49 @@ export async function areAllSplitGroupsPaid(
   return groups.every((g) => g.payment_status === "paid");
 }
 
+/** Keep the order aggregate in sync with each independently-paid split group. */
+export async function syncSplitOrderPaymentTotals(
+  admin: SupabaseClient,
+  orderId: string,
+  options: { now: string; method?: string },
+): Promise<{ allPaid: boolean }> {
+  const { data: groups, error } = await admin
+    .from("order_split_groups")
+    .select("total, paid_total, balance_due, payment_status")
+    .eq("order_id", orderId);
+
+  // An incomplete read must never close a table or mark money as collected.
+  if (error || !groups || groups.length === 0) return { allPaid: false };
+
+  const paidTotal = groups.reduce(
+    (sum, group) => sum + Number(group.paid_total ?? 0),
+    0,
+  );
+  const balanceDue = groups.reduce(
+    (sum, group) => sum + Number(group.balance_due ?? group.total ?? 0),
+    0,
+  );
+  const allPaid = groups.every((group) => group.payment_status === "paid");
+
+  await admin
+    .from("orders")
+    .update({
+      paid_total: paidTotal,
+      balance_due: Math.max(0, balanceDue),
+      ...(allPaid
+        ? {
+            status: "paid",
+            paid_at: options.now,
+            payment_method: options.method ?? "manual",
+          }
+        : {}),
+      updated_at: options.now,
+    })
+    .eq("id", orderId);
+
+  return { allPaid };
+}
+
 /* -------------------------------------------------------------------------- */
 /* Payment intent — customer signals they want to pay (cash/transfer/in-card) */
 /* -------------------------------------------------------------------------- */
@@ -105,7 +148,7 @@ export async function createPaymentIntent(
   const { data: order } = await admin
     .from("orders")
     .select(
-      "id, tenant_id, status, fulfillment_status, source, total, balance_due",
+      "id, tenant_id, status, fulfillment_status, source, order_type, total, balance_due",
     )
     .eq("id", input.orderId)
     .single();
@@ -116,21 +159,23 @@ export async function createPaymentIntent(
   if (order.status === "cancelled")
     return err("conflict", "La orden fue cancelada");
 
-  const gateOnReady = requiresReadyBeforePayment(order.source);
+  const gateOnReady = requiresReadyBeforePayment(order.source, order.order_type);
 
   // Locate device id so the activity log records who paid AND so we can gate
   // payment on THAT person's readiness (per-person), not the whole table.
   let deviceId: string | null = null;
   let deviceStatus: string | null = null;
+  let isAccountOwner = false;
   if (input.fingerprint) {
     const { data: device } = await admin
       .from("order_devices")
-      .select("id, fulfillment_status")
+      .select("id, fulfillment_status, is_owner")
       .eq("order_id", input.orderId)
       .eq("device_fingerprint", input.fingerprint)
       .maybeSingle();
     deviceId = device?.id ?? null;
     deviceStatus = device?.fulfillment_status ?? null;
+    isAccountOwner = device?.is_owner === true;
   }
 
   const requestedGroupId = input.groupId ?? null;
@@ -140,7 +185,9 @@ export async function createPaymentIntent(
   // Never let a ready device materialize and pay the entire table's balance.
   if (gateOnReady) {
     const canPayTargetGroup =
-      requestedGroupId !== null && deviceStatus === "ready";
+      requestedGroupId !== null &&
+      (deviceStatus === "ready" ||
+        (isAccountOwner && order.fulfillment_status === "ready"));
     const canPayWholeOrder =
       requestedGroupId === null && order.fulfillment_status === "ready";
     if (!canPayTargetGroup && !canPayWholeOrder) return NOT_READY_ERROR;
@@ -189,14 +236,24 @@ export async function createPaymentIntent(
   } else {
     const { data: group } = await admin
       .from("order_split_groups")
-      .select("id, payment_status, total, balance_due")
+      .select("id, device_id, payment_status, total, balance_due")
       .eq("id", targetGroupId)
       .eq("order_id", input.orderId)
       .single();
 
     if (!group) return err("not_found", "Grupo no encontrado");
+    if (
+      input.fingerprint &&
+      (!deviceId || (group.device_id !== deviceId && !isAccountOwner))
+    ) {
+      return err("forbidden", "Esta parte de la cuenta pertenece a otra persona");
+    }
     if (group.payment_status === "paid")
       return err("conflict", "Esta parte ya está pagada");
+
+    if (group.payment_status === "pending_validation") {
+      return err("conflict", "Esta parte ya estÃ¡ esperando confirmaciÃ³n");
+    }
 
     await admin
       .from("order_split_groups")
@@ -209,7 +266,7 @@ export async function createPaymentIntent(
 
   const { data: groupRow } = await admin
     .from("order_split_groups")
-    .select("total, balance_due")
+    .select("total, balance_due, device_id")
     .eq("id", targetGroupId)
     .single();
   const intentAmount = Number(groupRow?.balance_due ?? groupRow?.total ?? 0);
@@ -289,7 +346,7 @@ export async function confirmPayment(
 ): Promise<ServiceResult<ConfirmPaymentResult>> {
   const { data: payment } = await admin
     .from("payments")
-    .select("id, order_id, split_group_id, amount, status, metadata")
+    .select("id, order_id, split_group_id, amount, status, metadata, tip_amount")
     .eq("id", input.paymentId)
     .single();
 
@@ -312,7 +369,13 @@ export async function confirmPayment(
 
   await admin
     .from("payments")
-    .update({ status: "approved", updated_at: now })
+    .update({
+      status: "approved",
+      // Manual methods have no processor fee; the whole tip reaches the
+      // assigned attendant. Mercado Pago fills these values from its webhook.
+      tip_net_amount: Number(payment.tip_amount ?? 0),
+      updated_at: now,
+    } as never)
     .eq("id", payment.id);
 
   if (payment.split_group_id) {
@@ -336,21 +399,11 @@ export async function confirmPayment(
 
   let allPaid = false;
   if (payment.split_group_id) {
-    allPaid = await areAllSplitGroupsPaid(admin, order.id);
-    if (allPaid) {
-      await admin
-        .from("orders")
-        .update({
-          status: "paid",
-          paid_at: now,
-          balance_due: 0,
-          paid_total: Number(order.total),
-          payment_method: method,
-          updated_at: now,
-        })
-        .eq("id", order.id);
-    }
-  } else {
+    ({ allPaid } = await syncSplitOrderPaymentTotals(admin, order.id, {
+      now,
+      method,
+    }));
+  } else if (Number(payment.tip_amount ?? 0) === 0) {
     // Sin grupo de split: un ticket de mostrador o de pantalla de autoservicio.
     // Antes solo se liquidaba la rama de mesas, así que el pago quedaba
     // aprobado y el pedido abierto para siempre.
@@ -382,6 +435,10 @@ export async function confirmPayment(
         updated_at: now,
       })
       .eq("id", order.id);
+  } else {
+    // A tip is paid after the order is already settled. It must never change
+    // the original method, revenue aggregate, or balance of that order.
+    allPaid = true;
   }
 
   await admin.from("order_activity_log").insert({
@@ -487,7 +544,7 @@ export async function payFullOrder(
   const { data: order } = await admin
     .from("orders")
     .select(
-      "id, status, fulfillment_status, source, total, paid_total, balance_due, merge_group_id",
+      "id, status, fulfillment_status, source, order_type, total, paid_total, balance_due, merge_group_id",
     )
     .eq("id", input.orderId)
     .single();
@@ -510,7 +567,7 @@ export async function payFullOrder(
     );
   }
   if (
-    requiresReadyBeforePayment(order.source) &&
+    requiresReadyBeforePayment(order.source, order.order_type) &&
     order.fulfillment_status !== "ready"
   ) {
     return NOT_READY_ERROR;
@@ -606,6 +663,8 @@ export async function payFullOrder(
 export interface PayGroupInput {
   groupId: string;
   method: CheckoutMethod;
+  /** Public callers must prove ownership of the group with their fingerprint. */
+  fingerprint?: string | null;
 }
 
 export interface PayGroupResult {
@@ -632,14 +691,26 @@ export async function payGroup(
 
   const { data: groupOrder } = await admin
     .from("orders")
-    .select("fulfillment_status, source")
+    .select("fulfillment_status, source, order_type")
     .eq("id", group.order_id)
     .single();
+
+  if (input.fingerprint) {
+    const { data: device } = await admin
+      .from("order_devices")
+      .select("id")
+      .eq("order_id", group.order_id)
+      .eq("device_fingerprint", input.fingerprint)
+      .maybeSingle();
+    if (!device || !group.device_id || device.id !== group.device_id) {
+      return err("forbidden", "Esta parte de la cuenta pertenece a otra persona");
+    }
+  }
 
   // Per-person gating: a group tied to a device is payable as soon as THAT
   // person is ready, even if the rest of the table isn't. Groups without a
   // device (e.g. "cuenta total") fall back to the order-level summary.
-  if (requiresReadyBeforePayment(groupOrder?.source)) {
+  if (requiresReadyBeforePayment(groupOrder?.source, groupOrder?.order_type)) {
     if (group.device_id) {
       const { data: device } = await admin
         .from("order_devices")
@@ -676,20 +747,11 @@ export async function payGroup(
     metadata: { source: "qr_split_checkout", method: input.method },
   });
 
-  const allPaid = await areAllSplitGroupsPaid(admin, group.order_id);
-
-  if (allPaid) {
-    await admin
-      .from("orders")
-      .update({
-        status: "paid",
-        paid_at: now,
-        balance_due: 0,
-        paid_total: Number(group.total),
-        payment_method: input.method,
-      })
-      .eq("id", group.order_id);
-  }
+  const { allPaid } = await syncSplitOrderPaymentTotals(
+    admin,
+    group.order_id,
+    { now, method: input.method },
+  );
 
   await admin.from("order_activity_log").insert({
     order_id: group.order_id,

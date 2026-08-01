@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { ArrowLeft, Loader2, Lock, Search, ShoppingBag, User } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, Search, ShoppingBag, User, Users } from "lucide-react";
 import Link from "next/link";
 import useSWR from "swr";
 
@@ -16,8 +16,10 @@ import { StaffOrderCartPanel } from "@/features/qr/components/menu-product/Staff
 import { StaffOrderQrResult } from "@/features/qr/components/qr-create/StaffOrderQrResult";
 import { useStaffOrderBuilder } from "@/features/qr/hooks/useStaffOrderBuilder";
 import { listByTenant } from "@/services/productsService";
+import { swrFetcher } from "@/lib/swrFetcher";
 
 import type { ProductListItem } from "@/types/products";
+import type { AdminViewResponse } from "@/features/qr/services/tableAdminViewService";
 
 export default function NuevoPedidoStaffPage() {
   const params = useParams();
@@ -34,6 +36,10 @@ export default function NuevoPedidoStaffPage() {
   const { data: products, isLoading } = useSWR<ProductListItem[]>(
     tenantId ? ["staff-order-products", tenantId] : null,
     () => listByTenant(tenantId as string),
+  );
+  const { data: tableView, isLoading: tableLoading } = useSWR<AdminViewResponse>(
+    tableOrderId ? `/api/qr/table/${encodeURIComponent(tableOrderId)}/admin-view` : null,
+    swrFetcher,
   );
 
   const builder = useStaffOrderBuilder({
@@ -69,6 +75,8 @@ export default function NuevoPedidoStaffPage() {
     [products],
   );
   const { add } = builder;
+  const tableDevices = tableView?.devices ?? [];
+  const tableLabel = tableView?.order?.table_label ?? "Mesa";
   const addById = useCallback(
     (productId: string) => {
       const product = productById.get(productId);
@@ -127,21 +135,91 @@ export default function NuevoPedidoStaffPage() {
             </h1>
             <p className="truncate text-sm text-muted-foreground">
               {tableOrderId
-                ? "Se agregará a la cuenta de la mesa."
+                ? `${tableLabel} · ${tableDevices.length} usuario${tableDevices.length === 1 ? "" : "s"} conectado${tableDevices.length === 1 ? "" : "s"}`
                 : "Se generará un código QR para que el cliente pague."}
             </p>
           </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <FormInput
-            label="Cliente"
-            icon={User}
-            optional
-            value={builder.customerName}
-            onChange={(e) => builder.setCustomerName(e.target.value)}
-            placeholder="Nombre del cliente"
-          />
+          {tableOrderId ? (
+            <section className="rounded-2xl border border-border bg-surface p-3 sm:col-span-2">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" aria-hidden />
+                <div>
+                  <h2 className="text-sm font-semibold text-foreground">¿Para quién es este pedido?</h2>
+                  <p className="text-xs text-muted-foreground">Elige a la persona para que reciba sus productos.</p>
+                </div>
+              </div>
+              {tableLoading ? (
+                <div className="mt-3 flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  Cargando usuarios de la mesa…
+                </div>
+              ) : tableDevices.length === 0 ? (
+                <p className="mt-3 rounded-xl bg-border-soft/45 px-3 py-2.5 text-sm text-muted-foreground">
+                  Aún no hay usuarios conectados. El pedido se agregará para toda la mesa.
+                </p>
+              ) : (
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => builder.setAssignedDeviceId(undefined)}
+                    aria-pressed={!builder.assignedDeviceId}
+                    className={`flex min-h-12 w-full items-center rounded-xl border px-3 text-left text-sm font-semibold transition-colors ${
+                      !builder.assignedDeviceId
+                        ? "border-accent bg-accent/10 text-accent"
+                        : "border-border bg-background text-foreground hover:bg-border-soft/35"
+                    }`}
+                  >
+                    Para toda la mesa
+                  </button>
+                  {tableDevices.map((device, index) => {
+                    const name = device.display_name?.trim() || `Cliente ${index + 1}`;
+                    const initials = name
+                      .split(/\s+/)
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((part) => part[0])
+                      .join("")
+                      .toUpperCase();
+                    const selected = builder.assignedDeviceId === device.id;
+                    return (
+                      <button
+                        key={device.id}
+                        type="button"
+                        onClick={() => builder.setAssignedDeviceId(device.id)}
+                        aria-pressed={selected}
+                        className={`flex min-h-12 w-full items-center gap-2 rounded-xl border px-3 text-left text-sm font-semibold transition-colors ${
+                          selected
+                            ? "border-accent bg-accent/10 text-accent"
+                            : "border-border bg-background text-foreground hover:bg-border-soft/35"
+                        }`}
+                      >
+                        <span
+                          aria-hidden
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                          style={{ backgroundColor: device.color_hex }}
+                        >
+                          {initials}
+                        </span>
+                        <span className="truncate">{name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          ) : (
+            <FormInput
+              label="Cliente"
+              icon={User}
+              optional
+              value={builder.customerName}
+              onChange={(e) => builder.setCustomerName(e.target.value)}
+              placeholder="Nombre del cliente"
+            />
+          )}
           <div>
             <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
               Buscar

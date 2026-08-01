@@ -15,6 +15,7 @@ import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 export interface CreatePreferenceInput {
   orderId: string;
   groupId?: string | null;
+  fingerprint?: string | null;
   baseUrl: string;
   qrToken: string;
 }
@@ -32,7 +33,7 @@ export async function createTableMpPreference(
   const { data: order } = await admin
     .from("orders")
     .select(
-      "id, tenant_id, status, fulfillment_status, source, total, balance_due",
+      "id, tenant_id, status, fulfillment_status, source, order_type, total, balance_due",
     )
     .eq("id", input.orderId)
     .single();
@@ -52,10 +53,8 @@ export async function createTableMpPreference(
       ok: false,
       error: { code: "conflict", message: "La orden fue cancelada" },
     };
-  if (
-    requiresReadyBeforePayment(order.source) &&
-    order.fulfillment_status !== "ready"
-  )
+  const gateOnReady = requiresReadyBeforePayment(order.source, order.order_type);
+  if (gateOnReady && !input.groupId && order.fulfillment_status !== "ready")
     return {
       ok: false,
       error: {
@@ -68,10 +67,23 @@ export async function createTableMpPreference(
   let title: string;
   let externalReference: string;
 
+  let deviceId: string | null = null;
+  let deviceStatus: string | null = null;
+  if (input.fingerprint) {
+    const { data: device } = await admin
+      .from("order_devices")
+      .select("id, fulfillment_status")
+      .eq("order_id", input.orderId)
+      .eq("device_fingerprint", input.fingerprint)
+      .maybeSingle();
+    deviceId = device?.id ?? null;
+    deviceStatus = device?.fulfillment_status ?? null;
+  }
+
   if (input.groupId) {
     const { data: group } = await admin
       .from("order_split_groups")
-      .select("id, label, total, balance_due, payment_status")
+      .select("id, device_id, label, total, balance_due, payment_status")
       .eq("id", input.groupId)
       .eq("order_id", input.orderId)
       .single();
@@ -80,6 +92,19 @@ export async function createTableMpPreference(
       return {
         ok: false,
         error: { code: "not_found", message: "Grupo no encontrado" },
+      };
+    if (!deviceId || group.device_id !== deviceId)
+      return {
+        ok: false,
+        error: {
+          code: "forbidden",
+          message: "Esta parte de la cuenta pertenece a otra persona",
+        },
+      };
+    if (gateOnReady && deviceStatus !== "ready")
+      return {
+        ok: false,
+        error: { code: "conflict", message: NOT_READY_MESSAGE },
       };
     if (group.payment_status === "paid")
       return {

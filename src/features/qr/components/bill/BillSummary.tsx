@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { CheckCircle2, Clock, ShoppingBag, User, Users } from "lucide-react";
+import { CheckCircle2, ChevronDown, Clock, ShoppingBag, User, Users } from "lucide-react";
 
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getFulfillmentStatusMeta } from "@/features/qr/constants/fulfillmentStatusMeta";
@@ -29,6 +29,10 @@ interface BillSummaryProps {
   onPayGroup?: (group: SplitGroup) => void;
   /** When false, per-group pay buttons are hidden (order not ready yet). */
   canPay?: boolean;
+  /** A split bill is private by default: show only this device's detail. */
+  scope?: "table" | "personal";
+  /** The account owner may cover another diner's still-open split. */
+  canPayForOthers?: boolean;
 }
 
 /**
@@ -43,32 +47,55 @@ export function BillSummary({
   currentDeviceId,
   onPayGroup,
   canPay = true,
+  scope = "table",
+  canPayForOthers = false,
 }: BillSummaryProps) {
   const isSplit = isSplitBill(groups);
   const isMerged = useMemo(() => isMergedBill(items), [items]);
-  const itemsByPerson = useMemo(
-    () => groupItemsByPerson(items, devices, currentDeviceId),
-    [items, devices, currentDeviceId],
+  const currentGroup = groups.find(
+    (group) => group.device_id === currentDeviceId,
   );
-  const showPersonHeaders = itemsByPerson.length > 1;
+  const hasExplicitItemAssignments = items.some((item) => !!item.split_group_id);
+  const scopedItems =
+    scope === "personal" && currentGroup && hasExplicitItemAssignments
+      ? items.filter((item) => item.split_group_id === currentGroup.id)
+      : items;
+  const itemsByPerson = useMemo(
+    () => groupItemsByPerson(scopedItems, devices, currentDeviceId),
+    [scopedItems, devices, currentDeviceId],
+  );
+  const visiblePeople =
+    scope === "personal" ? itemsByPerson.filter((person) => person.isMine) : itemsByPerson;
+  const visibleItemCount = visiblePeople.reduce(
+    (count, person) => count + person.items.length,
+    0,
+  );
+  const showPersonHeaders = visiblePeople.length > 1;
+  const settledGroups = groups.filter((group) => group.payment_status === "paid").length;
+  const groupsStillOpen = groups.filter((group) => group.payment_status !== "paid");
 
   return (
     <div className="space-y-3">
       {/* Items — grouped by person; collapses to one flat group when solo. */}
-      {items.length > 0 && (
-        <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
-          <div className="mb-3 flex items-center gap-2">
-            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-bold text-foreground">
-              Productos pedidos
-            </h3>
-            <span className="ml-auto rounded-full bg-border-soft/60 px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-              {items.length}
-            </span>
-          </div>
+      {visibleItemCount > 0 && (
+        <section className="rounded-2xl border border-border bg-surface shadow-sm">
+          <details
+            open={scope !== "personal"}
+            className="group [&>summary::-webkit-details-marker]:hidden"
+          >
+            <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 py-3">
+              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-bold text-foreground">
+                {scope === "personal" ? "Mis productos" : "Productos pedidos"}
+              </span>
+              <span className="ml-auto rounded-full bg-border-soft/60 px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                {visibleItemCount}
+              </span>
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+            </summary>
 
-          <div className="space-y-4">
-            {itemsByPerson.map((person) => (
+            <div className="space-y-4 border-t border-border-soft/60 px-4 pb-4 pt-3">
+            {visiblePeople.map((person) => (
               <div key={person.key}>
                 {showPersonHeaders && (
                   <div className="mb-2 flex items-center justify-between gap-2">
@@ -124,12 +151,13 @@ export function BillSummary({
                 </ul>
               </div>
             ))}
-          </div>
+            </div>
+          </details>
         </section>
       )}
 
       {/* Split groups */}
-      {isSplit && (
+      {isSplit && scope === "table" && (
         <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <div className="mb-3 flex items-center gap-2">
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -149,6 +177,62 @@ export function BillSummary({
               />
             ))}
           </ul>
+        </section>
+      )}
+
+      {isSplit && scope === "personal" && (
+        <section className="rounded-2xl border border-border bg-surface shadow-sm">
+          <details className="group [&>summary::-webkit-details-marker]:hidden">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 py-3">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold text-foreground">Estado de la mesa</span>
+                <span className="block text-xs text-muted-foreground">
+                  {settledGroups} de {groups.length} cuentas pagadas
+                </span>
+              </span>
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="border-t border-border-soft/60 px-4 pb-4 pt-3">
+              {groupsStillOpen.length > 0 ? (
+                <>
+                  <p className="mb-2 text-xs font-semibold text-muted-foreground">Faltan por pagar</p>
+                  <ul className="space-y-2">
+                    {groupsStillOpen.map((group) => {
+                      const isMine = group.device_id === currentDeviceId;
+                      const waiting = group.payment_status === "pending_validation";
+                      return (
+                        <li key={group.id} className="flex items-center gap-2 rounded-xl bg-border-soft/40 px-3 py-2.5">
+                          {waiting ? (
+                            <Clock className="h-4 w-4 shrink-0 text-amber-500" />
+                          ) : (
+                            <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          )}
+                          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+                            {isMine ? "Tú" : group.label}
+                          </span>
+                          <span className="text-xs font-semibold text-muted-foreground">
+                            {waiting ? "Por validar" : "Pendiente"}
+                          </span>
+                          {canPayForOthers && !isMine && !waiting && onPayGroup && (
+                            <button
+                              type="button"
+                              onClick={() => onPayGroup(group)}
+                              className="min-h-9 shrink-0 rounded-xl bg-accent px-3 text-xs font-bold text-accent-foreground"
+                            >
+                              Pagar
+                            </button>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
+              ) : (
+                <p className="text-sm text-emerald-700">Todas las cuentas están pagadas.</p>
+              )}
+            </div>
+          </details>
         </section>
       )}
     </div>

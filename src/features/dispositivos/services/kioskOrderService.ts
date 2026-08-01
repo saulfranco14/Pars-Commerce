@@ -8,6 +8,7 @@ import {
   buildOrderItemRows,
   filterValidItems,
 } from "@/features/qr/helpers/buildOrderItemRows";
+import { validateOrderStock } from "@/features/inventory/services/orderStockValidationService";
 import {
   readPickupScheduling,
   validateScheduledFor,
@@ -74,6 +75,13 @@ export async function createKioskOrder(
   // Prices from the table, never from the screen.
   const priceByProduct = new Map<string, number>();
   for (const p of products ?? []) priceByProduct.set(p.id, Number(p.price));
+
+  const stockValidation = await validateOrderStock(
+    admin,
+    input.tenantId,
+    valid,
+  );
+  if (!stockValidation.ok) return err("conflict", stockValidation.message);
 
   const { data: order, error: orderErr } = await admin
     .from("orders")

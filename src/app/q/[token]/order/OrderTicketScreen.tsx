@@ -1,10 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ChevronDown, CreditCard, RefreshCw, ShoppingBag } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ChevronDown,
+  CreditCard,
+  ReceiptText,
+  RefreshCw,
+  ShoppingBag,
+} from "lucide-react";
 import useSWR from "swr";
 
 import { Notification } from "@/components/ui/Notification";
+import { FormSheet } from "@/components/ui/FormSheet";
 import { CustomerScreen } from "@/features/qr/components/customer/CustomerScreen";
 import { BillScreenSkeleton } from "@/features/qr/components/bill/BillScreenSkeleton";
 import { CustomerPayModal } from "@/features/qr/components/payment/CustomerPayModal";
@@ -15,6 +22,7 @@ import { PostPurchaseRecommendations } from "@/features/qr/components/order-tick
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { useBillData } from "@/features/qr/hooks/useBillData";
 import { usePaymentFlow } from "@/features/qr/hooks/usePaymentFlow";
+import { saveKioskHandoff } from "@/features/qr/helpers/deviceFingerprint";
 
 import type { CustomerPayMethod } from "@/features/qr/components/payment/CustomerPayModal";
 import type {
@@ -28,6 +36,7 @@ interface OrderTicketScreenProps {
   orderId: string;
   initialOrder?: {
     status: string;
+    source?: string | null;
     fulfillment_status?: string;
     total?: number;
   };
@@ -80,6 +89,18 @@ export function OrderTicketScreen({
     fingerprint,
     onSubmitted: refresh,
   });
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  // This is not cross-QR tracking: it is a short-lived, opaque ticket proof
+  // kept only on the customer's own phone so they can choose to use a table.
+  useEffect(() => {
+    if (initialOrder?.source !== "kiosk") return;
+    saveKioskHandoff({
+      ticketToken: token,
+      orderId,
+      tenantId: tenant.id,
+    });
+  }, [initialOrder?.source, orderId, tenant.id, token]);
 
   const shouldTrackPreparation =
     data?.order.status === "paid" &&
@@ -165,7 +186,10 @@ export function OrderTicketScreen({
     pulse?.order?.fulfillment_status ?? data.order.fulfillment_status;
 
   /* ---------- Receipt after submitting a payment intent ---------- */
-  if (paymentFlow.pending) {
+  // The intent is local UI state. Once staff confirms it, the authoritative
+  // order status wins so the customer can follow preparation instead of being
+  // left on the "Pago registrado" receipt indefinitely.
+  if (paymentFlow.pending && !isPaid) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-background px-4 py-6">
         <PaymentReceipt
@@ -205,7 +229,23 @@ export function OrderTicketScreen({
     );
   }
 
-  const footer = isPaid ? null : (
+  const footer = isPaid ? (
+    <button
+      type="button"
+      onClick={() => setDetailOpen(true)}
+      className="flex min-h-12 w-full cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:bg-border-soft/40"
+    >
+      <ReceiptText className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <span className="text-sm font-bold text-foreground">Detalle de compra</span>
+      <span className="ml-auto text-sm font-bold text-foreground">
+        {formatCurrency(data.order.total)}
+      </span>
+      <span className="rounded-full bg-border-soft/60 px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+        {data.items.length}
+      </span>
+      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+    </button>
+  ) : (
     <button
       type="button"
       onClick={() =>
@@ -257,7 +297,8 @@ export function OrderTicketScreen({
             amount={data.order.total}
             paidAt={data.order.created_at}
             paymentMethod={data.order.payment_method}
-            itemCount={data.items.length}
+            items={data.items}
+            logoUrl={data.tenant?.logo_url ?? tenant.logo_url}
           />
         )}
 
@@ -270,9 +311,10 @@ export function OrderTicketScreen({
           />
         )}
 
-        <details
+        {!isPaid && (
+          <details
           className="group rounded-2xl border border-border bg-surface shadow-sm"
-          open={!isPaid}
+          open
         >
           <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 rounded-2xl px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [&::-webkit-details-marker]:hidden">
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
@@ -305,8 +347,34 @@ export function OrderTicketScreen({
               </li>
             ))}
           </ul>
-        </details>
+          </details>
+        )}
       </div>
+
+      <FormSheet
+        isOpen={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        title="Detalle de compra"
+        description="Revisa los productos de tu pedido."
+        icon={ReceiptText}
+        maxWidth="max-w-md"
+      >
+        <ul className="space-y-2.5 rounded-2xl border border-border bg-surface px-4 py-3">
+          {data.items.map((item) => (
+            <li
+              key={item.id}
+              className="flex items-start justify-between gap-3 border-b border-border-soft/50 pb-2.5 last:border-0 last:pb-0"
+            >
+              <p className="text-sm font-semibold text-foreground">
+                {item.quantity}× {item.product_name}
+              </p>
+              <span className="shrink-0 text-sm font-bold text-foreground">
+                {formatCurrency(item.subtotal)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </FormSheet>
 
       {data.tenant && (
         <CustomerPayModal

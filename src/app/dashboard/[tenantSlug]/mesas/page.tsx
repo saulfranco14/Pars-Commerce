@@ -44,6 +44,7 @@ export default function MesasPage() {
   const [createdTable, setCreatedTable] = useState<QrCode | null>(null);
   const [previewTable, setPreviewTable] = useState<QrCode | null>(null);
   const [detailTableId, setDetailTableId] = useState<string | null>(null);
+  const [refreshingTables, setRefreshingTables] = useState(false);
   // Re-resolve from the live list on every render (not a frozen snapshot from
   // the click moment) so the modal reflects e.g. the table freeing up while
   // it's open, same as the standalone detail page does via its own SWR read.
@@ -66,6 +67,16 @@ export default function MesasPage() {
   function closeCreate() {
     setShowCreate(false);
     setCreatedTable(null);
+  }
+
+  async function refreshTables() {
+    if (refreshingTables) return;
+    setRefreshingTables(true);
+    try {
+      await list.refresh();
+    } finally {
+      setRefreshingTables(false);
+    }
   }
 
   const createModalTitle = createdTable ? "Mesa creada" : "Nueva mesa";
@@ -100,12 +111,15 @@ export default function MesasPage() {
             <div className="hidden flex-wrap items-center gap-2 md:flex">
               <Link
                 href={`/dashboard/${tenantSlug}/pedidos/nuevo`}
+                aria-disabled={refreshingTables}
+                tabIndex={refreshingTables ? -1 : undefined}
+                onClick={refreshingTables ? (event) => event.preventDefault() : undefined}
                 className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-2 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
               >
                 <ClipboardList className="h-4 w-4" />
                 Tomar pedido
               </Link>
-              <button type="button" onClick={openCreate} className={primaryCta}>
+              <button type="button" onClick={openCreate} disabled={refreshingTables} className={`${primaryCta} disabled:cursor-not-allowed disabled:opacity-55`}>
                 <Plus className="h-4 w-4" />
                 Agregar mesa
               </button>
@@ -120,17 +134,18 @@ export default function MesasPage() {
                 filter={list.filter}
                 onChange={list.setFilter}
                 counts={list.metrics}
+                disabled={refreshingTables}
               />
             </div>
             <button
               type="button"
-              onClick={() => list.refresh()}
-              disabled={list.isRefreshing}
+              onClick={refreshTables}
+              disabled={refreshingTables}
               aria-label="Actualizar estado de las mesas"
               className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-surface text-muted-foreground transition-colors hover:bg-border-soft/40 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RefreshCw
-                className={`h-4 w-4 ${list.isRefreshing ? "animate-spin" : ""}`}
+                className={`h-4 w-4 ${refreshingTables ? "animate-spin" : ""}`}
               />
             </button>
           </div>
@@ -140,6 +155,7 @@ export default function MesasPage() {
       {/* Mobile: one FAB that expands to both create actions. */}
       <FabSpeedDial
         aria-label="Acciones"
+        disabled={refreshingTables}
         actions={[
           { label: "Agregar mesa", icon: Plus, onClick: openCreate },
           {
@@ -227,6 +243,7 @@ export default function MesasPage() {
               onViewQr={setPreviewTable}
               onViewDetail={setDetailTableId}
               active={activeByQrId.get(table.id)}
+              disabled={refreshingTables}
             />
           ))}
         </div>

@@ -5,6 +5,7 @@ import { useId, useRef, useState } from "react";
 import { FolderTree, Package } from "lucide-react";
 
 import { FormSheet } from "@/components/ui/FormSheet";
+import { Notification } from "@/components/ui/Notification";
 import { btnPrimaryFlex, btnSecondary } from "@/components/ui/buttonClasses";
 import {
   MultiImageUpload,
@@ -91,6 +92,14 @@ export function ProductFormSheet({
       maxWidth="max-w-xl"
       footer={
         <div className="flex flex-col gap-2">
+          {form.submitError && (
+            <Notification
+              tone="error"
+              title="No se pudo guardar el producto"
+              message={form.submitError}
+              className="rounded-xl px-3 py-2"
+            />
+          )}
           <button
             type="submit"
             form={formId}
@@ -134,15 +143,6 @@ export function ProductFormSheet({
             />
           </div>
         </div>
-
-        {form.submitError && (
-          <div
-            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-            role="alert"
-          >
-            {form.submitError}
-          </div>
-        )}
       </form>
 
       {/* Nested sheet — "+ Crear subcatálogo" from the select above, without

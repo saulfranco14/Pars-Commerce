@@ -86,6 +86,7 @@ export async function GET(request: Request) {
       status: string;
       fulfillment_status: string | null;
       source: string | null;
+      order_type: string | null;
       subtotal: number | null;
       total: number | null;
       paid_total: number | null;
@@ -97,7 +98,7 @@ export async function GET(request: Request) {
       const { data } = await admin
         .from("orders")
         .select(
-          "id, status, fulfillment_status, source, subtotal, total, paid_total, balance_due",
+          "id, status, fulfillment_status, source, order_type, subtotal, total, paid_total, balance_due",
         )
         .eq("qr_code_id", qrCode.id)
         .order("created_at", { ascending: false })
@@ -109,7 +110,7 @@ export async function GET(request: Request) {
       const { data } = await admin
         .from("orders")
         .select(
-          "id, status, fulfillment_status, source, subtotal, total, paid_total, balance_due",
+          "id, status, fulfillment_status, source, order_type, subtotal, total, paid_total, balance_due",
         )
         .eq("id", orderId)
         .maybeSingle();
@@ -121,7 +122,7 @@ export async function GET(request: Request) {
       const stillFollowable =
         isSingleUseTicket &&
         existingOrder?.status === "paid" &&
-        !requiresReadyBeforePayment(existingOrder.source) &&
+        !requiresReadyBeforePayment(existingOrder.source, existingOrder.order_type) &&
         (existingOrder.fulfillment_status ?? "received") !== "ready";
       const hasHistoricalReceipt =
         isSingleUseTicket && existingOrder?.status === "paid";
@@ -152,6 +153,48 @@ export async function GET(request: Request) {
       // Returning here avoids all of those reads for both live and historical
       // receipts.
       return NextResponse.json(response);
+    }
+
+    // The server-rendered request has no browser fingerprint. It may describe
+    // a table, but it must not occupy one: the client can first offer to attach
+    // a valid kiosk ticket from this same phone.
+    if (!orderId && !fingerprint) {
+      return NextResponse.json(response);
+    }
+
+    // A kiosk ticket is an opaque proof held by the customer's browser. When
+    // it is present, offer the explicit handoff BEFORE creating a new table
+    // order. The actual mutation lives in POST /attach-kiosk.
+    const kioskTicketToken = request.headers
+      .get("x-kiosk-ticket-token")
+      ?.trim();
+    if (!orderId && kioskTicketToken) {
+      const { data: ticketQr } = await admin
+        .from("qr_codes")
+        .select("tenant_id, kind, current_order_id")
+        .eq("token", kioskTicketToken)
+        .maybeSingle();
+
+      if (
+        ticketQr?.kind === "order" &&
+        ticketQr.tenant_id === tenant.id &&
+        ticketQr.current_order_id
+      ) {
+        const { data: kioskOrder } = await admin
+          .from("orders")
+          .select("id, order_number, source, status, total")
+          .eq("id", ticketQr.current_order_id)
+          .maybeSingle();
+
+        if (kioskOrder?.source === "kiosk" && kioskOrder.status !== "cancelled") {
+          response.kiosk_handoff = {
+            order_id: kioskOrder.id,
+            order_number: kioskOrder.order_number ?? null,
+            total: Number(kioskOrder.total ?? 0),
+          };
+          return NextResponse.json(response);
+        }
+      }
     }
 
     if (!orderId) {
@@ -239,7 +282,7 @@ export async function GET(request: Request) {
 
         const color = pickColor(currentCount);
         const isOwner = currentCount === 0;
-        const { data: device } = await admin
+        let { data: device, error: insertDeviceError } = await admin
           .from("order_devices")
           .insert({
             order_id: orderId,
@@ -254,6 +297,38 @@ export async function GET(request: Request) {
             "id, display_name, color_hex, joined_at, last_seen_at, is_owner",
           )
           .single();
+
+        // Two phones can scan an empty table at the same instant. The partial
+        // unique index is the authority for the owner claim; the losing request
+        // still joins normally instead of receiving a broken QR session.
+        if (insertDeviceError?.code === "23505" && isOwner) {
+          const retry = await admin
+            .from("order_devices")
+            .insert({
+              order_id: orderId,
+              device_fingerprint: fingerprint,
+              display_name: null,
+              color_hex: color,
+              is_owner: false,
+              last_seen_at: now,
+              updated_at: now,
+            })
+            .select(
+              "id, display_name, color_hex, joined_at, last_seen_at, is_owner",
+            )
+            .single();
+          device = retry.data;
+          insertDeviceError = retry.error;
+        }
+        if (!device && insertDeviceError?.code === "23505") {
+          const retryExisting = await admin
+            .from("order_devices")
+            .select("id, display_name, color_hex, joined_at, last_seen_at, is_owner")
+            .eq("order_id", orderId)
+            .eq("device_fingerprint", fingerprint)
+            .maybeSingle();
+          device = retryExisting.data;
+        }
         response.my_device = device ?? null;
       }
 

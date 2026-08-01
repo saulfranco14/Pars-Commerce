@@ -136,6 +136,13 @@ export function MesaDetailContent({
   const data = live.data;
   const hasPendingPayments = (data?.pending_payments ?? []).length > 0;
   const isLinked = (data?.linked_tables?.length ?? 0) > 0;
+  const orderStatus = data?.order?.status;
+  const isOrderClosed = orderStatus === "paid" || orderStatus === "cancelled";
+  // The staff order endpoint rejects new items once payment has started. Do
+  // not surface an action that will necessarily fail while the customer pays.
+  const canTakeOrder = !["pending_payment", "paid", "cancelled"].includes(
+    orderStatus ?? "",
+  );
 
   async function handleClose(payload: Parameters<typeof live.closeTable>[0]) {
     const ok = await live.closeTable(payload);
@@ -191,7 +198,10 @@ export function MesaDetailContent({
               {qr.label}
             </h1>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              <StatusBadge tone="warning" label="En uso" />
+              <StatusBadge
+                tone={isOrderClosed ? "success" : "warning"}
+                label={isOrderClosed ? "Cerrada" : "En uso"}
+              />
               {isLinked && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent">
                   <Link2 className="h-3 w-3" />
@@ -215,16 +225,20 @@ export function MesaDetailContent({
 
         {/* Mobile-first: one primary action (Tomar pedido) + everything else
             (Unir/Separar, Ver QR, Cerrar mesa) collapsed into the ⋯ menu. */}
-        <div className="flex shrink-0 items-center gap-2">
-          <Link href={orderHref(orderId)} className={adminActionButtonPrimary}>
-            <ClipboardList className="h-4 w-4" />
-            <span className="hidden sm:inline">Tomar pedido</span>
-          </Link>
-          <ActionsMenu items={menuItems} aria-label="Más acciones de la mesa" />
-        </div>
+        {!isOrderClosed && (
+          <div className="flex shrink-0 items-center gap-2">
+            {canTakeOrder && (
+              <Link href={orderHref(orderId)} className={adminActionButtonPrimary}>
+                <ClipboardList className="h-4 w-4" />
+                <span className="hidden sm:inline">Tomar pedido</span>
+              </Link>
+            )}
+            <ActionsMenu items={menuItems} aria-label="Más acciones de la mesa" />
+          </div>
+        )}
       </div>
 
-      {showQr && (
+      {!isOrderClosed && showQr && (
         <QrPreview
           token={qr.token}
           label={qr.label}
@@ -284,6 +298,14 @@ export function MesaDetailContent({
               busyDeviceId={live.busyDeviceId}
               busyItemId={live.busyItemId}
               busyAll={live.advancing}
+              lockedDeviceIds={data.split_groups
+                .filter(
+                  (group) =>
+                    group.device_id &&
+                    (group.payment_status === "pending_validation" ||
+                      group.payment_status === "paid"),
+                )
+                .map((group) => group.device_id!)}
               onAdvanceDevice={live.advanceDevice}
               onAdvanceItem={live.advanceItem}
               onAdvanceAll={live.advanceAll}

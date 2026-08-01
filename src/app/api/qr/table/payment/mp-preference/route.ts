@@ -30,9 +30,11 @@ export async function POST(request: Request) {
     new URL(request.url).origin;
 
   const admin = createAdminClient();
+  const fingerprint = request.headers.get("x-fingerprint-id")?.trim() || null;
   const result = await createTableMpPreference(admin, {
     orderId: body.order_id,
     groupId: body.group_id ?? null,
+    fingerprint,
     qrToken: body.qr_token,
     baseUrl,
   });
