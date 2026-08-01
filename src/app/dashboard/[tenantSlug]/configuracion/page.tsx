@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useEffect, useId } from "react";
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Check } from "lucide-react";
-import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import {
+  useTenantStore,
+  useActiveTenant,
+  usePermission,
+} from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
 import {
   update as updateTenant,
@@ -21,6 +25,14 @@ import { ConfigTicketSection } from "@/features/configuracion/components/config-
 import { ConfigFinanzasSection } from "@/features/configuracion/components/config-sections/ConfigFinanzasSection";
 import { ConfigDireccionSection } from "@/features/configuracion/components/config-sections/ConfigDireccionSection";
 import { ConfigRecurrentesSection } from "@/features/configuracion/components/config-sections/ConfigRecurrentesSection";
+import { ConfigAgendaSection } from "@/features/configuracion/components/config-sections/ConfigAgendaSection";
+import { ConfigHorariosSection } from "@/features/configuracion/components/config-sections/ConfigHorariosSection";
+import { ConfigDispositivosSection } from "@/features/dispositivos/components/ConfigDispositivosSection";
+import { DEVICE_PERMISSIONS } from "@/features/dispositivos/constants/devicePermissions";
+import { readBusinessHours } from "@/features/configuracion/helpers/businessHours";
+import type { BusinessHours } from "@/features/configuracion/interfaces/businessHours";
+import { readPickupScheduling } from "@/features/checkout/helpers/pickupSchedule";
+import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import {
   CONFIG_TABS,
   type ConfigTab,
@@ -30,11 +42,17 @@ import type { RecurringPurchasesConfig } from "@/types/subscriptions";
 
 export default function ConfiguracionPage() {
   const formId = useId();
-  const params = useParams();
-  const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
+  const can = usePermission();
   const setMemberships = useTenantStore((s) => s.setMemberships);
-  const [activeTab, setActiveTab] = useState<ConfigTab>("negocio");
+  // `?tab=horarios` deja que otras pantallas enlacen a una sección concreta.
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<ConfigTab>(() => {
+    const requested = searchParams.get("tab");
+    return CONFIG_TABS.some((t) => t.value === requested)
+      ? (requested as ConfigTab)
+      : "negocio";
+  });
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -68,6 +86,11 @@ export default function ConfiguracionPage() {
   const [rcDeliveryOn, setRcDeliveryOn] = useState<"first_payment" | "full_payment">("first_payment");
   const [rcAllowedFrequencies, setRcAllowedFrequencies] = useState<Array<"weekly" | "biweekly" | "monthly">>(["weekly", "biweekly", "monthly"]);
   const [rcMaxInstallments, setRcMaxInstallments] = useState("6");
+  const [pickupEnabled, setPickupEnabled] = useState(false);
+  const [pickupMinLead, setPickupMinLead] = useState("30");
+  const [pickupMaxDays, setPickupMaxDays] = useState("7");
+  const [acceptingOrders, setAcceptingOrders] = useState(true);
+  const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -137,6 +160,12 @@ export default function ConfiguracionPage() {
     setRcDeliveryOn(rc.delivery_on);
     setRcAllowedFrequencies(rc.allowed_frequencies);
     setRcMaxInstallments(String(rc.max_installments));
+    const ps = readPickupScheduling(st);
+    setPickupEnabled(ps.enabled);
+    setPickupMinLead(String(ps.minLeadMinutes));
+    setPickupMaxDays(String(ps.maxDaysAhead));
+    setAcceptingOrders(activeTenant.accepting_orders !== false);
+    setBusinessHours(readBusinessHours(st));
   }, [activeTenant?.id]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -165,6 +194,12 @@ export default function ConfiguracionPage() {
             delivery_on: rcDeliveryOn,
             allowed_frequencies: rcAllowedFrequencies,
             max_installments: parseInt(rcMaxInstallments, 10) || 6,
+          },
+          business_hours: businessHours ?? undefined,
+          pickup_scheduling: {
+            enabled: pickupEnabled,
+            minLeadMinutes: parseInt(pickupMinLead, 10) || 0,
+            maxDaysAhead: parseInt(pickupMaxDays, 10) || 0,
           },
           ticket: {
             showLogo: ticketShowLogo,
@@ -222,7 +257,7 @@ export default function ConfiguracionPage() {
       <div className="shrink-0 space-y-4 pb-4">
         <Link
           href="/dashboard"
-          className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver al inicio
@@ -329,6 +364,33 @@ export default function ConfiguracionPage() {
                 onMaxInstallmentsChange={setRcMaxInstallments}
               />
             )}
+            {activeTab === "dispositivos" && (
+              <ConfigDispositivosSection
+                tenantId={activeTenant.id}
+                canManage={can(DEVICE_PERMISSIONS.manage)}
+              />
+            )}
+            {activeTab === "horarios" && (
+              <ConfigHorariosSection
+                hours={businessHours}
+                onChange={setBusinessHours}
+              />
+            )}
+            {activeTab === "agenda" && (
+              <ConfigAgendaSection
+                enabled={pickupEnabled}
+                onEnabledChange={setPickupEnabled}
+                minLeadMinutes={pickupMinLead}
+                onMinLeadMinutesChange={setPickupMinLead}
+                maxDaysAhead={pickupMaxDays}
+                onMaxDaysAheadChange={setPickupMaxDays}
+                acceptingOrders={acceptingOrders}
+                onAcceptingOrdersChange={setAcceptingOrders}
+                canConfigureReception={can(ORDER_PERMISSIONS.scheduleConfig)}
+                hours={businessHours}
+                tenantId={activeTenant.id}
+              />
+            )}
             {activeTab === "direccion" && (
               <ConfigDireccionSection
                 street={addressStreet}
@@ -346,17 +408,21 @@ export default function ConfiguracionPage() {
               />
             )}
           </div>
-          <FormSaveBar align="end">
+          {/* Las pantallas se aprueban al instante; un "Guardar" ahí solo
+              haría dudar de si el cambio se aplicó. */}
+          {activeTab !== "dispositivos" && (
+            <FormSaveBar align="end">
             <button
               type="submit"
               form={formId}
               disabled={loading}
-              className="inline-flex w-full min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto md:min-w-[140px]"
+              className="inline-flex w-full min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto md:min-w-35"
             >
               <Check className="h-4 w-4 shrink-0" aria-hidden />
               {loading ? "Guardando…" : "Guardar"}
-            </button>
-          </FormSaveBar>
+              </button>
+            </FormSaveBar>
+          )}
         </form>
       </div>
     </div>

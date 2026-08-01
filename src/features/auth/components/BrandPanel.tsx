@@ -1,14 +1,37 @@
-import Image from "next/image";
+import type { LucideIcon } from "lucide-react";
+
+import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { HIGHLIGHTS } from "@/features/auth/constants/loginHighlights";
 
-type BrandPanelProps = {
+interface BrandItem {
+  icon: LucideIcon;
+  text: string;
+  accent: string;
+}
+
+interface BrandPanelProps {
   title?: string;
   subtitle?: string;
-};
+  /** Anima la caída de la moneda al montar. */
+  animated?: boolean;
+  /** Lista de tarjetas. Login y registro muestran contenido distinto —
+   *  "por qué confiar" vs. "por qué registrarte" — pero con el mismo molde
+   *  visual, que es lo que las hace sentir parte del mismo producto. */
+  items?: BrandItem[];
+  /** Línea de cierre bajo la lista (y bajo `children`, si lo hay). */
+  footnote?: string;
+  /** Contenido extra específico de una pantalla, como el recuadro de precio
+   *  del registro. Login no lo usa. */
+  children?: React.ReactNode;
+}
 
 export function BrandPanel({
   title = "Bienvenido de vuelta",
-  subtitle = "Accede a tu dashboard para gestionar tu negocio, revisar ordenes y hacer crecer tus ventas.",
+  subtitle = "Accede a tu panel para gestionar tu negocio, revisar órdenes y hacer crecer tus ventas.",
+  items = HIGHLIGHTS,
+  footnote = "Más de 50 negocios ya confían en Tlaco",
+  animated = false,
+  children,
 }: BrandPanelProps) {
   return (
     <div className="relative hidden lg:flex lg:flex-1 items-center justify-center overflow-hidden">
@@ -27,17 +50,10 @@ export function BrandPanel({
       />
 
       <div className="relative z-10 max-w-sm px-8">
-        <div className="flex items-center gap-3 mb-8">
-          <Image
-            src="/android-chrome-192x192.png"
-            alt=""
-            width={40}
-            height={40}
-            className="h-10 w-10"
-          />
-          <span className="text-xl font-bold text-foreground">
-            Pars Commerce
-          </span>
+        {/* Este panel no tiene entrada propia, así que usa el retardo por
+            defecto: la moneda cae sobre un fondo quieto. */}
+        <div className="mb-8">
+          <TlacoLogo size="xl" animated={animated} />
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-foreground">
           {title}
@@ -47,7 +63,7 @@ export function BrandPanel({
         </p>
 
         <div className="mt-8 space-y-3">
-          {HIGHLIGHTS.map(({ icon: Icon, text, accent }) => (
+          {items.map(({ icon: Icon, text, accent }) => (
             <div
               key={text}
               className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 transition-all duration-200 hover:shadow-soft cursor-default"
@@ -62,9 +78,9 @@ export function BrandPanel({
           ))}
         </div>
 
-        <p className="mt-8 text-xs text-muted-foreground/60">
-          Mas de 50 negocios ya confian en Pars Commerce
-        </p>
+        {children}
+
+        <p className="mt-8 text-xs text-muted-foreground/60">{footnote}</p>
       </div>
     </div>
   );

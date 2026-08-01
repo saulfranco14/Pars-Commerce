@@ -1,155 +1,74 @@
-import { createClient } from "@/lib/supabase/client";
+type ImageKind = "product" | "promotion" | "hero" | "logo";
 
-const BUCKET = "product-images";
+async function uploadTenantImage(
+  file: File,
+  tenantId: string,
+  kind: ImageKind,
+  options: { productId?: string; previousUrl?: string | null } = {},
+): Promise<string> {
+  const formData = new FormData();
+  formData.set("file", file);
+  formData.set("tenant_id", tenantId);
+  formData.set("kind", kind);
+  if (options.productId) formData.set("product_id", options.productId);
+  if (options.previousUrl) formData.set("previous_url", options.previousUrl);
 
-function extractPathFromUrl(url: string): string | null {
-  try {
-    const parsed = new URL(url);
-    // Supabase public URLs follow the pattern: /storage/v1/object/public/<bucket>/<path>
-    const match = parsed.pathname.match(/\/storage\/v1\/object\/public\/[^/]+\/(.+)/);
-    return match ? decodeURIComponent(match[1].split("?")[0]) : null;
-  } catch {
-    return null;
+  const response = await fetch("/api/uploads/image", {
+    method: "POST",
+    body: formData,
+  });
+  const body = (await response.json().catch(() => null)) as { error?: string; url?: string } | null;
+  if (!response.ok || !body?.url) {
+    throw new Error(body?.error ?? "No pudimos guardar la imagen. Intenta de nuevo.");
+  }
+  return body.url;
+}
+
+export async function deleteFileByUrl(url: string, tenantId: string): Promise<void> {
+  const response = await fetch("/api/uploads/image", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url, tenant_id: tenantId }),
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(body?.error ?? "No pudimos eliminar la imagen.");
   }
 }
 
-export async function deleteFileByUrl(url: string): Promise<void> {
-  const path = extractPathFromUrl(url);
-  if (!path) return;
-  const supabase = createClient();
-  await supabase.storage.from(BUCKET).remove([path]);
-}
-
-export async function uploadProductImage(
+export function uploadProductImage(
   file: File,
   tenantId: string,
-  productId?: string
+  productId?: string,
 ): Promise<string> {
-  const supabase = createClient();
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const safeExt = ["jpeg", "jpg", "png", "gif", "webp"].includes(ext)
-    ? ext
-    : "jpg";
-  const id = productId || crypto.randomUUID();
-  // Use a unique filename per upload so different products don't collide,
-  // but keep a stable name when productId is provided to allow upsert.
-  const path = `${tenantId}/${id}.${safeExt}`;
-
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, file, { upsert: true });
-
-  if (error) throw error;
-
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return publicUrl;
+  return uploadTenantImage(file, tenantId, "product", { productId });
 }
 
-export async function uploadPromotionImage(
+export function uploadPromotionImage(
   file: File,
   tenantId: string,
-  promotionId?: string,
-  previousUrl?: string | null
+  _promotionId?: string,
+  previousUrl?: string | null,
 ): Promise<string> {
-  const supabase = createClient();
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const safeExt = ["jpeg", "jpg", "png", "gif", "webp"].includes(ext)
-    ? ext
-    : "jpg";
-  const id = promotionId || crypto.randomUUID();
-  const path = `${tenantId}/promotions/${id}.${safeExt}`;
-
-  // Delete previous file if extension changed
-  if (previousUrl) {
-    const prevPath = extractPathFromUrl(previousUrl);
-    if (prevPath && prevPath !== path) {
-      await supabase.storage.from(BUCKET).remove([prevPath]);
-    }
-  }
-
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, file, { upsert: true });
-
-  if (error) throw error;
-
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return publicUrl;
+  return uploadTenantImage(file, tenantId, "promotion", { previousUrl });
 }
 
-export async function uploadHeroImage(
+export function uploadHeroImage(
   file: File,
   tenantId: string,
-  previousUrl?: string | null
+  previousUrl?: string | null,
 ): Promise<string> {
-  const supabase = createClient();
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const safeExt = ["jpeg", "jpg", "png", "gif", "webp"].includes(ext)
-    ? ext
-    : "jpg";
-  // Use a unique name each upload so CDN cache is busted automatically
-  const uid = crypto.randomUUID().slice(0, 8);
-  const path = `${tenantId}/hero/hero-${uid}.${safeExt}`;
-
-  // Delete previous hero image to avoid orphaned files
-  if (previousUrl) {
-    const prevPath = extractPathFromUrl(previousUrl);
-    if (prevPath) {
-      await supabase.storage.from(BUCKET).remove([prevPath]);
-    }
-  }
-
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, file, { upsert: false });
-
-  if (error) throw error;
-
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return publicUrl;
+  return uploadTenantImage(file, tenantId, "hero", { previousUrl });
 }
 
-export async function deleteHeroImage(url: string): Promise<void> {
-  const path = extractPathFromUrl(url);
-  if (!path) return;
-  const supabase = createClient();
-  await supabase.storage.from(BUCKET).remove([path]);
+export function deleteHeroImage(url: string, tenantId: string): Promise<void> {
+  return deleteFileByUrl(url, tenantId);
 }
 
-export async function uploadTenantLogo(
+export function uploadTenantLogo(
   file: File,
   tenantId: string,
-  previousUrl?: string | null
+  previousUrl?: string | null,
 ): Promise<string> {
-  const supabase = createClient();
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const safeExt = ["jpeg", "jpg", "png", "gif", "webp"].includes(ext)
-    ? ext
-    : "jpg";
-  const path = `${tenantId}/logos/logo.${safeExt}`;
-
-  // Delete the previous logo if it has a different extension (upsert won't remove it)
-  if (previousUrl) {
-    const prevPath = extractPathFromUrl(previousUrl);
-    if (prevPath && prevPath !== path) {
-      await supabase.storage.from(BUCKET).remove([prevPath]);
-    }
-  }
-
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, file, { upsert: true });
-
-  if (error) throw error;
-
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return publicUrl;
+  return uploadTenantImage(file, tenantId, "logo", { previousUrl });
 }

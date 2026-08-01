@@ -1,0 +1,204 @@
+/* ─────────────────────────────────────────────────────────────
+   TLACO · Tokens de identidad
+   Base única para el sitio público, el panel y los materiales
+   impresos. Si un color no está aquí, no se usa.
+
+   Criterio de diseño (estilo MercadoPago):
+   blanco dominante, UN azul de acción, radios de 8px y sombras
+   casi imperceptibles. La jerarquía la carga la tipografía, no
+   el color de fondo.
+
+   AVISO: --tlaco-blue-500 (#3483fa) es el azul de marca de
+   MercadoPago. Se usa por decisión de producto. Lo que nos
+   separa de MP es el acento: su acento es amarillo (#ffe600),
+   el nuestro es oro (#e8a33d), y la marca es una moneda.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── Acción ───────────────────────────────────────────────
+     500 es el único azul para botones y links. 600 es hover.
+     700 solo para texto sobre fondos --blue-50. */
+  --tlaco-blue-50: #e8f1fe;
+  --tlaco-blue-100: #bcd6fb;
+  --tlaco-blue-300: #8fb4f5;
+  --tlaco-blue-500: #3483fa;
+  --tlaco-blue-600: #1f5fd1;
+  --tlaco-blue-700: #123a80;
+
+  /* ── Acento de marca: la moneda ───────────────────────────
+     Reservado a momentos de valor: precio $0, sellos, el logo.
+     Nunca para acciones — un botón oro compite con el azul. */
+  --tlaco-gold-50: #fdf3e2;
+  --tlaco-gold-500: #e8a33d;
+  --tlaco-gold-600: #c07f22;
+  --tlaco-gold-700: #8a5a12;
+
+  /* ── Texto y estructura ───────────────────────────────────
+     ink para títulos, ink-2 para cuerpo, mute para secundario. */
+  --tlaco-ink: #0f1c33;
+  --tlaco-ink-2: #3a4a66;
+  --tlaco-mute: #64748b;
+  --tlaco-line: #dbe4f0;
+  --tlaco-surface: #ffffff;
+  --tlaco-surface-2: #f4f6fa;
+
+  /* ── Semántico (separado del acento, nunca lo sustituye) ── */
+  --tlaco-success: #129d6e;
+  --tlaco-success-50: #e3f7f0;
+  --tlaco-warning: #c07f22;
+  --tlaco-danger: #d13b3b;
+  --tlaco-danger-50: #fdecec;
+
+  /* ── Tipografía ───────────────────────────────────────────
+     El display es una grotesca muy pesada y muy estrecha de
+     tracking: en columnas angostas NO cabe, va a todo lo ancho.
+     Sustituir por una webfont propia cuando exista. */
+  --tlaco-font-display: "Arial Black", "Helvetica Neue", Impact, system-ui, sans-serif;
+  --tlaco-font-body: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+
+  --tlaco-text-xs: 0.75rem;
+  --tlaco-text-sm: 0.875rem;
+  --tlaco-text-base: 1rem;
+  --tlaco-text-lg: 1.125rem;
+  --tlaco-text-xl: 1.375rem;
+  --tlaco-text-2xl: 1.75rem;
+  --tlaco-text-3xl: 2.25rem;
+  --tlaco-text-4xl: 3rem;
+
+  --tlaco-tracking-display: -0.03em;
+  --tlaco-tracking-label: 0.15em;
+
+  /* ── Radios y sombras ─────────────────────────────────────
+     8px es el radio de todo lo interactivo. Las sombras son
+     casi invisibles a propósito: la separación la da el borde. */
+  --tlaco-radius-sm: 6px;
+  --tlaco-radius: 8px;
+  --tlaco-radius-lg: 14px;
+  --tlaco-radius-pill: 999px;
+
+  --tlaco-shadow-sm: 0 1px 3px rgba(15, 28, 51, 0.08);
+  --tlaco-shadow: 0 2px 10px rgba(15, 28, 51, 0.1);
+  --tlaco-shadow-lg: 0 12px 32px rgba(15, 28, 51, 0.14);
+}
+
+/* ── Modo oscuro ───────────────────────────────────────────
+   El azul 500 pierde contraste sobre fondos oscuros: en dark
+   la acción sube a --blue-300 y el texto baja a un gris azulado. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tlaco-ink: #e8edf9;
+    --tlaco-ink-2: #b9c6de;
+    --tlaco-mute: #93a7c9;
+    --tlaco-line: #253049;
+    --tlaco-surface: #121b2e;
+    --tlaco-surface-2: #0a1020;
+    --tlaco-blue-50: #16294a;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   EL LOGOTIPO
+
+   La moneda ES la O de Tlaco. No es "tipografía + insignia al
+   lado": la moneda es una letra de la palabra, y ese mismo SVG
+   suelto funciona como icono de app. Un solo activo, dos usos.
+
+   Se dimensiona a la altura de x (≈0.545 del tamaño de fuente) y
+   sobrepasa un poco la línea base, igual que una "o" real en una
+   grotesca pesada.
+
+   El hueco de la moneda (el contrapunzón) DEBE tomar el color del
+   fondo donde se apoya el logotipo — de ahí la variable
+   --logo-on. Si no coincide, deja de leerse como una "o".
+
+   Escalado: arriba de ~24px la moneda lleva su mitad más oscura
+   (el "mitad" del tlacotl náhuatl); abajo de eso va lisa, porque
+   el detalle se convierte en ruido.
+
+   Si la marca cambia y no termina en "o", la moneda pasa a ir al
+   lado de la palabra completa en vez de sustituir la última letra.
+   ───────────────────────────────────────────────────────────── */
+
+/* ─────────────────────────────────────────────────────────────
+   ANIMACIÓN DE LA MONEDA — solo web y app, nunca en impresos
+
+   La moneda es la única pieza de la marca que se anima, y se anima
+   como lo que es: una moneda que gira sobre su eje. Nada más se
+   mueve — si todo se mueve, nada destaca.
+
+   Dónde sí:
+     · una vez al cargar el landing (no en cada navegación)
+     · al pasar el mouse por el logo del header
+     · como spinner mientras se procesa un cobro (girando en loop:
+       es el único caso donde el loop tiene sentido)
+
+   Dónde no: en el panel del negocio. El dueño entra a trabajar,
+   no a ver el logo girar.
+
+   Marca el SVG de la moneda con .tlaco-coin dentro de .tlaco-logo.
+   ───────────────────────────────────────────────────────────── */
+
+@keyframes tlaco-coin-flip {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(360deg); }
+}
+
+.tlaco-logo { display: inline-flex; align-items: baseline; }
+
+.tlaco-coin {
+  /* perspective da el achatamiento del canto al pasar de perfil;
+     sin ella la moneda se ve como un círculo que se encoge. */
+  transform-style: preserve-3d;
+  perspective: 220px;
+  will-change: transform;
+}
+
+/* Giro único: entrada del landing o hover del header. */
+.tlaco-logo:hover .tlaco-coin,
+.tlaco-coin--flip {
+  animation: tlaco-coin-flip 820ms cubic-bezier(0.34, 0.02, 0.28, 1) both;
+}
+
+/* Loop: reservado a "procesando cobro". */
+.tlaco-coin--spin {
+  animation: tlaco-coin-flip 1100ms linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tlaco-logo:hover .tlaco-coin,
+  .tlaco-coin--flip,
+  .tlaco-coin--spin {
+    animation: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Reglas de uso — esto es lo que evita que el sistema se rompa
+   cuando lo toca otra persona:
+
+   1. Un solo azul de acción. Si algo es clicable, es
+      --tlaco-blue-500. Si hay dos azules en pantalla peleando,
+      uno está mal.
+   2. El oro es SOLO la moneda de la marca. No es un botón, no es
+      un link y no es un relleno grande. Un disco de 34mm en oro
+      saturado grita y compite con el logotipo; los sellos de
+      precio van en --tlaco-ink con el número en blanco. Un URL en
+      oro sobre fondo oscuro además pierde contraste al
+      fotocopiarse: los links van en blanco.
+   3. Los fondos oscuros son bandas, nunca páginas completas:
+      los materiales se fotocopian en blanco y negro y una
+      página oscura sale como mancha gris.
+   4. El semántico (success/danger) es independiente del acento.
+      Un check verde no cuenta como color de marca.
+   5. Radio 8px en todo lo interactivo; 14px solo en tarjetas
+      grandes o contenedores.
+   6. NO se nombra al procesador de pagos en materiales ni en
+      copy de producto. Es un detalle de implementación: si mañana
+      se cambia de proveedor, todo lo impreso queda mintiendo, y
+      además le enseña al negocio a pensar en el proveedor en vez
+      de en nosotros. Se dice "la red de pagos que procesa la
+      transacción".
+   7. Las ilustraciones de línea sobre fondo oscuro llevan la
+      línea en blanco, no en --tlaco-ink: en tinta oscura sobre
+      navy desaparecen y solo queda el acento flotando.
+   ───────────────────────────────────────────────────────────── */

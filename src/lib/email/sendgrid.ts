@@ -17,9 +17,14 @@ export async function sendEmail({
   to,
   subject,
   html,
+  /**
+   * Solo cambia el nombre visible, no la dirección: este remitente ya está
+   * verificado en SendGrid y cambiarlo sin verificar el nuevo tumba el envío.
+   * Migrar a un correo del dominio es tarea aparte (requiere DNS + verificación).
+   */
   from = {
     email: "saul.franco1420@gmail.com",
-    name: "Pars Commerce",
+    name: "Tlaco",
   },
 }: SendEmailParams) {
   try {

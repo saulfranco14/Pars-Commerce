@@ -35,7 +35,11 @@ export interface RecordedWrite {
   filters: Array<{ op: string; column: string; value: unknown }>;
 }
 
-type Filter = { op: "eq" | "neq" | "in" | "is"; column: string; value: unknown };
+type Filter = {
+  op: "eq" | "neq" | "in" | "is";
+  column: string;
+  value: unknown;
+};
 
 function matches(row: Row, filters: Filter[]): boolean {
   return filters.every((f) => {
@@ -113,10 +117,21 @@ class FakeQuery implements PromiseLike<{ data: unknown; error: unknown }> {
 
   // ---- write terminals (record + mutate in-memory) ----
   insert(values: Row | Row[]) {
-    this.pendingWrite = { table: this.table, op: "insert", values, filters: [] };
+    this.pendingWrite = {
+      table: this.table,
+      op: "insert",
+      values,
+      filters: [],
+    };
     this.writes.push(this.pendingWrite);
     const arr = this.rows().slice();
-    for (const v of Array.isArray(values) ? values : [values]) arr.push({ ...v });
+    for (const v of Array.isArray(values) ? values : [values]) {
+      const stored = { ...v };
+      if (stored.id === undefined) {
+        stored.id = `${this.table}-${arr.length + 1}`;
+      }
+      arr.push(stored);
+    }
     this.store.set(this.table, arr);
     return this;
   }
@@ -138,7 +153,12 @@ class FakeQuery implements PromiseLike<{ data: unknown; error: unknown }> {
     return this;
   }
   upsert(values: Row | Row[]) {
-    this.pendingWrite = { table: this.table, op: "upsert", values, filters: [] };
+    this.pendingWrite = {
+      table: this.table,
+      op: "upsert",
+      values,
+      filters: [],
+    };
     this.writes.push(this.pendingWrite);
     return this;
   }
@@ -234,9 +254,7 @@ export function createFakeSupabase(
   const store = new Map<string, Row[]>(
     Object.entries(seed).map(([t, rows]) => [t, rows.map((r) => ({ ...r }))]),
   );
-  const errors = new Map<string, unknown>(
-    Object.entries(options.errors ?? {}),
-  );
+  const errors = new Map<string, unknown>(Object.entries(options.errors ?? {}));
   const writes: RecordedWrite[] = [];
   return {
     from(table: string) {

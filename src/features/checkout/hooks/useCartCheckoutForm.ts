@@ -28,12 +28,15 @@ interface CheckoutFormState {
   customer_name: string;
   customer_email: string;
   customer_phone: string;
+  /** ISO de la hora de recolección; `""` = pasa cuando esté listo. */
+  scheduled_for: string;
 }
 
 const INITIAL_FORM: CheckoutFormState = {
   customer_name: "",
   customer_email: "",
   customer_phone: "",
+  scheduled_for: "",
 };
 
 export function useCartCheckoutForm({
@@ -83,6 +86,7 @@ export function useCartCheckoutForm({
             customer_email: validated.customer_email,
             customer_phone: validated.customer_phone,
             msi_option: msiOption,
+            scheduled_for: form.scheduled_for || null,
           },
           fingerprint,
         );
@@ -104,6 +108,7 @@ export function useCartCheckoutForm({
           frequency: freqValues.frequency,
           frequency_type: freqValues.frequency_type,
           msi_option: paymentMode === "installments" ? msiOption : undefined,
+          scheduled_for: form.scheduled_for || null,
         },
         fingerprint,
       );

@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       ) ?? 0;
     const mpFeeAmount =
       Math.round((transactionAmount - netReceived) * 100) / 100;
-    const parsFeeAmount = 0;
+    const platformFeeAmount = 0;
     const supabase = createAdminClient();
 
     if (externalRef.startsWith("bulk_loan:")) {
@@ -140,6 +140,7 @@ export async function POST(request: Request) {
           externalReference: externalRef,
           mpPaymentId: String(mpPayment.id ?? paymentId),
           amount: transactionAmount,
+          feeAmount: mpFeeAmount,
         });
       }
       return NextResponse.json({ received: true });
@@ -311,7 +312,7 @@ export async function POST(request: Request) {
         mp_payment_method: mpPayment.payment_method_id,
         paid_at: mpPayment.date_approved,
         mp_fee_amount: mpFeeAmount,
-        pars_fee_amount: parsFeeAmount,
+        tlaco_fee_amount: platformFeeAmount,
       };
 
       if (existingPayment) {
@@ -381,7 +382,7 @@ export async function POST(request: Request) {
               mp_status: mpStatus,
               mp_status_detail: mpPayment.status_detail,
               mp_fee_amount: mpFeeAmount,
-              pars_fee_amount: parsFeeAmount,
+              tlaco_fee_amount: platformFeeAmount,
             },
             updated_at: new Date().toISOString(),
           })

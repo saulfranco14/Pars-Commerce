@@ -14,7 +14,7 @@ interface CheckoutFormFieldsProps {
 }
 
 const inputBaseClass =
-  "mt-1 w-full min-h-[44px] rounded-xl border bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:ring-2";
+  "mt-1 w-full min-h-11 rounded-xl border bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:ring-2";
 
 function inputClass(hasError: boolean): string {
   return `${inputBaseClass} ${

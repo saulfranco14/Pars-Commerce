@@ -39,6 +39,7 @@ export interface AdminViewItem {
   id: string;
   product_id: string;
   product_name: string;
+  product_type: string | null;
   quantity: number;
   unit_price: number;
   subtotal: number;
@@ -180,21 +181,25 @@ export async function getTableAdminView(
   const productIds = Array.from(
     new Set((rawItems ?? []).map((i) => i.product_id).filter(Boolean)),
   );
-  let productNameMap = new Map<string, string>();
+  let productMetaById = new Map<string, { name: string; type: string | null }>();
   if (productIds.length > 0) {
     const { data: products } = await admin
       .from("products")
-      .select("id, name")
+      .select("id, name, type")
       .in("id", productIds);
-    productNameMap = new Map(
-      (products ?? []).map((p) => [p.id as string, p.name as string]),
+    productMetaById = new Map(
+      (products ?? []).map((p) => [
+        p.id as string,
+        { name: p.name as string, type: (p.type as string | null) ?? null },
+      ]),
     );
   }
 
   const items: AdminViewItem[] = (rawItems ?? []).map((item) => ({
     id: item.id,
     product_id: item.product_id,
-    product_name: productNameMap.get(item.product_id) ?? "Producto",
+    product_name: productMetaById.get(item.product_id)?.name ?? "Producto",
+    product_type: productMetaById.get(item.product_id)?.type ?? null,
     quantity: Number(item.quantity),
     unit_price: Number(item.unit_price),
     subtotal: Number(item.subtotal),

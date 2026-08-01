@@ -2,18 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import {
-  Check,
-  ChevronDown,
-  Clock,
-  Loader2,
-  PackageCheck,
-  Receipt,
-} from "lucide-react";
+import { Check, ChevronDown, Loader2, Receipt } from "lucide-react";
 
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ConfettiBurst } from "@/features/qr/components/ConfettiBurst";
-import { getFulfillmentStatusMeta } from "@/features/qr/constants/fulfillmentStatusMeta";
+import {
+  FULFILLMENT_STEPS,
+  getFulfillmentStatusMeta,
+} from "@/features/qr/constants/fulfillmentStatusMeta";
 import {
   formatCurrency,
   formatRelativeTime,
@@ -21,7 +17,6 @@ import {
 } from "@/features/qr/helpers/format";
 
 import type { BillDevice, BillItem } from "@/features/qr/hooks/useBillData";
-import type { LucideIcon } from "lucide-react";
 
 interface OrderTrackerCardProps {
   items: BillItem[];
@@ -34,6 +29,8 @@ interface OrderTrackerCardProps {
    * received → in_progress → ready. Drives the journey stepper.
    */
   fulfillmentStatus: string;
+  /** Preparation state for this device only. It never changes the table stepper. */
+  myFulfillmentStatus?: string;
   myDeviceId: string | null;
   loading?: boolean;
   /** For the inline "pagar / ver cuenta" link. */
@@ -42,13 +39,6 @@ interface OrderTrackerCardProps {
 }
 
 type StepState = "done" | "active" | "pending";
-
-// Neutral, multi-business copy — NO food/restaurant labels or icons.
-const STEPS: { key: string; label: string; icon: LucideIcon }[] = [
-  { key: "received", label: "Recibido", icon: Receipt },
-  { key: "in_progress", label: "En proceso", icon: Clock },
-  { key: "ready", label: "Listo", icon: PackageCheck },
-];
 
 function stepStates(fulfillmentStatus: string, paid: boolean): StepState[] {
   if (paid) return ["done", "done", "done"];
@@ -95,6 +85,7 @@ export function OrderTrackerCard({
   total,
   orderStatus,
   fulfillmentStatus,
+  myFulfillmentStatus,
   myDeviceId,
   loading = false,
   token,
@@ -103,6 +94,8 @@ export function OrderTrackerCard({
   // Collapsed by default: the stepper + total (the glanceable part) stay
   // visible, and the item detail expands on demand — giving the menu below
   // more room without hiding the customer's status.
+  // Products are shown immediately on mobile; the header still lets a user
+  // collapse a long order after reviewing it.
   const [showDetails, setShowDetails] = useState(false);
 
   const paid = orderStatus === "paid";
@@ -168,34 +161,24 @@ export function OrderTrackerCard({
     <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
       {/* Header — tap to collapse/expand the item detail. The stepper + total
           stay visible so the customer always sees status at a glance. */}
-      <button
-        type="button"
-        onClick={() => setShowDetails((v) => !v)}
-        className="flex w-full items-baseline justify-between gap-2 text-left"
-        aria-expanded={showDetails}
-      >
+      <div className="flex w-full items-baseline justify-between gap-2">
         <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
           Tu pedido
           {loading && <Loader2 className="h-3 w-3 animate-spin" />}
-          <ChevronDown
-            className={`h-3.5 w-3.5 transition-transform ${
-              showDetails ? "rotate-180" : ""
-            }`}
-          />
         </span>
         <span className="text-lg font-bold tracking-tight text-foreground">
           {formatCurrency(total)}
         </span>
-      </button>
+      </div>
 
       {/* Journey stepper */}
       <div className="mt-3 flex items-center">
-        {STEPS.map((step, i) => {
+        {FULFILLMENT_STEPS.map((step, i) => {
           const state = states[i];
           const Icon = step.icon;
           return (
             <div
-              key={step.key}
+              key={step.status}
               className={`flex items-center ${i > 0 ? "flex-1" : ""}`}
             >
               {i > 0 && (
@@ -240,7 +223,7 @@ export function OrderTrackerCard({
                       glanceable cue without opening the detail. Pulses ONCE
                       right when a line just flipped to ready (Uber/Didi-style
                       delivery confirmation), then settles into a plain dot. */}
-                  {step.key === "in_progress" && hasPartialProgress && (
+                  {step.status === "in_progress" && hasPartialProgress && (
                     <span
                       aria-hidden
                       className={`absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-surface transition-transform duration-300 ${
@@ -255,7 +238,7 @@ export function OrderTrackerCard({
                   )}
                   {/* Confetti accent — mounted only during the one-shot flash,
                       unmounts right after so it never lingers or re-fires. */}
-                  {step.key === "in_progress" && justCompletedPulse && (
+                  {step.status === "in_progress" && justCompletedPulse && (
                     <ConfettiBurst />
                   )}
                 </span>
@@ -290,6 +273,25 @@ export function OrderTrackerCard({
       </p>
 
       {/* Sent items — grouped into rounds (tandas); collapsible. */}
+      {myFulfillmentStatus === "ready" && fulfillmentStatus !== "ready" && !paid && (
+        <p className="mt-2 text-center text-xs font-semibold text-emerald-600">
+          Tu parte está lista; la mesa sigue en preparación.
+        </p>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setShowDetails((v) => !v)}
+        aria-expanded={showDetails}
+        className="mt-4 flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+      >
+        <Receipt className="h-4 w-4" />
+        {showDetails
+          ? "Ocultar detalle del pedido"
+          : `Ver detalle · ${items.length} ${items.length === 1 ? "producto" : "productos"}`}
+        <ChevronDown className={`h-4 w-4 transition-transform ${showDetails ? "rotate-180" : ""}`} />
+      </button>
+
       {showDetails && (
       <div className="mt-4 space-y-3 border-t border-border-soft pt-3">
         {batches.map((batch, bi) => (
@@ -364,7 +366,7 @@ export function OrderTrackerCard({
       {!paid && (
         <Link
           href={`/q/${token}/table/bill?order_id=${orderId}`}
-          className="mt-4 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
+          className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
         >
           <Receipt className="h-4 w-4" />
           Ver cuenta completa

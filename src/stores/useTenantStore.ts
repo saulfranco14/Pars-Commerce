@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { create } from "zustand";
 import type { Tenant, TenantRole } from "@/types/database";
 
@@ -48,4 +49,24 @@ export const useTenantStore = create<TenantState>((set, get) => ({
 
 export function useActiveTenant(): Tenant | null {
   return useTenantStore((s) => s.activeTenant());
+}
+
+/**
+ * Comprueba un permiso del rol activo. Espejo cliente de
+ * `requirePermission`, incluida la excepción del owner.
+ *
+ * Es para DECIDIR QUÉ MOSTRAR, no para autorizar: el permiso de verdad lo
+ * comprueba el servidor. Ocultar un botón sin cerrar su endpoint no protege
+ * nada; enseñar un botón que va a devolver 403 solo frustra.
+ *
+ *   const can = usePermission();
+ *   if (can(ORDER_PERMISSIONS.assign)) { ... }
+ */
+export function usePermission(): (permission: string) => boolean {
+  const role = useTenantStore((s) => s.activeRole());
+  return useCallback(
+    (permission: string) =>
+      role?.name === "owner" || (role?.permissions ?? []).includes(permission),
+    [role],
+  );
 }

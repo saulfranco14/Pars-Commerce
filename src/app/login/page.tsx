@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useState, useEffect, useCallback } from "react";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import * as yup from "yup";
@@ -13,8 +12,10 @@ import {
 import { BrandPanel } from "@/features/auth/components/BrandPanel";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { AuthBrandMark } from "@/components/brand/AuthBrandMark";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { createClient } from "@/lib/supabase/client";
+import { safeNextPath } from "@/lib/auth/safeNextPath";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 
 function parseHashParams() {
@@ -27,18 +28,18 @@ const loginSchema = yup.object({
   email: yup
     .string()
     .required("El email es obligatorio")
-    .email("Ingresa un email valido"),
+    .email("Ingresa un email válido"),
   password: yup
     .string()
     .required("La contraseña es obligatoria")
-    .min(6, "Minimo 6 caracteres"),
+    .min(6, "Mínimo 6 caracteres"),
 });
 
 const setPasswordSchema = yup.object({
   newPassword: yup
     .string()
     .required("La contraseña es obligatoria")
-    .min(6, "Minimo 6 caracteres"),
+    .min(6, "Mínimo 6 caracteres"),
   confirmPassword: yup
     .string()
     .required("Confirma tu contraseña")
@@ -48,7 +49,7 @@ const setPasswordSchema = yup.object({
 type FieldErrors = Record<string, string>;
 
 const inputBase =
-  "input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2";
+  "input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2";
 const inputNormal = `${inputBase} focus:border-accent focus:ring-accent/20`;
 const inputError = `${inputBase} border-red-400 focus:border-red-400 focus:ring-red-400/20`;
 
@@ -64,7 +65,7 @@ function FieldError({ message }: { message?: string }) {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = safeNextPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -249,31 +250,15 @@ function LoginForm() {
               ? "Crea una nueva contraseña segura para tu cuenta."
               : "Crea una contraseña para acceder a tu cuenta"
           }
+          animated
         />
         <div className="relative flex flex-1 items-center justify-center bg-background px-4 py-8">
           <div className="absolute right-4 top-4 z-10">
             <ThemeToggle />
           </div>
-          <div className="w-full max-w-[400px] animate-auth-enter">
-            {/* Mobile branded header */}
-            <div className="mb-8 flex flex-col items-center lg:hidden">
-              <div className="relative mb-3">
-                <div
-                  className="absolute inset-0 scale-150 rounded-3xl bg-accent opacity-25 blur-2xl"
-                  aria-hidden
-                />
-                <Image
-                  src="/android-chrome-192x192.png"
-                  alt=""
-                  width={64}
-                  height={64}
-                  className="relative h-16 w-16 rounded-2xl"
-                  priority
-                />
-              </div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-                Pars Commerce
-              </p>
+          <div className="w-full max-w-100 animate-auth-enter">
+            <div className="mb-8 flex justify-center lg:hidden">
+              <AuthBrandMark animated />
             </div>
 
             <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
@@ -376,7 +361,7 @@ function LoginForm() {
                         : inputNormal
                     }
                     autoComplete="new-password"
-                    placeholder="Minimo 6 caracteres"
+                    placeholder="Mínimo 6 caracteres"
                     aria-invalid={!!setPasswordFieldErrors.newPassword}
                   />
                   <FieldError
@@ -462,7 +447,7 @@ function LoginForm() {
                 <button
                   type="submit"
                   disabled={setPasswordLoading}
-                  className="group w-full min-h-[48px] rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
+                  className="group w-full min-h-12 cursor-pointer rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
                 >
                   {setPasswordLoading ? "Guardando..." : "Guardar y entrar"}
                   {!setPasswordLoading && (
@@ -483,7 +468,7 @@ function LoginForm() {
   // Normal login
   return (
     <div className="flex min-h-screen">
-      <BrandPanel />
+      <BrandPanel animated />
       <div className="relative flex flex-1 items-center justify-center bg-background px-4 py-8">
         <div className="absolute right-4 top-4 z-10">
           <ThemeToggle />
@@ -498,32 +483,15 @@ function LoginForm() {
           }}
           aria-hidden
         />
-        <div className="relative w-full max-w-[400px] animate-auth-enter">
-          {/* Mobile branded header */}
-          <div className="mb-8 flex flex-col items-center lg:hidden">
-            <div className="relative mb-3">
-              <div
-                className="absolute inset-0 scale-150 rounded-3xl bg-accent opacity-25 blur-2xl"
-                aria-hidden
-              />
-              <Image
-                src="/android-chrome-192x192.png"
-                alt=""
-                width={64}
-                height={64}
-                className="relative h-16 w-16 rounded-2xl"
-                priority
-              />
-            </div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-              Pars Commerce
-            </p>
+        <div className="relative w-full max-w-100 animate-auth-enter">
+          <div className="mb-8 flex justify-center lg:hidden">
+            <AuthBrandMark animated />
           </div>
 
           {/* Card */}
           <div className="rounded-2xl border border-border bg-surface p-6  sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
             <h1 className="text-xl font-bold text-foreground sm:text-2xl">
-              Iniciar sesion
+              Iniciar sesión
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Ingresa con tu email y contraseña
@@ -578,6 +546,7 @@ function LoginForm() {
                       : inputNormal
                   }
                   autoComplete="current-password"
+                  placeholder="Tu contraseña"
                   aria-invalid={!!(touched.password && fieldErrors.password)}
                 />
                 <FieldError
@@ -595,7 +564,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group w-full min-h-[48px] rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
+                className="group w-full min-h-12 cursor-pointer rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
               >
                 {loading ? "Entrando..." : "Entrar"}
                 {!loading && (
@@ -619,7 +588,7 @@ function LoginForm() {
                 href="/registro"
                 className="font-semibold text-accent transition-colors hover:text-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 rounded"
               >
-                Registrate gratis
+                Regístrate gratis
               </Link>
             </p>
           </div>
@@ -631,7 +600,7 @@ function LoginForm() {
               aria-hidden
             />
             <span className="text-xs text-muted-foreground/50">
-              Conexion segura y cifrada
+              Conexión segura y cifrada
             </span>
           </div>
         </div>

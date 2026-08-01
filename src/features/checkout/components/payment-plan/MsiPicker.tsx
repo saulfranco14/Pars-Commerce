@@ -55,7 +55,7 @@ export function MsiPicker({
               type="button"
               disabled={!isViable}
               onClick={() => isViable && onSelect(n)}
-              className={`flex min-h-[64px] cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl border-2 px-2 py-2 text-center transition-colors ${
+              className={`flex min-h-16 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl border-2 px-2 py-2 text-center transition-colors ${
                 !isViable
                   ? "cursor-not-allowed border-gray-100 bg-gray-50 text-gray-300"
                   : isSelected

@@ -71,7 +71,7 @@ export default function SiteHeader({
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <Link
             href={`/sitio/${slug}`}
-            className="flex min-h-[44px] shrink-0 cursor-pointer items-center gap-2 text-xl font-bold tracking-tight transition-colors duration-200 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
+            className="flex min-h-11 shrink-0 cursor-pointer items-center gap-2 text-xl font-bold tracking-tight transition-colors duration-200 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
             style={{ color: accentColor }}
           >
             {logoUrl ? (
@@ -98,7 +98,7 @@ export default function SiteHeader({
                   <Link
                     key={p.id}
                     href={`/sitio/${slug}/${p.slug}`}
-                    className={`flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 ${navLinkClass}`}
+                    className={`flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 ${navLinkClass}`}
                   >
                     {p.title}
                   </Link>
@@ -110,7 +110,7 @@ export default function SiteHeader({
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen((o) => !o)}
-                  className={`flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 ${menuButtonClass}`}
+                  className={`flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 ${menuButtonClass}`}
                   aria-expanded={mobileMenuOpen}
                   aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
                 >
@@ -147,7 +147,7 @@ export default function SiteHeader({
                 key={p.id}
                 href={`/sitio/${slug}/${p.slug}`}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex min-h-[48px] cursor-pointer items-center rounded-xl px-4 py-3 text-base font-medium ${mobileLinkClass}`}
+                className={`flex min-h-12 cursor-pointer items-center rounded-xl px-4 py-3 text-base font-medium ${mobileLinkClass}`}
               >
                 {p.title}
               </Link>
@@ -155,7 +155,7 @@ export default function SiteHeader({
             <Link
               href={`/sitio/${slug}/carrito`}
               onClick={() => setMobileMenuOpen(false)}
-              className={`mt-2 flex min-h-[48px] cursor-pointer items-center justify-between rounded-xl px-4 py-3 text-base font-medium ${mobileLinkClass}`}
+              className={`mt-2 flex min-h-12 cursor-pointer items-center justify-between rounded-xl px-4 py-3 text-base font-medium ${mobileLinkClass}`}
             >
               <span>Carrito</span>
               {itemsCount > 0 && (

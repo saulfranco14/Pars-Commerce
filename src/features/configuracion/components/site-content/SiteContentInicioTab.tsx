@@ -59,7 +59,7 @@ export function SiteContentInicioTab({
     setHeroDeleting(true);
     try {
       const { deleteHeroImage } = await import("@/lib/supabase/storage");
-      await deleteHeroImage(content.hero_image_url);
+      await deleteHeroImage(content.hero_image_url, tenantId);
       onChange({ ...content, hero_image_url: undefined });
     } catch (err: unknown) {
       setHeroError(handleUploadError(err, "Error al eliminar la imagen."));
@@ -159,7 +159,7 @@ export function SiteContentInicioTab({
                     type="button"
                     onClick={() => heroInputRef.current?.click()}
                     disabled={heroUploading || heroDeleting}
-                    className="inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-border-soft disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-border-soft disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <ImagePlus className="h-4 w-4" aria-hidden />
                     {heroUploading ? "Subiendo…" : "Cambiar imagen"}
@@ -168,7 +168,7 @@ export function SiteContentInicioTab({
                     type="button"
                     onClick={handleHeroDelete}
                     disabled={heroUploading || heroDeleting}
-                    className="inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border border-red-200 bg-surface px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-red-200 bg-surface px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" aria-hidden />
                     {heroDeleting ? "Eliminando…" : "Eliminar"}
@@ -394,7 +394,7 @@ export function SiteContentInicioTab({
               <button
                 type="button"
                 onClick={() => setFaqItems((prev) => prev.filter((_, j) => j !== i))}
-                className="inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-red-600 transition-colors duration-200 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-2"
+                className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-red-600 transition-colors duration-200 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-2"
               >
                 Eliminar pregunta
               </button>
@@ -403,7 +403,7 @@ export function SiteContentInicioTab({
           <button
             type="button"
             onClick={() => setFaqItems((prev) => [...prev, { question: "", answer: "" }])}
-            className="inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-lg border border-dashed border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/20 focus-visible:ring-offset-2"
+            className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-dashed border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/20 focus-visible:ring-offset-2"
           >
             + Agregar pregunta
           </button>

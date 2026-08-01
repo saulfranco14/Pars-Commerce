@@ -139,7 +139,7 @@ export function QrCreateForm({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="flex min-h-[48px] cursor-pointer items-center justify-center rounded-2xl border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-border-soft/60 disabled:cursor-not-allowed disabled:opacity-50 sm:max-w-[140px]"
+            className="flex min-h-12 cursor-pointer items-center justify-center rounded-2xl border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-border-soft/60 disabled:cursor-not-allowed disabled:opacity-50 sm:max-w-35"
           >
             Cancelar
           </button>
@@ -147,7 +147,7 @@ export function QrCreateForm({
         <button
           type="submit"
           disabled={loading || !form.isValid}
-          className="flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 transition-all sm:max-w-[220px]"
+          className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 transition-all sm:max-w-55"
         >
           {loading
             ? "Creando..."

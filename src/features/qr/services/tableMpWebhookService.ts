@@ -9,14 +9,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { releaseTableQrIfPaid } from "@/features/qr/helpers/releaseTableQrIfPaid";
-import { areAllSplitGroupsPaid } from "@/features/qr/services/tablePaymentService";
+import { syncSplitOrderPaymentTotals } from "@/features/qr/services/tablePaymentService";
 
 export const QR_TABLE_PREFIX = "qr_table:";
 export const QR_TABLE_GROUP_PREFIX = "qr_table_group:";
+export const QR_TIP_PREFIX = "qr_tip:";
 
 export function isQrTableReference(ref: string): boolean {
   return (
     ref.startsWith(QR_TABLE_PREFIX) || ref.startsWith(QR_TABLE_GROUP_PREFIX)
+    || ref.startsWith(QR_TIP_PREFIX)
   );
 }
 
@@ -25,6 +27,7 @@ interface HandleArgs {
   externalReference: string;
   mpPaymentId: string;
   amount: number;
+  feeAmount?: number;
 }
 
 export async function handleQrTableMpPayment({
@@ -32,8 +35,20 @@ export async function handleQrTableMpPayment({
   externalReference,
   mpPaymentId,
   amount,
+  feeAmount,
 }: HandleArgs) {
   const now = new Date().toISOString();
+
+  if (externalReference.startsWith(QR_TIP_PREFIX)) {
+    const paymentId = externalReference.slice(QR_TIP_PREFIX.length);
+    const fee = Math.max(0, Number(feeAmount ?? 0));
+    await admin.from("payments").update({
+      status: "approved", external_id: mpPaymentId,
+      processing_fee_amount: fee, tip_fee_amount: fee,
+      tip_net_amount: Math.max(0, Number(amount) - fee), updated_at: now,
+    } as never).eq("id", paymentId);
+    return;
+  }
 
   if (externalReference.startsWith(QR_TABLE_GROUP_PREFIX)) {
     const groupId = externalReference.slice(QR_TABLE_GROUP_PREFIX.length);
@@ -152,21 +167,11 @@ async function settleSplitGroup(
   // instead of the old inline `(allGroups ?? []).every(...)`, which marked the
   // order paid whenever the query failed — the money-path bug fixed in
   // tablePaymentService.
-  const allPaid = await areAllSplitGroupsPaid(admin, group.order_id);
-
-  if (allPaid) {
-    await admin
-      .from("orders")
-      .update({
-        status: "paid",
-        paid_at: args.now,
-        balance_due: 0,
-        paid_total: Number(group.total),
-        payment_method: "mercadopago",
-        updated_at: args.now,
-      })
-      .eq("id", group.order_id);
-  }
+  const { allPaid } = await syncSplitOrderPaymentTotals(
+    admin,
+    group.order_id,
+    { now: args.now, method: "mercadopago" },
+  );
 
   await admin.from("order_activity_log").insert({
     order_id: group.order_id,

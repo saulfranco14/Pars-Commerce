@@ -4,6 +4,8 @@ import Link from "next/link";
 import { XCircle, Clock, ArrowLeft, Repeat, CalendarCheck } from "lucide-react";
 import { ClearCartOnConfirm } from "./ClearCartOnConfirm";
 import { PaymentSuccessFullScreen } from "./PaymentSuccessFullScreen";
+import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
+import { formatPickupTime } from "@/features/checkout/helpers/pickupSchedule";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -52,7 +54,7 @@ export default async function ConfirmacionPage({
     notFound();
   }
 
-  const accentColor = tenant.theme_color?.trim() || "#6366f1";
+  const accentColor = tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT;
 
   if (!order_id) {
     return (
@@ -74,7 +76,7 @@ export default async function ConfirmacionPage({
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, status, total, paid_total, balance_due, payment_mode, payment_link, payment_plan_status, customer_name, created_at")
+    .select("id, status, total, paid_total, balance_due, payment_mode, payment_link, payment_plan_status, customer_name, created_at, scheduled_for")
     .eq("id", order_id)
     .eq("tenant_id", tenant.id)
     .single();
@@ -188,6 +190,26 @@ export default async function ConfirmacionPage({
               </div>
             )}
 
+            {order.scheduled_for && paymentStatus !== "failure" && (
+              <div
+                className="mx-auto mt-6 max-w-xs rounded-xl border-2 p-4 text-center"
+                style={{
+                  borderColor: accentColor,
+                  backgroundColor: `${accentColor}08`,
+                }}
+              >
+                <p className="text-xs font-medium text-gray-500">
+                  Pasa por tu pedido
+                </p>
+                <p
+                  className="mt-1 text-base font-bold"
+                  style={{ color: accentColor }}
+                >
+                  {formatPickupTime(new Date(order.scheduled_for))}
+                </p>
+              </div>
+            )}
+
             {formattedAddress !== "Dirección no configurada" && (
               <div className="mx-auto mt-6 max-w-xs rounded-xl border border-gray-100 bg-gray-50 p-3">
                 <p className="text-center text-xs font-medium text-gray-600">
@@ -204,7 +226,7 @@ export default async function ConfirmacionPage({
               {paymentStatus !== "success" && order.payment_link && (
                 <a
                   href={order.payment_link}
-                  className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
+                  className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
                   style={{ backgroundColor: accentColor }}
                 >
                   Reintentar pago
@@ -212,14 +234,14 @@ export default async function ConfirmacionPage({
               )}
               <Link
                 href={`/sitio/${slug}/productos`}
-                className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
+                className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
                 style={{ backgroundColor: accentColor }}
               >
                 Seguir comprando
               </Link>
               <Link
                 href={paymentStatus === "failure" ? `/sitio/${slug}/carrito` : `/sitio/${slug}/inicio`}
-                className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-6 py-4 font-semibold transition-opacity hover:opacity-90"
+                className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-6 py-4 font-semibold transition-opacity hover:opacity-90"
                 style={{ borderColor: accentColor, color: accentColor }}
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -244,6 +266,7 @@ export default async function ConfirmacionPage({
           customerName={order.customer_name ?? ""}
           formattedAddress={formattedAddress}
           phone={address?.phone}
+          scheduledFor={order.scheduled_for}
         />
       </>
     );
@@ -278,7 +301,7 @@ export default async function ConfirmacionPage({
             {order.payment_link && (
               <a
                 href={order.payment_link}
-                className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
+                className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
                 style={{ backgroundColor: accentColor }}
               >
                 Reintentar en Mercado Pago
@@ -286,14 +309,14 @@ export default async function ConfirmacionPage({
             )}
             <Link
               href={`/sitio/${slug}/carrito`}
-              className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
+              className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: accentColor }}
             >
               Volver al carrito
             </Link>
             <Link
               href={`/sitio/${slug}/inicio`}
-              className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-6 py-4 font-semibold transition-opacity hover:opacity-90"
+              className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-6 py-4 font-semibold transition-opacity hover:opacity-90"
               style={{ borderColor: accentColor, color: accentColor }}
             >
               <ArrowLeft className="h-4 w-4" />
@@ -325,7 +348,7 @@ export default async function ConfirmacionPage({
           {order.payment_link && (
             <a
               href={order.payment_link}
-              className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
+              className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: accentColor }}
             >
               Reintentar en Mercado Pago
@@ -333,14 +356,14 @@ export default async function ConfirmacionPage({
           )}
           <Link
             href={`/sitio/${slug}/carrito`}
-            className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
+            className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-4 font-semibold text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: accentColor }}
           >
             Intentar nuevamente
           </Link>
           <Link
             href={`/sitio/${slug}/inicio`}
-            className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-6 py-4 font-semibold transition-opacity hover:opacity-90"
+            className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-6 py-4 font-semibold transition-opacity hover:opacity-90"
             style={{ borderColor: accentColor, color: accentColor }}
           >
             <ArrowLeft className="h-4 w-4" />

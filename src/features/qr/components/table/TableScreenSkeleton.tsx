@@ -9,7 +9,7 @@ import { OrderTrackerSkeleton } from "@/features/qr/components/order-tracker/Ord
  */
 export function TableScreenSkeleton() {
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-131.5vh bg-background">
       <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col">
         {/* Accent header — real brand color from the first frame */}
         <header className="rounded-b-[28px] bg-accent px-5 pb-6 pt-5 shadow-sm">

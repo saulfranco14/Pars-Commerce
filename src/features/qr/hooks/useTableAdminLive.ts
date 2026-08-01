@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import useSWR from "swr";
 
 import { swrFetcher } from "@/lib/swrFetcher";
@@ -50,8 +50,20 @@ export function useTableAdminLive(
   const [busyDeviceId, setBusyDeviceId] = useState<string | null>(null);
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const mutationInFlight = useRef(false);
+
+  function acquireMutation() {
+    if (mutationInFlight.current) return false;
+    mutationInFlight.current = true;
+    return true;
+  }
+
+  function releaseMutation() {
+    mutationInFlight.current = false;
+  }
 
   async function confirmPayment(paymentId: string) {
+    if (!acquireMutation()) return;
     setBusyPaymentId(paymentId);
     setError(null);
     try {
@@ -63,10 +75,12 @@ export function useTableAdminLive(
       );
     } finally {
       setBusyPaymentId(null);
+      releaseMutation();
     }
   }
 
   async function rejectPayment(paymentId: string, reason?: string) {
+    if (!acquireMutation()) return;
     setBusyPaymentId(paymentId);
     setError(null);
     try {
@@ -78,6 +92,7 @@ export function useTableAdminLive(
       );
     } finally {
       setBusyPaymentId(null);
+      releaseMutation();
     }
   }
 
@@ -86,6 +101,7 @@ export function useTableAdminLive(
     reasonDetails?: string;
   }) {
     if (!orderId) return;
+    if (!acquireMutation()) return;
     setClosing(true);
     setError(null);
     try {
@@ -99,11 +115,13 @@ export function useTableAdminLive(
       return false;
     } finally {
       setClosing(false);
+      releaseMutation();
     }
   }
 
   async function mergeTable(secondaryOrderId: string) {
     if (!orderId) return false;
+    if (!acquireMutation()) return false;
     setMerging(true);
     setError(null);
     try {
@@ -117,11 +135,13 @@ export function useTableAdminLive(
       return false;
     } finally {
       setMerging(false);
+      releaseMutation();
     }
   }
 
   async function unlink() {
     if (!orderId) return false;
+    if (!acquireMutation()) return false;
     setMerging(true);
     setError(null);
     try {
@@ -135,11 +155,13 @@ export function useTableAdminLive(
       return false;
     } finally {
       setMerging(false);
+      releaseMutation();
     }
   }
 
   async function advanceFulfillment(status: FulfillmentStatus) {
     if (!orderId) return false;
+    if (!acquireMutation()) return false;
     setAdvancing(true);
     setError(null);
     try {
@@ -155,6 +177,7 @@ export function useTableAdminLive(
       return false;
     } finally {
       setAdvancing(false);
+      releaseMutation();
     }
   }
 
@@ -163,6 +186,7 @@ export function useTableAdminLive(
     status: FulfillmentStatus,
   ) {
     if (!orderId) return false;
+    if (!acquireMutation()) return false;
     setBusyDeviceId(deviceId);
     setError(null);
     try {
@@ -176,11 +200,13 @@ export function useTableAdminLive(
       return false;
     } finally {
       setBusyDeviceId(null);
+      releaseMutation();
     }
   }
 
   async function advanceItem(orderItemId: string, status: FulfillmentStatus) {
     if (!orderId) return false;
+    if (!acquireMutation()) return false;
     setBusyItemId(orderItemId);
     setError(null);
     try {
@@ -194,11 +220,13 @@ export function useTableAdminLive(
       return false;
     } finally {
       setBusyItemId(null);
+      releaseMutation();
     }
   }
 
   async function advanceAll(status: FulfillmentStatus) {
     if (!orderId) return false;
+    if (!acquireMutation()) return false;
     setAdvancing(true);
     setError(null);
     try {
@@ -212,6 +240,7 @@ export function useTableAdminLive(
       return false;
     } finally {
       setAdvancing(false);
+      releaseMutation();
     }
   }
 

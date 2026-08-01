@@ -1,216 +1,178 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useOrder } from "@/features/orders/hooks/useOrder";
-import { useTenantStore } from "@/stores/useTenantStore";
-import { UserPlus, UserCheck, Check, ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, ChevronDown, UserCheck, UserPlus } from "lucide-react";
 
+import { useOrder } from "@/features/orders/hooks/useOrder";
+import { usePermission } from "@/stores/useTenantStore";
+import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
+
+import type { AssignmentPickerProps } from "@/features/orders/interfaces/assignment";
+
+/** Statuses where who serves the order still matters. */
+const ASSIGNABLE_STATUSES = [
+  "draft",
+  "assigned",
+  "in_progress",
+  "pending_pickup",
+  "paid",
+];
+
+// Extracted because it used to be written three times (mobile/desktop ×
+// paid/unpaid) and the three had drifted apart.
+function AssignmentPicker({
+  team,
+  assignedTo,
+  onAssign,
+  loading,
+  actionLabel,
+}: AssignmentPickerProps) {
+  const [selected, setSelected] = useState(assignedTo ?? "");
+
+  useEffect(() => setSelected(assignedTo ?? ""), [assignedTo]);
+
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <select
+        value={selected}
+        onChange={(e) => setSelected(e.target.value)}
+        className="select-custom min-h-11 w-full min-w-0 max-w-full cursor-pointer rounded-lg border border-border bg-border-soft/50 px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:w-auto"
+        aria-label="Miembro del equipo"
+      >
+        <option value="">{assignedTo ? "Cambiar a…" : "Seleccionar…"}</option>
+        {team.map((t) => (
+          <option key={t.user_id} value={t.user_id}>
+            {t.display_name || t.email}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={() => onAssign(selected)}
+        disabled={loading || !selected || selected === assignedTo}
+        className="inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <UserPlus className="h-4 w-4 shrink-0" aria-hidden />
+        {loading ? "Guardando…" : actionLabel}
+      </button>
+    </div>
+  );
+}
+
+// Gated by permission, not role name. On a paid order it also needs
+// `orders.addendum`: reassigning rewrites who the sale is credited to.
 export function AssignmentCard() {
   const { order, team, actionLoading, assignmentSuccess, handleAssign } =
     useOrder();
-  const activeRole = useTenantStore((s) => s.activeRole)();
-  const [assignTo, setAssignTo] = useState("");
-  const [desktopOpen, setDesktopOpen] = useState(false);
+  const can = usePermission();
+  const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    if (order?.assigned_to) {
-      setAssignTo(order.assigned_to);
-    } else {
-      setAssignTo("");
-    }
-  }, [order?.assigned_to]);
+  if (!order || !ASSIGNABLE_STATUSES.includes(order.status)) return null;
 
-  if (!order) return null;
-
-  const isAssigned = !!order.assigned_to;
   const isPaid = order.status === "paid";
-  const isOwner = activeRole?.name === "owner";
-  const showAssignment = ["draft", "assigned", "in_progress", "pending_pickup", "paid"].includes(
-    order.status
-  );
-
-  if (!showAssignment) return null;
+  const canAssign =
+    can(ORDER_PERMISSIONS.assign) &&
+    (!isPaid || can(ORDER_PERMISSIONS.addendum));
 
   const assignedMember =
     team.find((t) => t.user_id === order.assigned_to) ?? order.assigned_user;
-  const assigneeLabel = isAssigned
-    ? assignedMember?.display_name || assignedMember?.email || "Miembro del equipo"
+  const assigneeLabel = order.assigned_to
+    ? assignedMember?.display_name ||
+      assignedMember?.email ||
+      "Miembro del equipo"
     : "Sin asignar";
 
-  const infoBlock = (
-    <div className="flex items-center gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
-        <UserCheck className="h-4 w-4" />
-      </div>
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-muted">
-          Encargado
-        </p>
-        <p className="text-sm font-semibold text-foreground">{assigneeLabel}</p>
-      </div>
-    </div>
-  );
-
-  const assignSummaryLabel = isPaid && isOwner
-    ? assigneeLabel
-    : isAssigned
-      ? assigneeLabel
-      : assignTo
-        ? team.find((t) => t.user_id === assignTo)?.display_name ?? "Seleccionado"
-        : "Sin asignar";
-
-  const assignContent = (compact?: boolean) => (
-    <div className={`flex min-w-0 flex-col ${compact ? "gap-2" : "gap-4"} sm:flex-row sm:items-center sm:justify-between sm:gap-4`}>
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted/60 text-muted-foreground">
-          <UserPlus className="h-4 w-4" />
-        </div>
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">
-            Asignación de equipo
-          </h3>
-          <p className="text-xs text-muted">
-            Selecciona quién se encargará de este pedido
-          </p>
-        </div>
-      </div>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <select
-          value={assignTo}
-          onChange={(e) => setAssignTo(e.target.value)}
-          className="select-custom min-h-[44px] w-full min-w-0 max-w-full rounded-lg border border-border bg-border-soft/50 px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:w-auto"
+  const body = (
+    <div className="space-y-4">
+      {assignmentSuccess && (
+        <div
+          className="flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700"
+          role="status"
         >
-          <option value="">Seleccionar...</option>
-          {team.map((t) => (
-            <option key={t.user_id} value={t.user_id}>
-              {t.display_name || t.email}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          onClick={() => handleAssign(assignTo)}
-          disabled={actionLoading || !assignTo}
-          className="inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          <UserPlus className="h-4 w-4 shrink-0" aria-hidden />
-          {actionLoading ? "Asignando…" : "Asignar"}
-        </button>
-      </div>
-    </div>
-  );
+          <Check className="h-4 w-4 shrink-0" aria-hidden />
+          Asignación actualizada
+        </div>
+      )}
 
-  const desktopAssignContent = () => {
-    if (isPaid && isOwner) {
-      return (
-        <div className="space-y-4">
-          {assignmentSuccess && (
-            <div
-              className="flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700"
-              role="status"
-            >
-              <Check className="h-4 w-4 shrink-0" />
-              Asignación actualizada
-            </div>
-          )}
-          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">{infoBlock}</div>
-            <div className="flex min-w-0 shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-              <select
-                value={assignTo}
-                onChange={(e) => setAssignTo(e.target.value)}
-                className="select-custom min-h-[44px] w-full min-w-0 max-w-full rounded-lg border border-border bg-border-soft/50 px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:w-auto"
-              >
-                <option value="">Cambiar a...</option>
-                {team.map((t) => (
-                  <option key={t.user_id} value={t.user_id}>
-                    {t.display_name || t.email}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => handleAssign(assignTo)}
-                disabled={
-                  actionLoading || !assignTo || assignTo === order.assigned_to
-                }
-                className="inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-surface"
-              >
-                <UserCheck className="h-4 w-4 shrink-0" aria-hidden />
-                {actionLoading ? "Guardando…" : "Cambiar asignación"}
-              </button>
-            </div>
+      <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <div
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+              order.assigned_to
+                ? "bg-emerald-500/10 text-emerald-600"
+                : "bg-muted/60 text-muted-foreground"
+            }`}
+          >
+            {order.assigned_to ? (
+              <UserCheck className="h-4 w-4" aria-hidden />
+            ) : (
+              <UserPlus className="h-4 w-4" aria-hidden />
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">
+              Encargado
+            </p>
+            <p className="truncate text-sm font-semibold text-foreground">
+              {assigneeLabel}
+            </p>
           </div>
         </div>
-      );
-    }
-    if (isPaid || isAssigned) {
-      return infoBlock;
-    }
-    return assignContent();
-  };
 
-  const mobileAssignSummary = (
-    <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-2 px-3 py-2">
-      <div className="flex min-w-0 items-center gap-2">
-        {isAssigned || isPaid ? (
-          <UserCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
-        ) : (
-          <UserPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
+        {canAssign && (
+          <AssignmentPicker
+            team={team}
+            assignedTo={order.assigned_to ?? null}
+            onAssign={handleAssign}
+            loading={actionLoading}
+            actionLabel={order.assigned_to ? "Reasignar" : "Asignar"}
+          />
         )}
-        <span className="text-sm font-medium text-foreground">Asignación</span>
-        <span className="truncate text-sm text-muted">{assignSummaryLabel}</span>
       </div>
-      <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
-    </summary>
-  );
 
-  const mobileAssignBlock = (
-    <details className="group border-t-0 md:hidden [&>summary::-webkit-details-marker]:hidden">
-      {mobileAssignSummary}
-      <div className="border-t border-border/50 px-3 py-2">
-        {isPaid && isOwner ? desktopAssignContent() : isPaid || isAssigned ? infoBlock : assignContent(true)}
-      </div>
-    </details>
+      {/* Un pedido de autoservicio sin dueño es un estado válido, no un dato
+          faltante: el cliente escaneó el QR y nadie lo atendió. Se dice para
+          que no se lea como un error. */}
+      {!order.assigned_to && !canAssign && (
+        <p className="text-xs text-muted-foreground">
+          Nadie tiene este pedido asignado. Tu rol no puede repartir pedidos.
+        </p>
+      )}
+    </div>
   );
-
-  const desktopAssignBlock = (
-    <details
-      open={desktopOpen}
-      onToggle={(e) => setDesktopOpen((e.target as HTMLDetailsElement).open)}
-      className="group hidden md:block [&>summary::-webkit-details-marker]:hidden"
-    >
-      <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-2 px-4 py-2">
-        <div className="flex min-w-0 items-center gap-2">
-          {isAssigned || isPaid ? (
-            <UserCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
-          ) : (
-            <UserPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
-          )}
-          <span className="text-sm font-semibold text-foreground">Asignación</span>
-          <span className="truncate text-sm text-muted">{assignSummaryLabel}</span>
-        </div>
-        <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
-      </summary>
-      <div className="border-t border-border/50 p-4">
-        {desktopAssignContent()}
-      </div>
-    </details>
-  );
-
-  if ((isPaid && isOwner) || isPaid || isAssigned) {
-    return (
-      <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
-        {desktopAssignBlock}
-        {mobileAssignBlock}
-      </div>
-    );
-  }
 
   return (
     <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
-      {desktopAssignBlock}
-      {mobileAssignBlock}
+      <details
+        open={open}
+        onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
+        className="group [&>summary::-webkit-details-marker]:hidden"
+      >
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 md:px-4">
+          <div className="flex min-w-0 items-center gap-2">
+            {order.assigned_to ? (
+              <UserCheck
+                className="h-4 w-4 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+            ) : (
+              <UserPlus
+                className="h-4 w-4 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+            )}
+            <span className="text-sm font-semibold text-foreground">
+              Asignación
+            </span>
+            <span className="truncate text-sm text-muted">{assigneeLabel}</span>
+          </div>
+          <ChevronDown
+            className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180"
+            aria-hidden
+          />
+        </summary>
+        <div className="border-t border-border/50 p-3 md:p-4">{body}</div>
+      </details>
     </div>
   );
 }

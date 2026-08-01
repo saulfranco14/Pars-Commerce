@@ -86,6 +86,12 @@ export interface TableSessionResponse {
   connected_devices?: number;
   incoming_merge_request?: QrIncomingMergeRequest | null;
   outgoing_merge_request?: QrOutgoingMergeRequest | null;
+  /** A kiosk ticket on this same phone can be deliberately attached here. */
+  kiosk_handoff?: {
+    order_id: string;
+    order_number: string | null;
+    total: number;
+  } | null;
   /** Active tenant promotions to tease inside the menu (Rappi-style banners). */
   promotions?: QrPromotion[];
 }
@@ -96,7 +102,12 @@ export interface TableSessionResponse {
  * and creates orders/devices as side effects).
  */
 export interface TablePulseResponse {
+  /** The QR view should remain open and keep following this ticket. */
   active: boolean;
+  /** Present for single-use (kiosk) tickets; independent from `active`. */
+  payment_completed?: boolean;
+  /** Present for single-use tickets; true while preparation is still tracked. */
+  tracking_fulfillment?: boolean;
   order?: {
     id: string;
     status: string;

@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { Sparkles } from "lucide-react";
 
 import { getInitials } from "@/features/qr/helpers/format";
 
 import type { BrandImageProps } from "@/features/qr/interfaces/brandImage";
+
+const DEFAULT_SIZES = "(max-width: 640px) 96px, 128px";
 
 /**
  * Shared image tile with a 3-tier fallback so no customer-facing card ever
@@ -15,7 +16,7 @@ import type { BrandImageProps } from "@/features/qr/interfaces/brandImage";
  *   1. `src`      → the actual photo (product image), object-cover.
  *   2. `logoUrl`  → the tenant's logo, object-contain on a soft tile.
  *   3. `name`     → a colored tile with the business initials.
- *   4. (fallback) → the Pars Commerce mark on an accent gradient.
+ *   4. (fallback) → the Tlaco coin on an accent gradient.
  *
  * Pure presentational: no fetch, no state. Uses next/image (configured for
  * *.supabase.co in next.config.ts) so every photo is served AVIF/WebP at the
@@ -29,9 +30,13 @@ export function BrandImage({
   alt,
   className = "",
   rounded = "rounded-none",
+  sizes = DEFAULT_SIZES,
+  fallbackScale = "default",
+  priority = false,
 }: BrandImageProps) {
   const tileBase = `relative flex items-center justify-center overflow-hidden ${rounded} ${className}`;
   const trimmedName = name?.trim() ?? "";
+  const loading = priority ? undefined : ("lazy" as const);
 
   // Tier 1 — product photo.
   if (src) {
@@ -41,8 +46,9 @@ export function BrandImage({
           src={src}
           alt={alt}
           fill
-          loading="lazy"
-          sizes="(max-width: 640px) 96px, 128px"
+          loading={loading}
+          priority={priority}
+          sizes={sizes}
           className="object-cover"
         />
       </div>
@@ -59,8 +65,9 @@ export function BrandImage({
           src={logoUrl}
           alt={alt}
           fill
-          loading="lazy"
-          sizes="(max-width: 640px) 96px, 128px"
+          loading={loading}
+          priority={priority}
+          sizes={sizes}
           className={`object-cover ${rounded}`}
         />
       </div>
@@ -71,30 +78,45 @@ export function BrandImage({
   if (trimmedName) {
     return (
       <div
-        className={`${tileBase} bg-gradient-to-br from-accent/10 to-accent/25`}
+        className={`${tileBase} bg-linear-to-br from-accent/10 to-accent/25`}
         aria-label={alt}
         role="img"
       >
-        <span className="text-2xl font-bold uppercase tracking-tight text-accent/70">
+        <span
+          className={`${
+            fallbackScale === "lg" ? "text-6xl" : "text-2xl"
+          } font-bold uppercase tracking-tight text-accent/70`}
+        >
           {getInitials(trimmedName)}
         </span>
       </div>
     );
   }
 
-  // Tier 4 — Pars Commerce mark.
+  // Tier 4 — la moneda de Tlaco. Es la única superficie del producto donde
+  // aparece nuestra marca en una tarjeta del cliente, así que va la moneda y
+  // no un ícono genérico: el `Sparkles` con el nombre de la marca al lado no
+  // decía nada.
   return (
     <div
-      className={`${tileBase} bg-gradient-to-br from-accent/15 to-accent/30`}
+      className={`${tileBase} bg-linear-to-br from-accent/15 to-accent/30`}
       aria-label={alt}
       role="img"
     >
-      <span className="flex flex-col items-center gap-1 text-accent/70">
-        <Sparkles className="h-7 w-7" fill="currentColor" strokeWidth={0} />
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">
-          pars
-        </span>
-      </span>
+      <svg
+        viewBox="0 0 32 32"
+        className={fallbackScale === "lg" ? "h-20 w-20" : "h-8 w-8"}
+        aria-hidden
+      >
+        <mask id="brand-image-coin">
+          <rect width="32" height="32" fill="#fff" />
+          <circle cx="16" cy="16" r="6" fill="#000" />
+        </mask>
+        <g mask="url(#brand-image-coin)">
+          <circle cx="16" cy="16" r="15" fill="var(--coin-face)" />
+          <path d="M16 1a15 15 0 0 1 0 30z" fill="var(--coin-edge)" />
+        </g>
+      </svg>
     </div>
   );
 }

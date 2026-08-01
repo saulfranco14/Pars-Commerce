@@ -9,11 +9,11 @@ export function LandingCta() {
           ¿Listo para vender en línea?
         </h2>
         <p className="mt-4 text-muted-foreground">
-          Únete a negocios que ya usan Pars Commerce para gestionar sus ventas.
+          Únete a los negocios que ya usan Tlaco para gestionar sus ventas.
         </p>
         <Link
           href="/registro"
-          className="group mt-8 inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+          className="group mt-8 inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
         >
           Crear cuenta gratis
           <ArrowRight

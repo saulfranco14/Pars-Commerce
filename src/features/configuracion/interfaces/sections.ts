@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { BusinessHours } from "@/features/configuracion/interfaces/businessHours";
 import type {
   SitePage,
   SitePageContent,
@@ -84,9 +85,32 @@ export interface ConfigRecurrentesSectionProps {
   deliveryOn: "first_payment" | "full_payment";
   onDeliveryOnChange: (v: "first_payment" | "full_payment") => void;
   allowedFrequencies: Array<"weekly" | "biweekly" | "monthly">;
-  onAllowedFrequenciesChange: (v: Array<"weekly" | "biweekly" | "monthly">) => void;
+  onAllowedFrequenciesChange: (
+    v: Array<"weekly" | "biweekly" | "monthly">,
+  ) => void;
   maxInstallments: string;
   onMaxInstallmentsChange: (v: string) => void;
+}
+
+export interface ConfigHorariosSectionProps {
+  /** `null` = el negocio todavía no los dio de alta. */
+  hours: BusinessHours | null;
+  onChange: (next: BusinessHours) => void;
+}
+
+export interface ConfigAgendaSectionProps {
+  enabled: boolean;
+  onEnabledChange: (v: boolean) => void;
+  minLeadMinutes: string;
+  onMinLeadMinutesChange: (v: string) => void;
+  maxDaysAhead: string;
+  onMaxDaysAheadChange: (v: string) => void;
+  acceptingOrders: boolean;
+  onAcceptingOrdersChange: (v: boolean) => void;
+  canConfigureReception: boolean;
+  tenantId: string;
+  /** `null` dispara el aviso de dar de alta los horarios. */
+  hours: BusinessHours | null;
 }
 
 export interface SiteContentFormProps {

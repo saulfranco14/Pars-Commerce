@@ -3,6 +3,7 @@
 import { Check } from "lucide-react";
 import type { SiteTemplate } from "@/services/siteTemplatesService";
 import { TemplateMiniPreview } from "./TemplateMiniPreview";
+import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
 
 interface TemplateSelectorProps {
   templates: SiteTemplate[];
@@ -17,11 +18,11 @@ export function TemplateSelector({
   templates,
   selectedTemplateId,
   onSelect,
-  themeColor = "#6366f1",
+  themeColor = DEFAULT_TENANT_ACCENT,
   label = "Plantilla",
   compact = false,
 }: TemplateSelectorProps) {
-  const previewColor = themeColor.trim() || "#6366f1";
+  const previewColor = themeColor.trim() || DEFAULT_TENANT_ACCENT;
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
 
   const gridClass = compact
@@ -49,7 +50,7 @@ export function TemplateSelector({
               onClick={() => onSelect(t)}
               title={t.description ?? undefined}
               className={`group relative flex min-w-0 flex-col overflow-hidden rounded-lg border text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
-                compact ? "min-h-0" : "min-h-[80px]"
+                compact ? "min-h-0" : "min-h-20"
               } ${
                 isSelected
                   ? "border-accent ring-2 ring-accent/25 shadow-md"
@@ -75,7 +76,7 @@ export function TemplateSelector({
               </div>
               <div
                 className={`flex items-center px-1.5 transition-colors ${
-                  compact ? "py-1" : "min-h-[44px] flex-1 px-2 py-1.5"
+                  compact ? "py-1" : "min-h-11 flex-1 px-2 py-1.5"
                 } ${
                   isSelected ? "bg-accent/5" : "bg-background"
                 }`}

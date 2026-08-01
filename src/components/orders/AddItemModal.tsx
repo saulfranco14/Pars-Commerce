@@ -153,7 +153,7 @@ export function AddItemModal({
   if (!isOpen) return null;
 
   const inputBase =
-    "input-form block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50";
+    "input-form block w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50";
   const selectClass =
     inputBase +
     " mt-1 appearance-none bg-[url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2378716c%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E')] bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10";
@@ -248,7 +248,7 @@ export function AddItemModal({
               type="button"
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
               disabled={loading || quantity <= 1}
-              className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl border border-border bg-surface-raised text-foreground transition-colors hover:bg-border-soft disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/20"
+              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-raised text-foreground transition-colors hover:bg-border-soft disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/20"
               aria-label="Disminuir cantidad"
             >
               −
@@ -271,13 +271,13 @@ export function AddItemModal({
               onBlur={() => {
                 if (quantity < 1) setQuantity(1);
               }}
-              className="input-form min-h-[44px] w-20 shrink-0 rounded-xl border border-border px-3 py-2.5 text-center text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+              className="input-form min-h-11 w-20 shrink-0 rounded-xl border border-border px-3 py-2.5 text-center text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             />
             <button
               type="button"
               onClick={() => setQuantity((q) => Math.min(999, q + 1))}
               disabled={loading || quantity >= 999}
-              className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl border border-border bg-surface-raised text-foreground transition-colors hover:bg-border-soft disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/20"
+              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-raised text-foreground transition-colors hover:bg-border-soft disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/20"
               aria-label="Aumentar cantidad"
             >
               +

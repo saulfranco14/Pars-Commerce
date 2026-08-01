@@ -42,7 +42,13 @@ export async function POST(_request: Request, context: RouteContext) {
   if (!order) {
     return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
   }
-  const allowed = await requirePermission(user.id, order.tenant_id, "qr.write");
+  // `payments.write`, no `qr.write`: validar el efectivo que recibió es
+  // justo el trabajo del cajero, y `qr.write` es exclusivo del dueño.
+  const allowed = await requirePermission(
+    user.id,
+    order.tenant_id,
+    "payments.write",
+  );
   if (!allowed) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

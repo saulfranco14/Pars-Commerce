@@ -148,7 +148,7 @@ export function TipScreen({
           type="submit"
           form="tip-form"
           disabled={submitting || currentAmount <= 0}
-          className="flex min-h-[54px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex min-h-13.5 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? (
             <>
@@ -186,7 +186,7 @@ export function TipScreen({
                   type="button"
                   onClick={() => selectPreset(chip.value)}
                   aria-pressed={isSelected}
-                  className={`relative flex min-h-[76px] flex-col items-center justify-center gap-1 rounded-2xl border-2 px-2 py-3 text-center transition-all active:scale-[0.96] ${
+                  className={`relative flex min-h-19 flex-col items-center justify-center gap-1 rounded-2xl border-2 px-2 py-3 text-center transition-all active:scale-[0.96] ${
                     isSelected
                       ? "border-accent bg-accent/5 shadow-md shadow-accent/15"
                       : "border-border bg-surface hover:border-accent/40"

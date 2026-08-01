@@ -97,10 +97,10 @@ export function TableQRClient({
   // caller's own state (my_fulfillment_status) so "ya puedes pagar" reflects
   // when MY items are ready, not the whole table. Falls back to the order
   // summary, then the tracker snapshot.
-  const liveFulfillment =
-    order?.my_fulfillment_status ??
-    order?.fulfillment_status ??
-    tracker.fulfillmentStatus;
+  const tableFulfillment =
+    order?.fulfillment_status ?? tracker.fulfillmentStatus;
+  const myFulfillment =
+    order?.my_fulfillment_status ?? tableFulfillment;
   const liveItemCount = order?.item_count;
   const liveReadyItemCount = order?.ready_item_count;
   const liveReceivedItemCount = order?.received_item_count;
@@ -138,7 +138,7 @@ export function TableQRClient({
     if (!order?.id) return;
     const fulfillmentChanged =
       prevFulfillmentRef.current !== null &&
-      prevFulfillmentRef.current !== liveFulfillment;
+      prevFulfillmentRef.current !== tableFulfillment;
     const itemsChanged =
       typeof liveItemCount === "number" &&
       prevItemCountRef.current !== null &&
@@ -158,7 +158,7 @@ export function TableQRClient({
       receivedItemsChanged
     )
       void reloadTracker();
-    prevFulfillmentRef.current = liveFulfillment;
+    prevFulfillmentRef.current = tableFulfillment;
     if (typeof liveItemCount === "number")
       prevItemCountRef.current = liveItemCount;
     if (typeof liveReadyItemCount === "number")
@@ -167,7 +167,7 @@ export function TableQRClient({
       prevReceivedItemCountRef.current = liveReceivedItemCount;
   }, [
     order?.id,
-    liveFulfillment,
+    tableFulfillment,
     liveItemCount,
     liveReadyItemCount,
     liveReceivedItemCount,
@@ -187,7 +187,7 @@ export function TableQRClient({
   useEffect(() => {
     const id = order?.id;
     if (!id) return;
-    if (liveFulfillment === "ready") {
+    if (myFulfillment === "ready") {
       sawReadyRef.current = true;
       if (!hasSeenReady(id)) {
         markReadySeen(id);
@@ -198,7 +198,7 @@ export function TableQRClient({
       sawReadyRef.current = false;
       clearReadySeen(id);
     }
-  }, [order?.id, liveFulfillment]);
+  }, [order?.id, myFulfillment]);
 
   const [mergeToast, setMergeToast] = useState<string | null>(null);
   const merge = useCustomerMerge({
@@ -261,7 +261,7 @@ export function TableQRClient({
           onDecrement={cart.decrement}
           orderTotal={tracker.total}
           hasSentItems={!!tracker.items && tracker.items.length > 0}
-          isReady={liveFulfillment === "ready"}
+          isReady={tableFulfillment === "ready"}
         />
       }
     >
@@ -343,7 +343,8 @@ export function TableQRClient({
             devices={tracker.devices}
             total={tracker.total}
             orderStatus={order.status}
-            fulfillmentStatus={liveFulfillment}
+            fulfillmentStatus={tableFulfillment}
+            myFulfillmentStatus={myFulfillment}
             myDeviceId={tracker.myDeviceId}
             loading={tracker.loading}
             token={token}

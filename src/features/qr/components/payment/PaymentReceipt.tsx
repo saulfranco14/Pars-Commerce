@@ -18,6 +18,12 @@ interface PaymentReceiptProps {
   onClose: () => void;
   onRefresh?: () => void | Promise<void>;
   refreshing?: boolean;
+  /**
+   * `false` esconde el botón secundario mientras el pago espera confirmación.
+   * En un ticket de pantalla no hay "cuenta" a la que volver: el pedido es uno
+   * solo y ya está cerrado, así que el botón llevaba a la misma pantalla.
+   */
+  showSecondaryAction?: boolean;
 }
 
 function formatDate(iso: string) {
@@ -43,6 +49,7 @@ export function PaymentReceipt({
   onClose,
   onRefresh,
   refreshing = false,
+  showSecondaryAction = true,
 }: PaymentReceiptProps) {
   const meta = PAYMENT_METHOD_META[method];
   const Icon = meta.icon;
@@ -163,7 +170,7 @@ export function PaymentReceipt({
             type="button"
             onClick={onRefresh}
             disabled={refreshing}
-            className="flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 transition-all"
+            className="flex min-h-13 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 transition-all"
           >
             {refreshing ? (
               <>
@@ -179,17 +186,19 @@ export function PaymentReceipt({
           </button>
         )}
 
-        <button
-          type="button"
-          onClick={onClose}
-          className={`flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-2xl px-4 py-3 text-base font-bold transition-all active:scale-[0.99] ${
-            isApproved
-              ? "bg-accent text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90"
-              : "border border-border bg-surface text-foreground hover:bg-border-soft/40"
-          }`}
-        >
-          {isApproved ? "Listo" : "Volver a la cuenta"}
-        </button>
+        {(isApproved || showSecondaryAction) && (
+          <button
+            type="button"
+            onClick={onClose}
+            className={`flex min-h-13 w-full cursor-pointer items-center justify-center rounded-2xl px-4 py-3 text-base font-bold transition-all active:scale-[0.99] ${
+              isApproved
+                ? "bg-accent text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90"
+                : "border border-border bg-surface text-foreground hover:bg-border-soft/40"
+            }`}
+          >
+            {isApproved ? "Listo" : "Volver a la cuenta"}
+          </button>
+        )}
 
         {!isApproved && (
           <p className="mt-2 text-center text-xs text-muted-foreground">

@@ -169,7 +169,7 @@ export function CustomerPayModal({
                       key={id}
                       type="button"
                       onClick={() => setSelected(id)}
-                      className="group flex w-full min-h-[64px] cursor-pointer items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-accent hover:bg-accent/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+                      className="group flex w-full min-h-16 cursor-pointer items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-accent hover:bg-accent/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
                     >
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-border-soft/60 text-muted-foreground transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
                         <Icon className="h-5 w-5" aria-hidden />

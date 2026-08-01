@@ -15,7 +15,7 @@ import { FieldError } from "@/features/prestamos/components/FieldError";
 import { inputBase, inputError } from "@/features/prestamos/constants/formClasses";
 import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
 import { formatMXN } from "@/lib/loanUtils";
-import { calcSubscriptionFees, MP_SUB_FEE_PERCENT, MP_SUB_FEE_FIXED_MXN, PARS_SERVICE_FEE_PERCENT } from "@/constants/commissionConfig";
+import { calcSubscriptionFees, MP_SUB_FEE_PERCENT, MP_SUB_FEE_FIXED_MXN, TLACO_SERVICE_FEE_PERCENT } from "@/constants/commissionConfig";
 import type { Customer } from "@/types/customers";
 import type { PaymentPlanType, MpFeeAbsorbedBy } from "@/types/loans";
 
@@ -602,7 +602,7 @@ export default function NuevoPrestamo() {
                           key={label}
                           type="button"
                           onClick={() => { setPlanFrequency(freq); setPlanFrequencyType(type); }}
-                          className={`flex-1 min-h-[36px] rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                          className={`flex-1 min-h-9 rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                             isSelected
                               ? "border-accent bg-accent/10 text-accent"
                               : "border-border bg-surface text-foreground hover:bg-surface-raised"
@@ -652,7 +652,7 @@ export default function NuevoPrestamo() {
                         key={value}
                         type="button"
                         onClick={() => setPlanType(value)}
-                        className={`flex-1 min-h-[36px] rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                        className={`flex-1 min-h-9 rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                           planType === value
                             ? "border-accent bg-accent/10 text-accent"
                             : "border-border bg-surface text-foreground hover:bg-surface-raised"
@@ -672,7 +672,7 @@ export default function NuevoPrestamo() {
                   <button
                     type="button"
                     onClick={() => setFeeAbsorbedBy("business")}
-                    className={`flex-1 min-h-[36px] rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    className={`flex-1 min-h-9 rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                       feeAbsorbedBy === "business"
                         ? "border-accent bg-accent/10 text-accent"
                         : "border-border bg-surface text-foreground hover:bg-surface-raised"
@@ -683,7 +683,7 @@ export default function NuevoPrestamo() {
                   <button
                     type="button"
                     onClick={() => setFeeAbsorbedBy("customer")}
-                    className={`flex-1 min-h-[36px] rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    className={`flex-1 min-h-9 rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                       feeAbsorbedBy === "customer"
                         ? "border-accent bg-accent/10 text-accent"
                         : "border-border bg-surface text-foreground hover:bg-surface-raised"
@@ -709,10 +709,10 @@ export default function NuevoPrestamo() {
                       </span>
                       <span className="font-medium text-red-600 tabular-nums">−{formatMXN(fees.mpFee)}</span>
                     </div>
-                    {PARS_SERVICE_FEE_PERCENT > 0 && (
+                    {TLACO_SERVICE_FEE_PERCENT > 0 && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Tarifa de servicio</span>
-                        <span className="font-medium text-red-600 tabular-nums">−{formatMXN(fees.parsFee)}</span>
+                        <span className="font-medium text-red-600 tabular-nums">−{formatMXN(fees.platformFee)}</span>
                       </div>
                     )}
                     <div className="flex justify-between border-t border-accent/10 pt-1.5">

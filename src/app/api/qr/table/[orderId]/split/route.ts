@@ -39,9 +39,11 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const admin = createAdminClient();
+  const fingerprint = request.headers.get("x-fingerprint-id")?.trim() || null;
   const result = await splitOrder(admin, {
     orderId,
     mode: body.mode,
+    fingerprint,
     peopleCount: body.people_count,
     groups: body.groups,
   });

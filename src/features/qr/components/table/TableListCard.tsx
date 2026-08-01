@@ -24,6 +24,7 @@ interface TableListCardProps {
   /** Live total + preparation state, when known — from useActiveTables.
    *  Absent while loading or when the table is free. */
   active?: ActiveTableSummary;
+  disabled?: boolean;
 }
 
 /**
@@ -38,6 +39,7 @@ export function TableListCard({
   onViewQr,
   onViewDetail,
   active,
+  disabled = false,
 }: TableListCardProps) {
   const occupied = !!table.current_order_id;
   const fulfillmentMeta = active
@@ -110,7 +112,8 @@ export function TableListCard({
           <button
             type="button"
             onClick={() => onViewQr(table)}
-            className={`flex-1 ${adminActionButtonSecondary}`}
+            disabled={disabled}
+            className={`flex-1 disabled:cursor-not-allowed disabled:opacity-55 ${adminActionButtonSecondary}`}
           >
             <QrIcon className="h-3.5 w-3.5" />
             Ver QR
@@ -118,7 +121,8 @@ export function TableListCard({
           <button
             type="button"
             onClick={() => onViewDetail(table.id)}
-            className={`flex-1 ${adminActionButtonPrimary}`}
+            disabled={disabled}
+            className={`flex-1 disabled:cursor-not-allowed disabled:opacity-55 ${adminActionButtonPrimary}`}
           >
             <ClipboardList className="h-3.5 w-3.5" />
             {occupied ? "Ver actividad" : "Detalle"}

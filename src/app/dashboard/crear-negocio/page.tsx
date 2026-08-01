@@ -98,7 +98,7 @@ export default function CrearNegocioPage() {
       setActiveTenantId(tenant.id);
       if (typeof window !== "undefined") {
         try {
-          localStorage.setItem("pars_activeTenantId", tenant.id);
+          localStorage.setItem("tlaco_activeTenantId", tenant.id);
         } catch {
           console.error("Error al guardar el ID del negocio en localStorage");
         }
@@ -125,7 +125,7 @@ export default function CrearNegocioPage() {
       <div className="shrink-0 pb-4">
         <Link
           href="/dashboard"
-          className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver al inicio
@@ -164,7 +164,7 @@ export default function CrearNegocioPage() {
                   value={name}
                   onChange={handleNameChange}
                   required
-                  className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                  className="input-form mt-1 block w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                   placeholder="Ej. Lavado Express"
                 />
                 {fieldErrors.name && (
@@ -185,7 +185,7 @@ export default function CrearNegocioPage() {
                   type="text"
                   value={slug}
                   onChange={(e) => handleSlugChange(e.target.value)}
-                  className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                  className="input-form mt-1 block w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                   placeholder="lavado-express"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -212,7 +212,7 @@ export default function CrearNegocioPage() {
                     setBusinessType(e.target.value);
                     setFieldErrors((prev) => ({ ...prev, business_type: "" }));
                   }}
-                  className="input-form select-custom mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                  className="input-form select-custom mt-1 block w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                 >
                   <option value="">Seleccionar</option>
                   {BUSINESS_TYPES.map((bt) => (

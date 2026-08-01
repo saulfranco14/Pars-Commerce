@@ -122,7 +122,7 @@ export function ProductDetailSheet({
         <button
           type="button"
           onClick={handleAdd}
-          className="flex min-h-[54px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
+          className="flex min-h-13.5 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
         >
           <ShoppingBag className="h-5 w-5" />
           Agregar {qty > 1 ? `${qty} ` : ""}· {formatCurrency(lineTotal)}

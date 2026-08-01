@@ -19,7 +19,7 @@ export function SalesObjectiveChart({
 }: SalesObjectiveChartProps) {
   if (loading) {
     return (
-      <div className="min-h-[180px] rounded-xl border border-border bg-surface-raised p-4 flex items-center justify-center">
+      <div className="min-h-45 rounded-xl border border-border bg-surface-raised p-4 flex items-center justify-center">
         <p className="text-sm text-muted-foreground">Cargando...</p>
       </div>
     );

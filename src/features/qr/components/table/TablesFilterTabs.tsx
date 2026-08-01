@@ -8,6 +8,7 @@ interface TablesFilterTabsProps {
   filter: TableFilter;
   onChange: (filter: TableFilter) => void;
   counts: { total: number; free: number; occupied: number };
+  disabled?: boolean;
 }
 
 /**
@@ -19,12 +20,14 @@ export function TablesFilterTabs({
   filter,
   onChange,
   counts,
+  disabled = false,
 }: TablesFilterTabsProps) {
   return (
     <FilterTabs
       ariaLabel="Filtrar mesas"
       activeValue={filter}
       onTabChange={(v) => onChange(v as TableFilter)}
+      disabled={disabled}
       tabs={[
         { value: "all", label: `Todas ${counts.total}` },
         { value: "occupied", label: `Ocupadas ${counts.occupied}` },

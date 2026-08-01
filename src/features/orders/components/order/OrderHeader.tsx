@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { StatusBadge } from "@/components/orders/StatusBadge";
+import { PickupBadge } from "@/features/orders/components/order/PickupBadge";
 import { formatOrderDateFull } from "@/lib/formatDate";
 import { getPaymentMethodConfig } from "@/lib/formatPaymentMethod";
 import { getSourceConfig } from "@/lib/formatSource";
@@ -23,14 +24,19 @@ export function OrderHeader() {
     <div className="shrink-0 pb-4">
       <Link
         href={`/dashboard/${tenantSlug}/ordenes`}
-        className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+        className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
       >
         <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
         Volver a órdenes
       </Link>
       <div className="mt-3 flex flex-wrap items-center gap-2">
+        {/* En mayúsculas y monoespaciada, igual que en el ticket: el mostrador
+            compara este número con el que el cliente le canta. */}
         <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-          Orden {order.id.slice(0, 8)}
+          Orden{" "}
+          <span className="font-mono tracking-wider">
+            {order.order_number ?? order.id.slice(0, 8).toUpperCase()}
+          </span>
         </h1>
         {order.source &&
           (() => {
@@ -58,6 +64,10 @@ export function OrderHeader() {
         <StatusBadge
           status={order.status}
           cancelledFrom={order.cancelled_from}
+        />
+        <PickupBadge
+          scheduledFor={order.scheduled_for}
+          status={order.status}
         />
         {order.assigned_user && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-border-soft px-2.5 py-0.5 text-xs font-medium text-muted-foreground">

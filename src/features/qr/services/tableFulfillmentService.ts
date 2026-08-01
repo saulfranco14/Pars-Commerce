@@ -11,6 +11,12 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  NOT_READY_MESSAGE,
+  requiresReadyBeforePayment,
+} from "@/features/qr/helpers/paymentReadiness";
+import { releaseTableQrIfPaid } from "@/features/qr/helpers/releaseTableQrIfPaid";
+
 import type {
   ServiceError,
   ServiceResult,
@@ -32,9 +38,10 @@ function err(
 }
 
 /**
- * Guard used by the payment services: the customer can only pay once the
- * business has marked the order as ready. Returns a ServiceError to surface,
- * or null when payment is allowed.
+ * Guard used by the payment services: on a table order the customer can only pay
+ * once the business marks it ready. A counter or self-service ticket is paid up
+ * front, so it doesn't wait (see `requiresReadyBeforePayment`). Returns a
+ * ServiceError to surface, or null when payment is allowed.
  */
 export async function assertOrderReadyForPayment(
   admin: SupabaseClient,
@@ -42,17 +49,16 @@ export async function assertOrderReadyForPayment(
 ): Promise<ServiceError | null> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, fulfillment_status")
+    .select("id, fulfillment_status, source, order_type")
     .eq("id", orderId)
     .single();
 
   if (!order) return { code: "not_found", message: "Orden no encontrada" };
-  if (order.fulfillment_status !== "ready") {
-    return {
-      code: "conflict",
-      message:
-        "El negocio aún está preparando tu pedido. Podrás pagar cuando esté listo.",
-    };
+  if (
+    requiresReadyBeforePayment(order.source, order.order_type) &&
+    order.fulfillment_status !== "ready"
+  ) {
+    return { code: "conflict", message: NOT_READY_MESSAGE };
   }
   return null;
 }
@@ -74,15 +80,24 @@ export async function advanceFulfillment(
 ): Promise<ServiceResult<AdvanceFulfillmentResult>> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, status, fulfillment_status")
+    .select("id, status, fulfillment_status, source, order_type")
     .eq("id", input.orderId)
     .single();
 
   if (!order) return err("not_found", "Orden no encontrada");
-  if (order.status === "paid")
-    return err("conflict", "La orden ya está pagada");
   if (order.status === "cancelled")
     return err("conflict", "La orden fue cancelada");
+
+  // En una mesa el cobro va al final, así que "pagada" significa terminada y
+  // mover su preparación después no tiene sentido. Donde el cliente paga por
+  // adelantado es lo contrario: paga y su pedido queda POR HACER, y este es el
+  // único lugar donde el personal puede avanzarlo.
+  if (
+    order.status === "paid" &&
+    requiresReadyBeforePayment(order.source)
+  ) {
+    return err("conflict", "La orden ya está pagada");
+  }
 
   const from = (order.fulfillment_status as FulfillmentStatus) ?? "received";
 
@@ -101,6 +116,12 @@ export async function advanceFulfillment(
     .eq("id", input.orderId);
 
   if (updateError) return err("internal", updateError.message);
+
+  // Un ticket pagado por adelantado sigue vivo hasta que el trabajo está listo:
+  // al llegar ahí ya se gastó. No hace nada si el pedido no está pagado.
+  if (input.target === "ready") {
+    await releaseTableQrIfPaid(admin, input.orderId);
+  }
 
   await admin.from("order_activity_log").insert({
     order_id: input.orderId,
@@ -150,12 +171,15 @@ export async function advanceDeviceFulfillment(
 ): Promise<ServiceResult<AdvanceDeviceFulfillmentResult>> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, status")
+    .select("id, status, source, order_type")
     .eq("id", input.orderId)
     .single();
 
   if (!order) return err("not_found", "Orden no encontrada");
-  if (order.status === "paid")
+  if (
+    order.status === "paid" &&
+    requiresReadyBeforePayment(order.source)
+  )
     return err("conflict", "La orden ya está pagada");
   if (order.status === "cancelled")
     return err("conflict", "La orden fue cancelada");
@@ -252,12 +276,15 @@ export async function advanceItemFulfillment(
 ): Promise<ServiceResult<AdvanceItemFulfillmentResult>> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, status")
+    .select("id, status, source, order_type")
     .eq("id", input.orderId)
     .single();
 
   if (!order) return err("not_found", "Orden no encontrada");
-  if (order.status === "paid")
+  if (
+    order.status === "paid" &&
+    requiresReadyBeforePayment(order.source)
+  )
     return err("conflict", "La orden ya está pagada");
   if (order.status === "cancelled")
     return err("conflict", "La orden fue cancelada");
@@ -338,12 +365,15 @@ export async function advanceAllDevicesFulfillment(
 ): Promise<ServiceResult<AdvanceFulfillmentResult>> {
   const { data: order } = await admin
     .from("orders")
-    .select("id, status")
+    .select("id, status, source, order_type")
     .eq("id", input.orderId)
     .single();
 
   if (!order) return err("not_found", "Orden no encontrada");
-  if (order.status === "paid")
+  if (
+    order.status === "paid" &&
+    requiresReadyBeforePayment(order.source)
+  )
     return err("conflict", "La orden ya está pagada");
   if (order.status === "cancelled")
     return err("conflict", "La orden fue cancelada");
@@ -353,8 +383,15 @@ export async function advanceAllDevicesFulfillment(
     .select("id")
     .eq("order_id", input.orderId);
 
-  // No people connected yet → keep the order-level shortcut behaviour.
+  // No people connected yet (e.g. a kiosk ticket before it reaches a table):
+  // advance its actual lines too, otherwise the accordion would keep showing
+  // stale per-item states below an updated order summary.
   if (!devices || devices.length === 0) {
+    const { error: itemsError } = await admin
+      .from("order_items")
+      .update({ fulfillment_status: input.target })
+      .eq("order_id", input.orderId);
+    if (itemsError) return err("internal", itemsError.message);
     return advanceFulfillment(admin, input);
   }
 

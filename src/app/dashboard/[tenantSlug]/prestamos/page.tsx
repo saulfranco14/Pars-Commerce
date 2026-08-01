@@ -172,7 +172,7 @@ export default function PrestamosPage() {
             <button
               type="button"
               onClick={() => setOverdueOnly((o) => !o)}
-              className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+              className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 overdueOnly
                   ? "bg-red-100 text-red-700 hover:bg-red-200"
                   : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
@@ -184,7 +184,7 @@ export default function PrestamosPage() {
             <button
               type="button"
               onClick={() => setFilterSheetOpen(true)}
-              className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+              className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 hasDateFilter
                   ? "bg-accent/15 text-accent hover:bg-accent/20"
                   : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
@@ -202,7 +202,7 @@ export default function PrestamosPage() {
                   setDateFrom("");
                   setDateTo("");
                 }}
-                className="inline-flex min-h-[36px] items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
               >
                 Limpiar
               </button>
@@ -241,7 +241,7 @@ export default function PrestamosPage() {
             </p>
             <Link
               href={`/dashboard/${tenantSlug}/prestamos/nuevo`}
-              className="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               <Plus className="h-4 w-4" />
               Registrar préstamo

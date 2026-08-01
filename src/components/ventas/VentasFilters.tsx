@@ -33,7 +33,7 @@ export function VentasFilters({
       <button
         type="button"
         onClick={() => setFiltersOpen((o) => !o)}
-        className="flex min-h-[44px] w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium text-foreground hover:bg-border-soft/60"
+        className="flex min-h-11 w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium text-foreground hover:bg-border-soft/60"
         aria-expanded={filtersOpen}
         aria-controls="ventas-filters-content"
         id="ventas-filters-trigger"
@@ -63,7 +63,7 @@ export function VentasFilters({
                     setDateFrom(today);
                     setDateTo(today);
                   }}
-                  className={`min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                  className={`min-h-9 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                     dateFrom && dateTo && dateFrom === dateTo && dateFrom === getTodayStr()
                       ? "bg-accent/15 text-accent ring-1 ring-accent/30"
                       : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
@@ -81,7 +81,7 @@ export function VentasFilters({
                     setDateFrom(ayerStr);
                     setDateTo(ayerStr);
                   }}
-                  className="min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
+                  className="min-h-9 rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
                 >
                   Ayer
                 </button>
@@ -96,18 +96,18 @@ export function VentasFilters({
                     setDateFrom(desdeStr);
                     setDateTo(todayStr);
                   }}
-                  className="min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
+                  className="min-h-9 rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
                 >
                   7 días
                 </button>
               </div>
               <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-              <label className="flex w-full flex-col gap-1.5 sm:min-w-[120px] sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
+              <label className="flex w-full flex-col gap-1.5 sm:min-w-30 sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
                 <span className="text-sm font-medium text-muted-foreground sm:shrink-0">Persona</span>
                 <select
                   value={userFilter}
                   onChange={(e) => setUserFilter(e.target.value)}
-                  className="input-form select-custom min-h-[44px] w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                  className="input-form select-custom min-h-11 w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
                 >
                   <option value="">Todas</option>
                   {teamMembers.map((m) => (
@@ -117,19 +117,19 @@ export function VentasFilters({
                   ))}
                 </select>
               </label>
-              <label className="flex w-full flex-col gap-1.5 sm:min-w-[120px] sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
+              <label className="flex w-full flex-col gap-1.5 sm:min-w-30 sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
                 <span className="text-sm font-medium text-muted-foreground sm:shrink-0">Estado</span>
                 <select
                   value={paidFilter}
                   onChange={(e) => setPaidFilter(e.target.value)}
-                  className="input-form select-custom min-h-[44px] w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                  className="input-form select-custom min-h-11 w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
                 >
                   <option value="">Todas</option>
                   <option value="false">Pendientes</option>
                   <option value="true">Pagadas</option>
                 </select>
               </label>
-              <label className="flex w-full flex-col gap-1.5 sm:min-w-[120px] sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
+              <label className="flex w-full flex-col gap-1.5 sm:min-w-30 sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
                 <span className="text-sm font-medium text-muted-foreground sm:shrink-0">Desde</span>
                 <input
                   type="date"
@@ -137,10 +137,10 @@ export function VentasFilters({
                   min={DATE_MIN}
                   max={getTodayStr()}
                   onChange={(e) => setDateFrom(clampDate(e.target.value))}
-                  className="input-form min-h-[44px] w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                  className="input-form min-h-11 w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
                 />
               </label>
-              <label className="flex w-full flex-col gap-1.5 sm:min-w-[120px] sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
+              <label className="flex w-full flex-col gap-1.5 sm:min-w-30 sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
                 <span className="text-sm font-medium text-muted-foreground sm:shrink-0">Hasta</span>
                 <input
                   type="date"
@@ -148,33 +148,33 @@ export function VentasFilters({
                   min={DATE_MIN}
                   max={getTodayStr()}
                   onChange={(e) => setDateTo(clampDate(e.target.value))}
-                  className="input-form min-h-[44px] w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                  className="input-form min-h-11 w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
                 />
               </label>
               </div>
             </div>
           ) : (
             <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-              <label className="flex w-full flex-col gap-1.5 sm:min-w-[120px] sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
+              <label className="flex w-full flex-col gap-1.5 sm:min-w-30 sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
                 <span className="text-sm font-medium text-muted-foreground sm:shrink-0">Período</span>
                 <select
                   value={periodType}
                   onChange={(e) =>
                     setPeriodType(e.target.value as "day" | "week" | "month")
                   }
-                  className="input-form select-custom min-h-[44px] w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                  className="input-form select-custom min-h-11 w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
                 >
                   <option value="day">Día</option>
                   <option value="week">Semana</option>
                   <option value="month">Mes</option>
                 </select>
               </label>
-              <label className="flex w-full flex-col gap-1.5 sm:min-w-[120px] sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
+              <label className="flex w-full flex-col gap-1.5 sm:min-w-30 sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
                 <span className="text-sm font-medium text-muted-foreground sm:shrink-0">Persona</span>
                 <select
                   value={selectedUser}
                   onChange={(e) => setSelectedUser(e.target.value)}
-                  className="input-form select-custom min-h-[44px] w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                  className="input-form select-custom min-h-11 w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
                 >
                   <option value="">Todas</option>
                   {teamMembers.map((m) => (
@@ -184,12 +184,12 @@ export function VentasFilters({
                   ))}
                 </select>
               </label>
-              <label className="flex w-full flex-col gap-1.5 sm:min-w-[120px] sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
+              <label className="flex w-full flex-col gap-1.5 sm:min-w-30 sm:flex-1 sm:flex-row sm:items-center sm:gap-1.5">
                 <span className="text-sm font-medium text-muted-foreground sm:shrink-0">Estado</span>
                 <select
                   value={paymentStatus}
                   onChange={(e) => setPaymentStatus(e.target.value)}
-                  className="input-form select-custom min-h-[44px] w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
+                  className="input-form select-custom min-h-11 w-full rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:flex-1 sm:py-1.5"
                 >
                   <option value="">Todos</option>
                   <option value="pending">Pendientes</option>

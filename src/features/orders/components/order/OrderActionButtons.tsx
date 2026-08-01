@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useOrder } from "@/features/orders/hooks/useOrder";
-import { useActiveTenant, useTenantStore } from "@/stores/useTenantStore";
+import {
+  useActiveTenant,
+  usePermission,
+  useTenantStore,
+} from "@/stores/useTenantStore";
+import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { AssignBeforePaidModal } from "@/features/orders/components/payment/AssignBeforePaidModal";
 import { ConfirmPaymentModal } from "@/features/orders/components/payment/ConfirmPaymentModal";
@@ -16,7 +21,9 @@ import {
   X,
   Banknote,
   ExternalLink,
+  PackagePlus,
 } from "lucide-react";
+import { AddendumSheet } from "@/features/orders/components/order/AddendumSheet";
 import type { OrderActionButtonsProps } from "@/features/orders/interfaces/orderActionButtons";
 import { GenerateLinkModal } from "./GenerateLinkModal";
 
@@ -46,7 +53,9 @@ export function OrderActionButtons({
   } = useOrder();
   const activeTenant = useActiveTenant();
   const activeRole = useTenantStore((s) => s.activeRole)();
+  const can = usePermission();
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [addendumOpen, setAddendumOpen] = useState(false);
   const [assignBeforePaidModalOpen, setAssignBeforePaidModalOpen] =
     useState(false);
   const [confirmPaymentModalOpen, setConfirmPaymentModalOpen] = useState(false);
@@ -64,12 +73,25 @@ export function OrderActionButtons({
   const showExpressButton =
     expressEnabled && isEditableStatus && canStartOrComplete;
 
-  const isOwner = activeRole?.name === "owner";
+  // Cancelar va por permiso: es lo que comprueba el PATCH de `/api/orders`, y
+  // el `cashier` (el responsable de pedidos) también cierra.
   const showCancel =
-    isOwner &&
+    can(ORDER_PERMISSIONS.close) &&
     ["draft", "assigned", "in_progress", "pending_pickup", "paid"].includes(
       order.status,
     );
+
+  // "Lo que faltó": solo sobre un pedido que el cliente YA cerró. Antes de eso
+  // no hace falta un pedido aparte — se le agregan los ítems al que está
+  // abierto, que es lo que hace el botón de agregar item.
+  const showAddendumButton =
+    can(ORDER_PERMISSIONS.addendum) &&
+    ["paid", "completed"].includes(order.status);
+
+  // Los préstamos siguen siendo del dueño del negocio. No hay un permiso
+  // `loans.*` en el sistema todavía, así que aquí sí se compara el rol; en
+  // cuanto exista, esto debe pasar a `can(...)` como el resto.
+  const isOwner = activeRole?.name === "owner";
 
   // Préstamo vinculado
   const existingLoan = (order as { loan?: { id: string; status: string } | null }).loan;
@@ -125,7 +147,7 @@ export function OrderActionButtons({
   }
 
   const btnBase =
-    "inline-flex min-h-[48px] min-w-0 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 active:scale-[0.98]";
+    "inline-flex min-h-12 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 active:scale-[0.98]";
   const btnPrimary = `${btnBase} bg-accent text-accent-foreground hover:bg-accent/90 focus-visible:ring-accent`;
   const btnSuccess = `${btnBase} bg-emerald-600 text-white shadow-sm hover:bg-emerald-500 focus-visible:ring-emerald-500`;
   const btnBlue = `${btnBase} bg-blue-600 text-white hover:bg-blue-500 focus-visible:ring-blue-500`;
@@ -265,7 +287,30 @@ export function OrderActionButtons({
             Registrar como préstamo
           </button>
         )}
+        {showAddendumButton && (
+          <button
+            type="button"
+            onClick={() => setAddendumOpen(true)}
+            disabled={actionLoading}
+            className={`w-full min-w-0 shrink-0 sm:w-auto ${btnBase} border border-border bg-surface text-foreground hover:bg-surface-raised focus-visible:ring-accent`}
+          >
+            <PackagePlus className="h-4 w-4 shrink-0" aria-hidden />
+            Agregar lo que faltó
+          </button>
+        )}
       </div>
+
+      {activeTenant && (
+        <AddendumSheet
+          isOpen={addendumOpen}
+          onClose={() => setAddendumOpen(false)}
+          tenantId={activeTenant.id}
+          parentOrderId={order.id}
+          onCreated={(childId) =>
+            router.push(`/dashboard/${tenantSlug}/ordenes/${childId}`)
+          }
+        />
+      )}
 
       <ConfirmModal
         isOpen={cancelModalOpen}

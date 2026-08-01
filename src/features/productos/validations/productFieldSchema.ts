@@ -189,6 +189,10 @@ export function buildProductFields(
       placeholder: "0",
       required: false,
       disabledUnless: "track_stock",
+      yupNumber: (base) =>
+        base
+          .min(0, "El stock debe ser mayor o igual a 0")
+          .integer("El stock debe ser un número entero"),
     },
     {
       name: "is_public",

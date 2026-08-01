@@ -9,6 +9,7 @@ import type { AssignedGroup } from "@/features/qr/components/split/SplitItemsAss
 
 interface UseSplitBillOptions {
   orderId: string;
+  fingerprint: string;
   onSubmitted?: () => void | Promise<void>;
 }
 
@@ -17,14 +18,14 @@ interface UseSplitBillOptions {
  * submission flow. The bill page just renders the controls and calls
  * `submit()`; this hook handles the service call, loading and error state.
  */
-export function useSplitBill({ orderId, onSubmitted }: UseSplitBillOptions) {
+export function useSplitBill({ orderId, fingerprint, onSubmitted }: UseSplitBillOptions) {
   const [mode, setMode] = useState<SplitMode>("by_device");
   const [peopleCount, setPeopleCount] = useState(2);
   const [assignedGroups, setAssignedGroups] = useState<AssignedGroup[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function submit() {
+  async function submit(): Promise<boolean> {
     setSubmitting(true);
     setError(null);
     try {
@@ -33,15 +34,17 @@ export function useSplitBill({ orderId, onSubmitted }: UseSplitBillOptions) {
         if (nonEmpty.length < 2) {
           throw new Error("Asigna productos a al menos 2 personas.");
         }
-        await submitSplit({ orderId, mode, groups: nonEmpty });
+        await submitSplit({ orderId, mode, fingerprint, groups: nonEmpty });
       } else if (mode === "equal") {
-        await submitSplit({ orderId, mode, peopleCount });
+        await submitSplit({ orderId, mode, fingerprint, peopleCount });
       } else {
-        await submitSplit({ orderId, mode });
+        await submitSplit({ orderId, mode, fingerprint });
       }
       if (onSubmitted) await onSubmitted();
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado");
+      return false;
     } finally {
       setSubmitting(false);
     }

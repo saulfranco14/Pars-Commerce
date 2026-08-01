@@ -115,7 +115,7 @@ export function TeamMemberFormSheet({
                 <button
                   type="button"
                   onClick={handleCopyPassword}
-                  className="min-h-[44px] cursor-pointer rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+                  className="min-h-11 cursor-pointer rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
                 >
                   {copied ? "✓ Copiado" : "Copiar"}
                 </button>

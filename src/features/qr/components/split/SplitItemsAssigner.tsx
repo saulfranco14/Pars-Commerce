@@ -165,7 +165,7 @@ export function SplitItemsAssigner({
                         key={idx}
                         type="button"
                         onClick={() => assign(item.id, idx)}
-                        className={`min-h-[32px] cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-colors
+                        className={`min-h-8 cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-colors
                           ${isSelected
                             ? "border-accent bg-accent text-accent-foreground"
                             : "border-border bg-surface text-foreground hover:bg-border-soft/40"}

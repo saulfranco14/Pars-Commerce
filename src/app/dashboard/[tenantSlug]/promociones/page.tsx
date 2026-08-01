@@ -184,7 +184,7 @@ export default function PromocionesPage() {
               onChange={(e) => setName(e.target.value)}
               required
               maxLength={100}
-              className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm"
+              className="input-form mt-1 block w-full min-h-10 rounded-lg border px-3 py-2 text-sm"
               placeholder="Ej. 20% en regalos"
             />
           </div>
@@ -218,7 +218,7 @@ export default function PromocionesPage() {
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as PromotionType)}
-                className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm"
+                className="input-form mt-1 block w-full min-h-10 rounded-lg border px-3 py-2 text-sm"
               >
                 <option value="percentage">Porcentaje</option>
                 <option value="fixed_amount">Monto fijo</option>
@@ -239,7 +239,7 @@ export default function PromocionesPage() {
                   required
                   min={0}
                   step={type === "percentage" ? 1 : 0.01}
-                  className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm"
+                  className="input-form mt-1 block w-full min-h-10 rounded-lg border px-3 py-2 text-sm"
                 />
               </div>
             )}
@@ -252,7 +252,7 @@ export default function PromocionesPage() {
                   type="text"
                   value={badgeLabel}
                   onChange={(e) => setBadgeLabel(e.target.value)}
-                  className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm"
+                  className="input-form mt-1 block w-full min-h-10 rounded-lg border px-3 py-2 text-sm"
                   placeholder="Ej. BUEN-FIN"
                 />
               </div>
@@ -267,7 +267,7 @@ export default function PromocionesPage() {
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
                   min={1}
-                  className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm"
+                  className="input-form mt-1 block w-full min-h-10 rounded-lg border px-3 py-2 text-sm"
                   placeholder="6"
                 />
               </div>
@@ -283,7 +283,7 @@ export default function PromocionesPage() {
               onChange={(e) => setMinAmount(e.target.value)}
               min={0}
               step={0.01}
-              className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm"
+              className="input-form mt-1 block w-full min-h-10 rounded-lg border px-3 py-2 text-sm"
               placeholder="0"
             />
           </div>
@@ -362,7 +362,7 @@ export default function PromocionesPage() {
                 type="date"
                 value={validFrom}
                 onChange={(e) => setValidFrom(e.target.value)}
-                className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm"
+                className="input-form mt-1 block w-full min-h-10 rounded-lg border px-3 py-2 text-sm"
               />
             </div>
             <div>
@@ -373,7 +373,7 @@ export default function PromocionesPage() {
                 type="date"
                 value={validUntil}
                 onChange={(e) => setValidUntil(e.target.value)}
-                className="input-form mt-1 block w-full min-h-[40px] rounded-lg border px-3 py-2 text-sm"
+                className="input-form mt-1 block w-full min-h-10 rounded-lg border px-3 py-2 text-sm"
               />
             </div>
           </div>

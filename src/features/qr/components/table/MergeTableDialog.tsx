@@ -68,7 +68,7 @@ export function MergeTableDialog({
                   type="button"
                   onClick={() => setSelected(t.current_order_id ?? null)}
                   aria-pressed={active}
-                  className={`flex w-full min-h-[56px] cursor-pointer items-center gap-3 rounded-2xl border-2 px-4 py-2.5 text-left transition-colors ${
+                  className={`flex w-full min-h-14 cursor-pointer items-center gap-3 rounded-2xl border-2 px-4 py-2.5 text-left transition-colors ${
                     active
                       ? "border-accent bg-accent/5"
                       : "border-border bg-surface hover:border-accent/40"
@@ -92,7 +92,7 @@ export function MergeTableDialog({
           type="button"
           onClick={handleConfirm}
           disabled={!selected || merging}
-          className="flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex min-h-13 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {merging ? (
             <>

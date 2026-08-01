@@ -10,11 +10,6 @@ interface UseActiveTablesOptions {
   refreshIntervalMs?: number;
 }
 
-/**
- * Tables (QR codes) that currently have a customer connected — for the
- * dashboard home's "mesas activas" widget. Empty array when none are active,
- * so the widget can hide itself entirely rather than show an empty state.
- */
 export function useActiveTables(
   tenantId: string | null,
   options: UseActiveTablesOptions = {},

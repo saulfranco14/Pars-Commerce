@@ -386,7 +386,7 @@ export default function VentasPage() {
   }
 
   const tabBtnClass = (tab: TabView) =>
-    `min-h-[44px] shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${
+    `min-h-11 shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${
       activeTab === tab
         ? "border-b-2 border-accent text-foreground"
         : "text-muted hover:text-foreground active:text-foreground"
@@ -430,7 +430,7 @@ export default function VentasPage() {
             id="ventas-tab-select"
             value={activeTab}
             onChange={(e) => setActiveTab(e.target.value as TabView)}
-            className="input-form select-custom min-h-[44px] w-full appearance-none rounded-xl border px-4 py-2.5 text-sm font-medium text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className="input-form select-custom min-h-11 w-full appearance-none rounded-xl border px-4 py-2.5 text-sm font-medium text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             aria-label="Seleccionar sección de ventas"
           >
             <option value="resumen">Resumen</option>
@@ -597,7 +597,7 @@ export default function VentasPage() {
                     inputMode="decimal"
                     value={editAmount}
                     onChange={(e) => setEditAmount(e.target.value)}
-                    className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                    className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                     placeholder="0.00"
                   />
                 </div>

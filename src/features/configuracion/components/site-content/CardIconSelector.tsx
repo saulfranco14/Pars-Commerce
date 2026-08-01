@@ -28,7 +28,7 @@ export function CardIconSelector({ value, onChange, id }: CardIconSelectorProps)
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label={selected ? `${selected.label} seleccionado` : "Seleccionar icono"}
-        className="input-form flex min-h-[44px] min-w-[180px] cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground transition-colors duration-200 hover:border-accent/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+        className="input-form flex min-h-11 min-w-45 cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground transition-colors duration-200 hover:border-accent/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
       >
         {selected ? (
           <>
@@ -47,7 +47,7 @@ export function CardIconSelector({ value, onChange, id }: CardIconSelectorProps)
       {open && (
         <ul
           role="listbox"
-          className="absolute left-0 top-full z-20 mt-1 min-w-[180px] rounded-lg border border-border bg-surface py-1 shadow-lg"
+          className="absolute left-0 top-full z-20 mt-1 min-w-45 rounded-lg border border-border bg-surface py-1 shadow-lg"
         >
           {ICON_OPTIONS.map(({ value: v, label, Icon }) => (
             <li key={v} role="option" aria-selected={value === v}>

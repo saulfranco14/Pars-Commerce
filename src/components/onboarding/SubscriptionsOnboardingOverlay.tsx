@@ -31,7 +31,7 @@ function IntroMockup() {
         style={{ top: 8, left: 16, width: 162, transform: "rotate(-2deg)" }}
       >
         <div className="p-3">
-          <p className="text-[9px]" style={{ color: "#a8a29e" }}>
+          <p className="text-[9px]" style={{ color: "#94a3b8" }}>
             Ingresos recurrentes
           </p>
           <p
@@ -63,12 +63,12 @@ function IntroMockup() {
         style={{ top: 62, right: 12, width: 112, transform: "rotate(3.5deg)" }}
       >
         <div className="p-3">
-          <p className="text-[9px]" style={{ color: "#a8a29e" }}>
+          <p className="text-[9px]" style={{ color: "#94a3b8" }}>
             Suscripciones
           </p>
           <p
             className="text-[24px] font-bold leading-none"
-            style={{ color: "#292524" }}
+            style={{ color: "#0f1c33" }}
           >
             24
           </p>
@@ -84,10 +84,10 @@ function IntroMockup() {
       >
         <div className="flex items-center justify-between p-2.5">
           <div>
-            <p className="text-[9px] font-semibold" style={{ color: "#292524" }}>
+            <p className="text-[9px] font-semibold" style={{ color: "#0f1c33" }}>
               Cobro automático
             </p>
-            <p className="text-[8px]" style={{ color: "#a8a29e" }}>
+            <p className="text-[8px]" style={{ color: "#94a3b8" }}>
               5 pagos procesados hoy
             </p>
           </div>
@@ -112,7 +112,7 @@ function TiposMockup() {
         style={{ top: -30, left: 14, right: 14, transform: "rotate(-1deg)" }}
       >
         <div className="p-2.5">
-          <p className="mb-2 text-[9px] font-semibold" style={{ color: "#292524" }}>
+          <p className="mb-2 text-[9px] font-semibold" style={{ color: "#0f1c33" }}>
             Dos modalidades
           </p>
 
@@ -179,7 +179,7 @@ function ClienteVeMockup() {
   return (
     <div className="relative mx-auto h-52 w-72">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full bg-linear-to-br from-pink-400 to-rose-300 opacity-20 blur-3xl" />
+        <div className="h-40 w-40 rounded-full bg-linear-to-br from-accent/60 to-blue-300 opacity-20 blur-3xl" />
       </div>
 
       <MiniCard
@@ -189,7 +189,7 @@ function ClienteVeMockup() {
         {/* Browser chrome */}
         <div
           className="flex items-center gap-1.5 rounded-t-2xl px-3 py-2"
-          style={{ background: "#f5f5f4", borderBottom: "1px solid #ede9e4" }}
+          style={{ background: "#eef2f8", borderBottom: "1px solid #dbe4f0" }}
         >
           <div className="flex gap-1">
             {["#ef4444", "#f59e0b", "#10b981"].map((c) => (
@@ -204,39 +204,39 @@ function ClienteVeMockup() {
             className="flex flex-1 items-center justify-center rounded-md"
             style={{ background: "white", height: 14 }}
           >
-            <span className="text-[7px]" style={{ color: "#78716c" }}>
+            <span className="text-[7px]" style={{ color: "#64748b" }}>
               🛒 Tu tienda / carrito
             </span>
           </div>
         </div>
 
-        <div className="p-2.5" style={{ background: "#faf9f7" }}>
-          <p className="mb-2 text-[8px] font-semibold" style={{ color: "#292524" }}>
+        <div className="p-2.5" style={{ background: "#f7f9fc" }}>
+          <p className="mb-2 text-[8px] font-semibold" style={{ color: "#0f1c33" }}>
             ¿Cómo quieres pagar?
           </p>
           <div className="grid grid-cols-3 gap-1">
-            <div className="flex flex-col items-center rounded-lg p-1.5" style={{ background: "#f5f5f4", border: "1px solid #ede9e4" }}>
-              <CreditCard className="h-3 w-3" style={{ color: "#78716c" }} />
-              <p className="text-[6px] font-medium" style={{ color: "#78716c" }}>Pago único</p>
+            <div className="flex flex-col items-center rounded-lg p-1.5" style={{ background: "#eef2f8", border: "1px solid #dbe4f0" }}>
+              <CreditCard className="h-3 w-3" style={{ color: "#64748b" }} />
+              <p className="text-[6px] font-medium" style={{ color: "#64748b" }}>Pago único</p>
             </div>
             <div className="flex flex-col items-center rounded-lg p-1.5" style={{ background: "#ede9fe", border: "2px solid #8b5cf6" }}>
               <SplitSquareHorizontal className="h-3 w-3" style={{ color: "#5b21b6" }} />
               <p className="text-[6px] font-bold" style={{ color: "#5b21b6" }}>En cuotas</p>
             </div>
-            <div className="flex flex-col items-center rounded-lg p-1.5" style={{ background: "#f5f5f4", border: "1px solid #ede9e4" }}>
-              <Repeat className="h-3 w-3" style={{ color: "#78716c" }} />
-              <p className="text-[6px] font-medium" style={{ color: "#78716c" }}>Recurrente</p>
+            <div className="flex flex-col items-center rounded-lg p-1.5" style={{ background: "#eef2f8", border: "1px solid #dbe4f0" }}>
+              <Repeat className="h-3 w-3" style={{ color: "#64748b" }} />
+              <p className="text-[6px] font-medium" style={{ color: "#64748b" }}>Recurrente</p>
             </div>
           </div>
 
-          <div className="mt-2 rounded-lg p-2" style={{ background: "white", border: "1px solid #ede9e4" }}>
+          <div className="mt-2 rounded-lg p-2" style={{ background: "white", border: "1px solid #dbe4f0" }}>
             <div className="flex justify-between mb-1">
-              <span className="text-[7px]" style={{ color: "#78716c" }}>3x $166.67</span>
+              <span className="text-[7px]" style={{ color: "#64748b" }}>3x $166.67</span>
               <span className="text-[7px] font-bold" style={{ color: "#8b5cf6" }}>Semanal</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[7px]" style={{ color: "#78716c" }}>Total</span>
-              <span className="text-[8px] font-bold" style={{ color: "#292524" }}>$500.00</span>
+              <span className="text-[7px]" style={{ color: "#64748b" }}>Total</span>
+              <span className="text-[8px] font-bold" style={{ color: "#0f1c33" }}>$500.00</span>
             </div>
           </div>
 
@@ -272,10 +272,10 @@ function CobroMPMockup() {
               <span className="text-[10px] font-bold text-white">MP</span>
             </div>
             <div>
-              <p className="text-[9px] font-bold" style={{ color: "#292524" }}>
+              <p className="text-[9px] font-bold" style={{ color: "#0f1c33" }}>
                 MercadoPago Suscripciones
               </p>
-              <p className="text-[7px]" style={{ color: "#a8a29e" }}>
+              <p className="text-[7px]" style={{ color: "#94a3b8" }}>
                 Cobro automático con tarjeta
               </p>
             </div>
@@ -323,7 +323,7 @@ function CobroMPMockup() {
             </div>
           </div>
 
-          <p className="mt-2 text-[7px] text-center" style={{ color: "#a8a29e" }}>
+          <p className="mt-2 text-[7px] text-center" style={{ color: "#94a3b8" }}>
             Tú solo configuras, MP se encarga del resto
           </p>
         </div>
@@ -350,7 +350,7 @@ function DashboardMockup() {
       >
         <div className="p-2.5">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-[9px] font-semibold" style={{ color: "#292524" }}>
+            <p className="text-[9px] font-semibold" style={{ color: "#0f1c33" }}>
               Suscripciones
             </p>
             <div className="flex gap-1">
@@ -361,7 +361,7 @@ function DashboardMockup() {
                   style={
                     i === 0
                       ? { background: "#8b5cf6", color: "white" }
-                      : { background: "#f5f5f4", color: "#78716c" }
+                      : { background: "#eef2f8", color: "#64748b" }
                   }
                 >
                   {t}
@@ -374,13 +374,13 @@ function DashboardMockup() {
               <div
                 key={s.name}
                 className="flex items-center justify-between rounded-xl p-2"
-                style={{ background: "#faf9f7", border: "1px solid #ede9e4" }}
+                style={{ background: "#f7f9fc", border: "1px solid #dbe4f0" }}
               >
                 <div>
-                  <p className="text-[8px] font-semibold" style={{ color: "#292524" }}>
+                  <p className="text-[8px] font-semibold" style={{ color: "#0f1c33" }}>
                     {s.name}
                   </p>
-                  <p className="text-[7px]" style={{ color: "#a8a29e" }}>
+                  <p className="text-[7px]" style={{ color: "#94a3b8" }}>
                     {s.type}
                   </p>
                 </div>
@@ -402,7 +402,7 @@ function DashboardMockup() {
 function ListoMockup() {
   const steps: { icon: LucideIcon; name: string; color: string; bg: string }[] = [
     { icon: Settings, name: "Configura opciones", color: "#8b5cf6", bg: "#ede9fe" },
-    { icon: ShoppingCart, name: "Cliente compra", color: "#ec4899", bg: "#fce7f3" },
+    { icon: ShoppingCart, name: "Cliente compra", color: "#3483fa", bg: "#e8f1fe" },
     { icon: CreditCard, name: "Autoriza tarjeta", color: "#009ee3", bg: "#e0f2fe" },
     { icon: Repeat, name: "Cobro automático", color: "#10b981", bg: "#d1fae5" },
     { icon: BarChart3, name: "Monitorea todo", color: "#f59e0b", bg: "#fef3c7" },
@@ -431,7 +431,7 @@ function ListoMockup() {
                   <Icon className="h-5 w-5" style={{ color: s.color }} />
                   <span
                     className="text-center text-[7px] font-medium leading-tight"
-                    style={{ color: "#292524" }}
+                    style={{ color: "#0f1c33" }}
                   >
                     {s.name}
                   </span>

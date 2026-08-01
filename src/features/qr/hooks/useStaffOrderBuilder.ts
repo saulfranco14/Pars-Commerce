@@ -33,6 +33,9 @@ export function useStaffOrderBuilder({
     Record<string, ProductListItem>
   >({});
   const [customerName, setCustomerName] = useState("");
+  // In table mode, staff attributes the new lines to one of the people already
+  // connected to the table. Counter orders intentionally leave this empty.
+  const [assignedDeviceId, setAssignedDeviceId] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CreateStaffOrderResponse | null>(null);
@@ -85,6 +88,7 @@ export function useStaffOrderBuilder({
         })),
         customerName: customerName.trim() || undefined,
         tableOrderId,
+        deviceId: assignedDeviceId,
       });
       setResult(res);
     } catch (e) {
@@ -92,12 +96,13 @@ export function useStaffOrderBuilder({
     } finally {
       setSubmitting(false);
     }
-  }, [lines, tenantId, customerName, tableOrderId]);
+  }, [lines, tenantId, customerName, tableOrderId, assignedDeviceId]);
 
   const reset = useCallback(() => {
     setQtyByProduct({});
     setProductById({});
     setCustomerName("");
+    setAssignedDeviceId(undefined);
     setResult(null);
     setError(null);
   }, []);
@@ -109,6 +114,8 @@ export function useStaffOrderBuilder({
     itemCount,
     customerName,
     setCustomerName,
+    assignedDeviceId,
+    setAssignedDeviceId,
     add,
     decrement,
     submit,

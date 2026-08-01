@@ -25,7 +25,7 @@ export function CartEmptyState({
       </p>
       <Link
         href={productsHref}
-        className="mt-6 inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold text-white transition-opacity hover:opacity-90"
+        className="mt-6 inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold text-white transition-opacity hover:opacity-90"
         style={{ backgroundColor: accentColor }}
       >
         Ir a productos

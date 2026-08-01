@@ -1,9 +1,15 @@
+import type { OrderSource } from "@/lib/formatSource";
+
 export interface OrderListItem {
   id: string;
+  /** Los 8 del id en mayúsculas. Es el número que el cliente canta al pagar. */
+  order_number?: string | null;
   status: string;
   cancelled_from?: string | null;
-  source?: "dashboard" | "public_store" | "qr_payment" | "qr_table" | null;
+  source?: OrderSource | null;
   order_type?: "dine_in" | "takeaway" | "qr_payment" | null;
+  /** Cuándo pasa el cliente por él. `null` = sin agendar. */
+  scheduled_for?: string | null;
   qr_code_id?: string | null;
   table_label?: string | null;
   diner_count?: number | null;
@@ -21,6 +27,8 @@ export interface OrderListItem {
   } | null;
   products_count?: number;
   services_count?: number;
+  /** Cuántos pedidos complementarios cuelgan de este. */
+  addenda_count?: number;
   subscription_id?: string | null;
   subscription_installment?: number | null;
 }

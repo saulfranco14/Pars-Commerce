@@ -78,16 +78,37 @@ content density of the screen.
 
 ## 3. Color usage
 
-- `bg-accent` / `text-accent-foreground` — primary CTAs, hero blocks, active
-  states. Never use for warnings or errors.
+- `bg-accent` / `text-accent-foreground` — el ÚNICO azul de acción
+  (`#3483fa`). CTAs primarios, bloques hero, estados activos/seleccionados,
+  anillos de foco. Nunca un estado, nunca una categoría.
+- `bg-coin/10` + `text-coin-ink` (`dark:text-coin`) — el oro de marca
+  `#e8a33d`, **solo momentos de valor**: "$0 comisión", sellos de precio, el
+  logotipo. Nunca un botón ni un link — un botón oro compite con el azul de
+  acción. Nunca dos elementos oro en la misma pantalla. El oro puro da ~2.1:1
+  sobre blanco, así que el texto SIEMPRE usa el paso `coin-ink`.
 - `bg-emerald-50/100/600` — success / paid / approved.
 - `bg-amber-50/100/600` — pending validation, warnings (non-blocking).
+  **Solo estado**: ámbar nunca es categoría ni tono decorativo.
 - `bg-red-50/200/600/700` — destructive actions (manual close, reject) and
-  error states only.
-- `bg-violet-100 text-violet-700` — transferencia method icon.
-- `bg-blue-100 text-blue-700` — Mercado Pago / tarjeta method icon.
+  error states only. **rojo, rosa, rose y fucsia están todos dentro de esta
+  banda reservada** — ninguno se usa para un mensaje positivo o neutro.
+- Chip neutro para iconos que IDENTIFICAN (no señalan estado):
+  `bg-border-soft/60 text-muted-foreground`, acento solo en hover/activo. Es
+  el patrón de los métodos de pago (`CustomerPayModal`,
+  `PendingPaymentsCard`): un método se identifica por ícono y etiqueta, no por
+  tono.
+- **El matiz carga significado en exactamente tres conjuntos cerrados**:
+  estado (emerald / amber / red), marca (azul de acción + oro de moneda) y
+  categorías de gráfica (`src/features/ventas/constants/chartColors.ts`).
+  Todo lo demás es neutro.
+- Los colores de series de gráficas viven SOLO en `chartColors.ts` — nunca un
+  hex inline en un componente de gráfica. Serie única de ingresos =
+  `COLOR_REVENUE`. Recharts pasa `stroke`/`fill` directo a atributos de
+  presentación del SVG, así que ahí `var(--accent)` y
+  `className="stroke-accent"` **no funcionan**.
 - **Never mix more than 2 status colors on the same screen.** No
-  rainbow gradients (orange→amber→red was wrong).
+  rainbow gradients (orange→amber→red was wrong). Nunca un chip de estado
+  ámbar y una tarjeta de valor en oro en la misma pantalla.
 
 ---
 
@@ -219,7 +240,8 @@ Las pantallas internas del dashboard (`/src/app/dashboard/**`) NO usan
 
   <MetricsStrip metrics={[ …KPIs… ]} />     // si aplica
 
-  <FilterPills value={filter} onChange={setFilter} filters={[…]} />
+  <FilterTabs tabs={[…]} activeValue={filter} onTabChange={setFilter}
+              ariaLabel="…" />                // reemplazó a FilterPills
 
   {hasItems ? (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -240,12 +262,17 @@ Las pantallas internas del dashboard (`/src/app/dashboard/**`) NO usan
 - KPIs → `<MetricsStrip metrics={[{label, value, tone, icon}]}>`.
 - Tabs de filtro → `<FilterTabs>` (`@/components/ui/FilterTabs`), el estilo
   ÚNICO de filtros del dashboard: tabs rectangulares (`rounded-lg`), activo
-  en `bg-accent text-accent-foreground` (rosa). Lo usan órdenes, préstamos,
+  en `bg-accent text-accent-foreground` (el azul de acción `#3483fa`; el
+  activo hereda el token — nunca se hardcodea un color en `FilterTabs`). Lo
+  usan órdenes, préstamos,
   productos, mesas, QR. `FilterTabs` no tiene slot de count-badge: si
   necesitas contador, pliégalo en el label (`Todas 2`). Si tu feature tiene
   un wrapper (p.ej. `TablesFilterTabs`), ese wrapper SOLO traduce los filtros
-  del dominio a `FilterTabItem[]` y delega. (`FilterPills` queda obsoleto para
-  filtros de listado — no usarlo en pantallas nuevas.)
+  del dominio a `FilterTabItem[]` y delega. (`FilterPills` se eliminó al quedar
+  sin consumidores.)
+- `FilterTabs` acepta `density="touch"` para mantener los 44px también en
+  pantallas anchas. La densidad normal los baja a partir de `md` asumiendo
+  ratón, y en una tablet de 820px eso deja las pestañas en 32px.
 - Estados vacíos → `<EmptyState icon title description action>` siempre.
   Cero `<div className="border-dashed">` ad-hoc.
 - Cards de listado → `<AdminListCard icon title meta badge thumbnail
@@ -362,7 +389,6 @@ These are the canonical references — match their pattern:
 | -------------------------------------------- | ---------------------------------------------------------------- |
 | `PageHeader` (title + description + action)  | `src/components/admin/PageHeader.tsx`                            |
 | `MetricsStrip` (KPI grid, tone-aware)        | `src/components/admin/MetricsStrip.tsx`                          |
-| `FilterPills` (pill tabs with count badges)  | `src/components/admin/FilterPills.tsx`                           |
 | `StatusBadge` (colored dot + label pill)     | `src/components/admin/StatusBadge.tsx`                           |
 | `EmptyState` (dashed card + icon + CTA)      | `src/components/admin/EmptyState.tsx`                            |
 | `AdminListCard` (icon + title + meta + actions) | `src/components/admin/AdminListCard.tsx`                      |

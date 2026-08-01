@@ -26,7 +26,7 @@ export function SalesBySourceChart({
 
   if (loading) {
     return (
-      <div className="min-h-[260px] rounded-xl border border-border bg-surface-raised p-3 sm:p-4 flex flex-col justify-center">
+      <div className="min-h-65 rounded-xl border border-border bg-surface-raised p-3 sm:p-4 flex flex-col justify-center">
         <ChartHeader
           title="Ventas por origen"
           description="Dashboard vs carrito del sitio web."
@@ -49,7 +49,7 @@ export function SalesBySourceChart({
           dateFrom={dateFrom}
           dateTo={dateTo}
         />
-        <div className="mt-4 h-[180px] flex items-center justify-center">
+        <div className="mt-4 h-45 flex items-center justify-center">
           <p className="text-sm text-muted-foreground">Sin datos en el período</p>
         </div>
       </div>
@@ -64,7 +64,7 @@ export function SalesBySourceChart({
         dateFrom={dateFrom}
         dateTo={dateTo}
       />
-      <div className="mt-2 h-[200px] w-full min-w-[120px] sm:h-[220px]" style={{ minHeight: 200 }}>
+      <div className="mt-2 h-50 w-full min-w-30 sm:h-55" style={{ minHeight: 200 }}>
         <ResponsiveContainer
           width="100%"
           height="100%"

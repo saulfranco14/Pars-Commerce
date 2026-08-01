@@ -55,7 +55,7 @@ export function CartItemRow({
         >
           ${price.toFixed(2)} × {qty} = ${itemSubtotal.toFixed(2)}
         </p>
-        <div className="mt-3 flex min-h-[44px] items-center gap-1">
+        <div className="mt-3 flex min-h-11 items-center gap-1">
           <button
             type="button"
             onClick={() =>

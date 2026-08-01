@@ -22,14 +22,36 @@ import type {
 export async function resolveTableSession(payload: {
   token: string;
   fingerprint: string;
+  kioskTicketToken?: string | null;
 }): Promise<TableSessionResponse> {
   return apiFetch(
     `/api/qr/resolve?token=${encodeURIComponent(payload.token)}`,
     {
       cache: "no-store",
-      headers: fingerprintHeader(payload.fingerprint),
+      headers: {
+        ...fingerprintHeader(payload.fingerprint),
+        ...(payload.kioskTicketToken
+          ? { "x-kiosk-ticket-token": payload.kioskTicketToken }
+          : {}),
+      },
     },
   ) as Promise<TableSessionResponse>;
+}
+
+/** Bind the kiosk ticket carried by this phone to a free table, deliberately. */
+export async function attachKioskOrderToTable(payload: {
+  tableToken: string;
+  ticketToken: string;
+  fingerprint: string;
+}) {
+  return apiFetch("/api/qr/table/attach-kiosk", {
+    method: "POST",
+    headers: fingerprintHeader(payload.fingerprint),
+    body: JSON.stringify({
+      table_token: payload.tableToken,
+      ticket_token: payload.ticketToken,
+    }),
+  });
 }
 
 /* ---------- One-shot bill read (order tracker on the mesa screen) ---------- */
@@ -114,6 +136,7 @@ export type SplitMode = "by_device" | "equal" | "items";
 export async function submitSplit(payload: {
   orderId: string;
   mode: SplitMode;
+  fingerprint: string;
   peopleCount?: number;
   groups?: AssignedGroup[];
 }) {
@@ -121,6 +144,7 @@ export async function submitSplit(payload: {
     `/api/qr/table/${encodeURIComponent(payload.orderId)}/split`,
     {
       method: "POST",
+      headers: fingerprintHeader(payload.fingerprint),
       body: JSON.stringify({
         mode: payload.mode,
         people_count: payload.peopleCount,
@@ -172,9 +196,11 @@ export async function createMpPreference(payload: {
   orderId: string;
   groupId?: string | null;
   qrToken: string;
+  fingerprint: string;
 }): Promise<MpPreferenceResult> {
   return apiFetch("/api/qr/table/payment/mp-preference", {
     method: "POST",
+    headers: fingerprintHeader(payload.fingerprint),
     body: JSON.stringify({
       order_id: payload.orderId,
       group_id: payload.groupId ?? null,
