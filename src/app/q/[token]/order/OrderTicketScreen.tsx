@@ -233,17 +233,10 @@ export function OrderTicketScreen({
     <button
       type="button"
       onClick={() => setDetailOpen(true)}
-      className="flex min-h-12 w-full cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:bg-border-soft/40"
+      className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40 active:scale-[0.99]"
     >
-      <ReceiptText className="h-4 w-4 shrink-0 text-muted-foreground" />
-      <span className="text-sm font-bold text-foreground">Detalle de compra</span>
-      <span className="ml-auto text-sm font-bold text-foreground">
-        {formatCurrency(data.order.total)}
-      </span>
-      <span className="rounded-full bg-border-soft/60 px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-        {data.items.length}
-      </span>
-      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+      Ver detalle de compra
     </button>
   ) : (
     <button
