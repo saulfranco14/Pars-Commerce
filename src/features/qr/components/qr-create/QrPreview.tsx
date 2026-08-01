@@ -128,7 +128,7 @@ export function QrPreview({
         <button
           type="button"
           onClick={handleCopy}
-          className="inline-flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground hover:bg-border-soft/40"
+          className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground hover:bg-border-soft/40"
         >
           {copied ? (
             <>
@@ -146,7 +146,7 @@ export function QrPreview({
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground hover:bg-border-soft/40"
+          className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground hover:bg-border-soft/40"
         >
           <ExternalLink className="h-4 w-4" />
           Probar
@@ -154,7 +154,7 @@ export function QrPreview({
         <button
           type="button"
           onClick={handleDownload}
-          className="inline-flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+          className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
         >
           <Download className="h-4 w-4" />
           Descargar PNG

@@ -38,6 +38,12 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
   const fingerprint = request.headers.get("x-fingerprint-id")?.trim() || null;
+  if (body.group_id && !fingerprint) {
+    return NextResponse.json(
+      { error: "Identifica tu dispositivo para pagar esta parte" },
+      { status: 403 },
+    );
+  }
 
   const result = await createPaymentIntent(admin, {
     orderId: body.order_id,

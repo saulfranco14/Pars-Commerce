@@ -9,7 +9,7 @@ import { getPendingMergeRequests } from "@/features/qr/services/tableMergeReques
  * and device rows — far too heavy (and side-effectful) to poll. This endpoint
  * answers only what changes while sitting at the table:
  *
- *   - is the order still active? (paid / cancelled / gone → `active: false`)
+ *   - is the ticket still active for the screen that opened it?
  *   - how many people are connected, and am I the responsible?
  *   - is there a pending merge invite (incoming/outgoing)?
  *
@@ -31,14 +31,18 @@ export async function GET(request: Request) {
   // Both 'table' and single-use 'order' tickets carry a live order to poll.
   const { data: qrCode } = await admin
     .from("qr_codes")
-    .select("id, current_order_id, kind")
+    .select("id, current_order_id, kind, is_active, archived_at")
     .eq("token", token)
     .in("kind", ["table", "order"])
-    .is("archived_at", null)
-    .eq("is_active", true)
-    .single();
+    .maybeSingle();
 
   if (!qrCode) {
+    return NextResponse.json({ error: "QR no encontrado" }, { status: 404 });
+  }
+  if (
+    qrCode.kind !== "order" &&
+    (qrCode.is_active !== true || qrCode.archived_at !== null)
+  ) {
     return NextResponse.json({ error: "QR no encontrado" }, { status: 404 });
   }
 
@@ -49,11 +53,45 @@ export async function GET(request: Request) {
 
   const { data: order } = await admin
     .from("orders")
-    .select("id, status, fulfillment_status, total")
+    .select("id, status, fulfillment_status, source, total")
     .eq("id", orderId)
     .single();
 
-  if (!order || ["paid", "cancelled"].includes(order.status)) {
+  // A single-use ticket only needs preparation progress. Keep this hot path at
+  // two small reads (QR + order): no device counts or merge queries. Payment
+  // may happen before preparation, so a paid ticket remains live until the
+  // customer has seen the final preparation state.
+  if (qrCode.kind === "order" && order) {
+    const fulfillmentStatus = order.fulfillment_status ?? "received";
+    const paymentCompleted = ["paid", "completed"].includes(order.status);
+    const trackingFulfillment =
+      order.status !== "cancelled" &&
+      !(paymentCompleted && fulfillmentStatus === "ready");
+    return NextResponse.json({
+      // `active` means the QR view must keep tracking this ticket; it does NOT
+      // mean the payment is pending. The explicit fields below make that
+      // distinction available to clients and to operational diagnostics.
+      active: trackingFulfillment,
+      payment_completed: paymentCompleted,
+      tracking_fulfillment: trackingFulfillment,
+      order: {
+        id: order.id,
+        status: order.status,
+        fulfillment_status: fulfillmentStatus,
+        total: Number(order.total ?? 0),
+      },
+    });
+  }
+
+  const kioskPaymentStillPreparing =
+    order?.source === "kiosk" &&
+    order.status === "paid" &&
+    (order.fulfillment_status ?? "received") !== "ready";
+  if (
+    !order ||
+    (order.status === "cancelled" ||
+      (order.status === "paid" && !kioskPaymentStillPreparing))
+  ) {
     return NextResponse.json({ active: false, order: order ?? null });
   }
 

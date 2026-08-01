@@ -1,11 +1,12 @@
 "use client";
 
-import { CheckCircle2, Users } from "lucide-react";
+import { CheckCircle2, Link2, Loader2, Users } from "lucide-react";
 
 import { TableQRClient } from "./TableQRClient";
 import { Notification } from "@/components/ui/Notification";
 import { TableScreenSkeleton } from "@/features/qr/components/table/TableScreenSkeleton";
 import { useTableSession } from "@/features/qr/hooks/useTableSession";
+import { formatCurrency } from "@/features/qr/helpers/format";
 
 interface TableSessionProps {
   token: string;
@@ -25,6 +26,9 @@ export function TableSession({ token }: TableSessionProps) {
     isLoading,
     ended,
     refresh,
+    attachingKiosk,
+    attachKiosk,
+    dismissKioskHandoff,
   } = useTableSession(token);
 
   // The order was paid or closed by the business while this screen was open.
@@ -48,7 +52,7 @@ export function TableSession({ token }: TableSessionProps) {
         <button
           type="button"
           onClick={refresh}
-          className="flex min-h-[52px] w-full max-w-xs cursor-pointer items-center justify-center rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
+          className="flex min-h-13 w-full max-w-xs cursor-pointer items-center justify-center rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
         >
           Comenzar un pedido nuevo
         </button>
@@ -81,6 +85,51 @@ export function TableSession({ token }: TableSessionProps) {
   // content replaces it in place — no jump, better perceived performance.
   if (isLoading || !data || !fingerprint) {
     return <TableScreenSkeleton />;
+  }
+
+  // A table QR is never silently attached to another order. This clear,
+  // touch-first decision is shown only when this phone holds the kiosk ticket.
+  if (data.kiosk_handoff) {
+    const ticketLabel =
+      data.kiosk_handoff.order_number ??
+      data.kiosk_handoff.order_id.slice(0, 8).toUpperCase();
+    return (
+      <main className="flex min-h-dvh items-center bg-background px-5 py-8">
+        <section className="mx-auto w-full max-w-md rounded-3xl border border-border bg-surface p-5 shadow-sm">
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+            <Link2 className="h-6 w-6" aria-hidden />
+          </span>
+          <p className="mt-5 text-[10px] font-bold uppercase tracking-wider text-accent">
+            Pedido de autoservicio
+          </p>
+          <h1 className="mt-1 text-xl font-bold tracking-tight text-foreground">
+            ¿Usar {data.qr_code.label} para tu pedido?
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Encontramos el pedido <span className="font-mono font-bold text-foreground">{ticketLabel}</span> por {formatCurrency(data.kiosk_handoff.total)}. Al continuar, las personas que escaneen esta mesa se unirán al mismo pedido.
+          </p>
+          <div className="mt-6 space-y-2.5">
+            <button
+              type="button"
+              onClick={() => void attachKiosk()}
+              disabled={attachingKiosk}
+              className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {attachingKiosk ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Link2 className="h-5 w-5" aria-hidden />}
+              {attachingKiosk ? "Vinculando mesa..." : "Usar esta mesa"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void dismissKioskHandoff()}
+              disabled={attachingKiosk}
+              className="flex min-h-12 w-full cursor-pointer items-center justify-center rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/60 disabled:opacity-60"
+            >
+              Pedir por separado
+            </button>
+          </div>
+        </section>
+      </main>
+    );
   }
 
   return (

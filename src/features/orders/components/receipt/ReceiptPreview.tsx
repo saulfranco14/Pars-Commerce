@@ -4,6 +4,7 @@ import type { TenantAddress } from "@/types/database";
 import type { OrderPayment } from "@/features/orders/interfaces/orderDetail";
 import type { ReceiptPreviewProps } from "@/features/orders/interfaces/receiptPreview";
 import { formatOrderDateFull } from "@/lib/formatDate";
+import { formatPickupTime } from "@/features/checkout/helpers/pickupSchedule";
 import {
   formatPaymentMethod,
   getPaymentMethodConfig,
@@ -64,13 +65,17 @@ export function ReceiptPreview({
       (p) => p.provider === "mercadopago",
     );
     const mpFee = mpPayment?.metadata?.mp_fee_amount ?? 0;
-    const parsFee = mpPayment?.metadata?.pars_fee_amount ?? 0;
+    // Acepta la clave vieja: los pagos anteriores al rebrand la conservan.
+    const platformFee =
+      mpPayment?.metadata?.tlaco_fee_amount ??
+      mpPayment?.metadata?.pars_fee_amount ??
+      0;
     const vendorTotal = Number(order.total);
     const storedClientTotal = mpPayment?.amount;
-    const computedClientTotal = vendorTotal + mpFee + parsFee;
+    const computedClientTotal = vendorTotal + mpFee + platformFee;
     if (storedClientTotal && storedClientTotal > vendorTotal)
       return storedClientTotal;
-    if (mpFee > 0 || parsFee > 0) return computedClientTotal;
+    if (mpFee > 0 || platformFee > 0) return computedClientTotal;
     const { total } = calcBuyerTotal(vendorTotal);
     return total;
   })();
@@ -98,7 +103,7 @@ export function ReceiptPreview({
               alt=""
               width={72}
               height={72}
-              className="h-[72px] w-[72px] object-contain"
+              className="h-18 w-18 object-contain"
             />
           </div>
         )}
@@ -135,6 +140,21 @@ export function ReceiptPreview({
               )}
             </div>
           )}
+        {order.scheduled_for && (
+          <div className="mt-4 rounded border-2 border-dashed border-foreground/40 px-3 py-2.5 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Pasa por tu pedido
+            </p>
+            <p className="mt-0.5 text-sm font-bold text-foreground">
+              {formatPickupTime(new Date(order.scheduled_for))}
+            </p>
+          </div>
+        )}
+        {order.parent_order_id && (
+          <p className="mt-3 text-center text-xs text-muted">
+            Complementa al pedido {order.parent_order_id.slice(0, 8).toUpperCase()}
+          </p>
+        )}
         {shouldShow(opts.showItems) && (
           <>
             <div className="my-5 h-px bg-border" />
@@ -225,14 +245,18 @@ export function ReceiptPreview({
                   order.payments as OrderPayment[] | undefined
                 )?.find((p) => p.provider === "mercadopago");
                 const mpFee = mpPayment?.metadata?.mp_fee_amount ?? 0;
-                const parsFee = mpPayment?.metadata?.pars_fee_amount ?? 0;
+                // Acepta la clave vieja: los pagos anteriores al rebrand la conservan.
+                const platformFee =
+                  mpPayment?.metadata?.tlaco_fee_amount ??
+                  mpPayment?.metadata?.pars_fee_amount ??
+                  0;
                 const vendorTotal = Number(order.total);
-                const { mpFee: estMpFee, parsFee: estParsFee } =
+                const { mpFee: estMpFee, platformFee: estPlatformFee } =
                   calcBuyerTotal(vendorTotal);
-                const showEstimate = mpFee === 0 && parsFee === 0;
+                const showEstimate = mpFee === 0 && platformFee === 0;
                 const combinedFee = showEstimate
-                  ? estMpFee + estParsFee
-                  : mpFee + parsFee;
+                  ? estMpFee + estPlatformFee
+                  : mpFee + platformFee;
                 return (
                   <p className="flex justify-between text-sm">
                     <span className="text-muted-foreground">

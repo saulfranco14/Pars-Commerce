@@ -1,6 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { MapPin, Phone, Mail, Clock, MessageCircle } from "lucide-react";
+import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
+import {
+  describeWeek,
+  readBusinessHours,
+} from "@/features/configuracion/helpers/businessHours";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -12,7 +17,7 @@ export default async function ContactoPage({ params }: PageProps) {
 
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
-    .select("id, name, theme_color")
+    .select("id, name, theme_color, settings")
     .eq("slug", slug)
     .single();
 
@@ -29,7 +34,19 @@ export default async function ContactoPage({ params }: PageProps) {
     .single();
 
   const content = (page?.content as Record<string, string> | null) ?? {};
-  const accentColor = tenant.theme_color?.trim() || "#6366f1";
+  const accentColor = tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT;
+
+  // Los horarios dados de alta mandan sobre el texto libre de esta página: son
+  // los que aplica el selector de recolección, y dos fuentes distintas
+  // acabarían contradiciéndose delante del cliente.
+  const hours = readBusinessHours(
+    tenant.settings as Record<string, unknown> | null,
+  );
+  const scheduleLines = hours
+    ? describeWeek(hours)
+    : content.schedule
+      ? [content.schedule]
+      : [];
 
   const contactItems = [
     {
@@ -51,12 +68,6 @@ export default async function ContactoPage({ params }: PageProps) {
       icon: MapPin,
       label: "Dirección",
       value: content.address_text,
-    },
-    {
-      key: "schedule",
-      icon: Clock,
-      label: "Horario",
-      value: content.schedule,
     },
   ].filter((item) => item.value);
 
@@ -90,8 +101,9 @@ export default async function ContactoPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* Contact cards */}
-      {contactItems.length > 0 ? (
+      {/* Los horarios cuentan como dato de contacto: un negocio puede no tener
+          correo ni teléfono capturados y aun así tener horario que mostrar. */}
+      {contactItems.length > 0 || scheduleLines.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {contactItems.map((item) => {
             const Icon = item.icon;
@@ -127,6 +139,27 @@ export default async function ContactoPage({ params }: PageProps) {
             }
             return <div key={item.key}>{inner}</div>;
           })}
+
+          {scheduleLines.length > 0 && (
+            <div className="flex items-start gap-4 rounded-xl bg-white p-5 shadow-sm">
+              <div
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+                style={{ backgroundColor: `${accentColor}15` }}
+              >
+                <Clock className="h-5 w-5" style={{ color: accentColor }} />
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                  Horario
+                </p>
+                {scheduleLines.map((line) => (
+                  <p key={line} className="mt-1 font-medium text-gray-900">
+                    {line}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="rounded-2xl bg-white py-16 text-center shadow-sm">

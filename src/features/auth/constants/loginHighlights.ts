@@ -15,7 +15,7 @@ export const HIGHLIGHTS: {
 }[] = [
   {
     icon: ShoppingBag,
-    text: "Gestiona productos y ordenes",
+    text: "Gestiona productos y órdenes",
     accent: "bg-blue-500/10 text-blue-500 dark:text-blue-400",
   },
   {
@@ -25,12 +25,14 @@ export const HIGHLIGHTS: {
   },
   {
     icon: CreditCard,
-    text: "Pagos integrados con MercadoPago",
+    text: "Cobra con tarjeta, sin terminal",
     accent: "bg-amber-500/10 text-amber-500 dark:text-amber-400",
   },
   {
+    // No prestamos dinero: el negocio le fía a su cliente y aquí lleva el
+    // control. Decir "crédito" hacía creer que el crédito venía de nosotros.
     icon: Banknote,
-    text: "Préstamos y créditos a clientes",
+    text: "Lleva el control de lo que te deben",
     accent: "bg-teal-500/10 text-teal-500 dark:text-teal-400",
   },
   {
@@ -39,8 +41,11 @@ export const HIGHLIGHTS: {
     accent: "bg-violet-500/10 text-violet-500 dark:text-violet-400",
   },
   {
+    // Neutro, no rosa (rosa/rojo está reservado a error) y no oro: la lista ya
+    // gasta azul, esmeralda, ámbar, teal y violeta, así que un sexto tono la
+    // volvería arcoíris. El ícono del escudo carga el significado.
     icon: Shield,
     text: "Seguro y confiable, 24/7",
-    accent: "bg-rose-500/10 text-rose-500 dark:text-rose-400",
+    accent: "bg-slate-500/10 text-slate-500 dark:text-slate-400",
   },
 ];

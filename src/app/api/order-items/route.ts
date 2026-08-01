@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { validateOrderStock } from "@/features/inventory/services/orderStockValidationService";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -77,20 +78,11 @@ export async function POST(request: Request) {
     ? (retailPrice - (wholesalePrice ?? 0)) * qty
     : 0;
 
-  if (product.track_stock && product.type === "product") {
-    const { data: inventory } = await supabase
-      .from("product_inventory")
-      .select("quantity")
-      .eq("product_id", product_id)
-      .single();
-
-    const availableStock = inventory?.quantity ?? 0;
-    if (availableStock < qty) {
-      return NextResponse.json(
-        { error: `Stock insuficiente. Disponible: ${availableStock}` },
-        { status: 409 }
-      );
-    }
+  const stockValidation = await validateOrderStock(supabase, order.tenant_id, [
+    { product_id, quantity: qty },
+  ]);
+  if (!stockValidation.ok) {
+    return NextResponse.json({ error: stockValidation.message }, { status: 409 });
   }
 
   const subtotal = unitPrice * qty;

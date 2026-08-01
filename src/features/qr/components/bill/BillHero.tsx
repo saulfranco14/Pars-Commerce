@@ -13,6 +13,9 @@ interface BillHeroProps {
   paidTotal: number;
   balanceDue: number;
   isPaid: boolean;
+  /** A divided bill is intentionally personal: never present the table total as mine. */
+  personal?: boolean;
+  personalStatus?: "pending" | "pending_validation" | "paid";
 }
 
 /**
@@ -28,7 +31,11 @@ export function BillHero({
   paidTotal,
   balanceDue,
   isPaid,
+  personal = false,
+  personalStatus,
 }: BillHeroProps) {
+  const isPersonalPaid = personal && personalStatus === "paid";
+  const paid = personal ? isPersonalPaid : isPaid;
   return (
     <div className="w-full">
       <div className="flex items-center gap-2.5">
@@ -59,7 +66,7 @@ export function BillHero({
             </p>
           )}
         </div>
-        {isPaid && (
+        {paid && (
           <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm">
             <CheckCircle2 className="h-3 w-3" />
             Pagada
@@ -69,14 +76,14 @@ export function BillHero({
 
       <div className="mt-5">
         <p className="text-[10px] font-bold uppercase tracking-wider opacity-75">
-          {isPaid ? "Total pagado" : "Total"}
+          {paid ? "Total pagado" : personal ? "Tu parte" : "Total"}
         </p>
         <p className="mt-0.5 text-5xl font-bold tracking-tight">
-          {formatCurrency(total)}
+          {formatCurrency(personal ? (paid ? paidTotal : balanceDue) : total)}
         </p>
       </div>
 
-      {!isPaid && (paidTotal > 0 || balanceDue > 0) && (
+      {!personal && !isPaid && (paidTotal > 0 || balanceDue > 0) && (
         <div className="mt-4 grid grid-cols-2 gap-2">
           {paidTotal > 0 && (
             <div className="rounded-xl bg-white/15 px-3 py-2 backdrop-blur-sm">
@@ -95,6 +102,11 @@ export function BillHero({
             </div>
           )}
         </div>
+      )}
+      {personal && personalStatus === "pending_validation" && (
+        <p className="mt-4 inline-flex rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm">
+          Pago en validación
+        </p>
       )}
     </div>
   );

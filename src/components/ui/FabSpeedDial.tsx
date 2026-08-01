@@ -16,6 +16,7 @@ export interface FabAction {
 interface FabSpeedDialProps {
   actions: FabAction[];
   "aria-label": string;
+  disabled?: boolean;
 }
 
 /**
@@ -27,6 +28,7 @@ interface FabSpeedDialProps {
 export function FabSpeedDial({
   actions,
   "aria-label": ariaLabel,
+  disabled = false,
 }: FabSpeedDialProps) {
   const [open, setOpen] = useState(false);
 
@@ -91,7 +93,8 @@ export function FabSpeedDial({
           aria-label={ariaLabel}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg transition-transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          disabled={disabled}
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg transition-transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55"
         >
           {open ? (
             <X className="h-6 w-6" strokeWidth={2.5} />

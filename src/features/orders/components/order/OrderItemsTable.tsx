@@ -55,7 +55,7 @@ export function OrderItemsTable() {
           <button
             type="button"
             onClick={() => setAddItemOpen(true)}
-            className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
             <Plus className="h-4 w-4" aria-hidden />
             Agregar item
@@ -63,7 +63,7 @@ export function OrderItemsTable() {
         )}
       </div>
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-contain md:max-h-[300px]">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-contain md:max-h-75">
         {items.length === 0 ? (
           <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-4 text-center text-sm text-muted">
             No hay items. Agrega productos o servicios.
@@ -204,7 +204,7 @@ export function OrderItemsTable() {
       </div>
 
       <div className="shrink-0 border-t border-border bg-background/20 p-3">
-        <div className="flex flex-col items-end gap-1 w-full sm:max-w-[260px] sm:ml-auto">
+        <div className="flex flex-col items-end gap-1 w-full sm:max-w-65 sm:ml-auto">
           <div className="flex justify-between items-center w-full text-sm py-1">
             <span className="text-muted-foreground">Subtotal</span>
             <span className="tabular-nums font-medium text-foreground">
@@ -229,7 +229,7 @@ export function OrderItemsTable() {
               <button
                 type="button"
                 onClick={() => setDiscountModalOpen(true)}
-                className="inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-border px-2.5 py-1 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:border-accent hover:text-accent"
+                className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-border px-2.5 py-1 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:border-accent hover:text-accent"
               >
                 <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 Agregar
@@ -242,7 +242,7 @@ export function OrderItemsTable() {
               <button
                 type="button"
                 onClick={() => setDiscountModalOpen(true)}
-                className="inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-sm font-medium text-red-600 transition-colors duration-200 hover:bg-red-50"
+                className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-sm font-medium text-red-600 transition-colors duration-200 hover:bg-red-50"
               >
                 <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 -${Number(order.discount).toFixed(2)}

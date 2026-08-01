@@ -21,6 +21,9 @@ export function isFocusRoute(pathname: string): boolean {
     return fourth !== undefined && fourth !== "";
   }
   if (third === "equipo" && fourth === "nuevo") return true;
+  // Tomar pedido ocupa la pantalla completa y ancla su carrito abajo: la barra
+  // inferior de móvil se le montaría encima.
+  if (third === "pedidos" && fourth === "nuevo") return true;
   if (third === "configuracion" || third === "sitio-web") return true;
 
   return false;

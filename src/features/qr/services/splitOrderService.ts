@@ -19,11 +19,14 @@ interface GroupPayload {
   label: string;
   total: number;
   device_id: string | null;
+  item_ids?: string[];
 }
 
 export interface SplitOrderInput {
   orderId: string;
   mode: SplitMode;
+  /** Only the table owner can alter a division shared by every diner. */
+  fingerprint: string | null;
   peopleCount?: number;
   groups?: Array<{ label: string; item_ids: string[] }>;
 }
@@ -63,34 +66,84 @@ export async function splitOrder(
     };
   }
 
-  // Replace previous split (UX allows redoing the split from the public bill).
+  if (!input.fingerprint) {
+    return {
+      ok: false,
+      error: { code: "forbidden", message: "Identifica tu dispositivo para dividir la cuenta" },
+    };
+  }
+
+  const { data: splitter } = await admin
+    .from("order_devices")
+    .select("id, is_owner")
+    .eq("order_id", input.orderId)
+    .eq("device_fingerprint", input.fingerprint)
+    .maybeSingle();
+  if (!splitter?.is_owner) {
+    return {
+      ok: false,
+      error: { code: "forbidden", message: "Sólo quien abrió la mesa puede dividir la cuenta" },
+    };
+  }
+
+  const { data: connectedDevices } = await admin
+    .from("order_devices")
+    .select("id, display_name, color_hex, joined_at, last_seen_at")
+    .eq("order_id", input.orderId)
+    .order("joined_at", { ascending: true });
+  const devices = connectedDevices ?? [];
+  const deviceLabel = (index: number) =>
+    devices[index]?.display_name?.trim() || `Persona ${index + 1}`;
+
+  const { data: previousGroups } = await admin
+    .from("order_split_groups")
+    .select("payment_status")
+    .eq("order_id", input.orderId);
+  if (
+    (previousGroups ?? []).some(
+      (group) => group.payment_status !== "pending",
+    )
+  ) {
+    return {
+      ok: false,
+      error: {
+        code: "conflict",
+        message: "No puedes cambiar la división mientras una persona ya está pagando o pagó",
+      },
+    };
+  }
+
+  // A draft split can be corrected before anybody starts paying.
   await admin.from("order_split_groups").delete().eq("order_id", input.orderId);
 
   let groups: GroupPayload[] | null = null;
 
   if (input.mode === "equal") {
     const people = Math.max(2, Number(input.peopleCount ?? 2));
+    if (people > devices.length) {
+      return {
+        ok: false,
+        error: {
+          code: "validation",
+          message: "Cada persona debe escanear el QR antes de asignarle una parte",
+        },
+      };
+    }
     const eachAmount = Number(order.total) / people;
     groups = Array.from({ length: people }, (_, idx) => ({
-      label: `Persona ${idx + 1}`,
+      label: deviceLabel(idx),
       total: eachAmount,
-      device_id: null,
+      device_id: devices[idx].id,
     }));
   } else if (input.mode === "by_device") {
-    const [{ data: devices }, { data: items }] = await Promise.all([
-      admin
-        .from("order_devices")
-        .select("id, display_name, color_hex, joined_at, last_seen_at")
-        .eq("order_id", input.orderId),
-      admin
+    const { data: items } = await admin
         .from("order_items")
         .select(
           "id, product_id, quantity, unit_price, subtotal, added_by_device_id, is_shared",
         )
-        .eq("order_id", input.orderId),
-    ]);
+        .eq("order_id", input.orderId);
 
-    const computed = computeSplitByDevice(items ?? [], devices ?? []);
+    const computed = computeSplitByDevice(items ?? [], devices);
     groups = computed.map((entry) => ({
       label: entry.label,
       total: entry.total,
@@ -107,10 +160,19 @@ export async function splitOrder(
         },
       };
     }
+    if (input.groups.length > devices.length) {
+      return {
+        ok: false,
+        error: {
+          code: "validation",
+          message: "Cada persona debe escanear el QR antes de asignarle una parte",
+        },
+      };
+    }
 
     const { data: items } = await admin
       .from("order_items")
-      .select("id, subtotal")
+      .select("id, subtotal, quantity")
       .eq("order_id", input.orderId);
 
     const subtotalById = new Map<string, number>();
@@ -154,13 +216,14 @@ export async function splitOrder(
     }
 
     groups = input.groups
-      .map((g) => ({
-        label: g.label.trim() || "Cuenta",
+      .map((g, index) => ({
+        label: deviceLabel(index),
         total: g.item_ids.reduce(
           (acc, id) => acc + (subtotalById.get(id) ?? 0),
           0,
         ),
-        device_id: null,
+        device_id: devices[index].id,
+        item_ids: g.item_ids,
       }))
       .filter((g) => g.total > 0);
   }
@@ -193,6 +256,36 @@ export async function splitOrder(
 
   if (insertError) {
     return { ok: false, error: { code: "internal", message: insertError.message } };
+  }
+
+  // The schema already has this relationship. Persist it for the explicit
+  // item-assignment mode so future reads can render the real owner, not just
+  // the device that originally added the item.
+  if (input.mode === "items" && createdGroups) {
+    const quantities = new Map(
+      (await admin
+        .from("order_items")
+        .select("id, quantity")
+        .eq("order_id", input.orderId)).data?.map((item) => [
+        item.id as string,
+        Number(item.quantity),
+      ]) ?? [],
+    );
+    const mappings = createdGroups.flatMap((created, index) =>
+      (groups?.[index]?.item_ids ?? []).map((orderItemId) => ({
+        split_group_id: created.id,
+        order_item_id: orderItemId,
+        quantity: quantities.get(orderItemId) ?? 1,
+      })),
+    );
+    if (mappings.length > 0) {
+      const { error: mappingError } = await admin
+        .from("order_split_group_items")
+        .insert(mappings);
+      if (mappingError) {
+        return { ok: false, error: { code: "internal", message: mappingError.message } };
+      }
+    }
   }
 
   await admin

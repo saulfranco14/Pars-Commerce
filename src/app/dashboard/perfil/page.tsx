@@ -58,7 +58,7 @@ export default function PerfilPage() {
       <div className="shrink-0 pb-4">
         <Link
           href="/dashboard"
-          className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver al inicio
@@ -101,7 +101,7 @@ export default function PerfilPage() {
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="input-form mt-2 block w-full min-h-[52px] rounded-xl border border-border px-4 py-3 text-lg text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                  className="input-form mt-2 block w-full min-h-13 rounded-xl border border-border px-4 py-3 text-lg text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                   placeholder="Tu nombre"
                 />
               </div>
@@ -117,7 +117,7 @@ export default function PerfilPage() {
                   type="email"
                   value={profile.email ?? ""}
                   readOnly
-                  className="input-form mt-2 block w-full min-h-[52px] rounded-xl border border-border px-4 py-3 text-lg text-muted bg-border-soft/80 focus:outline-none"
+                  className="input-form mt-2 block w-full min-h-13 rounded-xl border border-border px-4 py-3 text-lg text-muted bg-border-soft/80 focus:outline-none"
                   aria-readonly
                 />
                 <p className="mt-2 text-sm text-muted-foreground">
@@ -136,7 +136,7 @@ export default function PerfilPage() {
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="input-form mt-2 block w-full min-h-[52px] rounded-xl border border-border px-4 py-3 text-lg text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                  className="input-form mt-2 block w-full min-h-13 rounded-xl border border-border px-4 py-3 text-lg text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                   placeholder="555 123 4567"
                 />
               </div>
@@ -147,7 +147,7 @@ export default function PerfilPage() {
               type="submit"
               form={formId}
               disabled={loading}
-              className="inline-flex w-full min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-base font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto md:min-w-[140px]"
+              className="inline-flex w-full min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-base font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto md:min-w-35"
             >
               <Check className="h-5 w-5 shrink-0" aria-hidden />
               {loading ? "Guardando…" : "Guardar"}

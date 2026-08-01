@@ -73,10 +73,31 @@ con RLS — cada query relevante debe filtrar por tenant.
 - Tenant activo en el cliente: `useActiveTenant()` desde `@/stores/useTenantStore`.
 - Verificación obligatoria en cada API route protegida:
   `supabase.auth.getUser()` → 401, luego `tenant_memberships` check → 403.
-- Roles relevantes en `tenant_memberships`: `owner`, `cashier`, `waiter`.
-  No existe `admin` — no escribas comprobaciones contra ese rol.
-- Helper de permisos: `requirePermission(userId, tenantId, "qr.write")`
-  desde `@/lib/auth/requirePermission`.
+- Los roles NO son un enum en `tenant_memberships`: viven en la tabla
+  **`tenant_roles`**, con un array `permissions jsonb`. Cada tenant recibe
+  su propia copia de los 4 roles de sistema, sembrada por el trigger
+  `handle_new_tenant()`. Un tenant puede además tener roles propios.
+- Roles de sistema: `owner`, `member`, `cashier`, `waiter`. `member` es el
+  valor por defecto del selector de invitación. No existe `admin` — no
+  escribas comprobaciones contra ese rol.
+- **Nunca autorices comparando el nombre del rol.** Un rol personalizado no
+  entraría en el `if`, y el mismo nombre puede tener permisos distintos en
+  dos tenants. Autoriza siempre por permiso:
+  `requirePermission(userId, tenantId, "qr.write")` desde
+  `@/lib/auth/requirePermission`, que devuelve
+  `{ membershipId, roleId, roleName, permissions }`. El `owner` los pasa
+  todos.
+- Alcance de pedidos: `orders.view_all` vs `orders.view_assigned` deciden
+  *qué* pedidos ve alguien; `orders.assign` / `orders.close` /
+  `orders.addendum` / `orders.schedule_config` deciden qué puede hacer con
+  ellos. Los nombres están en
+  `features/orders/constants/orderPermissions.ts` y la decisión se resuelve
+  en `features/orders/services/orderAccessService.ts` — no repitas la lógica
+  en el route handler.
+- Al invitar o cambiar el rol de alguien, la UI muestra qué podrá hacer.
+  Ese texto se **compone de los permisos reales del rol**
+  (`features/equipo/constants/roleDescriptions.ts`), no de su nombre; si
+  agregas un permiso, agrégale su frase ahí o quedará invisible.
 
 ### 2. Features = módulos autocontenidos
 
@@ -97,7 +118,7 @@ Las primitivas verdaderamente compartidas viven fuera de features:
   (`ConfirmDialog`, `FormSheet`, `FormInput`, `Notification`, `Toast`,
   `BottomSheet`).
 - `src/components/admin/` — primitivas de pantallas internas del
-  dashboard (`PageHeader`, `MetricsStrip`, `FilterPills`, `StatusBadge`,
+  dashboard (`PageHeader`, `MetricsStrip`, `FilterTabs`, `StatusBadge`,
   `EmptyState`, `AdminListCard`, `actionButtonClasses`). Reglas de
   composición en `DESIGN_SYSTEM.md §4.7`.
 - `src/lib/` — clientes (`supabase/{client,server,admin}`, `mercadopago`,
@@ -226,6 +247,29 @@ hace algo raro, revisa la config de Serwist antes que el endpoint en sí.
 - Usar `resolveUserError(error, source)` de `@/lib/errors/resolveUserError`
   con `source: "supabase" | "sendgrid" | "mercadopago"`.
 - Mapeos en `src/lib/errors/errorMessages.ts`.
+
+---
+
+## Comentarios
+
+- **En inglés.** Una línea; tres como máximo absoluto.
+- Solo si son necesarios. Si el código ya lo dice, el comentario es ruido.
+- Nunca describir lo que hace la línea de abajo, ni narrar decisiones de
+  layout/CSS, ni dejar bloques `/* … */` dentro del JSX.
+- Sí vale un comentario corto para: un `?? 0` que existe por compatibilidad,
+  una omisión deliberada (no poner `qr_code_id` al hijo), o una constante cuyo
+  valor no se deduce.
+
+---
+
+## Clases de Tailwind
+
+- Usar la escala canónica, no valores arbitrarios: `min-h-11` en vez de
+  `min-h-[44px]`, `h-4.5` en vez de `h-[18px]`, `bg-foreground/6` en vez de
+  `bg-foreground/[0.06]`. El linter de Tailwind avisa (`suggestCanonicalClasses`)
+  y esos warnings no se dejan pasar.
+- Arbitrario solo cuando no hay equivalente en la escala (`w-[302px]` de un
+  ticket térmico, `text-[15px]`).
 
 ---
 

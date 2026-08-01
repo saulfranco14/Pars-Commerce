@@ -18,7 +18,36 @@ interface MenuProductCardProps {
   tenantLogoUrl?: string | null;
   /** Tenant name, used to derive initials when there's no photo or logo. */
   tenantName?: string | null;
+  /** `touch` grows the controls to 44px, for order-taking on a tablet. */
+  density?: "default" | "touch";
 }
+
+const DENSITY = {
+  default: {
+    photo: "h-24 w-24",
+    textPad: "pr-11",
+    addBtn: "h-9 w-9",
+    addIcon: "h-5 w-5",
+    stepBtn: "h-7 w-7",
+    stepIcon: "h-3.5 w-3.5",
+    qtyText: "text-sm",
+    name: "text-[15px]",
+    price: "text-base",
+  },
+  touch: {
+    photo: "h-24 w-24",
+    // El stepper de 44px mide ~112px de ancho; con menos hueco se monta encima
+    // del precio.
+    textPad: "pr-28",
+    addBtn: "h-11 w-11",
+    addIcon: "h-6 w-6",
+    stepBtn: "h-11 w-11",
+    stepIcon: "h-4 w-4",
+    qtyText: "text-base",
+    name: "text-base",
+    price: "text-lg",
+  },
+} as const;
 
 /**
  * One product on the customer's menu. Image-led layout (the photo is the hook,
@@ -38,9 +67,11 @@ export function MenuProductCard({
   onOpenDetail,
   tenantLogoUrl,
   tenantName,
+  density = "default",
 }: MenuProductCardProps) {
   const inCart = quantity > 0;
   const description = product.description?.trim();
+  const d = DENSITY[density];
 
   return (
     <article
@@ -54,7 +85,7 @@ export function MenuProductCard({
       <button
         type="button"
         onClick={() => onOpenDetail?.(product)}
-        className="block h-24 w-24 shrink-0 cursor-pointer overflow-hidden rounded-xl transition-transform active:scale-[0.98]"
+        className={`block ${d.photo} shrink-0 cursor-pointer overflow-hidden rounded-xl transition-transform active:scale-[0.98]`}
         aria-label={`Ver ${product.name}`}
       >
         <BrandImage
@@ -72,9 +103,9 @@ export function MenuProductCard({
       <button
         type="button"
         onClick={() => onOpenDetail?.(product)}
-        className="flex min-w-0 flex-1 cursor-pointer flex-col py-1 pr-11 text-left"
+        className={`flex min-w-0 flex-1 cursor-pointer flex-col py-1 ${d.textPad} text-left`}
       >
-        <h3 className="text-[15px] font-semibold leading-snug text-foreground line-clamp-2">
+        <h3 className={`${d.name} font-semibold leading-snug text-foreground line-clamp-2`}>
           {product.name}
         </h3>
         {description && (
@@ -82,7 +113,7 @@ export function MenuProductCard({
             {description}
           </p>
         )}
-        <p className="mt-auto pt-1 text-base font-bold tracking-tight text-accent">
+        <p className={`mt-auto pt-1 ${d.price} font-bold tracking-tight text-accent`}>
           {formatCurrency(Number(product.price))}
         </p>
       </button>
@@ -94,20 +125,20 @@ export function MenuProductCard({
             type="button"
             onClick={() => onDecrement(product.id)}
             aria-label="Quitar uno"
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-accent transition-transform hover:bg-accent/10 active:scale-90"
+            className={`flex ${d.stepBtn} cursor-pointer items-center justify-center rounded-full text-accent transition-transform hover:bg-accent/10 active:scale-90`}
           >
-            <Minus className="h-3.5 w-3.5" strokeWidth={2.75} />
+            <Minus className={d.stepIcon} strokeWidth={2.75} />
           </button>
-          <span className="min-w-[16px] text-center text-sm font-bold text-foreground">
+          <span className={`min-w-4 text-center ${d.qtyText} font-bold text-foreground`}>
             {quantity}
           </span>
           <button
             type="button"
             onClick={() => onAdd(product.id)}
             aria-label="Agregar uno más"
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-accent text-accent-foreground transition-transform hover:bg-accent/90 active:scale-90"
+            className={`flex ${d.stepBtn} cursor-pointer items-center justify-center rounded-full bg-accent text-accent-foreground transition-transform hover:bg-accent/90 active:scale-90`}
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={2.75} />
+            <Plus className={d.stepIcon} strokeWidth={2.75} />
           </button>
         </div>
       ) : (
@@ -115,9 +146,9 @@ export function MenuProductCard({
           type="button"
           onClick={() => onAdd(product.id)}
           aria-label={`Agregar ${product.name}`}
-          className="absolute bottom-2.5 right-2.5 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md shadow-accent/25 transition-transform hover:bg-accent/90 active:scale-90"
+          className={`absolute bottom-2.5 right-2.5 flex ${d.addBtn} cursor-pointer items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md shadow-accent/25 transition-transform hover:bg-accent/90 active:scale-90`}
         >
-          <Plus className="h-5 w-5" strokeWidth={2.75} />
+          <Plus className={d.addIcon} strokeWidth={2.75} />
         </button>
       )}
     </article>

@@ -9,8 +9,8 @@ export const STATS = [
   },
   {
     icon: CreditCard,
-    value: "MercadoPago",
-    label: "pagos integrados",
+    value: "Tarjeta",
+    label: "crédito, débito y meses",
     accent: "bg-blue-500/10 text-blue-500 dark:bg-blue-400/10 dark:text-blue-400",
   },
   {
@@ -22,7 +22,11 @@ export const STATS = [
   {
     icon: TrendingUp,
     value: "$0",
-    label: "comision de plataforma",
-    accent: "bg-rose-500/10 text-rose-500 dark:bg-rose-400/10 dark:text-rose-400",
+    label: "comisión de plataforma",
+    // Oro, no rosa: DESIGN_SYSTEM.md §3 reserva rojo/rosa a error y
+    // destructivo, y este es justo el caso que el oro cubre (momento de valor:
+    // el precio). El texto usa el paso --coin-ink porque el oro puro no pasa
+    // contraste sobre blanco.
+    accent: "bg-coin/10 text-coin-ink dark:bg-coin/10 dark:text-coin",
   },
 ] as const;

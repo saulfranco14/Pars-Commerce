@@ -21,7 +21,7 @@ function QueEsMockup() {
       </div>
       <MiniCard className="absolute" style={{ top: 6, left: 14, right: 14 }}>
         <div className="p-3">
-          <p className="mb-2 text-[9px] font-semibold" style={{ color: "#292524" }}>
+          <p className="mb-2 text-[9px] font-semibold" style={{ color: "#0f1c33" }}>
             Tus lugares
           </p>
           <div className="grid grid-cols-2 gap-2">
@@ -29,11 +29,11 @@ function QueEsMockup() {
               <div
                 key={t.name}
                 className="flex items-center justify-between rounded-lg px-2.5 py-2"
-                style={{ background: "#faf9f7", border: "1px solid #ede9e4" }}
+                style={{ background: "#f7f9fc", border: "1px solid #dbe4f0" }}
               >
                 <div className="flex items-center gap-1.5">
-                  <Store className="h-3 w-3" style={{ color: "#a8a29e" }} />
-                  <span className="text-[8px] font-medium" style={{ color: "#292524" }}>{t.name}</span>
+                  <Store className="h-3 w-3" style={{ color: "#94a3b8" }} />
+                  <span className="text-[8px] font-medium" style={{ color: "#0f1c33" }}>{t.name}</span>
                 </div>
                 <span className="rounded-full px-1.5 py-0.5 text-[6px] font-semibold" style={{ background: t.bg, color: t.color }}>
                   {t.state}
@@ -57,12 +57,12 @@ function QrMockup() {
         <div className="flex flex-col items-center p-4">
           <div
             className="flex h-24 w-24 items-center justify-center rounded-lg"
-            style={{ background: "#faf9f7", border: "1px solid #ede9e4" }}
+            style={{ background: "#f7f9fc", border: "1px solid #dbe4f0" }}
           >
-            <QrCode className="h-16 w-16" style={{ color: "#292524" }} />
+            <QrCode className="h-16 w-16" style={{ color: "#0f1c33" }} />
           </div>
-          <p className="mt-2 text-[9px] font-bold" style={{ color: "#292524" }}>Lugar 5</p>
-          <p className="text-[7px]" style={{ color: "#a8a29e" }}>Escanea para ordenar</p>
+          <p className="mt-2 text-[9px] font-bold" style={{ color: "#0f1c33" }}>Lugar 5</p>
+          <p className="text-[7px]" style={{ color: "#94a3b8" }}>Escanea para ordenar</p>
         </div>
       </MiniCard>
     </div>
@@ -78,23 +78,23 @@ function PideMockup() {
   return (
     <div className="relative mx-auto h-52 w-72">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full bg-linear-to-br from-pink-400 to-rose-300 opacity-20 blur-3xl" />
+        <div className="h-40 w-40 rounded-full bg-linear-to-br from-accent/60 to-blue-300 opacity-20 blur-3xl" />
       </div>
       <MiniCard className="absolute" style={{ top: 2, left: 40, right: 40 }}>
         <div className="p-3">
           <div className="mb-2 flex items-center gap-1.5">
-            <div className="h-5 w-5 rounded-full" style={{ background: "#fce7f3" }} />
-            <span className="text-[8px] font-semibold" style={{ color: "#292524" }}>Pedido del cliente</span>
+            <div className="h-5 w-5 rounded-full" style={{ background: "#e8f1fe" }} />
+            <span className="text-[8px] font-semibold" style={{ color: "#0f1c33" }}>Pedido del cliente</span>
           </div>
           <div className="space-y-1.5">
             {items.map((it) => (
               <div key={it.name} className="flex items-center justify-between">
-                <span className="text-[8px]" style={{ color: "#292524" }}>{it.qty} {it.name}</span>
-                <span className="text-[8px] font-bold" style={{ color: "#292524" }}>{it.price}</span>
+                <span className="text-[8px]" style={{ color: "#0f1c33" }}>{it.qty} {it.name}</span>
+                <span className="text-[8px] font-bold" style={{ color: "#0f1c33" }}>{it.price}</span>
               </div>
             ))}
-            <div className="flex justify-between border-t pt-1.5" style={{ borderColor: "#ede9e4" }}>
-              <span className="text-[9px] font-bold" style={{ color: "#292524" }}>Total</span>
+            <div className="flex justify-between border-t pt-1.5" style={{ borderColor: "#dbe4f0" }}>
+              <span className="text-[9px] font-bold" style={{ color: "#0f1c33" }}>Total</span>
               <span className="text-[10px] font-bold" style={{ color: "#059669" }}>$485</span>
             </div>
           </div>
@@ -119,7 +119,7 @@ function EnVivoMockup() {
         <div className="p-3">
           <div className="mb-2.5 flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5" style={{ color: "#d97706" }} />
-            <span className="text-[9px] font-bold" style={{ color: "#292524" }}>Lugar 2 · en vivo</span>
+            <span className="text-[9px] font-bold" style={{ color: "#0f1c33" }}>Lugar 2 · en vivo</span>
           </div>
           <div className="flex items-center justify-between">
             {steps.map((s, i) => (
@@ -139,8 +139,8 @@ function EnVivoMockup() {
               </div>
             ))}
           </div>
-          <div className="mt-2.5 flex justify-between rounded-lg px-2.5 py-1.5" style={{ background: "#faf9f7" }}>
-            <span className="text-[7px]" style={{ color: "#a8a29e" }}>Pagado $200 de $485</span>
+          <div className="mt-2.5 flex justify-between rounded-lg px-2.5 py-1.5" style={{ background: "#f7f9fc" }}>
+            <span className="text-[7px]" style={{ color: "#94a3b8" }}>Pagado $200 de $485</span>
             <span className="text-[7px] font-bold" style={{ color: "#d97706" }}>Falta $285</span>
           </div>
         </div>
@@ -163,7 +163,7 @@ function DivideMockup() {
         <div className="p-3">
           <div className="mb-2 flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5" style={{ color: "#8b5cf6" }} />
-            <span className="text-[9px] font-bold" style={{ color: "#292524" }}>Dividir cuenta</span>
+            <span className="text-[9px] font-bold" style={{ color: "#0f1c33" }}>Dividir cuenta</span>
           </div>
           <div className="space-y-1.5">
             {people.map((p) => (
@@ -172,12 +172,12 @@ function DivideMockup() {
                 className="flex items-center justify-between rounded-lg px-2.5 py-2"
                 style={{ background: "#f5f3ff", border: "1px solid #ede9fe" }}
               >
-                <span className="text-[8px] font-medium" style={{ color: "#292524" }}>{p.name}</span>
+                <span className="text-[8px] font-medium" style={{ color: "#0f1c33" }}>{p.name}</span>
                 <span className="text-[9px] font-bold" style={{ color: "#8b5cf6" }}>{p.amount}</span>
               </div>
             ))}
           </div>
-          <p className="mt-2 text-center text-[7px]" style={{ color: "#a8a29e" }}>
+          <p className="mt-2 text-center text-[7px]" style={{ color: "#94a3b8" }}>
             Cada quien paga su parte desde su celular
           </p>
         </div>

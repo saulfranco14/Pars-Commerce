@@ -41,7 +41,7 @@ export function useAuthProfileAndTenants() {
       let stored: string | null = null;
       if (typeof window !== "undefined") {
         try {
-          stored = localStorage.getItem("pars_activeTenantId");
+          stored = localStorage.getItem("tlaco_activeTenantId");
         } catch {
           /* incognito, quota, disabled */
         }

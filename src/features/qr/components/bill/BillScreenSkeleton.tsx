@@ -45,7 +45,7 @@ export function BillScreenSkeleton() {
           </div>
 
           {/* Action bar */}
-          <Skeleton className="h-[54px] w-full rounded-2xl" />
+          <Skeleton className="h-13.5 w-full rounded-2xl" />
           <Skeleton className="h-12 w-full rounded-2xl" />
         </main>
       </div>

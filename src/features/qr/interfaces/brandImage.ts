@@ -16,4 +16,14 @@ export interface BrandImageProps {
   className?: string;
   /** Rounding of the tile. Default "rounded-none" (card handles clipping). */
   rounded?: string;
+  /**
+   * `sizes` for next/image. The default is tuned for small card tiles; a large
+   * surface (kiosk grid, hero) must pass its own or the photo renders upscaled
+   * from a 128px source.
+   */
+  sizes?: string;
+  /** Initials/coin scale for the fallback tiers. `lg` for large surfaces. */
+  fallbackScale?: "default" | "lg";
+  /** Skips lazy loading — for tiles above the fold on a kiosk. */
+  priority?: boolean;
 }

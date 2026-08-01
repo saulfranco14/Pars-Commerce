@@ -659,7 +659,7 @@ export default function DashboardPage() {
             </h2>
             <Link
               href={`/dashboard/${activeTenant.slug}/ordenes`}
-              className="inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-muted hover:text-foreground sm:min-h-0"
+              className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-muted hover:text-foreground sm:min-h-0"
             >
               Ver todas <ArrowRight className="h-4 w-4" />
             </Link>

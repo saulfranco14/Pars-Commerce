@@ -288,13 +288,13 @@ export function SiteWebConfigSection({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-border/60 bg-background shadow-[0_-2px_8px_rgba(0,0,0,0.04)] px-4 py-3 sm:px-5 min-h-[60px] flex items-center">
+      <div className="shrink-0 border-t border-border/60 bg-background shadow-[0_-2px_8px_rgba(0,0,0,0.04)] px-4 py-3 sm:px-5 min-h-15 flex items-center">
         {activeTab === "general" && (
           <button
             type="submit"
             form="appearance-form"
             disabled={appearanceLoading || !appearanceDirty}
-            className="flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Check className="h-4 w-4 shrink-0" aria-hidden />
             {appearanceLoading ? "Guardando…" : "Guardar apariencia"}
@@ -305,7 +305,7 @@ export function SiteWebConfigSection({
             type="submit"
             form="redes-form"
             disabled={redesLoading}
-            className="flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Save className="h-4 w-4 shrink-0" aria-hidden />
             {redesLoading ? "Guardando…" : "Guardar redes"}
@@ -319,7 +319,7 @@ export function SiteWebConfigSection({
         {activeTab === "promociones" && (
           <Link
             href={`/dashboard/${tenantSlug}/promociones`}
-            className="flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
             Administrar promociones
             <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />

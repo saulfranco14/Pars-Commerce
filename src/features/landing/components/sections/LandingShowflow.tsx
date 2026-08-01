@@ -89,7 +89,7 @@ function MockStorefront() {
         <span className="h-2 w-2 rounded-full bg-green-400/70" aria-hidden />
         <div className="ml-2 flex flex-1 items-center gap-1.5 rounded-md bg-background border border-border px-2.5 py-1">
           <ExternalLink className="h-2.5 w-2.5 text-muted-foreground" aria-hidden />
-          <span className="text-[10px] text-muted-foreground font-mono">tunegocio.pars.com</span>
+          <span className="text-[10px] text-muted-foreground font-mono">tunegocio.tlaco.mx</span>
         </div>
       </div>
       <div className="p-4">
@@ -191,7 +191,7 @@ export function LandingShowflow() {
               </p>
               <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-accent/20 bg-accent/5 px-4 py-2.5">
                 <span className="text-sm font-mono font-medium text-accent">
-                  tunegocio.pars.com
+                  tunegocio.tlaco.mx
                 </span>
               </div>
               <p className="mt-4 text-xs text-muted-foreground leading-relaxed">

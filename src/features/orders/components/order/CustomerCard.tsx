@@ -99,7 +99,7 @@ export function CustomerCard() {
                 type="button"
                 onClick={onCancel}
                 disabled={actionLoading}
-                className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <X className="h-4 w-4 shrink-0" aria-hidden />
                 Cancelar
@@ -108,7 +108,7 @@ export function CustomerCard() {
                 type="button"
                 onClick={onSave}
                 disabled={actionLoading}
-                className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+                className="inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <Check className="h-4 w-4 shrink-0" aria-hidden />
                 {actionLoading ? "Guardando…" : "Guardar cambios"}
@@ -145,7 +145,7 @@ export function CustomerCard() {
         onToggle={(e) => setDesktopOpen((e.target as HTMLDetailsElement).open)}
         className="group hidden md:block [&>summary::-webkit-details-marker]:hidden"
       >
-        <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-2 px-4 py-2">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-4 py-2">
           {desktopSummary}
           <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
         </summary>
@@ -156,7 +156,7 @@ export function CustomerCard() {
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className="inline-flex min-h-[36px] min-w-[36px] cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-accent hover:bg-accent/10"
+                className="inline-flex min-h-9 min-w-9 cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-accent hover:bg-accent/10"
               >
                 <Pencil className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 Editar
@@ -171,7 +171,7 @@ export function CustomerCard() {
         onToggle={(e) => setMobileOpen((e.target as HTMLDetailsElement).open)}
         className="group border-t-0 md:hidden [&>summary::-webkit-details-marker]:hidden"
       >
-        <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-2 px-3 py-2">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <User className="h-4 w-4 shrink-0 text-muted" />
             <span className="text-sm font-medium text-foreground">Cliente</span>
@@ -199,7 +199,7 @@ export function CustomerCard() {
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-accent"
+                className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-accent"
               >
                 <Pencil className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 Editar

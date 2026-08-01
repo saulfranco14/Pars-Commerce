@@ -84,7 +84,7 @@ export async function POST(request: Request) {
   const orderTotal = Number(order.total);
   const orderItems = (order.items as unknown[]) ?? [];
   const hasDiscount = orderDiscount > 0;
-  const { total: buyerTotal, mpFee, parsFee } = calcBuyerTotal(orderTotal);
+  const { total: buyerTotal, mpFee, platformFee } = calcBuyerTotal(orderTotal);
 
   const baseItems: {
     id: string;
@@ -128,7 +128,7 @@ export async function POST(request: Request) {
         });
 
   const mpFeeRounded = Math.round(mpFee * 100) / 100;
-  const parsFeeRounded = Math.round(parsFee * 100) / 100;
+  const platformFeeRounded = Math.round(platformFee * 100) / 100;
 
   const items = [
     ...baseItems,
@@ -146,10 +146,10 @@ export async function POST(request: Request) {
         ]
       : []),
     {
-      id: "pars-fee",
+      id: "tlaco-fee",
       title: TARIFA_DE_SERVICIO_LABEL,
       quantity: 1,
-      unit_price: parsFeeRounded,
+      unit_price: platformFeeRounded,
       currency_id: "MXN" as const,
       category_id: MP_ITEM_CATEGORY_OTHERS,
       description: "Comisión",

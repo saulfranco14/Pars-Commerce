@@ -3,9 +3,18 @@
 import { useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CreditCard, Link2, PlusCircle, RotateCcw, Users } from "lucide-react";
+import {
+  ChevronDown,
+  CreditCard,
+  Link2,
+  PlusCircle,
+  ReceiptText,
+  RotateCcw,
+  Users,
+} from "lucide-react";
 
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { FormSheet } from "@/components/ui/FormSheet";
 import { Notification } from "@/components/ui/Notification";
 import { CustomerScreen } from "@/features/qr/components/customer/CustomerScreen";
 import { BillScreenSkeleton } from "@/features/qr/components/bill/BillScreenSkeleton";
@@ -16,6 +25,8 @@ import { CustomerPayModal } from "@/features/qr/components/payment/CustomerPayMo
 import { CustomerMergeSheet } from "@/features/qr/components/customer/CustomerMergeSheet";
 import { MergeRequestBanner } from "@/features/qr/components/table/MergeRequestBanner";
 import { PaymentReceipt } from "@/features/qr/components/payment/PaymentReceipt";
+import { OrderReceiptCard } from "@/features/qr/components/order-ticket/OrderReceiptCard";
+import { TipCard } from "@/features/qr/components/payment/TipCard";
 
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { getLastOrderId } from "@/features/qr/helpers/deviceFingerprint";
@@ -32,7 +43,6 @@ export default function TableBillPage() {
   const searchParams = useSearchParams();
   const token = params.token as string;
   const orderId = searchParams.get("order_id");
-  const splitEnabled = searchParams.get("split") === "1";
 
   const { data, isLoading, error, mutate, fingerprint } = useBillData(
     token,
@@ -49,11 +59,6 @@ export default function TableBillPage() {
     }
   };
 
-  // Once THIS device paid THIS order, going back to /q/{token} would scan
-  // the QR again and — since the table is now free — silently open a brand
-  // new order. Only this device (the one whose fingerprint is cached as the
-  // last order for this token) is asked to confirm; any other device
-  // scanning the same QR is a genuinely new customer, no confirmation needed.
   const [confirmNewOrder, setConfirmNewOrder] = useState(false);
   function goToQrRoot() {
     if (orderId && getLastOrderId(token) === orderId) {
@@ -72,8 +77,12 @@ export default function TableBillPage() {
 
   const splitForm = useSplitBill({
     orderId: orderId ?? "",
+    fingerprint,
     onSubmitted: refresh,
   });
+
+  const [splitOpen, setSplitOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const [mergeOpen, setMergeOpen] = useState(false);
   const merge = useCustomerMerge({
@@ -92,15 +101,16 @@ export default function TableBillPage() {
     return g?.payment_status ?? null;
   }, [paymentFlow.pending, data]);
 
-  // For OTHER users in the same mesa: detect a pending_validation group
-  // they didn't initiate, so they see the same receipt instead of being
-  // able to pay it again.
-  const sharedPendingGroup = useMemo(() => {
-    if (!data || paymentFlow.pending) return null;
+  const myGroup = useMemo(() => {
+    if (!data?.my_device_id) return null;
     return (
-      data.groups.find((g) => g.payment_status === "pending_validation") ?? null
+      data.groups.find((group) => group.device_id === data.my_device_id) ?? null
     );
-  }, [data, paymentFlow.pending]);
+  }, [data]);
+  const myPendingGroup =
+    !paymentFlow.pending && myGroup?.payment_status === "pending_validation"
+      ? myGroup
+      : null;
 
   if (!orderId) {
     return (
@@ -136,18 +146,31 @@ export default function TableBillPage() {
     const status =
       pendingGroupStatus === "paid" ? "approved" : "pending_validation";
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-background px-4 py-6">
-        <PaymentReceipt
-          amount={paymentFlow.pending.amount}
-          method={paymentFlow.pending.method}
-          paidAt={paymentFlow.pending.submittedAt}
-          businessName={data.tenant?.name}
-          tableLabel={data.qr_code?.label}
-          status={status}
-          onClose={paymentFlow.dismissPending}
-          onRefresh={refresh}
-          refreshing={refreshing}
-        />
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-background px-4 py-6">
+        <div className="w-full max-w-md">
+          <PaymentReceipt
+            amount={paymentFlow.pending.amount}
+            method={paymentFlow.pending.method}
+            paidAt={paymentFlow.pending.submittedAt}
+            businessName={data.tenant?.name}
+            tableLabel={data.qr_code?.label}
+            status={status}
+            onClose={paymentFlow.dismissPending}
+            onRefresh={refresh}
+            refreshing={refreshing}
+            showSecondaryAction={false}
+          />
+        </div>
+        <div className="w-full max-w-md">
+          <BillSummary
+            items={data.items}
+            devices={data.devices}
+            groups={data.groups}
+            currentDeviceId={data.my_device_id}
+            canPay={false}
+            scope={myGroup ? "personal" : "table"}
+          />
+        </div>
       </main>
     );
   }
@@ -155,28 +178,38 @@ export default function TableBillPage() {
   /* ---------- Shared pending screen — another user already initiated the
                 payment for the whole bill. Show them the same waiting state
                 so they don't double-pay. ---------- */
-  if (sharedPendingGroup && data.order.status !== "paid") {
-    const amount = Number(
-      sharedPendingGroup.balance_due || sharedPendingGroup.total,
-    );
+  if (myPendingGroup && data.order.status !== "paid") {
+    const amount = Number(myPendingGroup.balance_due || myPendingGroup.total);
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-background px-4 py-6">
-        <PaymentReceipt
-          amount={amount}
-          method={(data.order.payment_method as CustomerPayMethod) ?? "efectivo"}
-          paidAt={new Date().toISOString()}
-          businessName={data.tenant?.name}
-          tableLabel={data.qr_code?.label}
-          status="pending_validation"
-          onClose={() => {
-            window.location.href = `/q/${token}`;
-          }}
-          onRefresh={refresh}
-          refreshing={refreshing}
-        />
+        <div className="w-full max-w-md">
+          <PaymentReceipt
+            amount={amount}
+            method={
+              (data.order.payment_method as CustomerPayMethod) ?? "efectivo"
+            }
+            paidAt={new Date().toISOString()}
+            businessName={data.tenant?.name}
+            tableLabel={data.qr_code?.label}
+            status="pending_validation"
+            onClose={() => undefined}
+            onRefresh={refresh}
+            refreshing={refreshing}
+            showSecondaryAction={false}
+          />
+        </div>
+        <div className="w-full max-w-md">
+          <BillSummary
+            items={data.items}
+            devices={data.devices}
+            groups={data.groups}
+            currentDeviceId={data.my_device_id}
+            canPay={false}
+            scope="personal"
+          />
+        </div>
         <p className="max-w-md text-center text-xs text-muted-foreground">
-          Alguien más de esta mesa ya marcó el pago. Esperamos la
-          confirmación del negocio.
+          Esperamos la confirmación del negocio para tu pago.
         </p>
       </main>
     );
@@ -184,13 +217,15 @@ export default function TableBillPage() {
 
   /* ---------- Default: bill view ---------- */
 
-  const isPaid = data.order.status === "paid";
+  const isOrderPaid = data.order.status === "paid";
   const deviceCount = data.devices.length;
   const hasSplitGroups =
     data.groups.length > 1 ||
     (data.groups.length === 1 && data.groups[0].device_id !== null);
-  const canSplit = deviceCount >= 2 && !hasSplitGroups;
+  const canSplit = deviceCount >= 2 && !hasSplitGroups && data.i_am_owner;
   const hasItems = data.items.length > 0;
+  const myGroupPaid = myGroup?.payment_status === "paid";
+  const isPaid = isOrderPaid || myGroupPaid;
 
   // Payment is blocked until the business marks preparation as ready. Per-person:
   // gate on THIS caller's own state when we know it (someone else not being
@@ -200,7 +235,8 @@ export default function TableBillPage() {
     data.my_fulfillment_status != null
       ? data.my_fulfillment_status === "ready"
       : data.order.fulfillment_status === "ready";
-  const isReady = isPaid || myReady;
+  const tableReady = data.order.fulfillment_status === "ready";
+  const isReady = isOrderPaid || tableReady;
 
   // Some lines can be ready while others aren't (a drink comes out before a
   // service). Distinguish that from "nothing has started yet" so the banner
@@ -211,30 +247,52 @@ export default function TableBillPage() {
   const hasPartialProgress =
     !isReady && readyItemCount > 0 && readyItemCount < data.items.length;
 
-  // The split-picker screen is a distinct sub-view: body shows the controls,
-  // the "Confirmar división" CTA lives in the fixed footer below.
-  const inSplitPicker = !isPaid && splitEnabled && canSplit;
-
-  const showPay = !isPaid && !hasSplitGroups && hasItems && isReady;
-  const showSplitButton = !isPaid && hasItems && canSplit;
-
+  const showPay = !isOrderPaid && !hasSplitGroups && hasItems && tableReady;
+  const showSplitButton = !isOrderPaid && hasItems && canSplit;
+  const showMyGroupPay =
+    !isOrderPaid &&
+    !myGroupPaid &&
+    !!myGroup &&
+    myGroup.payment_status === "pending" &&
+    myReady;
+  const showPersonalSplit =
+    !isOrderPaid &&
+    !hasSplitGroups &&
+    hasItems &&
+    canSplit &&
+    myReady &&
+    !tableReady;
+  const billSummary = (
+    <BillSummary
+      items={data.items}
+      devices={data.devices}
+      groups={data.groups}
+      currentDeviceId={data.my_device_id}
+      onPayGroup={(group) =>
+        paymentFlow.pickTarget({ kind: "group", group })
+      }
+      canPay={tableReady || myReady}
+      scope={myGroup ? "personal" : "table"}
+      canPayForOthers={data.i_am_owner === true && tableReady}
+    />
+  );
   /* ---------- Footer (fixed) — CTA stays visible regardless of list length -- */
   let footer: React.ReactNode = null;
-  if (inSplitPicker) {
-    footer = (
-      <button
-        type="button"
-        onClick={splitForm.submit}
-        disabled={splitForm.submitting}
-        className="flex min-h-[54px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <Users className="h-5 w-5" />
-        {splitForm.submitting ? "Dividiendo..." : "Confirmar división"}
-      </button>
-    );
-  } else if (!isPaid) {
+  if (!isOrderPaid && !myGroupPaid) {
     footer = (
       <div className="space-y-2">
+        {showMyGroupPay && myGroup && (
+          <button
+            type="button"
+            onClick={() =>
+              paymentFlow.pickTarget({ kind: "group", group: myGroup })
+            }
+            className="flex min-h-13.5 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
+          >
+            <CreditCard className="h-5 w-5" />
+            Pagar
+          </button>
+        )}
         {showPay && (
           <button
             type="button"
@@ -244,30 +302,39 @@ export default function TableBillPage() {
                 amount: data.order.balance_due,
               })
             }
-            className="flex min-h-[54px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
+            className="flex min-h-13.5 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
           >
             <CreditCard className="h-5 w-5" />
             Pagar {formatCurrency(data.order.balance_due)}
           </button>
         )}
-        <div
-          className={`grid gap-2 ${showSplitButton ? "grid-cols-2" : "grid-cols-1"}`}
-        >
+        {showPersonalSplit && (
+          <button
+            type="button"
+            onClick={() => setSplitOpen(true)}
+            className="flex min-h-13.5 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
+          >
+            <CreditCard className="h-5 w-5" />
+            Dividir y pagar
+          </button>
+        )}
+        <div className="grid grid-cols-1 gap-2">
           <Link
             href={`/q/${token}`}
-            className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
+            className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
           >
             <PlusCircle className="h-4 w-4 text-muted-foreground" />
             Agregar más
           </Link>
           {showSplitButton && (
-            <Link
-              href={`/q/${token}/table/bill?order_id=${orderId}&split=1`}
-              className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
+            <button
+              type="button"
+              onClick={() => setSplitOpen(true)}
+              className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
             >
               <Users className="h-4 w-4 text-muted-foreground" />
               Dividir
-            </Link>
+            </button>
           )}
         </div>
         {!hasSplitGroups &&
@@ -276,12 +343,50 @@ export default function TableBillPage() {
             <button
               type="button"
               onClick={() => setMergeOpen(true)}
-              className="inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl px-4 text-xs font-semibold text-muted-foreground transition-colors hover:text-accent"
+              className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl px-4 text-xs font-semibold text-muted-foreground transition-colors hover:text-accent"
             >
               <Link2 className="h-3.5 w-3.5" />
               Unir con otra mesa
             </button>
           )}
+      </div>
+    );
+  } else if (isOrderPaid) {
+    footer = (
+      <div className="space-y-2">
+        {fingerprint && data.order.tip_available && (
+          <TipCard
+            orderId={data.order.id}
+            total={Number(data.order.total)}
+            fingerprint={fingerprint}
+            onDone={() => void refresh()}
+          />
+        )}
+        <button
+          type="button"
+          onClick={() => setDetailOpen(true)}
+          className="flex min-h-12 w-full cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:bg-border-soft/40"
+        >
+          <ReceiptText className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span className="text-sm font-bold text-foreground">
+            Detalle de compra
+          </span>
+          <span className="ml-auto text-sm font-bold text-foreground">
+            {formatCurrency(Number(data.order.paid_total || data.order.total))}
+          </span>
+          <span className="rounded-full bg-border-soft/60 px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+            {data.items.length}
+          </span>
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </button>
+        <button
+          type="button"
+          onClick={goToQrRoot}
+          className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-muted-foreground transition-colors hover:bg-border-soft/40 hover:text-foreground active:scale-[0.99]"
+        >
+          <RotateCcw className="h-4 w-4 text-muted-foreground" />
+          Ordenar de nuevo
+        </button>
       </div>
     );
   }
@@ -294,22 +399,22 @@ export default function TableBillPage() {
       // and, since the table is free now, silently opens a new order. The
       // dedicated "Ordenar de nuevo" button below (with its own confirm gate)
       // is the only way back from here.
-      {...(isPaid
+      {...(isOrderPaid || myGroupPaid
         ? {}
         : {
-            backHref: inSplitPicker
-              ? `/q/${token}/table/bill?order_id=${orderId}`
-              : `/q/${token}`,
+            backHref: `/q/${token}`,
           })}
       header={
         <BillHero
           tableLabel={data.qr_code?.label}
           tenantName={data.tenant?.name}
           tenantLogoUrl={data.tenant?.logo_url}
-          total={data.order.total}
-          paidTotal={data.order.paid_total}
-          balanceDue={data.order.balance_due}
+          total={myGroup?.total ?? data.order.total}
+          paidTotal={myGroup?.paid_total ?? data.order.paid_total}
+          balanceDue={myGroup?.balance_due ?? data.order.balance_due}
           isPaid={isPaid}
+          personal={!!myGroup}
+          personalStatus={myGroup?.payment_status}
         />
       }
       footer={footer}
@@ -353,7 +458,11 @@ export default function TableBillPage() {
         {!isPaid && !isReady && hasItems && (
           <Notification
             tone="info"
-            title={hasPartialProgress ? "Parte de tu pedido ya está lista" : "En preparación"}
+            title={
+              hasPartialProgress
+                ? "Parte de tu pedido ya está lista"
+                : "En preparación"
+            }
             message={
               hasPartialProgress
                 ? `${readyItemCount} de ${data.items.length} productos ya están listos. Revisa el detalle abajo — podrás pagar en cuanto estén todos.`
@@ -362,56 +471,101 @@ export default function TableBillPage() {
           />
         )}
 
-        <BillSummary
-          items={data.items}
-          devices={data.devices}
-          groups={data.groups}
-          currentDeviceId={data.my_device_id}
-          onPayGroup={(g) => paymentFlow.pickTarget({ kind: "group", group: g })}
-          canPay={isReady}
-        />
+        {!isPaid && myReady && !tableReady && hasItems && (
+          <Notification
+            tone="info"
+            title="Tu parte está lista"
+            message="La mesa sigue en preparación. Puedes dividir la cuenta y pagar sólo tus productos."
+          />
+        )}
 
-        {isPaid ? (
+        {!isOrderPaid && billSummary}
+
+        {isOrderPaid ? (
           <>
+            <OrderReceiptCard
+              businessName={data.tenant?.name ?? "Comprobante"}
+              orderId={data.order.id}
+              orderNumber={null}
+              amount={Number(data.order.paid_total || data.order.total)}
+              paidAt={data.order.created_at}
+              paymentMethod={data.order.payment_method}
+              items={data.items}
+              logoUrl={data.tenant?.logo_url}
+            />
             <Notification
               tone="success"
               title="¡Cuenta pagada por completo!"
               message="Gracias por tu visita."
             />
-            <button
-              type="button"
-              onClick={goToQrRoot}
-              className="flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40"
-            >
-              <RotateCcw className="h-4 w-4 text-muted-foreground" />
-              Ordenar de nuevo
-            </button>
           </>
-        ) : inSplitPicker ? (
-          <BillSplitSection
-            mode={splitForm.mode}
-            onModeChange={splitForm.setMode}
-            peopleCount={splitForm.peopleCount}
-            onPeopleCountChange={splitForm.setPeopleCount}
-            onItemsAssignmentChange={splitForm.setAssignedGroups}
-            items={data.items.map((i) => ({
-              id: i.id,
-              product_name: i.product_name,
-              quantity: i.quantity,
-              subtotal: i.subtotal,
-            }))}
-            deviceCount={deviceCount}
-            orderTotal={data.order.total}
-            error={splitForm.error}
-          />
-        ) : splitEnabled && !canSplit && !hasSplitGroups ? (
+        ) : myGroupPaid ? (
           <Notification
-            tone="info"
-            title="Aún están solos en esta cuenta"
-            message="Para dividir, comparte el QR de la mesa con quien quiera unirse. Cuando otra persona se conecte podrán dividir."
+            tone="success"
+            title="Tu parte está pagada"
+            message="La mesa sigue abierta mientras las demás personas terminan su proceso."
           />
         ) : null}
       </div>
+
+      <FormSheet
+        isOpen={splitOpen}
+        onClose={() => {
+          if (!splitForm.submitting) setSplitOpen(false);
+        }}
+        title="Dividir cuenta"
+        description="Elige cómo repartirá el total cada persona."
+        icon={Users}
+        dismissible={!splitForm.submitting}
+        footer={
+          <button
+            type="button"
+            onClick={async () => {
+              if (await splitForm.submit()) setSplitOpen(false);
+            }}
+            disabled={splitForm.submitting}
+            className="flex min-h-13 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Users className="h-5 w-5" />
+            {splitForm.submitting ? "Dividiendo..." : "Confirmar división"}
+          </button>
+        }
+      >
+        <BillSplitSection
+          mode={splitForm.mode}
+          onModeChange={splitForm.setMode}
+          peopleCount={splitForm.peopleCount}
+          onPeopleCountChange={splitForm.setPeopleCount}
+          onItemsAssignmentChange={splitForm.setAssignedGroups}
+          items={data.items.map((i) => ({
+            id: i.id,
+            product_name: i.product_name,
+            quantity: i.quantity,
+            subtotal: i.subtotal,
+          }))}
+          deviceCount={deviceCount}
+          orderTotal={data.order.total}
+          error={splitForm.error}
+        />
+      </FormSheet>
+
+      <FormSheet
+        isOpen={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        title="Detalle de compra"
+        description="Revisa los productos y el estado de tu cuenta."
+        icon={ReceiptText}
+        maxWidth="max-w-md"
+      >
+        <BillSummary
+          items={data.items}
+          devices={data.devices}
+          groups={data.groups}
+          currentDeviceId={data.my_device_id}
+          canPay={false}
+          scope={myGroup ? "personal" : "table"}
+        />
+      </FormSheet>
 
       {data.tenant && (
         <CustomerPayModal

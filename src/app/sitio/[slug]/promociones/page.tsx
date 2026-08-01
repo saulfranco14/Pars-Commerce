@@ -7,6 +7,7 @@ import PromotionCard from "./PromotionCard";
 import ProductCard from "../ProductCard";
 import { enrichProducts } from "@/lib/enrichProducts";
 import type { PromotionForPrice } from "@/lib/promotionPrice";
+import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
 
 export const dynamic = "force-dynamic";
 
@@ -97,7 +98,7 @@ export default async function PromocionesPage({ params }: PageProps) {
     );
   }
 
-  const accentColor = tenant.theme_color?.trim() || "#6366f1";
+  const accentColor = tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT;
 
   return (
     <div className="space-y-10">

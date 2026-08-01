@@ -25,6 +25,7 @@ import { isAbortError } from "@/services/apiFetch";
 import { btnDanger } from "@/components/ui/buttonClasses";
 import { teamKey, tenantRolesKey } from "@/features/equipo/helpers/swrKeys";
 import { TeamMemberFormSheet } from "@/features/equipo/components/TeamMemberFormSheet";
+import { MemberRoleSelect } from "@/features/equipo/components/MemberRoleSelect";
 
 export default function EquipoPage() {
   const params = useParams();
@@ -154,20 +155,15 @@ export default function EquipoPage() {
                 <p className="mt-0.5 break-all text-sm text-muted">
                   {m.email || "—"}
                 </p>
-                <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border-soft pt-4">
-                  <select
+                <div className="mt-4 flex flex-wrap items-start gap-3 border-t border-border-soft pt-4">
+                  <MemberRoleSelect
+                    roles={roles}
                     value={m.role_id}
-                    onChange={(e) => handleRoleChange(m.id, e.target.value)}
+                    onChange={(roleId) => handleRoleChange(m.id, roleId)}
                     disabled={updatingId === m.id || m.role_name === "owner"}
-                    className="input-form select-custom min-h-[44px] flex-1 rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50"
-                    aria-label={`Rol de ${m.display_name || m.email}`}
-                  >
-                    {roles.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.name}
-                      </option>
-                    ))}
-                  </select>
+                    ariaLabel={`Rol de ${m.display_name || m.email}`}
+                    className="flex-1"
+                  />
                   {m.role_name !== "owner" && (
                     <button
                       type="button"
@@ -204,22 +200,16 @@ export default function EquipoPage() {
                         {m.email || "—"}
                       </td>
                       <td className={tableBodyCellClass}>
-                        <select
+                        <MemberRoleSelect
+                          roles={roles}
                           value={m.role_id}
-                          onChange={(e) =>
-                            handleRoleChange(m.id, e.target.value)
-                          }
+                          onChange={(roleId) => handleRoleChange(m.id, roleId)}
                           disabled={
                             updatingId === m.id || m.role_name === "owner"
                           }
-                          className="input-form select-custom min-h-[44px] rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50"
-                        >
-                          {roles.map((r) => (
-                            <option key={r.id} value={r.id}>
-                              {r.name}
-                            </option>
-                          ))}
-                        </select>
+                          ariaLabel={`Rol de ${m.display_name || m.email}`}
+                          className="max-w-xs"
+                        />
                       </td>
                       <td className="px-4 py-3 text-right">
                         {m.role_name !== "owner" && (

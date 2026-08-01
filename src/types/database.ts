@@ -47,6 +47,11 @@ export interface Tenant {
   theme_color: string | null;
   description: string | null;
   public_store_enabled: boolean;
+  /**
+   * `false` = el sitio muestra el catálogo pero no acepta pedidos nuevos.
+   * Distinto de `public_store_enabled`, que apaga la tienda entera.
+   */
+  accepting_orders?: boolean;
   settings: Json | null;
   whatsapp_phone?: string | null;
   social_links?: TenantSocialLinks | null;

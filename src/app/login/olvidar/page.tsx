@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import * as yup from "yup";
 import { ArrowRight, Mail } from "lucide-react";
 import { BrandPanel } from "@/features/auth/components/BrandPanel";
+import { AuthBrandMark } from "@/components/brand/AuthBrandMark";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 
@@ -13,13 +13,13 @@ const forgotSchema = yup.object({
   email: yup
     .string()
     .required("El email es obligatorio")
-    .email("Ingresa un email valido"),
+    .email("Ingresa un email válido"),
 });
 
 type FieldErrors = Record<string, string>;
 
 const inputBase =
-  "input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2";
+  "input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2";
 const inputNormal = `${inputBase} focus:border-accent focus:ring-accent/20`;
 const inputError = `${inputBase} border-red-400 focus:border-red-400 focus:ring-red-400/20`;
 
@@ -89,25 +89,9 @@ export default function OlvidarPage() {
           <div className="absolute right-4 top-4 z-10">
             <ThemeToggle />
           </div>
-          <div className="w-full max-w-[400px] animate-auth-enter">
-            <div className="mb-8 flex flex-col items-center lg:hidden">
-              <div className="relative mb-3">
-                <div
-                  className="absolute inset-0 scale-150 rounded-3xl bg-accent opacity-25 blur-2xl"
-                  aria-hidden
-                />
-                <Image
-                  src="/android-chrome-192x192.png"
-                  alt=""
-                  width={64}
-                  height={64}
-                  className="relative h-16 w-16 rounded-2xl"
-                  priority
-                />
-              </div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-                Pars Commerce
-              </p>
+          <div className="w-full max-w-100 animate-auth-enter">
+            <div className="mb-8 flex justify-center lg:hidden">
+              <AuthBrandMark />
             </div>
 
             <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
@@ -123,7 +107,7 @@ export default function OlvidarPage() {
               </p>
               <Link
                 href="/login"
-                className="mt-6 flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 cursor-pointer"
+                className="mt-6 flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 cursor-pointer"
               >
                 Volver al login
                 <ArrowRight className="h-4 w-4" aria-hidden />
@@ -140,30 +124,17 @@ export default function OlvidarPage() {
       <BrandPanel
         title="Recupera tu cuenta"
         subtitle="Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña."
+        animated
       />
       <div className="relative flex flex-1 items-center justify-center bg-background px-4 py-8">
         <div className="absolute right-4 top-4 z-10">
           <ThemeToggle />
         </div>
-        <div className="relative w-full max-w-[400px] animate-auth-enter">
-          <div className="mb-8 flex flex-col items-center lg:hidden">
-            <div className="relative mb-3">
-              <div
-                className="absolute inset-0 scale-150 rounded-3xl bg-accent opacity-25 blur-2xl"
-                aria-hidden
-              />
-              <Image
-                src="/android-chrome-192x192.png"
-                alt=""
-                width={64}
-                height={64}
-                className="relative h-16 w-16 rounded-2xl"
-                priority
-              />
-            </div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-              Pars Commerce
-            </p>
+        <div className="relative w-full max-w-100 animate-auth-enter">
+          <div className="mb-8 flex justify-center lg:hidden">
+            {/* El estado de éxito (arriba) no anima: la moneda cayendo
+                distraería del "revisa tu correo". */}
+            <AuthBrandMark animated />
           </div>
 
           <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
@@ -211,7 +182,7 @@ export default function OlvidarPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group w-full min-h-[48px] rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2 cursor-pointer"
+                className="group w-full min-h-12 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2 cursor-pointer"
               >
                 {loading ? "Enviando..." : "Enviar enlace"}
                 {!loading && (

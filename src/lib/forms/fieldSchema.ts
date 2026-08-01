@@ -19,6 +19,13 @@ export interface CustomFieldRenderContext {
 export interface FieldOption {
   value: string;
   label: string;
+  /**
+   * Explicación de qué implica elegir esta opción. Se muestra bajo el select
+   * cuando la opción está seleccionada. Vive en la opción y no en un callback
+   * aparte porque quien construye las opciones suele ser el único que tiene el
+   * dato con el que se redacta (permisos de un rol, por ejemplo).
+   */
+  hint?: string;
 }
 
 export interface FieldSchema {
@@ -49,7 +56,6 @@ export interface FieldSchema {
   onCreateNew?: () => void;
   createNewLabel?: string;
   refreshKey?: number;
-  hintForOption?: (option: FieldOption | null) => string | undefined;
   yupString?: (base: yup.StringSchema) => yup.StringSchema;
   yupNumber?: (base: yup.NumberSchema) => yup.NumberSchema;
   derivedFrom?: string;

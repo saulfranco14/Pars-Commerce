@@ -4,6 +4,9 @@ import type { MsiOption } from "@/constants/commissionConfig";
 import type { RecurringPurchasesConfig } from "@/types/subscriptions";
 
 import { CheckoutFormFields } from "@/features/checkout/components/cart/CheckoutFormFields";
+import { PickupTimePicker } from "@/features/checkout/components/cart/PickupTimePicker";
+import type { PickupSchedulingConfig } from "@/features/checkout/interfaces/pickupSchedule";
+import type { BusinessHours } from "@/features/configuracion/interfaces/businessHours";
 import { FeesBreakdownCard } from "@/features/checkout/components/payment-plan/FeesBreakdownCard";
 import { FrequencyPicker } from "@/features/checkout/components/payment-plan/FrequencyPicker";
 import { InstallmentsPicker } from "@/features/checkout/components/payment-plan/InstallmentsPicker";
@@ -20,12 +23,21 @@ interface CheckoutBodyProps {
     customer_name: string;
     customer_email: string;
     customer_phone: string;
+    scheduled_for: string;
   };
   fieldErrors: Record<string, string>;
   onFormFieldChange: (
-    field: "customer_name" | "customer_email" | "customer_phone",
+    field:
+      | "customer_name"
+      | "customer_email"
+      | "customer_phone"
+      | "scheduled_for",
     value: string,
   ) => void;
+  /** Ventana de recolección del negocio. Con `enabled: false` no se pinta nada. */
+  pickupScheduling: PickupSchedulingConfig;
+  /** `null` = el negocio no dio de alta horarios. */
+  businessHours: BusinessHours | null;
   onSubmit: (e: React.FormEvent) => void;
   submitting: boolean;
   submitLabel: string;
@@ -53,12 +65,6 @@ interface CheckoutBodyProps {
   } | null;
 }
 
-/**
- * Cuerpo común del checkout — usado tanto en el aside de desktop como en el
- * bottom-sheet de mobile. Compone subtotal, selector de modo, MSI,
- * frecuencia, desgloses y formulario, sincronizando todos los IDs y `form`
- * para que los handlers funcionen con submit nativo.
- */
 export function CheckoutBody({
   variant,
   formState,
@@ -85,6 +91,8 @@ export function CheckoutBody({
   msiBaseAmount,
   viableMsiOptions,
   msiBreakdown,
+  pickupScheduling,
+  businessHours,
 }: CheckoutBodyProps) {
   const idPrefix = variant === "mobile" ? "m-" : "";
   const formId = `${idPrefix}checkout-form`;
@@ -180,11 +188,21 @@ export function CheckoutBody({
           onUpdate={onFormFieldChange}
         />
 
+        <PickupTimePicker
+          config={pickupScheduling}
+          businessHours={businessHours}
+          value={formState.scheduled_for}
+          onChange={(v) => onFormFieldChange("scheduled_for", v)}
+          accentColor={accentColor}
+          disabled={submitting}
+          error={fieldErrors.scheduled_for}
+        />
+
         {variant === "desktop" && (
           <button
             type="submit"
             disabled={submitting}
-            className="w-full min-h-[48px] cursor-pointer rounded-xl px-6 py-4 font-semibold text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
+            className="w-full min-h-12 cursor-pointer rounded-xl px-6 py-4 font-semibold text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
             style={{ backgroundColor: accentColor }}
           >
             {submitLabel}

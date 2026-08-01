@@ -254,7 +254,7 @@ export default function NuevoProductoPage() {
                           type="text"
                           value={name}
                           onChange={handleNameChange}
-                          className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                          className="input-form mt-1 block w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                           placeholder="Ej. Mesa 14x10"
                         />
                         {fieldErrors.name && (
@@ -275,7 +275,7 @@ export default function NuevoProductoPage() {
                           type="text"
                           value={slug}
                           onChange={(e) => setSlug(e.target.value)}
-                          className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                          className="input-form mt-1 block w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                           placeholder="mesa-14x10"
                         />
                         <p className="mt-1 text-xs text-muted-foreground">
@@ -299,7 +299,7 @@ export default function NuevoProductoPage() {
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
                           rows={2}
-                          className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                          className="input-form mt-1 block w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                           placeholder="Descripción del producto"
                         />
                       </div>
@@ -318,7 +318,7 @@ export default function NuevoProductoPage() {
                           value={stock}
                           disabled={!trackStock}
                           onChange={(e) => setStock(e.target.value)}
-                          className="input-form mt-1 w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="input-form mt-1 w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20 disabled:opacity-40 disabled:cursor-not-allowed"
                           placeholder="0"
                         />
                         {fieldErrors.stock && (
@@ -332,7 +332,7 @@ export default function NuevoProductoPage() {
                           Mayoreo (opcional)
                         </label>
                         <details className="group mt-1 rounded-xl border border-border overflow-hidden">
-                          <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-2 bg-surface px-4 py-3 text-sm text-muted-foreground transition-colors duration-200 hover:bg-border-soft [&::-webkit-details-marker]:hidden">
+                          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 bg-surface px-4 py-3 text-sm text-muted-foreground transition-colors duration-200 hover:bg-border-soft [&::-webkit-details-marker]:hidden">
                             <span>Configurar precio</span>
                             <ChevronDown
                               className="h-4 w-4 shrink-0 transition-transform duration-200 group-open:rotate-180"
@@ -355,7 +355,7 @@ export default function NuevoProductoPage() {
                                 onChange={(e) =>
                                   setWholesaleMinQuantity(e.target.value)
                                 }
-                                className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                                className="input-form mt-1 block w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                                 placeholder="Ej. 10"
                               />
                             </div>
@@ -374,7 +374,7 @@ export default function NuevoProductoPage() {
                                 onChange={(e) =>
                                   setWholesalePrice(e.target.value)
                                 }
-                                className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                                className="input-form mt-1 block w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                                 placeholder="0.00"
                               />
                             </div>
@@ -416,7 +416,7 @@ export default function NuevoProductoPage() {
                           inputMode="decimal"
                           value={price}
                           onChange={(e) => setPrice(e.target.value)}
-                          className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                          className="input-form mt-1 block w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                           placeholder="0.00"
                         />
                         {fieldErrors.price && (
@@ -438,7 +438,7 @@ export default function NuevoProductoPage() {
                           inputMode="decimal"
                           value={costPrice}
                           onChange={(e) => setCostPrice(e.target.value)}
-                          className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                          className="input-form mt-1 block w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                           placeholder="0.00"
                         />
                         <p className="mt-1 text-xs text-muted-foreground">
@@ -463,7 +463,7 @@ export default function NuevoProductoPage() {
                           inputMode="decimal"
                           value={commissionAmount}
                           onChange={(e) => setCommissionAmount(e.target.value)}
-                          className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                          className="input-form mt-1 block w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                           placeholder="0.00"
                         />
                         <p className="mt-1 text-xs text-muted-foreground">
@@ -501,7 +501,7 @@ export default function NuevoProductoPage() {
                           type="text"
                           value={sku}
                           onChange={(e) => setSku(e.target.value)}
-                          className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                          className="input-form mt-1 block w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                           placeholder="Ej. MESA-001"
                         />
                         <p className="mt-1 text-xs text-muted-foreground">
@@ -520,7 +520,7 @@ export default function NuevoProductoPage() {
                           type="text"
                           value={unit}
                           onChange={(e) => setUnit(e.target.value)}
-                          className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                          className="input-form mt-1 block w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                           placeholder="unit, kg, pza, hora..."
                         />
                         <p className="mt-1 text-xs text-muted-foreground">
@@ -546,7 +546,7 @@ export default function NuevoProductoPage() {
                           type="text"
                           value={theme}
                           onChange={(e) => setTheme(e.target.value)}
-                          className="input-form mt-1 block w-full min-h-[44px] rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
+                          className="input-form mt-1 block w-full min-h-11 rounded-xl border border-border px-3 py-2.5 text-base text-foreground placeholder:text-muted transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:border-accent focus-visible:ring-accent/20"
                           placeholder="Ej. Mobiliario, Promociones"
                         />
                       </div>
@@ -584,7 +584,7 @@ export default function NuevoProductoPage() {
                       </p>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="flex min-h-[44px] cursor-pointer items-center gap-2">
+                      <label className="flex min-h-11 cursor-pointer items-center gap-2">
                         <input
                           type="checkbox"
                           checked={trackStock}
@@ -595,7 +595,7 @@ export default function NuevoProductoPage() {
                           Controlar stock
                         </span>
                       </label>
-                      <label className="flex min-h-[44px] cursor-pointer items-center gap-2">
+                      <label className="flex min-h-11 cursor-pointer items-center gap-2">
                         <input
                           type="checkbox"
                           checked={isPublic}

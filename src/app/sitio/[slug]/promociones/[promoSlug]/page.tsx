@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MessageCircle, Tag, Package, FolderOpen } from "lucide-react";
 import PromotionDetailActions from "./PromotionDetailActions";
+import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
 
 interface PageProps {
   params: Promise<{ slug: string; promoSlug: string }>;
@@ -112,7 +113,7 @@ export default async function PromocionDetallePage({ params }: PageProps) {
     ? buildWhatsAppUrl(tenant.whatsapp_phone, promotion.name, promoUrl)
     : null;
 
-  const accentColor = tenant.theme_color?.trim() || "#6366f1";
+  const accentColor = tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT;
   const imageUrls = (promoImages ?? []).map((i) => i.url);
   const mainImage = promotion.image_url ?? imageUrls[0];
   const galleryImages = promotion.image_url ? imageUrls : imageUrls.slice(1);

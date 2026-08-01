@@ -36,7 +36,7 @@ export function FrequencyPicker({
               key={freq}
               type="button"
               onClick={() => onSelect(freq)}
-              className={`min-h-[40px] flex-1 cursor-pointer rounded-lg border-2 px-3 py-1.5 text-xs font-semibold transition-colors ${
+              className={`min-h-10 flex-1 cursor-pointer rounded-lg border-2 px-3 py-1.5 text-xs font-semibold transition-colors ${
                 isActive
                   ? "border-current bg-current/5"
                   : "border-gray-200 text-gray-600 hover:border-gray-300"

@@ -41,7 +41,7 @@ export function PeriodSelector({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex min-h-[44px] w-full items-center justify-between gap-2 rounded-2xl border border-border bg-background px-4 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
+        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-2xl border border-border bg-background px-4 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
       >
         <span className="flex items-center gap-2 truncate">
           <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -68,7 +68,7 @@ export function PeriodSelector({
                   onChange(opt.value);
                   setOpen(false);
                 }}
-                className={`flex min-h-[52px] w-full items-center justify-between rounded-2xl px-4 text-left text-base font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                className={`flex min-h-13 w-full items-center justify-between rounded-2xl px-4 text-left text-base font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                   isActive
                     ? "bg-accent/15 text-accent"
                     : "text-foreground hover:bg-border-soft/60"

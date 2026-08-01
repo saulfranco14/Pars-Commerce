@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useRef } from "react";
+import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import {
   ArrowRight,
   Store,
@@ -10,11 +10,19 @@ import {
   BarChart3,
 } from "lucide-react";
 
-// ─── Confetti ──────────────────────────────────────────────────
 const CONFETTI_COLORS = [
-  "#ec4899", "#f472b6", "#fb923c", "#fbbf24",
-  "#34d399", "#60a5fa", "#a78bfa", "#f43f5e",
-  "#10b981", "#38bdf8", "#c084fc",
+  "#e8a33d",
+  "#3483fa",
+  "#7cb3ff",
+  "#fb923c",
+  "#fbbf24",
+  "#34d399",
+  "#60a5fa",
+  "#a78bfa",
+  "#f43f5e",
+  "#10b981",
+  "#38bdf8",
+  "#c084fc",
 ];
 
 interface ConfettiPiece {
@@ -85,7 +93,10 @@ export function BusinessCreatedSuccess({
       />
 
       {/* ── Confetti rain ───────────────────────────────────── */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      <div
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+        aria-hidden
+      >
         {confettiRef.current.map((p) => (
           <div
             key={p.id}
@@ -104,7 +115,6 @@ export function BusinessCreatedSuccess({
 
       {/* ── Centered content ────────────────────────────────── */}
       <div className="relative flex h-full flex-col items-center justify-center px-4 py-10">
-
         {/* Card */}
         <div
           className="w-full max-w-sm rounded-xl border border-border bg-surface shadow-card"
@@ -115,23 +125,17 @@ export function BusinessCreatedSuccess({
         >
           {/* ── Logo + headline ─────────────────────────────── */}
           <div className="flex flex-col items-center px-6 pb-6 pt-8 text-center">
-
-            {/* App logo */}
+            {/* Logotipo. No lleva `animated`: esta pantalla ya tiene su propia
+                secuencia de entrada (`float-up` escalonado) y una moneda
+                cayendo encima competiría con el confeti. */}
             <div
               className="mb-5"
               style={{ animation: "float-up 0.4s 0.3s both" }}
             >
-              <Image
-                src="/android-chrome-192x192.png"
-                alt="Pars Commerce"
-                width={72}
-                height={72}
-                className="rounded-2xl shadow-card"
-                priority
-              />
+              <TlacoLogo size="lg" />
             </div>
 
-            {/* Pink accent divider — matches LandingHowItWorks */}
+            {/* Divisor de acento */}
             <div
               className="mb-4 h-1 w-8 rounded-full bg-accent"
               style={{ animation: "float-up 0.4s 0.35s both" }}
@@ -200,7 +204,7 @@ export function BusinessCreatedSuccess({
           >
             <button
               onClick={onGoToDashboard}
-              className="group inline-flex w-full min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+              className="group inline-flex w-full min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
             >
               Ir al Dashboard
               <ArrowRight
@@ -216,7 +220,7 @@ export function BusinessCreatedSuccess({
           className="mt-5 text-sm text-muted-foreground"
           style={{ animation: "float-up 0.4s 0.75s both" }}
         >
-          Bienvenido a Pars Commerce
+          Bienvenido a Tlaco
         </p>
       </div>
     </div>

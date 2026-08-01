@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowRight, Loader2, PackageCheck, Undo2, Users } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, ChevronDown, Loader2, PackageCheck, Undo2, Users } from "lucide-react";
 
 import {
   adminActionButtonPrimary,
@@ -12,6 +13,34 @@ import { getFulfillmentStatusMeta } from "@/features/qr/constants/fulfillmentSta
 import type { AdminViewDevice, AdminViewItem } from "@/features/qr/services/tableAdminViewService";
 import type { FulfillmentStatus } from "@/features/qr/services/tableFulfillmentService";
 
+const SHARED_ITEMS_KEY = "__table_shared_items__";
+
+function itemSummary(items: AdminViewItem[]) {
+  const counts = new Map<FulfillmentStatus, number>();
+  for (const item of items) {
+    const status = (item.fulfillment_status ?? "received") as FulfillmentStatus;
+    counts.set(status, (counts.get(status) ?? 0) + 1);
+  }
+  const labels: Array<[FulfillmentStatus, string]> = [
+    ["received", "recibido"],
+    ["in_progress", "en proceso"],
+    ["ready", "listo"],
+  ];
+  const stateLabel = labels
+    .flatMap(([status, label]) => {
+      const count = counts.get(status) ?? 0;
+      return count ? [`${count} ${label}${count === 1 ? "" : "s"}`] : [];
+    })
+    .join(" · ");
+  return `${items.length} producto${items.length === 1 ? "" : "s"}${stateLabel ? ` · ${stateLabel}` : ""}`;
+}
+
+function itemTypeLabel(item: AdminViewItem): string | null {
+  if (item.product_type === "service") return "Servicio";
+  if (item.product_type === "product") return "Producto";
+  return null;
+}
+
 interface PerPersonFulfillmentCardProps {
   devices: AdminViewDevice[];
   /** All order lines — filtered per device below (added_by_device_id). */
@@ -22,6 +51,14 @@ interface PerPersonFulfillmentCardProps {
   busyItemId: string | null;
   /** true while a whole-table action is running. */
   busyAll: boolean;
+  /** A paid or validating split group can no longer be moved backwards. */
+  lockedDeviceIds?: string[];
+  /** Neutral label for lines not yet attached to a person. */
+  sharedLabel?: string;
+  /** The order scope shown by the one-tap fulfillment action. */
+  allScopeLabel?: string;
+  /** Copy changes by context: table vs. self-service ticket. */
+  description?: string;
   onAdvanceDevice: (deviceId: string, status: FulfillmentStatus) => void;
   onAdvanceItem: (orderItemId: string, status: FulfillmentStatus) => void;
   onAdvanceAll: (status: FulfillmentStatus) => void;
@@ -46,13 +83,55 @@ export function PerPersonFulfillmentCard({
   busyDeviceId,
   busyItemId,
   busyAll,
+  lockedDeviceIds = [],
+  sharedLabel = "Pedido para la mesa",
+  allScopeLabel = "Toda la mesa",
+  description = "Avanza cada producto. Un cliente puede pagar su parte cuando TODOS sus productos estén listos.",
   onAdvanceDevice,
   onAdvanceItem,
   onAdvanceAll,
 }: PerPersonFulfillmentCardProps) {
+  const [expandedDeviceIds, setExpandedDeviceIds] = useState<string[]>([]);
+  const previousItemStates = useRef<Map<string, string> | null>(null);
   const hasDevices = devices.length > 0;
   const allReady =
-    hasDevices && devices.every((d) => d.fulfillment_status === "ready");
+    items.length > 0 &&
+    items.every((item) => (item.fulfillment_status ?? "received") === "ready");
+  const actionsLocked =
+    busyAll || busyDeviceId !== null || busyItemId !== null;
+  const hasPaymentLockedDevice = lockedDeviceIds.length > 0;
+  const sharedItems = items.filter((item) => !item.added_by_device_id);
+
+  function toggleDevice(deviceId: string) {
+    setExpandedDeviceIds((current) =>
+      current.includes(deviceId)
+        ? current.filter((id) => id !== deviceId)
+        : [...current, deviceId],
+    );
+  }
+
+  // New lines and status updates open their exact accordion group. A staff
+  // member sees what just arrived without sacrificing the compact mobile view.
+  useEffect(() => {
+    const nextStates = new Map(
+      items.map((item) => [item.id, item.fulfillment_status ?? "received"]),
+    );
+    const previous = previousItemStates.current;
+    const groupsToOpen = new Set<string>();
+
+    for (const item of items) {
+      const previousStatus = previous?.get(item.id);
+      const currentStatus = item.fulfillment_status ?? "received";
+      if (!previous ? currentStatus !== "ready" : previousStatus !== currentStatus) {
+        groupsToOpen.add(item.added_by_device_id ?? SHARED_ITEMS_KEY);
+      }
+    }
+
+    if (groupsToOpen.size > 0) {
+      setExpandedDeviceIds((current) => Array.from(new Set([...current, ...groupsToOpen])));
+    }
+    previousItemStates.current = nextStates;
+  }, [items]);
 
   return (
     <section className="rounded-xl border border-border bg-surface p-4">
@@ -63,24 +142,23 @@ export function PerPersonFulfillmentCard({
         </h2>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Avanza cada producto. Un cliente puede pagar su parte cuando TODOS sus
-        productos estén listos.
+        {description}
       </p>
 
       {/* Whole-table shortcut */}
-      {hasDevices && (
-        <div className="mt-3 flex items-center justify-between gap-2 rounded-lg bg-border-soft/50 px-3 py-2">
+      {items.length > 0 && (
+        <div className="mt-3 rounded-lg bg-border-soft/50 p-3">
           <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
             <Users className="h-3.5 w-3.5" />
-            Toda la mesa
+            {allScopeLabel}
           </span>
-          <div className="flex gap-2">
+          <div className="mt-3">
             {!allReady ? (
               <button
                 type="button"
                 onClick={() => onAdvanceAll("ready")}
-                disabled={busyAll}
-                className={adminActionButtonPrimary}
+                disabled={actionsLocked || hasPaymentLockedDevice}
+                className={`${adminActionButtonPrimary} w-full justify-center`}
               >
                 {busyAll ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -93,8 +171,8 @@ export function PerPersonFulfillmentCard({
               <button
                 type="button"
                 onClick={() => onAdvanceAll("in_progress")}
-                disabled={busyAll}
-                className={adminActionButtonSecondary}
+                disabled={actionsLocked || hasPaymentLockedDevice}
+                className={`${adminActionButtonSecondary} w-full justify-center`}
               >
                 <Undo2 className="h-4 w-4" />
                 Regresar todo
@@ -106,17 +184,103 @@ export function PerPersonFulfillmentCard({
 
       {/* Per-person groups, each expanded into its own product lines */}
       <div className="mt-3 space-y-3">
-        {!hasDevices && (
+        {!hasDevices && sharedItems.length === 0 && (
           <p className="rounded-lg bg-border-soft/40 px-3 py-3 text-center text-xs text-muted-foreground">
             Aún no hay clientes conectados. En cuanto alguien escanee el QR
             aparecerá aquí para avanzar su pedido.
           </p>
         )}
 
+        {sharedItems.length > 0 && (
+          <div className="rounded-xl border border-border px-3 py-2.5">
+            <button
+              type="button"
+              onClick={() => toggleDevice(SHARED_ITEMS_KEY)}
+              aria-expanded={expandedDeviceIds.includes(SHARED_ITEMS_KEY)}
+              aria-controls="shared-table-items"
+              className="flex w-full items-center gap-2 text-left"
+            >
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
+                <Users className="h-3.5 w-3.5" />
+              </span>
+              <span className="min-w-0 flex-1 text-sm font-semibold text-foreground">
+                {sharedLabel}
+              </span>
+              <ChevronDown
+                className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
+                  expandedDeviceIds.includes(SHARED_ITEMS_KEY) ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+            {!expandedDeviceIds.includes(SHARED_ITEMS_KEY) && (
+              <p className="mt-1.5 pl-9 text-xs text-muted-foreground">
+                {itemSummary(sharedItems)}
+              </p>
+            )}
+            {expandedDeviceIds.includes(SHARED_ITEMS_KEY) && (
+              <div id="shared-table-items" className="mt-2 space-y-1.5 border-t border-border-soft pt-2">
+                {sharedItems.map((item) => {
+                  const itemStatus = item.fulfillment_status ?? "received";
+                  const itemMeta = getFulfillmentStatusMeta(itemStatus);
+                  const itemBusy = busyItemId === item.id;
+                  return (
+                    <div key={item.id} className="flex flex-col items-stretch gap-2 rounded-lg bg-border-soft/30 px-2.5 py-2 sm:flex-row sm:items-center">
+                      <p className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
+                        {item.quantity}× {item.product_name}
+                      </p>
+                      {itemTypeLabel(item) && (
+                        <span className="rounded-full bg-border-soft/70 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+                          {itemTypeLabel(item)}
+                        </span>
+                      )}
+                      <StatusBadge tone={itemMeta.tone} label={itemMeta.label} compact />
+                      <div className="flex w-full gap-1.5 sm:w-auto">
+                        {itemStatus === "received" && (
+                          <button type="button" onClick={() => onAdvanceItem(item.id, "in_progress")} disabled={actionsLocked || itemBusy} className={`${adminActionButtonPrimary} w-full justify-center`}>
+                            {itemBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="h-3.5 w-3.5" />}
+                            Iniciar
+                          </button>
+                        )}
+                        {itemStatus === "in_progress" && (
+                          <>
+                            <button type="button" onClick={() => onAdvanceItem(item.id, "received")} disabled={actionsLocked || itemBusy} className={`${adminActionButtonSecondary} flex-1 justify-center sm:flex-none`} aria-label="Regresar a recibido">
+                              <Undo2 className="h-3.5 w-3.5" />
+                            </button>
+                            <button type="button" onClick={() => onAdvanceItem(item.id, "ready")} disabled={actionsLocked || itemBusy} className={`${adminActionButtonPrimary} flex-1 justify-center sm:flex-none`}>
+                              {itemBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackageCheck className="h-3.5 w-3.5" />}
+                              Listo
+                            </button>
+                          </>
+                        )}
+                        {itemStatus === "ready" && (
+                          <button type="button" onClick={() => onAdvanceItem(item.id, "in_progress")} disabled={actionsLocked || itemBusy} className={`${adminActionButtonSecondary} w-full justify-center`}>
+                            {itemBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Undo2 className="h-3.5 w-3.5" />}
+                            Regresar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {devices.map((device) => {
           const deviceStatus = device.fulfillment_status ?? "received";
           const deviceMeta = getFulfillmentStatusMeta(deviceStatus);
           const deviceBusy = busyDeviceId === device.id;
+          const devicePaymentLocked = lockedDeviceIds.includes(device.id);
+          const expanded = expandedDeviceIds.includes(device.id);
+          const deviceName = device.display_name?.trim() || "Cliente";
+          const initials = deviceName
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => part[0])
+            .join("")
+            .toUpperCase();
           const deviceItems = items.filter(
             (item) => item.added_by_device_id === device.id,
           );
@@ -126,25 +290,39 @@ export function PerPersonFulfillmentCard({
               key={device.id}
               className="rounded-xl border border-border px-3 py-2.5"
             >
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  aria-hidden
-                  className="h-6 w-6 shrink-0 rounded-full"
-                  style={{ backgroundColor: device.color_hex }}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-foreground">
-                    {device.display_name?.trim() || "Cliente"}
-                  </p>
-                </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggleDevice(device.id)}
+                  aria-expanded={expanded}
+                  aria-controls={`device-items-${device.id}`}
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                >
+                  <span
+                    aria-hidden
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                    style={{ backgroundColor: device.color_hex }}
+                  >
+                    {initials}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+                    <span className="sm:hidden">{deviceName.split(/\s+/)[0]}</span>
+                    <span className="hidden sm:inline">{deviceName}</span>
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
+                      expanded ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
                 <StatusBadge tone={deviceMeta.tone} label={deviceMeta.label} />
 
                 {deviceStatus === "ready" && (
                   <button
                     type="button"
                     onClick={() => onAdvanceDevice(device.id, "in_progress")}
-                    disabled={deviceBusy}
-                    className={adminActionButtonSecondary}
+                    disabled={actionsLocked || deviceBusy || devicePaymentLocked}
+                    className={`${adminActionButtonSecondary} w-full justify-center sm:w-auto`}
                   >
                     {deviceBusy ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -156,8 +334,18 @@ export function PerPersonFulfillmentCard({
                 )}
               </div>
 
+              {!expanded && (
+                <p className="mt-1.5 pl-9 text-xs text-muted-foreground">
+                  {itemSummary(deviceItems)}
+                </p>
+              )}
+
               {/* Product lines for this person */}
-              <div className="mt-2 space-y-1.5 border-t border-border-soft pt-2">
+              {expanded && (
+              <div
+                id={`device-items-${device.id}`}
+                className="mt-2 space-y-1.5 border-t border-border-soft pt-2"
+              >
                 {deviceItems.length === 0 && (
                   <p className="px-1 text-xs text-muted-foreground">
                     Sin productos asignados.
@@ -170,19 +358,24 @@ export function PerPersonFulfillmentCard({
                   return (
                     <div
                       key={item.id}
-                      className="flex flex-wrap items-center gap-2 rounded-lg bg-border-soft/30 px-2.5 py-1.5"
+                      className="flex flex-col items-stretch gap-2 rounded-lg bg-border-soft/30 px-2.5 py-2 sm:flex-row sm:items-center"
                     >
                       <p className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
                         {item.quantity}× {item.product_name}
                       </p>
+                      {itemTypeLabel(item) && (
+                        <span className="rounded-full bg-border-soft/70 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+                          {itemTypeLabel(item)}
+                        </span>
+                      )}
                       <StatusBadge tone={itemMeta.tone} label={itemMeta.label} compact />
-                      <div className="flex gap-1.5">
+                      <div className="flex w-full gap-1.5 sm:w-auto">
                         {itemStatus === "received" && (
                           <button
                             type="button"
                             onClick={() => onAdvanceItem(item.id, "in_progress")}
-                            disabled={itemBusy}
-                            className={adminActionButtonPrimary}
+                            disabled={actionsLocked || itemBusy || devicePaymentLocked}
+                            className={`${adminActionButtonPrimary} w-full justify-center`}
                           >
                             {itemBusy ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -197,8 +390,8 @@ export function PerPersonFulfillmentCard({
                             <button
                               type="button"
                               onClick={() => onAdvanceItem(item.id, "received")}
-                              disabled={itemBusy}
-                              className={adminActionButtonSecondary}
+                              disabled={actionsLocked || itemBusy || devicePaymentLocked}
+                              className={`${adminActionButtonSecondary} flex-1 justify-center sm:flex-none`}
                               aria-label="Regresar a recibido"
                             >
                               <Undo2 className="h-3.5 w-3.5" />
@@ -206,8 +399,8 @@ export function PerPersonFulfillmentCard({
                             <button
                               type="button"
                               onClick={() => onAdvanceItem(item.id, "ready")}
-                              disabled={itemBusy}
-                              className={adminActionButtonPrimary}
+                              disabled={actionsLocked || itemBusy || devicePaymentLocked}
+                              className={`${adminActionButtonPrimary} flex-1 justify-center sm:flex-none`}
                             >
                               {itemBusy ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -222,8 +415,8 @@ export function PerPersonFulfillmentCard({
                           <button
                             type="button"
                             onClick={() => onAdvanceItem(item.id, "in_progress")}
-                            disabled={itemBusy}
-                            className={adminActionButtonSecondary}
+                            disabled={actionsLocked || itemBusy || devicePaymentLocked}
+                            className={`${adminActionButtonSecondary} w-full justify-center`}
                           >
                             {itemBusy ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -238,6 +431,7 @@ export function PerPersonFulfillmentCard({
                   );
                 })}
               </div>
+              )}
             </div>
           );
         })}

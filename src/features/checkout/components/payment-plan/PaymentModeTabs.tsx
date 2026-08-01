@@ -58,7 +58,7 @@ export function PaymentModeTabs({
                 key={mode}
                 type="button"
                 onClick={() => onChange(mode)}
-                className={`flex min-h-[60px] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 px-2 py-3 text-center transition-colors ${
+                className={`flex min-h-15 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 px-2 py-3 text-center transition-colors ${
                   isActive
                     ? "border-current bg-current/5"
                     : "border-gray-200 text-gray-500 hover:border-gray-300"

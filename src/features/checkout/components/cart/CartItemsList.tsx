@@ -20,7 +20,7 @@ export function CartItemsList({
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
       <p className="mb-3 text-sm font-semibold text-gray-900">Tus artículos</p>
-      <div className="max-h-[420px] space-y-3 overflow-y-auto overscroll-contain pr-1 sm:max-h-[520px]">
+      <div className="max-h-105 space-y-3 overflow-y-auto overscroll-contain pr-1 sm:max-h-130">
         {items.map((item) => (
           <CartItemRow
             key={item.id}

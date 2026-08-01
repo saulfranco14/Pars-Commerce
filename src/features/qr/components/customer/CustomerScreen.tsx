@@ -83,7 +83,7 @@ export function CustomerScreen({
 
         {/* Neutral body — scrolls, padded to clear the fixed footer */}
         <main
-          className={`flex-1 px-5 pt-5 ${footer ? "pb-40" : "pb-10"}`}
+          className={`flex-1 px-5 pt-5 ${footer ? "pb-48" : "pb-10"}`}
         >
           {children}
         </main>

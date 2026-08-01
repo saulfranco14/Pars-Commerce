@@ -39,7 +39,7 @@ export function SplitModePicker({ mode, onChange }: SplitModePickerProps) {
             type="button"
             onClick={() => onChange(opt.value)}
             aria-pressed={active}
-            className={`flex w-full min-h-[56px] cursor-pointer flex-col justify-center rounded-2xl border-2 px-4 py-2.5 text-left transition-colors ${
+            className={`flex w-full min-h-14 cursor-pointer flex-col justify-center rounded-2xl border-2 px-4 py-2.5 text-left transition-colors ${
               active
                 ? "border-accent bg-accent/5"
                 : "border-border bg-surface hover:border-accent/40"

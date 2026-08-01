@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     await sendEmail({
       to: trimmedEmail,
-      subject: "Restablece tu contraseña - Pars Commerce",
+      subject: "Restablece tu contraseña - Tlaco",
       html: resetPasswordEmailTemplate(recoveryUrl),
     });
 

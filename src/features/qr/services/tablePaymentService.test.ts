@@ -4,6 +4,7 @@ import { createFakeSupabase } from "@/test/fakeSupabase";
 import {
   areAllSplitGroupsPaid,
   confirmPayment,
+  createPaymentIntent,
   payGroup,
 } from "@/features/qr/services/tablePaymentService";
 
@@ -155,9 +156,61 @@ describe("confirmPayment (T1.2)", () => {
     expect(res.ok && res.data.allPaid).toBe(false);
     // order NOT marked paid
     expect(db.rowsOf("orders")[0].status).toBe("pending_payment");
+    // But its aggregate is truthful for the business and the remaining diner.
+    expect(db.rowsOf("orders")[0].paid_total).toBe(50);
+    expect(db.rowsOf("orders")[0].balance_due).toBe(50);
     // but the confirmed group IS paid
     const g1 = db.rowsOf("order_split_groups").find((g) => g.id === "g1");
     expect(g1?.payment_status).toBe("paid");
+  });
+
+  it("refuses a payment intent for another device's split group", async () => {
+    const db = createFakeSupabase({
+      orders: [
+        {
+          id: "o1",
+          tenant_id: "t1",
+          status: "pending_payment",
+          fulfillment_status: "ready",
+          source: "qr_table",
+          total: 100,
+          balance_due: 100,
+        },
+      ],
+      order_devices: [
+        {
+          id: "d1",
+          order_id: "o1",
+          device_fingerprint: "fp-lorena",
+          fulfillment_status: "ready",
+        },
+      ],
+      order_split_groups: [
+        {
+          id: "g-selene",
+          order_id: "o1",
+          device_id: "d2",
+          total: 50,
+          balance_due: 50,
+          payment_status: "pending",
+        },
+      ],
+    });
+
+    const result = await createPaymentIntent(asClient(db), {
+      orderId: "o1",
+      groupId: "g-selene",
+      method: "efectivo",
+      fingerprint: "fp-lorena",
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: "forbidden",
+        message: "Esta parte de la cuenta pertenece a otra persona",
+      },
+    });
   });
 });
 
@@ -230,6 +283,8 @@ describe("payGroup (T1.3)", () => {
 
     expect(res.ok && res.data.allPaid).toBe(false);
     expect(db.rowsOf("orders")[0].status).toBe("pending_payment");
+    expect(db.rowsOf("orders")[0].paid_total).toBe(50);
+    expect(db.rowsOf("orders")[0].balance_due).toBe(50);
     const g1 = db.rowsOf("order_split_groups").find((g) => g.id === "g1");
     expect(g1?.payment_status).toBe("paid");
   });

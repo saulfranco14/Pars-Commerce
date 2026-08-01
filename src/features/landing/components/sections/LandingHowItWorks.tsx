@@ -10,13 +10,13 @@ export function LandingHowItWorks() {
             Tres pasos para comenzar
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-            Sin configuraciones complejas. En minutos tendras tu tienda en linea.
+            Sin configuraciones complejas. En minutos tendrás tu tienda en línea.
           </p>
         </div>
 
         <div className="relative mt-12 grid gap-8 sm:grid-cols-3">
           <div
-            className="absolute top-[60px] left-[16.67%] right-[16.67%] hidden border-t border-dashed border-border sm:block"
+            className="absolute top-15 left-[16.67%] right-[16.67%] hidden border-t border-dashed border-border sm:block"
             aria-hidden
           />
 

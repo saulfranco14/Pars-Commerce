@@ -1,12 +1,12 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
+
+import { TlacoLogo } from "@/components/brand/TlacoLogo";
 
 export function LandingFooter() {
   return (
     <footer>
       <div className="relative border-t border-border overflow-hidden py-20 sm:py-28">
-        <div className="absolute inset-0 to-transparent" aria-hidden />
         <div
           className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]"
           style={{
@@ -15,8 +15,10 @@ export function LandingFooter() {
           }}
           aria-hidden
         />
+        {/* Halo de acento detrás del cierre. Antes era un div con `blur-[80px]`
+            pero sin color de fondo, así que no pintaba nada. */}
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full blur-[80px]"
+          className="absolute top-1/2 left-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/10 blur-[80px]"
           aria-hidden
         />
 
@@ -25,16 +27,16 @@ export function LandingFooter() {
             <Sparkles className="h-6 w-6 text-accent" aria-hidden />
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Listo para digitalizar tu negocio?
+            ¿Listo para digitalizar tu negocio?
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
-            Unete a negocios que ya usan Pars Commerce para gestionar productos, recibir pedidos y
-            vender en linea.
+            Únete a los negocios que ya usan Tlaco para gestionar productos, recibir pedidos y
+            vender en línea.
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
               href="/registro"
-              className="group inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+              className="group inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
             >
               Crear cuenta gratis
               <ArrowRight
@@ -44,12 +46,12 @@ export function LandingFooter() {
             </Link>
             <Link
               href="/login"
-              className="inline-flex min-h-[48px] cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-6 py-3.5 text-base font-medium text-foreground transition-colors duration-200 hover:bg-border-soft/50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+              className="inline-flex min-h-12 cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-6 py-3.5 text-base font-medium text-foreground transition-colors duration-200 hover:bg-border-soft/50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
             >
               Ya tengo cuenta
             </Link>
           </div>
-          <p className="mt-6 text-sm text-muted-foreground">Sin tarjeta de credito.</p>
+          <p className="mt-6 text-sm text-muted-foreground">Sin tarjeta de crédito.</p>
         </div>
       </div>
 
@@ -57,19 +59,10 @@ export function LandingFooter() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="grid gap-8 sm:grid-cols-4">
             <div className="sm:col-span-2">
-              <div className="flex items-center gap-2">
-                <Image
-                  src="/android-chrome-192x192.png"
-                  alt="Pars Commerce"
-                  width={24}
-                  height={24}
-                  className="h-6 w-6 rounded-lg"
-                />
-                <span className="font-semibold text-foreground">Pars Commerce</span>
-              </div>
+              <TlacoLogo size="sm" />
               <p className="mt-2 max-w-xs text-sm text-muted-foreground leading-relaxed">
-                Plataforma de comercio para negocios. Gestiona productos, ordenes y ventas desde un
-                solo lugar.
+                Todo tu negocio en un solo lugar. Tu catálogo, tus pedidos, tus cobros y tu
+                dinero, desde tu celular.
               </p>
             </div>
 
@@ -77,8 +70,13 @@ export function LandingFooter() {
               <p className="text-sm font-semibold text-foreground">Producto</p>
               <ul className="mt-3 space-y-2">
                 <li>
-                  <a href="#funciones" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                    Funciones
+                  <a href="#plataforma" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                    Plataforma
+                  </a>
+                </li>
+                <li>
+                  <a href="#mesas-qr" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                    Mesas y QR
                   </a>
                 </li>
                 <li>
@@ -88,7 +86,7 @@ export function LandingFooter() {
                 </li>
                 <li>
                   <a href="#como-funciona" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                    Como funciona
+                    Cómo funciona
                   </a>
                 </li>
               </ul>
@@ -98,10 +96,14 @@ export function LandingFooter() {
               <p className="text-sm font-semibold text-foreground">Legal</p>
               <ul className="mt-3 space-y-2">
                 <li>
-                  <span className="text-sm text-muted-foreground">Terminos de servicio</span>
+                  <Link href="/terminos" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                    Términos de servicio
+                  </Link>
                 </li>
                 <li>
-                  <span className="text-sm text-muted-foreground">Privacidad</span>
+                  <Link href="/privacidad" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                    Aviso de Privacidad
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -109,7 +111,7 @@ export function LandingFooter() {
 
           <div className="mt-8 border-t border-border pt-6 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
             <span className="text-sm text-muted-foreground">
-              &copy; 2026 Pars Commerce. Todos los derechos reservados.
+              &copy; {new Date().getFullYear()} Tlaco. Todos los derechos reservados.
             </span>
             <span className="text-xs text-muted-foreground/60">
               Hecho con amor para negocios que quieren crecer

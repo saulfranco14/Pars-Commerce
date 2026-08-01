@@ -70,7 +70,7 @@ export function TableCtaBar({
               className="flex items-center gap-1 rounded-full bg-border-soft/60 px-2.5 py-1 text-xs font-medium text-foreground"
             >
               <span>{e.quantity}×</span>
-              <span className="max-w-[120px] truncate">{e.product_name}</span>
+              <span className="max-w-30 truncate">{e.product_name}</span>
               <button
                 type="button"
                 onClick={() => onDecrement(e.product_id)}
@@ -99,7 +99,7 @@ export function TableCtaBar({
               type="button"
               onClick={goToBill}
               disabled={navigating}
-              className={`inline-flex min-h-[54px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-4 text-base font-bold shadow-md transition-all active:scale-[0.99] disabled:opacity-70 ${
+              className={`inline-flex min-h-13.5 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-4 text-base font-bold shadow-md transition-all active:scale-[0.99] disabled:opacity-70 ${
                 hasSentItems && isReady
                   ? "bg-emerald-600 text-white shadow-emerald-600/25 hover:bg-emerald-700"
                   : "bg-accent text-accent-foreground shadow-accent/20 hover:bg-accent/90"
@@ -133,27 +133,12 @@ export function TableCtaBar({
             </p>
           )
         ) : (
-          <>
-            {orderId && (
-              <button
-                type="button"
-                onClick={goToBill}
-                disabled={navigating}
-                className="inline-flex h-[54px] w-[54px] shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-border bg-surface text-foreground transition-colors hover:bg-border-soft/40 disabled:opacity-70"
-                aria-label="Ver cuenta"
-              >
-                {navigating ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Receipt className="h-5 w-5" />
-                )}
-              </button>
-            )}
+          <div className="w-full space-y-2">
             <button
               type="button"
               onClick={onSend}
               disabled={saving}
-              className="relative inline-flex min-h-[54px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="relative inline-flex min-h-13.5 flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-[11px] font-bold text-background shadow">
                 {itemCount}
@@ -170,7 +155,18 @@ export function TableCtaBar({
                 </>
               )}
             </button>
-          </>
+            {orderId && (
+              <button
+                type="button"
+                onClick={goToBill}
+                disabled={navigating}
+                className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40 disabled:opacity-70"
+              >
+                {navigating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Receipt className="h-4 w-4" />}
+                Revisar detalle de compra
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

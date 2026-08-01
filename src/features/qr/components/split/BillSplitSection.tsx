@@ -45,8 +45,8 @@ export function BillSplitSection({
   error,
 }: BillSplitSectionProps) {
   return (
-    <section className="space-y-4 rounded-2xl border border-border bg-surface p-4 shadow-sm">
-      <div>
+    <section className="space-y-4 pb-1">
+      <div className="hidden">
         <h2 className="text-base font-bold text-foreground">Dividir cuenta</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">
           Elijan cómo repartir el total.

@@ -146,7 +146,7 @@ export function CloseTableDialog({
                     type="button"
                     onClick={() => setReason(r.value)}
                     aria-pressed={isSelected}
-                    className={`relative flex w-full min-h-[56px] cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-colors ${
+                    className={`relative flex w-full min-h-14 cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-colors ${
                       isSelected
                         ? "border-accent bg-accent/5"
                         : "border-border bg-surface hover:bg-border-soft/40"
@@ -202,7 +202,7 @@ export function CloseTableDialog({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex min-h-[48px] w-full cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium text-foreground hover:bg-border-soft/60 disabled:cursor-not-allowed disabled:opacity-50 md:max-w-[140px]"
+              className="flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium text-foreground hover:bg-border-soft/60 disabled:cursor-not-allowed disabled:opacity-50 md:max-w-35"
             >
               Cancelar
             </button>
@@ -210,7 +210,7 @@ export function CloseTableDialog({
               type="button"
               onClick={handleConfirm}
               disabled={!canSubmit}
-              className={`flex min-h-[48px] w-full cursor-pointer items-center justify-center rounded-xl px-4 py-3 text-base font-semibold text-white shadow-sm active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 md:max-w-[200px] ${
+              className={`flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xl px-4 py-3 text-base font-semibold text-white shadow-sm active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 md:max-w-50 ${
                 reason === "paid_outside_system"
                   ? "bg-emerald-600 hover:bg-emerald-700"
                   : "bg-red-600 hover:bg-red-700"

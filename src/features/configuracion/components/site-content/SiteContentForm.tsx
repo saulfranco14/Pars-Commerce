@@ -160,7 +160,7 @@ export function SiteContentForm({
               <button
                 type="button"
                 onClick={() => setExpanded(isExpanded ? null : id)}
-                className="flex w-full min-h-[44px] cursor-pointer items-center justify-between px-4 py-3 text-left text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
+                className="flex w-full min-h-11 cursor-pointer items-center justify-between px-4 py-3 text-left text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
               >
                 {label}
                 {isExpanded ? (
@@ -215,7 +215,7 @@ export function SiteContentForm({
           href={`/sitio/${tenantSlug}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-6 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          className="mt-6 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
         >
           <ExternalLink className="h-4 w-4" aria-hidden />
           Ver cómo se ve el sitio

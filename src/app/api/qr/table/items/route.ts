@@ -6,6 +6,7 @@ import {
   buildOrderItemRows,
   filterValidItems,
 } from "@/features/qr/helpers/buildOrderItemRows";
+import { validateOrderStock } from "@/features/inventory/services/orderStockValidationService";
 
 interface TableItemPayload {
   product_id: string;
@@ -86,6 +87,15 @@ export async function POST(request: Request) {
       { error: "No hay items válidos para agregar" },
       { status: 400 },
     );
+  }
+
+  const stockValidation = await validateOrderStock(
+    admin,
+    order.tenant_id,
+    validItems,
+  );
+  if (!stockValidation.ok) {
+    return NextResponse.json({ error: stockValidation.message }, { status: 409 });
   }
 
   const productIds = validItems.map((item) => item.product_id);

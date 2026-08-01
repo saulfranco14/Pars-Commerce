@@ -15,6 +15,8 @@ export interface BillItem {
   origin_table_label: string | null;
   /** Per-line preparation state: received | in_progress | ready. */
   fulfillment_status?: string;
+  /** Explicit owner selected in the manual item-assignment split mode. */
+  split_group_id?: string | null;
 }
 
 export interface BillDevice {

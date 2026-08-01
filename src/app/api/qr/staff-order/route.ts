@@ -15,6 +15,8 @@ interface RequestBody {
   customer_phone?: string;
   /** When present, append to this existing table order instead of a new one. */
   table_order_id?: string;
+  /** Person already connected to the table who owns these new lines. */
+  device_id?: string;
 }
 
 /**
@@ -65,6 +67,7 @@ export async function POST(request: Request) {
     customerName: body.customer_name ?? null,
     customerPhone: body.customer_phone ?? null,
     tableOrderId: body.table_order_id ?? null,
+    deviceId: body.device_id ?? null,
   });
 
   if (!result.ok) return serviceErrorToResponse(result.error);

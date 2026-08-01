@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 const baseInputClass =
-  "input-form block w-full min-h-[44px] rounded-xl border px-3 py-2.5 pr-12 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+  "input-form block w-full min-h-11 rounded-xl border px-3 py-2.5 pr-12 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
 
 interface PasswordInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {
@@ -50,7 +50,7 @@ export function PasswordInput({
         <button
           type="button"
           onClick={() => setShowPassword((prev) => !prev)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1.5 text-muted-foreground hover:bg-border-soft/60 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent/20"
+          className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer rounded p-1.5 text-muted-foreground hover:bg-border-soft/60 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent/20"
           aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
         >
           {showPassword ? (

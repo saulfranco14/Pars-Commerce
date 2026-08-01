@@ -83,7 +83,7 @@ export function SchemaFormFields<T extends FieldValues>({
           return (
             <label
               key={field.name}
-              className="flex min-h-[44px] cursor-pointer items-center gap-2"
+              className="flex min-h-11 cursor-pointer items-center gap-2"
             >
               <input
                 type="checkbox"
@@ -284,9 +284,7 @@ function SchemaSelectField<T extends FieldValues>({
         />
       </div>
       {(() => {
-        if (!field.hintForOption) return null;
-        const selectedOption = options.find((opt) => opt.value === ownValue) ?? null;
-        const hint = field.hintForOption(selectedOption);
+        const hint = options.find((opt) => opt.value === ownValue)?.hint;
         return hint ? (
           <p className="mt-1.5 text-[11px] text-muted-foreground">{hint}</p>
         ) : null;

@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
@@ -12,6 +12,7 @@ import {
   Home,
   Package,
   Scissors,
+  CalendarClock,
   ClipboardList,
   Banknote,
   Users,
@@ -52,7 +53,7 @@ function NavLink({
     <Link
       href={href}
       onClick={onNavigate}
-      className={`flex items-center gap-2.5 min-h-[44px] rounded-lg px-3 py-3 text-base font-medium transition-colors sm:min-h-0 sm:py-2 sm:text-sm ${
+      className={`flex items-center gap-2.5 min-h-11 rounded-lg px-3 py-3 text-base font-medium transition-colors sm:min-h-0 sm:py-2 sm:text-sm ${
         active
           ? "bg-border-soft text-foreground"
           : "text-muted hover:bg-border-soft/60 hover:text-foreground active:bg-border-soft"
@@ -118,19 +119,11 @@ function SidebarContent(props: SidebarContentProps) {
   return (
     <>
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-border-soft px-4">
-        <Link
-          href="/dashboard"
-          onClick={onNavigate}
-          className="flex items-center gap-2 font-semibold text-foreground"
-        >
-          <Image
-            src="/android-chrome-192x192.png"
-            alt="Pars Commerce"
-            width={32}
-            height={32}
-            className="h-8 w-8 shrink-0 rounded-lg"
-          />
-          <span>Pars Commerce</span>
+        {/* Sin `animated`: es una herramienta de uso diario y una caída de 1.5s
+            en cada carga del panel es ruido. `TlacoLogo` ya trae su propio
+            `sr-only` con el nombre, así que no lleva alt ni aria-label. */}
+        <Link href="/dashboard" onClick={onNavigate} className="flex items-center">
+          <TlacoLogo size="md" />
         </Link>
         {showCloseButton && onClose && (
           <button
@@ -155,7 +148,7 @@ function SidebarContent(props: SidebarContentProps) {
               setActiveTenantId(id);
               if (typeof window !== "undefined") {
                 try {
-                  localStorage.setItem("pars_activeTenantId", id);
+                  localStorage.setItem("tlaco_activeTenantId", id);
                 } catch {
                   /* incognito, quota, disabled */
                 }
@@ -175,7 +168,7 @@ function SidebarContent(props: SidebarContentProps) {
                 router.push(`/dashboard/${selected.tenant.slug}`);
               }
             }}
-            className="select-custom w-full min-h-[44px] rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:py-1.5"
+            className="select-custom w-full min-h-11 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:py-1.5"
           >
             {memberships.map((m) => (
               <option key={m.id} value={m.tenant_id}>
@@ -238,6 +231,16 @@ function SidebarContent(props: SidebarContentProps) {
               onNavigate={onNavigate}
             >
               Órdenes / Tickets
+            </NavLink>
+            {/* Junto a Órdenes: es la misma mercancía, vista por hora de
+                recolección en vez de por fecha de creación. */}
+            <NavLink
+              href={`${base}/agenda`}
+              active={pathname === `${base}/agenda`}
+              icon={CalendarClock}
+              onNavigate={onNavigate}
+            >
+              Agenda
             </NavLink>
             <NavLink
               href={`${base}/suscripciones`}
@@ -393,7 +396,7 @@ function SidebarContent(props: SidebarContentProps) {
           <button
             type="button"
             onClick={onPwaInstall}
-            className="flex w-full min-h-[44px] items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:bg-accent-hover"
+            className="flex w-full min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:bg-accent-hover"
           >
             <Download className="h-5 w-5" />
             Instalar app
@@ -403,7 +406,7 @@ function SidebarContent(props: SidebarContentProps) {
           <button
             type="button"
             onClick={onSignOut}
-            className="w-full min-h-[44px] rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-border-soft/60"
+            className="w-full min-h-11 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-border-soft/60"
           >
             Cerrar sesión
           </button>

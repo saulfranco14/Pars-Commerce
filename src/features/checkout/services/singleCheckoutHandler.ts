@@ -47,11 +47,11 @@ export async function handleSingleCheckout(
   const {
     total: buyerTotal,
     mpFee,
-    parsFee,
+    platformFee,
     perMonth,
   } = calcMsiBuyerTotal(subtotal, msiOption, recurringConfig.fee_absorbed_by);
   const mpFeeRounded = Math.round(mpFee * 100) / 100;
-  const parsFeeRounded = Math.round(parsFee * 100) / 100;
+  const platformFeeRounded = Math.round(platformFee * 100) / 100;
 
   const baseItems = cartItems.map((item) => {
     const product = mapCartItemProduct(item);
@@ -85,13 +85,13 @@ export async function handleSingleCheckout(
           },
         ]
       : []),
-    ...(parsFeeRounded > 0 && customerAbsorbsFee
+    ...(platformFeeRounded > 0 && customerAbsorbsFee
       ? [
           {
-            id: "pars-fee",
+            id: "tlaco-fee",
             title: TARIFA_DE_SERVICIO_LABEL,
             quantity: 1,
-            unit_price: parsFeeRounded,
+            unit_price: platformFeeRounded,
             currency_id: "MXN" as const,
           },
         ]

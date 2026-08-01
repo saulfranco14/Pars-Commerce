@@ -48,7 +48,7 @@ export function MergeRequestBanner(props: MergeRequestBannerProps) {
             type="button"
             onClick={props.onDecline}
             disabled={props.busy}
-            className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40 disabled:opacity-60"
+            className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40 disabled:opacity-60"
           >
             <X className="h-4 w-4" />
             Rechazar
@@ -57,7 +57,7 @@ export function MergeRequestBanner(props: MergeRequestBannerProps) {
             type="button"
             onClick={props.onApprove}
             disabled={props.busy}
-            className="inline-flex min-h-[48px] cursor-pointer items-center justify-center gap-1.5 rounded-2xl bg-accent px-4 text-sm font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99] disabled:opacity-60"
+            className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-1.5 rounded-2xl bg-accent px-4 text-sm font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99] disabled:opacity-60"
           >
             {props.busy ? (
               <Loader2 className="h-4 w-4 animate-spin" />

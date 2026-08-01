@@ -8,6 +8,7 @@ import { useAuthInitializer } from "@/hooks/useAuthInitializer";
 import { useAuthProfileAndTenants } from "@/hooks/useAuthProfileAndTenants";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -55,7 +56,7 @@ export default function DashboardLayout({
       setActiveTenantId(match.tenant_id);
       if (typeof window !== "undefined") {
         try {
-          localStorage.setItem("pars_activeTenantId", match.tenant_id);
+          localStorage.setItem("tlaco_activeTenantId", match.tenant_id);
         } catch {
           /* ignore */
         }
@@ -92,11 +93,8 @@ export default function DashboardLayout({
           className="no-print sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border-soft bg-surface px-4"
           style={{ paddingLeft: "max(1rem, env(safe-area-inset-left, 1rem))" }}
         >
-          <Link
-            href="/dashboard"
-            className="font-semibold text-foreground md:hidden"
-          >
-            Pars Commerce
+          <Link href="/dashboard" className="flex items-center md:hidden">
+            <TlacoLogo size="md" />
           </Link>
           <div className="flex-1" />
           <ThemeToggle />

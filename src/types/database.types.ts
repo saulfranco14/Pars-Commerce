@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
+  }
   public: {
     Tables: {
       commission_payments: {
@@ -1072,6 +1077,7 @@ export type Database = {
           customer_id: string | null
           customer_name: string | null
           customer_phone: string | null
+          device_id: string | null
           diner_count: number | null
           discount: number
           expires_at: string | null
@@ -1079,15 +1085,18 @@ export type Database = {
           id: string
           merge_group_id: string | null
           mp_preference_id: string | null
+          order_number: string | null
           order_type: string | null
           paid_at: string | null
           paid_total: number
+          parent_order_id: string | null
           payment_link: string | null
           payment_method: string | null
           payment_mode: string
           payment_plan_status: string
           promotion_id: string | null
           qr_code_id: string | null
+          scheduled_for: string | null
           source: string
           status: string
           subscription_id: string | null
@@ -1114,6 +1123,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          device_id?: string | null
           diner_count?: number | null
           discount?: number
           expires_at?: string | null
@@ -1121,15 +1131,18 @@ export type Database = {
           id?: string
           merge_group_id?: string | null
           mp_preference_id?: string | null
+          order_number?: string | null
           order_type?: string | null
           paid_at?: string | null
           paid_total?: number
+          parent_order_id?: string | null
           payment_link?: string | null
           payment_method?: string | null
           payment_mode?: string
           payment_plan_status?: string
           promotion_id?: string | null
           qr_code_id?: string | null
+          scheduled_for?: string | null
           source?: string
           status?: string
           subscription_id?: string | null
@@ -1156,6 +1169,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          device_id?: string | null
           diner_count?: number | null
           discount?: number
           expires_at?: string | null
@@ -1163,15 +1177,18 @@ export type Database = {
           id?: string
           merge_group_id?: string | null
           mp_preference_id?: string | null
+          order_number?: string | null
           order_type?: string | null
           paid_at?: string | null
           paid_total?: number
+          parent_order_id?: string | null
           payment_link?: string | null
           payment_method?: string | null
           payment_mode?: string
           payment_plan_status?: string
           promotion_id?: string | null
           qr_code_id?: string | null
+          scheduled_for?: string | null
           source?: string
           status?: string
           subscription_id?: string | null
@@ -1217,6 +1234,20 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_parent_order_id_fkey"
+            columns: ["parent_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
@@ -2378,6 +2409,81 @@ export type Database = {
           },
         ]
       }
+      tenant_devices: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          claimed_at: string | null
+          created_at: string
+          enroll_code: string
+          id: string
+          install_id: string
+          kind: string
+          last_seen_at: string | null
+          name: string | null
+          requested_at: string
+          screen_info: string | null
+          status: string
+          tenant_id: string
+          token_hash: string | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          claimed_at?: string | null
+          created_at?: string
+          enroll_code: string
+          id?: string
+          install_id: string
+          kind?: string
+          last_seen_at?: string | null
+          name?: string | null
+          requested_at?: string
+          screen_info?: string | null
+          status?: string
+          tenant_id: string
+          token_hash?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          claimed_at?: string | null
+          created_at?: string
+          enroll_code?: string
+          id?: string
+          install_id?: string
+          kind?: string
+          last_seen_at?: string | null
+          name?: string | null
+          requested_at?: string
+          screen_info?: string | null
+          status?: string
+          tenant_id?: string
+          token_hash?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_devices_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_devices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_memberships: {
         Row: {
           accepted_at: string | null
@@ -2640,11 +2746,13 @@ export type Database = {
       }
       tenants: {
         Row: {
+          accepting_orders: boolean
           banner_url: string | null
           business_type: string | null
           created_at: string
           description: string | null
           id: string
+          kiosk_enroll_key: string | null
           logo_url: string | null
           name: string
           public_store_enabled: boolean
@@ -2657,11 +2765,13 @@ export type Database = {
           whatsapp_phone: string | null
         }
         Insert: {
+          accepting_orders?: boolean
           banner_url?: string | null
           business_type?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          kiosk_enroll_key?: string | null
           logo_url?: string | null
           name: string
           public_store_enabled?: boolean
@@ -2674,11 +2784,13 @@ export type Database = {
           whatsapp_phone?: string | null
         }
         Update: {
+          accepting_orders?: boolean
           banner_url?: string | null
           business_type?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          kiosk_enroll_key?: string | null
           logo_url?: string | null
           name?: string
           public_store_enabled?: boolean
@@ -2895,4 +3007,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

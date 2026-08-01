@@ -8,6 +8,17 @@ import {
 
 import type { CustomerPayMethod } from "@/features/qr/components/payment/CustomerPayModal";
 
+/**
+ * Los campos `color` y `bg` se eliminaron: ningún componente los leía
+ * (`CustomerPayModal`, `PendingPaymentsCard` y `PaymentReceipt` pintan el ícono
+ * monocromo sobre un chip neutro) y documentaban una regla que la UI ya
+ * contradecía. Además `mercadopago` y `tarjeta` compartían `bg-blue-100`, que
+ * hoy es la banda del azul de marca: un chip de método se leería como acento.
+ *
+ * Un método de pago se identifica por ícono y etiqueta, no por tono. Si algún
+ * día hace falta color aquí, tiene que salir de `chartColors.ts` para no tener
+ * dos paletas de método de pago en el proyecto.
+ */
 export interface PaymentMethodMeta {
   /** Short label shown in headers and chips. */
   label: string;
@@ -16,10 +27,6 @@ export interface PaymentMethodMeta {
   /** One-line description for the method picker. */
   description: string;
   icon: LucideIcon;
-  /** Tailwind text class for the icon when displayed in a colored chip. */
-  color: string;
-  /** Tailwind background class for the colored chip surrounding the icon. */
-  bg: string;
 }
 
 export const PAYMENT_METHOD_META: Record<CustomerPayMethod, PaymentMethodMeta> =
@@ -29,32 +36,24 @@ export const PAYMENT_METHOD_META: Record<CustomerPayMethod, PaymentMethodMeta> =
       pickerLabel: "Mercado Pago",
       description: "Tarjeta, débito o SPEI desde la app",
       icon: Smartphone,
-      color: "text-blue-700",
-      bg: "bg-blue-100",
     },
     transferencia: {
       label: "Transferencia",
       pickerLabel: "Transferencia bancaria",
       description: "Te mostramos los datos de la cuenta",
       icon: Building2,
-      color: "text-violet-700",
-      bg: "bg-violet-100",
     },
     tarjeta: {
       label: "Tarjeta",
       pickerLabel: "Tarjeta",
       description: "El personal te cobra con terminal",
       icon: CreditCard,
-      color: "text-blue-700",
-      bg: "bg-blue-100",
     },
     efectivo: {
       label: "Efectivo",
       pickerLabel: "Efectivo",
       description: "Paga en caja al terminar",
       icon: Banknote,
-      color: "text-emerald-700",
-      bg: "bg-emerald-100",
     },
   };
 
