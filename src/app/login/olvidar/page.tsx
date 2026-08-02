@@ -5,8 +5,7 @@ import Link from "next/link";
 import * as yup from "yup";
 import { ArrowRight, Mail } from "lucide-react";
 import { BrandPanel } from "@/features/auth/components/BrandPanel";
-import { AuthBrandMark } from "@/components/brand/AuthBrandMark";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { MobileAuthHeader } from "@/features/auth/components/MobileAuthHeader";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 
 const forgotSchema = yup.object({
@@ -86,15 +85,10 @@ export default function OlvidarPage() {
           subtitle="Te enviamos un enlace para restablecer tu contraseña. Revisa tu bandeja de entrada y spam."
         />
         <div className="relative flex flex-1 items-center justify-center bg-background px-4 py-8">
-          <div className="absolute right-4 top-4 z-10">
-            <ThemeToggle />
-          </div>
-          <div className="w-full max-w-100 animate-auth-enter">
-            <div className="mb-8 flex justify-center lg:hidden">
-              <AuthBrandMark />
-            </div>
+          <MobileAuthHeader accountHref="/login" accountLabel="Iniciar sesión" />
+          <div className="w-full max-w-100 animate-auth-enter pt-20 lg:pt-0">
 
-            <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
+            <div className="px-2 text-center sm:px-4 lg:px-0">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
                 <Mail className="h-5 w-5" aria-hidden />
               </div>
@@ -127,17 +121,10 @@ export default function OlvidarPage() {
         animated
       />
       <div className="relative flex flex-1 items-center justify-center bg-background px-4 py-8">
-        <div className="absolute right-4 top-4 z-10">
-          <ThemeToggle />
-        </div>
-        <div className="relative w-full max-w-100 animate-auth-enter">
-          <div className="mb-8 flex justify-center lg:hidden">
-            {/* El estado de éxito (arriba) no anima: la moneda cayendo
-                distraería del "revisa tu correo". */}
-            <AuthBrandMark animated />
-          </div>
+        <MobileAuthHeader accountHref="/login" accountLabel="Iniciar sesión" />
+        <div className="relative w-full max-w-100 animate-auth-enter pt-20 lg:pt-0">
 
-          <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
+          <div className="px-2 sm:px-4 lg:px-0">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10">
               <Mail className="h-5 w-5 text-accent" aria-hidden />
             </div>
