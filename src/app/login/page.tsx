@@ -262,7 +262,7 @@ function LoginForm() {
               <AuthBrandMark animated />
             </div>
 
-            <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
+            <div className="px-2 sm:px-4 lg:px-0">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10">
                 <Lock className="h-5 w-5 text-accent" aria-hidden />
               </div>
@@ -482,13 +482,10 @@ function LoginForm() {
           }}
           aria-hidden
         />
-        <div className="relative w-full max-w-100 animate-auth-enter">
-          <div className="mb-8 flex justify-center lg:hidden">
-            <AuthBrandMark animated />
-          </div>
+        <div className="relative w-full max-w-100 animate-auth-enter pt-20 lg:pt-0">
 
           {/* Card */}
-          <div className="rounded-2xl border border-border bg-surface p-6  sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
+          <div className="px-2 sm:px-4 lg:px-0">
             <h1 className="text-xl font-bold text-foreground sm:text-2xl">
               Iniciar sesión
             </h1>
