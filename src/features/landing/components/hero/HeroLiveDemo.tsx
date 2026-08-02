@@ -1,6 +1,17 @@
 "use client";
 
-import { ArrowDown, Pause, Play, Smartphone, Store, Zap } from "lucide-react";
+import Link from "next/link";
+import {
+  ArrowDown,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Pause,
+  Play,
+  Smartphone,
+  Store,
+  Zap,
+} from "lucide-react";
 
 import { useHeroDemo } from "@/features/landing/hooks/useHeroDemo";
 import { HeroPhone } from "@/features/landing/components/hero/HeroPhone";
@@ -127,86 +138,65 @@ function MobileModuleExplorer({
   toggle: () => void;
 }) {
   const beat = HERO_BEATS[index];
+  const previousIndex = (index - 1 + HERO_BEATS.length) % HERO_BEATS.length;
+  const nextIndex = (index + 1) % HERO_BEATS.length;
+  const nextBeat = HERO_BEATS[nextIndex];
 
   return (
     <div className="mt-4 lg:hidden">
-      <div className="rounded-xl border border-border bg-surface-raised p-2.5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold text-foreground">Explora Tlaco</p>
-            <p className="mt-0.5 text-[10px] text-muted-foreground">
-              Toca una capacidad para verla funcionar
+      <div className="rounded-xl border border-border bg-surface-raised p-1.5 shadow-card">
+        <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem_2.75rem] items-center">
+          <button
+            type="button"
+            onClick={() => goTo(previousIndex)}
+            aria-label={`Ver ${HERO_BEATS[previousIndex].label}`}
+            className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent/10 hover:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+          >
+            <ChevronLeft className="h-5 w-5" aria-hidden />
+          </button>
+
+          <div key={beat.key} className="animate-fade-in-up min-w-0 px-1 text-center">
+            <p className="text-[10px] font-semibold text-muted-foreground">
+              Paso {index + 1} de {HERO_BEATS.length}
             </p>
+            <p className="truncate text-sm font-bold text-foreground">{beat.label}</p>
           </div>
+
+          <button
+            type="button"
+            onClick={() => goTo(nextIndex)}
+            aria-label={`Ver ${nextBeat.label}`}
+            className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent/10 hover:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+          >
+            <ChevronRight className="h-5 w-5" aria-hidden />
+          </button>
           <button
             type="button"
             onClick={toggle}
             aria-label={playing ? "Pausar demostración" : "Reproducir demostración"}
-            className="inline-flex min-h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+            className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border border-border bg-surface text-accent transition-colors hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
           >
             {playing ? (
-              <Pause className="h-3.5 w-3.5" aria-hidden />
+              <Pause className="h-4 w-4" aria-hidden />
             ) : (
-              <Play className="h-3.5 w-3.5" aria-hidden />
+              <Play className="h-4 w-4" aria-hidden />
             )}
-            {playing ? "Pausar" : "Reproducir"}
+            <span className="sr-only">{playing ? "Pausar" : "Reproducir"}</span>
           </button>
         </div>
 
-        <ol className="mt-3 grid grid-cols-4 gap-1.5">
-          {HERO_BEATS.map((candidate, candidateIndex) => {
-            const active = candidateIndex === index;
-            const seen = candidateIndex < index;
-            return (
-              <li key={candidate.key} className="min-w-0">
-                <button
-                  type="button"
-                  onClick={() => goTo(candidateIndex)}
-                  aria-current={active ? "step" : undefined}
-                  className={`group flex min-h-13 w-full cursor-pointer flex-col gap-1.5 rounded-lg border px-1 py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-                    active
-                      ? "border-accent bg-accent/10"
-                      : "border-transparent bg-surface hover:border-accent/30"
-                  }`}
-                >
-                  <span
-                    className={`h-1 w-full rounded-full transition-colors ${
-                      active
-                        ? "bg-accent"
-                        : seen
-                          ? "bg-accent/35"
-                          : "bg-border group-hover:bg-accent/40"
-                    }`}
-                    aria-hidden
-                  />
-                  <span className="flex min-w-0 flex-col items-center gap-1">
-                    <candidate.icon
-                      className={`h-3 w-3 shrink-0 transition-colors ${
-                        active ? "text-accent" : "text-muted-foreground"
-                      }`}
-                      aria-hidden
-                    />
-                    <span
-                      className={`text-center text-[9px] font-semibold leading-tight transition-colors ${
-                        active
-                          ? "text-foreground"
-                          : "text-muted-foreground group-hover:text-foreground"
-                      }`}
-                    >
-                      {candidate.label}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ol>
+        <div className="mt-1 h-1 overflow-hidden rounded-full bg-border" aria-hidden>
+          <span
+            className="block h-full rounded-full bg-accent transition-all duration-500 ease-out"
+            style={{ width: `${((index + 1) / HERO_BEATS.length) * 100}%` }}
+          />
+        </div>
       </div>
 
-      <p className="mt-1.5 text-[11px] text-muted-foreground" aria-live="polite">
+      <p className="mt-1.5 text-center text-[11px] text-muted-foreground" aria-live="polite">
         {playing
-          ? `Mostrando ${beat.label} · la demo avanzará sola`
-          : `Mostrando ${beat.label} · elige otro módulo o reanuda la demo`}
+          ? `Mostrando ${beat.label} · sigue con ${nextBeat.label}`
+          : `Mostrando ${beat.label} · usa las flechas para explorar`}
       </p>
     </div>
   );
@@ -277,6 +267,19 @@ export function HeroLiveDemo() {
       </div>
 
       {/* ── Rail de módulos — tocable ──────────────────────────── */}
+      <div className="mt-4 lg:hidden">
+        <Link
+          href="/registro"
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-bold text-accent-foreground shadow-card transition-transform active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+        >
+          Lleva este flujo a tu negocio
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </Link>
+        <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
+          Crea tu cuenta gratis y empieza en minutos
+        </p>
+      </div>
+
       <div className="mt-5 hidden rounded-xl border border-border bg-surface-raised p-2.5 lg:block">
         <div className="flex items-center justify-between gap-3">
           <div>
