@@ -14,6 +14,7 @@ import {
   advanceDeviceFulfillment,
   advanceItemFulfillment,
   advanceAllFulfillment,
+  takeTableOrder,
 } from "@/features/qr/services/tableAdminClientService";
 
 import type { AdminViewResponse } from "@/features/qr/services/tableAdminViewService";
@@ -47,6 +48,7 @@ export function useTableAdminLive(
   const [closing, setClosing] = useState(false);
   const [merging, setMerging] = useState(false);
   const [advancing, setAdvancing] = useState(false);
+  const [taking, setTaking] = useState(false);
   const [busyDeviceId, setBusyDeviceId] = useState<string | null>(null);
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -181,6 +183,24 @@ export function useTableAdminLive(
     }
   }
 
+  async function takeTable() {
+    if (!orderId) return false;
+    if (!acquireMutation()) return false;
+    setTaking(true);
+    setError(null);
+    try {
+      await takeTableOrder(orderId);
+      await swr.mutate();
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo tomar la mesa");
+      return false;
+    } finally {
+      setTaking(false);
+      releaseMutation();
+    }
+  }
+
   async function advanceDevice(
     deviceId: string,
     status: FulfillmentStatus,
@@ -250,6 +270,7 @@ export function useTableAdminLive(
     closing,
     merging,
     advancing,
+    taking,
     busyDeviceId,
     busyItemId,
     error,
@@ -260,6 +281,7 @@ export function useTableAdminLive(
     mergeTable,
     unlink,
     advanceFulfillment,
+    takeTable,
     advanceDevice,
     advanceItem,
     advanceAll,

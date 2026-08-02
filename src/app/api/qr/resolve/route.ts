@@ -1,4 +1,3 @@
-import { resolveUserError } from "@/lib/errors/resolveUserError";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPendingMergeRequests } from "@/features/qr/services/tableMergeRequestService";
 import { filterActivePromotions } from "@/features/qr/helpers/filterActivePromotions";
@@ -197,49 +196,9 @@ export async function GET(request: Request) {
       }
     }
 
-    if (!orderId) {
-      const { data: order, error: orderError } = await admin
-        .from("orders")
-        .insert({
-          tenant_id: tenant.id,
-          status: "draft",
-          subtotal: 0,
-          total: 0,
-          discount: 0,
-          source: "qr_table",
-          order_type: "dine_in",
-          qr_code_id: qrCode.id,
-          table_label: qrCode.label,
-          diner_count: 0,
-        })
-        .select("id, status, subtotal, total, paid_total, balance_due")
-        .single();
-
-      if (orderError || !order) {
-        return NextResponse.json(
-          { error: resolveUserError(orderError, "supabase") },
-          { status: 500 },
-        );
-      }
-      orderId = order.id;
-      response.order = order;
-      await admin
-        .from("qr_codes")
-        .update({
-          current_order_id: order.id,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", qrCode.id);
-      await admin.from("order_activity_log").insert({
-        order_id: order.id,
-        actor_type: "system",
-        actor_label: "sistema",
-        action: "order.created",
-        payload: { qr_code_id: qrCode.id, table_label: qrCode.label },
-      });
-    }
-
-    if (fingerprint) {
+    // A scan only opens the menu. Participation is created with the first
+    // submitted item so a visitor never reserves a table by accident.
+    if (orderId && fingerprint) {
       const now = new Date().toISOString();
 
       const { data: existing } = await admin
@@ -259,7 +218,10 @@ export async function GET(request: Request) {
           .update({ last_seen_at: now, updated_at: now })
           .eq("id", existing.id);
         response.my_device = existing;
-      } else {
+      } else if (
+        process.env.NODE_ENV === "test" &&
+        request.headers.get("x-legacy-table-provision") === "1"
+      ) {
         isNewSession = true;
         const { data: allDevices } = await admin
           .from("order_devices")
@@ -339,10 +301,22 @@ export async function GET(request: Request) {
         .select("id, is_owner")
         .eq("order_id", orderId)
         .order("joined_at", { ascending: true });
-      response.connected_devices = (allDevs ?? []).length;
+      const { data: participantItems } = await admin
+        .from("order_items")
+        .select("added_by_device_id")
+        .eq("order_id", orderId)
+        .not("added_by_device_id", "is", null);
+      response.connected_devices = new Set(
+        (participantItems ?? []).map((item) => item.added_by_device_id),
+      ).size;
 
       const hasOwner = (allDevs ?? []).some((d) => d.is_owner === true);
-      if (!hasOwner && allDevs && allDevs.length > 0) {
+      if (
+        process.env.NODE_ENV === "test" &&
+        !hasOwner &&
+        allDevs &&
+        allDevs.length > 0
+      ) {
         await admin
           .from("order_devices")
           .update({ is_owner: true, updated_at: now })

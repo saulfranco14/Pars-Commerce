@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
-import { ArrowLeft, Loader2, Lock, Search, ShoppingBag, User, Users } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, ChevronDown, Loader2, Lock, Search, ShoppingBag, User, Users } from "lucide-react";
 import Link from "next/link";
 import useSWR from "swr";
 
@@ -23,6 +23,7 @@ import type { AdminViewResponse } from "@/features/qr/services/tableAdminViewSer
 
 export default function NuevoPedidoStaffPage() {
   const params = useParams();
+  const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
   const searchParams = useSearchParams();
   const tableOrderId = searchParams.get("table_order_id") ?? undefined;
@@ -32,6 +33,7 @@ export default function NuevoPedidoStaffPage() {
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
+  const [recipientOpen, setRecipientOpen] = useState(true);
 
   const { data: products, isLoading } = useSWR<ProductListItem[]>(
     tenantId ? ["staff-order-products", tenantId] : null,
@@ -46,6 +48,14 @@ export default function NuevoPedidoStaffPage() {
     tenantId: tenantId ?? "",
     tableOrderId,
   });
+
+  useEffect(() => {
+    if (!tableOrderId || !builder.result?.linked_to_table) return;
+    const timer = window.setTimeout(() => {
+      router.replace(`/dashboard/${tenantSlug}/mesas/${tableOrderId}`);
+    }, 1_400);
+    return () => window.clearTimeout(timer);
+  }, [builder.result?.linked_to_table, router, tableOrderId, tenantSlug]);
 
   const categoryFilters = useMemo(() => {
     const byId = new Map<string, string>();
@@ -77,6 +87,10 @@ export default function NuevoPedidoStaffPage() {
   const { add } = builder;
   const tableDevices = tableView?.devices ?? [];
   const tableLabel = tableView?.order?.table_label ?? "Mesa";
+  const selectedDevice = tableDevices.find(
+    (device) => device.id === builder.assignedDeviceId,
+  );
+  const selectedRecipient = selectedDevice?.display_name?.trim() || "Toda la mesa";
   const addById = useCallback(
     (productId: string) => {
       const product = productById.get(productId);
@@ -112,6 +126,12 @@ export default function NuevoPedidoStaffPage() {
         qrToken={builder.result.qr_token}
         customerName={builder.customerName || undefined}
         businessName={activeTenant.name}
+        tableLabel={tableOrderId ? tableLabel : undefined}
+        returnToTableHref={
+          tableOrderId
+            ? `/dashboard/${tenantSlug}/mesas/${tableOrderId}`
+            : undefined
+        }
         onNewOrder={builder.reset}
       />
     );
@@ -144,7 +164,25 @@ export default function NuevoPedidoStaffPage() {
         <div className="grid gap-3 sm:grid-cols-2">
           {tableOrderId ? (
             <section className="rounded-2xl border border-border bg-surface p-3 sm:col-span-2">
-              <div className="flex items-center gap-2">
+              {!recipientOpen && (
+                <button
+                  type="button"
+                  onClick={() => setRecipientOpen(true)}
+                  className="flex min-h-11 w-full items-center gap-2 rounded-xl px-1 text-left transition-colors hover:bg-border-soft/35"
+                  aria-expanded={false}
+                >
+                  <Users className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Agregar para</span>
+                    <span className="block truncate text-sm font-semibold text-foreground">{selectedRecipient}</span>
+                  </span>
+                  <span className="text-xs font-semibold text-accent">Cambiar</span>
+                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                </button>
+              )}
+              {recipientOpen && (
+                <>
+                <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-muted-foreground" aria-hidden />
                 <div>
                   <h2 className="text-sm font-semibold text-foreground">¿Para quién es este pedido?</h2>
@@ -164,7 +202,10 @@ export default function NuevoPedidoStaffPage() {
                 <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <button
                     type="button"
-                    onClick={() => builder.setAssignedDeviceId(undefined)}
+                    onClick={() => {
+                      builder.setAssignedDeviceId(undefined);
+                      setRecipientOpen(false);
+                    }}
                     aria-pressed={!builder.assignedDeviceId}
                     className={`flex min-h-12 w-full items-center rounded-xl border px-3 text-left text-sm font-semibold transition-colors ${
                       !builder.assignedDeviceId
@@ -188,7 +229,10 @@ export default function NuevoPedidoStaffPage() {
                       <button
                         key={device.id}
                         type="button"
-                        onClick={() => builder.setAssignedDeviceId(device.id)}
+                        onClick={() => {
+                          builder.setAssignedDeviceId(device.id);
+                          setRecipientOpen(false);
+                        }}
                         aria-pressed={selected}
                         className={`flex min-h-12 w-full items-center gap-2 rounded-xl border px-3 text-left text-sm font-semibold transition-colors ${
                           selected
@@ -208,6 +252,8 @@ export default function NuevoPedidoStaffPage() {
                     );
                   })}
                 </div>
+              )}
+                </>
               )}
             </section>
           ) : (

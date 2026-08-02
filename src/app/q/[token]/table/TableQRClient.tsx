@@ -10,12 +10,14 @@ import { MergeRequestBanner } from "@/features/qr/components/table/MergeRequestB
 import { OrderTrackerCard } from "@/features/qr/components/order-tracker/OrderTrackerCard";
 import { OrderTrackerSkeleton } from "@/features/qr/components/order-tracker/OrderTrackerSkeleton";
 import { TableCtaBar } from "@/features/qr/components/table/TableCtaBar";
+import { TableResponsibilitySheet } from "@/features/qr/components/table/TableResponsibilitySheet";
 import { TableMenuSections } from "@/features/qr/components/menu-product/TableMenuSections";
 import { TableMenuHero } from "@/features/qr/components/menu-product/TableMenuHero";
 import { useDeviceNaming } from "@/features/qr/hooks/useDeviceNaming";
 import { useTableCart } from "@/features/qr/hooks/useTableCart";
 import { useCustomerMerge } from "@/features/qr/hooks/useCustomerMerge";
 import { useOrderTracker } from "@/features/qr/hooks/useOrderTracker";
+import { claimTableResponsibility } from "@/features/qr/services/tableClientService";
 import {
   clearReadySeen,
   hasSeenReady,
@@ -67,16 +69,43 @@ export function TableQRClient({
 }: TableQRClientProps) {
   const naming = useDeviceNaming({
     qrToken: token,
-    fingerprint,
     initialName: initialDeviceName,
   });
 
   const cart = useTableCart({
     menu,
-    orderId: order?.id ?? null,
     qrToken: token,
     fingerprint,
+    displayName: naming.deviceName,
   });
+  const [responsibilityOpen, setResponsibilityOpen] = useState(false);
+  const [claimingResponsibility, setClaimingResponsibility] = useState(false);
+  const [responsibilityError, setResponsibilityError] = useState<string | null>(null);
+
+  async function sendCart() {
+    const sent = await cart.send();
+    if (sent) {
+      await onSessionRefresh();
+      if (!isOwner) setResponsibilityOpen(true);
+    }
+  }
+
+  async function claimResponsibility() {
+    if (!order?.id) return;
+    setClaimingResponsibility(true);
+    setResponsibilityError(null);
+    try {
+      await claimTableResponsibility({ orderId: order.id, fingerprint });
+      await onSessionRefresh();
+      setResponsibilityOpen(false);
+    } catch (err) {
+      setResponsibilityError(
+        err instanceof Error ? err.message : "No se pudo guardar la responsabilidad",
+      );
+    } finally {
+      setClaimingResponsibility(false);
+    }
+  }
 
   // "Tu pedido" tracker: hydrates once when an order is already running and
   // re-reads after each send. It no longer needs its own polling loop — the
@@ -257,7 +286,7 @@ export function TableQRClient({
           total={cart.total}
           itemCount={cart.itemCount}
           saving={cart.saving}
-          onSend={cart.send}
+          onSend={sendCart}
           onDecrement={cart.decrement}
           orderTotal={tracker.total}
           hasSentItems={!!tracker.items && tracker.items.length > 0}
@@ -273,6 +302,17 @@ export function TableQRClient({
           onDone={cart.dismissConfirmation}
         />
       )}
+
+      <TableResponsibilitySheet
+        isOpen={responsibilityOpen && !isOwner}
+        tableLabel={qrCode.label}
+        loading={claimingResponsibility}
+        error={responsibilityError}
+        onClaim={() => void claimResponsibility()}
+        onDefer={() => {
+          if (!claimingResponsibility) setResponsibilityOpen(false);
+        }}
+      />
 
       {readyToast && (
         <Toast

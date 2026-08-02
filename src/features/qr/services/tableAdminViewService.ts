@@ -23,6 +23,8 @@ export interface AdminViewOrder {
   created_at: string;
   paid_at: string | null;
   cancel_reason: string | null;
+  assigned_to: string | null;
+  assigned_staff_name: string | null;
 }
 
 export interface AdminViewDevice {
@@ -104,7 +106,7 @@ export async function getTableAdminView(
   const { data: order } = await admin
     .from("orders")
     .select(
-      "id, tenant_id, status, fulfillment_status, subtotal, total, paid_total, balance_due, payment_method, created_at, paid_at, qr_code_id, table_label, cancel_reason, merge_group_id",
+      "id, tenant_id, status, fulfillment_status, subtotal, total, paid_total, balance_due, payment_method, created_at, paid_at, qr_code_id, table_label, cancel_reason, merge_group_id, assigned_to, assigned_user:profiles!orders_assigned_to_fkey(display_name, email)",
     )
     .eq("id", orderId)
     .single();
@@ -209,6 +211,18 @@ export async function getTableAdminView(
     fulfillment_status: item.fulfillment_status ?? "received",
   }));
 
+  // A scan without an actual order is not a diner. Keeping raw device rows for
+  // payment diagnostics above is useful, but the operational mesa UI must
+  // only show people who have products attributed to them.
+  const participantDeviceIds = new Set(
+    items
+      .map((item) => item.added_by_device_id)
+      .filter((id): id is string => !!id),
+  );
+  const participantDevices = (devices ?? []).filter((device) =>
+    participantDeviceIds.has(device.id),
+  );
+
   const groupById = new Map(
     (splitGroups ?? []).map((g) => [g.id, g] as const),
   );
@@ -258,9 +272,15 @@ export async function getTableAdminView(
         created_at: order.created_at,
         paid_at: order.paid_at,
         cancel_reason: order.cancel_reason,
+        assigned_to: order.assigned_to ?? null,
+        assigned_staff_name:
+          (order.assigned_user as { display_name?: string | null; email?: string | null } | null)
+            ?.display_name ??
+          (order.assigned_user as { email?: string | null } | null)?.email ??
+          null,
       },
       qr_code: qrCode as AdminViewResponse["qr_code"],
-      devices: (devices ?? []).map((d) => ({
+      devices: participantDevices.map((d) => ({
         ...d,
         fulfillment_status: d.fulfillment_status ?? "received",
       })),

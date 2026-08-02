@@ -3,11 +3,9 @@
 import { useState } from "react";
 
 import { setDeviceName } from "@/features/qr/helpers/deviceFingerprint";
-import { setMyDeviceName } from "@/features/qr/services/tableClientService";
 
 interface UseDeviceNamingParams {
   qrToken: string;
-  fingerprint: string;
   initialName: string | null;
 }
 
@@ -21,12 +19,11 @@ interface UseDeviceNamingResult {
 /**
  * Manages the customer's display_name lifecycle:
  *  - holds the active name in state
- *  - persists it to localStorage (so refresh inside the same order keeps it)
- *  - calls `/api/qr/table/device` to write it server-side
+ *  - persists it locally while the customer explores the menu
+ *  - the name reaches the server only with their first submitted product
  */
 export function useDeviceNaming({
   qrToken,
-  fingerprint,
   initialName,
 }: UseDeviceNamingParams): UseDeviceNamingResult {
   const [deviceName, setDeviceNameState] = useState<string | null>(initialName);
@@ -37,7 +34,6 @@ export function useDeviceNaming({
     setSubmitting(true);
     setError(null);
     try {
-      await setMyDeviceName({ qrToken, fingerprint, displayName: name });
       setDeviceName(qrToken, name);
       setDeviceNameState(name);
     } catch (err) {

@@ -255,7 +255,7 @@ export function PerPersonFulfillmentCard({
                 type="button"
                 onClick={() => onAdvanceAll("ready")}
                 disabled={actionsLocked || hasPaymentLockedDevice}
-                className={`${adminActionButtonPrimary} ml-auto min-h-11 shrink-0 px-3`}
+                className={`${adminActionButtonPrimary} ml-auto min-h-11 w-auto shrink-0 px-3`}
               >
                 {busyAll ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -270,11 +270,10 @@ export function PerPersonFulfillmentCard({
                 type="button"
                 onClick={() => onAdvanceAll("in_progress")}
                 disabled={actionsLocked || hasPaymentLockedDevice}
-                className={`${adminActionButtonSecondary} ml-auto min-h-11 shrink-0 px-3`}
+                className={`${adminActionButtonSecondary} ml-auto min-h-11 w-auto shrink-0 px-3`}
               >
                 <Undo2 className="h-4 w-4" />
-                <span className="sm:hidden">Regresar</span>
-                <span className="hidden sm:inline">Regresar todo</span>
+                <span>Deshacer todo</span>
               </button>
             )}
           </div>
@@ -389,21 +388,20 @@ export function PerPersonFulfillmentCard({
                 </p>
               )}
 
-              {deviceStatus === "ready" && (
-                <div className="mt-2 flex pl-9">
+              {deviceStatus === "ready" && expanded && (
+                <div className="mt-2 flex justify-end border-t border-border-soft pt-2">
                   <button
                     type="button"
                     onClick={() => onAdvanceDevice(device.id, "in_progress")}
                     disabled={actionsLocked || deviceBusy || devicePaymentLocked}
-                    className={`${adminActionButtonSecondary} min-h-11 shrink-0 px-3`}
+                    className={`${adminActionButtonSecondary} min-h-10 w-auto shrink-0 px-3`}
                   >
                     {deviceBusy ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Undo2 className="h-4 w-4" />
                     )}
-                    <span className="sm:hidden">Regresar</span>
-                    <span className="hidden sm:inline">Regresar todo</span>
+                    <span>Deshacer listo</span>
                   </button>
                 </div>
               )}

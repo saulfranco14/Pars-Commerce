@@ -13,6 +13,7 @@ import {
   ShoppingBag,
   Store,
   Unlink,
+  UserCheck,
   Users,
 } from "lucide-react";
 
@@ -20,7 +21,10 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
 import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { adminActionButtonPrimary } from "@/components/admin/actionButtonClasses";
+import {
+  adminActionButtonPrimary,
+  adminActionButtonSecondary,
+} from "@/components/admin/actionButtonClasses";
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { QrPreview } from "@/features/qr/components/qr-create/QrPreview";
@@ -233,10 +237,36 @@ export function MesaDetailContent({
                 <span className="hidden sm:inline">Tomar pedido</span>
               </Link>
             )}
+            {!data?.order?.assigned_to && (
+              <button
+                type="button"
+                onClick={() => void live.takeTable()}
+                disabled={live.taking}
+                className={`${adminActionButtonSecondary} min-h-11 px-3 disabled:cursor-not-allowed disabled:opacity-60`}
+              >
+                <UserCheck className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {live.taking ? "Tomando..." : "Atender mesa"}
+                </span>
+              </button>
+            )}
             <ActionsMenu items={menuItems} aria-label="Más acciones de la mesa" />
           </div>
         )}
       </div>
+
+      {data?.order && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <UserCheck className="h-3.5 w-3.5" aria-hidden />
+          {data.order.assigned_staff_name ? (
+            <span>
+              Atiende: <strong className="font-semibold text-foreground">{data.order.assigned_staff_name}</strong>
+            </span>
+          ) : (
+            <span>Sin persona asignada para atender esta mesa.</span>
+          )}
+        </div>
+      )}
 
       {!isOrderClosed && showQr && (
         <QrPreview

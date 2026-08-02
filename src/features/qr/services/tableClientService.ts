@@ -88,23 +88,6 @@ function fingerprintHeader(fingerprint: string): HeadersInit {
   return { "x-fingerprint-id": fingerprint };
 }
 
-/* ---------- Device naming ---------- */
-
-export async function setMyDeviceName(payload: {
-  qrToken: string;
-  fingerprint: string;
-  displayName: string;
-}) {
-  return apiFetch("/api/qr/table/device", {
-    method: "PATCH",
-    headers: fingerprintHeader(payload.fingerprint),
-    body: JSON.stringify({
-      qr_token: payload.qrToken,
-      display_name: payload.displayName,
-    }),
-  });
-}
-
 /* ---------- Sending items to the business/staff ---------- */
 
 export interface SendItemsItem {
@@ -113,20 +96,31 @@ export interface SendItemsItem {
 }
 
 export async function sendItems(payload: {
-  orderId: string;
   qrToken: string;
   fingerprint: string;
+  displayName: string;
   items: SendItemsItem[];
 }) {
   return apiFetch("/api/qr/table/items", {
     method: "POST",
     headers: fingerprintHeader(payload.fingerprint),
     body: JSON.stringify({
-      order_id: payload.orderId,
       qr_token: payload.qrToken,
+      display_name: payload.displayName,
       items: payload.items,
     }),
   });
+}
+
+/** Explicitly become the customer responsible for account-level actions. */
+export async function claimTableResponsibility(payload: {
+  orderId: string;
+  fingerprint: string;
+}) {
+  return apiFetch(
+    `/api/qr/table/${encodeURIComponent(payload.orderId)}/owner`,
+    { method: "POST", headers: fingerprintHeader(payload.fingerprint) },
+  );
 }
 
 /* ---------- Split bill ---------- */

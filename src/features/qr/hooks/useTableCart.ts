@@ -8,9 +8,9 @@ import type { CartEntry, MenuItem } from "@/features/qr/interfaces/tableCart";
 
 interface UseTableCartParams {
   menu: MenuItem[];
-  orderId: string | null;
   qrToken: string;
   fingerprint: string;
+  displayName: string | null;
 }
 
 interface UseTableCartResult {
@@ -25,7 +25,7 @@ interface UseTableCartResult {
   addMany: (productId: string, qty: number) => void;
   decrement: (productId: string) => void;
   remove: (productId: string) => void;
-  send: () => Promise<void>;
+  send: () => Promise<boolean>;
   dismissConfirmation: () => void;
 }
 
@@ -36,9 +36,9 @@ interface UseTableCartResult {
  */
 export function useTableCart({
   menu,
-  orderId,
   qrToken,
   fingerprint,
+  displayName,
 }: UseTableCartParams): UseTableCartResult {
   const [entries, setEntries] = useState<CartEntry[]>([]);
   const [saving, setSaving] = useState(false);
@@ -108,14 +108,14 @@ export function useTableCart({
   }
 
   async function send() {
-    if (!orderId || entries.length === 0) return;
+    if (!displayName || entries.length === 0) return false;
     setSaving(true);
     setError(null);
     try {
       await sendItems({
-        orderId,
         qrToken,
         fingerprint,
+        displayName,
         items: entries.map((e) => ({
           product_id: e.product_id,
           quantity: e.quantity,
@@ -123,8 +123,10 @@ export function useTableCart({
       });
       setEntries([]);
       setConfirmation(true);
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo enviar el pedido");
+      return false;
     } finally {
       setSaving(false);
     }
