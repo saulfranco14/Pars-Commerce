@@ -14,7 +14,7 @@ export function MobileAuthHeader({
   accountLabel,
 }: MobileAuthHeaderProps) {
   return (
-    <header className="absolute inset-x-0 top-0 z-10 flex min-h-16 items-center justify-between px-4 lg:hidden">
+    <header className="fixed inset-x-0 top-0 z-40 flex min-h-16 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur-md lg:hidden">
       <Link
         href="/"
         aria-label="Volver al inicio"

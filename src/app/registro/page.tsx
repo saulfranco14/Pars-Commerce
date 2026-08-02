@@ -61,7 +61,7 @@ function SuccessMessage({
   onClose: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 text-center">
+    <div className="px-2 text-center sm:px-4 lg:px-0">
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
         <Mail className="h-8 w-8 text-emerald-500" aria-hidden />
       </div>
@@ -202,7 +202,7 @@ export default function RegistroPage() {
           aria-hidden
         />
         <div className="relative w-full max-w-sm animate-auth-enter pb-8 pt-20 sm:pb-0 lg:pt-0">
-          <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
+          <div className="px-2 sm:px-4 lg:px-0">
             <h1 className="text-xl font-bold text-foreground sm:text-2xl">
               Crear cuenta
             </h1>

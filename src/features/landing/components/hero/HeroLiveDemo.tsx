@@ -115,6 +115,103 @@ function PanelEcho({ beat }: { beat: HeroBeat }) {
   );
 }
 
+function MobileModuleExplorer({
+  index,
+  playing,
+  goTo,
+  toggle,
+}: {
+  index: number;
+  playing: boolean;
+  goTo: (index: number) => void;
+  toggle: () => void;
+}) {
+  const beat = HERO_BEATS[index];
+
+  return (
+    <div className="mt-4 lg:hidden">
+      <div className="rounded-xl border border-border bg-surface-raised p-2.5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold text-foreground">Explora Tlaco</p>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">
+              Toca una capacidad para verla funcionar
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={playing ? "Pausar demostración" : "Reproducir demostración"}
+            className="inline-flex min-h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+          >
+            {playing ? (
+              <Pause className="h-3.5 w-3.5" aria-hidden />
+            ) : (
+              <Play className="h-3.5 w-3.5" aria-hidden />
+            )}
+            {playing ? "Pausar" : "Reproducir"}
+          </button>
+        </div>
+
+        <ol className="mt-3 grid grid-cols-4 gap-1.5">
+          {HERO_BEATS.map((candidate, candidateIndex) => {
+            const active = candidateIndex === index;
+            const seen = candidateIndex < index;
+            return (
+              <li key={candidate.key} className="min-w-0">
+                <button
+                  type="button"
+                  onClick={() => goTo(candidateIndex)}
+                  aria-current={active ? "step" : undefined}
+                  className={`group flex min-h-13 w-full cursor-pointer flex-col gap-1.5 rounded-lg border px-1 py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                    active
+                      ? "border-accent bg-accent/10"
+                      : "border-transparent bg-surface hover:border-accent/30"
+                  }`}
+                >
+                  <span
+                    className={`h-1 w-full rounded-full transition-colors ${
+                      active
+                        ? "bg-accent"
+                        : seen
+                          ? "bg-accent/35"
+                          : "bg-border group-hover:bg-accent/40"
+                    }`}
+                    aria-hidden
+                  />
+                  <span className="flex min-w-0 flex-col items-center gap-1">
+                    <candidate.icon
+                      className={`h-3 w-3 shrink-0 transition-colors ${
+                        active ? "text-accent" : "text-muted-foreground"
+                      }`}
+                      aria-hidden
+                    />
+                    <span
+                      className={`text-center text-[9px] font-semibold leading-tight transition-colors ${
+                        active
+                          ? "text-foreground"
+                          : "text-muted-foreground group-hover:text-foreground"
+                      }`}
+                    >
+                      {candidate.label}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+
+      <p className="mt-1.5 text-[11px] text-muted-foreground" aria-live="polite">
+        {playing
+          ? `Mostrando ${beat.label} · la demo avanzará sola`
+          : `Mostrando ${beat.label} · elige otro módulo o reanuda la demo`}
+      </p>
+    </div>
+  );
+}
+
 export function HeroLiveDemo() {
   const { index, playing, containerRef, goTo, toggle } = useHeroDemo();
   const beat = HERO_BEATS[index];
@@ -137,6 +234,13 @@ export function HeroLiveDemo() {
       </div>
 
       {/* ── Dispositivos ───────────────────────────────────────── */}
+      <MobileModuleExplorer
+        index={index}
+        playing={playing}
+        goTo={goTo}
+        toggle={toggle}
+      />
+
       <div className="mt-3 flex flex-col items-center lg:mt-4 lg:flex-row lg:items-start lg:gap-0">
         <div className="shrink-0">
           <DeviceLabel
@@ -173,7 +277,7 @@ export function HeroLiveDemo() {
       </div>
 
       {/* ── Rail de módulos — tocable ──────────────────────────── */}
-      <div className="mt-5 rounded-xl border border-border bg-surface-raised p-2.5">
+      <div className="mt-5 hidden rounded-xl border border-border bg-surface-raised p-2.5 lg:block">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-bold text-foreground">Explora Tlaco</p>
@@ -247,7 +351,7 @@ export function HeroLiveDemo() {
         </ol>
       </div>
 
-      <p className="mt-1.5 text-[11px] text-muted-foreground" aria-live="polite">
+      <p className="mt-1.5 hidden text-[11px] text-muted-foreground lg:block" aria-live="polite">
         {playing
           ? "Recorriendo la plataforma — toca un módulo para explorarlo tú"
           : "En pausa — toca otro módulo o dale play para seguir"}

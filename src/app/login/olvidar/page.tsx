@@ -88,7 +88,7 @@ export default function OlvidarPage() {
           <MobileAuthHeader accountHref="/login" accountLabel="Iniciar sesión" />
           <div className="w-full max-w-100 animate-auth-enter pt-20 lg:pt-0">
 
-            <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
+            <div className="px-2 text-center sm:px-4 lg:px-0">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
                 <Mail className="h-5 w-5" aria-hidden />
               </div>
@@ -124,7 +124,7 @@ export default function OlvidarPage() {
         <MobileAuthHeader accountHref="/login" accountLabel="Iniciar sesión" />
         <div className="relative w-full max-w-100 animate-auth-enter pt-20 lg:pt-0">
 
-          <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
+          <div className="px-2 sm:px-4 lg:px-0">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10">
               <Mail className="h-5 w-5 text-accent" aria-hidden />
             </div>
