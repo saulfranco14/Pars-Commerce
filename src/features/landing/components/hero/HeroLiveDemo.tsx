@@ -173,36 +173,45 @@ export function HeroLiveDemo() {
       </div>
 
       {/* ── Rail de módulos — tocable ──────────────────────────── */}
-      <div className="mt-5 flex items-start gap-2">
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={playing ? "Pausar demostración" : "Reproducir demostración"}
-          className="mt-1 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-surface text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
-        >
-          {playing ? (
-            <Pause className="h-3.5 w-3.5" aria-hidden />
-          ) : (
-            <Play className="h-3.5 w-3.5" aria-hidden />
-          )}
-        </button>
+      <div className="mt-5 rounded-xl border border-border bg-surface-raised p-2.5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold text-foreground">Explora Tlaco</p>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">
+              Toca una capacidad para verla funcionar
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={playing ? "Pausar demostración" : "Reproducir demostración"}
+            className="inline-flex min-h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+          >
+            {playing ? (
+              <Pause className="h-3.5 w-3.5" aria-hidden />
+            ) : (
+              <Play className="h-3.5 w-3.5" aria-hidden />
+            )}
+            {playing ? "Pausar" : "Reproducir"}
+          </button>
+        </div>
 
-        {/* 7 módulos no caben cómodos en móvil: ahí el rail hace scroll y cada
-            chip conserva ancho legible; desde `sm` se reparten al ancho total. */}
-        <ol className="flex flex-1 items-stretch gap-1.5 overflow-x-auto pb-1 sm:overflow-visible">
+        {/* Todas las capacidades quedan visibles y son objetivos táctiles grandes. */}
+        <ol className="mt-3 grid grid-cols-4 gap-1.5 sm:grid-cols-7">
           {HERO_BEATS.map((b, i) => {
             const active = i === index;
             const seen = i < index;
             return (
-              <li
-                key={b.key}
-                className="w-19 shrink-0 sm:w-auto sm:min-w-0 sm:flex-1"
-              >
+              <li key={b.key} className="min-w-0">
                 <button
                   type="button"
                   onClick={() => goTo(i)}
                   aria-current={active ? "step" : undefined}
-                  className="group flex w-full cursor-pointer flex-col gap-1.5 rounded-lg py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  className={`group flex min-h-13 w-full cursor-pointer flex-col gap-1.5 rounded-lg border px-1 py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                    active
+                      ? "border-accent bg-accent/10"
+                      : "border-transparent bg-surface hover:border-accent/30"
+                  }`}
                 >
                   <span
                     className={`h-1 w-full rounded-full transition-colors ${
@@ -214,7 +223,7 @@ export function HeroLiveDemo() {
                     }`}
                     aria-hidden
                   />
-                  <span className="flex min-w-0 items-center gap-1">
+                  <span className="flex min-w-0 flex-col items-center gap-1">
                     <b.icon
                       className={`h-3 w-3 shrink-0 transition-colors ${
                         active ? "text-accent" : "text-muted-foreground"
@@ -222,7 +231,7 @@ export function HeroLiveDemo() {
                       aria-hidden
                     />
                     <span
-                      className={`truncate text-[10px] font-semibold transition-colors ${
+                      className={`text-center text-[9px] font-semibold leading-tight transition-colors sm:text-[10px] ${
                         active
                           ? "text-foreground"
                           : "text-muted-foreground group-hover:text-foreground"
@@ -238,7 +247,7 @@ export function HeroLiveDemo() {
         </ol>
       </div>
 
-      <p className="mt-1.5 text-[11px] text-muted-foreground">
+      <p className="mt-1.5 text-[11px] text-muted-foreground" aria-live="polite">
         {playing
           ? "Recorriendo la plataforma — toca un módulo para explorarlo tú"
           : "En pausa — toca otro módulo o dale play para seguir"}

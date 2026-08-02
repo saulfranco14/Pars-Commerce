@@ -1,4 +1,5 @@
 import { QrCode as QrIcon } from "lucide-react";
+import { headers } from "next/headers";
 
 import { PaymentQRClient } from "./payment/PaymentQRClient";
 import { TableSession } from "./table/TableSession";
@@ -39,8 +40,27 @@ type ResolveResult =
   | { ok: true; data: QrResolveResponse }
   | { ok: false; status: number; message: string };
 
-async function getSession(token: string): Promise<ResolveResult> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+async function getRequestOrigin(): Promise<string> {
+  const requestHeaders = await headers();
+  const host =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+
+  if (host) {
+    const protocol =
+      requestHeaders.get("x-forwarded-proto") ??
+      (host.startsWith("localhost") || host.startsWith("127.0.0.1")
+        ? "http"
+        : "https");
+    return `${protocol}://${host}`;
+  }
+
+  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+}
+
+async function getSession(
+  token: string,
+  baseUrl: string,
+): Promise<ResolveResult> {
   let response: Response;
   try {
     response = await fetch(
@@ -77,8 +97,8 @@ async function getSession(token: string): Promise<ResolveResult> {
 
 async function getActivePaymentMethod(
   tenantId: string,
+  baseUrl: string,
 ): Promise<TenantPaymentMethod | null> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const response = await fetch(
     `${baseUrl}/api/tenant-payment-methods?tenant_id=${encodeURIComponent(tenantId)}`,
     { cache: "no-store" },
@@ -109,7 +129,8 @@ function QrUnavailable({ message }: { message: string }) {
 
 export default async function QrPage({ params }: QrPageProps) {
   const { token } = await params;
-  const result = await getSession(token);
+  const baseUrl = await getRequestOrigin();
+  const result = await getSession(token, baseUrl);
 
   if (!result.ok) {
     return <QrUnavailable message={result.message} />;
@@ -118,7 +139,10 @@ export default async function QrPage({ params }: QrPageProps) {
   const session = result.data;
 
   if (session.kind === "payment") {
-    const activePaymentMethod = await getActivePaymentMethod(session.tenant.id);
+    const activePaymentMethod = await getActivePaymentMethod(
+      session.tenant.id,
+      baseUrl,
+    );
     return (
       <PaymentQRClient
         token={token}

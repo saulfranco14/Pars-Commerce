@@ -14,6 +14,7 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { AuthBrandMark } from "@/components/brand/AuthBrandMark";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { MobileAuthHeader } from "@/features/auth/components/MobileAuthHeader";
 import { createClient } from "@/lib/supabase/client";
 import { safeNextPath } from "@/lib/auth/safeNextPath";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
@@ -470,9 +471,7 @@ function LoginForm() {
     <div className="flex min-h-screen">
       <BrandPanel animated />
       <div className="relative flex flex-1 items-center justify-center bg-background px-4 py-8">
-        <div className="absolute right-4 top-4 z-10">
-          <ThemeToggle />
-        </div>
+        <MobileAuthHeader accountHref="/registro" accountLabel="Crear cuenta" />
         {/* Mobile background decoration */}
         <div
           className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04] lg:hidden"

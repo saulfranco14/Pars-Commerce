@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import * as yup from "yup";
 import {
@@ -12,7 +11,7 @@ import {
 } from "lucide-react";
 import { AuthBrandMark } from "@/components/brand/AuthBrandMark";
 import { BrandPanel } from "@/features/auth/components/BrandPanel";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { MobileAuthHeader } from "@/features/auth/components/MobileAuthHeader";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { registroSchema } from "@/features/auth/validations/registroForm";
 import { BENEFITS } from "@/features/auth/constants/benefits";
@@ -96,7 +95,6 @@ function SuccessMessage({
 }
 
 export default function RegistroPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -169,9 +167,7 @@ export default function RegistroPage() {
       <div className="flex min-h-screen flex-col lg:flex-row">
         <BrandPanel {...REGISTRO_BRAND}>{registroPricingHighlight}</BrandPanel>
         <div className="relative flex min-h-dvh flex-1 flex-col items-center justify-center bg-background px-4 py-6 sm:py-8">
-          <div className="absolute right-4 top-4 z-20">
-            <ThemeToggle />
-          </div>
+          <MobileAuthHeader accountHref="/login" accountLabel="Ingresar" />
           <div
             className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04] lg:hidden"
             style={{
@@ -205,9 +201,7 @@ export default function RegistroPage() {
         {registroPricingHighlight}
       </BrandPanel>
       <div className="relative flex min-h-dvh flex-1 flex-col items-center justify-center bg-background px-4 py-6 sm:py-8">
-        <div className="absolute right-4 top-4 z-20">
-          <ThemeToggle />
-        </div>
+        <MobileAuthHeader accountHref="/login" accountLabel="Ingresar" />
         {/* Mobile subtle background decoration */}
         <div
           className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04] lg:hidden"
