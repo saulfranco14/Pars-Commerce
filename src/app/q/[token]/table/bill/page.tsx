@@ -91,8 +91,6 @@ export default function TableBillPage() {
     onMerged: refresh,
   });
 
-  // While a pending payment exists, check if the linked group has been
-  // approved by the admin. SWR is already polling so the UI updates by itself.
   const pendingGroupStatus = useMemo(() => {
     if (!paymentFlow.pending || !data) return null;
     const g = data.groups.find(
@@ -268,9 +266,7 @@ export default function TableBillPage() {
       devices={data.devices}
       groups={data.groups}
       currentDeviceId={data.my_device_id}
-      onPayGroup={(group) =>
-        paymentFlow.pickTarget({ kind: "group", group })
-      }
+      onPayGroup={(group) => paymentFlow.pickTarget({ kind: "group", group })}
       canPay={tableReady || myReady}
       scope={myGroup ? "personal" : "table"}
       canPayForOthers={data.i_am_owner === true && tableReady}

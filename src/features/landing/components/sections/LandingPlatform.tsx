@@ -174,7 +174,7 @@ export function LandingPlatform() {
               <ul className="mt-4 grid gap-2 sm:grid-cols-2">
                 {[
                   "Los 14 módulos incluidos desde el día uno",
-                  "Sin contratar terminal ni programador",
+                  "Sin contratar terminal",
                   "Solo pagas comisión cuando te pagan",
                   "Funciona en celular, tablet y computadora",
                 ].map((item) => (
