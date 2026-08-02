@@ -1,11 +1,21 @@
 export function buildPublicQrUrl(token: string): string {
-  // Prefer the configured public app URL so QR codes always point to production,
-  // regardless of where the dashboard is being viewed from.
   const envUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (envUrl) return `${envUrl.replace(/\/$/, "")}/q/${token}`;
+  const configuredUrl = envUrl?.replace(/\/$/, "");
+  const usesRetiredDomain = configuredUrl?.includes("pars-commerce.vercel.app");
+
+  // The retired deployment must never be embedded into newly downloaded QR
+  // images, even if an old environment variable has not been updated yet.
+  if (configuredUrl && !usesRetiredDomain) {
+    return `${configuredUrl}/q/${token}`;
+  }
+
+  const canonicalUrl = "https://tlaco.vercel.app";
 
   if (typeof window !== "undefined") {
-    return `${window.location.origin}/q/${token}`;
+    const currentOrigin = window.location.origin;
+    if (!currentOrigin.includes("localhost") && !currentOrigin.includes("127.0.0.1")) {
+      return `${currentOrigin}/q/${token}`;
+    }
   }
-  return `/q/${token}`;
+  return `${canonicalUrl}/q/${token}`;
 }
