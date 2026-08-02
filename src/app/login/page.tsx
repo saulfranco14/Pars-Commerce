@@ -482,10 +482,7 @@ function LoginForm() {
           }}
           aria-hidden
         />
-        <div className="relative w-full max-w-100 animate-auth-enter">
-          <div className="mb-8 flex justify-center lg:hidden">
-            <AuthBrandMark animated />
-          </div>
+        <div className="relative w-full max-w-100 animate-auth-enter pt-20 lg:pt-0">
 
           {/* Card */}
           <div className="rounded-2xl border border-border bg-surface p-6  sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">

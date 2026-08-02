@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -21,17 +20,18 @@ export function MobileAuthHeader({
         aria-label="Volver al inicio"
         className="inline-flex min-h-11 items-center rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
       >
-        <TlacoLogo size="sm" />
+        <TlacoLogo size="md" />
       </Link>
       <div className="flex items-center gap-1">
         <Link
           href={accountHref}
-          className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+          className="inline-flex min-h-11 items-center rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-foreground transition-colors hover:bg-surface-raised focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
         >
-          <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
           {accountLabel}
         </Link>
-        <ThemeToggle />
+        <div className="max-[359px]:hidden">
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );

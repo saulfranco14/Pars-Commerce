@@ -9,7 +9,6 @@ import {
   Sparkles,
   Mail,
 } from "lucide-react";
-import { AuthBrandMark } from "@/components/brand/AuthBrandMark";
 import { BrandPanel } from "@/features/auth/components/BrandPanel";
 import { MobileAuthHeader } from "@/features/auth/components/MobileAuthHeader";
 import { PasswordInput } from "@/components/ui/PasswordInput";
@@ -152,22 +151,13 @@ export default function RegistroPage() {
     }
   }
 
-  // La moneda solo cae en la carga inicial. Al enviar el formulario, el bloque
-  // de éxito remonta este logo y la animación volvería a dispararse justo
-  // cuando el usuario necesita leer "revisa tu correo".
-  const logoBlock = (
-    <div className="flex flex-col items-center">
-      <AuthBrandMark animated={!success} />
-    </div>
-  );
-
   // Mostrar mensaje de éxito
   if (success) {
     return (
       <div className="flex min-h-screen flex-col lg:flex-row">
         <BrandPanel {...REGISTRO_BRAND}>{registroPricingHighlight}</BrandPanel>
         <div className="relative flex min-h-dvh flex-1 flex-col items-center justify-center bg-background px-4 py-6 sm:py-8">
-          <MobileAuthHeader accountHref="/login" accountLabel="Ingresar" />
+          <MobileAuthHeader accountHref="/login" accountLabel="Iniciar sesión" />
           <div
             className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04] lg:hidden"
             style={{
@@ -177,8 +167,7 @@ export default function RegistroPage() {
             }}
             aria-hidden
           />
-          <div className="relative w-full max-w-md animate-auth-enter pb-8 sm:pb-0">
-            <div className="mb-8 lg:hidden">{logoBlock}</div>
+          <div className="relative w-full max-w-md animate-auth-enter pb-8 pt-20 sm:pb-0 lg:pt-0">
             <SuccessMessage
               email={registeredEmail}
               onClose={() => {
@@ -201,7 +190,7 @@ export default function RegistroPage() {
         {registroPricingHighlight}
       </BrandPanel>
       <div className="relative flex min-h-dvh flex-1 flex-col items-center justify-center bg-background px-4 py-6 sm:py-8">
-        <MobileAuthHeader accountHref="/login" accountLabel="Ingresar" />
+        <MobileAuthHeader accountHref="/login" accountLabel="Iniciar sesión" />
         {/* Mobile subtle background decoration */}
         <div
           className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04] lg:hidden"
@@ -212,8 +201,7 @@ export default function RegistroPage() {
           }}
           aria-hidden
         />
-        <div className="relative w-full max-w-sm animate-auth-enter pb-8 sm:pb-0">
-          <div className="mb-8 lg:hidden">{logoBlock}</div>
+        <div className="relative w-full max-w-sm animate-auth-enter pb-8 pt-20 sm:pb-0 lg:pt-0">
           <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
             <h1 className="text-xl font-bold text-foreground sm:text-2xl">
               Crear cuenta
