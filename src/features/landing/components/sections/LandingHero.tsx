@@ -1,117 +1,81 @@
-import { Fragment } from "react";
 import Link from "next/link";
-import { ArrowRight, Package } from "lucide-react";
+import { ArrowRight, Check, Sparkles } from "lucide-react";
 
-function DashboardMockup() {
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-card">
-      <div className="flex items-center gap-1.5 border-b border-border bg-surface-raised px-4 py-2.5">
-        <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" aria-hidden />
-        <span className="h-2.5 w-2.5 rounded-full bg-yellow-400/70" aria-hidden />
-        <span className="h-2.5 w-2.5 rounded-full bg-green-400/70" aria-hidden />
-        <span className="ml-3 h-5 flex-1 rounded-md bg-border/50" aria-hidden />
-      </div>
+import { HeroLiveDemo } from "@/features/landing/components/hero/HeroLiveDemo";
 
-      <div className="space-y-3 p-4">
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { label: "Ventas", value: "$12,450", color: "bg-accent/15" },
-            { label: "Órdenes", value: "84", color: "bg-emerald-500/15" },
-            { label: "Productos", value: "36", color: "bg-blue-500/15" },
-          ].map((metric) => (
-            <div key={metric.label} className={`rounded-lg ${metric.color} p-2.5`}>
-              <div className="text-[10px] text-muted-foreground">{metric.label}</div>
-              <div className="mt-0.5 text-sm font-bold text-foreground">{metric.value}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="rounded-lg border border-border bg-background p-3">
-          <div className="mb-2 text-[10px] font-medium text-muted-foreground">Ventas del mes</div>
-          <div className="flex h-16 items-end gap-1">
-            {[40, 65, 45, 80, 55, 90, 70, 95, 60, 85, 75, 100].map((height, index) => (
-              <div
-                key={index}
-                className="flex-1 rounded-t bg-accent/60"
-                style={{ height: `${height}%` }}
-                aria-hidden
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-lg border border-border">
-          <div className="grid grid-cols-3 gap-px bg-border text-[10px]">
-            {['Producto', 'Estado', 'Total'].map((heading) => (
-              <div key={heading} className="bg-surface-raised px-2 py-1.5 font-medium text-muted-foreground">
-                {heading}
-              </div>
-            ))}
-            {[
-              ["Venta de hoy", "Completado", "$899"],
-              ["Pedido QR", "En proceso", "$45"],
-              ["Servicio", "Pendiente", "$120"],
-            ].map(([name, status, total]) => (
-              <Fragment key={name}>
-                <div className="truncate bg-surface px-2 py-1.5 text-foreground">{name}</div>
-                <div className="bg-surface px-2 py-1.5 text-muted-foreground">{status}</div>
-                <div className="bg-surface px-2 py-1.5 font-medium text-foreground">{total}</div>
-              </Fragment>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
+/**
+ * La promesa explica la plataforma completa; la demostración permite verla.
+ * El hero no convierte Tlaco en un producto de QR: ese es solo uno de los
+ * módulos que el visitante puede explorar desde el mismo bloque.
+ */
 export function LandingHero() {
   return (
     <section className="relative overflow-hidden">
       <div
         className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04]"
         style={{
-          backgroundImage: "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
+          backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
           backgroundSize: "32px 32px",
         }}
         aria-hidden
       />
 
-      <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
-        <div className="items-center lg:grid lg:grid-cols-2 lg:gap-16">
-          <div className="mx-auto max-w-2xl text-center lg:mx-0 lg:text-left">
-            <div className="animate-fade-in-up inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3.5 py-1.5 text-sm font-medium text-accent">
-              <Package className="h-3.5 w-3.5" aria-hidden />
+      <div className="relative mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:py-20">
+        <div className="lg:grid lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start lg:gap-x-12">
+          <div className="mx-auto max-w-xl text-center lg:col-start-1 lg:row-start-1 lg:mx-0 lg:pt-4 lg:text-left">
+            <div className="animate-fade-in-up inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5 text-[13px] font-semibold text-accent">
+              <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden />
               Plataforma para comercios
             </div>
 
-            <h1 className="animate-fade-in-up animation-delay-100 mt-6 text-4xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-5xl md:text-6xl">
+            <h1 className="animate-fade-in-up animation-delay-100 mt-5 text-[2.25rem] font-bold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-[3.25rem]">
               Tu negocio, tu tienda.{" "}
               <span className="text-accent">Todo en un solo lugar.</span>
             </h1>
 
-            <p className="animate-fade-in-up animation-delay-200 mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl lg:mx-0">
-              Gestiona productos, órdenes y ventas. Genera tu sitio web y recibe pagos,
-              todo desde un solo panel diseñado para vender sin complicaciones.
+            <p className="animate-fade-in-up animation-delay-200 mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-muted-foreground sm:text-lg lg:mx-0">
+              Gestiona productos, ventas y pedidos. Cobra, crea tu sitio web y
+              conoce tu dinero desde un solo panel.
             </p>
 
-            <div className="animate-fade-in-up animation-delay-300 mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center lg:justify-start">
+            <div className="animate-fade-in-up animation-delay-300 mt-6">
               <Link
                 href="/registro"
-                className="group inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+                className="group inline-flex min-h-13 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background sm:w-auto"
               >
-                Crear cuenta gratis
-                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden />
+                Crear mi cuenta gratis
+                <ArrowRight
+                  className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                  aria-hidden
+                />
               </Link>
-              <Link
-                href="/login"
-                className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-6 py-3 text-base font-medium text-foreground transition-colors duration-200 hover:bg-border-soft/50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
-              >
-                Ya tengo cuenta
-              </Link>
+              <p className="mt-2.5 text-[13px] text-muted-foreground">
+                Sin tarjeta de crédito · Listo en 2 minutos
+              </p>
             </div>
+          </div>
 
-            <div className="animate-fade-in-up animation-delay-400 mt-10 flex items-center justify-center gap-3 lg:justify-start">
+          <div className="animate-fade-in-up animation-delay-400 mt-10 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0">
+            <HeroLiveDemo />
+          </div>
+
+          <div className="mx-auto max-w-xl lg:col-start-1 lg:row-start-2 lg:mx-0">
+            <ul className="mt-10 flex flex-col gap-2.5 lg:mt-8">
+              {[
+                "Vende por QR, en mesas, mostrador o desde tu sitio web",
+                "Ve cada pedido, cobro y cliente en el momento en que ocurre",
+                "Tu catálogo, equipo, créditos y dinero, conectados en Tlaco",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2.5">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/12 text-accent">
+                    <Check className="h-3 w-3" aria-hidden strokeWidth={3} />
+                  </span>
+                  <span className="text-sm leading-relaxed text-muted-foreground">{item}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-7 flex items-center gap-3">
               <div className="flex -space-x-2">
                 {["P", "M", "S", "L"].map((initial) => (
                   <div
@@ -126,14 +90,6 @@ export function LandingHero() {
                 <span className="font-semibold text-foreground">+50 negocios</span>{" "}
                 ya confían en Tlaco
               </p>
-            </div>
-          </div>
-
-          <div className="animate-fade-in-up animation-delay-300 mt-12 lg:mt-0">
-            <div className="mx-auto max-w-lg lg:max-w-none">
-              <div className="rotate-1 transition-transform duration-500 hover:rotate-0 lg:rotate-2">
-                <DashboardMockup />
-              </div>
             </div>
           </div>
         </div>
