@@ -261,6 +261,7 @@ export function TableQRClient({
           onDecrement={cart.decrement}
           orderTotal={tracker.total}
           hasSentItems={!!tracker.items && tracker.items.length > 0}
+          sentItems={tracker.items}
           isReady={tableFulfillment === "ready"}
         />
       }

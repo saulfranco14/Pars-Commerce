@@ -41,6 +41,103 @@ function itemTypeLabel(item: AdminViewItem): string | null {
   return null;
 }
 
+interface FulfillmentItemRowProps {
+  item: AdminViewItem;
+  actionsLocked: boolean;
+  itemBusy: boolean;
+  paymentLocked?: boolean;
+  onAdvanceItem: (orderItemId: string, status: FulfillmentStatus) => void;
+}
+
+/**
+ * A single, compact product action row. The status is information; only the
+ * next possible action is a button. Keeping both in the same visual row avoids
+ * turning every completed product into a full-width green block on mobile.
+ */
+function FulfillmentItemRow({
+  item,
+  actionsLocked,
+  itemBusy,
+  paymentLocked = false,
+  onAdvanceItem,
+}: FulfillmentItemRowProps) {
+  const itemStatus = item.fulfillment_status ?? "received";
+  const itemMeta = getFulfillmentStatusMeta(itemStatus);
+  const disabled = actionsLocked || itemBusy || paymentLocked;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg bg-border-soft/30 px-2.5 py-2">
+      <p className="min-w-0 basis-full truncate text-xs font-medium text-foreground sm:basis-auto sm:flex-1">
+        {item.quantity}× {item.product_name}
+      </p>
+      {itemTypeLabel(item) && (
+        <span className="rounded-full bg-border-soft/70 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+          {itemTypeLabel(item)}
+        </span>
+      )}
+      <StatusBadge tone={itemMeta.tone} label={itemMeta.label} compact />
+      <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        {itemStatus === "received" && (
+          <button
+            type="button"
+            onClick={() => onAdvanceItem(item.id, "in_progress")}
+            disabled={disabled}
+            className={`${adminActionButtonPrimary} min-h-11 shrink-0 px-3`}
+          >
+            {itemBusy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <ArrowRight className="h-3.5 w-3.5" />
+            )}
+            Iniciar
+          </button>
+        )}
+        {itemStatus === "in_progress" && (
+          <>
+            <button
+              type="button"
+              onClick={() => onAdvanceItem(item.id, "received")}
+              disabled={disabled}
+              className={`${adminActionButtonSecondary} min-h-11 min-w-11 px-0`}
+              aria-label="Regresar a recibido"
+            >
+              <Undo2 className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onAdvanceItem(item.id, "ready")}
+              disabled={disabled}
+              className={`${adminActionButtonPrimary} min-h-11 shrink-0 px-3`}
+            >
+              {itemBusy ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <PackageCheck className="h-3.5 w-3.5" />
+              )}
+              Listo
+            </button>
+          </>
+        )}
+        {itemStatus === "ready" && (
+          <button
+            type="button"
+            onClick={() => onAdvanceItem(item.id, "in_progress")}
+            disabled={disabled}
+            className={`${adminActionButtonSecondary} min-h-11 shrink-0 px-3`}
+          >
+            {itemBusy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Undo2 className="h-3.5 w-3.5" />
+            )}
+            Regresar
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface PerPersonFulfillmentCardProps {
   devices: AdminViewDevice[];
   /** All order lines — filtered per device below (added_by_device_id). */
@@ -148,34 +245,36 @@ export function PerPersonFulfillmentCard({
       {/* Whole-table shortcut */}
       {items.length > 0 && (
         <div className="mt-3 rounded-lg bg-border-soft/50 p-3">
-          <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Users className="h-3.5 w-3.5" />
-            {allScopeLabel}
-          </span>
-          <div className="mt-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <Users className="h-3.5 w-3.5" />
+              {allScopeLabel}
+            </span>
             {!allReady ? (
               <button
                 type="button"
                 onClick={() => onAdvanceAll("ready")}
                 disabled={actionsLocked || hasPaymentLockedDevice}
-                className={`${adminActionButtonPrimary} w-full justify-center`}
+                className={`${adminActionButtonPrimary} ml-auto min-h-11 shrink-0 px-3`}
               >
                 {busyAll ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <PackageCheck className="h-4 w-4" />
                 )}
-                Marcar todo listo
+                <span className="sm:hidden">Todo listo</span>
+                <span className="hidden sm:inline">Marcar todo listo</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => onAdvanceAll("in_progress")}
                 disabled={actionsLocked || hasPaymentLockedDevice}
-                className={`${adminActionButtonSecondary} w-full justify-center`}
+                className={`${adminActionButtonSecondary} ml-auto min-h-11 shrink-0 px-3`}
               >
                 <Undo2 className="h-4 w-4" />
-                Regresar todo
+                <span className="sm:hidden">Regresar</span>
+                <span className="hidden sm:inline">Regresar todo</span>
               </button>
             )}
           </div>
@@ -219,49 +318,15 @@ export function PerPersonFulfillmentCard({
             )}
             {expandedDeviceIds.includes(SHARED_ITEMS_KEY) && (
               <div id="shared-table-items" className="mt-2 space-y-1.5 border-t border-border-soft pt-2">
-                {sharedItems.map((item) => {
-                  const itemStatus = item.fulfillment_status ?? "received";
-                  const itemMeta = getFulfillmentStatusMeta(itemStatus);
-                  const itemBusy = busyItemId === item.id;
-                  return (
-                    <div key={item.id} className="flex flex-col items-stretch gap-2 rounded-lg bg-border-soft/30 px-2.5 py-2 sm:flex-row sm:items-center">
-                      <p className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
-                        {item.quantity}× {item.product_name}
-                      </p>
-                      {itemTypeLabel(item) && (
-                        <span className="rounded-full bg-border-soft/70 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
-                          {itemTypeLabel(item)}
-                        </span>
-                      )}
-                      <StatusBadge tone={itemMeta.tone} label={itemMeta.label} compact />
-                      <div className="flex w-full gap-1.5 sm:w-auto">
-                        {itemStatus === "received" && (
-                          <button type="button" onClick={() => onAdvanceItem(item.id, "in_progress")} disabled={actionsLocked || itemBusy} className={`${adminActionButtonPrimary} w-full justify-center`}>
-                            {itemBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="h-3.5 w-3.5" />}
-                            Iniciar
-                          </button>
-                        )}
-                        {itemStatus === "in_progress" && (
-                          <>
-                            <button type="button" onClick={() => onAdvanceItem(item.id, "received")} disabled={actionsLocked || itemBusy} className={`${adminActionButtonSecondary} flex-1 justify-center sm:flex-none`} aria-label="Regresar a recibido">
-                              <Undo2 className="h-3.5 w-3.5" />
-                            </button>
-                            <button type="button" onClick={() => onAdvanceItem(item.id, "ready")} disabled={actionsLocked || itemBusy} className={`${adminActionButtonPrimary} flex-1 justify-center sm:flex-none`}>
-                              {itemBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackageCheck className="h-3.5 w-3.5" />}
-                              Listo
-                            </button>
-                          </>
-                        )}
-                        {itemStatus === "ready" && (
-                          <button type="button" onClick={() => onAdvanceItem(item.id, "in_progress")} disabled={actionsLocked || itemBusy} className={`${adminActionButtonSecondary} w-full justify-center`}>
-                            {itemBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Undo2 className="h-3.5 w-3.5" />}
-                            Regresar
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                {sharedItems.map((item) => (
+                  <FulfillmentItemRow
+                    key={item.id}
+                    item={item}
+                    actionsLocked={actionsLocked}
+                    itemBusy={busyItemId === item.id}
+                    onAdvanceItem={onAdvanceItem}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -316,28 +381,31 @@ export function PerPersonFulfillmentCard({
                   />
                 </button>
                 <StatusBadge tone={deviceMeta.tone} label={deviceMeta.label} />
-
-                {deviceStatus === "ready" && (
-                  <button
-                    type="button"
-                    onClick={() => onAdvanceDevice(device.id, "in_progress")}
-                    disabled={actionsLocked || deviceBusy || devicePaymentLocked}
-                    className={`${adminActionButtonSecondary} w-full justify-center sm:w-auto`}
-                  >
-                    {deviceBusy ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Undo2 className="h-4 w-4" />
-                    )}
-                    Regresar todo
-                  </button>
-                )}
               </div>
 
               {!expanded && (
                 <p className="mt-1.5 pl-9 text-xs text-muted-foreground">
                   {itemSummary(deviceItems)}
                 </p>
+              )}
+
+              {deviceStatus === "ready" && (
+                <div className="mt-2 flex pl-9">
+                  <button
+                    type="button"
+                    onClick={() => onAdvanceDevice(device.id, "in_progress")}
+                    disabled={actionsLocked || deviceBusy || devicePaymentLocked}
+                    className={`${adminActionButtonSecondary} min-h-11 shrink-0 px-3`}
+                  >
+                    {deviceBusy ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Undo2 className="h-4 w-4" />
+                    )}
+                    <span className="sm:hidden">Regresar</span>
+                    <span className="hidden sm:inline">Regresar todo</span>
+                  </button>
+                </div>
               )}
 
               {/* Product lines for this person */}
@@ -351,85 +419,16 @@ export function PerPersonFulfillmentCard({
                     Sin productos asignados.
                   </p>
                 )}
-                {deviceItems.map((item) => {
-                  const itemStatus = item.fulfillment_status ?? "received";
-                  const itemMeta = getFulfillmentStatusMeta(itemStatus);
-                  const itemBusy = busyItemId === item.id;
-                  return (
-                    <div
-                      key={item.id}
-                      className="flex flex-col items-stretch gap-2 rounded-lg bg-border-soft/30 px-2.5 py-2 sm:flex-row sm:items-center"
-                    >
-                      <p className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
-                        {item.quantity}× {item.product_name}
-                      </p>
-                      {itemTypeLabel(item) && (
-                        <span className="rounded-full bg-border-soft/70 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
-                          {itemTypeLabel(item)}
-                        </span>
-                      )}
-                      <StatusBadge tone={itemMeta.tone} label={itemMeta.label} compact />
-                      <div className="flex w-full gap-1.5 sm:w-auto">
-                        {itemStatus === "received" && (
-                          <button
-                            type="button"
-                            onClick={() => onAdvanceItem(item.id, "in_progress")}
-                            disabled={actionsLocked || itemBusy || devicePaymentLocked}
-                            className={`${adminActionButtonPrimary} w-full justify-center`}
-                          >
-                            {itemBusy ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <ArrowRight className="h-3.5 w-3.5" />
-                            )}
-                            Iniciar
-                          </button>
-                        )}
-                        {itemStatus === "in_progress" && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => onAdvanceItem(item.id, "received")}
-                              disabled={actionsLocked || itemBusy || devicePaymentLocked}
-                              className={`${adminActionButtonSecondary} flex-1 justify-center sm:flex-none`}
-                              aria-label="Regresar a recibido"
-                            >
-                              <Undo2 className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => onAdvanceItem(item.id, "ready")}
-                              disabled={actionsLocked || itemBusy || devicePaymentLocked}
-                              className={`${adminActionButtonPrimary} flex-1 justify-center sm:flex-none`}
-                            >
-                              {itemBusy ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <PackageCheck className="h-3.5 w-3.5" />
-                              )}
-                              Listo
-                            </button>
-                          </>
-                        )}
-                        {itemStatus === "ready" && (
-                          <button
-                            type="button"
-                            onClick={() => onAdvanceItem(item.id, "in_progress")}
-                            disabled={actionsLocked || itemBusy || devicePaymentLocked}
-                            className={`${adminActionButtonSecondary} w-full justify-center`}
-                          >
-                            {itemBusy ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <Undo2 className="h-3.5 w-3.5" />
-                            )}
-                            Regresar
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                {deviceItems.map((item) => (
+                  <FulfillmentItemRow
+                    key={item.id}
+                    item={item}
+                    actionsLocked={actionsLocked}
+                    itemBusy={busyItemId === item.id}
+                    paymentLocked={devicePaymentLocked}
+                    onAdvanceItem={onAdvanceItem}
+                  />
+                ))}
               </div>
               )}
             </div>
