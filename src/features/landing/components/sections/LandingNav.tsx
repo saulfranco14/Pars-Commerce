@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { LogIn } from "lucide-react";
 
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -63,6 +64,14 @@ export function LandingNav() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link
+            href="/login"
+            aria-label="Iniciar sesión"
+            className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 sm:hidden"
+          >
+            <LogIn className="h-4 w-4" aria-hidden />
+            Entrar
+          </Link>
           <Link
             href="/login"
             className="hidden min-h-11 cursor-pointer items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 sm:inline-flex"
