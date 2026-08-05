@@ -14,6 +14,10 @@ import {
   handleQrTableMpPayment,
   isQrTableReference,
 } from "@/features/qr/services/tableMpWebhookService";
+import {
+  handleBillingAuthorizedPayment,
+  handleBillingPreapprovalStatus,
+} from "@/features/billing/billingService";
 
 type OrderUpdate = Database["public"]["Tables"]["orders"]["Update"];
 type SubscriptionUpdate =
@@ -413,14 +417,7 @@ async function handlePreapprovalStatusChange(
 ): Promise<void> {
   const supabase = createAdminClient();
 
-  const mpRes = await fetch(
-    `https://api.mercadopago.com/preapproval/${preapprovalId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
-      },
-    },
-  );
+  const mpRes = await fetchMercadoPagoResource(`preapproval/${preapprovalId}`);
 
   if (!mpRes.ok) {
     console.error(
@@ -446,6 +443,13 @@ async function handlePreapprovalStatusChange(
     console.warn(
       `Webhook: unknown preapproval status "${mpStatus}" for ${preapprovalId}`,
     );
+    return;
+  }
+
+  // SaaS memberships are intentionally a separate billing domain from a
+  // merchant's own customer subscriptions.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- billing schema is introduced by its accompanying migration.
+  if (await handleBillingPreapprovalStatus(supabase as any, preapprovalId, mpStatus)) {
     return;
   }
 
@@ -513,24 +517,31 @@ async function handlePreapprovalPayment(
   const supabase = createAdminClient();
 
   let preapprovalId: string | null = null;
+  let amount = 0;
+  let fee = 0;
+  let paymentStatus = "approved";
   try {
-    const mpRes = await fetch(
-      `https://api.mercadopago.com/authorized_payments/${authorizedPaymentId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
-        },
-      },
-    );
+    const mpRes = await fetchMercadoPagoResource(`authorized_payments/${authorizedPaymentId}`);
     if (mpRes.ok) {
       const mpData = await mpRes.json();
       preapprovalId = mpData.preapproval_id ?? null;
+      amount = Number(mpData.transaction_amount ?? 0);
+      const net = Number(mpData.transaction_details?.net_received_amount ?? amount);
+      fee = Math.max(0, Math.round((amount - net) * 100) / 100);
+      paymentStatus = String(mpData.status ?? "approved");
     }
   } catch (err) {
     console.error(
       `Webhook: error fetching authorized_payment ${authorizedPaymentId} from MP:`,
       err,
     );
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- billing schema is introduced by its accompanying migration.
+  if (await handleBillingAuthorizedPayment(supabase as any, {
+    authorizedPaymentId, preapprovalId, amount, fee, status: paymentStatus,
+  })) {
+    return;
   }
 
   const appliedToLoan = await handlePreapprovalLoanPayment(
@@ -546,4 +557,15 @@ async function handlePreapprovalPayment(
       preapprovalId,
     );
   }
+}
+
+/** Memberships and merchant charges live in the same Tlaco Mercado Pago
+ * account. Their external references and their database tables keep them
+ * separated after Mercado Pago sends the webhook. */
+async function fetchMercadoPagoResource(path: string) {
+  const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  if (!token) throw new Error("No hay credenciales de Mercado Pago configuradas");
+  return fetch(`https://api.mercadopago.com/${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 }

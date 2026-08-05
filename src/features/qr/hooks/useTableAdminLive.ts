@@ -36,13 +36,26 @@ export function useTableAdminLive(
   orderId: string | null,
   options: UseTableAdminLiveOptions = {},
 ) {
-  const refreshInterval = options.refreshIntervalMs ?? 5000;
+  // The admin payload includes products, people, activity and payments. Ten
+  // seconds is still live for staff work, while halving the hot-read volume
+  // compared with the prior 5s loop. A focused tab revalidates immediately.
+  const refreshInterval = options.refreshIntervalMs ?? 10_000;
 
   const key = orderId
     ? `/api/qr/table/${encodeURIComponent(orderId)}/admin-view`
     : null;
 
-  const swr = useSWR<AdminViewResponse>(key, swrFetcher, { refreshInterval });
+  const swr = useSWR<AdminViewResponse>(key, swrFetcher, {
+    refreshInterval: (latest) => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+        return 0;
+      }
+      const status = latest?.order?.status;
+      return status === "paid" || status === "cancelled" ? 0 : refreshInterval;
+    },
+    refreshWhenHidden: false,
+    revalidateOnFocus: true,
+  });
 
   const [busyPaymentId, setBusyPaymentId] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);

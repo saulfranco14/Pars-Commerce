@@ -6,7 +6,7 @@ import useSWR from "swr";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { PeriodSelector } from "@/components/admin/PeriodSelector";
 import { pageHeaderCta } from "@/components/admin/actionButtonClasses";
-import { useActiveTenant } from "@/stores/useTenantStore";
+import { useActiveTenant, useTenantStore } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import {
@@ -48,9 +48,11 @@ import type {
 import { getPeriodDates } from "@/features/ventas/helpers/periodDates";
 import { salesByUser } from "@/features/ventas/helpers/salesByUser";
 import { orderContentType } from "@/features/orders/helpers/orderContentType";
+import { BillingPlanCard } from "@/features/billing/components/BillingPlanCard";
 
 export default function DashboardPage() {
   const activeTenant = useActiveTenant();
+  const activeRole = useTenantStore((state) => state.activeRole());
   const [period, setPeriod] = useState<
     "today" | "week" | "fortnight" | "month" | "cutoff"
   >("week");
@@ -214,6 +216,8 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+
+        <BillingPlanCard tenantId={activeTenant.id} canManage={activeRole?.name === "owner"} />
 
         {period === "cutoff" && lastCutoffEnd && (
           <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3">

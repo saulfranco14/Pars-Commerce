@@ -49,14 +49,6 @@ export default function NuevoPedidoStaffPage() {
     tableOrderId,
   });
 
-  useEffect(() => {
-    if (!tableOrderId || !builder.result?.linked_to_table) return;
-    const timer = window.setTimeout(() => {
-      router.replace(`/dashboard/${tenantSlug}/mesas/${tableOrderId}`);
-    }, 1_400);
-    return () => window.clearTimeout(timer);
-  }, [builder.result?.linked_to_table, router, tableOrderId, tenantSlug]);
-
   const categoryFilters = useMemo(() => {
     const byId = new Map<string, string>();
     for (const p of products ?? []) {
@@ -87,10 +79,20 @@ export default function NuevoPedidoStaffPage() {
   const { add } = builder;
   const tableDevices = tableView?.devices ?? [];
   const tableLabel = tableView?.order?.table_label ?? "Mesa";
+  const tableQrId = tableView?.qr_code?.id;
+  const tableDetailHref = tableQrId
+    ? `/dashboard/${tenantSlug}/mesas/${tableQrId}`
+    : `/dashboard/${tenantSlug}/mesas`;
   const selectedDevice = tableDevices.find(
     (device) => device.id === builder.assignedDeviceId,
   );
   const selectedRecipient = selectedDevice?.display_name?.trim() || "Toda la mesa";
+
+  useEffect(() => {
+    if (!tableOrderId || !tableQrId || !builder.result?.linked_to_table) return;
+    const timer = window.setTimeout(() => router.replace(tableDetailHref), 1_400);
+    return () => window.clearTimeout(timer);
+  }, [builder.result?.linked_to_table, router, tableDetailHref, tableOrderId, tableQrId]);
   const addById = useCallback(
     (productId: string) => {
       const product = productById.get(productId);
@@ -127,11 +129,7 @@ export default function NuevoPedidoStaffPage() {
         customerName={builder.customerName || undefined}
         businessName={activeTenant.name}
         tableLabel={tableOrderId ? tableLabel : undefined}
-        returnToTableHref={
-          tableOrderId
-            ? `/dashboard/${tenantSlug}/mesas/${tableOrderId}`
-            : undefined
-        }
+        returnToTableHref={tableOrderId ? tableDetailHref : undefined}
         onNewOrder={builder.reset}
       />
     );
@@ -139,7 +137,7 @@ export default function NuevoPedidoStaffPage() {
 
   return (
     // Subtracts the dashboard chrome: h-14 header + main's vertical padding.
-    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col overflow-hidden sm:h-[calc(100dvh-6.5rem)]">
+    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col overflow-hidden pt-4 sm:h-[calc(100dvh-6.5rem)] sm:pt-0">
       <div className="shrink-0 space-y-3 pb-3">
         <div className="flex items-center gap-3">
           <Link
@@ -173,10 +171,10 @@ export default function NuevoPedidoStaffPage() {
                 >
                   <Users className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Agregar para</span>
+                    <span className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Pedido para</span>
                     <span className="block truncate text-sm font-semibold text-foreground">{selectedRecipient}</span>
                   </span>
-                  <span className="text-xs font-semibold text-accent">Cambiar</span>
+                  <span className="text-xs font-bold text-accent">Cambiar destinatario</span>
                   <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                 </button>
               )}

@@ -39,11 +39,13 @@ import {
 } from "@/features/configuracion/constants/tabs";
 import { DEFAULT_RECURRING_CONFIG } from "@/types/subscriptions";
 import type { RecurringPurchasesConfig } from "@/types/subscriptions";
+import { BillingPlanCard } from "@/features/billing/components/BillingPlanCard";
 
 export default function ConfiguracionPage() {
   const formId = useId();
   const activeTenant = useActiveTenant();
   const can = usePermission();
+  const activeRole = useTenantStore((s) => s.activeRole());
   const setMemberships = useTenantStore((s) => s.setMemberships);
   // `?tab=horarios` deja que otras pantallas enlacen a una sección concreta.
   const searchParams = useSearchParams();
@@ -277,6 +279,7 @@ export default function ConfiguracionPage() {
           onTabChange={(v) => setActiveTab(v as ConfigTab)}
           ariaLabel="Secciones de configuración"
         />
+        <BillingPlanCard tenantId={activeTenant.id} canManage={activeRole?.name === "owner"} />
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
