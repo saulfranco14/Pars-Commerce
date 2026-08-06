@@ -4,18 +4,21 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Notification } from "@/components/ui/Notification";
 import { Toast } from "@/components/ui/Toast";
+import { FormSheet } from "@/components/ui/FormSheet";
 import { CustomerScreen } from "@/features/qr/components/customer/CustomerScreen";
 import { DeviceNamePrompt } from "@/features/qr/components/customer/DeviceNamePrompt";
 import { MergeRequestBanner } from "@/features/qr/components/table/MergeRequestBanner";
 import { OrderTrackerCard } from "@/features/qr/components/order-tracker/OrderTrackerCard";
 import { OrderTrackerSkeleton } from "@/features/qr/components/order-tracker/OrderTrackerSkeleton";
 import { TableCtaBar } from "@/features/qr/components/table/TableCtaBar";
+import { TableResponsibilitySheet } from "@/features/qr/components/table/TableResponsibilitySheet";
 import { TableMenuSections } from "@/features/qr/components/menu-product/TableMenuSections";
 import { TableMenuHero } from "@/features/qr/components/menu-product/TableMenuHero";
 import { useDeviceNaming } from "@/features/qr/hooks/useDeviceNaming";
 import { useTableCart } from "@/features/qr/hooks/useTableCart";
 import { useCustomerMerge } from "@/features/qr/hooks/useCustomerMerge";
 import { useOrderTracker } from "@/features/qr/hooks/useOrderTracker";
+import { claimTableResponsibility } from "@/features/qr/services/tableClientService";
 import {
   clearReadySeen,
   hasSeenReady,
@@ -67,16 +70,64 @@ export function TableQRClient({
 }: TableQRClientProps) {
   const naming = useDeviceNaming({
     qrToken: token,
-    fingerprint,
     initialName: initialDeviceName,
   });
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [identityOpen, setIdentityOpen] = useState(false);
 
   const cart = useTableCart({
     menu,
-    orderId: order?.id ?? null,
     qrToken: token,
     fingerprint,
+    displayName: naming.deviceName,
+    customerPhone,
   });
+  const [responsibilityOpen, setResponsibilityOpen] = useState(false);
+  const [claimingResponsibility, setClaimingResponsibility] = useState(false);
+  const [responsibilityError, setResponsibilityError] = useState<string | null>(null);
+
+  async function sendCart() {
+    // A scan and menu browsing stay anonymous. We only request the phone at
+    // the commitment point, immediately before the first submitted items.
+    if (!customerPhone.trim()) {
+      setIdentityOpen(true);
+      return;
+    }
+    const sent = await cart.send();
+    if (sent) {
+      await onSessionRefresh();
+      if (!isOwner) setResponsibilityOpen(true);
+    }
+  }
+
+  async function confirmIdentityAndSend(event: React.FormEvent) {
+    event.preventDefault();
+    if (customerPhone.replace(/\D/g, "").length < 10) return;
+    setIdentityOpen(false);
+    await cart.send().then(async (sent) => {
+      if (sent) {
+        await onSessionRefresh();
+        if (!isOwner) setResponsibilityOpen(true);
+      }
+    });
+  }
+
+  async function claimResponsibility() {
+    if (!order?.id) return;
+    setClaimingResponsibility(true);
+    setResponsibilityError(null);
+    try {
+      await claimTableResponsibility({ orderId: order.id, fingerprint });
+      await onSessionRefresh();
+      setResponsibilityOpen(false);
+    } catch (err) {
+      setResponsibilityError(
+        err instanceof Error ? err.message : "No se pudo guardar la responsabilidad",
+      );
+    } finally {
+      setClaimingResponsibility(false);
+    }
+  }
 
   // "Tu pedido" tracker: hydrates once when an order is already running and
   // re-reads after each send. It no longer needs its own polling loop — the
@@ -257,10 +308,11 @@ export function TableQRClient({
           total={cart.total}
           itemCount={cart.itemCount}
           saving={cart.saving}
-          onSend={cart.send}
+          onSend={sendCart}
           onDecrement={cart.decrement}
           orderTotal={tracker.total}
           hasSentItems={!!tracker.items && tracker.items.length > 0}
+          sentItems={tracker.items}
           isReady={tableFulfillment === "ready"}
         />
       }
@@ -272,6 +324,36 @@ export function TableQRClient({
           onDone={cart.dismissConfirmation}
         />
       )}
+
+      <TableResponsibilitySheet
+        isOpen={responsibilityOpen && !isOwner}
+        tableLabel={qrCode.label}
+        loading={claimingResponsibility}
+        error={responsibilityError}
+        onClaim={() => void claimResponsibility()}
+        onDefer={() => {
+          if (!claimingResponsibility) setResponsibilityOpen(false);
+        }}
+      />
+
+      <FormSheet
+        isOpen={identityOpen}
+        onClose={() => !cart.saving && setIdentityOpen(false)}
+        title="Antes de enviar tu pedido"
+        description="Guardamos tu número solo en este negocio para identificar tu cuenta y tus compras."
+        maxWidth="max-w-md"
+      >
+        <form onSubmit={confirmIdentityAndSend} className="space-y-4">
+          <label className="block text-sm font-semibold text-foreground">Nombre
+            <input value={naming.deviceName ?? ""} disabled className="mt-1.5 min-h-12 w-full rounded-xl border border-border bg-surface-raised px-3 text-sm text-muted-foreground" />
+          </label>
+          <label className="block text-sm font-semibold text-foreground">Teléfono
+            <input type="tel" inputMode="tel" autoFocus value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} placeholder="10 dígitos" className="mt-1.5 min-h-12 w-full rounded-xl border border-border bg-background px-3 text-base focus:border-accent focus:outline-none" />
+          </label>
+          <p className="text-xs text-muted-foreground">No se crea una cuenta por escanear; esta identidad se vincula al enviar este pedido.</p>
+          <button type="submit" disabled={cart.saving || customerPhone.replace(/\D/g, "").length < 10} className="min-h-12 w-full rounded-xl bg-accent px-4 font-bold text-accent-foreground disabled:opacity-50">{cart.saving ? "Enviando..." : "Confirmar y enviar pedido"}</button>
+        </form>
+      </FormSheet>
 
       {readyToast && (
         <Toast

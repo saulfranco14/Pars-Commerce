@@ -10,7 +10,10 @@ import {
   QR_TABLE_GROUP_PREFIX,
 } from "@/features/qr/services/tableMpWebhookService";
 
-import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
+import {
+  materializePersonalGroups,
+  type ServiceResult,
+} from "@/features/qr/services/tablePaymentService";
 
 export interface CreatePreferenceInput {
   orderId: string;
@@ -54,14 +57,6 @@ export async function createTableMpPreference(
       error: { code: "conflict", message: "La orden fue cancelada" },
     };
   const gateOnReady = requiresReadyBeforePayment(order.source, order.order_type);
-  if (gateOnReady && !input.groupId && order.fulfillment_status !== "ready")
-    return {
-      ok: false,
-      error: {
-        code: "conflict",
-        message: NOT_READY_MESSAGE,
-      },
-    };
 
   let amount: number;
   let title: string;
@@ -69,22 +64,39 @@ export async function createTableMpPreference(
 
   let deviceId: string | null = null;
   let deviceStatus: string | null = null;
+  let isAccountOwner = false;
   if (input.fingerprint) {
     const { data: device } = await admin
       .from("order_devices")
-      .select("id, fulfillment_status")
+      .select("id, fulfillment_status, is_owner")
       .eq("order_id", input.orderId)
       .eq("device_fingerprint", input.fingerprint)
       .maybeSingle();
     deviceId = device?.id ?? null;
     deviceStatus = device?.fulfillment_status ?? null;
+    isAccountOwner = device?.is_owner === true;
   }
 
-  if (input.groupId) {
+  let targetGroupId = input.groupId ?? null;
+  const paysOwnProducts = !targetGroupId && !!deviceId && !isAccountOwner;
+  if (!targetGroupId && paysOwnProducts && deviceId) {
+    const personal = await materializePersonalGroups(admin, input.orderId, deviceId);
+    if (!personal.ok) return personal;
+    targetGroupId = personal.data.groupId;
+  }
+  if (
+    gateOnReady &&
+    ((targetGroupId && deviceStatus !== "ready") ||
+      (!targetGroupId && order.fulfillment_status !== "ready"))
+  ) {
+    return { ok: false, error: { code: "conflict", message: NOT_READY_MESSAGE } };
+  }
+
+  if (targetGroupId) {
     const { data: group } = await admin
       .from("order_split_groups")
       .select("id, device_id, label, total, balance_due, payment_status")
-      .eq("id", input.groupId)
+      .eq("id", targetGroupId)
       .eq("order_id", input.orderId)
       .single();
 
@@ -100,11 +112,6 @@ export async function createTableMpPreference(
           code: "forbidden",
           message: "Esta parte de la cuenta pertenece a otra persona",
         },
-      };
-    if (gateOnReady && deviceStatus !== "ready")
-      return {
-        ok: false,
-        error: { code: "conflict", message: NOT_READY_MESSAGE },
       };
     if (group.payment_status === "paid")
       return {
@@ -148,7 +155,7 @@ export async function createTableMpPreference(
     `${base}/q/${encodeURIComponent(input.qrToken)}/table/payment/result`,
   );
   successUrl.searchParams.set("order_id", order.id);
-  if (input.groupId) successUrl.searchParams.set("group_id", input.groupId);
+  if (targetGroupId) successUrl.searchParams.set("group_id", targetGroupId);
 
   const isPubliclyReachable = base.startsWith("https://");
 
@@ -175,7 +182,7 @@ export async function createTableMpPreference(
         metadata: {
           source: "qr_table",
           order_id: order.id,
-          split_group_id: input.groupId ?? null,
+          split_group_id: targetGroupId ?? null,
           fee_absorbed_by: "business",
         },
       },
@@ -203,7 +210,7 @@ export async function createTableMpPreference(
     const mpError = extractMercadoPagoError(err);
     console.error("[tableMpPreferenceService] MP preference failed", {
       orderId: input.orderId,
-      groupId: input.groupId ?? null,
+      groupId: targetGroupId ?? null,
       amount,
       mpError,
     });

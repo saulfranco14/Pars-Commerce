@@ -356,8 +356,10 @@ export async function advanceItemFulfillment(
 
 /**
  * Whole-table shortcut used by the business "marcar toda la mesa como lista"
- * button: set EVERY device to the target, then let the trigger derive the order.
- * Falls back to the order-level update when the table has no device rows yet.
+ * button. Product lines are the source of truth; changing only devices made
+ * the order summary say "ready" while each visible line stayed "received".
+ * Updating all lines lets the existing trigger cascade derive every device and
+ * the order summary consistently.
  */
 export async function advanceAllDevicesFulfillment(
   admin: SupabaseClient,
@@ -378,30 +380,17 @@ export async function advanceAllDevicesFulfillment(
   if (order.status === "cancelled")
     return err("conflict", "La orden fue cancelada");
 
-  const { data: devices } = await admin
-    .from("order_devices")
-    .select("id")
+  const { error: itemsError } = await admin
+    .from("order_items")
+    .update({ fulfillment_status: input.target })
     .eq("order_id", input.orderId);
+  if (itemsError) return err("internal", itemsError.message);
 
-  // No people connected yet (e.g. a kiosk ticket before it reaches a table):
-  // advance its actual lines too, otherwise the accordion would keep showing
-  // stale per-item states below an updated order summary.
-  if (!devices || devices.length === 0) {
-    const { error: itemsError } = await admin
-      .from("order_items")
-      .update({ fulfillment_status: input.target })
-      .eq("order_id", input.orderId);
-    if (itemsError) return err("internal", itemsError.message);
-    return advanceFulfillment(admin, input);
-  }
-
-  const now = new Date().toISOString();
-  const { error: updateError } = await admin
-    .from("order_devices")
-    .update({ fulfillment_status: input.target, updated_at: now })
-    .eq("order_id", input.orderId);
-
-  if (updateError) return err("internal", updateError.message);
+  // The trigger normally derives device/order summaries. Keep an explicit
+  // order-level write as a defensive fallback for historical shared lines,
+  // which do not belong to an order_device.
+  const summary = await advanceFulfillment(admin, input);
+  if (!summary.ok) return summary;
 
   await admin.from("order_activity_log").insert({
     order_id: input.orderId,
@@ -412,8 +401,5 @@ export async function advanceAllDevicesFulfillment(
     payload: { to: input.target, scope: "all_devices" },
   });
 
-  return {
-    ok: true,
-    data: { orderId: input.orderId, fulfillmentStatus: input.target },
-  };
+  return summary;
 }

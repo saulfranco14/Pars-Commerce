@@ -3,7 +3,7 @@
 import { useState, useEffect, useId } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, Sparkles } from "lucide-react";
 import {
   useTenantStore,
   useActiveTenant,
@@ -39,11 +39,13 @@ import {
 } from "@/features/configuracion/constants/tabs";
 import { DEFAULT_RECURRING_CONFIG } from "@/types/subscriptions";
 import type { RecurringPurchasesConfig } from "@/types/subscriptions";
+import { BillingPlanCard } from "@/features/billing/components/BillingPlanCard";
 
 export default function ConfiguracionPage() {
   const formId = useId();
   const activeTenant = useActiveTenant();
   const can = usePermission();
+  const activeRole = useTenantStore((s) => s.activeRole());
   const setMemberships = useTenantStore((s) => s.setMemberships);
   // `?tab=horarios` deja que otras pantallas enlacen a una sección concreta.
   const searchParams = useSearchParams();
@@ -96,6 +98,7 @@ export default function ConfiguracionPage() {
   const [loading, setLoading] = useState(false);
   const [logoError, setLogoError] = useState<string | null>(null);
   const [logoSaving, setLogoSaving] = useState(false);
+  const [billingOpen, setBillingOpen] = useState(false);
 
   async function handleLogoChange(url: string | null) {
     if (!activeTenant) return;
@@ -253,8 +256,8 @@ export default function ConfiguracionPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-0 max-w-4xl flex-1 flex-col overflow-hidden">
-      <div className="shrink-0 space-y-4 pb-4">
+    <div className="mx-auto flex max-w-4xl flex-1 flex-col overflow-visible pb-28 md:min-h-0 md:overflow-hidden md:pb-0">
+      <div className="shrink-0 space-y-3 pb-3 md:space-y-4 md:pb-4">
         <Link
           href="/dashboard"
           className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
@@ -263,29 +266,30 @@ export default function ConfiguracionPage() {
           Volver al inicio
         </Link>
         <div>
-          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
-            Configuración
-          </h1>
+        <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
+          Configuración
+        </h1>
           <p className="mt-0.5 text-sm text-muted">
-            Datos del negocio, dirección y finanzas. Para tienda pública, redes
-            y contenido del sitio web, usa Sitio web.
+            Ajusta tu negocio y cómo se muestran tus ventas.
           </p>
         </div>
-        <FilterTabs
-          tabs={CONFIG_TABS}
-          activeValue={activeTab}
-          onTabChange={(v) => setActiveTab(v as ConfigTab)}
-          ariaLabel="Secciones de configuración"
-        />
+        <div className="sticky top-14 z-10 -mx-4 border-y border-border-soft bg-background px-4 py-2 shadow-sm md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:shadow-none">
+          <FilterTabs
+            tabs={CONFIG_TABS}
+            activeValue={activeTab}
+            onTabChange={(v) => setActiveTab(v as ConfigTab)}
+            ariaLabel="Secciones de configuración"
+          />
+        </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
+      <div className="flex flex-col rounded-xl border border-border bg-surface-raised shadow-sm md:min-h-0 md:flex-1 md:overflow-hidden">
         <form
           id={formId}
           onSubmit={handleSubmit}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden md:pb-0"
+          className="flex flex-col md:min-h-0 md:flex-1 md:overflow-hidden md:pb-0"
         >
-          <div className="flex-1 overflow-y-auto overscroll-contain p-4 pb-8 sm:p-6 sm:pb-8">
+          <div className="p-4 pb-8 sm:p-6 sm:pb-8 md:flex-1 md:overflow-y-auto md:overscroll-contain">
             {error && (
               <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
                 {error}
@@ -407,6 +411,35 @@ export default function ConfiguracionPage() {
                 onPhoneChange={setAddressPhone}
               />
             )}
+
+            <section className="mt-5 rounded-xl border border-border bg-surface p-1.5">
+              <button
+                type="button"
+                onClick={() => setBillingOpen((open) => !open)}
+                aria-expanded={billingOpen}
+                className="flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left transition-colors hover:bg-border-soft/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                  <Sparkles className="h-4 w-4" aria-hidden />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-foreground">Membresía y límites</span>
+                  <span className="block text-xs text-muted-foreground">Consulta o cambia el plan de este negocio.</span>
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${billingOpen ? "rotate-180" : ""}`}
+                  aria-hidden
+                />
+              </button>
+              {billingOpen && (
+                <div className="border-t border-border-soft pt-1.5">
+                  <BillingPlanCard
+                    tenantId={activeTenant.id}
+                    canManage={activeRole?.name === "owner"}
+                  />
+                </div>
+              )}
+            </section>
           </div>
           {/* Las pantallas se aprueban al instante; un "Guardar" ahí solo
               haría dudar de si el cambio se aplicó. */}

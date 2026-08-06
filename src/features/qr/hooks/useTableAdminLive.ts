@@ -14,6 +14,7 @@ import {
   advanceDeviceFulfillment,
   advanceItemFulfillment,
   advanceAllFulfillment,
+  takeTableOrder,
 } from "@/features/qr/services/tableAdminClientService";
 
 import type { AdminViewResponse } from "@/features/qr/services/tableAdminViewService";
@@ -35,18 +36,32 @@ export function useTableAdminLive(
   orderId: string | null,
   options: UseTableAdminLiveOptions = {},
 ) {
-  const refreshInterval = options.refreshIntervalMs ?? 5000;
+  // The admin payload includes products, people, activity and payments. Ten
+  // seconds is still live for staff work, while halving the hot-read volume
+  // compared with the prior 5s loop. A focused tab revalidates immediately.
+  const refreshInterval = options.refreshIntervalMs ?? 10_000;
 
   const key = orderId
     ? `/api/qr/table/${encodeURIComponent(orderId)}/admin-view`
     : null;
 
-  const swr = useSWR<AdminViewResponse>(key, swrFetcher, { refreshInterval });
+  const swr = useSWR<AdminViewResponse>(key, swrFetcher, {
+    refreshInterval: (latest) => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+        return 0;
+      }
+      const status = latest?.order?.status;
+      return status === "paid" || status === "cancelled" ? 0 : refreshInterval;
+    },
+    refreshWhenHidden: false,
+    revalidateOnFocus: true,
+  });
 
   const [busyPaymentId, setBusyPaymentId] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
   const [merging, setMerging] = useState(false);
   const [advancing, setAdvancing] = useState(false);
+  const [taking, setTaking] = useState(false);
   const [busyDeviceId, setBusyDeviceId] = useState<string | null>(null);
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -181,6 +196,24 @@ export function useTableAdminLive(
     }
   }
 
+  async function takeTable() {
+    if (!orderId) return false;
+    if (!acquireMutation()) return false;
+    setTaking(true);
+    setError(null);
+    try {
+      await takeTableOrder(orderId);
+      await swr.mutate();
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo tomar la mesa");
+      return false;
+    } finally {
+      setTaking(false);
+      releaseMutation();
+    }
+  }
+
   async function advanceDevice(
     deviceId: string,
     status: FulfillmentStatus,
@@ -250,6 +283,7 @@ export function useTableAdminLive(
     closing,
     merging,
     advancing,
+    taking,
     busyDeviceId,
     busyItemId,
     error,
@@ -260,6 +294,7 @@ export function useTableAdminLive(
     mergeTable,
     unlink,
     advanceFulfillment,
+    takeTable,
     advanceDevice,
     advanceItem,
     advanceAll,

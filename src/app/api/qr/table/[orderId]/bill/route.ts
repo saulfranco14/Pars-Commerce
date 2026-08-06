@@ -137,6 +137,14 @@ export async function GET(request: Request, context: RouteContext) {
     fulfillment_status: item.fulfillment_status ?? "received",
     split_group_id: splitGroupIdByItemId.get(item.id as string) ?? null,
   }));
+  const participantDeviceIds = new Set(
+    enrichedItems
+      .map((item) => item.added_by_device_id)
+      .filter((id): id is string => !!id),
+  );
+  const participantDevices = (devices ?? []).filter((device) =>
+    participantDeviceIds.has(device.id),
+  );
 
   const groups =
     splitGroups && splitGroups.length > 0
@@ -238,7 +246,7 @@ export async function GET(request: Request, context: RouteContext) {
     groups,
     items: enrichedItems,
     // Strip device_fingerprint (identifier) — expose only what the UI renders.
-    devices: (devices ?? []).map((d) => ({
+    devices: participantDevices.map((d) => ({
       id: d.id,
       display_name: d.display_name,
       color_hex: d.color_hex,

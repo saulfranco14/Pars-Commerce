@@ -29,7 +29,7 @@ export const FAQS = [
   {
     question: "¿Cuánto cuesta usar la plataforma?",
     answer:
-      "Tlaco es gratis: $0 al mes y 0% de tus ventas, sin plazo forzoso. La única comisión aparece cuando tu cliente paga con tarjeta, y la cobra la red de pagos que procesa la transacción — igual que en cualquier terminal. Nosotros no te cobramos nada encima.",
+      "Puedes empezar con Tlaco Gratis por $0 al mes. Cuando necesitas más mesas, kiosko, reportes o control de varios negocios, eliges Operación, Crecimiento o Escala desde tu panel. El cambio y la cancelación se hacen sin hablar con soporte.",
   },
   {
     question: "¿Puedo personalizar mi tienda?",

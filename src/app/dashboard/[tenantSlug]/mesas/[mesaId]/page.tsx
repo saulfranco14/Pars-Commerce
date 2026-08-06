@@ -9,8 +9,34 @@ import { swrFetcher } from "@/lib/swrFetcher";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
 import { MesaDetailContent } from "@/features/qr/components/table/MesaDetailContent";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
+
+function MesaDetailSkeleton() {
+  return (
+    <div className="mx-auto w-full max-w-3xl space-y-5" aria-label="Cargando mesa">
+      <Skeleton className="h-4 w-28" />
+      <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-11 w-11 rounded-xl" />
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-28" />
+            <Skeleton className="h-3 w-44" />
+          </div>
+        </div>
+        <div className="mt-6 grid grid-cols-3 gap-3">
+          {[0, 1, 2].map((item) => <Skeleton key={item} className="h-16 rounded-xl" />)}
+        </div>
+      </section>
+      <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+        <Skeleton className="h-5 w-44" />
+        <Skeleton className="mt-4 h-12 w-full rounded-xl" />
+        <Skeleton className="mt-3 h-24 w-full rounded-xl" />
+      </section>
+    </div>
+  );
+}
 
 /**
  * Standalone page for a mesa's detail — kept as a fallback for direct links
@@ -30,17 +56,20 @@ export default function MesaDetailPage() {
   // list's already-loaded data instantly via SWR's cache/dedupe instead of
   // starting a brand new fetch from scratch on every visit.
   const qrKey = buildQrCodesKey(activeTenant?.id ?? null, "table");
-  const { data: qrList } = useSWR<QrCode[]>(qrKey, swrFetcher, {
-    fallbackData: [],
-  });
+  const { data: qrList, isLoading, isValidating } = useSWR<QrCode[]>(
+    qrKey,
+    swrFetcher,
+  );
   const qr = (qrList ?? []).find((q) => q.id === mesaQrId);
 
   if (!activeTenant) {
-    return (
-      <div className="text-sm text-muted-foreground">
-        Selecciona un negocio para continuar.
-      </div>
-    );
+    return <MesaDetailSkeleton />;
+  }
+
+  // A direct return from "Tomar pedido" starts with an empty SWR cache. Do
+  // not turn that short loading window into a false "not found" state.
+  if (!qrList || (!qr && (isLoading || isValidating))) {
+    return <MesaDetailSkeleton />;
   }
 
   if (!qr) {

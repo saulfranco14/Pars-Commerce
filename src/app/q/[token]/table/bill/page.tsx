@@ -245,7 +245,26 @@ export default function TableBillPage() {
   const hasPartialProgress =
     !isReady && readyItemCount > 0 && readyItemCount < data.items.length;
 
-  const showPay = !isOrderPaid && !hasSplitGroups && hasItems && tableReady;
+  const sharedUnsplitTotal = data.items
+    .filter((item) => item.is_shared || !item.added_by_device_id)
+    .reduce((sum, item) => sum + Number(item.subtotal), 0);
+  const ownUnsplitTotal = data.items
+    .filter((item) => item.added_by_device_id === data.my_device_id && !item.is_shared)
+    .reduce((sum, item) => sum + Number(item.subtotal), 0);
+  const myUnsplitTotal =
+    ownUnsplitTotal + (deviceCount > 0 ? sharedUnsplitTotal / deviceCount : 0);
+  const canPayOwnUnsplit =
+    !isOrderPaid &&
+    !hasSplitGroups &&
+    hasItems &&
+    !!data.my_device_id &&
+    !data.i_am_owner &&
+    myReady;
+  const showPay =
+    !isOrderPaid &&
+    !hasSplitGroups &&
+    hasItems &&
+    (data.i_am_owner ? tableReady : canPayOwnUnsplit);
   const showSplitButton = !isOrderPaid && hasItems && canSplit;
   const showMyGroupPay =
     !isOrderPaid &&
@@ -268,7 +287,7 @@ export default function TableBillPage() {
       currentDeviceId={data.my_device_id}
       onPayGroup={(group) => paymentFlow.pickTarget({ kind: "group", group })}
       canPay={tableReady || myReady}
-      scope={myGroup ? "personal" : "table"}
+      scope={myGroup || canPayOwnUnsplit ? "personal" : "table"}
       canPayForOthers={data.i_am_owner === true && tableReady}
     />
   );
@@ -295,13 +314,15 @@ export default function TableBillPage() {
             onClick={() =>
               paymentFlow.pickTarget({
                 kind: "full",
-                amount: data.order.balance_due,
+                amount: canPayOwnUnsplit ? myUnsplitTotal : data.order.balance_due,
               })
             }
             className="flex min-h-13.5 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99]"
           >
             <CreditCard className="h-5 w-5" />
-            Pagar {formatCurrency(data.order.balance_due)}
+            {canPayOwnUnsplit
+              ? `Pagar mi parte · ${formatCurrency(myUnsplitTotal)}`
+              : `Pagar ${formatCurrency(data.order.balance_due)}`}
           </button>
         )}
         {showPersonalSplit && (

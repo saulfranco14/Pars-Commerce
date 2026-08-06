@@ -47,7 +47,12 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const admin = createAdminClient();
-  const result = await payFullOrder(admin, { orderId, method: body.method });
+  const fingerprint = request.headers.get("x-fingerprint-id")?.trim() || null;
+  const result = await payFullOrder(admin, {
+    orderId,
+    method: body.method,
+    fingerprint,
+  });
   if (!result.ok) return serviceErrorToResponse(result.error);
 
   return NextResponse.json({

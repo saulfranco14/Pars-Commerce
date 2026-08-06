@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSWRConfig } from "swr";
 import {
   CheckCircle2,
+  ChevronDown,
   ClipboardList,
   Clock,
   Link2,
@@ -13,6 +14,7 @@ import {
   ShoppingBag,
   Store,
   Unlink,
+  UserCheck,
   Users,
 } from "lucide-react";
 
@@ -20,7 +22,10 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
 import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { adminActionButtonPrimary } from "@/components/admin/actionButtonClasses";
+import {
+  adminActionButtonPrimary,
+  adminActionButtonSecondary,
+} from "@/components/admin/actionButtonClasses";
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { QrPreview } from "@/features/qr/components/qr-create/QrPreview";
@@ -77,10 +82,14 @@ export function MesaDetailContent({
   const [showQr, setShowQr] = useState(false);
   const [closeOpen, setCloseOpen] = useState(false);
   const [mergeOpen, setMergeOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Other tables currently in use — candidates to merge into this one.
   const mergeCandidates = useMemo(
-    () => qrList.filter((q) => !!q.current_order_id && q.current_order_id !== orderId),
+    () =>
+      qrList.filter(
+        (q) => !!q.current_order_id && q.current_order_id !== orderId,
+      ),
     [qrList, orderId],
   );
 
@@ -188,52 +197,88 @@ export function MesaDetailContent({
   return (
     <div className="space-y-5">
       {/* Header — icon tile + state, mirrors the list card */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-            <Store className="h-5 w-5" />
-          </span>
-          <div className="min-w-0">
-            <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-              {qr.label}
-            </h1>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <StatusBadge
-                tone={isOrderClosed ? "success" : "warning"}
-                label={isOrderClosed ? "Cerrada" : "En uso"}
-              />
-              {isLinked && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent">
-                  <Link2 className="h-3 w-3" />
-                  Unida con {data!.linked_tables.join(", ")}
-                </span>
-              )}
-              {data?.order?.created_at && (
-                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  {elapsedLabel(data.order.created_at)}
-                </span>
-              )}
-              {qr.table_capacity ? (
-                <span className="text-xs text-muted-foreground">
-                  Capacidad: {qr.table_capacity}
-                </span>
-              ) : null}
+      <div className="sticky top-0 z-20 -mx-5 -mt-5 flex flex-col gap-2 border-b border-border-soft bg-surface px-5 py-4 shadow-sm md:-mx-6 md:-mt-6 md:px-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+              <Store className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                {qr.label}
+              </h1>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <StatusBadge
+                  tone={isOrderClosed ? "success" : "warning"}
+                  label={isOrderClosed ? "Cerrada" : "En uso"}
+                />
+                {isLinked && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent">
+                    <Link2 className="h-3 w-3" />
+                    Unida con {data!.linked_tables.join(", ")}
+                  </span>
+                )}
+                {data?.order?.created_at && (
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    {elapsedLabel(data.order.created_at)}
+                  </span>
+                )}
+                {qr.table_capacity ? (
+                  <span className="text-xs text-muted-foreground">
+                    Capacidad: {qr.table_capacity}
+                  </span>
+                ) : null}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Mobile-first: one primary action (Tomar pedido) + everything else
+          {/* Mobile-first: one primary action (Tomar pedido) + everything else
             (Unir/Separar, Ver QR, Cerrar mesa) collapsed into the ⋯ menu. */}
-        {!isOrderClosed && (
-          <div className="flex shrink-0 items-center gap-2">
-            {canTakeOrder && (
-              <Link href={orderHref(orderId)} className={adminActionButtonPrimary}>
-                <ClipboardList className="h-4 w-4" />
-                <span className="hidden sm:inline">Tomar pedido</span>
-              </Link>
+          {!isOrderClosed && (
+            <div className="flex shrink-0 items-center gap-2">
+              {canTakeOrder && (
+                <Link
+                  href={orderHref(orderId)}
+                  className={adminActionButtonPrimary}
+                >
+                  <ClipboardList className="h-4 w-4" />
+                  <span className="hidden sm:inline">Tomar pedido</span>
+                </Link>
+              )}
+              {!data?.order?.assigned_to && (
+                <button
+                  type="button"
+                  onClick={() => void live.takeTable()}
+                  disabled={live.taking}
+                  className={`${adminActionButtonSecondary} min-h-11 px-3 disabled:cursor-not-allowed disabled:opacity-60`}
+                >
+                  <UserCheck className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {live.taking ? "Tomando..." : "Atender mesa"}
+                  </span>
+                </button>
+              )}
+              <ActionsMenu
+                items={menuItems}
+                aria-label="Más acciones de la mesa"
+              />
+            </div>
+          )}
+        </div>
+        {data?.order && (
+          <div className="flex min-h-7 items-center gap-2 border-t border-border-soft pt-2 text-xs text-muted-foreground">
+            <UserCheck className="h-3.5 w-3.5" aria-hidden />
+            {data.order.assigned_staff_name ? (
+              <span>
+                Atiende:{" "}
+                <strong className="font-semibold text-foreground">
+                  {data.order.assigned_staff_name}
+                </strong>
+              </span>
+            ) : (
+              <span>Sin persona asignada para atender esta mesa.</span>
             )}
-            <ActionsMenu items={menuItems} aria-label="Más acciones de la mesa" />
           </div>
         )}
       </div>
@@ -269,12 +314,13 @@ export function MesaDetailContent({
           )}
 
           {/* Totals card */}
-          <section className="grid grid-cols-1 gap-3 rounded-xl border border-border bg-surface p-4 sm:grid-cols-3">
+          <section className="grid  grid-cols-1 gap-3 rounded-xl border border-border bg-surface p-4 sm:grid-cols-3 mt-8">
             <div>
               <p className="text-xs text-muted-foreground">Total acumulado</p>
               <p className="mt-0.5 text-xl font-bold text-foreground">
                 {data.order ? formatCurrency(data.order.total) : "—"}
               </p>
+              image.png
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Pagado</p>
@@ -405,17 +451,33 @@ export function MesaDetailContent({
 
           {/* Timeline */}
           <section className="rounded-xl border border-border bg-surface p-4">
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-foreground">
+            <button
+              type="button"
+              onClick={() => setHistoryOpen((open) => !open)}
+              aria-expanded={historyOpen}
+              className="flex min-h-11 w-full items-center gap-2 rounded-lg text-left transition-colors hover:bg-border-soft/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            >
+              <ShoppingBag className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <h2 className="flex-1 text-sm font-semibold text-foreground">
                 Historial de actividad
               </h2>
-            </div>
-            <TableTimeline
-              items={data.items}
-              activityLog={data.activity_log}
-              devices={deviceById}
-            />
+              <span className="rounded-full bg-border-soft px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                {data.activity_log.length}
+              </span>
+              <ChevronDown
+                className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${historyOpen ? "rotate-180" : ""}`}
+                aria-hidden
+              />
+            </button>
+            {historyOpen && (
+              <div className="mt-3 border-t border-border-soft pt-3">
+                <TableTimeline
+                  items={data.items}
+                  activityLog={data.activity_log}
+                  devices={deviceById}
+                />
+              </div>
+            )}
           </section>
         </>
       )}

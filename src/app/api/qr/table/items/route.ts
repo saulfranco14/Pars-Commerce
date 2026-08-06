@@ -2,11 +2,9 @@ import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
-import {
-  buildOrderItemRows,
-  filterValidItems,
-} from "@/features/qr/helpers/buildOrderItemRows";
+import { filterValidItems } from "@/features/qr/helpers/buildOrderItemRows";
 import { validateOrderStock } from "@/features/inventory/services/orderStockValidationService";
+import { identifyCustomer, normalizeMxPhone } from "@/lib/customers/customerIdentity";
 
 interface TableItemPayload {
   product_id: string;
@@ -15,171 +13,133 @@ interface TableItemPayload {
 }
 
 interface RequestBody {
-  order_id: string;
   qr_token: string;
+  display_name: string;
+  customer_phone?: string;
   items: TableItemPayload[];
 }
 
+function submitErrorMessage(message: string) {
+  if (/table is full/i.test(message)) {
+    return "Esta mesa ya llegÃ³ a su capacidad. Pide al personal que la amplÃ­e o te asigne otra.";
+  }
+  if (/no longer accepts/i.test(message)) {
+    return "La cuenta ya estÃ¡ en proceso de pago y no acepta nuevos productos.";
+  }
+  if (/product is not available/i.test(message)) {
+    return "Uno de los productos ya no estÃ¡ disponible. Actualiza el menÃº e intÃ©ntalo de nuevo.";
+  }
+  return resolveUserError({ message } as never, "supabase");
+}
+
+/**
+ * First actual submit is the table's commit point. The database function locks
+ * the QR, creates/reuses one active order, identifies this customer and adds
+ * their lines in the same transaction. A mere scan never reaches this route.
+ */
 export async function POST(request: Request) {
   let body: RequestBody;
   try {
     body = (await request.json()) as RequestBody;
   } catch {
-    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+    return NextResponse.json({ error: "JSON invÃ¡lido" }, { status: 400 });
   }
 
-  if (!body.order_id || !body.qr_token || !Array.isArray(body.items)) {
+  const fingerprint = request.headers.get("x-fingerprint-id")?.trim();
+  const displayName = body.display_name?.trim();
+  const validItems = filterValidItems(body.items ?? []);
+  if (!body.qr_token || !fingerprint || !displayName || validItems.length === 0) {
     return NextResponse.json(
-      { error: "order_id, qr_token e items son requeridos" },
+      { error: "Nombre, mesa e items vÃ¡lidos son requeridos" },
+      { status: 400 },
+    );
+  }
+  if (!body.customer_phone?.trim() || !normalizeMxPhone(body.customer_phone)) {
+    return NextResponse.json({ error: "Confirma un teléfono válido antes de enviar tu pedido" }, { status: 400 });
+  }
+  if (displayName.length > 40) {
+    return NextResponse.json(
+      { error: "El nombre no puede tener mÃ¡s de 40 caracteres" },
       { status: 400 },
     );
   }
 
   const admin = createAdminClient();
-  const fingerprint = request.headers.get("x-fingerprint-id")?.trim() || null;
-
   const { data: qrCode } = await admin
     .from("qr_codes")
-    .select("id, tenant_id, current_order_id")
+    .select("id, tenant_id")
     .eq("token", body.qr_token)
     .eq("kind", "table")
-    .single();
+    .eq("is_active", true)
+    .is("archived_at", null)
+    .maybeSingle();
 
-  if (!qrCode || qrCode.current_order_id !== body.order_id) {
-    return NextResponse.json(
-      { error: "QR inválido para esta orden" },
-      { status: 403 },
-    );
+  if (!qrCode) {
+    return NextResponse.json({ error: "Mesa no encontrada o inactiva" }, { status: 404 });
   }
 
-  const { data: order } = await admin
-    .from("orders")
-    .select("id, tenant_id, status, subtotal, total, table_label")
-    .eq("id", body.order_id)
-    .single();
-
-  if (!order) {
-    return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
-  }
-
-  if (["pending_payment", "paid", "cancelled"].includes(order.status)) {
-    return NextResponse.json(
-      { error: "La orden ya no acepta nuevos productos" },
-      { status: 409 },
-    );
-  }
-
-  let deviceId: string | null = null;
-  if (fingerprint) {
-    const { data: device } = await admin
-      .from("order_devices")
-      .select("id")
-      .eq("order_id", body.order_id)
-      .eq("device_fingerprint", fingerprint)
-      .single();
-    deviceId = device?.id ?? null;
-  }
-
-  const validItems = filterValidItems(body.items);
-
-  if (validItems.length === 0) {
-    return NextResponse.json(
-      { error: "No hay items válidos para agregar" },
-      { status: 400 },
-    );
-  }
-
+  // Friendly preflight. The payment-time inventory trigger remains the
+  // authoritative concurrent guard, exactly as it is for staff orders.
   const stockValidation = await validateOrderStock(
     admin,
-    order.tenant_id,
+    qrCode.tenant_id,
     validItems,
   );
   if (!stockValidation.ok) {
     return NextResponse.json({ error: stockValidation.message }, { status: 409 });
   }
 
-  const productIds = validItems.map((item) => item.product_id);
-  const { data: products } = await admin
-    .from("products")
-    .select("id, price")
-    .in("id", productIds)
-    .eq("tenant_id", order.tenant_id);
-
-  const priceByProduct = new Map<string, number>();
-  for (const product of products ?? []) {
-    priceByProduct.set(product.id, Number(product.price));
-  }
-
-  const rows = buildOrderItemRows({
-    orderId: body.order_id,
-    items: validItems,
-    priceByProduct,
-    addedByDeviceId: deviceId,
-    // Snapshot the table this was ordered at, so it survives a later merge.
-    originTableLabel: order.table_label ?? null,
-  });
-
-  if (rows.length === 0) {
-    return NextResponse.json(
-      { error: "Ningún producto coincide con el negocio" },
-      { status: 404 },
-    );
-  }
-
-  const { error: insertError } = await admin.from("order_items").insert(rows);
-  if (insertError) {
-    return NextResponse.json(
-      { error: resolveUserError(insertError, "supabase") },
-      { status: 500 },
-    );
-  }
-
-  // The new line(s) are inserted with fulfillment_status defaulting to
-  // 'received' (column default) — the order_items -> order_devices -> orders
-  // trigger cascade (20260710000004) automatically re-derives this device's
-  // (and the order's) summary to in_progress if it had already reached
-  // ready, without touching the OTHER lines that were already done. Other
-  // people at the table are untouched either way.
-  const addedSubtotal = rows.reduce(
-    (acc, row) => acc + Number(row?.subtotal ?? 0),
-    0,
+  const { data, error } = await admin.rpc(
+    "submit_table_order" as never,
+    {
+      p_qr_token: body.qr_token,
+      p_device_fingerprint: fingerprint,
+      p_display_name: displayName,
+      p_items: validItems,
+    } as never,
   );
-  const nextSubtotal = Number(order.subtotal) + addedSubtotal;
-  const { data: updatedOrder, error: updateOrderError } = await admin
-    .from("orders")
-    .update({
-      status: "in_progress",
-      subtotal: nextSubtotal,
-      total: nextSubtotal,
-      balance_due: nextSubtotal,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", body.order_id)
-    .select("id, status, subtotal, total, balance_due")
-    .single();
+  const submitted = data as unknown as Array<{
+    order_id: string;
+    device_id: string;
+    added_items: number;
+  }> | null;
 
-  if (updateOrderError) {
-    return NextResponse.json(
-      { error: resolveUserError(updateOrderError, "supabase") },
-      { status: 500 },
-    );
+  if (error || !submitted?.[0]) {
+    const message = submitErrorMessage(error?.message ?? "No se pudo enviar el pedido");
+    const status = /capacidad|proceso de pago|disponible/i.test(message) ? 409 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 
-  await admin.from("order_activity_log").insert({
-    order_id: body.order_id,
-    actor_type: deviceId ? "device" : "system",
-    actor_id: deviceId,
-    actor_label: null,
-    action: "item.added",
-    payload: {
-      count: rows.length,
-      subtotal: addedSubtotal,
-    },
-  });
+  const result = submitted[0];
+  // Identity is optional during the migration from name-only table sessions.
+  // When supplied on the first real order, it is tenant-scoped and linked to
+  // this participant, never created merely by scanning the QR.
+  let customerId: string | null = null;
+  if (body.customer_phone?.trim()) {
+    const identity = await identifyCustomer({
+      admin,
+      tenantId: qrCode.tenant_id,
+      displayName,
+      phone: body.customer_phone,
+      fingerprint,
+    });
+    if ("error" in identity) {
+      return NextResponse.json({ error: identity.error }, { status: 422 });
+    }
+    customerId = identity.customer.id;
+    await admin.from("order_devices").update({ customer_id: customerId, updated_at: new Date().toISOString() } as never).eq("id", result.device_id);
+  }
+  const { data: order } = await admin
+    .from("orders")
+    .select("id, status, subtotal, total, paid_total, balance_due, fulfillment_status")
+    .eq("id", result.order_id)
+    .single();
 
   return NextResponse.json({
     success: true,
-    order: updatedOrder,
-    added_items: rows.length,
+    order,
+    device_id: result.device_id,
+    customer_id: customerId,
+    added_items: result.added_items,
   });
 }

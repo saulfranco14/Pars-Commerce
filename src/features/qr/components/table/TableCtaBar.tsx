@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CreditCard, Loader2, Receipt, Send, X } from "lucide-react";
+import { ChevronRight, CreditCard, Loader2, Receipt, Send, X } from "lucide-react";
 
+import { FormSheet } from "@/components/ui/FormSheet";
 import { formatCurrency } from "@/features/qr/helpers/format";
 
 import type { CartEntry } from "@/features/qr/interfaces/tableCart";
+import type { BillItem } from "@/features/qr/hooks/useBillData";
 
 interface TableCtaBarProps {
   token: string;
@@ -21,6 +23,8 @@ interface TableCtaBarProps {
   orderTotal: number;
   /** True once at least one batch has been sent to the business. */
   hasSentItems: boolean;
+  /** Items already received by the business, for the inline review sheet. */
+  sentItems: BillItem[] | null;
   /** True when the business marked the order ready — unlocks paying. */
   isReady: boolean;
 }
@@ -48,11 +52,15 @@ export function TableCtaBar({
   onDecrement,
   orderTotal,
   hasSentItems,
+  sentItems,
   isReady,
 }: TableCtaBarProps) {
   const router = useRouter();
   const [navigating, setNavigating] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
   const hasItems = entries.length > 0;
+  const reviewTotal = orderTotal + total;
+  const reviewItemCount = (sentItems?.length ?? 0) + entries.length;
 
   function goToBill() {
     if (!orderId || navigating) return;
@@ -158,17 +166,69 @@ export function TableCtaBar({
             {orderId && (
               <button
                 type="button"
-                onClick={goToBill}
-                disabled={navigating}
-                className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40 disabled:opacity-70"
+                onClick={() => setDetailOpen(true)}
+                className="flex min-h-12 w-full cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:bg-border-soft/40 active:scale-[0.99]"
               >
-                {navigating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Receipt className="h-4 w-4" />}
-                Revisar detalle de compra
+                <Receipt className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="text-sm font-bold text-foreground">
+                  Detalle de compra
+                </span>
+                <span className="ml-auto text-sm font-bold text-foreground">
+                  {formatCurrency(reviewTotal)}
+                </span>
+                <span className="rounded-full bg-border-soft/60 px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                  {reviewItemCount}
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
               </button>
             )}
           </div>
         )}
       </div>
+
+      <FormSheet
+        isOpen={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        title="Detalle de compra"
+        description="Revisa los productos antes de enviar tu pedido."
+        icon={Receipt}
+        maxWidth="max-w-md"
+      >
+        <ul className="space-y-2.5 rounded-2xl border border-border bg-surface px-4 py-3">
+          {sentItems?.map((item) => (
+            <li
+              key={item.id}
+              className="flex items-start justify-between gap-3 border-b border-border-soft/50 pb-2.5 last:border-0 last:pb-0"
+            >
+              <p className="text-sm font-semibold text-foreground">
+                {item.quantity}× {item.product_name}
+              </p>
+              <span className="shrink-0 text-sm font-bold text-foreground">
+                {formatCurrency(item.subtotal)}
+              </span>
+            </li>
+          ))}
+          {entries.map((entry) => (
+            <li
+              key={`staged-${entry.product_id}`}
+              className="flex items-start justify-between gap-3 border-b border-border-soft/50 pb-2.5 last:border-0 last:pb-0"
+            >
+              <p className="text-sm font-semibold text-foreground">
+                {entry.quantity}× {entry.product_name}
+              </p>
+              <span className="shrink-0 text-sm font-bold text-foreground">
+                {formatCurrency(entry.quantity * entry.unit_price)}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-3 flex items-center justify-between px-1 text-sm">
+          <span className="font-semibold text-muted-foreground">Total</span>
+          <span className="font-bold text-foreground">
+            {formatCurrency(reviewTotal)}
+          </span>
+        </div>
+      </FormSheet>
     </div>
   );
 }

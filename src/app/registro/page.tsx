@@ -25,9 +25,9 @@ const inputClass =
 const REGISTRO_BRAND = {
   title: "Digitaliza tu negocio hoy",
   subtitle:
-    "Crea tu tienda en línea, gestiona productos, recibe pedidos y cobra con tarjeta. Todo gratis.",
+    "Crea tu tienda en línea, gestiona productos, recibe pedidos y cobra con tarjeta. Empiezas gratis y creces cuando tu operación lo pida.",
   items: BENEFITS,
-  footnote: "Sin tarjeta de crédito. Sin comisiones de plataforma.",
+  footnote: "Sin tarjeta de crédito para empezar. Cambia o cancela desde tu panel.",
 };
 
 // Único bloque que login no tiene — se pasa como children al panel
@@ -41,7 +41,7 @@ const registroPricingHighlight = (
       </span>
     </div>
     <div className="space-y-1.5">
-      {["Productos ilimitados", "Cobros con tarjeta", "Tu propia tienda web"].map(
+      {["Hasta 5 mesas activas", "Cobros con tarjeta", "Tu propia tienda web"].map(
         (f) => (
           <div key={f} className="flex items-center gap-2">
             <Check className="h-3.5 w-3.5 shrink-0 text-accent" aria-hidden />
