@@ -11,7 +11,7 @@ import {
   renameDevice,
 } from "@/features/dispositivos/services/deviceService";
 import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
-import { assertKioskCapacity, BillingCapabilityError } from "@/features/billing/billingService";
+import { asBillingAdmin, assertKioskCapacity, BillingCapabilityError } from "@/features/billing/billingService";
 
 interface Params {
   params: Promise<{ deviceId: string }>;
@@ -84,7 +84,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   if (body.action === "approve") {
     try {
-      if (auth.deviceStatus !== "approved") await assertKioskCapacity(auth.admin as any, auth.tenantId as string);
+      if (auth.deviceStatus !== "approved") await assertKioskCapacity(asBillingAdmin(auth.admin), auth.tenantId as string);
     } catch (error) {
       if (error instanceof BillingCapabilityError) {
         return NextResponse.json({

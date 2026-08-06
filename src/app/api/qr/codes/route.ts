@@ -2,7 +2,7 @@ import { resolveUserError } from "@/lib/errors/resolveUserError";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/auth/requirePermission";
-import { assertTableCapacity, BillingCapabilityError } from "@/features/billing/billingService";
+import { asBillingAdmin, assertTableCapacity, BillingCapabilityError } from "@/features/billing/billingService";
 import { NextResponse } from "next/server";
 
 import type { Database, Json } from "@/types/database.types";
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   if (kind === "table") {
     try {
-      await assertTableCapacity(admin as any, tenantId);
+      await assertTableCapacity(asBillingAdmin(admin), tenantId);
     } catch (error) {
       if (error instanceof BillingCapabilityError) {
         return NextResponse.json({
@@ -221,7 +221,7 @@ export async function PATCH(request: Request) {
       .maybeSingle();
     if (current?.kind === "table" && !current.is_active && !current.archived_at) {
       try {
-        await assertTableCapacity(admin as any, tenantId);
+        await assertTableCapacity(asBillingAdmin(admin), tenantId);
       } catch (error) {
         if (error instanceof BillingCapabilityError) {
           return NextResponse.json({

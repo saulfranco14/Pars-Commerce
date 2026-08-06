@@ -16,6 +16,15 @@ import {
 // order safe: migration first, application second.
 type Db = SupabaseClient<any>;
 
+/**
+ * Billing migrations can be applied before generated Supabase types are
+ * refreshed. Keep this narrow compatibility cast here, rather than forcing
+ * every calling route to use `any`.
+ */
+export function asBillingAdmin(client: unknown): Db {
+  return client as Db;
+}
+
 const FREE_PLAN: BillingPlan = {
   code: "free",
   name: "Gratis",
