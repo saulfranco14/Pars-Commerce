@@ -15,17 +15,19 @@ export async function requirePermission(
   const admin = createAdminClient();
   const { data: membership } = await admin
     .from("tenant_memberships")
-    .select("id, role_id")
+    .select("id, role_id, status, invitation_expires_at")
     .eq("tenant_id", tenantId)
     .eq("user_id", userId)
     .single();
 
-  if (!membership) return null;
+  const lifecycle = membership as unknown as { id: string; role_id: string; status?: string; invitation_expires_at?: string | null } | null;
+  if (!lifecycle || lifecycle.status === "suspended" || lifecycle.status === "invited") return null;
+  if (lifecycle.invitation_expires_at && new Date(lifecycle.invitation_expires_at) < new Date()) return null;
 
   const { data: role } = await admin
     .from("tenant_roles")
     .select("name, permissions")
-    .eq("id", membership.role_id)
+    .eq("id", lifecycle.role_id)
     .single();
 
   if (!role) return null;
@@ -33,8 +35,8 @@ export async function requirePermission(
   const permissions = (role.permissions as string[] | null) ?? [];
   if (role.name === "owner" || permissions.includes(permission)) {
     return {
-      membershipId: membership.id,
-      roleId: membership.role_id,
+      membershipId: lifecycle.id,
+      roleId: lifecycle.role_id,
       roleName: role.name,
       permissions,
     };

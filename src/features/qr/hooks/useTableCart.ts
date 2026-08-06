@@ -11,6 +11,7 @@ interface UseTableCartParams {
   qrToken: string;
   fingerprint: string;
   displayName: string | null;
+  customerPhone?: string | null;
 }
 
 interface UseTableCartResult {
@@ -39,6 +40,7 @@ export function useTableCart({
   qrToken,
   fingerprint,
   displayName,
+  customerPhone = null,
 }: UseTableCartParams): UseTableCartResult {
   const [entries, setEntries] = useState<CartEntry[]>([]);
   const [saving, setSaving] = useState(false);
@@ -116,6 +118,7 @@ export function useTableCart({
         qrToken,
         fingerprint,
         displayName,
+        customerPhone,
         items: entries.map((e) => ({
           product_id: e.product_id,
           quantity: e.quantity,

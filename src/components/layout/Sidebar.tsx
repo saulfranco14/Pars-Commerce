@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
@@ -26,8 +27,10 @@ import {
   Landmark,
   Wallet,
   Sparkles,
+  Plus,
 } from "lucide-react";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
+import { FormSheet } from "@/components/ui/FormSheet";
 
 interface SidebarProps {
   tenantSlug: string | null;
@@ -92,6 +95,10 @@ interface SidebarContentProps {
 function SidebarContent(props: SidebarContentProps) {
   const router = useRouter();
   const isPlatformAdmin = useIsPlatformAdmin();
+  const [expansionOpen, setExpansionOpen] = useState(false);
+  const [checkingExpansion, setCheckingExpansion] = useState(false);
+  const [activatingOperation, setActivatingOperation] = useState(false);
+  const [expansionError, setExpansionError] = useState<string | null>(null);
   const {
     pathname,
     base,
@@ -116,6 +123,56 @@ function SidebarContent(props: SidebarContentProps) {
   const canAccessTables =
     userRole === "owner" || userRole === "cashier" || userRole === "waiter";
   const canAccessBankAccounts = userRole === "owner";
+
+  async function createAnotherBusiness() {
+    setExpansionError(null);
+    if (userRole !== "owner") {
+      setExpansionOpen(true);
+      setExpansionError("Solo la persona propietaria puede crear otro negocio.");
+      return;
+    }
+    setCheckingExpansion(true);
+    try {
+      const response = await fetch("/api/billing/business-expansion");
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "No pudimos validar tu plan");
+      if (result.can_create) {
+        onNavigate?.();
+        router.push("/dashboard/crear-negocio");
+        return;
+      }
+      setExpansionOpen(true);
+    } catch (error) {
+      setExpansionError(
+        error instanceof Error ? error.message : "No pudimos validar tu plan.",
+      );
+      setExpansionOpen(true);
+    } finally {
+      setCheckingExpansion(false);
+    }
+  }
+
+  async function activateOperation() {
+    if (!activeTenantId) return;
+    setActivatingOperation(true);
+    setExpansionError(null);
+    try {
+      const response = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenant_id: activeTenantId, plan_code: "operation" }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "No pudimos abrir el cobro");
+      window.location.assign(result.checkout_url);
+    } catch (error) {
+      setExpansionError(
+        error instanceof Error ? error.message : "No pudimos abrir el cobro.",
+      );
+      setActivatingOperation(false);
+    }
+  }
+
   return (
     <>
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-border-soft px-4">
@@ -176,6 +233,15 @@ function SidebarContent(props: SidebarContentProps) {
               </option>
             ))}
           </select>
+          <button
+            type="button"
+            onClick={() => void createAnotherBusiness()}
+            disabled={checkingExpansion}
+            className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          >
+            <Plus className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+            {checkingExpansion ? "Validando plan…" : "Crear otro negocio"}
+          </button>
         </div>
       )}
       <nav className="flex min-h-0 flex-1 flex-col space-y-0.5 overflow-auto p-3">
@@ -422,6 +488,52 @@ function SidebarContent(props: SidebarContentProps) {
           )}
         </Link>
       </div>
+      <FormSheet
+        isOpen={expansionOpen}
+        onClose={() => {
+          if (!activatingOperation) setExpansionOpen(false);
+        }}
+        dismissible={!activatingOperation}
+        title="Crea otro negocio"
+        description="Cada negocio mantiene su propio catálogo, equipo, mesas y cobros."
+        icon={Sparkles}
+        footer={
+          <div className="space-y-2">
+            {userRole === "owner" && (
+              <button
+                type="button"
+                onClick={() => void activateOperation()}
+                disabled={activatingOperation}
+                className="min-h-12 w-full rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {activatingOperation ? "Abriendo Mercado Pago…" : "Activar Operación · $199/mes"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setExpansionOpen(false)}
+              disabled={activatingOperation}
+              className="min-h-12 w-full rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground disabled:opacity-60"
+            >
+              Ahora no
+            </button>
+          </div>
+        }
+      >
+        {expansionError ? (
+          <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{expansionError}</p>
+        ) : (
+          <div className="rounded-xl bg-accent/5 p-4">
+            <p className="text-sm font-bold text-foreground">Operación incluye</p>
+            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+              <li>• Crea y administra otro negocio.</li>
+              <li>• Hasta 20 mesas activas.</li>
+              <li>• Un kiosko para tomar pedidos.</li>
+            </ul>
+            <p className="mt-3 text-xs text-muted-foreground">No se cobra aquí: primero revisarás y autorizarás el pago en Mercado Pago.</p>
+          </div>
+        )}
+      </FormSheet>
     </>
   );
 }

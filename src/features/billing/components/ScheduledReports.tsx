@@ -10,7 +10,14 @@ import type { TenantEntitlements } from "@/features/billing/entitlements";
 type ScheduledResponse = { entitlement: TenantEntitlements["scheduled_report_frequency"]; report: { frequency: "weekly" | "daily"; recipient_email: string; is_active: boolean } | null };
 
 export function ScheduledReports({ tenantId, entitlement }: { tenantId: string; entitlement: TenantEntitlements["scheduled_report_frequency"] }) {
-  const { data, mutate } = useSWR<ScheduledResponse>(`/api/billing/scheduled-reports?tenant_id=${encodeURIComponent(tenantId)}`, swrFetcher);
+  // A Free/Operation tenant cannot configure scheduled reports. Keeping the
+  // SWR key null avoids an otherwise repeated 403 request on every refresh.
+  const { data, mutate } = useSWR<ScheduledResponse>(
+    entitlement
+      ? `/api/billing/scheduled-reports?tenant_id=${encodeURIComponent(tenantId)}`
+      : null,
+    swrFetcher,
+  );
   const [email, setEmail] = useState("");
   const [frequency, setFrequency] = useState<"weekly" | "daily">("weekly");
   const [saving, setSaving] = useState(false);

@@ -12,7 +12,7 @@ import { ScheduledReports } from "@/features/billing/components/ScheduledReports
 
 const PLAN_COPY: Record<BillingPlanCode, { summary: string; bullets: string[] }> = {
   free: { summary: "Empieza a vender sin costo fijo.", bullets: ["5 mesas activas", "Catálogo, QR, órdenes y equipo ilimitado", "Clientes y préstamos manuales"] },
-  operation: { summary: "Para atender más en el piso.", bullets: ["20 mesas activas", "1 kiosko", "Recomendación para prestar"] },
+  operation: { summary: "Para atender más en el piso.", bullets: ["20 mesas activas", "1 kiosko", "Crea otro negocio", "Recomendación para prestar"] },
   growth: { summary: "Para controlar varias operaciones.", bullets: ["50 mesas y 3 kioskos", "Reportes y exportación", "Vista de hasta 3 negocios"] },
   scale: { summary: "Para una operación que ya escala.", bullets: ["100 mesas y 10 kioskos", "Hasta 10 negocios juntos", "Reglas de crédito y reportes programados"] },
 };
@@ -27,6 +27,7 @@ export function BillingPlanCard({ tenantId, canManage }: { tenantId: string; can
     swrFetcher,
   );
   const [plans, setPlans] = useState<BillingPlan[] | null>(null);
+  const [plansLoading, setPlansLoading] = useState(false);
   const [sheet, setSheet] = useState<"plans" | "manage" | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +36,7 @@ export function BillingPlanCard({ tenantId, canManage }: { tenantId: string; can
     setError(null);
     setSheet("plans");
     if (plans) return;
+    setPlansLoading(true);
     try {
       const response = await fetch("/api/billing/plans");
       const data = await response.json();
@@ -42,6 +44,8 @@ export function BillingPlanCard({ tenantId, canManage }: { tenantId: string; can
       setPlans(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No pudimos cargar los planes");
+    } finally {
+      setPlansLoading(false);
     }
   }
 
@@ -158,7 +162,15 @@ export function BillingPlanCard({ tenantId, canManage }: { tenantId: string; can
       <FormSheet isOpen={sheet === "plans"} onClose={() => setSheet(null)} title="Elige cómo crece tu negocio" description="Empiezas gratis. Cambias o cancelas desde aquí, sin hablar con soporte." icon={Sparkles} footer={<button type="button" onClick={() => setSheet(null)} className="min-h-12 w-full rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground">Cerrar</button>}>
         <div className="space-y-3">
           {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-          {(plans ?? []).map((plan) => {
+          {plansLoading && [0, 1, 2, 3].map((index) => (
+            <div key={index} className="animate-pulse rounded-2xl border border-border bg-surface p-4" aria-label="Cargando plan">
+              <div className="flex items-start justify-between gap-3"><div className="h-5 w-28 rounded bg-border-soft" /><div className="h-6 w-16 rounded bg-border-soft" /></div>
+              <div className="mt-3 h-3 w-5/6 rounded bg-border-soft" />
+              <div className="mt-2 h-3 w-3/4 rounded bg-border-soft" />
+              <div className="mt-4 h-12 rounded-xl bg-border-soft" />
+            </div>
+          ))}
+          {!plansLoading && (plans ?? []).map((plan) => {
             const copy = PLAN_COPY[plan.code];
             const current = plan.code === account.plan_code;
             return (

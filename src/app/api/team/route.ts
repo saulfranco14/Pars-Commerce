@@ -1,6 +1,37 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
+import { requirePermission } from "@/lib/auth/requirePermission";
+
+type MembershipLifecycle = {
+  id: string;
+  tenant_id: string;
+  user_id: string;
+  role_id: string;
+  status?: "invited" | "active" | "suspended";
+  invited_at?: string | null;
+  invitation_expires_at?: string | null;
+  suspended_at?: string | null;
+  suspension_reason?: string | null;
+};
+
+async function audit(
+  tenantId: string,
+  actorId: string,
+  action: string,
+  entityId: string,
+  payload: Record<string, unknown> = {},
+) {
+  const admin = createAdminClient();
+  await admin.from("platform_activity_events" as never).insert({
+    tenant_id: tenantId,
+    actor_id: actorId,
+    action,
+    entity_type: "tenant_membership",
+    entity_id: entityId,
+    payload,
+  } as never);
+}
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -23,19 +54,23 @@ export async function GET(request: Request) {
     );
   }
 
-  const { data: memberships, error } = await supabase
+  const canRead = await requirePermission(user.id, tenantId, "team.read");
+  if (!canRead) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const admin = createAdminClient();
+  const { data: memberships, error } = await admin
     .from("tenant_memberships")
-    .select("id, user_id, role_id")
+    .select("id, tenant_id, user_id, role_id, status, invited_at, invitation_expires_at, suspended_at, suspension_reason")
     .eq("tenant_id", tenantId);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const userIds = [...new Set((memberships ?? []).map((m) => m.user_id))];
-  const roleIds = [...new Set((memberships ?? []).map((m) => m.role_id))];
+  const rows = (memberships ?? []) as unknown as MembershipLifecycle[];
+  const userIds = [...new Set(rows.map((m) => m.user_id))];
+  const roleIds = [...new Set(rows.map((m) => m.role_id))];
 
-  const admin = createAdminClient();
   const [profilesRes, rolesRes] = await Promise.all([
     userIds.length > 0
       ? admin
@@ -85,7 +120,7 @@ export async function GET(request: Request) {
     }
   }
 
-  const list = (memberships ?? []).map((m) => {
+  const list = rows.map((m) => {
     const profile = profileMap.get(m.user_id) ?? null;
     return {
       id: m.id,
@@ -94,6 +129,11 @@ export async function GET(request: Request) {
       role_name: roleMap.get(m.role_id) ?? "",
       display_name: profile?.display_name ?? "",
       email: profile?.email ?? "",
+      status: m.status ?? "active",
+      invited_at: m.invited_at ?? null,
+      invitation_expires_at: m.invitation_expires_at ?? null,
+      suspended_at: m.suspended_at ?? null,
+      suspension_reason: m.suspension_reason ?? null,
     };
   });
 
@@ -105,24 +145,7 @@ async function requireTeamWrite(
   userId: string,
   tenantId: string
 ) {
-  const admin = createAdminClient();
-  const { data: m } = await admin
-    .from("tenant_memberships")
-    .select("role_id")
-    .eq("user_id", userId)
-    .eq("tenant_id", tenantId)
-    .single();
-  if (!m) return false;
-  const { data: role } = await admin
-    .from("tenant_roles")
-    .select("name, permissions")
-    .eq("id", m.role_id)
-    .single();
-  const perms = role?.permissions as string[] | undefined;
-  return (
-    role?.name === "owner" ||
-    (Array.isArray(perms) && perms.includes("team.write"))
-  );
+  return Boolean(await requirePermission(userId, tenantId, "team.write"));
 }
 
 export async function POST(request: Request) {
@@ -278,13 +301,18 @@ export async function POST(request: Request) {
     );
   }
 
+  const invitedAt = invitedByEmail ? new Date() : null;
+  const expiresAt = invitedByEmail ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null;
   const { data: membership, error } = await admin
     .from("tenant_memberships")
     .insert({
       tenant_id,
       user_id: targetUserId,
       role_id,
-      accepted_at: new Date().toISOString(),
+      invited_at: invitedAt?.toISOString() ?? null,
+      invitation_expires_at: expiresAt?.toISOString() ?? null,
+      accepted_at: invitedByEmail ? null : new Date().toISOString(),
+      status: invitedByEmail ? "invited" : "active",
     })
     .select("id, user_id, role_id")
     .single();
@@ -292,6 +320,12 @@ export async function POST(request: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  await audit(tenant_id, user.id, invitedByEmail ? "team.invited" : "team.added", membership.id, {
+    target_user_id: targetUserId,
+    role_id,
+    invited_by_email: invitedByEmail,
+  });
 
   return NextResponse.json({
     ...membership,
@@ -312,12 +346,14 @@ export async function PATCH(request: Request) {
   }
 
   const body = await request.json();
-  const { membership_id, role_id } = body as {
+  const { membership_id, role_id, action, reason } = body as {
     membership_id: string;
-    role_id: string;
+    role_id?: string;
+    action?: "suspend" | "reactivate";
+    reason?: string;
   };
 
-  if (!membership_id || !role_id) {
+  if (!membership_id || (!role_id && !action)) {
     return NextResponse.json(
       { error: "membership_id and role_id are required" },
       { status: 400 }
@@ -325,12 +361,13 @@ export async function PATCH(request: Request) {
   }
 
   const admin = createAdminClient();
-  const { data: membership } = await admin
+  const { data: rawMembership } = await admin
     .from("tenant_memberships")
-    .select("tenant_id")
+    .select("id, tenant_id, user_id, role_id, status")
     .eq("id", membership_id)
     .single();
 
+  const membership = rawMembership as unknown as MembershipLifecycle | null;
   if (!membership) {
     return NextResponse.json(
       { error: "Membership not found" },
@@ -347,15 +384,47 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const { data: targetRole } = await admin
+    .from("tenant_roles")
+    .select("name")
+    .eq("id", membership.role_id)
+    .maybeSingle();
+  if (targetRole?.name === "owner" && action) {
+    return NextResponse.json({ error: "No se puede suspender al owner" }, { status: 409 });
+  }
+  if (action === "suspend" && !reason?.trim()) {
+    return NextResponse.json({ error: "Indica el motivo de la suspensión" }, { status: 400 });
+  }
+
+  const now = new Date().toISOString();
+  const updates: Record<string, unknown> = { updated_at: now };
+  if (role_id) updates.role_id = role_id;
+  if (action === "suspend") {
+    updates.status = "suspended";
+    updates.suspended_at = now;
+    updates.suspended_by = user.id;
+    updates.suspension_reason = reason!.trim();
+  }
+  if (action === "reactivate") {
+    updates.status = "active";
+    updates.suspended_at = null;
+    updates.suspended_by = null;
+    updates.suspension_reason = null;
+  }
   const { error: updateError } = await admin
     .from("tenant_memberships")
-    .update({ role_id, updated_at: new Date().toISOString() })
+    .update(updates as never)
     .eq("id", membership_id);
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
+  await audit(membership.tenant_id, user.id, action ? `team.${action}d` : "team.role_changed", membership_id, {
+    target_user_id: membership.user_id,
+    role_id: role_id ?? membership.role_id,
+    reason: action === "suspend" ? reason!.trim() : null,
+  });
   return NextResponse.json({ success: true });
 }
 
@@ -424,6 +493,10 @@ export async function DELETE(request: Request) {
   if (delError) {
     return NextResponse.json({ error: delError.message }, { status: 500 });
   }
+
+  await audit(membership.tenant_id, user.id, "team.removed", membershipId, {
+    role_id: membership.role_id,
+  });
 
   return NextResponse.json({ success: true });
 }

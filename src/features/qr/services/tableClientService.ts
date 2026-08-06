@@ -99,6 +99,7 @@ export async function sendItems(payload: {
   qrToken: string;
   fingerprint: string;
   displayName: string;
+  customerPhone?: string | null;
   items: SendItemsItem[];
 }) {
   return apiFetch("/api/qr/table/items", {
@@ -107,6 +108,7 @@ export async function sendItems(payload: {
     body: JSON.stringify({
       qr_token: payload.qrToken,
       display_name: payload.displayName,
+      customer_phone: payload.customerPhone?.trim() || undefined,
       items: payload.items,
     }),
   });

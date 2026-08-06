@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import type { Database, Json } from "@/types/database.types";
+import { getAdditionalBusinessAccess } from "@/features/billing/businessExpansion";
 
 type TenantInsert = Database["public"]["Tables"]["tenants"]["Insert"];
 type TenantUpdate = Database["public"]["Tables"]["tenants"]["Update"];
@@ -17,6 +18,19 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // An invitation becomes usable only after the invited person has a verified
+  // Supabase session. This keeps email verification as the acceptance proof
+  // without creating a second token system.
+  if (user.email_confirmed_at) {
+    const admin = createAdminClient();
+    await admin
+      .from("tenant_memberships")
+      .update({ status: "active", accepted_at: new Date().toISOString(), updated_at: new Date().toISOString() } as never)
+      .eq("user_id", user.id)
+      .eq("status", "invited")
+      .or(`invitation_expires_at.is.null,invitation_expires_at.gt.${new Date().toISOString()}`);
+  }
+
   const { data: memberships, error } = await supabase
     .from("tenant_memberships")
     .select(
@@ -29,7 +43,8 @@ export async function GET() {
       role:tenant_roles(id, name, permissions)
     `
     )
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .eq("status", "active");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -122,6 +137,14 @@ export async function POST(request: Request) {
     .replace(/[^a-z0-9-]/g, "");
 
   const admin = createAdminClient();
+
+  const expansion = await getAdditionalBusinessAccess(admin as any, user.id);
+  if (!expansion.can_create) {
+    return NextResponse.json(
+      { error: "Crear otro negocio está disponible desde el plan Operación ($199/mes)." },
+      { status: 403 },
+    );
+  }
 
   const insertPayload: TenantInsert = {
     name,
@@ -224,12 +247,16 @@ export async function PATCH(request: Request) {
   const admin = createAdminClient();
   const { data: membership } = await admin
     .from("tenant_memberships")
-    .select("role:tenant_roles(name, permissions)")
+    .select("role:tenant_roles(name, permissions), status")
     .eq("user_id", user.id)
     .eq("tenant_id", tenant_id)
     .single();
 
-  const rawRole = membership?.role as
+  const membershipLifecycle = membership as unknown as { status?: string; role?: unknown } | null;
+  if (!membershipLifecycle || membershipLifecycle.status === "suspended" || membershipLifecycle.status === "invited") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const rawRole = membershipLifecycle.role as
     | { name: string; permissions: string[] }
     | { name: string; permissions: string[] }[]
     | null

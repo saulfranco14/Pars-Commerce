@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 import { filterValidItems } from "@/features/qr/helpers/buildOrderItemRows";
 import { validateOrderStock } from "@/features/inventory/services/orderStockValidationService";
+import { identifyCustomer, normalizeMxPhone } from "@/lib/customers/customerIdentity";
 
 interface TableItemPayload {
   product_id: string;
@@ -14,6 +15,7 @@ interface TableItemPayload {
 interface RequestBody {
   qr_token: string;
   display_name: string;
+  customer_phone?: string;
   items: TableItemPayload[];
 }
 
@@ -51,6 +53,9 @@ export async function POST(request: Request) {
       { error: "Nombre, mesa e items vÃ¡lidos son requeridos" },
       { status: 400 },
     );
+  }
+  if (!body.customer_phone?.trim() || !normalizeMxPhone(body.customer_phone)) {
+    return NextResponse.json({ error: "Confirma un teléfono válido antes de enviar tu pedido" }, { status: 400 });
   }
   if (displayName.length > 40) {
     return NextResponse.json(
@@ -106,6 +111,24 @@ export async function POST(request: Request) {
   }
 
   const result = submitted[0];
+  // Identity is optional during the migration from name-only table sessions.
+  // When supplied on the first real order, it is tenant-scoped and linked to
+  // this participant, never created merely by scanning the QR.
+  let customerId: string | null = null;
+  if (body.customer_phone?.trim()) {
+    const identity = await identifyCustomer({
+      admin,
+      tenantId: qrCode.tenant_id,
+      displayName,
+      phone: body.customer_phone,
+      fingerprint,
+    });
+    if ("error" in identity) {
+      return NextResponse.json({ error: identity.error }, { status: 422 });
+    }
+    customerId = identity.customer.id;
+    await admin.from("order_devices").update({ customer_id: customerId, updated_at: new Date().toISOString() } as never).eq("id", result.device_id);
+  }
   const { data: order } = await admin
     .from("orders")
     .select("id, status, subtotal, total, paid_total, balance_due, fulfillment_status")
@@ -116,6 +139,7 @@ export async function POST(request: Request) {
     success: true,
     order,
     device_id: result.device_id,
+    customer_id: customerId,
     added_items: result.added_items,
   });
 }

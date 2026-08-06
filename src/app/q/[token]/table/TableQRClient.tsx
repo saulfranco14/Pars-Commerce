@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Notification } from "@/components/ui/Notification";
 import { Toast } from "@/components/ui/Toast";
+import { FormSheet } from "@/components/ui/FormSheet";
 import { CustomerScreen } from "@/features/qr/components/customer/CustomerScreen";
 import { DeviceNamePrompt } from "@/features/qr/components/customer/DeviceNamePrompt";
 import { MergeRequestBanner } from "@/features/qr/components/table/MergeRequestBanner";
@@ -71,23 +72,44 @@ export function TableQRClient({
     qrToken: token,
     initialName: initialDeviceName,
   });
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [identityOpen, setIdentityOpen] = useState(false);
 
   const cart = useTableCart({
     menu,
     qrToken: token,
     fingerprint,
     displayName: naming.deviceName,
+    customerPhone,
   });
   const [responsibilityOpen, setResponsibilityOpen] = useState(false);
   const [claimingResponsibility, setClaimingResponsibility] = useState(false);
   const [responsibilityError, setResponsibilityError] = useState<string | null>(null);
 
   async function sendCart() {
+    // A scan and menu browsing stay anonymous. We only request the phone at
+    // the commitment point, immediately before the first submitted items.
+    if (!customerPhone.trim()) {
+      setIdentityOpen(true);
+      return;
+    }
     const sent = await cart.send();
     if (sent) {
       await onSessionRefresh();
       if (!isOwner) setResponsibilityOpen(true);
     }
+  }
+
+  async function confirmIdentityAndSend(event: React.FormEvent) {
+    event.preventDefault();
+    if (customerPhone.replace(/\D/g, "").length < 10) return;
+    setIdentityOpen(false);
+    await cart.send().then(async (sent) => {
+      if (sent) {
+        await onSessionRefresh();
+        if (!isOwner) setResponsibilityOpen(true);
+      }
+    });
   }
 
   async function claimResponsibility() {
@@ -313,6 +335,25 @@ export function TableQRClient({
           if (!claimingResponsibility) setResponsibilityOpen(false);
         }}
       />
+
+      <FormSheet
+        isOpen={identityOpen}
+        onClose={() => !cart.saving && setIdentityOpen(false)}
+        title="Antes de enviar tu pedido"
+        description="Guardamos tu número solo en este negocio para identificar tu cuenta y tus compras."
+        maxWidth="max-w-md"
+      >
+        <form onSubmit={confirmIdentityAndSend} className="space-y-4">
+          <label className="block text-sm font-semibold text-foreground">Nombre
+            <input value={naming.deviceName ?? ""} disabled className="mt-1.5 min-h-12 w-full rounded-xl border border-border bg-surface-raised px-3 text-sm text-muted-foreground" />
+          </label>
+          <label className="block text-sm font-semibold text-foreground">Teléfono
+            <input type="tel" inputMode="tel" autoFocus value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} placeholder="10 dígitos" className="mt-1.5 min-h-12 w-full rounded-xl border border-border bg-background px-3 text-base focus:border-accent focus:outline-none" />
+          </label>
+          <p className="text-xs text-muted-foreground">No se crea una cuenta por escanear; esta identidad se vincula al enviar este pedido.</p>
+          <button type="submit" disabled={cart.saving || customerPhone.replace(/\D/g, "").length < 10} className="min-h-12 w-full rounded-xl bg-accent px-4 font-bold text-accent-foreground disabled:opacity-50">{cart.saving ? "Enviando..." : "Confirmar y enviar pedido"}</button>
+        </form>
+      </FormSheet>
 
       {readyToast && (
         <Toast

@@ -6,7 +6,7 @@ import useSWR from "swr";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { PeriodSelector } from "@/components/admin/PeriodSelector";
 import { pageHeaderCta } from "@/components/admin/actionButtonClasses";
-import { useActiveTenant, useTenantStore } from "@/stores/useTenantStore";
+import { useActiveTenant } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import {
@@ -48,11 +48,9 @@ import type {
 import { getPeriodDates } from "@/features/ventas/helpers/periodDates";
 import { salesByUser } from "@/features/ventas/helpers/salesByUser";
 import { orderContentType } from "@/features/orders/helpers/orderContentType";
-import { BillingPlanCard } from "@/features/billing/components/BillingPlanCard";
 
 export default function DashboardPage() {
   const activeTenant = useActiveTenant();
-  const activeRole = useTenantStore((state) => state.activeRole());
   const [period, setPeriod] = useState<
     "today" | "week" | "fortnight" | "month" | "cutoff"
   >("week");
@@ -190,7 +188,7 @@ export default function DashboardPage() {
         <div className="space-y-3 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5">
           <PageHeader title={activeTenant.name} description={periodLabel} />
 
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <PeriodSelector
               value={period}
               onChange={(v) => setPeriod(v as typeof period)}
@@ -209,15 +207,13 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => setCreateOrderOpen(true)}
-              className={`${pageHeaderCta} justify-center whitespace-nowrap sm:w-auto`}
+              className={`${pageHeaderCta} w-full justify-center whitespace-nowrap sm:w-auto`}
             >
               <Plus className="h-4 w-4 shrink-0" aria-hidden />
               Nueva Orden
             </button>
           </div>
         </div>
-
-        <BillingPlanCard tenantId={activeTenant.id} canManage={activeRole?.name === "owner"} />
 
         {period === "cutoff" && lastCutoffEnd && (
           <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3">
@@ -240,17 +236,22 @@ export default function DashboardPage() {
         )}
 
         {needsAttention && (
-          <Link
-            href={`/dashboard/${activeTenant.slug}/ordenes`}
-            className="flex cursor-pointer items-center gap-3 rounded-2xl border border-border bg-surface p-3 shadow-sm transition-colors duration-200 hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
-          >
-            <div
-              className={`grid flex-1 gap-2 ${
-                activeOrders > 0 && unassignedCount > 0
-                  ? "grid-cols-2"
-                  : "grid-cols-1"
-              }`}
+          <section aria-labelledby="atender-ahora">
+            <div className="mb-3 flex items-baseline justify-between gap-3">
+              <h2 id="atender-ahora" className="text-sm font-semibold uppercase tracking-wider text-muted">Atiende ahora</h2>
+              <Link href={`/dashboard/${activeTenant.slug}/ordenes`} className="text-xs font-medium text-muted hover:text-foreground">Ver órdenes <ArrowRight className="inline h-3 w-3" /></Link>
+            </div>
+            <Link
+              href={`/dashboard/${activeTenant.slug}/ordenes`}
+              className="flex cursor-pointer items-center gap-3 rounded-2xl border border-border bg-surface p-3 shadow-sm transition-colors duration-200 hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
             >
+              <div
+                className={`grid flex-1 gap-2 ${
+                  activeOrders > 0 && unassignedCount > 0
+                    ? "grid-cols-2"
+                    : "grid-cols-1"
+                }`}
+              >
               {activeOrders > 0 && (
                 <div className="flex items-center gap-2.5 rounded-xl bg-amber-50 px-3 py-2">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
@@ -281,9 +282,10 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
-            </div>
-            <ArrowRight className="h-4 w-4 shrink-0 text-muted" />
-          </Link>
+              </div>
+              <ArrowRight className="h-4 w-4 shrink-0 text-muted" />
+            </Link>
+          </section>
         )}
 
         {/* Hidden entirely when no table has a customer connected right now —

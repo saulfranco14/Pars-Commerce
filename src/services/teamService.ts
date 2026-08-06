@@ -32,6 +32,17 @@ export async function updateRole(
   });
 }
 
+export async function setMemberStatus(
+  membershipId: string,
+  action: "suspend" | "reactivate",
+  reason?: string,
+): Promise<void> {
+  await apiFetch("/api/team", {
+    method: "PATCH",
+    body: JSON.stringify({ membership_id: membershipId, action, reason }),
+  });
+}
+
 export async function remove(membershipId: string): Promise<void> {
   await apiFetch(
     `/api/team?membership_id=${encodeURIComponent(membershipId)}`,
