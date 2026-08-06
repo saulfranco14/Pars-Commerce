@@ -3,9 +3,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** Server-side source of truth for creating a second business. */
 export async function getAdditionalBusinessAccess(
-  admin: SupabaseClient<any>,
+  adminClient: unknown,
   userId: string,
 ) {
+  // `tenant_billing_accounts` is added by the billing migration and is not in
+  // the checked-in generated Supabase types yet. Keep that compatibility
+  // boundary inside this server-only module instead of leaking `any` to APIs.
+  const admin = adminClient as SupabaseClient<any>;
   const { data: memberships, error: membershipError } = await admin
     .from("tenant_memberships")
     .select("tenant_id, role:tenant_roles(name)")

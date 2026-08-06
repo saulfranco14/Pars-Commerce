@@ -11,7 +11,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     return NextResponse.json(
-      await getAdditionalBusinessAccess(createAdminClient() as any, user.id),
+      await getAdditionalBusinessAccess(createAdminClient(), user.id),
     );
   } catch (error) {
     return NextResponse.json(

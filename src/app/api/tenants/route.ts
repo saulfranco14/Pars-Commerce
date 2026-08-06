@@ -138,7 +138,7 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
-  const expansion = await getAdditionalBusinessAccess(admin as any, user.id);
+  const expansion = await getAdditionalBusinessAccess(admin, user.id);
   if (!expansion.can_create) {
     return NextResponse.json(
       { error: "Crear otro negocio está disponible desde el plan Operación ($199/mes)." },
