@@ -198,6 +198,7 @@ export default function MesasPage() {
         onClose={() => setDetailTableId(null)}
         title=""
         maxWidth="max-w-2xl"
+        hideHeader
       >
         {detailTable && (
           <MesaDetailContent

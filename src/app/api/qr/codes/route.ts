@@ -2,6 +2,7 @@ import { resolveUserError } from "@/lib/errors/resolveUserError";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/auth/requirePermission";
+import { asBillingAdmin, assertTableCapacity, BillingCapabilityError } from "@/features/billing/billingService";
 import { NextResponse } from "next/server";
 
 import type { Database, Json } from "@/types/database.types";
@@ -99,6 +100,20 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+  if (kind === "table") {
+    try {
+      await assertTableCapacity(asBillingAdmin(admin), tenantId);
+    } catch (error) {
+      if (error instanceof BillingCapabilityError) {
+        return NextResponse.json({
+          error: `Tu plan ${error.account.plan.name} permite hasta ${error.account.plan.entitlements.active_table_limit} mesas activas.`,
+          code: "billing_table_limit",
+          billing: error.account,
+        }, { status: 403 });
+      }
+      return NextResponse.json({ error: "No pudimos validar el límite de mesas" }, { status: 500 });
+    }
+  }
   const { data: membership } = await admin
     .from("tenant_memberships")
     .select("id")
@@ -195,6 +210,29 @@ export async function PATCH(request: Request) {
   if (body.preset_concept !== undefined)
     updates.preset_concept =
       body.preset_concept === null ? null : String(body.preset_concept);
+
+  if (body.is_active === true) {
+    const admin = createAdminClient();
+    const { data: current } = await admin
+      .from("qr_codes")
+      .select("kind, is_active, archived_at")
+      .eq("id", qrId)
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+    if (current?.kind === "table" && !current.is_active && !current.archived_at) {
+      try {
+        await assertTableCapacity(asBillingAdmin(admin), tenantId);
+      } catch (error) {
+        if (error instanceof BillingCapabilityError) {
+          return NextResponse.json({
+            error: `Tu plan ${error.account.plan.name} permite hasta ${error.account.plan.entitlements.active_table_limit} mesas activas.`,
+            code: "billing_table_limit", billing: error.account,
+          }, { status: 403 });
+        }
+        return NextResponse.json({ error: "No pudimos validar el límite de mesas" }, { status: 500 });
+      }
+    }
+  }
 
   const { data, error } = await supabase
     .from("qr_codes")

@@ -11,6 +11,7 @@ import {
   renameDevice,
 } from "@/features/dispositivos/services/deviceService";
 import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
+import { asBillingAdmin, assertKioskCapacity, BillingCapabilityError } from "@/features/billing/billingService";
 
 interface Params {
   params: Promise<{ deviceId: string }>;
@@ -22,7 +23,7 @@ async function authorize(deviceId: string) {
   const admin = createAdminClient();
   const { data: device } = await admin
     .from("tenant_devices")
-    .select("tenant_id")
+    .select("tenant_id, status")
     .eq("id", deviceId)
     .maybeSingle();
 
@@ -64,7 +65,7 @@ async function authorize(deviceId: string) {
     };
   }
 
-  return { tenantId: device.tenant_id as string, admin, userId: user.id };
+  return { tenantId: device.tenant_id as string, deviceStatus: device.status as string, admin, userId: user.id };
 }
 
 /** `{ action: "approve" | "reject" | "rename", name? }`. */
@@ -82,6 +83,18 @@ export async function PATCH(request: Request, { params }: Params) {
   if (auth.error) return auth.error;
 
   if (body.action === "approve") {
+    try {
+      if (auth.deviceStatus !== "approved") await assertKioskCapacity(asBillingAdmin(auth.admin), auth.tenantId as string);
+    } catch (error) {
+      if (error instanceof BillingCapabilityError) {
+        return NextResponse.json({
+          error: `Tu plan ${error.account.plan.name} permite ${error.account.plan.entitlements.active_kiosk_limit} kiosko(s) activo(s).`,
+          code: "billing_kiosk_limit",
+          billing: error.account,
+        }, { status: 403 });
+      }
+      return NextResponse.json({ error: "No pudimos validar el límite de kioskos" }, { status: 500 });
+    }
     const result = await approveDevice(
       auth.admin!,
       auth.tenantId as string,

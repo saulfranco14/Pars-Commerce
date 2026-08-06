@@ -34,6 +34,8 @@ interface FormSheetProps {
    * behavior where the footer scrolls together with the rest of `children`.
    */
   footer?: React.ReactNode;
+  /** The caller renders its own sticky context header inside the scroll area. */
+  hideHeader?: boolean;
 }
 
 /**
@@ -57,6 +59,7 @@ export function FormSheet({
   dismissible = true,
   icon: Icon,
   footer,
+  hideHeader = false,
 }: FormSheetProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -100,7 +103,7 @@ export function FormSheet({
 
         {/* Header — plain title, or the "Nuevo cliente"-style icon chip
             layout when `icon` is passed. */}
-        <div className="shrink-0 px-5 pb-3 pt-3 md:px-6 md:pt-6">
+        {!hideHeader && <div className="shrink-0 px-5 pb-3 pt-3 md:px-6 md:pt-6">
           {Icon ? (
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10">
@@ -135,7 +138,7 @@ export function FormSheet({
               )}
             </>
           )}
-        </div>
+        </div>}
 
         {/* Body — scrolls when content is long */}
         <div

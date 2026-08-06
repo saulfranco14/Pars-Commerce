@@ -18,6 +18,7 @@ import {
   NOT_READY_MESSAGE,
   requiresReadyBeforePayment,
 } from "@/features/qr/helpers/paymentReadiness";
+import { computeSplitByDevice } from "@/features/qr/helpers/computeSplitByDevice";
 
 export type IntentMethod = "efectivo" | "transferencia" | "tarjeta";
 export type CheckoutMethod = IntentMethod | "mercadopago";
@@ -141,6 +142,94 @@ export interface CreatePaymentIntentResult {
   method: IntentMethod;
 }
 
+/**
+ * The first person paying their own products can safely establish the natural
+ * per-person split. This is derived from item attribution, not from whoever
+ * first scanned the QR. Once any payment starts the existing split lock keeps
+ * the distribution stable for everyone else.
+ */
+export async function materializePersonalGroups(
+  admin: SupabaseClient,
+  orderId: string,
+  currentDeviceId: string,
+): Promise<ServiceResult<{ groupId: string }>> {
+  const [{ data: existing }, { data: rawItems }, { data: rawDevices }] =
+    await Promise.all([
+      admin
+        .from("order_split_groups")
+        .select("id, device_id")
+        .eq("order_id", orderId),
+      admin
+        .from("order_items")
+        .select("id, product_id, quantity, unit_price, subtotal, added_by_device_id, is_shared")
+        .eq("order_id", orderId),
+      admin
+        .from("order_devices")
+        .select("id, display_name, color_hex, joined_at, last_seen_at")
+        .eq("order_id", orderId)
+        .order("joined_at", { ascending: true }),
+    ]);
+
+  const existingCurrent = (existing ?? []).find(
+    (group) => group.device_id === currentDeviceId,
+  );
+  if (existingCurrent) return { ok: true, data: { groupId: existingCurrent.id } };
+  if ((existing ?? []).length > 0) {
+    return err("conflict", "La cuenta ya fue dividida. Pide al responsable que revise tu parte.");
+  }
+
+  const participantIds = new Set(
+    (rawItems ?? [])
+      .map((item) => item.added_by_device_id)
+      .filter((id): id is string => !!id),
+  );
+  const devices = (rawDevices ?? []).filter((device) => participantIds.has(device.id));
+  if (!devices.some((device) => device.id === currentDeviceId)) {
+    return err("forbidden", "No encontramos productos asociados a tu cuenta");
+  }
+
+  const groups = computeSplitByDevice(rawItems ?? [], devices);
+  if (groups.length === 0 || groups.some((group) => group.total <= 0)) {
+    return err("validation", "No se pudo preparar las cuentas personales");
+  }
+
+  const { data: created, error } = await admin
+    .from("order_split_groups")
+    .insert(
+      groups.map((group) => ({
+        order_id: orderId,
+        device_id: group.deviceId,
+        label: group.label,
+        subtotal: group.total,
+        total: group.total,
+        paid_total: 0,
+        balance_due: group.total,
+        payment_status: "pending",
+      })),
+    )
+    .select("id, device_id");
+  if (error) return err("internal", error.message);
+
+  const current = (created ?? []).find((group) => group.device_id === currentDeviceId);
+  if (!current) return err("internal", "No se pudo preparar tu parte de la cuenta");
+
+  await admin
+    .from("orders")
+    .update({ status: "pending_payment", updated_at: new Date().toISOString() })
+    .eq("id", orderId);
+
+  await admin.from("order_activity_log").insert({
+    order_id: orderId,
+    actor_type: "device",
+    actor_id: currentDeviceId,
+    actor_label: "cliente",
+    action: "split.created",
+    payload: { mode: "by_device", groups: groups.length, automatic: true },
+  });
+
+  return { ok: true, data: { groupId: current.id } };
+}
+
 export async function createPaymentIntent(
   admin: SupabaseClient,
   input: CreatePaymentIntentInput,
@@ -179,21 +268,31 @@ export async function createPaymentIntent(
   }
 
   const requestedGroupId = input.groupId ?? null;
+  // A named participant without an account-owner role is always asking to pay
+  // their own products. The server, not the CTA wording, enforces that scope.
+  const paysOwnProducts = requestedGroupId === null && !!deviceId && !isAccountOwner;
 
-  // A full-table payment must wait for EVERY person. A group payment can use
-  // the paying person's readiness, but only after that group already exists.
-  // Never let a ready device materialize and pay the entire table's balance.
+  // A whole-table payment waits for everyone. A personal payment is gated by
+  // this customer's own preparation state, even before its group exists.
   if (gateOnReady) {
     const canPayTargetGroup =
-      requestedGroupId !== null &&
+      (requestedGroupId !== null || paysOwnProducts) &&
       (deviceStatus === "ready" ||
         (isAccountOwner && order.fulfillment_status === "ready"));
     const canPayWholeOrder =
-      requestedGroupId === null && order.fulfillment_status === "ready";
+      requestedGroupId === null &&
+      !paysOwnProducts &&
+      order.fulfillment_status === "ready";
     if (!canPayTargetGroup && !canPayWholeOrder) return NOT_READY_ERROR;
   }
 
   let targetGroupId = requestedGroupId;
+
+  if (!targetGroupId && paysOwnProducts && deviceId) {
+    const personal = await materializePersonalGroups(admin, input.orderId, deviceId);
+    if (!personal.ok) return personal;
+    targetGroupId = personal.data.groupId;
+  }
 
   if (!targetGroupId) {
     // Pay the whole order: materialize a single "Cuenta total" group.
@@ -529,6 +628,7 @@ export async function rejectPayment(
 export interface PayFullOrderInput {
   orderId: string;
   method: CheckoutMethod;
+  fingerprint: string | null;
 }
 
 export interface PayFullOrderResult {
@@ -541,6 +641,9 @@ export async function payFullOrder(
   admin: SupabaseClient,
   input: PayFullOrderInput,
 ): Promise<ServiceResult<PayFullOrderResult>> {
+  if (!input.fingerprint) {
+    return err("forbidden", "Identifica tu dispositivo para pagar la cuenta total");
+  }
   const { data: order } = await admin
     .from("orders")
     .select(
@@ -550,6 +653,15 @@ export async function payFullOrder(
     .single();
 
   if (!order) return err("not_found", "Orden no encontrada");
+  const { data: payer } = await admin
+    .from("order_devices")
+    .select("is_owner")
+    .eq("order_id", input.orderId)
+    .eq("device_fingerprint", input.fingerprint)
+    .maybeSingle();
+  if (!payer?.is_owner) {
+    return err("forbidden", "Solo la persona responsable puede pagar la cuenta total");
+  }
   if (order.status === "paid") {
     return {
       ok: true,

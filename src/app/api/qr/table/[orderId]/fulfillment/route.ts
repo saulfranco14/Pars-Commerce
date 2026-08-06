@@ -66,7 +66,7 @@ export async function POST(request: Request, context: RouteContext) {
   const admin = createAdminClient();
   const { data: order } = await admin
     .from("orders")
-    .select("id, tenant_id")
+    .select("id, tenant_id, assigned_to")
     .eq("id", orderId)
     .single();
 
@@ -81,6 +81,17 @@ export async function POST(request: Request, context: RouteContext) {
   );
   if (!permission) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // The first team member to advance real work becomes the attendant when no
+  // one has claimed it. This keeps the tip recipient accurate without ever
+  // replacing an existing assignment.
+  if (!order.assigned_to) {
+    await admin
+      .from("orders")
+      .update({ assigned_to: user.id, updated_at: new Date().toISOString() })
+      .eq("id", orderId)
+      .is("assigned_to", null);
   }
 
   // One product line's state → per-item (the DB trigger cascade derives both

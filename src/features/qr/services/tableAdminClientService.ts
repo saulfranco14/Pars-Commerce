@@ -22,6 +22,13 @@ export async function advanceOrderFulfillment(payload: {
   );
 }
 
+/** Mark the current team member as the person attending this table. */
+export async function takeTableOrder(orderId: string) {
+  return apiFetch(`/api/qr/table/${encodeURIComponent(orderId)}/take`, {
+    method: "POST",
+  });
+}
+
 /** Advance ONE person's preparation state (per-device). */
 export async function advanceDeviceFulfillment(payload: {
   orderId: string;

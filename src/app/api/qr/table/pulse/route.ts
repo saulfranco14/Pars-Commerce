@@ -48,7 +48,9 @@ export async function GET(request: Request) {
 
   const orderId = qrCode.current_order_id as string | null;
   if (!orderId) {
-    return NextResponse.json({ active: false });
+    // A table with no submitted products is still a valid menu session. Do
+    // not make the client think it was closed just because somebody scanned.
+    return NextResponse.json({ active: qrCode.kind === "table", order: null });
   }
 
   const { data: order } = await admin
@@ -117,6 +119,7 @@ export async function GET(request: Request) {
     { count: readyItemCount },
     { count: receivedItemCount },
     { data: devices },
+    { data: participantItems },
     { incoming, outgoing },
   ] = await Promise.all([
     admin
@@ -139,6 +142,11 @@ export async function GET(request: Request) {
       .from("order_devices")
       .select("id, device_fingerprint, is_owner, fulfillment_status")
       .eq("order_id", orderId),
+    admin
+      .from("order_items")
+      .select("added_by_device_id")
+      .eq("order_id", orderId)
+      .not("added_by_device_id", "is", null),
     getPendingMergeRequests(admin, orderId, nowIso),
   ]);
   const myDevice = fingerprint
@@ -182,7 +190,9 @@ export async function GET(request: Request) {
        *  (a change ready_item_count alone can't see). */
       received_item_count: receivedItemCount ?? 0,
     },
-    connected_devices: (devices ?? []).length,
+    connected_devices: new Set(
+      (participantItems ?? []).map((item) => item.added_by_device_id),
+    ).size,
     i_am_owner: myDevice?.is_owner === true,
     incoming_merge_request: incoming
       ? {
