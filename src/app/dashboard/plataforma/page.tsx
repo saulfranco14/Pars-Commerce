@@ -1,36 +1,94 @@
 "use client";
 
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
-import { Landmark, AlertTriangle, Building2, ListChecks, ShieldCheck, TrendingUp, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  Landmark,
+  ListChecks,
+  ShieldCheck,
+  TrendingUp,
+} from "lucide-react";
 
-import { swrFetcher } from "@/lib/swrFetcher";
-import { PageHeader } from "@/components/admin/PageHeader";
-import { MetricsStrip } from "@/components/admin/MetricsStrip";
 import { EmptyState } from "@/components/admin/EmptyState";
-import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { MetricsStrip } from "@/components/admin/MetricsStrip";
+import { PageHeader } from "@/components/admin/PageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { formatMXN } from "@/lib/loanUtils";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { PlatformBusinessesView } from "@/features/platform/components/PlatformBusinessesView";
+import { PlatformUsersView } from "@/features/platform/components/PlatformUsersView";
 import { STATUS_LABEL, STATUS_TONE } from "@/features/settlement/constants/labels";
+import { formatMXN } from "@/lib/loanUtils";
+import { swrFetcher } from "@/lib/swrFetcher";
 import type { SettlementStatus } from "@/types/settlement";
 import type { PlatformDashboard } from "@/types/settlementDashboard";
 
-/**
- * Platform treasury board (super admin only). The endpoint enforces
- * isPlatformAdmin server-side; a non-admin gets a 403 which surfaces here as
- * the "no access" state.
- */
+type PlatformView = "operation" | "users" | "businesses" | "audit";
+type PlatformEvent = {
+  id: string;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  created_at: string;
+};
+
+const VIEW_COPY: Record<PlatformView, { title: string; description: string }> = {
+  operation: {
+    title: "Operación",
+    description: "Supervisa liquidaciones, actividad de pedidos y alertas de todos los negocios.",
+  },
+  users: {
+    title: "Usuarios",
+    description: "Localiza cuentas, revisa su contexto y administra su acceso a la plataforma.",
+  },
+  businesses: {
+    title: "Negocios",
+    description: "Entiende la operación, el responsable y los límites de acceso de cada comercio.",
+  },
+  audit: {
+    title: "Auditoría",
+    description: "Revisa la trazabilidad de los cambios realizados dentro de la plataforma.",
+  },
+};
+
 export default function PlataformaPage() {
-  const { data, error, isLoading } = useSWR<PlatformDashboard>(
-    "/api/settlement-dashboard",
-    swrFetcher,
+  const searchParams = useSearchParams();
+  const requestedView = searchParams.get("view");
+  const view: PlatformView =
+    requestedView === "users" || requestedView === "businesses" || requestedView === "audit"
+      ? requestedView
+      : "operation";
+  const copy = VIEW_COPY[view];
+
+  return (
+    <div className="mx-auto max-w-[1440px] space-y-5">
+      <PageHeader eyebrow="Plataforma" title={copy.title} description={copy.description} />
+      {view === "operation" && <OperationModule />}
+      {view === "users" && <PlatformUsersView />}
+      {view === "businesses" && <PlatformBusinessesView />}
+      {view === "audit" && <AuditModule />}
+    </div>
   );
+}
 
-  if (isLoading) {
-    return <LoadingBlock message="Cargando tesorería…" />;
-  }
+function OperationModule() {
+  const {
+    data: treasury,
+    error: treasuryError,
+    isLoading: treasuryLoading,
+  } = useSWR<PlatformDashboard>("/api/settlement-dashboard", swrFetcher);
+  const {
+    data: health,
+    error: healthError,
+    isLoading: healthLoading,
+  } = useSWR<{
+    open_orders: number;
+    stale_tables: Array<{ id: string }>;
+    errors_last_24h: number;
+  }>("/api/platform/operation-health", swrFetcher);
 
-  if (error) {
+  if (treasuryLoading) return <LoadingBlock message="Cargando operación…" variant="skeleton" />;
+  if (treasuryError || !treasury) {
     return (
       <EmptyState
         icon={AlertTriangle}
@@ -40,148 +98,95 @@ export default function PlataformaPage() {
     );
   }
 
-  if (!data) return null;
-
-  return <PlatformConsole treasury={data} />;
-}
-
-type PlatformUser = { id: string; email: string; display_name: string; email_confirmed_at: string | null; last_sign_in_at: string | null; businesses: number; banned_until: string | null };
-type PlatformTenant = { id: string; name: string; slug: string; team_active: number; team_invited: number; active_tables: number; tables_enabled: number; sales_30d: number; open_orders: number };
-type PlatformEvent = { id: string; action: string; entity_type: string; entity_id: string | null; created_at: string; tenant_id: string | null };
-
-function PlatformConsole({ treasury: data }: { treasury: PlatformDashboard }) {
-  const [view, setView] = useState<"operation" | "users" | "businesses" | "audit">("operation");
-  const { data: usersData, mutate: mutateUsers } = useSWR<{ users: PlatformUser[] }>(view === "users" ? "/api/platform/users" : null, swrFetcher);
-  const { data: tenantsData } = useSWR<{ tenants: PlatformTenant[] }>(view === "businesses" ? "/api/platform/tenants" : null, swrFetcher);
-  const { data: activityData } = useSWR<{ events: PlatformEvent[] }>(view === "audit" ? "/api/platform/activity" : null, swrFetcher);
-  const { data: health } = useSWR<{ open_orders: number; stale_tables: Array<{ id: string; table_label: string | null }>; errors_last_24h: number }>(view === "operation" ? "/api/platform/operation-health" : null, swrFetcher);
-
-  async function changeUser(user: PlatformUser, status: "suspended" | "active") {
-    const reason = status === "suspended" ? prompt("Motivo de la suspensión:") : undefined;
-    if (status === "suspended" && !reason?.trim()) return;
-    const res = await fetch(`/api/platform/users/${user.id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status, reason }) });
-    if (!res.ok) alert((await res.json()).error ?? "No se pudo actualizar el usuario");
-    await mutateUsers();
-  }
-
-  async function resendVerification(user: PlatformUser) {
-    const res = await fetch(`/api/platform/users/${user.id}/resend-verification`, { method: "POST" });
-    const payload = await res.json() as { error?: string };
-    if (!res.ok) alert(payload.error ?? "No se pudo reenviar el correo");
-    else alert("Correo de verificación reenviado.");
-  }
-
   return (
-    <div className="space-y-5">
-      <PageHeader
-        eyebrow="Plataforma"
-        title="Tesorería"
-        description="Cuánto debes liquidar, a quién, qué falta confirmar y la comisión ya cobrada — de todos los negocios."
-      />
-
-      <div className="grid grid-cols-2 gap-2 rounded-2xl border border-border bg-surface p-2 sm:grid-cols-4">
-        {[
-          ["operation", "Operación", ShieldCheck], ["users", "Usuarios", Users], ["businesses", "Negocios", Building2], ["audit", "Auditoría", ListChecks],
-        ].map(([key, label, Icon]) => <button key={key as string} type="button" onClick={() => setView(key as typeof view)} className={`min-h-11 rounded-xl px-3 text-sm font-semibold transition ${view === key ? "bg-accent text-white" : "text-muted-foreground hover:bg-surface-raised"}`}><Icon className="mr-1 inline h-4 w-4" />{label as string}</button>)}
-      </div>
-
+    <>
       <MetricsStrip
         metrics={[
-          {
-            label: "Por liquidar (total)",
-            value: formatMXN(data.total_outstanding),
-            tone: "amber",
-            icon: Landmark,
-          },
-          {
-            label: "Comisión cobrada",
-            value: formatMXN(data.commission_confirmed),
-            tone: "emerald",
-            icon: TrendingUp,
-          },
-          {
-            label: "Requieren acción",
-            value: data.needs_action,
-            tone: data.needs_action > 0 ? "accent" : "default",
-            icon: ListChecks,
-          },
-          {
-            label: "En revisión",
-            value: data.disputed,
-            tone: data.disputed > 0 ? "red" : "default",
-            icon: AlertTriangle,
-          },
+          { label: "Por liquidar (total)", value: formatMXN(treasury.total_outstanding), tone: "amber", icon: Landmark },
+          { label: "Comisión cobrada", value: formatMXN(treasury.commission_confirmed), tone: "emerald", icon: TrendingUp },
+          { label: "Requieren acción", value: treasury.needs_action, tone: treasury.needs_action > 0 ? "accent" : "default", icon: ListChecks },
+          { label: "En revisión", value: treasury.disputed, tone: treasury.disputed > 0 ? "red" : "default", icon: AlertTriangle },
         ]}
       />
 
-      {view === "operation" && <section className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-surface p-4"><p className="text-xs text-muted-foreground">Órdenes abiertas</p><p className="mt-1 text-2xl font-bold">{health?.open_orders ?? "—"}</p></div>
-        <div className="rounded-2xl border border-border bg-surface p-4"><p className="text-xs text-muted-foreground">Mesas sin movimiento +12 h</p><p className="mt-1 text-2xl font-bold">{health?.stale_tables.length ?? "—"}</p></div>
-        <div className="rounded-2xl border border-border bg-surface p-4"><p className="text-xs text-muted-foreground">Alertas últimas 24 h</p><p className="mt-1 text-2xl font-bold">{health?.errors_last_24h ?? "—"}</p></div>
-      </section>}
+      {healthLoading ? (
+        <LoadingBlock message="Cargando estado operativo…" variant="skeleton" skeletonRows={3} />
+      ) : healthError ? (
+        <InlineError message="No se pudo cargar el estado operativo." />
+      ) : (
+        <section className="grid gap-3 sm:grid-cols-3" aria-label="Estado operativo">
+          <OperationalMetric label="Órdenes abiertas" value={health?.open_orders ?? 0} />
+          <OperationalMetric label="Mesas sin movimiento +12 h" value={health?.stale_tables.length ?? 0} />
+          <OperationalMetric label="Alertas últimas 24 h" value={health?.errors_last_24h ?? 0} alert={(health?.errors_last_24h ?? 0) > 0} />
+        </section>
+      )}
 
-      {view === "users" && <section className="space-y-2 rounded-2xl border border-border bg-surface p-4"><h2 className="font-bold">Usuarios de Tlaco</h2>{(usersData?.users ?? []).map((user) => <div key={user.id} className="flex flex-wrap items-center justify-between gap-3 border-t border-border-soft py-3 text-sm"><div><p className="font-semibold">{user.display_name || user.email}</p><p className="text-muted-foreground">{user.email} · {user.businesses} negocio(s) · {user.email_confirmed_at ? "correo confirmado" : "correo pendiente"}</p></div><div className="flex w-full gap-2 sm:w-auto">{!user.email_confirmed_at && <button type="button" onClick={() => resendVerification(user)} className="min-h-11 flex-1 rounded-lg border border-border px-3 font-semibold sm:flex-none">Reenviar correo</button>}<button type="button" onClick={() => changeUser(user, user.banned_until ? "active" : "suspended")} className="min-h-11 flex-1 rounded-lg border border-border px-3 font-semibold sm:flex-none">{user.banned_until ? "Reactivar" : "Suspender"}</button></div></div>)}</section>}
-      {view === "businesses" && <section className="space-y-2 rounded-2xl border border-border bg-surface p-4"><h2 className="font-bold">Negocios y operación</h2>{(tenantsData?.tenants ?? []).map((tenant) => <div key={tenant.id} className="grid gap-1 border-t border-border-soft py-3 text-sm sm:grid-cols-4"><p className="font-semibold">{tenant.name}</p><p>{tenant.team_active} activos · {tenant.team_invited} invitados</p><p>{tenant.active_tables}/{tenant.tables_enabled} mesas con pedido</p><p>{formatMXN(tenant.sales_30d)} · {tenant.open_orders} abiertas</p></div>)}</section>}
-      {view === "audit" && <section className="space-y-2 rounded-2xl border border-border bg-surface p-4"><h2 className="font-bold">Auditoría</h2>{(activityData?.events ?? []).map((event) => <div key={event.id} className="flex justify-between gap-3 border-t border-border-soft py-3 text-sm"><div><p className="font-semibold">{event.action}</p><p className="text-muted-foreground">{event.entity_type} · {event.entity_id ?? "—"}</p></div><time className="text-muted-foreground">{new Date(event.created_at).toLocaleString("es-MX")}</time></div>)}</section>}
-
-      {/* By status */}
       <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
-        <h2 className="mb-3 text-sm font-bold text-foreground">
-          Liquidaciones por estado
-        </h2>
+        <h2 className="mb-3 text-sm font-bold text-foreground">Liquidaciones por estado</h2>
         <div className="flex flex-wrap gap-2">
-          {data.by_status.map((s) => (
-            <div
-              key={s.status}
-              className="flex items-center gap-2 rounded-xl border border-border px-3 py-2"
-            >
-              <StatusBadge
-                tone={STATUS_TONE[s.status as SettlementStatus] ?? "neutral"}
-                label={STATUS_LABEL[s.status as SettlementStatus] ?? s.status}
-                compact
-              />
-              <span className="text-xs text-muted-foreground">
-                {s.count} · {formatMXN(s.total_to_transfer)}
-              </span>
+          {treasury.by_status.map((status) => (
+            <div key={status.status} className="flex items-center gap-2 rounded-xl border border-border px-3 py-2">
+              <StatusBadge tone={STATUS_TONE[status.status as SettlementStatus] ?? "neutral"} label={STATUS_LABEL[status.status as SettlementStatus] ?? status.status} compact />
+              <span className="text-xs text-muted-foreground">{status.count} · {formatMXN(status.total_to_transfer)}</span>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Owed by tenant — who to pay next */}
       <section className="space-y-3">
-        <h2 className="text-sm font-bold text-foreground">
-          A quién debes liquidar (mayor primero)
-        </h2>
-        {data.owed_by_tenant.length === 0 ? (
-          <EmptyState
-            icon={Landmark}
-            title="Nada pendiente"
-            description="No hay dinero por liquidar a ningún negocio ahora mismo."
-          />
+        <h2 className="text-sm font-bold text-foreground">A quién debes liquidar (mayor primero)</h2>
+        {treasury.owed_by_tenant.length === 0 ? (
+          <EmptyState icon={Landmark} title="Nada pendiente" description="No hay dinero por liquidar a ningún negocio ahora mismo." />
         ) : (
           <div className="grid gap-2">
-            {data.owed_by_tenant.map((t) => (
-              <div
-                key={t.tenant_id}
-                className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 shadow-sm"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-mono text-xs text-muted-foreground">
-                    {t.tenant_id}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t.open_settlements} liquidación(es) pendiente(s)
-                  </p>
-                </div>
-                <span className="text-lg font-bold text-foreground">
-                  {formatMXN(t.total_to_transfer)}
-                </span>
+            {treasury.owed_by_tenant.map((tenant) => (
+              <div key={tenant.tenant_id} className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-surface p-4 shadow-sm">
+                <div className="min-w-0"><p className="truncate font-mono text-xs text-muted-foreground">{tenant.tenant_id}</p><p className="text-xs text-muted-foreground">{tenant.open_settlements} liquidación(es) pendiente(s)</p></div>
+                <span className="shrink-0 text-lg font-bold tabular-nums text-foreground">{formatMXN(tenant.total_to_transfer)}</span>
               </div>
             ))}
           </div>
         )}
       </section>
-    </div>
+    </>
   );
+}
+
+function OperationalMetric({ label, value, alert = false }: { label: string; value: number; alert?: boolean }) {
+  return <div className="rounded-2xl border border-border bg-surface p-4"><p className="text-xs text-muted-foreground">{label}</p><p className={`mt-1 text-2xl font-bold tabular-nums ${alert ? "text-red-600" : "text-foreground"}`}>{value}</p></div>;
+}
+
+function AuditModule() {
+  const { data, error, isLoading } = useSWR<{ events: PlatformEvent[] }>(
+    "/api/platform/activity",
+    swrFetcher,
+  );
+
+  if (isLoading) return <LoadingBlock message="Cargando auditoría…" variant="skeleton" />;
+  if (error) return <InlineError message="No se pudo cargar la actividad reciente." />;
+  if (!data?.events.length) return <EmptyState icon={ListChecks} title="Sin actividad" description="No hay eventos recientes para revisar." />;
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+      <div className="flex items-center justify-between border-b border-border-soft px-4 py-3 sm:px-5">
+        <h2 className="text-sm font-bold text-foreground">Actividad reciente</h2>
+        <span className="text-xs font-semibold tabular-nums text-muted-foreground">{data.events.length} eventos</span>
+      </div>
+      <ol className="divide-y divide-border-soft">
+        {data.events.map((event) => (
+          <li key={event.id} className="grid gap-2 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-5">
+            <div className="flex min-w-0 gap-3">
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent"><ShieldCheck className="h-4 w-4" aria-hidden /></span>
+              <div className="min-w-0"><p className="truncate text-sm font-bold text-foreground">{event.action}</p><p className="truncate text-xs text-muted-foreground">{event.entity_type} · {event.entity_id ?? "Sin identificador"}</p></div>
+            </div>
+            <time dateTime={event.created_at} className="pl-11 text-xs text-muted-foreground sm:pl-0">{new Date(event.created_at).toLocaleString("es-MX")}</time>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function InlineError({ message }: { message: string }) {
+  return <div className="flex min-h-24 items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700" role="alert"><AlertTriangle className="h-5 w-5 shrink-0" aria-hidden />{message}</div>;
 }

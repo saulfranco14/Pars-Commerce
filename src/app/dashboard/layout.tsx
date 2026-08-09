@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthInitializer } from "@/hooks/useAuthInitializer";
@@ -16,6 +16,7 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { btnPrimary } from "@/components/ui/buttonClasses";
 import { isFocusRoute } from "@/lib/focusRoutes";
 import { OnboardingOverlay } from "@/components/onboarding/OnboardingOverlay";
+import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
 
 export default function DashboardLayout({
   children,
@@ -23,7 +24,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isPlatformAdmin = useIsPlatformAdmin();
   useAuthInitializer();
   useAuthProfileAndTenants();
   const profile = useSessionStore((s) => s.profile);
@@ -46,6 +49,12 @@ export default function DashboardLayout({
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (pathname === "/dashboard" && isPlatformAdmin) {
+      router.replace("/dashboard/plataforma");
+    }
+  }, [isPlatformAdmin, pathname, router]);
 
   useEffect(() => {
     if (!tenantSlug || memberships.length === 0) return;

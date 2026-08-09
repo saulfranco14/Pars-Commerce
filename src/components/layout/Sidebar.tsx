@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
@@ -25,6 +25,9 @@ import {
   QrCode,
   Table2,
   Landmark,
+  ShieldCheck,
+  Building2,
+  ListChecks,
   Wallet,
   Sparkles,
   Plus,
@@ -72,6 +75,7 @@ function NavLink({
 
 interface SidebarContentProps {
   pathname: string;
+  platformView: "operation" | "users" | "businesses" | "audit";
   slug: string | null;
   base: string;
   hasTenant: boolean;
@@ -101,6 +105,7 @@ function SidebarContent(props: SidebarContentProps) {
   const [expansionError, setExpansionError] = useState<string | null>(null);
   const {
     pathname,
+    platformView,
     base,
     hasTenant,
     memberships,
@@ -254,17 +259,54 @@ function SidebarContent(props: SidebarContentProps) {
           Inicio
         </NavLink>
         {isPlatformAdmin && (
-          <NavLink
-            href="/dashboard/plataforma"
-            active={pathname === "/dashboard/plataforma"}
-            icon={Landmark}
-            onNavigate={onNavigate}
-          >
-            Tesorería
-          </NavLink>
+          <div className="mt-2 border-t border-border-soft pt-2">
+            <div className="flex items-center justify-between px-3 pb-1.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                Plataforma
+              </p>
+              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold text-accent">
+                Super admin
+              </span>
+            </div>
+            <NavLink
+              href="/dashboard/plataforma"
+              active={pathname === "/dashboard/plataforma" && platformView === "operation"}
+              icon={ShieldCheck}
+              onNavigate={onNavigate}
+            >
+              Operación
+            </NavLink>
+            <NavLink
+              href="/dashboard/plataforma?view=users"
+              active={pathname === "/dashboard/plataforma" && platformView === "users"}
+              icon={Users}
+              onNavigate={onNavigate}
+            >
+              Usuarios
+            </NavLink>
+            <NavLink
+              href="/dashboard/plataforma?view=businesses"
+              active={pathname === "/dashboard/plataforma" && platformView === "businesses"}
+              icon={Building2}
+              onNavigate={onNavigate}
+            >
+              Negocios
+            </NavLink>
+            <NavLink
+              href="/dashboard/plataforma?view=audit"
+              active={pathname === "/dashboard/plataforma" && platformView === "audit"}
+              icon={ListChecks}
+              onNavigate={onNavigate}
+            >
+              Auditoría
+            </NavLink>
+          </div>
         )}
         {hasTenant && (
           <>
+            <p className="mt-2 border-t border-border-soft px-3 pb-1.5 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Gestión del negocio
+            </p>
             <NavLink
               href={`${base}/productos`}
               active={
@@ -545,6 +587,7 @@ export function Sidebar({
   onSignOut,
 }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const profile = useSessionStore((s) => s.profile);
   const memberships = useTenantStore((s) => s.memberships);
   const activeTenantId = useTenantStore((s) => s.activeTenantId);
@@ -555,9 +598,17 @@ export function Sidebar({
   const slug = tenantSlug ?? activeTenant?.slug ?? null;
   const base = slug ? `/dashboard/${slug}` : "/dashboard";
   const hasTenant = !!slug;
+  const requestedPlatformView = searchParams.get("view");
+  const platformView: SidebarContentProps["platformView"] =
+    requestedPlatformView === "users" ||
+    requestedPlatformView === "businesses" ||
+    requestedPlatformView === "audit"
+      ? requestedPlatformView
+      : "operation";
 
   const sidebarContentProps = {
     pathname,
+    platformView,
     slug,
     base,
     hasTenant,
