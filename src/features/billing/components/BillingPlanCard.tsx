@@ -14,7 +14,7 @@ const PLAN_COPY: Record<BillingPlanCode, { summary: string; bullets: string[] }>
   free: { summary: "Empieza a vender sin costo fijo.", bullets: ["5 mesas activas", "Catálogo, QR, órdenes y equipo ilimitado", "Clientes y préstamos manuales"] },
   operation: { summary: "Para atender más en el piso.", bullets: ["20 mesas activas", "1 kiosko", "Crea otro negocio", "Recomendación para prestar"] },
   growth: { summary: "Para controlar varias operaciones.", bullets: ["50 mesas y 3 kioskos", "Reportes y exportación", "Vista de hasta 3 negocios"] },
-  scale: { summary: "Para una operación que ya escala.", bullets: ["100 mesas y 10 kioskos", "Hasta 10 negocios juntos", "Reglas de crédito y reportes programados"] },
+  scale: { summary: "Para una operación que ya escala.", bullets: ["100 mesas y 10 kioskos", "Hasta 12 negocios juntos", "Reglas de crédito y reportes programados"] },
 };
 
 function money(value: number) {

@@ -18,6 +18,7 @@ import {
 import { btnPrimary, btnDanger, btnSecondary } from "@/components/ui/buttonClasses";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { useActiveTenant } from "@/stores/useTenantStore";
+import { WhatsAppShareButton } from "@/components/communications/WhatsAppShareButton";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { formatOrderDateFull } from "@/lib/formatDate";
 import {
@@ -227,6 +228,9 @@ export default function SubscriptionDetailPage() {
         <p className="text-sm text-muted">{sub.customer_email}</p>
         {sub.customer_phone && (
           <p className="text-sm text-muted">{sub.customer_phone}</p>
+        )}
+        {activeTenant?.id && sub.customer_phone && (
+          <div className="mt-3"><WhatsAppShareButton tenantId={activeTenant.id} entityType="subscription" entityId={sub.id} recipientPhone={sub.customer_phone} eventType="subscription_reminder_shared" /></div>
         )}
       </div>
 

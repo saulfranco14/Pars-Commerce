@@ -54,6 +54,11 @@ export interface Tenant {
   accepting_orders?: boolean;
   settings: Json | null;
   whatsapp_phone?: string | null;
+  whatsapp_orders_enabled?: boolean;
+  is_demo?: boolean;
+  demo_key?: string | null;
+  catalog_template_id?: string | null;
+  catalog_template_version?: number | null;
   social_links?: TenantSocialLinks | null;
   address?: TenantAddress | null;
   sales_config?: TenantSalesConfig | null;

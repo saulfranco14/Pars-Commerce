@@ -58,6 +58,17 @@ export async function PATCH(request: Request) {
   }
 
   const admin = createAdminClient();
+  const { data: tenant } = await admin
+    .from("tenants")
+    .select("is_demo")
+    .eq("id", body.tenant_id)
+    .maybeSingle();
+  if (body.accepting_orders && tenant?.is_demo) {
+    return NextResponse.json(
+      { error: "Los negocios demo son sólo de consulta y no pueden recibir pedidos." },
+      { status: 403 },
+    );
+  }
   const { error } = await admin
     .from("tenants")
     .update({ accepting_orders: body.accepting_orders })

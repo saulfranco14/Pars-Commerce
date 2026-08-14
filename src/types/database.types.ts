@@ -2749,9 +2749,13 @@ export type Database = {
           accepting_orders: boolean
           banner_url: string | null
           business_type: string | null
+          catalog_template_id: string | null
+          catalog_template_version: number | null
           created_at: string
+          demo_key: string | null
           description: string | null
           id: string
+          is_demo: boolean
           kiosk_enroll_key: string | null
           logo_url: string | null
           name: string
@@ -2763,14 +2767,19 @@ export type Database = {
           theme_color: string | null
           updated_at: string
           whatsapp_phone: string | null
+          whatsapp_orders_enabled: boolean
         }
         Insert: {
           accepting_orders?: boolean
           banner_url?: string | null
           business_type?: string | null
+          catalog_template_id?: string | null
+          catalog_template_version?: number | null
           created_at?: string
+          demo_key?: string | null
           description?: string | null
           id?: string
+          is_demo?: boolean
           kiosk_enroll_key?: string | null
           logo_url?: string | null
           name: string
@@ -2782,14 +2791,19 @@ export type Database = {
           theme_color?: string | null
           updated_at?: string
           whatsapp_phone?: string | null
+          whatsapp_orders_enabled?: boolean
         }
         Update: {
           accepting_orders?: boolean
           banner_url?: string | null
           business_type?: string | null
+          catalog_template_id?: string | null
+          catalog_template_version?: number | null
           created_at?: string
+          demo_key?: string | null
           description?: string | null
           id?: string
+          is_demo?: boolean
           kiosk_enroll_key?: string | null
           logo_url?: string | null
           name?: string
@@ -2801,6 +2815,7 @@ export type Database = {
           theme_color?: string | null
           updated_at?: string
           whatsapp_phone?: string | null
+          whatsapp_orders_enabled?: boolean
         }
         Relationships: [
           {
@@ -2862,6 +2877,25 @@ export type Database = {
       }
     }
     Functions: {
+      create_tenant_with_catalog: {
+        Args: {
+          p_business_type: string
+          p_catalog_template_key?: string | null
+          p_demo_key?: string | null
+          p_is_demo?: boolean
+          p_name: string
+          p_owner_user_id: string
+          p_site_template_id?: string | null
+          p_slug: string
+        }
+        Returns: {
+          id: string
+          name: string
+          products_created: number
+          services_created: number
+          slug: string
+        }[]
+      }
       can_manage_tenant_team: {
         Args: { p_tenant_id: string }
         Returns: boolean
