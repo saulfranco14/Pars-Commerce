@@ -7,6 +7,7 @@ import {
   Monitor,
   QrCode,
   Smartphone,
+  MessageCircle,
 } from "lucide-react";
 
 export type OrderSource =
@@ -16,7 +17,8 @@ export type OrderSource =
   | "kiosk"
   | "qr_table"
   | "qr_payment"
-  | "addendum";
+  | "addendum"
+  | "whatsapp";
 
 const SOURCE_CONFIG: Record<
   OrderSource,
@@ -61,6 +63,11 @@ const SOURCE_CONFIG: Record<
     label: "Complemento",
     icon: Link2,
     iconClass: "text-amber-600",
+  },
+  whatsapp: {
+    label: "WhatsApp",
+    icon: MessageCircle,
+    iconClass: "text-emerald-600",
   },
 };
 

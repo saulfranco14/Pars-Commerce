@@ -29,6 +29,8 @@ function SocialFieldLabel({
 export function SiteWebRedesTab({
   whatsappPhone,
   onWhatsappPhoneChange,
+  whatsappOrdersEnabled,
+  onWhatsappOrdersEnabledChange,
   instagramUrl,
   onInstagramUrlChange,
   facebookUrl,
@@ -82,6 +84,10 @@ export function SiteWebRedesTab({
           placeholder={wa.placeholder}
         />
         <p className="mt-1.5 text-[11px] text-muted-foreground">{wa.hint}</p>
+        <label className="mt-3 flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+          <span><span className="block font-semibold">Recibir pedidos por WhatsApp</span><span className="block text-xs text-emerald-800">Crea la orden antes de abrir el chat. Nunca confirma un pago.</span></span>
+          <input type="checkbox" checked={whatsappOrdersEnabled} onChange={(event) => onWhatsappOrdersEnabledChange(event.target.checked)} className="h-5 w-5 accent-emerald-700" />
+        </label>
       </div>
 
       <div className="rounded-xl border border-border/60 bg-background p-4 shadow-sm">

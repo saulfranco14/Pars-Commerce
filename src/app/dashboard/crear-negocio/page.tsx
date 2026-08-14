@@ -1,10 +1,10 @@
 "use client";
 
-import { useId, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useId, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
-import { ArrowLeft, Plus, X, Palette } from "lucide-react";
+import { ArrowLeft, Plus, X, Palette, PackageCheck } from "lucide-react";
 import {
   create as createTenant,
   list as listTenants,
@@ -18,18 +18,22 @@ import { BusinessCreatedSuccess } from "@/components/tenants/BusinessCreatedSucc
 import { BUSINESS_TYPES } from "@/constants/businessTypes";
 import { TemplateSelector } from "@/components/site/TemplateSelector";
 import { CreateCancelActions } from "@/components/layout/CreateCancelActions";
+import type { CatalogTemplatePreview } from "@/features/catalog/types";
 
 export default function CrearNegocioPage() {
   const formId = useId();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const setMemberships = useTenantStore((s) => s.setMemberships);
   const setActiveTenantId = useTenantStore((s) => s.setActiveTenantId);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
-  const [businessType, setBusinessType] = useState("");
+  const [businessType, setBusinessType] = useState(() => searchParams.get("giro") ?? "");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
     null,
   );
+  const [useStarterCatalog, setUseStarterCatalog] = useState(true);
+  const [selectedCatalogKey, setSelectedCatalogKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -43,6 +47,16 @@ export default function CrearNegocioPage() {
     { fallbackData: [] },
   );
   const templates = Array.isArray(templatesData) ? templatesData : [];
+  const { data: catalogData, isLoading: catalogLoading } = useSWR<CatalogTemplatePreview[]>(
+    businessType ? `/api/catalog-templates?business_type=${encodeURIComponent(businessType)}` : null,
+    swrFetcher,
+    { fallbackData: [] },
+  );
+  const catalogTemplates = Array.isArray(catalogData) ? catalogData : [];
+
+  useEffect(() => {
+    setSelectedCatalogKey(catalogTemplates[0]?.key ?? null);
+  }, [businessType, catalogTemplates]);
 
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
@@ -92,6 +106,7 @@ export default function CrearNegocioPage() {
         slug: finalSlug,
         business_type: businessType.trim(),
         site_template_id: selectedTemplateId ?? undefined,
+        catalog_template_key: useStarterCatalog ? selectedCatalogKey ?? undefined : undefined,
       })) as { id: string };
       const list = (await listTenants()) as MembershipItem[];
       setMemberships(list);
@@ -227,6 +242,62 @@ export default function CrearNegocioPage() {
                   </p>
                 )}
               </div>
+              {businessType && (
+                <section className="rounded-xl border border-border bg-surface p-4" aria-labelledby="starter-catalog-title">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10">
+                      <PackageCheck className="h-5 w-5 text-accent" aria-hidden />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 id="starter-catalog-title" className="text-sm font-semibold text-foreground">Empieza con catálogo</h3>
+                          <p className="mt-0.5 text-xs text-muted-foreground">Productos, servicios, precios en MXN e imágenes editables para empezar más rápido.</p>
+                        </div>
+                        <label className="relative inline-flex min-h-11 shrink-0 cursor-pointer items-center">
+                          <input
+                            type="checkbox"
+                            checked={useStarterCatalog}
+                            onChange={(event) => setUseStarterCatalog(event.target.checked)}
+                            className="peer sr-only"
+                          />
+                          <span className="h-6 w-11 rounded-full bg-border transition-colors peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2" />
+                          <span className="pointer-events-none absolute left-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5" />
+                          <span className="sr-only">Cargar catálogo recomendado</span>
+                        </label>
+                      </div>
+                      {useStarterCatalog && (
+                        <div className="mt-3">
+                          {catalogLoading ? (
+                            <p className="text-sm text-muted-foreground">Buscando el catálogo recomendado…</p>
+                          ) : catalogTemplates.length > 0 ? (
+                            <>
+                              <label htmlFor="catalog-template" className="sr-only">Catálogo inicial</label>
+                              <select
+                                id="catalog-template"
+                                value={selectedCatalogKey ?? ""}
+                                onChange={(event) => setSelectedCatalogKey(event.target.value || null)}
+                                className="select-custom min-h-11 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                              >
+                                {catalogTemplates.map((template) => (
+                                  <option key={template.key} value={template.key}>{template.name}</option>
+                                ))}
+                              </select>
+                              {catalogTemplates.filter((template) => template.key === selectedCatalogKey).map((template) => (
+                                <p key={template.key} className="mt-2 text-xs text-muted-foreground">
+                                  {template.products_count} productos · {template.services_count} servicios · Puedes editar todo después de crear el negocio.
+                                </p>
+                              ))}
+                            </>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">Aún no hay catálogo para este giro. Puedes iniciar vacío.</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              )}
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10">

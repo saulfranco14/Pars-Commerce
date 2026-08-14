@@ -1,13 +1,16 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import useSWR from "swr";
+import { useState } from "react";
+import useSWR, { mutate } from "swr";
 import {
   AlertTriangle,
+  CheckCircle2,
   Landmark,
   ListChecks,
   ShieldCheck,
   TrendingUp,
+  Store,
 } from "lucide-react";
 
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -16,10 +19,12 @@ import { PageHeader } from "@/components/admin/PageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { PlatformBusinessesView } from "@/features/platform/components/PlatformBusinessesView";
+import { DEMO_PORTFOLIO } from "@/features/catalog/demoPortfolio";
 import { PlatformUsersView } from "@/features/platform/components/PlatformUsersView";
 import { STATUS_LABEL, STATUS_TONE } from "@/features/settlement/constants/labels";
 import { formatMXN } from "@/lib/loanUtils";
 import { swrFetcher } from "@/lib/swrFetcher";
+import { useTenantStore } from "@/stores/useTenantStore";
 import type { SettlementStatus } from "@/types/settlement";
 import type { PlatformDashboard } from "@/types/settlementDashboard";
 
@@ -72,6 +77,15 @@ export default function PlataformaPage() {
 }
 
 function OperationModule() {
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [demoMessage, setDemoMessage] = useState<string | null>(null);
+  const [preparedDemoCount, setPreparedDemoCount] = useState<number | null>(null);
+  const memberships = useTenantStore((state) => state.memberships);
+  const portfolioCount = Math.max(
+    preparedDemoCount ?? 0,
+    memberships.filter((membership) => membership.tenant.is_demo).length,
+  );
+  const demosReady = portfolioCount >= DEMO_PORTFOLIO.length;
   const {
     data: treasury,
     error: treasuryError,
@@ -100,6 +114,15 @@ function OperationModule() {
 
   return (
     <>
+      <section className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div><h2 className="text-sm font-bold text-foreground">Portafolio de demos</h2><p className="mt-1 text-sm text-muted-foreground">{demosReady ? `Tus ${portfolioCount} demos están listas. Cámbialas desde el selector de negocios, en la sección “Mis demos”.` : "Prepara o repara las tiendas demo de forma idempotente. Es un privilegio de super admin y no habilita cobros ni pedidos reales."}</p></div>
+        {demosReady ? (
+          <span className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-800"><CheckCircle2 className="h-4 w-4" aria-hidden />Demos listas</span>
+        ) : (
+          <button type="button" onClick={async () => { setDemoLoading(true); setDemoMessage(null); try { const response = await fetch("/api/platform/demo-portfolio", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }); const result = await response.json(); if (!response.ok) throw new Error(result.error ?? "No pudimos preparar las demos."); setPreparedDemoCount(result.count); await mutate("/api/tenants"); setDemoMessage(`${result.count} demos listas en tu selector de negocios.`); } catch (error) { setDemoMessage(error instanceof Error ? error.message : "No pudimos preparar las demos."); } finally { setDemoLoading(false); } }} disabled={demoLoading} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-50"><Store className="h-4 w-4" aria-hidden />{demoLoading ? "Preparando…" : "Preparar demos"}</button>
+        )}
+        {demoMessage && !demosReady && <p role="status" className="text-sm text-muted-foreground">{demoMessage}</p>}
+      </section>
       <MetricsStrip
         metrics={[
           { label: "Por liquidar (total)", value: formatMXN(treasury.total_outstanding), tone: "amber", icon: Landmark },

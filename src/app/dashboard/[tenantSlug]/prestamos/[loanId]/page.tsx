@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/buttonClasses";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { useActiveTenant } from "@/stores/useTenantStore";
+import { WhatsAppShareButton } from "@/components/communications/WhatsAppShareButton";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { calcSubscriptionFees, MP_SUB_FEE_PERCENT, MP_SUB_FEE_FIXED_MXN, TLACO_SERVICE_FEE_PERCENT } from "@/constants/commissionConfig";
 import {
@@ -358,6 +359,11 @@ export default function LoanDetailPage() {
             </div>
           </div>
         </div>
+        {activeTenant?.id && loan.customer?.phone && (
+          <div className="border-t border-border px-4 py-3">
+            <WhatsAppShareButton tenantId={activeTenant.id} entityType="loan" entityId={loan.id} recipientPhone={loan.customer.phone} eventType="loan_reminder_shared" />
+          </div>
+        )}
       </div>
 
       {/* Alerta si vencido */}

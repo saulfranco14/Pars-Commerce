@@ -18,7 +18,7 @@ export default async function CarritoPage({ params }: PageProps) {
 
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
-    .select("id, name, theme_color, settings, accepting_orders")
+    .select("id, name, theme_color, settings, accepting_orders, whatsapp_orders_enabled")
     .eq("slug", slug)
     .single();
 
@@ -61,6 +61,7 @@ export default async function CarritoPage({ params }: PageProps) {
         pickupScheduling={pickupScheduling}
         businessHours={businessHours}
         acceptingOrders={acceptingOrders}
+        whatsappOrdersEnabled={tenant.whatsapp_orders_enabled === true}
       />
     </div>
   );

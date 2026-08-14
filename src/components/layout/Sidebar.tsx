@@ -59,7 +59,7 @@ function NavLink({
     <Link
       href={href}
       onClick={onNavigate}
-      className={`flex items-center gap-2.5 min-h-11 rounded-lg px-3 py-3 text-base font-medium transition-colors sm:min-h-0 sm:py-2 sm:text-sm ${
+      className={`flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
         active
           ? "bg-border-soft text-foreground"
           : "text-muted hover:bg-border-soft/60 hover:text-foreground active:bg-border-soft"
@@ -79,10 +79,11 @@ interface SidebarContentProps {
   slug: string | null;
   base: string;
   hasTenant: boolean;
+  tenantsLoaded: boolean;
   memberships: {
     id: string;
     tenant_id: string;
-    tenant: { name: string; slug: string };
+    tenant: { name: string; slug: string; business_type?: string | null; is_demo?: boolean | null; theme_color?: string | null };
     role?: { name: string };
   }[];
   activeTenantId: string | null;
@@ -108,6 +109,7 @@ function SidebarContent(props: SidebarContentProps) {
     platformView,
     base,
     hasTenant,
+    tenantsLoaded,
     memberships,
     activeTenantId,
     setActiveTenantId,
@@ -128,6 +130,28 @@ function SidebarContent(props: SidebarContentProps) {
   const canAccessTables =
     userRole === "owner" || userRole === "cashier" || userRole === "waiter";
   const canAccessBankAccounts = userRole === "owner";
+  const ownBusinesses = memberships.filter((membership) => !membership.tenant.is_demo);
+  const demos = memberships.filter((membership) => membership.tenant.is_demo);
+
+  function switchBusiness(selected: SidebarContentProps["memberships"][number]) {
+    setActiveTenantId(selected.tenant_id);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("tlaco_activeTenantId", selected.tenant_id);
+      } catch {
+        /* incognito, quota, disabled */
+      }
+    }
+    const pathParts = pathname.split("/").filter(Boolean);
+    const section = pathParts[0] === "dashboard" && pathParts[1] && !["crear-negocio", "perfil", "plataforma"].includes(pathParts[1])
+      ? pathParts.slice(2)
+      : [];
+    const destination = section.length > 0
+      ? `/dashboard/${selected.tenant.slug}/${section.join("/")}`
+      : `/dashboard/${selected.tenant.slug}`;
+    onNavigate?.();
+    router.push(destination);
+  }
 
   async function createAnotherBusiness() {
     setExpansionError(null);
@@ -198,69 +222,48 @@ function SidebarContent(props: SidebarContentProps) {
           </button>
         )}
       </div>
-      {memberships.length > 0 && (
-        <div className="shrink-0 border-b border-border-soft px-3 py-3">
-          <select
+      {!tenantsLoaded ? (
+        <div className="shrink-0 border-b border-border-soft px-4 py-4" aria-busy="true" aria-label="Cargando negocios">
+          <div className="animate-pulse space-y-2.5"><div className="h-3 w-24 rounded bg-border-soft" /><div className="h-12 w-full rounded-xl bg-border-soft" /><div className="h-11 w-full rounded-xl bg-border-soft" /></div>
+        </div>
+      ) : memberships.length > 0 && (
+        <div className="shrink-0 border-b border-border-soft px-4 py-4">
+          {memberships.length > 1 && <><label htmlFor="business-switcher" className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Negocio activo</label><select
+            id="business-switcher"
             value={activeTenantId ?? memberships[0]?.tenant_id ?? ""}
-            onChange={(e) => {
-              const id = e.target.value;
-              if (!id) return;
-              const selected = memberships.find((m) => m.tenant_id === id);
-              if (!selected) return;
-              setActiveTenantId(id);
-              if (typeof window !== "undefined") {
-                try {
-                  localStorage.setItem("tlaco_activeTenantId", id);
-                } catch {
-                  /* incognito, quota, disabled */
-                }
-              }
-              const pathParts = pathname.split("/").filter(Boolean);
-              const section =
-                pathParts[0] === "dashboard" &&
-                pathParts[1] &&
-                !["crear-negocio", "perfil"].includes(pathParts[1])
-                  ? pathParts.slice(2)
-                  : [];
-              if (section.length > 0) {
-                router.push(
-                  `/dashboard/${selected.tenant.slug}/${section.join("/")}`,
-                );
-              } else if (pathname !== "/dashboard") {
-                router.push(`/dashboard/${selected.tenant.slug}`);
-              }
+            onChange={(event) => {
+              const selected = memberships.find((membership) => membership.tenant_id === event.target.value);
+              if (selected) switchBusiness(selected);
             }}
-            className="select-custom w-full min-h-11 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-0 sm:py-1.5"
+            className="select-custom min-h-12 w-full cursor-pointer rounded-xl border border-border bg-surface px-3 py-2.5 text-sm font-semibold text-foreground transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            aria-label="Cambiar negocio activo"
           >
-            {memberships.map((m) => (
-              <option key={m.id} value={m.tenant_id}>
-                {m.tenant.name}
-              </option>
-            ))}
-          </select>
+            {ownBusinesses.length > 0 && <optgroup label="Mis negocios">{ownBusinesses.map((membership) => <option key={membership.id} value={membership.tenant_id}>{membership.tenant.name}</option>)}</optgroup>}
+            {demos.length > 0 && <optgroup label="Mis demos">{demos.map((membership) => <option key={membership.id} value={membership.tenant_id}>{membership.tenant.name} · Demo</option>)}</optgroup>}
+          </select></>}
           <button
             type="button"
             onClick={() => void createAnotherBusiness()}
             disabled={checkingExpansion}
-            className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            className={`${memberships.length > 1 ? "mt-2" : ""} inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2`}
           >
             <Plus className="h-4 w-4 shrink-0 text-accent" aria-hidden />
             {checkingExpansion ? "Validando plan…" : "Crear otro negocio"}
           </button>
         </div>
       )}
-      <nav className="flex min-h-0 flex-1 flex-col space-y-0.5 overflow-auto p-3">
+      <nav className="flex min-h-0 flex-1 flex-col space-y-1 overflow-auto p-4">
         <NavLink
-          href="/dashboard"
-          active={pathname === "/dashboard"}
+          href={hasTenant ? base : "/dashboard"}
+          active={pathname === (hasTenant ? base : "/dashboard")}
           icon={Home}
           onNavigate={onNavigate}
         >
           Inicio
         </NavLink>
         {isPlatformAdmin && (
-          <div className="mt-2 border-t border-border-soft pt-2">
-            <div className="flex items-center justify-between px-3 pb-1.5">
+          <div className="mt-3 border-t border-border-soft pt-4">
+            <div className="flex items-center justify-between px-3 pb-2">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                 Plataforma
               </p>
@@ -304,7 +307,7 @@ function SidebarContent(props: SidebarContentProps) {
         )}
         {hasTenant && (
           <>
-            <p className="mt-2 border-t border-border-soft px-3 pb-1.5 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+            <p className="mt-4 border-t border-border-soft px-3 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
               Gestión del negocio
             </p>
             <NavLink
@@ -388,8 +391,8 @@ function SidebarContent(props: SidebarContentProps) {
               </NavLink>
             )}
 
-            <div className="pt-2 mt-2 border-t border-border-soft">
-              <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+            <div className="mt-4 border-t border-border-soft pt-4">
+              <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                 Cobranza
               </p>
               <NavLink
@@ -417,8 +420,8 @@ function SidebarContent(props: SidebarContentProps) {
             </div>
 
             {canAccessTeamAndSettings && (
-              <div className="pt-2 mt-2 border-t border-border-soft">
-                <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              <div className="mt-4 border-t border-border-soft pt-4">
+                <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                   Administración
                 </p>
                 <NavLink
@@ -590,6 +593,7 @@ export function Sidebar({
   const searchParams = useSearchParams();
   const profile = useSessionStore((s) => s.profile);
   const memberships = useTenantStore((s) => s.memberships);
+  const tenantsLoaded = useTenantStore((s) => s.tenantsLoaded);
   const activeTenantId = useTenantStore((s) => s.activeTenantId);
   const setActiveTenantId = useTenantStore((s) => s.setActiveTenantId);
   const activeTenant = useActiveTenant();
@@ -612,6 +616,7 @@ export function Sidebar({
     slug,
     base,
     hasTenant,
+    tenantsLoaded,
     memberships,
     activeTenantId,
     setActiveTenantId,
@@ -623,7 +628,7 @@ export function Sidebar({
 
   return (
     <>
-      <aside className="hidden h-screen max-h-screen w-56 shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-border-soft bg-surface md:flex">
+      <aside className="hidden h-screen max-h-screen w-64 shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-border-soft bg-surface md:flex">
         <SidebarContent {...sidebarContentProps} />
       </aside>
       {mobileOpen && (

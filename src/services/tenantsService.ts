@@ -10,6 +10,7 @@ export async function create(payload: {
   slug: string;
   business_type?: string;
   site_template_id?: string;
+  catalog_template_key?: string;
 }): Promise<unknown> {
   const data = await apiFetch("/api/tenants", {
     method: "POST",
