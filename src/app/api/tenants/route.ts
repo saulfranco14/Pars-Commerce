@@ -2,10 +2,26 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import type { Database, Json } from "@/types/database.types";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAdditionalBusinessAccess } from "@/features/billing/businessExpansion";
 
 type TenantUpdate = Database["public"]["Tables"]["tenants"]["Update"];
+type CreateTenantWithCatalogArgs = {
+  p_owner_user_id: string;
+  p_name: string;
+  p_slug: string;
+  p_business_type: string;
+  p_catalog_template_key: string | null;
+  p_site_template_id: string | null;
+  p_is_demo: boolean;
+  p_demo_key: string | null;
+};
+type CreatedTenant = { id: string; name: string; slug: string; product_count: number; service_count: number };
+type CatalogTenantRpc = {
+  rpc: (functionName: "create_tenant_with_catalog", args: CreateTenantWithCatalogArgs) => Promise<{
+    data: CreatedTenant[] | null;
+    error: { code?: string; message: string } | null;
+  }>;
+};
 
 export async function GET() {
   const supabase = await createClient();
@@ -147,7 +163,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const catalogAdmin = admin as unknown as SupabaseClient<any>;
+  // La función se introduce en la migración de catálogos. El tipo generado se
+  // actualizará al regenerar Supabase; mientras tanto limitamos el cast a la
+  // única RPC y a su contrato real, sin abrir un cliente `any`.
+  const catalogAdmin = admin as unknown as CatalogTenantRpc;
   const { data: created, error: tenantError } = await catalogAdmin.rpc(
     "create_tenant_with_catalog",
     {
