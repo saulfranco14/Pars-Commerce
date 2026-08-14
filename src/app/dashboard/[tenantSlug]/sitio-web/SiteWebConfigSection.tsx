@@ -34,6 +34,7 @@ export function SiteWebConfigSection({
   const [publicStoreLoading, setPublicStoreLoading] = useState(false);
   const [themeColor, setThemeColor] = useState("");
   const [whatsappPhone, setWhatsappPhone] = useState("");
+  const [whatsappOrdersEnabled, setWhatsappOrdersEnabled] = useState(false);
   const [instagramUrl, setInstagramUrl] = useState("");
   const [facebookUrl, setFacebookUrl] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
@@ -83,6 +84,7 @@ export function SiteWebConfigSection({
     setWhatsappPhone(
       (activeTenant as { whatsapp_phone?: string }).whatsapp_phone ?? "",
     );
+    setWhatsappOrdersEnabled((activeTenant as { whatsapp_orders_enabled?: boolean }).whatsapp_orders_enabled === true);
     const sl = (
       activeTenant as {
         social_links?: {
@@ -161,6 +163,7 @@ export function SiteWebConfigSection({
     try {
       await updateTenant(activeTenant.id, {
         whatsapp_phone: whatsappPhone.trim() || undefined,
+        whatsapp_orders_enabled: whatsappOrdersEnabled,
         social_links: {
           instagram: instagramUrl.trim() || undefined,
           facebook: facebookUrl.trim() || undefined,
@@ -236,6 +239,8 @@ export function SiteWebConfigSection({
           <SiteWebRedesTab
             whatsappPhone={whatsappPhone}
             onWhatsappPhoneChange={setWhatsappPhone}
+            whatsappOrdersEnabled={whatsappOrdersEnabled}
+            onWhatsappOrdersEnabledChange={setWhatsappOrdersEnabled}
             instagramUrl={instagramUrl}
             onInstagramUrlChange={setInstagramUrl}
             facebookUrl={facebookUrl}

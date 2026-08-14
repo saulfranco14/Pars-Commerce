@@ -166,6 +166,23 @@ export async function checkoutPickup(
   };
 }
 
+export async function checkoutWhatsApp(
+  payload: Omit<CheckoutPickupPayload, "msi_option">,
+  fingerprintId: string,
+  idempotencyKey: string,
+): Promise<{ success: boolean; order_id: string; whatsapp_url: string }> {
+  const res = await fetch("/api/public-whatsapp-order", {
+    method: "POST",
+    headers: { ...getHeaders(fingerprintId), "x-idempotency-key": idempotencyKey },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(typeof (data as { error?: string }).error === "string" ? (data as { error: string }).error : res.statusText);
+  }
+  return data as { success: boolean; order_id: string; whatsapp_url: string };
+}
+
 export async function checkoutSubscription(
   payload: CheckoutSubscriptionPayload,
   fingerprintId: string

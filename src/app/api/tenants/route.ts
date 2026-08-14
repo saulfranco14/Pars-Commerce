@@ -4,7 +4,6 @@ import { NextResponse } from "next/server";
 import type { Database, Json } from "@/types/database.types";
 import { getAdditionalBusinessAccess } from "@/features/billing/businessExpansion";
 
-type TenantInsert = Database["public"]["Tables"]["tenants"]["Insert"];
 type TenantUpdate = Database["public"]["Tables"]["tenants"]["Update"];
 
 export async function GET() {
@@ -39,7 +38,7 @@ export async function GET() {
       tenant_id,
       role_id,
       accepted_at,
-      tenant:tenants(id, name, slug, business_type, logo_url, theme_color, description, public_store_enabled, accepting_orders, settings, whatsapp_phone, social_links, site_template_id),
+      tenant:tenants(id, name, slug, business_type, logo_url, theme_color, description, public_store_enabled, accepting_orders, settings, whatsapp_phone, social_links, site_template_id, is_demo, whatsapp_orders_enabled, catalog_template_id, catalog_template_version),
       role:tenant_roles(id, name, permissions)
     `
     )
@@ -117,11 +116,12 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { name, slug, business_type, site_template_id } = body as {
+  const { name, slug, business_type, site_template_id, catalog_template_key } = body as {
     name: string;
     slug: string;
     business_type?: string;
     site_template_id?: string;
+    catalog_template_key?: string;
   };
 
   if (!name || !slug) {
@@ -141,23 +141,25 @@ export async function POST(request: Request) {
   const expansion = await getAdditionalBusinessAccess(admin, user.id);
   if (!expansion.can_create) {
     return NextResponse.json(
-      { error: "Crear otro negocio está disponible desde el plan Operación ($199/mes)." },
+      { error: expansion.requires_upgrade ? "Llegaste al límite de negocios de tu plan. Actualiza tu plan para crear otro." : "Llegaste al límite de negocios de tu plan." },
       { status: 403 },
     );
   }
 
-  const insertPayload: TenantInsert = {
-    name,
-    slug: normalizedSlug,
-    business_type: business_type ?? null,
-  };
-  if (site_template_id) insertPayload.site_template_id = site_template_id;
-
-  const { data: tenant, error: tenantError } = await admin
-    .from("tenants")
-    .insert(insertPayload)
-    .select("id, name, slug")
-    .single();
+  const { data: created, error: tenantError } = await admin.rpc(
+    "create_tenant_with_catalog",
+    {
+      p_owner_user_id: user.id,
+      p_name: name.trim(),
+      p_slug: normalizedSlug,
+      p_business_type: business_type ?? "otro",
+      p_catalog_template_key: catalog_template_key?.trim() || null,
+      p_site_template_id: site_template_id ?? null,
+      p_is_demo: false,
+      p_demo_key: null,
+    },
+  );
+  const tenant = Array.isArray(created) ? created[0] : created;
 
   if (tenantError) {
     if (tenantError.code === "23505") {
@@ -167,22 +169,6 @@ export async function POST(request: Request) {
       );
     }
     return NextResponse.json({ error: tenantError.message }, { status: 500 });
-  }
-
-  const { data: ownerRole } = await admin
-    .from("tenant_roles")
-    .select("id")
-    .eq("tenant_id", tenant.id)
-    .eq("name", "owner")
-    .single();
-
-  if (ownerRole) {
-    await admin.from("tenant_memberships").insert({
-      user_id: user.id,
-      tenant_id: tenant.id,
-      role_id: ownerRole.id,
-      accepted_at: new Date().toISOString(),
-    });
   }
 
   return NextResponse.json(tenant);
@@ -213,6 +199,7 @@ export async function PATCH(request: Request) {
     monthly_rent,
     monthly_sales_objective,
     whatsapp_phone,
+    whatsapp_orders_enabled,
     social_links,
   } = body as {
     tenant_id: string;
@@ -234,6 +221,7 @@ export async function PATCH(request: Request) {
     monthly_rent?: number;
     monthly_sales_objective?: number;
     whatsapp_phone?: string;
+    whatsapp_orders_enabled?: boolean;
     social_links?: { instagram?: string; facebook?: string; twitter?: string };
   };
 
@@ -288,6 +276,17 @@ export async function PATCH(request: Request) {
     updates.site_template_id = site_template_id || null;
   if (whatsapp_phone !== undefined)
     updates.whatsapp_phone = whatsapp_phone?.trim() ?? null;
+  if (whatsapp_orders_enabled !== undefined) {
+    const phoneToValidate = whatsapp_phone?.trim() || (await admin.from("tenants").select("whatsapp_phone, is_demo").eq("id", tenant_id).maybeSingle()).data?.whatsapp_phone;
+    if (whatsapp_orders_enabled && (!phoneToValidate || !/^\+[1-9]\d{7,14}$/.test(phoneToValidate))) {
+      return NextResponse.json({ error: "Configura un WhatsApp en formato internacional antes de recibir pedidos por ese canal." }, { status: 400 });
+    }
+    const { data: tenantFlags } = await admin.from("tenants").select("is_demo").eq("id", tenant_id).maybeSingle();
+    if (whatsapp_orders_enabled && tenantFlags?.is_demo) {
+      return NextResponse.json({ error: "Los negocios demo no pueden activar pedidos reales por WhatsApp." }, { status: 403 });
+    }
+    (updates as TenantUpdate & { whatsapp_orders_enabled?: boolean }).whatsapp_orders_enabled = whatsapp_orders_enabled;
+  }
   if (social_links !== undefined)
     updates.social_links = social_links && typeof social_links === "object" ? social_links : {};
 
@@ -305,7 +304,7 @@ export async function PATCH(request: Request) {
     .from("tenants")
     .update(updates)
     .eq("id", tenant_id)
-    .select("id, name, slug, description, logo_url, theme_color, public_store_enabled, settings, whatsapp_phone, social_links, site_template_id")
+    .select("id, name, slug, description, logo_url, theme_color, public_store_enabled, settings, whatsapp_phone, whatsapp_orders_enabled, social_links, site_template_id")
     .single();
 
   if (error) {

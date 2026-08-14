@@ -57,7 +57,7 @@ export const LANDING_PLANS: LandingPlan[] = [
     description: "Para una red de negocios que necesita control.",
     features: [
       "Hasta 100 mesas y 10 kioskos",
-      "Vista consolidada de 10 negocios",
+      "Vista consolidada de hasta 12 negocios",
       "Reglas de crédito siempre manuales",
       "Reportes diarios o semanales",
     ],

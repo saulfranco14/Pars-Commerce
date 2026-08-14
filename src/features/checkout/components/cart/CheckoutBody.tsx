@@ -16,6 +16,7 @@ import { PaymentModeTabs } from "@/features/checkout/components/payment-plan/Pay
 import type { CartFrequency } from "@/features/checkout/helpers/cartFrequency";
 import type { FeeBreakdown } from "@/features/checkout/hooks/usePaymentMode";
 import type { PaymentMode } from "@/features/checkout/interfaces/paymentMode";
+import { MessageCircle } from "lucide-react";
 
 interface CheckoutBodyProps {
   variant: "desktop" | "mobile";
@@ -39,6 +40,8 @@ interface CheckoutBodyProps {
   /** `null` = el negocio no dio de alta horarios. */
   businessHours: BusinessHours | null;
   onSubmit: (e: React.FormEvent) => void;
+  onWhatsAppOrder?: () => void;
+  whatsappOrdersEnabled?: boolean;
   submitting: boolean;
   submitLabel: string;
   submitDisclaimer: string;
@@ -71,6 +74,8 @@ export function CheckoutBody({
   fieldErrors,
   onFormFieldChange,
   onSubmit,
+  onWhatsAppOrder,
+  whatsappOrdersEnabled = false,
   submitting,
   submitLabel,
   submitDisclaimer,
@@ -199,14 +204,15 @@ export function CheckoutBody({
         />
 
         {variant === "desktop" && (
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full min-h-12 cursor-pointer rounded-xl px-6 py-4 font-semibold text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
-            style={{ backgroundColor: accentColor }}
-          >
-            {submitLabel}
-          </button>
+          <div className="space-y-2">
+            <button type="submit" disabled={submitting} className="w-full min-h-12 cursor-pointer rounded-xl px-6 py-4 font-semibold text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2" style={{ backgroundColor: accentColor }}>{submitLabel}</button>
+            {whatsappOrdersEnabled && onWhatsAppOrder && (
+              <button type="button" disabled={submitting} onClick={onWhatsAppOrder} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:opacity-50"><MessageCircle className="h-4 w-4" aria-hidden />Pedir por WhatsApp</button>
+            )}
+          </div>
+        )}
+        {variant === "mobile" && whatsappOrdersEnabled && onWhatsAppOrder && (
+          <button type="button" disabled={submitting} onClick={onWhatsAppOrder} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:opacity-50"><MessageCircle className="h-4 w-4" aria-hidden />Pedir por WhatsApp</button>
         )}
       </form>
 

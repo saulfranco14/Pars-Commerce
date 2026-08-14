@@ -49,6 +49,18 @@ const setPasswordSchema = yup.object({
 
 type FieldErrors = Record<string, string>;
 
+async function resolvePostLoginDestination(next: string): Promise<string> {
+  if (next !== "/dashboard") return next;
+  try {
+    const response = await fetch("/api/me/platform-admin", { cache: "no-store" });
+    if (!response.ok) return next;
+    const payload = (await response.json()) as { isPlatformAdmin?: boolean };
+    return payload.isPlatformAdmin ? "/dashboard/plataforma" : next;
+  } catch {
+    return next;
+  }
+}
+
 const inputBase =
   "input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2";
 const inputNormal = `${inputBase} focus:border-accent focus:ring-accent/20`;
@@ -126,14 +138,14 @@ function LoginForm() {
           access_token: params.access_token,
           refresh_token: params.refresh_token,
         })
-        .then(({ data: { session } }) => {
+        .then(async ({ data: { session } }) => {
           if (session && showSetPassword) {
             setInviteMode(true);
             setIsRecoveryMode(isRecovery);
             setEmail(session.user.email ?? "");
           } else if (session) {
             window.history.replaceState(null, "", window.location.pathname);
-            window.location.href = next;
+            window.location.href = await resolvePostLoginDestination(next);
           }
         })
         .catch(() => setInviteMode(false));
@@ -176,7 +188,7 @@ function LoginForm() {
       setError(resolveUserError(signInError, "supabase"));
       return;
     }
-    router.push(next);
+    router.push(await resolvePostLoginDestination(next));
     router.refresh();
   }
 
@@ -217,7 +229,7 @@ function LoginForm() {
       return;
     }
     window.history.replaceState(null, "", window.location.pathname);
-    window.location.href = next;
+    window.location.href = await resolvePostLoginDestination(next);
   }
 
   if (inviteMode === null) {

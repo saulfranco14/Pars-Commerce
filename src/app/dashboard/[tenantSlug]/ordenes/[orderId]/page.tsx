@@ -27,6 +27,8 @@ import { PaymentLinkCard } from "@/features/orders/components/payment/PaymentLin
 import { OrderPaymentPlanCard } from "@/features/orders/components/order/OrderPaymentPlanCard";
 import { ReceiptPreview } from "@/features/orders/components/receipt/ReceiptPreview";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { WhatsAppShareButton } from "@/components/communications/WhatsAppShareButton";
+import { useActiveTenant } from "@/stores/useTenantStore";
 import type { OrderLoanSummary } from "@/features/orders/interfaces/orderDetail";
 
 function formatMXN(n: number) {
@@ -108,6 +110,7 @@ function OrderDetailContent() {
     ticketOptions,
     logoUrl,
   } = useOrder();
+  const activeTenant = useActiveTenant();
   const loan =
     (order as { loan?: OrderLoanSummary | null } | null)?.loan ?? null;
   const [mounted, setMounted] = useState(false);
@@ -172,6 +175,17 @@ function OrderDetailContent() {
         <div className="shrink-0">
           <OrderHeader />
         </div>
+        {activeTenant?.id && order.customer_phone && (
+          <div className="mt-3 shrink-0">
+            <WhatsAppShareButton
+              tenantId={activeTenant.id}
+              entityType="order"
+              entityId={order.id}
+              recipientPhone={order.customer_phone}
+              eventType="pickup_ready_shared"
+            />
+          </div>
+        )}
         {error && (
           <div className="mt-4 shrink-0 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}

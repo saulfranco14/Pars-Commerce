@@ -1,6 +1,7 @@
 import { LandingNav } from "@/features/landing/components/sections/LandingNav";
 import { LandingHero } from "@/features/landing/components/sections/LandingHero";
 import { LandingLogos } from "@/features/landing/components/sections/LandingLogos";
+import { LandingBusinessSolutions } from "@/features/landing/components/sections/LandingBusinessSolutions";
 import { LandingPlatform } from "@/features/landing/components/sections/LandingPlatform";
 import { LandingMesas } from "@/features/landing/components/sections/LandingMesas";
 import { LandingHowItWorks } from "@/features/landing/components/sections/LandingHowItWorks";
@@ -33,6 +34,7 @@ export default function Home() {
       <main>
         <LandingHero />
         <LandingLogos />
+        <LandingBusinessSolutions />
         <LandingPlatform />
         <LandingMesas />
         <LandingHowItWorks />

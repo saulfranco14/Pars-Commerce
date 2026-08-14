@@ -53,7 +53,7 @@ export default function ClientesPage() {
   );
   const customers = Array.isArray(customersData) ? customersData : [];
 
-  function handleCustomerCreated(_customer: Customer) {
+  function handleCustomerCreated() {
     setShowModal(false);
     mutate();
   }

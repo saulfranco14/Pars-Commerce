@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- billing tables are introduced by the billing migration. */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-/** Server-side source of truth for creating a second business. */
+const BUSINESS_LIMITS = {
+  free: 1,
+  operation: 2,
+  growth: 3,
+  scale: 12,
+} as const;
+
+/** Server-side source of truth for creating another business. */
 export async function getAdditionalBusinessAccess(
   adminClient: unknown,
   userId: string,
@@ -26,23 +33,22 @@ export async function getAdditionalBusinessAccess(
     })
     .map((membership: any) => membership.tenant_id as string);
 
-  if (ownedTenantIds.length === 0) {
-    return { can_create: true, requires_upgrade: false };
-  }
-
-  const { data: paidAccount, error: billingError } = await admin
+  const { data: paidAccounts, error: billingError } = await admin
     .from("tenant_billing_accounts")
     .select("tenant_id, plan_code")
     .in("tenant_id", ownedTenantIds)
     .neq("plan_code", "free")
-    .in("status", ["active", "cancelling"])
-    .limit(1)
-    .maybeSingle();
+    .in("status", ["active", "cancelling"]);
   if (billingError) throw new Error(billingError.message);
 
+  const planCode = ((paidAccounts ?? []).map((account: any) => account.plan_code)
+    .sort((left: keyof typeof BUSINESS_LIMITS, right: keyof typeof BUSINESS_LIMITS) => BUSINESS_LIMITS[right] - BUSINESS_LIMITS[left])[0] ?? "free") as keyof typeof BUSINESS_LIMITS;
+  const limit = BUSINESS_LIMITS[planCode] ?? BUSINESS_LIMITS.free;
   return {
-    can_create: Boolean(paidAccount),
-    requires_upgrade: !paidAccount,
-    plan_code: paidAccount?.plan_code ?? "free",
+    can_create: ownedTenantIds.length < limit,
+    requires_upgrade: planCode === "free" && ownedTenantIds.length >= limit,
+    plan_code: planCode,
+    business_limit: limit,
+    businesses_owned: ownedTenantIds.length,
   };
 }

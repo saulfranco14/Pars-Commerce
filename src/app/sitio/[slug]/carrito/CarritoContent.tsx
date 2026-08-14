@@ -34,6 +34,7 @@ interface CarritoContentProps {
   businessHours: BusinessHours | null;
   /** `false` = el negocio pausó los pedidos; el catálogo sigue visible. */
   acceptingOrders: boolean;
+  whatsappOrdersEnabled: boolean;
 }
 
 export default function CarritoContent({
@@ -44,6 +45,7 @@ export default function CarritoContent({
   pickupScheduling,
   businessHours,
   acceptingOrders,
+  whatsappOrdersEnabled,
 }: CarritoContentProps) {
   const fingerprint = useFingerprint();
   const { cart, items, subtotal, isLoading, mutate } = useCartContext();
@@ -136,6 +138,8 @@ export default function CarritoContent({
     fieldErrors: checkoutForm.fieldErrors,
     onFormFieldChange: checkoutForm.updateField,
     onSubmit: checkoutForm.handleSubmit,
+    onWhatsAppOrder: checkoutForm.handleWhatsAppOrder,
+    whatsappOrdersEnabled,
     submitting: checkoutForm.submitting,
     submitLabel,
     submitDisclaimer,
