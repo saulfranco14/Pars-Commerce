@@ -585,7 +585,7 @@ CREATE TRIGGER trigger_update_loan_on_payment
     FOR EACH ROW
     EXECUTE FUNCTION public.update_loan_on_payment();
 
-COMMENT ON FUNCTION public.update_loan_on_payment () IS 'Actualiza amount_paid, status y paid_at del préstamo al insertar un pago. ' 'Usa FOR UPDATE para prevenir condición de carrera en pagos simultáneos.';
+COMMENT ON FUNCTION public.update_loan_on_payment () IS 'Actualiza amount_paid, status y paid_at del préstamo al insertar un pago. Usa FOR UPDATE para prevenir condición de carrera en pagos simultáneos.';
 
 -- =============================================================================
 -- 7. ALTER TABLE orders — Agregar customer_id (retrocompatible, nullable)

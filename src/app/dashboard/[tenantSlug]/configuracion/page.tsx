@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useEffect, useId } from "react";
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Check } from "lucide-react";
-import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import { ArrowLeft, Check, ChevronDown, Sparkles } from "lucide-react";
+import {
+  useTenantStore,
+  useActiveTenant,
+  usePermission,
+} from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
 import {
   update as updateTenant,
@@ -16,25 +20,41 @@ import {
 } from "@/types/ticketSettings";
 import { FilterTabs } from "@/components/ui/FilterTabs";
 import { FormSaveBar } from "@/components/layout/FormSaveBar";
-import { ConfigNegocioSection } from "@/features/configuracion/components/ConfigNegocioSection";
-import { ConfigTicketSection } from "@/features/configuracion/components/ConfigTicketSection";
-import { ConfigFinanzasSection } from "@/features/configuracion/components/ConfigFinanzasSection";
-import { ConfigDireccionSection } from "@/features/configuracion/components/ConfigDireccionSection";
-import { ConfigRecurrentesSection } from "@/features/configuracion/components/ConfigRecurrentesSection";
+import { ConfigNegocioSection } from "@/features/configuracion/components/config-sections/ConfigNegocioSection";
+import { ConfigTicketSection } from "@/features/configuracion/components/config-sections/ConfigTicketSection";
+import { ConfigFinanzasSection } from "@/features/configuracion/components/config-sections/ConfigFinanzasSection";
+import { ConfigDireccionSection } from "@/features/configuracion/components/config-sections/ConfigDireccionSection";
+import { ConfigRecurrentesSection } from "@/features/configuracion/components/config-sections/ConfigRecurrentesSection";
+import { ConfigAgendaSection } from "@/features/configuracion/components/config-sections/ConfigAgendaSection";
+import { ConfigHorariosSection } from "@/features/configuracion/components/config-sections/ConfigHorariosSection";
+import { ConfigDispositivosSection } from "@/features/dispositivos/components/ConfigDispositivosSection";
+import { DEVICE_PERMISSIONS } from "@/features/dispositivos/constants/devicePermissions";
+import { readBusinessHours } from "@/features/configuracion/helpers/businessHours";
+import type { BusinessHours } from "@/features/configuracion/interfaces/businessHours";
+import { readPickupScheduling } from "@/features/checkout/helpers/pickupSchedule";
+import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import {
   CONFIG_TABS,
   type ConfigTab,
 } from "@/features/configuracion/constants/tabs";
 import { DEFAULT_RECURRING_CONFIG } from "@/types/subscriptions";
 import type { RecurringPurchasesConfig } from "@/types/subscriptions";
+import { BillingPlanCard } from "@/features/billing/components/BillingPlanCard";
 
 export default function ConfiguracionPage() {
   const formId = useId();
-  const params = useParams();
-  const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
+  const can = usePermission();
+  const activeRole = useTenantStore((s) => s.activeRole());
   const setMemberships = useTenantStore((s) => s.setMemberships);
-  const [activeTab, setActiveTab] = useState<ConfigTab>("negocio");
+  // `?tab=horarios` deja que otras pantallas enlacen a una sección concreta.
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<ConfigTab>(() => {
+    const requested = searchParams.get("tab");
+    return CONFIG_TABS.some((t) => t.value === requested)
+      ? (requested as ConfigTab)
+      : "negocio";
+  });
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -68,11 +88,17 @@ export default function ConfiguracionPage() {
   const [rcDeliveryOn, setRcDeliveryOn] = useState<"first_payment" | "full_payment">("first_payment");
   const [rcAllowedFrequencies, setRcAllowedFrequencies] = useState<Array<"weekly" | "biweekly" | "monthly">>(["weekly", "biweekly", "monthly"]);
   const [rcMaxInstallments, setRcMaxInstallments] = useState("6");
+  const [pickupEnabled, setPickupEnabled] = useState(false);
+  const [pickupMinLead, setPickupMinLead] = useState("30");
+  const [pickupMaxDays, setPickupMaxDays] = useState("7");
+  const [acceptingOrders, setAcceptingOrders] = useState(true);
+  const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [logoError, setLogoError] = useState<string | null>(null);
   const [logoSaving, setLogoSaving] = useState(false);
+  const [billingOpen, setBillingOpen] = useState(false);
 
   async function handleLogoChange(url: string | null) {
     if (!activeTenant) return;
@@ -137,6 +163,12 @@ export default function ConfiguracionPage() {
     setRcDeliveryOn(rc.delivery_on);
     setRcAllowedFrequencies(rc.allowed_frequencies);
     setRcMaxInstallments(String(rc.max_installments));
+    const ps = readPickupScheduling(st);
+    setPickupEnabled(ps.enabled);
+    setPickupMinLead(String(ps.minLeadMinutes));
+    setPickupMaxDays(String(ps.maxDaysAhead));
+    setAcceptingOrders(activeTenant.accepting_orders !== false);
+    setBusinessHours(readBusinessHours(st));
   }, [activeTenant?.id]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -165,6 +197,12 @@ export default function ConfiguracionPage() {
             delivery_on: rcDeliveryOn,
             allowed_frequencies: rcAllowedFrequencies,
             max_installments: parseInt(rcMaxInstallments, 10) || 6,
+          },
+          business_hours: businessHours ?? undefined,
+          pickup_scheduling: {
+            enabled: pickupEnabled,
+            minLeadMinutes: parseInt(pickupMinLead, 10) || 0,
+            maxDaysAhead: parseInt(pickupMaxDays, 10) || 0,
           },
           ticket: {
             showLogo: ticketShowLogo,
@@ -218,39 +256,40 @@ export default function ConfiguracionPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-0 max-w-4xl flex-1 flex-col overflow-hidden">
-      <div className="shrink-0 space-y-4 pb-4">
+    <div className="mx-auto flex max-w-4xl flex-1 flex-col overflow-visible pb-28 md:min-h-0 md:overflow-hidden md:pb-0">
+      <div className="shrink-0 space-y-3 pb-3 md:space-y-4 md:pb-4">
         <Link
           href="/dashboard"
-          className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver al inicio
         </Link>
         <div>
-          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
-            Configuración
-          </h1>
+        <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
+          Configuración
+        </h1>
           <p className="mt-0.5 text-sm text-muted">
-            Datos del negocio, dirección y finanzas. Para tienda pública, redes
-            y contenido del sitio web, usa Sitio web.
+            Ajusta tu negocio y cómo se muestran tus ventas.
           </p>
         </div>
-        <FilterTabs
-          tabs={CONFIG_TABS}
-          activeValue={activeTab}
-          onTabChange={(v) => setActiveTab(v as ConfigTab)}
-          ariaLabel="Secciones de configuración"
-        />
+        <div className="sticky top-14 z-10 -mx-4 border-y border-border-soft bg-background px-4 py-2 shadow-sm md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:shadow-none">
+          <FilterTabs
+            tabs={CONFIG_TABS}
+            activeValue={activeTab}
+            onTabChange={(v) => setActiveTab(v as ConfigTab)}
+            ariaLabel="Secciones de configuración"
+          />
+        </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-sm">
+      <div className="flex flex-col rounded-xl border border-border bg-surface-raised shadow-sm md:min-h-0 md:flex-1 md:overflow-hidden">
         <form
           id={formId}
           onSubmit={handleSubmit}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden md:pb-0"
+          className="flex flex-col md:min-h-0 md:flex-1 md:overflow-hidden md:pb-0"
         >
-          <div className="flex-1 overflow-y-auto overscroll-contain p-4 pb-8 sm:p-6 sm:pb-8">
+          <div className="p-4 pb-8 sm:p-6 sm:pb-8 md:flex-1 md:overflow-y-auto md:overscroll-contain">
             {error && (
               <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
                 {error}
@@ -329,6 +368,33 @@ export default function ConfiguracionPage() {
                 onMaxInstallmentsChange={setRcMaxInstallments}
               />
             )}
+            {activeTab === "dispositivos" && (
+              <ConfigDispositivosSection
+                tenantId={activeTenant.id}
+                canManage={can(DEVICE_PERMISSIONS.manage)}
+              />
+            )}
+            {activeTab === "horarios" && (
+              <ConfigHorariosSection
+                hours={businessHours}
+                onChange={setBusinessHours}
+              />
+            )}
+            {activeTab === "agenda" && (
+              <ConfigAgendaSection
+                enabled={pickupEnabled}
+                onEnabledChange={setPickupEnabled}
+                minLeadMinutes={pickupMinLead}
+                onMinLeadMinutesChange={setPickupMinLead}
+                maxDaysAhead={pickupMaxDays}
+                onMaxDaysAheadChange={setPickupMaxDays}
+                acceptingOrders={acceptingOrders}
+                onAcceptingOrdersChange={setAcceptingOrders}
+                canConfigureReception={can(ORDER_PERMISSIONS.scheduleConfig)}
+                hours={businessHours}
+                tenantId={activeTenant.id}
+              />
+            )}
             {activeTab === "direccion" && (
               <ConfigDireccionSection
                 street={addressStreet}
@@ -345,18 +411,51 @@ export default function ConfiguracionPage() {
                 onPhoneChange={setAddressPhone}
               />
             )}
+
+            <section className="mt-5 rounded-xl border border-border bg-surface p-1.5">
+              <button
+                type="button"
+                onClick={() => setBillingOpen((open) => !open)}
+                aria-expanded={billingOpen}
+                className="flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left transition-colors hover:bg-border-soft/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                  <Sparkles className="h-4 w-4" aria-hidden />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-foreground">Membresía y límites</span>
+                  <span className="block text-xs text-muted-foreground">Consulta o cambia el plan de este negocio.</span>
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${billingOpen ? "rotate-180" : ""}`}
+                  aria-hidden
+                />
+              </button>
+              {billingOpen && (
+                <div className="border-t border-border-soft pt-1.5">
+                  <BillingPlanCard
+                    tenantId={activeTenant.id}
+                    canManage={activeRole?.name === "owner"}
+                  />
+                </div>
+              )}
+            </section>
           </div>
-          <FormSaveBar align="end">
+          {/* Las pantallas se aprueban al instante; un "Guardar" ahí solo
+              haría dudar de si el cambio se aplicó. */}
+          {activeTab !== "dispositivos" && (
+            <FormSaveBar align="end">
             <button
               type="submit"
               form={formId}
               disabled={loading}
-              className="inline-flex w-full min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto md:min-w-[140px]"
+              className="inline-flex w-full min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto md:min-w-35"
             >
               <Check className="h-4 w-4 shrink-0" aria-hidden />
               {loading ? "Guardando…" : "Guardar"}
-            </button>
-          </FormSaveBar>
+              </button>
+            </FormSaveBar>
+          )}
         </form>
       </div>
     </div>

@@ -86,7 +86,7 @@ export function VentasPorOrden({
                 <div className="mt-3 border-t border-border-soft pt-3">
                   <button
                     onClick={() => onMarkAsPaid(c)}
-                    className="min-h-[44px] w-full rounded-xl border border-border px-4 text-sm font-medium text-muted-foreground hover:bg-border-soft/60"
+                    className="min-h-11 w-full rounded-xl border border-border px-4 text-sm font-medium text-muted-foreground hover:bg-border-soft/60"
                   >
                     Marcar pagada
                   </button>

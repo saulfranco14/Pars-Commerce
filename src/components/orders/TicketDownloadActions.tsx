@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import useSWR from "swr";
 import { Printer, Download, Share2 } from "lucide-react";
 import { exportReceiptAsPng } from "@/lib/receiptExport";
-import { ReceiptPreview } from "@/features/orders/components/ReceiptPreview";
+import { ReceiptPreview } from "@/features/orders/components/receipt/ReceiptPreview";
 import type { OrderDetail } from "@/features/orders/interfaces/orderDetail";
 import type { TenantAddress } from "@/types/database";
 import type { TicketSettings } from "@/types/ticketSettings";
@@ -154,8 +154,8 @@ export function TicketDownloadActions({
             ref={previewRef}
             className={
               loading
-                ? "fixed left-0 top-0 z-[-9999] w-[400px] bg-white p-6 opacity-100"
-                : "absolute -left-[9999px] -top-[9999px] w-[400px] bg-white p-6 opacity-0 pointer-events-none"
+                ? "fixed left-0 top-0 z-[-9999] w-100 bg-white p-6 opacity-100"
+                : "absolute -left-[9999px] -top-[9999px] w-100 bg-white p-6 opacity-0 pointer-events-none"
             }
             style={{ color: "#171717", backgroundColor: "#ffffff" }}
             aria-hidden

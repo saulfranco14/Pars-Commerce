@@ -28,7 +28,7 @@ function IntroMockup() {
         style={{ top: 8, left: 16, width: 162, transform: "rotate(-2deg)" }}
       >
         <div className="p-3">
-          <p className="text-[9px]" style={{ color: "#a8a29e" }}>
+          <p className="text-[9px]" style={{ color: "#94a3b8" }}>
             Ventas del mes
           </p>
           <p className="text-[22px] font-bold leading-tight" style={{ color: "#10b981" }}>
@@ -54,8 +54,8 @@ function IntroMockup() {
         style={{ top: 62, right: 12, width: 112, transform: "rotate(3.5deg)" }}
       >
         <div className="p-3">
-          <p className="text-[9px]" style={{ color: "#a8a29e" }}>Comisiones</p>
-          <p className="text-[24px] font-bold leading-none" style={{ color: "#292524" }}>
+          <p className="text-[9px]" style={{ color: "#94a3b8" }}>Comisiones</p>
+          <p className="text-[24px] font-bold leading-none" style={{ color: "#0f1c33" }}>
             $4,520
           </p>
           <p className="text-[8px]" style={{ color: "#f59e0b" }}>3 pendientes</p>
@@ -68,10 +68,10 @@ function IntroMockup() {
       >
         <div className="flex items-center justify-between p-2.5">
           <div>
-            <p className="text-[9px] font-semibold" style={{ color: "#292524" }}>
+            <p className="text-[9px] font-semibold" style={{ color: "#0f1c33" }}>
               Mario Rodríguez
             </p>
-            <p className="text-[8px]" style={{ color: "#a8a29e" }}>
+            <p className="text-[8px]" style={{ color: "#94a3b8" }}>
               12 órdenes esta semana
             </p>
           </div>
@@ -102,7 +102,7 @@ function ComisionesMockup() {
       >
         <div className="p-2.5">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-[9px] font-semibold" style={{ color: "#292524" }}>
+            <p className="text-[9px] font-semibold" style={{ color: "#0f1c33" }}>
               Comisiones por persona
             </p>
             <span className="rounded-full px-2 py-0.5 text-[7px] font-medium" style={{ background: "#fef3c7", color: "#92400e" }}>
@@ -113,13 +113,13 @@ function ComisionesMockup() {
             {members.map((m) => (
               <div key={m.name}>
                 <div className="mb-0.5 flex justify-between">
-                  <span className="text-[7px] font-medium" style={{ color: "#292524" }}>{m.name}</span>
-                  <span className="text-[7px] font-bold" style={{ color: "#292524" }}>{m.amount}</span>
+                  <span className="text-[7px] font-medium" style={{ color: "#0f1c33" }}>{m.name}</span>
+                  <span className="text-[7px] font-bold" style={{ color: "#0f1c33" }}>{m.amount}</span>
                 </div>
-                <div className="h-2 rounded-full" style={{ background: "#f5f5f4" }}>
+                <div className="h-2 rounded-full" style={{ background: "#eef2f8" }}>
                   <div className="h-2 rounded-full" style={{ width: `${m.bar}%`, background: "#f59e0b" }} />
                 </div>
-                <p className="mt-0.5 text-right text-[6px]" style={{ color: "#a8a29e" }}>{m.pct}% de ventas</p>
+                <p className="mt-0.5 text-right text-[6px]" style={{ color: "#94a3b8" }}>{m.pct}% de ventas</p>
               </div>
             ))}
           </div>
@@ -146,7 +146,7 @@ function PagosMockup() {
         style={{ top: -30, left: 14, right: 14, transform: "rotate(0.5deg)" }}
       >
         <div className="p-2.5">
-          <p className="mb-2 text-[9px] font-semibold" style={{ color: "#292524" }}>
+          <p className="mb-2 text-[9px] font-semibold" style={{ color: "#0f1c33" }}>
             Historial de pagos
           </p>
           <div className="space-y-1.5">
@@ -154,14 +154,14 @@ function PagosMockup() {
               <div
                 key={i}
                 className="flex items-center justify-between rounded-xl p-2"
-                style={{ background: "#faf9f7", border: "1px solid #ede9e4" }}
+                style={{ background: "#f7f9fc", border: "1px solid #dbe4f0" }}
               >
                 <div>
-                  <p className="text-[8px] font-semibold" style={{ color: "#292524" }}>{p.name}</p>
-                  <p className="text-[7px]" style={{ color: "#a8a29e" }}>{p.period}</p>
+                  <p className="text-[8px] font-semibold" style={{ color: "#0f1c33" }}>{p.name}</p>
+                  <p className="text-[7px]" style={{ color: "#94a3b8" }}>{p.period}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[9px] font-bold" style={{ color: "#292524" }}>{p.amount}</p>
+                  <p className="text-[9px] font-bold" style={{ color: "#0f1c33" }}>{p.amount}</p>
                   <span className="rounded-full px-1.5 py-0.5 text-[6px] font-semibold" style={{ background: p.bg, color: p.color }}>
                     {p.status}
                   </span>
@@ -189,7 +189,7 @@ function CortesMockup() {
         <div className="p-3">
           <div className="mb-3 flex items-center gap-2">
             <Scissors className="h-4 w-4" style={{ color: "#8b5cf6" }} />
-            <p className="text-[9px] font-bold" style={{ color: "#292524" }}>
+            <p className="text-[9px] font-bold" style={{ color: "#0f1c33" }}>
               Corte de caja
             </p>
           </div>
@@ -207,7 +207,7 @@ function CortesMockup() {
               <span className="text-[7px] font-medium" style={{ color: "#1e40af" }}>Costos</span>
               <span className="text-[8px] font-bold" style={{ color: "#2563eb" }}>-$6,200</span>
             </div>
-            <div className="border-t pt-1.5" style={{ borderColor: "#ede9e4" }}>
+            <div className="border-t pt-1.5" style={{ borderColor: "#dbe4f0" }}>
               <div className="flex justify-between rounded-lg px-2.5 py-1.5" style={{ background: "#ecfdf5" }}>
                 <span className="text-[8px] font-bold" style={{ color: "#065f46" }}>Utilidad neta</span>
                 <span className="text-[10px] font-bold" style={{ color: "#059669" }}>$5,005</span>
@@ -226,7 +226,7 @@ function ListoMockup() {
     { icon: Users, name: "Por persona", color: "#3b82f6", bg: "#dbeafe" },
     { icon: DollarSign, name: "Por orden", color: "#f59e0b", bg: "#fef3c7" },
     { icon: Wallet, name: "Pagos", color: "#8b5cf6", bg: "#ede9fe" },
-    { icon: Scissors, name: "Cortes", color: "#ec4899", bg: "#fce7f3" },
+    { icon: Scissors, name: "Cortes", color: "#3483fa", bg: "#e8f1fe" },
     { icon: TrendingUp, name: "Analíticas", color: "#06b6d4", bg: "#cffafe" },
   ];
   return (
@@ -250,7 +250,7 @@ function ListoMockup() {
                   style={{ background: s.bg }}
                 >
                   <Icon className="h-5 w-5" style={{ color: s.color }} />
-                  <span className="text-center text-[7px] font-medium leading-tight" style={{ color: "#292524" }}>
+                  <span className="text-center text-[7px] font-medium leading-tight" style={{ color: "#0f1c33" }}>
                     {s.name}
                   </span>
                 </div>

@@ -139,7 +139,7 @@ export async function POST(request: Request) {
   }
 
   if (promotion_id) {
-    return handleAddPromotion(supabase, tenant_id, promotion_id, cartId, fingerprint);
+    return handleAddPromotion(supabase, tenant_id, promotion_id, cartId);
   }
 
   if (!product_id || quantity < 1) {
@@ -237,7 +237,6 @@ async function handleAddPromotion(
   tenantId: string,
   promotionId: string,
   cartId: string,
-  _fingerprint: string
 ): Promise<NextResponse> {
   const { data: promotion, error: promoError } = await supabase
     .from("promotions")

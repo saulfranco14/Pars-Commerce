@@ -60,7 +60,7 @@ export function LogoUpload({
     if (urlToRemove) {
       try {
         const { deleteFileByUrl } = await import("@/lib/supabase/storage");
-        await deleteFileByUrl(urlToRemove);
+        await deleteFileByUrl(urlToRemove, tenantId);
       } catch {
         // Silently ignore deletion errors
       }

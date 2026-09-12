@@ -12,16 +12,23 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { OrderProvider, useOrder } from "@/features/orders/hooks/useOrder";
-import { OrderHeader } from "@/features/orders/components/OrderHeader";
-import { CustomerCard } from "@/features/orders/components/CustomerCard";
-import { AssignmentCard } from "@/features/orders/components/AssignmentCard";
-import { OrderItemsTable } from "@/features/orders/components/OrderItemsTable";
-import { OrderActionButtons } from "@/features/orders/components/OrderActionButtons";
-import { ReceiptActions } from "@/features/orders/components/ReceiptActions";
-import { PaymentLinkCard } from "@/features/orders/components/PaymentLinkCard";
-import { OrderPaymentPlanCard } from "@/features/orders/components/OrderPaymentPlanCard";
-import { ReceiptPreview } from "@/features/orders/components/ReceiptPreview";
+import { OrderHeader } from "@/features/orders/components/order/OrderHeader";
+import { CustomerCard } from "@/features/orders/components/order/CustomerCard";
+import { AssignmentCard } from "@/features/orders/components/payment/AssignmentCard";
+import { LinkedOrdersCard } from "@/features/orders/components/order/LinkedOrdersCard";
+import { PendingCashCard } from "@/features/orders/components/payment/PendingCashCard";
+import { CounterPaymentCard } from "@/features/orders/components/payment/CounterPaymentCard";
+import { OrderFulfillmentCard } from "@/features/orders/components/order/OrderFulfillmentCard";
+import { KioskFulfillmentCard } from "@/features/orders/components/order/KioskFulfillmentCard";
+import { OrderItemsTable } from "@/features/orders/components/order/OrderItemsTable";
+import { OrderActionButtons } from "@/features/orders/components/order/OrderActionButtons";
+import { ReceiptActions } from "@/features/orders/components/receipt/ReceiptActions";
+import { PaymentLinkCard } from "@/features/orders/components/payment/PaymentLinkCard";
+import { OrderPaymentPlanCard } from "@/features/orders/components/order/OrderPaymentPlanCard";
+import { ReceiptPreview } from "@/features/orders/components/receipt/ReceiptPreview";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { WhatsAppShareButton } from "@/components/communications/WhatsAppShareButton";
+import { useActiveTenant } from "@/stores/useTenantStore";
 import type { OrderLoanSummary } from "@/features/orders/interfaces/orderDetail";
 
 function formatMXN(n: number) {
@@ -82,7 +89,7 @@ function OrderLoanCard({
         </div>
         <Link
           href={`/dashboard/${tenantSlug}/prestamos/${loan.id}`}
-          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer shrink-0"
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer shrink-0"
         >
           <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
           Ver préstamo
@@ -103,6 +110,7 @@ function OrderDetailContent() {
     ticketOptions,
     logoUrl,
   } = useOrder();
+  const activeTenant = useActiveTenant();
   const loan =
     (order as { loan?: OrderLoanSummary | null } | null)?.loan ?? null;
   const [mounted, setMounted] = useState(false);
@@ -120,7 +128,7 @@ function OrderDetailContent() {
         {error}{" "}
         <Link
           href={`/dashboard/${tenantSlug}/ordenes`}
-          className="inline-flex min-h-[44px] items-center gap-2 font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex min-h-11 items-center gap-2 font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver a órdenes
@@ -163,18 +171,47 @@ function OrderDetailContent() {
           printContainer,
         )}
 
-      <div className="no-print flex min-h-0 min-w-0 h-full w-full max-w-5xl mx-auto flex-1 flex-col overflow-x-hidden overflow-y-auto pb-48 lg:pb-6 sm:max-w-5xl md:pb-0">
+      <div className="no-print mx-auto flex w-full max-w-5xl flex-1 flex-col overflow-x-hidden overflow-y-auto pb-52 sm:max-w-5xl md:pb-6">
         <div className="shrink-0">
           <OrderHeader />
         </div>
+        {activeTenant?.id && order.customer_phone && (
+          <div className="mt-3 shrink-0">
+            <WhatsAppShareButton
+              tenantId={activeTenant.id}
+              entityType="order"
+              entityId={order.id}
+              recipientPhone={order.customer_phone}
+              eventType="pickup_ready_shared"
+            />
+          </div>
+        )}
         {error && (
           <div className="mt-4 shrink-0 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
-        <div className="mt-0 lg:mt-4 flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-          <div className="order-1 min-h-0 min-w-0 flex-1 md:order-3">
+        <div className="mt-3 flex min-w-0 flex-col gap-3 lg:mt-4">
+          <div className="order-1 min-w-0 md:order-3">
             <OrderItemsTable />
+          </div>
+          {/* Si hay dinero esperando confirmación, es lo primero que el
+              mostrador tiene que resolver. */}
+          <div className="order-2 min-w-0 shrink-0 md:order-0">
+            <PendingCashCard />
+          </div>
+          <div className="order-2 min-w-0 shrink-0 md:order-0">
+            <CounterPaymentCard />
+          </div>
+          <div className="order-2 min-w-0 shrink-0 md:order-0">
+            {order.source === "kiosk" ? (
+              <KioskFulfillmentCard />
+            ) : (
+              <OrderFulfillmentCard />
+            )}
+          </div>
+          <div className="order-2 min-w-0 shrink-0 md:order-0">
+            <LinkedOrdersCard />
           </div>
           <div className="order-2 min-w-0 shrink-0 md:order-1">
             <AssignmentCard />

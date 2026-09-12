@@ -1,6 +1,8 @@
 export interface SiteWebRedesTabProps {
   whatsappPhone: string;
   onWhatsappPhoneChange: (v: string) => void;
+  whatsappOrdersEnabled: boolean;
+  onWhatsappOrdersEnabledChange: (v: boolean) => void;
   instagramUrl: string;
   onInstagramUrlChange: (v: string) => void;
   facebookUrl: string;

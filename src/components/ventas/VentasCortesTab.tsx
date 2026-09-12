@@ -194,7 +194,7 @@ function CutoffDetailModal({
         <div className="shrink-0 border-t border-border-soft px-5 py-3">
           <button
             onClick={onClose}
-            className="w-full min-h-[44px] cursor-pointer rounded-xl bg-border-soft/60 text-sm font-medium text-foreground transition-colors hover:bg-border-soft"
+            className="w-full min-h-11 cursor-pointer rounded-xl bg-border-soft/60 text-sm font-medium text-foreground transition-colors hover:bg-border-soft"
           >
             Cerrar
           </button>
@@ -282,7 +282,7 @@ export function VentasCortesTab({
             <button
               onClick={() => setShowNotes((v) => !v)}
               disabled={actionLoading}
-              className="flex min-h-[44px] shrink-0 cursor-pointer items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50 sm:self-start"
+              className="flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50 sm:self-start"
             >
               <Scissors className="h-4 w-4" />
               Generar Corte
@@ -324,13 +324,13 @@ export function VentasCortesTab({
               <button
                 onClick={handleGenerate}
                 disabled={actionLoading}
-                className="min-h-[44px] flex-1 cursor-pointer rounded-xl bg-accent px-4 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="min-h-11 flex-1 cursor-pointer rounded-xl bg-accent px-4 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {actionLoading ? "Generando..." : "Confirmar Corte"}
               </button>
               <button
                 onClick={() => setShowNotes(false)}
-                className="min-h-[44px] cursor-pointer rounded-xl border border-border px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-border-soft/60"
+                className="min-h-11 cursor-pointer rounded-xl border border-border px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-border-soft/60"
               >
                 Cancelar
               </button>
@@ -409,7 +409,7 @@ export function VentasCortesTab({
                 <div className="border-t border-border-soft px-4 py-3">
                   <button
                     onClick={() => setSelectedCutoff(c)}
-                    className="w-full min-h-[40px] cursor-pointer rounded-lg border border-border px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-border-soft/60"
+                    className="w-full min-h-10 cursor-pointer rounded-lg border border-border px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-border-soft/60"
                   >
                     Ver detalle
                   </button>

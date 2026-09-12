@@ -11,11 +11,11 @@ export default function SitioWebPage() {
   const tenantSlug = params.tenantSlug as string;
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-[1600px] overflow-x-hidden">
+    <div className="mx-auto w-full min-w-0 max-w-400 overflow-x-hidden">
       <div className="mb-5 border-b border-border pb-3">
         <Link
           href="/dashboard"
-          className="inline-flex min-h-[40px] items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex min-h-10 items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
           Volver al inicio
@@ -30,12 +30,18 @@ export default function SitioWebPage() {
 
       <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-stretch xl:gap-5">
         <div className="min-w-0 xl:flex-1 xl:h-[calc(100vh-220px)] xl:flex xl:flex-col xl:overflow-hidden">
-          <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border/80 bg-surface-raised shadow-sm">
+          {/* Below xl this falls back to normal document flow (no fixed
+              height/overflow-hidden) — only xl: and up opts into the
+              internal-scroll app-shell pattern, matching the parent above.
+              Without this, every viewport narrower than 1280px got clipped
+              content with no way to reach it (h-full/overflow-hidden with
+              no real height ancestor to bound against). */}
+          <div className="flex flex-col rounded-xl border border-border/80 bg-surface-raised shadow-sm xl:h-full xl:min-h-0 xl:overflow-hidden">
             <SiteWebConfigSection tenantSlug={tenantSlug} />
           </div>
         </div>
 
-        <div className="hidden min-h-[400px] min-w-0 xl:flex-1 xl:block">
+        <div className="hidden min-h-100 min-w-0 xl:flex-1 xl:block">
           <div className="sticky top-20 flex h-[calc(100vh-224px)] flex-col">
             <SitePreviewPanel tenantSlug={tenantSlug} />
           </div>

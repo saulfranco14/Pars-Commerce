@@ -1,12 +1,12 @@
 {
-  "name": "Pars Commerce",
-  "short_name": "Pars",
+  "name": "Tlaco",
+  "short_name": "Tlaco",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "theme_color": "#ec4899",
-  "background_color": "#faf9f7",
+  "theme_color": "#3483fa",
+  "background_color": "#f7f9fc",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",

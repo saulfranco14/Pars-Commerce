@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { safeNextPath } from "@/lib/auth/safeNextPath";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useTenantStore } from "@/stores/useTenantStore";
 
@@ -28,7 +29,11 @@ export function useAuthInitializer() {
         clearProfile();
         clearTenant();
         setTenantsLoaded(false);
-        router.replace("/login?next=/dashboard");
+        const here =
+          typeof window !== "undefined"
+            ? window.location.pathname + window.location.search
+            : "/dashboard";
+        router.replace(`/login?next=${encodeURIComponent(safeNextPath(here))}`);
         return;
       }
 

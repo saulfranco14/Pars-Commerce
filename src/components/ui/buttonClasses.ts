@@ -10,6 +10,30 @@ export const btnSecondary =
 export const btnDanger =
   `${base} border border-red-200 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-accent/50`.trim();
 
+/**
+ * Reversible but consequential actions. Use this instead of making every
+ * operational action look destructive; archive/delete remain `btnDanger`.
+ */
+export const btnWarning =
+  `${base} border border-amber-200 text-amber-800 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-amber-300`.trim();
+
+/**
+ * Customer-facing CTAs live in a fixed mobile action bar. They deliberately
+ * use a taller target and friendlier radius than dense dashboard controls,
+ * while keeping the same Tlaco color, focus and disabled semantics.
+ */
+const customerBase =
+  "inline-flex min-h-13.5 cursor-pointer items-center justify-center gap-2 rounded-2xl px-4 py-3 text-base font-bold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
+
+export const btnCustomerPrimary =
+  `${customerBase} bg-accent text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 focus-visible:ring-accent`.trim();
+
+export const btnCustomerSecondary =
+  `${customerBase} border border-border bg-surface text-foreground hover:bg-border-soft/60 focus-visible:ring-accent/50`.trim();
+
+export const btnCustomerSuccess =
+  `${customerBase} bg-emerald-600 text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 focus-visible:ring-emerald-500`.trim();
+
 export const btnSecondarySmall =
   "inline-flex min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2";
 

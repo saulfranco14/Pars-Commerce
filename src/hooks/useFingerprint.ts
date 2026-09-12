@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const STORAGE_KEY = "pars_cart_fingerprint";
+const STORAGE_KEY = "tlaco_cart_fingerprint";
 
 function getOrCreateFingerprint(): string {
   if (typeof window === "undefined") return "";

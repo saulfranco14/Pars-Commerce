@@ -4,6 +4,7 @@ import * as yup from "yup";
 import {
   checkoutPickup,
   checkoutSubscription,
+  checkoutWhatsApp,
 } from "@/services/publicCartService";
 import { checkoutFormSchema } from "@/features/orders/validations/checkoutForm";
 import type { MsiOption } from "@/constants/commissionConfig";
@@ -28,12 +29,15 @@ interface CheckoutFormState {
   customer_name: string;
   customer_email: string;
   customer_phone: string;
+  /** ISO de la hora de recolección; `""` = pasa cuando esté listo. */
+  scheduled_for: string;
 }
 
 const INITIAL_FORM: CheckoutFormState = {
   customer_name: "",
   customer_email: "",
   customer_phone: "",
+  scheduled_for: "",
 };
 
 export function useCartCheckoutForm({
@@ -83,6 +87,7 @@ export function useCartCheckoutForm({
             customer_email: validated.customer_email,
             customer_phone: validated.customer_phone,
             msi_option: msiOption,
+            scheduled_for: form.scheduled_for || null,
           },
           fingerprint,
         );
@@ -104,6 +109,7 @@ export function useCartCheckoutForm({
           frequency: freqValues.frequency,
           frequency_type: freqValues.frequency_type,
           msi_option: paymentMode === "installments" ? msiOption : undefined,
+          scheduled_for: form.scheduled_for || null,
         },
         fingerprint,
       );
@@ -125,6 +131,42 @@ export function useCartCheckoutForm({
     }
   };
 
+  const handleWhatsAppOrder = async () => {
+    if (!cartId || !fingerprint) return;
+    setError(null);
+    setFieldErrors({});
+    try {
+      const validated = await checkoutFormSchema.validate({
+        customer_name: form.customer_name.trim(),
+        customer_email: form.customer_email.trim(),
+        customer_phone: form.customer_phone.trim(),
+      }, { abortEarly: false });
+      setSubmitting(true);
+      const idempotencyKey = typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${cartId}-${Date.now()}`;
+      const result = await checkoutWhatsApp({
+        tenant_id: tenantId,
+        cart_id: cartId,
+        customer_name: validated.customer_name,
+        customer_email: validated.customer_email,
+        customer_phone: validated.customer_phone,
+        scheduled_for: form.scheduled_for || null,
+      }, fingerprint, idempotencyKey);
+      window.location.assign(result.whatsapp_url);
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        const errs: Record<string, string> = {};
+        err.inner.forEach((entry) => { if (entry.path) errs[entry.path] = entry.message; });
+        setFieldErrors(errs);
+      } else {
+        setError(err instanceof Error ? err.message : "No pudimos preparar el pedido por WhatsApp.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return {
     form,
     fieldErrors,
@@ -133,5 +175,6 @@ export function useCartCheckoutForm({
     setError,
     updateField,
     handleSubmit,
+    handleWhatsAppOrder,
   };
 }

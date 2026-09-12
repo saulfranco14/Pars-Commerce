@@ -1,28 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
-import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SwrProvider } from "@/components/providers/SwrProvider";
 import { Analytics } from "@vercel/analytics/next";
 import { AuthHashRedirect } from "@/components/auth/AuthHashRedirect";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { ServiceWorkerFreshnessGuard } from "@/features/qr/components/ServiceWorkerFreshnessGuard";
 
 export const metadata: Metadata = {
-  title: "Pars Commerce",
-  description: "Gestión de ventas y órdenes para tu negocio",
+  title: "Tlaco",
+  description: "Todo tu negocio en un solo lugar: catálogo, pedidos, cobros y tu dinero",
   manifest: "/site.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "Pars Commerce",
+    title: "Tlaco",
   },
   icons: {
     icon: [
@@ -46,9 +35,11 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  /* Tiñe la barra del navegador. Debe seguir a `--background` de globals.css
+     (claro #f7f9fc / oscuro #0a0b0e); antes eran los stone de la marca vieja. */
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#faf9f7" },
-    { media: "(prefers-color-scheme: dark)", color: "#1c1917" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f9fc" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0b0e" },
   ],
 };
 
@@ -59,9 +50,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} ${geistMono.variable} font-sans antialiased`}
-      >
+      <body className="font-sans antialiased">
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark');}catch(e){}})();`,
@@ -69,6 +58,7 @@ export default function RootLayout({
         />
         <SwrProvider>
           <AuthHashRedirect />
+          <ServiceWorkerFreshnessGuard />
           {children}
           <Analytics />
           <div id="ticket-print-portal" aria-hidden="true" />

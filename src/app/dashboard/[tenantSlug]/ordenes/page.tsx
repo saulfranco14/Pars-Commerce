@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import useSWR from "swr";
-import { Plus, Scissors, SlidersHorizontal, X } from "lucide-react";
+import { Link2, Plus, Scissors, SlidersHorizontal, X } from "lucide-react";
 import { FAB } from "@/components/ui/FAB";
 import { OrdersFilterSheet } from "@/components/orders/OrdersFilterSheet";
-import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import { OrderFormSheet } from "@/features/orders/components/OrderFormSheet";
+import { useActiveTenant, usePermission } from "@/stores/useTenantStore";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { OrderCardMobile } from "@/components/orders/OrderCardMobile";
 import { TicketDownloadActions } from "@/components/orders/TicketDownloadActions";
@@ -32,8 +32,15 @@ import { getSourceConfig } from "@/lib/formatSource";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { OrderListItem } from "@/types/orders";
 import { STATUS_TABS } from "@/features/orders/constants/statusTabs";
+import { SCOPE_TABS } from "@/features/orders/constants/scopeTabs";
+import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import { buildOrdersKey } from "@/features/orders/helpers/buildOrdersKey";
+import { ORDERS_LIST_REFRESH_MS } from "@/features/orders/constants/refresh";
+import { PickupBadge } from "@/features/orders/components/order/PickupBadge";
+import { OrderSearchField } from "@/features/orders/components/order/OrderSearchField";
 import { orderContentType } from "@/features/orders/helpers/orderContentType";
+
+import type { OrdersScope } from "@/features/orders/interfaces/ordersQuery";
 
 export default function OrdenesPage() {
   const params = useParams();
@@ -41,17 +48,22 @@ export default function OrdenesPage() {
   const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
+  const can = usePermission();
+  const canViewAll = can(ORDER_PERMISSIONS.viewAll);
   const [statusFilter, setStatusFilter] = useState(
     () => searchParams.get("status") ?? "",
   );
+  const [chosenScope, setChosenScope] = useState<OrdersScope | null>(null);
+  const scope: OrdersScope = chosenScope ?? (canViewAll ? "all" : "mine");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [dateFiltersOpen, setDateFiltersOpen] = useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const hasDateFilter = Boolean(dateFrom || dateTo);
 
-  // Fetch last cutoff to enable "desde último corte" quick filter
   const cutoffsKey =
     activeTenant?.id != null
       ? `/api/sales-cutoffs?tenant_id=${encodeURIComponent(activeTenant.id)}`
@@ -87,17 +99,24 @@ export default function OrdenesPage() {
     setDateFiltersOpen(false);
   }
 
-  const ordersKey = buildOrdersKey(
-    activeTenant?.id,
-    statusFilter,
+  const ordersKey = buildOrdersKey({
+    tenantId: activeTenant?.id,
+    status: statusFilter,
     dateFrom,
     dateTo,
-  );
+    scope,
+    search,
+  });
   const {
     data: ordersData,
     error: swrError,
     isLoading,
-  } = useSWR<OrderListItem[]>(ordersKey, swrFetcher, { fallbackData: [] });
+  } = useSWR<OrderListItem[]>(ordersKey, swrFetcher, {
+    fallbackData: [],
+    // Los pedidos de la pantalla de autoservicio entran solos: sin esto la cola
+    // se queda congelada hasta que alguien recarga.
+    refreshInterval: ORDERS_LIST_REFRESH_MS,
+  });
   const orders = Array.isArray(ordersData) ? ordersData : [];
   const error = swrError ? "No se pudieron cargar las órdenes" : null;
 
@@ -138,13 +157,14 @@ export default function OrdenesPage() {
               <SlidersHorizontal className="h-5 w-5 shrink-0" aria-hidden />
             </button>
           </div>
-          <Link
-            href={`/dashboard/${tenantSlug}/ordenes/nueva`}
-            className="hidden min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:w-auto md:inline-flex"
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="hidden min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:w-auto md:inline-flex"
           >
             <Plus className="h-4 w-4 shrink-0" aria-hidden />
             Nueva orden
-          </Link>
+          </button>
         </div>
 
         <OrdersFilterSheet
@@ -158,7 +178,17 @@ export default function OrdenesPage() {
           onApply={() => setFilterSheetOpen(false)}
         />
 
-        {/* ── Status tabs: horizontal scroll en móvil, flex-wrap en desktop ── */}
+        <OrderSearchField onSearch={setSearch} />
+
+        {canViewAll && (
+          <FilterTabs
+            tabs={SCOPE_TABS}
+            activeValue={scope}
+            onTabChange={(v) => setChosenScope(v as OrdersScope)}
+            ariaLabel="Filtrar por quién atiende"
+          />
+        )}
+
         <div>
           <FilterTabs
             tabs={STATUS_TABS}
@@ -167,13 +197,12 @@ export default function OrdenesPage() {
             ariaLabel="Filtrar por estado"
           />
 
-          {/* ── Date filter (solo desktop) ── */}
           <div className="hidden md:block">
             <div className="flex items-center gap-2 my-4">
               <button
                 type="button"
                 onClick={() => setDateFiltersOpen((o) => !o)}
-                className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   hasDateFilter
                     ? "bg-accent/15 text-accent hover:bg-accent/20"
                     : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
@@ -209,7 +238,7 @@ export default function OrdenesPage() {
                   <button
                     type="button"
                     onClick={() => setQuickDate("hoy")}
-                    className={`min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                    className={`min-h-9 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                       dateFrom &&
                       dateTo &&
                       dateFrom === dateTo &&
@@ -223,14 +252,14 @@ export default function OrdenesPage() {
                   <button
                     type="button"
                     onClick={() => setQuickDate("ayer")}
-                    className="min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
+                    className="min-h-9 rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
                   >
                     Ayer
                   </button>
                   <button
                     type="button"
                     onClick={() => setQuickDate("7dias")}
-                    className="min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
+                    className="min-h-9 rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
                   >
                     7 días
                   </button>
@@ -242,7 +271,7 @@ export default function OrdenesPage() {
                         setDateTo(getTodayStr());
                         setDateFiltersOpen(false);
                       }}
-                      className={`min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                      className={`min-h-9 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                         dateFrom === lastCutoffEnd
                           ? "bg-accent/15 text-accent ring-1 ring-accent/30"
                           : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
@@ -263,7 +292,7 @@ export default function OrdenesPage() {
                       min={DATE_MIN}
                       max={getTodayStr()}
                       onChange={(e) => setDateFrom(clampDate(e.target.value))}
-                      className="input-form min-h-[40px] w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form min-h-10 w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                     />
                   </label>
                   <label className="flex flex-1 flex-col gap-1">
@@ -276,7 +305,7 @@ export default function OrdenesPage() {
                       min={DATE_MIN}
                       max={getTodayStr()}
                       onChange={(e) => setDateTo(clampDate(e.target.value))}
-                      className="input-form min-h-[40px] w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form min-h-10 w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                     />
                   </label>
                 </div>
@@ -323,21 +352,34 @@ export default function OrdenesPage() {
           />
         ) : orders.length === 0 ? (
           <div className="rounded-xl border border-border bg-surface-raised p-8 text-center">
-            <p className="text-sm text-muted">
-              {hasDateFilter &&
-              dateFrom === dateTo &&
-              dateFrom === getTodayStr()
-                ? "No hay órdenes para hoy."
-                : `No hay órdenes${statusFilter ? " con este estado" : ""}${hasDateFilter ? " en las fechas seleccionadas" : ""}.`}{" "}
-              Crea una con &quot;Nueva orden&quot;.
-            </p>
-            <Link
-              href={`/dashboard/${tenantSlug}/ordenes/nueva`}
-              className="mt-4 inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-            >
-              <Plus className="h-4 w-4 shrink-0" aria-hidden />
-              Crear primera orden
-            </Link>
+            {search.trim() ? (
+              <p className="text-sm text-muted">
+                Ningún pedido coincide con{" "}
+                <span className="font-mono font-semibold text-foreground">
+                  {search.trim()}
+                </span>
+                . Revisa el número con el cliente o quita los otros filtros.
+              </p>
+            ) : (
+              <>
+                <p className="text-sm text-muted">
+                  {hasDateFilter &&
+                  dateFrom === dateTo &&
+                  dateFrom === getTodayStr()
+                    ? "No hay órdenes para hoy."
+                    : `No hay órdenes${statusFilter ? " con este estado" : ""}${hasDateFilter ? " en las fechas seleccionadas" : ""}.`}{" "}
+                  Crea una con &quot;Nueva orden&quot;.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setCreateOpen(true)}
+                  className="mt-4 inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+                >
+                  <Plus className="h-4 w-4 shrink-0" aria-hidden />
+                  Crear primera orden
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <>
@@ -346,7 +388,7 @@ export default function OrdenesPage() {
                 <table className="min-w-full">
                   <thead>
                     <tr className={tableHeaderRowClass}>
-                      <th className={tableHeaderCellClass}>Creada</th>
+                      <th className={tableHeaderCellClass}>Pedido</th>
                       <th className={tableHeaderCellClass}>Cliente</th>
                       <th className={tableHeaderCellClass}>Contenido</th>
                       <th className={tableHeaderCellClass}>Origen</th>
@@ -371,7 +413,17 @@ export default function OrdenesPage() {
                           }
                         >
                           <td className={tableBodyCellMutedClass}>
-                            {formatOrderDate(o.created_at)}
+                            <div className="flex flex-col items-start gap-1">
+                              <span className="font-mono text-xs font-bold tracking-wider text-foreground">
+                                {o.order_number ??
+                                  o.id.slice(0, 8).toUpperCase()}
+                              </span>
+                              {formatOrderDate(o.created_at)}
+                              <PickupBadge
+                                scheduledFor={o.scheduled_for}
+                                status={o.status}
+                              />
+                            </div>
                           </td>
                           <td className={tableBodyCellClass}>
                             {o.customer_name || o.customer_email ? (
@@ -398,6 +450,18 @@ export default function OrdenesPage() {
                             {tipo === "mixto" && (
                               <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800">
                                 Mixto
+                              </span>
+                            )}
+                            {(o.addenda_count ?? 0) > 0 && (
+                              <span
+                                className="ml-1 inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800"
+                                title="Este pedido tiene complementos: el cobro está repartido"
+                              >
+                                <Link2
+                                  className="h-3 w-3 shrink-0"
+                                  aria-hidden
+                                />
+                                +{o.addenda_count}
                               </span>
                             )}
                           </td>
@@ -509,12 +573,18 @@ export default function OrdenesPage() {
         )}
       </div>
 
-      <FAB
-        href={`/dashboard/${tenantSlug}/ordenes/nueva`}
-        aria-label="Nueva orden"
-      >
+      <FAB onClick={() => setCreateOpen(true)} aria-label="Nueva orden">
         <Plus className="h-6 w-6 shrink-0" aria-hidden />
       </FAB>
+
+      {activeTenant && (
+        <OrderFormSheet
+          isOpen={createOpen}
+          onClose={() => setCreateOpen(false)}
+          tenantId={activeTenant.id}
+          tenantSlug={tenantSlug}
+        />
+      )}
     </div>
   );
 }

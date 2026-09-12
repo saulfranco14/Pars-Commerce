@@ -22,9 +22,13 @@ export async function GET(request: Request) {
     );
   }
 
+  // `permissions` viaja al cliente porque la descripción que ve quien invita
+  // se compone de los permisos reales del rol, no de su nombre: un rol
+  // personalizado no tendría descripción, y si alguien edita los permisos de
+  // un rol de sistema una descripción por nombre se volvería mentira.
   const { data: roles, error } = await supabase
     .from("tenant_roles")
-    .select("id, name")
+    .select("id, name, permissions")
     .eq("tenant_id", tenantId)
     .order("name");
 

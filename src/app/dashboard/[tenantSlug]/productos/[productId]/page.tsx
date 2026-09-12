@@ -5,7 +5,8 @@ import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
-import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import { useSWRConfig } from "swr";
+import { useActiveTenant } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
 import { ArrowLeft, X, Check } from "lucide-react";
 import {
@@ -32,6 +33,7 @@ export default function EditarProductoPage() {
   }, []);
   const params = useParams();
   const router = useRouter();
+  const { mutate: globalMutate } = useSWRConfig();
   const productId = params.productId as string;
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
@@ -245,6 +247,16 @@ export default function EditarProductoPage() {
         wholesale_price: hasWholesaleMin ? (wholesalePriceNum as number) : null,
       });
       await mutate();
+      if (activeTenant) {
+        await globalMutate(
+          (cacheKey) =>
+            typeof cacheKey === "string" &&
+            cacheKey.startsWith("/api/products?") &&
+            cacheKey.includes(
+              `tenant_id=${encodeURIComponent(activeTenant.id)}`,
+            ),
+        );
+      }
       router.push(`/dashboard/${tenantSlug}/productos`);
       router.refresh();
     } catch (e) {
@@ -260,7 +272,7 @@ export default function EditarProductoPage() {
         {fetchError}{" "}
         <Link
           href={`/dashboard/${tenantSlug}/productos`}
-          className="inline-flex min-h-[44px] items-center gap-2 font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex min-h-11 items-center gap-2 font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver a productos
@@ -278,7 +290,7 @@ export default function EditarProductoPage() {
       <div className="shrink-0 pb-4">
         <Link
           href={`/dashboard/${tenantSlug}/productos`}
-          className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver a productos
@@ -315,7 +327,7 @@ export default function EditarProductoPage() {
                         type="text"
                         value={name}
                         onChange={handleNameChange}
-                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                         placeholder="Ej. Mesa 14x10"
                       />
                       {fieldErrors.name && (
@@ -336,7 +348,7 @@ export default function EditarProductoPage() {
                         type="text"
                         value={slug}
                         onChange={(e) => setSlug(e.target.value)}
-                        className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                         placeholder="mesa-14x10"
                       />
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -363,7 +375,7 @@ export default function EditarProductoPage() {
                       inputMode="decimal"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="0.00"
                     />
                     {fieldErrors.price && (
@@ -385,7 +397,7 @@ export default function EditarProductoPage() {
                       inputMode="decimal"
                       value={costPrice}
                       onChange={(e) => setCostPrice(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="0.00"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -409,7 +421,7 @@ export default function EditarProductoPage() {
                       type="text"
                       value={sku}
                       onChange={(e) => setSku(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="Ej. MESA-001"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -429,7 +441,7 @@ export default function EditarProductoPage() {
                       type="text"
                       value={unit}
                       onChange={(e) => setUnit(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="unit, kg, pza, hora..."
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -455,7 +467,7 @@ export default function EditarProductoPage() {
                       type="text"
                       value={theme}
                       onChange={(e) => setTheme(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="Ej. Mobiliario, Promociones"
                     />
                   </div>
@@ -492,7 +504,7 @@ export default function EditarProductoPage() {
                       inputMode="decimal"
                       value={commissionAmount}
                       onChange={(e) => setCommissionAmount(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="0.00"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -525,7 +537,7 @@ export default function EditarProductoPage() {
                           onChange={(e) =>
                             setWholesaleMinQuantity(e.target.value)
                           }
-                          className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                          className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                           placeholder="Ej. 10"
                         />
                         <p className="mt-1 text-xs text-muted-foreground">
@@ -545,7 +557,7 @@ export default function EditarProductoPage() {
                           inputMode="decimal"
                           value={wholesalePrice}
                           onChange={(e) => setWholesalePrice(e.target.value)}
-                          className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                          className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                           placeholder="0.00"
                         />
                       </div>
@@ -571,7 +583,7 @@ export default function EditarProductoPage() {
                         min={0}
                         value={stock}
                         onChange={(e) => setStock(e.target.value)}
-                        className="input-form mt-1 w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        className="input-form mt-1 w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       />
                     </div>
                   )}
@@ -613,7 +625,7 @@ export default function EditarProductoPage() {
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       rows={2}
-                      className="input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                       placeholder="Descripción del producto"
                     />
                   </div>

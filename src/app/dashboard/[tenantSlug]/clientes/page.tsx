@@ -53,7 +53,7 @@ export default function ClientesPage() {
   );
   const customers = Array.isArray(customersData) ? customersData : [];
 
-  function handleCustomerCreated(_customer: Customer) {
+  function handleCustomerCreated() {
     setShowModal(false);
     mutate();
   }
@@ -79,7 +79,7 @@ export default function ClientesPage() {
           <button
             type="button"
             onClick={() => setShowModal(true)}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90 transition-colors"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90 transition-colors"
           >
             <UserPlus className="h-4 w-4" />
             Nuevo cliente
@@ -118,7 +118,7 @@ export default function ClientesPage() {
             placeholder="Buscar por nombre, teléfono o email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="input-form w-full min-h-[44px] rounded-xl border border-border bg-surface pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className="input-form w-full min-h-11 rounded-xl border border-border bg-surface pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
           />
         </div>
       </div>
@@ -137,7 +137,7 @@ export default function ClientesPage() {
               <button
                 type="button"
                 onClick={() => setShowModal(true)}
-                className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90 transition-colors"
+                className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90 transition-colors"
               >
                 <UserPlus className="h-4 w-4" />
                 Crear primer cliente
@@ -188,7 +188,7 @@ export default function ClientesPage() {
                     </div>
                   </div>
                   {hasOverdue && (
-                    <div className="mt-2 ml-[52px] inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                    <div className="mt-2 ml-13 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
                       <AlertTriangle className="h-3 w-3" />
                       Tiene vencidos
                     </div>

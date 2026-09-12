@@ -3,17 +3,20 @@
 import { useRef } from "react";
 import Link from "next/link";
 import {
+  ArrowRight,
+  CalendarClock,
   CheckCircle,
   MapPin,
   Phone,
-  ArrowRight,
   ShoppingBag,
 } from "lucide-react";
 
-// ─── Confetti ──────────────────────────────────────────────────
+import { formatPickupTime } from "@/features/checkout/helpers/pickupSchedule";
+
 const CONFETTI_COLORS = [
-  "#ec4899",
-  "#f472b6",
+  "#e8a33d",
+  "#3483fa",
+  "#7cb3ff",
   "#fb923c",
   "#fbbf24",
   "#34d399",
@@ -58,6 +61,8 @@ interface Props {
   customerName: string;
   formattedAddress: string;
   phone?: string | null;
+  /** ISO de la hora de recolección, si el cliente agendó. */
+  scheduledFor?: string | null;
 }
 
 // ─── Component ─────────────────────────────────────────────────
@@ -68,6 +73,7 @@ export function PaymentSuccessFullScreen({
   customerName,
   formattedAddress,
   phone,
+  scheduledFor,
 }: Props) {
   const confettiRef = useRef<ConfettiPiece[]>(generateConfetti());
 
@@ -122,7 +128,6 @@ export function PaymentSuccessFullScreen({
               <CheckCircle className="h-9 w-9" style={{ color: accentColor }} />
             </div>
 
-            {/* Pink accent bar — matches landing style */}
             <div
               className="mb-4 h-1 w-8 rounded-full bg-emerald-400"
               style={{ animation: "float-up 0.4s 0.35s both" }}
@@ -153,8 +158,36 @@ export function PaymentSuccessFullScreen({
               <span className="font-semibold text-foreground">
                 {customerName}
               </span>
-              , tu pedido fue confirmado. Puedes pasar a recogerlo en:
+              , tu pedido fue confirmado.{" "}
+              {scheduledFor
+                ? "Te esperamos a la hora que elegiste:"
+                : "Puedes pasar a recogerlo en:"}
             </p>
+
+            {scheduledFor && (
+              <div
+                className="mt-4 w-full rounded-xl border-2 px-4 py-3"
+                style={{
+                  borderColor: accentColor,
+                  backgroundColor: `${accentColor}10`,
+                  animation: "float-up 0.4s 0.52s both",
+                }}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <CalendarClock
+                    className="h-4 w-4 shrink-0"
+                    style={{ color: accentColor }}
+                    aria-hidden
+                  />
+                  <span
+                    className="text-base font-bold"
+                    style={{ color: accentColor }}
+                  >
+                    {formatPickupTime(new Date(scheduledFor))}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Divider */}
@@ -207,7 +240,7 @@ export function PaymentSuccessFullScreen({
           >
             <Link
               href={`/sitio/${slug}/productos`}
-              className="group inline-flex w-full min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl px-8 py-3 text-base font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
+              className="group inline-flex w-full min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl px-8 py-3 text-base font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
               style={{ backgroundColor: accentColor }}
             >
               Seguir comprando
@@ -218,7 +251,7 @@ export function PaymentSuccessFullScreen({
             </Link>
             <Link
               href={`/sitio/${slug}/inicio`}
-              className="mt-3 inline-flex w-full min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-8 py-3 text-base font-semibold transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
+              className="mt-3 inline-flex w-full min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-8 py-3 text-base font-semibold transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
               style={{ borderColor: accentColor, color: accentColor }}
             >
               Volver al inicio

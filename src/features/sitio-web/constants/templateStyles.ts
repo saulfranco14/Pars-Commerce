@@ -72,8 +72,10 @@ export const VARIANT_STYLES: Record<
   },
 };
 
+export const DEFAULT_TENANT_ACCENT = "#3483fa";
+
 export const COLOR_PRESETS = [
-  "#c20fbc",
+  DEFAULT_TENANT_ACCENT,
   "#6366f1",
   "#0ea5e9",
   "#10b981",

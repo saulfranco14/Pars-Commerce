@@ -13,6 +13,8 @@ import { CartItemsList } from "@/features/checkout/components/cart/CartItemsList
 import { CartSummaryHeader } from "@/features/checkout/components/cart/CartSummaryHeader";
 import { CartTrustBadges } from "@/features/checkout/components/cart/CartTrustBadges";
 import { CheckoutBody } from "@/features/checkout/components/cart/CheckoutBody";
+import type { PickupSchedulingConfig } from "@/features/checkout/interfaces/pickupSchedule";
+import type { BusinessHours } from "@/features/configuracion/interfaces/businessHours";
 import { DesktopCheckoutAside } from "@/features/checkout/components/cart/DesktopCheckoutAside";
 import { MobileCheckoutBar } from "@/features/checkout/components/cart/MobileCheckoutBar";
 import { MobileCheckoutSheet } from "@/features/checkout/components/cart/MobileCheckoutSheet";
@@ -28,6 +30,11 @@ interface CarritoContentProps {
   sitioSlug: string;
   accentColor: string;
   recurringConfig: RecurringPurchasesConfig;
+  pickupScheduling: PickupSchedulingConfig;
+  businessHours: BusinessHours | null;
+  /** `false` = el negocio pausó los pedidos; el catálogo sigue visible. */
+  acceptingOrders: boolean;
+  whatsappOrdersEnabled: boolean;
 }
 
 export default function CarritoContent({
@@ -35,6 +42,10 @@ export default function CarritoContent({
   sitioSlug,
   accentColor,
   recurringConfig,
+  pickupScheduling,
+  businessHours,
+  acceptingOrders,
+  whatsappOrdersEnabled,
 }: CarritoContentProps) {
   const fingerprint = useFingerprint();
   const { cart, items, subtotal, isLoading, mutate } = useCartContext();
@@ -127,6 +138,8 @@ export default function CarritoContent({
     fieldErrors: checkoutForm.fieldErrors,
     onFormFieldChange: checkoutForm.updateField,
     onSubmit: checkoutForm.handleSubmit,
+    onWhatsAppOrder: checkoutForm.handleWhatsAppOrder,
+    whatsappOrdersEnabled,
     submitting: checkoutForm.submitting,
     submitLabel,
     submitDisclaimer,
@@ -147,6 +160,8 @@ export default function CarritoContent({
     msiBaseAmount,
     viableMsiOptions,
     msiBreakdown,
+    pickupScheduling,
+    businessHours,
   };
 
   return (
@@ -157,7 +172,8 @@ export default function CarritoContent({
         </div>
       )}
 
-      {hasRecurringOptions && (
+      {/* El aviso lo pone el layout del sitio, que sale en todas las páginas. */}
+      {acceptingOrders && hasRecurringOptions && (
         <CheckoutGuide
           accentColor={accentColor}
           hasInstallments={recurringConfig.installments_enabled}
@@ -183,18 +199,24 @@ export default function CarritoContent({
           <CartTrustBadges />
         </div>
 
-        <DesktopCheckoutAside>
-          <CheckoutBody variant="desktop" {...checkoutBodyProps} />
-        </DesktopCheckoutAside>
+        {/* Con la recepción cerrada desaparece el checkout, no el carrito:
+            los productos y sus cantidades siguen ahí para cuando reabran. */}
+        {acceptingOrders && (
+          <DesktopCheckoutAside>
+            <CheckoutBody variant="desktop" {...checkoutBodyProps} />
+          </DesktopCheckoutAside>
+        )}
       </div>
 
-      <MobileCheckoutBar
-        subtotal={subtotal}
-        accentColor={accentColor}
-        onContinue={sheet.open}
-      />
+      {acceptingOrders && (
+        <MobileCheckoutBar
+          subtotal={subtotal}
+          accentColor={accentColor}
+          onContinue={sheet.open}
+        />
+      )}
 
-      {sheet.mounted && (
+      {acceptingOrders && sheet.mounted && (
         <MobileCheckoutSheet
           visible={sheet.visible}
           items={items}

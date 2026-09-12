@@ -27,23 +27,23 @@ export type MsiOption = (typeof MSI_OPTIONS)[number];
 
 export const MP_MSI_MIN_INSTALLMENT_MXN = 30;
 
-export const PARS_SERVICE_FEE_PERCENT = 0;
+export const TLACO_SERVICE_FEE_PERCENT = 0;
 export const TARIFA_DE_SERVICIO_LABEL = "Tarifa de servicio";
 export const RECEIPT_LINK_LABEL = "Link de pago – enviar al cliente";
 
 export function calcBuyerTotal(vendorTotal: number): {
   total: number;
   mpFee: number;
-  parsFee: number;
+  platformFee: number;
 } {
-  const parsFee =
-    Math.round(vendorTotal * PARS_SERVICE_FEE_PERCENT * 100) / 100;
+  const platformFee =
+    Math.round(vendorTotal * TLACO_SERVICE_FEE_PERCENT * 100) / 100;
   const total =
     Math.ceil(
-      ((vendorTotal + MP_FEE_FIXED_MXN + parsFee) / (1 - MP_FEE_PERCENT)) * 100,
+      ((vendorTotal + MP_FEE_FIXED_MXN + platformFee) / (1 - MP_FEE_PERCENT)) * 100,
     ) / 100;
-  const mpFee = Math.round((total - vendorTotal - parsFee) * 100) / 100;
-  return { total, mpFee, parsFee };
+  const mpFee = Math.round((total - vendorTotal - platformFee) * 100) / 100;
+  return { total, mpFee, platformFee };
 }
 
 /**
@@ -64,7 +64,7 @@ export function calcSubscriptionFees(
 ): {
   chargeAmount: number; // Lo que se cobra al cliente
   mpFee: number;
-  parsFee: number;
+  platformFee: number;
   netReceived: number; // Lo que recibe el negocio
 } {
   if (absorbedBy === "business") {
@@ -73,15 +73,15 @@ export function calcSubscriptionFees(
       Math.round(
         (desiredAmount * MP_SUB_FEE_PERCENT + MP_SUB_FEE_FIXED_MXN) * 100,
       ) / 100;
-    const parsFee =
-      Math.round(desiredAmount * PARS_SERVICE_FEE_PERCENT * 100) / 100;
+    const platformFee =
+      Math.round(desiredAmount * TLACO_SERVICE_FEE_PERCENT * 100) / 100;
     const netReceived =
-      Math.round((desiredAmount - mpFee - parsFee) * 100) / 100;
-    return { chargeAmount: desiredAmount, mpFee, parsFee, netReceived };
+      Math.round((desiredAmount - mpFee - platformFee) * 100) / 100;
+    return { chargeAmount: desiredAmount, mpFee, platformFee, netReceived };
   }
 
   // El cliente paga: calculamos el monto mayor para que el negocio reciba desiredAmount
-  const totalFeePercent = MP_SUB_FEE_PERCENT + PARS_SERVICE_FEE_PERCENT;
+  const totalFeePercent = MP_SUB_FEE_PERCENT + TLACO_SERVICE_FEE_PERCENT;
   const chargeAmount =
     Math.ceil(
       ((desiredAmount + MP_SUB_FEE_FIXED_MXN) / (1 - totalFeePercent)) * 100,
@@ -90,10 +90,10 @@ export function calcSubscriptionFees(
     Math.round(
       (chargeAmount * MP_SUB_FEE_PERCENT + MP_SUB_FEE_FIXED_MXN) * 100,
     ) / 100;
-  const parsFee =
-    Math.round(chargeAmount * PARS_SERVICE_FEE_PERCENT * 100) / 100;
-  const netReceived = Math.round((chargeAmount - mpFee - parsFee) * 100) / 100;
-  return { chargeAmount, mpFee, parsFee, netReceived };
+  const platformFee =
+    Math.round(chargeAmount * TLACO_SERVICE_FEE_PERCENT * 100) / 100;
+  const netReceived = Math.round((chargeAmount - mpFee - platformFee) * 100) / 100;
+  return { chargeAmount, mpFee, platformFee, netReceived };
 }
 
 /**
@@ -117,7 +117,7 @@ export function calcMsiBuyerTotal(
 ): {
   total: number;
   mpFee: number;
-  parsFee: number;
+  platformFee: number;
   netReceived: number;
   perMonth: number;
   msi: MsiOption;
@@ -128,46 +128,46 @@ export function calcMsiBuyerTotal(
   // el cliente paga el subtotal y el negocio recibe menos; si el cliente
   // absorbe, se cobra la comisión estándar encima del subtotal.
   if (msi === 1) {
-    const parsFee = Math.round(vendorTotal * PARS_SERVICE_FEE_PERCENT * 100) / 100;
+    const platformFee = Math.round(vendorTotal * TLACO_SERVICE_FEE_PERCENT * 100) / 100;
     if (absorbedBy === "business") {
       const total = Math.round(vendorTotal * 100) / 100;
       const mpFee =
         Math.round((vendorTotal * MP_FEE_PERCENT + MP_FEE_FIXED_MXN) * 100) / 100;
-      const netReceived = Math.round((total - mpFee - parsFee) * 100) / 100;
-      return { total, mpFee, parsFee, netReceived, perMonth: total, msi };
+      const netReceived = Math.round((total - mpFee - platformFee) * 100) / 100;
+      return { total, mpFee, platformFee, netReceived, perMonth: total, msi };
     }
     // Cliente absorbe: calcBuyerTotal ya usa MP_FEE_PERCENT + MP_FEE_FIXED_MXN
-    const { total, mpFee: mpFeeCalc, parsFee: parsFeeCalc } = calcBuyerTotal(vendorTotal);
-    const netReceived = Math.round((total - mpFeeCalc - parsFeeCalc) * 100) / 100;
-    return { total, mpFee: mpFeeCalc, parsFee: parsFeeCalc, netReceived, perMonth: total, msi };
+    const { total, mpFee: mpFeeCalc, platformFee: platformFeeCalc } = calcBuyerTotal(vendorTotal);
+    const netReceived = Math.round((total - mpFeeCalc - platformFeeCalc) * 100) / 100;
+    return { total, mpFee: mpFeeCalc, platformFee: platformFeeCalc, netReceived, perMonth: total, msi };
   }
 
   const msiRate = MP_MSI_RATES[msi] ?? 0;
   const feePercentEffective =
     (MP_MSI_BASE_RATE + msiRate) * (1 + MP_IVA_PERCENT);
   const fixedFeeWithIva = MP_MSI_FIXED_MXN * (1 + MP_IVA_PERCENT);
-  const parsFee =
-    Math.round(vendorTotal * PARS_SERVICE_FEE_PERCENT * 100) / 100;
+  const platformFee =
+    Math.round(vendorTotal * TLACO_SERVICE_FEE_PERCENT * 100) / 100;
 
   if (absorbedBy === "business") {
     const total = Math.round(vendorTotal * 100) / 100;
     const mpFee =
       Math.round((vendorTotal * feePercentEffective + fixedFeeWithIva) * 100) /
       100;
-    const netReceived = Math.round((total - mpFee - parsFee) * 100) / 100;
+    const netReceived = Math.round((total - mpFee - platformFee) * 100) / 100;
     const perMonth = Math.round((total / msi) * 100) / 100;
-    return { total, mpFee, parsFee, netReceived, perMonth, msi };
+    return { total, mpFee, platformFee, netReceived, perMonth, msi };
   }
 
   const total =
     Math.ceil(
-      ((vendorTotal + fixedFeeWithIva + parsFee) / (1 - feePercentEffective)) *
+      ((vendorTotal + fixedFeeWithIva + platformFee) / (1 - feePercentEffective)) *
         100,
     ) / 100;
-  const mpFee = Math.round((total - vendorTotal - parsFee) * 100) / 100;
-  const netReceived = Math.round((total - mpFee - parsFee) * 100) / 100;
+  const mpFee = Math.round((total - vendorTotal - platformFee) * 100) / 100;
+  const netReceived = Math.round((total - mpFee - platformFee) * 100) / 100;
   const perMonth = Math.round((total / msi) * 100) / 100;
-  return { total, mpFee, parsFee, netReceived, perMonth, msi };
+  return { total, mpFee, platformFee, netReceived, perMonth, msi };
 }
 
 /**

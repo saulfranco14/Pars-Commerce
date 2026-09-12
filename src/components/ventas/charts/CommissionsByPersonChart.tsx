@@ -40,7 +40,7 @@ export function CommissionsByPersonChart({
 
   if (loading) {
     return (
-      <div className="min-h-[260px] rounded-xl border border-border bg-surface-raised p-3 sm:p-4 flex flex-col justify-center">
+      <div className="min-h-65 rounded-xl border border-border bg-surface-raised p-3 sm:p-4 flex flex-col justify-center">
         <ChartHeader
           title="Comisiones por persona"
           description="Comisiones generadas por cada comisionista en el período."
@@ -63,7 +63,7 @@ export function CommissionsByPersonChart({
           dateFrom={dateFrom}
           dateTo={dateTo}
         />
-        <div className="mt-4 h-[180px] flex items-center justify-center">
+        <div className="mt-4 h-45 flex items-center justify-center">
           <p className="text-sm text-muted-foreground">Sin datos en el período</p>
         </div>
       </div>
@@ -82,7 +82,7 @@ export function CommissionsByPersonChart({
         className="w-full overflow-x-auto overflow-y-auto"
         style={{ maxHeight: 320, minHeight: 200 }}
       >
-        <div style={{ height: chartHeight, minWidth: 280 }} className="min-h-[150px]">
+        <div style={{ height: chartHeight, minWidth: 280 }} className="min-h-37.5">
           <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 400, height: 200 }}>
             <BarChart
               data={chartData}

@@ -27,6 +27,7 @@ export async function handleSingleCheckout(
     origin,
     idempotencyKey,
     expiresAt,
+    backUrls,
   } = ctx;
 
   const msiOption: MsiOption = (payload.msi_option ?? 1) as MsiOption;
@@ -46,11 +47,11 @@ export async function handleSingleCheckout(
   const {
     total: buyerTotal,
     mpFee,
-    parsFee,
+    platformFee,
     perMonth,
   } = calcMsiBuyerTotal(subtotal, msiOption, recurringConfig.fee_absorbed_by);
   const mpFeeRounded = Math.round(mpFee * 100) / 100;
-  const parsFeeRounded = Math.round(parsFee * 100) / 100;
+  const platformFeeRounded = Math.round(platformFee * 100) / 100;
 
   const baseItems = cartItems.map((item) => {
     const product = mapCartItemProduct(item);
@@ -84,13 +85,13 @@ export async function handleSingleCheckout(
           },
         ]
       : []),
-    ...(parsFeeRounded > 0 && customerAbsorbsFee
+    ...(platformFeeRounded > 0 && customerAbsorbsFee
       ? [
           {
-            id: "pars-fee",
+            id: "tlaco-fee",
             title: TARIFA_DE_SERVICIO_LABEL,
             quantity: 1,
-            unit_price: parsFeeRounded,
+            unit_price: platformFeeRounded,
             currency_id: "MXN" as const,
           },
         ]
@@ -122,12 +123,14 @@ export async function handleSingleCheckout(
       body: {
         items: mpItems,
         external_reference: externalReference,
-        back_urls: {
+        back_urls: backUrls ?? {
           success: `${origin}/sitio/${tenantSlug}/confirmacion?status=success&order_id=${order.id}&mode=single`,
           failure: `${origin}/sitio/${tenantSlug}/confirmacion?status=failure&order_id=${order.id}&mode=single`,
           pending: `${origin}/sitio/${tenantSlug}/confirmacion?status=pending&order_id=${order.id}&mode=single`,
         },
-        auto_return: "approved",
+        // MP rejects auto_return when back_urls aren't publicly reachable
+        // (e.g. localhost during dev). Only enable it on real HTTPS hosts.
+        ...(origin.startsWith("https://") ? { auto_return: "approved" as const } : {}),
         notification_url: `${origin}/api/mercadopago/webhook`,
         payer: { email: payload.customer_email.trim() },
         // Para contado (msiOption=1) no forzamos installments en MP — el cliente

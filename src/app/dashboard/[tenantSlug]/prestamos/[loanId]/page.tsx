@@ -28,8 +28,9 @@ import {
 } from "@/components/ui/buttonClasses";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { useActiveTenant } from "@/stores/useTenantStore";
+import { WhatsAppShareButton } from "@/components/communications/WhatsAppShareButton";
 import { swrFetcher } from "@/lib/swrFetcher";
-import { calcSubscriptionFees, MP_SUB_FEE_PERCENT, MP_SUB_FEE_FIXED_MXN, PARS_SERVICE_FEE_PERCENT } from "@/constants/commissionConfig";
+import { calcSubscriptionFees, MP_SUB_FEE_PERCENT, MP_SUB_FEE_FIXED_MXN, TLACO_SERVICE_FEE_PERCENT } from "@/constants/commissionConfig";
 import {
   LOAN_PAYMENT_METHOD_LABEL,
   formatMXN,
@@ -358,6 +359,11 @@ export default function LoanDetailPage() {
             </div>
           </div>
         </div>
+        {activeTenant?.id && loan.customer?.phone && (
+          <div className="border-t border-border px-4 py-3">
+            <WhatsAppShareButton tenantId={activeTenant.id} entityType="loan" entityId={loan.id} recipientPhone={loan.customer.phone} eventType="loan_reminder_shared" />
+          </div>
+        )}
       </div>
 
       {/* Alerta si vencido */}
@@ -508,7 +514,7 @@ export default function LoanDetailPage() {
             </div>
             <a
               href={`/dashboard/${tenantSlug}/ordenes/${loan.order.id}`}
-              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer shrink-0"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer shrink-0"
             >
               <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
               Ver orden
@@ -623,10 +629,10 @@ export default function LoanDetailPage() {
                       </span>
                       <span className="font-medium text-red-600 tabular-nums">−{formatMXN(fees.mpFee)}</span>
                     </div>
-                    {PARS_SERVICE_FEE_PERCENT > 0 && (
+                    {TLACO_SERVICE_FEE_PERCENT > 0 && (
                       <div className="flex justify-between text-xs">
                         <span className="text-muted-foreground">Tarifa de servicio</span>
-                        <span className="font-medium text-red-600 tabular-nums">−{formatMXN(fees.parsFee)}</span>
+                        <span className="font-medium text-red-600 tabular-nums">−{formatMXN(fees.platformFee)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-xs pt-1 border-t border-border/50">
@@ -673,7 +679,7 @@ export default function LoanDetailPage() {
                             setSubscriptionStartDate(e.target.value)
                           }
                           min={new Date().toISOString().split("T")[0]}
-                          className="min-h-[44px] w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                          className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                         />
                       </div>
                       {subscriptionError && (
@@ -737,7 +743,7 @@ export default function LoanDetailPage() {
                       href={authLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`${btnSecondary} min-h-[44px] inline-flex items-center justify-center px-3`}
+                      className={`${btnSecondary} min-h-11 inline-flex items-center justify-center px-3`}
                       aria-label="Abrir link en nueva pestaña"
                     >
                       <ExternalLink className="h-4 w-4" aria-hidden />
@@ -931,7 +937,7 @@ export default function LoanDetailPage() {
                 href={loan.last_payment_link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`${btnSecondary} min-h-[44px] inline-flex items-center justify-center px-3`}
+                className={`${btnSecondary} min-h-11 inline-flex items-center justify-center px-3`}
                 aria-label="Abrir último link"
               >
                 <Link2 className="h-4 w-4" aria-hidden />
@@ -950,7 +956,7 @@ export default function LoanDetailPage() {
               <button
                 type="button"
                 onClick={() => setConfirmCancel(true)}
-                className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
               >
                 <XCircle className="h-4 w-4" aria-hidden />
                 Cancelar préstamo
@@ -979,7 +985,7 @@ export default function LoanDetailPage() {
                     type="button"
                     onClick={handleCancel}
                     disabled={cancelling}
-                    className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                    className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
                   >
                     {cancelling ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -1039,7 +1045,7 @@ export default function LoanDetailPage() {
                       href={loan.last_payment_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`${btnSecondary} min-h-[44px] inline-flex items-center justify-center px-3`}
+                      className={`${btnSecondary} min-h-11 inline-flex items-center justify-center px-3`}
                       aria-label="Abrir último link"
                     >
                       <Link2 className="h-4 w-4" aria-hidden />
@@ -1056,7 +1062,7 @@ export default function LoanDetailPage() {
                   <button
                     type="button"
                     onClick={() => setConfirmCancel(true)}
-                    className="inline-flex w-full min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                    className="inline-flex w-full min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
                   >
                     <XCircle className="h-4 w-4" aria-hidden />
                     Cancelar préstamo
@@ -1092,7 +1098,7 @@ export default function LoanDetailPage() {
                     type="button"
                     onClick={handleCancel}
                     disabled={cancelling}
-                    className="inline-flex flex-1 min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                    className="inline-flex flex-1 min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
                   >
                     {cancelling ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -1138,7 +1144,7 @@ export default function LoanDetailPage() {
                 step="0.01"
                 required
                 autoFocus
-                className="input-form w-full min-h-[44px] rounded-xl border border-border bg-surface pl-7 pr-3 py-2.5 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                className="input-form w-full min-h-11 rounded-xl border border-border bg-surface pl-7 pr-3 py-2.5 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               />
             </div>
           </div>
@@ -1149,7 +1155,7 @@ export default function LoanDetailPage() {
             <select
               value={payMethod}
               onChange={(e) => setPayMethod(e.target.value as typeof payMethod)}
-              className="select-custom w-full min-h-[44px] rounded-xl border border-border bg-surface px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+              className="select-custom w-full min-h-11 rounded-xl border border-border bg-surface px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             >
               <option value="efectivo">Efectivo</option>
               <option value="transferencia">Transferencia</option>
@@ -1169,7 +1175,7 @@ export default function LoanDetailPage() {
               value={payNotes}
               onChange={(e) => setPayNotes(e.target.value)}
               placeholder="Referencia, comprobante, etc."
-              className="input-form w-full min-h-[44px] rounded-xl border border-border bg-surface px-3 py-2.5 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+              className="input-form w-full min-h-11 rounded-xl border border-border bg-surface px-3 py-2.5 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             />
           </div>
           {payError && <p className="text-sm text-red-600">{payError}</p>}
@@ -1226,7 +1232,7 @@ export default function LoanDetailPage() {
                     step="0.01"
                     required
                     autoFocus
-                    className="input-form w-full min-h-[44px] rounded-xl border border-border bg-surface pl-7 pr-3 py-2.5 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                    className="input-form w-full min-h-11 rounded-xl border border-border bg-surface pl-7 pr-3 py-2.5 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                   />
                 </div>
               </div>
@@ -1239,7 +1245,7 @@ export default function LoanDetailPage() {
                   onChange={(e) =>
                     setPayMethod(e.target.value as typeof payMethod)
                   }
-                  className="select-custom w-full min-h-[44px] rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                  className="select-custom w-full min-h-11 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                 >
                   <option value="efectivo">Efectivo</option>
                   <option value="transferencia">Transferencia</option>
@@ -1259,7 +1265,7 @@ export default function LoanDetailPage() {
                   value={payNotes}
                   onChange={(e) => setPayNotes(e.target.value)}
                   placeholder="Referencia, comprobante, etc."
-                  className="input-form w-full min-h-[44px] rounded-xl border border-border bg-surface px-3 py-2.5 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                  className="input-form w-full min-h-11 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                 />
               </div>
               {payError && <p className="text-sm text-red-600">{payError}</p>}

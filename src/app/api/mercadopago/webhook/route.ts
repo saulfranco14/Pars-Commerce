@@ -3,12 +3,25 @@ import { paymentClient } from "@/lib/mercadopago";
 import { verifyWebhookSignature } from "@/lib/mercadopagoWebhookVerify";
 import { NextResponse } from "next/server";
 import { parseCheckoutReference } from "@/features/orders/helpers/parseCheckoutReference";
+import type { Database } from "@/types/database.types";
 import {
   handleSingleLoanPayment,
   handleBulkLoanPayment,
   handlePreapprovalLoanPayment,
 } from "@/features/prestamos/services/loanWebhookHandlers";
 import { handleStoreSubscriptionPayment } from "@/features/sitio/services/subscriptionWebhookHandlers";
+import {
+  handleQrTableMpPayment,
+  isQrTableReference,
+} from "@/features/qr/services/tableMpWebhookService";
+import {
+  handleBillingAuthorizedPayment,
+  handleBillingPreapprovalStatus,
+} from "@/features/billing/billingService";
+
+type OrderUpdate = Database["public"]["Tables"]["orders"]["Update"];
+type SubscriptionUpdate =
+  Database["public"]["Tables"]["subscriptions"]["Update"];
 
 export async function POST(request: Request) {
   let body: {
@@ -44,12 +57,15 @@ export async function POST(request: Request) {
       { status: 401 },
     );
   }
-
   if (body.type === "subscription_preapproval" && body.data?.id) {
     try {
       await handlePreapprovalStatusChange(body.data.id);
     } catch (err) {
-      console.error("Webhook: error en subscription_preapproval:", err);
+      console.error(
+        "Webhook: error en subscription_preapproval (500 for retry):",
+        err,
+      );
+      return NextResponse.json({ error: "processing_failed" }, { status: 500 });
     }
     return NextResponse.json({ received: true });
   }
@@ -58,7 +74,11 @@ export async function POST(request: Request) {
     try {
       await handlePreapprovalPayment(body.data.id);
     } catch (err) {
-      console.error("Webhook: error en subscription_authorized_payment:", err);
+      console.error(
+        "Webhook: error en subscription_authorized_payment (500 for retry):",
+        err,
+      );
+      return NextResponse.json({ error: "processing_failed" }, { status: 500 });
     }
     return NextResponse.json({ received: true });
   }
@@ -87,10 +107,9 @@ export async function POST(request: Request) {
       ) ?? 0;
     const mpFeeAmount =
       Math.round((transactionAmount - netReceived) * 100) / 100;
-    const parsFeeAmount = 0;
+    const platformFeeAmount = 0;
     const supabase = createAdminClient();
 
-    // ── Pago bulk de préstamos ───────────────────────────────────────────────
     if (externalRef.startsWith("bulk_loan:")) {
       if (mpStatus === "approved") {
         await handleBulkLoanPayment(
@@ -104,7 +123,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
-    // ── Pago de préstamo individual ──────────────────────────────────────────
     if (externalRef.startsWith("loan:")) {
       if (mpStatus === "approved") {
         await handleSingleLoanPayment(
@@ -119,11 +137,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
-    // ── Pago de orden de checkout (single / partial) ─────────────────────────
+    if (isQrTableReference(externalRef)) {
+      if (mpStatus === "approved") {
+        await handleQrTableMpPayment({
+          admin: supabase,
+          externalReference: externalRef,
+          mpPaymentId: String(mpPayment.id ?? paymentId),
+          amount: transactionAmount,
+          feeAmount: mpFeeAmount,
+        });
+      }
+      return NextResponse.json({ received: true });
+    }
+
     const parsedRef = parseCheckoutReference(externalRef);
     const orderId = parsedRef?.orderId ?? externalRef;
     const checkoutMode = parsedRef?.mode ?? "single";
     const attemptId = parsedRef?.attemptId ?? null;
+    const splitGroupId = parsedRef?.splitGroupId ?? null;
 
     if (attemptId) {
       const attemptStatus =
@@ -243,7 +274,7 @@ export async function POST(request: Request) {
             ? "partial"
             : "paid";
 
-      const updatePayload: Record<string, string | number | null> = {
+      const updatePayload: OrderUpdate = {
         status: nextStatus,
         paid_total: nextPaidTotal,
         balance_due: nextBalance,
@@ -269,12 +300,14 @@ export async function POST(request: Request) {
           "pending_subscription",
         ]);
 
-      const { data: existingPayment } = await supabase
-        .from("payments")
-        .select("id")
-        .eq("attempt_id", attemptId)
-        .limit(1)
-        .single();
+      const { data: existingPayment } = attemptId
+        ? await supabase
+            .from("payments")
+            .select("id")
+            .eq("attempt_id", attemptId)
+            .limit(1)
+            .single()
+        : { data: null };
 
       const paymentMetadata = {
         mp_payment_id: paymentId,
@@ -283,7 +316,7 @@ export async function POST(request: Request) {
         mp_payment_method: mpPayment.payment_method_id,
         paid_at: mpPayment.date_approved,
         mp_fee_amount: mpFeeAmount,
-        pars_fee_amount: parsFeeAmount,
+        tlaco_fee_amount: platformFeeAmount,
       };
 
       if (existingPayment) {
@@ -294,6 +327,7 @@ export async function POST(request: Request) {
             status: "approved",
             amount: appliedAmount,
             installment_number: installmentNumber,
+            split_group_id: splitGroupId,
             metadata: paymentMetadata,
             updated_at: new Date().toISOString(),
           })
@@ -305,9 +339,11 @@ export async function POST(request: Request) {
           external_id: String(paymentId),
           status: "approved",
           amount: appliedAmount,
-          payment_kind: checkoutMode === "partial" ? "partial" : "single",
+          payment_kind:
+            checkoutMode === "partial" || splitGroupId ? "partial" : "single",
           attempt_id: attemptId,
           installment_number: installmentNumber,
+          split_group_id: splitGroupId,
           idempotency_key: attemptId ? `payment:${attemptId}` : null,
           metadata: paymentMetadata,
         });
@@ -330,12 +366,14 @@ export async function POST(request: Request) {
         `Webhook: order ${orderId} marked as paid (payment ${paymentId})`,
       );
     } else {
-      const { data: existingPayment } = await supabase
-        .from("payments")
-        .select("id")
-        .eq("attempt_id", attemptId)
-        .limit(1)
-        .single();
+      const { data: existingPayment } = attemptId
+        ? await supabase
+            .from("payments")
+            .select("id")
+            .eq("attempt_id", attemptId)
+            .limit(1)
+            .single()
+        : { data: null };
 
       if (existingPayment) {
         await supabase
@@ -348,7 +386,7 @@ export async function POST(request: Request) {
               mp_status: mpStatus,
               mp_status_detail: mpPayment.status_detail,
               mp_fee_amount: mpFeeAmount,
-              pars_fee_amount: parsFeeAmount,
+              tlaco_fee_amount: platformFeeAmount,
             },
             updated_at: new Date().toISOString(),
           })
@@ -362,8 +400,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ received: true });
   } catch (err: unknown) {
-    console.error("Webhook processing error:", err);
-    return NextResponse.json({ received: true });
+    console.error(
+      "Webhook processing error (returning 500 for MP retry):",
+      err,
+    );
+    return NextResponse.json({ error: "processing_failed" }, { status: 500 });
   }
 }
 
@@ -376,14 +417,7 @@ async function handlePreapprovalStatusChange(
 ): Promise<void> {
   const supabase = createAdminClient();
 
-  const mpRes = await fetch(
-    `https://api.mercadopago.com/preapproval/${preapprovalId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
-      },
-    },
-  );
+  const mpRes = await fetchMercadoPagoResource(`preapproval/${preapprovalId}`);
 
   if (!mpRes.ok) {
     console.error(
@@ -409,6 +443,13 @@ async function handlePreapprovalStatusChange(
     console.warn(
       `Webhook: unknown preapproval status "${mpStatus}" for ${preapprovalId}`,
     );
+    return;
+  }
+
+  // SaaS memberships are intentionally a separate billing domain from a
+  // merchant's own customer subscriptions.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- billing schema is introduced by its accompanying migration.
+  if (await handleBillingPreapprovalStatus(supabase as any, preapprovalId, mpStatus)) {
     return;
   }
 
@@ -442,7 +483,7 @@ async function handlePreapprovalStatusChange(
   if (subscription) {
     if (subscription.status === newPlanStatus) return;
 
-    const updatePayload: Record<string, string> = {
+    const updatePayload: SubscriptionUpdate = {
       status: newPlanStatus,
       updated_at: new Date().toISOString(),
     };
@@ -476,24 +517,31 @@ async function handlePreapprovalPayment(
   const supabase = createAdminClient();
 
   let preapprovalId: string | null = null;
+  let amount = 0;
+  let fee = 0;
+  let paymentStatus = "approved";
   try {
-    const mpRes = await fetch(
-      `https://api.mercadopago.com/authorized_payments/${authorizedPaymentId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
-        },
-      },
-    );
+    const mpRes = await fetchMercadoPagoResource(`authorized_payments/${authorizedPaymentId}`);
     if (mpRes.ok) {
       const mpData = await mpRes.json();
       preapprovalId = mpData.preapproval_id ?? null;
+      amount = Number(mpData.transaction_amount ?? 0);
+      const net = Number(mpData.transaction_details?.net_received_amount ?? amount);
+      fee = Math.max(0, Math.round((amount - net) * 100) / 100);
+      paymentStatus = String(mpData.status ?? "approved");
     }
   } catch (err) {
     console.error(
       `Webhook: error fetching authorized_payment ${authorizedPaymentId} from MP:`,
       err,
     );
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- billing schema is introduced by its accompanying migration.
+  if (await handleBillingAuthorizedPayment(supabase as any, {
+    authorizedPaymentId, preapprovalId, amount, fee, status: paymentStatus,
+  })) {
+    return;
   }
 
   const appliedToLoan = await handlePreapprovalLoanPayment(
@@ -509,4 +557,15 @@ async function handlePreapprovalPayment(
       preapprovalId,
     );
   }
+}
+
+/** Memberships and merchant charges live in the same Tlaco Mercado Pago
+ * account. Their external references and their database tables keep them
+ * separated after Mercado Pago sends the webhook. */
+async function fetchMercadoPagoResource(path: string) {
+  const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  if (!token) throw new Error("No hay credenciales de Mercado Pago configuradas");
+  return fetch(`https://api.mercadopago.com/${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 }

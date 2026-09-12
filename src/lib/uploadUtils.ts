@@ -15,6 +15,14 @@ export function handleUploadError(
   console.error("Upload error:", err);
   const errorObj = err as Record<string, unknown>;
   const errorStr = (typeof errorObj?.message === "string" ? errorObj.message : "").toLowerCase();
+  const errorCode = typeof errorObj?.code === "string" ? errorObj.code : "";
+
+  if (
+    errorCode === "DatabaseInvalidObjectDefinition" ||
+    errorStr.includes("database schema is invalid or incompatible")
+  ) {
+    return "No pudimos guardar la imagen porque el almacenamiento necesita repararse. Intenta de nuevo en unos minutos.";
+  }
   
   if (
     errorStr.includes("size") ||

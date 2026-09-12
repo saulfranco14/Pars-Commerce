@@ -12,7 +12,7 @@ import type {
 } from "@/types/loans";
 
 const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://commerce.pars.com.mx";
+  process.env.NEXT_PUBLIC_APP_URL ?? "https://tlaco.mx";
 const WEBHOOK_URL = `${APP_URL}/api/mercadopago/webhook`;
 
 // POST /api/mercadopago/create-loan-preference
@@ -77,10 +77,12 @@ export async function POST(request: Request) {
     );
   }
 
-  if (amount > loan.amount_pending) {
+  const amountPending = loan.amount_pending ?? 0;
+
+  if (amount > amountPending) {
     return NextResponse.json(
       {
-        error: `El monto ($${amount}) supera el saldo pendiente ($${loan.amount_pending})`,
+        error: `El monto ($${amount}) supera el saldo pendiente ($${amountPending})`,
       },
       { status: 400 },
     );
@@ -154,7 +156,7 @@ export async function POST(request: Request) {
         },
         notification_url: WEBHOOK_URL,
         external_reference: `loan:${loan_id}`,
-        statement_descriptor: "PARS COMMERCE",
+        statement_descriptor: "TLACO",
         payment_methods: {
           installments: 12,
         },

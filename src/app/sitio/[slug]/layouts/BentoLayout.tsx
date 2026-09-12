@@ -94,7 +94,7 @@ export function BentoLayout({
                       href={tenant.social_links.instagram}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl bg-gray-200 text-gray-600 transition-colors hover:bg-pink-100 hover:text-pink-600"
+                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl bg-gray-200 text-gray-600 transition-colors hover:bg-accent/10 hover:text-accent"
                       aria-label="Instagram"
                     >
                       <InstagramIcon />

@@ -1,270 +1,335 @@
-# Claude Code Configuration
+# CLAUDE.md
 
-model: claude-sonnet-4-5-20250929
-
-## Project Context
-
-**pars_commerce** — Plataforma multi-tenant de comercio con sistema de préstamos, órdenes, productos, comisiones y pagos integrados con MercadoPago. Stack: Next.js 15 (App Router), React 19, TypeScript, Supabase, Zustand, SWR, React Hook Form + Yup, Tailwind CSS 4.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ---
 
-## Arquitectura: Clean Architecture por Features
+## Comandos
 
-### Principio fundamental
-
-Cada feature es un módulo autocontenido. No mezclar lógica entre features. Reutilizar solo lo que vive en carpetas compartidas (`/src/lib`, `/src/types`, `/src/stores`, `/src/hooks`, `/src/services`, `/src/constants`, `/src/components/ui`).
-
-### Estructura de un feature (Frontend)
-
-```
-src/features/{feature-name}/
-├── components/       # Componentes React del feature (máx 400 líneas c/u)
-├── hooks/            # Custom hooks (SWR, formularios, lógica de estado)
-├── constants/        # Constantes, tabs, opciones, clases CSS reutilizables
-├── helpers/          # Funciones puras (cálculos, transformaciones, SWR keys)
-├── interfaces/       # Types e interfaces de props y datos locales del feature
-├── services/         # Llamadas API (wrappers delgados sobre fetch)
-└── validations/      # Schemas de Yup para formularios
+```bash
+npm run dev      # Next.js dev server en http://localhost:3000
+npm run build    # Build de producción
+npm run start    # Servir build de producción
+npm run lint     # ESLint sobre todo el repo
+npx tsc --noEmit # Type-check del proyecto (sin emitir JS)
 ```
 
-### Estructura de un feature (Backend — API Routes)
+No hay tests automatizados configurados todavía.
 
-```
-src/app/api/{feature-name}/
-└── route.ts          # GET / POST / PATCH / DELETE
+**Migraciones Supabase** (en `supabase/migrations/`, orden alfabético = cronológico):
+
+```bash
+npx supabase link --project-ref <project-ref>
+npx supabase db push
 ```
 
-Cada route sigue este orden:
-1. **Auth**: `supabase.auth.getUser()` → 401 si falla
-2. **Tenant verification**: Validar membership del user en el tenant → 403 si no pertenece
-3. **Input validation**: Validar campos requeridos y reglas de negocio → 400
-4. **Query/Mutation**: Operación en Supabase
-5. **Response**: `NextResponse.json(data)` o error con `resolveUserError()`
+Alternativa manual: pegar cada `*.sql` en el SQL Editor del dashboard, en orden.
 
 ---
 
-## Principios SOLID
+## Documentos obligatorios antes de tocar código
 
-- **S — Single Responsibility**: Cada archivo tiene una sola razón de cambio. Un hook no hace fetch Y manipula DOM. Un helper no llama APIs.
-- **O — Open/Closed**: Usar constantes y configuraciones (tabs, opciones, status maps) en lugar de hardcodear. Agregar nuevos status/opciones sin modificar lógica existente.
-- **L — Liskov Substitution**: Las interfaces de props deben ser consistentes entre componentes intercambiables.
-- **I — Interface Segregation**: Props interfaces específicas por componente, no interfaces monolíticas. Cada componente recibe solo lo que necesita.
-- **D — Dependency Inversion**: Componentes dependen de hooks/services abstraídos, no de implementaciones directas de fetch o Supabase.
+Tres documentos son lectura obligatoria antes de modificar cualquier
+cosa. NO los repliques aquí — léelos.
 
----
+- **`.claude/skills/clean-code/SKILL.md`** — disciplina de ingeniería
+  agnóstica de stack: modularización, DRY, cuándo comentar, hook vs
+  helper vs util, formularios declarativos, capa de datos, loading
+  states, performance, seguridad. Léela PRIMERO — es la base sobre la
+  que `ARCHITECTURE.md` construye lo específico de este repo.
+- **`ARCHITECTURE.md`** — forma real de carpetas de este proyecto,
+  contratos concretos (`ServiceResult<T>`), reglas de Mercado Pago, y
+  los anti-patrones ya cazados en este repo específicamente.
+- **`DESIGN_SYSTEM.md`** — contrato visual para pantallas customer-facing
+  (`/src/app/q/**` y features dirigidas al cliente final). Define hero,
+  tipografía, color, layout canónico (`CustomerScreen`), primitivas
+  obligatorias (`Notification`, `FormSheet`, `FormInput`,
+  `ConfirmDialog`).
 
-## Reglas de Código
-
-### Componentes (máx 400 líneas)
-
-- Si un componente supera 400 líneas, extraer subcomponentes, hooks o helpers.
-- Patrón responsive: `hidden md:block` para desktop, `md:hidden` con `<BottomSheet>` para mobile.
-- No usar `useState` para lógica que se puede extraer a un custom hook.
-- No más de 3 `useState` por componente — si necesitas más, crear un custom hook.
-
-### Custom Hooks (obligatorios)
-
-Extraer a `/hooks` cuando:
-- Hay lógica de fetching (usar SWR dentro del hook)
-- Hay lógica de formulario (react-hook-form + yup)
-- Hay más de 2-3 `useState` relacionados
-- Hay lógica reutilizable entre componentes
-
-Patrón de retorno:
-```typescript
-// Devolver objeto con estado y handlers
-return { data, isLoading, error, handleAction, resetState };
-```
-
-### SWR para Data Fetching
-
-- **Siempre** usar SWR para fetching en componentes. No usar `useEffect` + `fetch` directo.
-- Usar `swrFetcher` de `@/lib/swrFetcher.ts` como fetcher estándar.
-- Construir SWR keys en archivos de helpers: `helpers/swrKeys.ts` o `helpers/buildXxxKey.ts`.
-- Key debe ser `null` cuando las dependencias no estén listas (conditional fetching).
-- Opciones estándar: `{ fallbackData: [], revalidateOnFocus: false }`.
-
-```typescript
-const key = tenantId ? `/api/endpoint?tenant_id=${tenantId}` : null;
-const { data, isLoading, mutate } = useSWR<Type>(key, swrFetcher, {
-  fallbackData: [],
-  revalidateOnFocus: false,
-});
-```
-
-### React Hook Form + Yup
-
-- Formularios **siempre** con `react-hook-form` + `yupResolver`.
-- Schemas de validación en `validations/` del feature, nunca inline.
-- Exportar el tipo inferido: `export type FormValues = yup.InferType<typeof schema>`.
-- Schemas modulares: componer con `.concat()` cuando se reutilicen partes.
-
-### Zustand (Estado Global)
-
-- Stores en `/src/stores/` con prefijo `use` (ej: `useTenantStore`, `useSessionStore`).
-- Persistencia manual a localStorage cuando sea necesario (no usar plugin persist).
-- Computed properties con `get()` dentro del store.
-- Solo estado verdaderamente global: auth, tenant, theme. Estado de feature va en hooks/context.
-
-### Services (Llamadas API)
-
-- Wrappers delgados sobre `apiFetch` de `@/services/apiFetch.ts`.
-- Un service por dominio: `loanService.ts`, `customerService.ts`, etc.
-- Pattern: `async function → fetch → check res.ok → throw/return`.
-- Services del feature en `features/{name}/services/`, compartidos en `/src/services/`.
-
-### Helpers (Funciones Puras)
-
-- Sin side effects, sin imports de React.
-- Cálculos, transformaciones de datos, formateo.
-- SWR key builders van aquí.
-- Nombrar descriptivamente: `buildOrdersKey`, `calcInterestAccrued`, `getPeriodDates`.
-
-### Constants
-
-- Tabs, opciones de select, status maps, clases CSS reutilizables.
-- Nunca hardcodear strings repetidos en componentes.
-
-### Interfaces / Types
-
-- Props de componentes en `interfaces/` del feature.
-- Types de dominio compartidos en `/src/types/` (loans.ts, customers.ts, orders.ts, etc.).
-- Usar `type` para datos y `interface` para props de componentes.
-- Payloads de API: `CreateXxxPayload`, `UpdateXxxPayload`.
-
-### Validations
-
-- Schemas Yup en `validations/` del feature.
-- Exportar schemas Y tipos inferidos.
-- Reutilizar schemas parciales con `.concat()`.
+Si encuentras código que viola estas reglas (ej. `formatCurrency`
+duplicado, `fetch` inline en un componente, interface inline en `.tsx`,
+banner inline en lugar de `<Notification>`), **refactoriza en vez de
+copiar el anti-patrón**.
 
 ---
 
-## Organización de Imports
+## Stack
 
-Orden estricto en cada archivo:
+Next.js 15 (App Router) + React 19 + TypeScript + Supabase (Auth + Postgres
++ RLS + Storage) + Zustand + SWR + React Hook Form + Yup + Tailwind CSS 4
++ Mercado Pago SDK + SendGrid (correo) + qrcode.react.
 
-```typescript
-"use client"; // 1. Directiva (si aplica)
-
-// 2. Librerías externas
-import { useState } from "react";
-import { Search, Loader2 } from "lucide-react";
-import useSWR from "swr";
-
-// 3. Hooks del feature
-import { useCustomerSearch } from "@/features/prestamos/hooks/useCustomerSearch";
-
-// 4. Componentes (UI compartidos, luego del feature)
-import { BottomSheet } from "@/components/ui/BottomSheet";
-import { CustomerPicker } from "@/features/prestamos/components/CustomerPicker";
-
-// 5. Services, helpers, constants
-import { swrFetcher } from "@/lib/swrFetcher";
-import { btnPrimary } from "@/components/ui/buttonClasses";
-
-// 6. Types (siempre con `import type`)
-import type { CustomerPickerProps } from "@/features/prestamos/interfaces/loanForm";
-import type { Customer } from "@/types/customers";
-```
-
-Usar siempre path aliases `@/` — nunca imports relativos (`../../../`).
+PWA: `@serwist/next` (service worker en `public/sw.js`).
 
 ---
 
-## Backend — API Routes
+## Mapa de arquitectura (lo que requiere leer varios archivos para entender)
 
-### Patrones obligatorios
+### 1. Multi-tenant
 
-1. **Auth guard** en toda ruta protegida:
-```typescript
-const supabase = await createClient();
-const { data: { user }, error: authError } = await supabase.auth.getUser();
-if (authError || !user) {
-  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-}
+Todo el dominio está scoped por `tenant_id`. Hay una sola base de datos
+con RLS — cada query relevante debe filtrar por tenant.
+
+- Tenant activo en el cliente: `useActiveTenant()` desde `@/stores/useTenantStore`.
+- Verificación obligatoria en cada API route protegida:
+  `supabase.auth.getUser()` → 401, luego `tenant_memberships` check → 403.
+- Los roles NO son un enum en `tenant_memberships`: viven en la tabla
+  **`tenant_roles`**, con un array `permissions jsonb`. Cada tenant recibe
+  su propia copia de los 4 roles de sistema, sembrada por el trigger
+  `handle_new_tenant()`. Un tenant puede además tener roles propios.
+- Roles de sistema: `owner`, `member`, `cashier`, `waiter`. `member` es el
+  valor por defecto del selector de invitación. No existe `admin` — no
+  escribas comprobaciones contra ese rol.
+- **Nunca autorices comparando el nombre del rol.** Un rol personalizado no
+  entraría en el `if`, y el mismo nombre puede tener permisos distintos en
+  dos tenants. Autoriza siempre por permiso:
+  `requirePermission(userId, tenantId, "qr.write")` desde
+  `@/lib/auth/requirePermission`, que devuelve
+  `{ membershipId, roleId, roleName, permissions }`. El `owner` los pasa
+  todos.
+- Alcance de pedidos: `orders.view_all` vs `orders.view_assigned` deciden
+  *qué* pedidos ve alguien; `orders.assign` / `orders.close` /
+  `orders.addendum` / `orders.schedule_config` deciden qué puede hacer con
+  ellos. Los nombres están en
+  `features/orders/constants/orderPermissions.ts` y la decisión se resuelve
+  en `features/orders/services/orderAccessService.ts` — no repitas la lógica
+  en el route handler.
+- Al invitar o cambiar el rol de alguien, la UI muestra qué podrá hacer.
+  Ese texto se **compone de los permisos reales del rol**
+  (`features/equipo/constants/roleDescriptions.ts`), no de su nombre; si
+  agregas un permiso, agrégale su frase ahí o quedará invisible.
+
+### 2. Features = módulos autocontenidos
+
+Cada feature en `src/features/{name}/` sigue exactamente esta estructura
+(ver `ARCHITECTURE.md` §2 para detalles):
+
+```
+components/   hooks/   helpers/   constants/   interfaces/   services/   validations/
 ```
 
-2. **Tenant membership check**:
-```typescript
-const { data: membership } = await supabase
-  .from("tenant_memberships")
-  .select("id")
-  .eq("tenant_id", tenant_id)
-  .eq("user_id", user.id)
-  .single();
-if (!membership) {
-  return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-}
+Features actuales: `auth`, `checkout`, `configuracion`, `equipo`,
+`landing`, `onboarding`, `orders`, `prestamos`, `productos`,
+`promociones`, `qr`, `servicios`, `sitio`, `sitio-web`, `suscripciones`,
+`ventas`.
+
+Las primitivas verdaderamente compartidas viven fuera de features:
+- `src/components/ui/` — primitivas visuales transversales
+  (`ConfirmDialog`, `FormSheet`, `FormInput`, `Notification`, `Toast`,
+  `BottomSheet`).
+- `src/components/admin/` — primitivas de pantallas internas del
+  dashboard (`PageHeader`, `MetricsStrip`, `FilterTabs`, `StatusBadge`,
+  `EmptyState`, `AdminListCard`, `actionButtonClasses`). Reglas de
+  composición en `DESIGN_SYSTEM.md §4.7`.
+- `src/lib/` — clientes (`supabase/{client,server,admin}`, `mercadopago`,
+  `swrFetcher`), helpers de errores, fee calculators (`loanUtils`).
+- `src/stores/` — Zustand global (`useTenantStore`, `useSessionStore`).
+- `src/services/apiFetch.ts` — wrapper único sobre `fetch`. Todos los
+  client services del repo lo usan.
+- `src/types/` — DTOs compartidos entre features.
+- `src/constants/` — `commissionConfig.ts` y otras constantes globales.
+
+### 3. Cliente Supabase: tres variantes
+
+- `@/lib/supabase/server` — Server Components y API routes con cookies.
+- `@/lib/supabase/client` — Client Components con sesión del browser.
+- `@/lib/supabase/admin` — Service role key, salta RLS. Solo en código
+  server-only (API routes, webhooks). Nunca importes desde un Client
+  Component.
+
+### 4. Patrón de API route (server-side service)
+
+Route handlers en `src/app/api/**/route.ts` son adaptadores delgados:
+parse body → llama al servicio → mapea error a HTTP. La lógica vive en
+`features/{name}/services/*Service.ts`.
+
+Convención de retorno de servicios server-side:
+```ts
+type ServiceResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: ServiceError };
 ```
 
-3. **Validación de inputs** antes de cualquier operación.
-4. **Error handling** con `resolveUserError()` de `@/lib/errors/resolveUserError.ts`.
-5. **State machines** para transiciones de estado (orders, loans) con `ALLOWED_TRANSITIONS`.
+`serviceErrorToResponse(error)` mapea `code` → HTTP status. Referencia
+canónica: `src/features/qr/services/tablePaymentService.ts` +
+`src/features/qr/services/serviceErrorToResponse.ts`.
 
-### DTOs y Types
+### 5. Mercado Pago
 
-- Definir en `/src/types/{domain}.ts`.
-- Payloads: `CreateXxxPayload`, `UpdateXxxPayload`.
-- Response types cuando aplique.
-- Enums como union types: `type Status = "pending" | "partial" | "paid"`.
+Cliente único en `@/lib/mercadopago`. Toda creación de preferencia debe
+seguir `ARCHITECTURE.md §6.1`:
 
-### MercadoPago
+- Negocio absorbe la comisión en flujos QR (mesas, propinas) →
+  `metadata.fee_absorbed_by = "business"`. Nunca inflar `unit_price`.
+- `auto_return: "approved"` solo cuando `base.startsWith("https://")`.
+  En localhost MP rechaza la preferencia.
+- Logear el error real del SDK (extraer de `err.cause.message`), no
+  devolver mensajes genéricos.
+- `external_reference` con prefijos por flujo:
+  - `qr_table:{order_id}` → pago completo de mesa
+  - `qr_table_group:{group_id}` → pago de grupo de split
+  - `order:{order_id}:mode:single:attempt:{attempt_id}` → storefront
+  - `loan:{id}` / `bulk_loan:{id}` → préstamos
 
-- Cliente inicializado en `/src/lib/mercadopago.ts`.
-- Webhooks en `/api/mercadopago/webhook/` con verificación de firma.
-- Fee calculations en `/src/lib/loanUtils.ts` y `/src/constants/commissionConfig.ts`.
-- `external_reference` format: `loan:{id}`, `bulk_loan:{id}`, `{orderId}`.
-- Siempre manejar `mp_fee_absorbed_by`: customer | business.
+Webhook en `/api/mercadopago/webhook/`. El despacho por prefijo se hace
+en `tableMpWebhookService` (`isQrTableReference`, `handleQrTableMpPayment`)
+y handlers análogos para storefront y préstamos.
 
-### Supabase
+Cálculo de fees: `src/constants/commissionConfig.ts` (`calcMsiBuyerTotal`,
+`calcBuyerTotal`) y `src/lib/loanUtils.ts` para préstamos.
 
-- Server client: `@/lib/supabase/server.ts` (rutas API, server components).
-- Browser client: `@/lib/supabase/client.ts` (client components).
-- Admin client: `@/lib/supabase/admin.ts` (operaciones privilegiadas).
-- Storage: `@/lib/supabase/storage.ts` (uploads de imágenes).
+### 6. Flujo customer-facing (QR)
 
----
+Las pantallas en `src/app/q/[token]/**` son la cara al cliente final.
+Reglas no negociables:
 
-## Multi-Tenant
+- TODAS usan `<CustomerScreenLayout>` (`features/qr/components/`). No
+  construyas un `<main>` + hero custom — extiende el layout si necesitas
+  algo nuevo.
+- Banners de status → `<Notification tone="...">`. Confirmaciones →
+  `<ConfirmDialog>`. Forms en modal → `<FormSheet>`. Inputs →
+  `<FormInput>`. Cero `window.confirm`, cero banners ad-hoc.
+- Iconos: `lucide-react` ÚNICAMENTE. Cero emojis en componentes.
+- **Copy e íconos NEUTRALES (multinegocio).** El QR de mesas lo usan
+  negocios de cualquier rubro (autolavado, taller, spa, comida…), NO solo
+  restaurantes. Prohibido copy/íconos específicos de comida en pantallas
+  customer-facing: nada de `¿Qué se te antoja?`, `En preparación`,
+  `ChefHat`, `Coffee`, `Utensils`, "cocina", "menú de platillos", etc.
+  Usa términos universales: `pedido`/`orden`, `En proceso`, `Listo`,
+  `productos`, íconos neutrales (`Clock`, `PackageCheck`, `Store`).
+- **Estado de preparación = estado real, no cosmético.** El avance
+  `recibido → en proceso → listo` vive en `orders.fulfillment_status`
+  (no en `orders.status`, que es el ciclo de pago). Solo el staff con el
+  permiso `qr.fulfill` (roles `owner` y `waiter`; el `cashier` NO) puede
+  avanzarlo vía `POST /api/qr/table/[orderId]/fulfillment`. El cliente NO
+  puede pagar hasta que `fulfillment_status === "ready"` — hay guarda en
+  UI y en los servicios de pago (`tablePaymentService`,
+  `tableMpPreferenceService`).
+- El monto en pesos es el protagonista visual de cada pantalla
+  (`text-5xl` o más, `font-bold`, `tracking-tight`).
+- Para propinas/montos: chips de presets primero, input custom solo si
+  el cliente toca "Otro monto".
+- Aislamiento de sesión QR: cuando una orden cierra y se crea una nueva
+  en el mismo QR, hay que limpiar `device_name` de `localStorage`. La
+  lógica vive en `useTableSession` + el flag `is_new_session` que
+  devuelve `/api/qr/resolve`. NUNCA revivas la identidad del cliente
+  anterior en una orden nueva — es un bug de privacidad.
 
-- **Todo** scoped por `tenant_id`. Nunca queries sin filtro de tenant.
-- Tenant activo viene de `useTenantStore`.
-- Verificar membership en cada API route.
-- Roles verificados cuando se requieren permisos especiales (owner, admin).
+### 7. Storefront público
 
----
+Rutas `src/app/sitio/[slug]/**` para el sitio público de cada tenant.
+Comparten infraestructura con el checkout en `src/features/checkout/`:
+`singleCheckoutHandler`, `partialCheckoutHandler`,
+`subscriptionCheckoutHandler` reciben un `CheckoutContext` y devuelven
+una preferencia MP. El `back_urls` por defecto apunta a
+`/sitio/{slug}/confirmacion`; flujos como pagos QR sobrescriben con
+`ctx.backUrls` para apuntar a su propia página branded.
 
-## Estilo y UI
+### 8. Estado global
 
-- Tailwind CSS 4 con tokens de diseño: `bg-surface`, `text-foreground`, `border-border`, `bg-accent`, etc.
-- Componentes UI compartidos en `/src/components/ui/`.
-- Botones: usar clases de `/src/components/ui/buttonClasses.ts`.
-- Inputs: clases base en `constants/formClasses.ts` del feature.
-- Responsive: mobile-first, `BottomSheet` para modales en mobile, modales estándar en desktop.
-- Min touch target: `min-h-[44px] min-w-[44px]` en elementos interactivos.
+Zustand stores en `src/stores/` — solo lo verdaderamente global:
+sesión (`useSessionStore`), tenant activo (`useTenantStore`), tema. El
+resto del estado vive en hooks de feature. Persistencia a `localStorage`
+manual (no usar el plugin `persist`).
+
+### 9. PWA y service worker
+
+`@serwist/next` controla el service worker en `public/sw.js`. Cuando
+veas logs como `serwist Router is responding to: /api/...` en el
+console del browser, vienen del SW. Si una request a un endpoint nuevo
+hace algo raro, revisa la config de Serwist antes que el endpoint en sí.
 
 ---
 
 ## Errores
 
-- Mensajes en español para el usuario final.
-- Usar `resolveUserError(error, source)` con sources: `"supabase"`, `"sendgrid"`, `"mercadopago"`.
-- Mapeos en `/src/lib/errors/errorMessages.ts`.
+- Mensajes para el usuario final SIEMPRE en español.
+- Usar `resolveUserError(error, source)` de `@/lib/errors/resolveUserError`
+  con `source: "supabase" | "sendgrid" | "mercadopago"`.
+- Mapeos en `src/lib/errors/errorMessages.ts`.
 
 ---
 
-## Checklist para nuevos features
+## Comentarios
 
-- [ ] Crear estructura de carpetas del feature (components, hooks, helpers, constants, interfaces, services, validations)
-- [ ] Types/interfaces definidos antes de implementar
-- [ ] SWR para todo fetching, key builders en helpers
-- [ ] Formularios con react-hook-form + yup (schema en validations/)
-- [ ] Componentes < 400 líneas, lógica extraída a hooks
-- [ ] No más de 3 useState por componente
-- [ ] Services como wrappers delgados sobre apiFetch
-- [ ] Constants para valores repetidos (tabs, opciones, clases CSS)
-- [ ] API routes con auth → tenant check → validation → operation → response
-- [ ] Error handling con resolveUserError
-- [ ] Imports organizados según convención
-- [ ] Responsive: mobile-first con BottomSheet pattern
+- **En inglés.** Una línea; tres como máximo absoluto.
+- Solo si son necesarios. Si el código ya lo dice, el comentario es ruido.
+- Nunca describir lo que hace la línea de abajo, ni narrar decisiones de
+  layout/CSS, ni dejar bloques `/* … */` dentro del JSX.
+- Sí vale un comentario corto para: un `?? 0` que existe por compatibilidad,
+  una omisión deliberada (no poner `qr_code_id` al hijo), o una constante cuyo
+  valor no se deduce.
+
+---
+
+## Clases de Tailwind
+
+- Usar la escala canónica, no valores arbitrarios: `min-h-11` en vez de
+  `min-h-[44px]`, `h-4.5` en vez de `h-[18px]`, `bg-foreground/6` en vez de
+  `bg-foreground/[0.06]`. El linter de Tailwind avisa (`suggestCanonicalClasses`)
+  y esos warnings no se dejan pasar.
+- Arbitrario solo cuando no hay equivalente en la escala (`w-[302px]` de un
+  ticket térmico, `text-[15px]`).
+
+---
+
+## Organización de imports
+
+```ts
+"use client";
+
+import { useState } from "react";          // 1. Externos
+import { Search } from "lucide-react";
+import useSWR from "swr";
+
+import { useFoo } from "@/features/x/hooks/useFoo";   // 2. Hooks del feature
+import { Bar } from "@/components/ui/Bar";            // 3. Componentes (UI compartidos → feature)
+import { CustomerPicker } from "@/features/x/components/CustomerPicker";
+
+import { swrFetcher } from "@/lib/swrFetcher";        // 4. Services, helpers, constants
+
+import type { FooProps } from "@/features/x/interfaces/foo"; // 5. Types con `import type`
+```
+
+Usar siempre alias `@/` — nunca `../../../`.
+
+---
+
+## Anti-patrones explícitamente prohibidos
+
+Prohibiciones genéricas (interfaces inline, `fetch` en componentes,
+helpers duplicados, `useState` xN con lógica de dominio) están en
+`clean-code/SKILL.md` — no se repiten aquí. Específicos de este repo,
+versión larga con ejemplos en `ARCHITECTURE.md §7`:
+
+- Renderizar `ModalShell` + `BottomSheet` en paralelo para responsive
+  (usar `FormSheet`)
+- Banners de status `<div className="rounded-2xl border border-emerald-200 ...">`
+  copiados (usar `<Notification>`)
+- `METHOD_META` / `METHOD_LABELS` redeclarado por componente (usar
+  `features/qr/constants/paymentMethodMeta.ts`)
+- Pantallas customer-facing sin `<CustomerScreen>`
+- Emojis en componentes (solo `lucide-react`)
+- Copy/íconos de comida en customer-facing (`¿Qué se te antoja?`,
+  `En preparación`, `ChefHat`, `Coffee`…) — es multinegocio, usa copy
+  neutral (ver §6)
+- `window.confirm` (usar `<ConfirmDialog>`)
+- `font-extrabold` en body type
+
+---
+
+## Checklist al cerrar un cambio
+
+- [ ] `clean-code/SKILL.md` §"Before shipping" completo.
+- [ ] Estructura del feature respetada (`ARCHITECTURE.md §2`).
+- [ ] Pantallas customer-facing usan `<CustomerScreen>` + las
+      primitivas (`Notification`, `FormInput`, `FormSheet`,
+      `ConfirmDialog`)
+- [ ] API routes: auth → tenant check → validación → operación →
+      response, con `resolveUserError`
+- [ ] Servicios server-side devuelven `ServiceResult<T>` y rutas usan
+      `serviceErrorToResponse`
+- [ ] Si toca Mercado Pago: `ARCHITECTURE.md §6.1` (`fee_absorbed_by`,
+      `auto_return` guard, error real propagado, `external_reference`
+      prefijado)
+- [ ] `npx tsc --noEmit` y `npm run lint` limpios

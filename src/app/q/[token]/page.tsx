@@ -1,0 +1,179 @@
+import { QrCode as QrIcon } from "lucide-react";
+import { headers } from "next/headers";
+
+import { PaymentQRClient } from "./payment/PaymentQRClient";
+import { TableSession } from "./table/TableSession";
+import { OrderTicketScreen } from "./order/OrderTicketScreen";
+
+import type { TenantPaymentMethod } from "@/features/configuracion/interfaces/bankAccount";
+import type { QrSessionTenant } from "@/features/qr/interfaces/tableSession";
+
+interface QrResolveResponse {
+  tenant: QrSessionTenant;
+  kind: "payment" | "table" | "order";
+  active?: boolean;
+  qr_code: {
+    id: string;
+    label: string;
+    token: string;
+    preset_amount: number | null;
+  };
+  order?: {
+    id: string;
+    status: string;
+    source?: string | null;
+    fulfillment_status?: string;
+    total?: number;
+  };
+  menu?: Array<{
+    id: string;
+    name: string;
+    price: number;
+  }>;
+}
+
+interface QrPageProps {
+  params: Promise<{ token: string }>;
+}
+
+type ResolveResult =
+  | { ok: true; data: QrResolveResponse }
+  | { ok: false; status: number; message: string };
+
+async function getRequestOrigin(): Promise<string> {
+  const requestHeaders = await headers();
+  const host =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+
+  if (host) {
+    const protocol =
+      requestHeaders.get("x-forwarded-proto") ??
+      (host.startsWith("localhost") || host.startsWith("127.0.0.1")
+        ? "http"
+        : "https");
+    return `${protocol}://${host}`;
+  }
+
+  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+}
+
+async function getSession(
+  token: string,
+  baseUrl: string,
+): Promise<ResolveResult> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${baseUrl}/api/qr/resolve?token=${encodeURIComponent(token)}`,
+      { cache: "no-store" },
+    );
+  } catch {
+    return {
+      ok: false,
+      status: 0,
+      message: "No pudimos conectarnos. Verifica tu conexión a internet.",
+    };
+  }
+
+  if (!response.ok) {
+    const fallback =
+      response.status === 404
+        ? "Este código QR no está disponible o fue desactivado."
+        : response.status === 403
+          ? "El negocio no tiene la tienda pública activa todavía."
+          : "Ocurrió un problema al cargar este QR.";
+    let message = fallback;
+    try {
+      const body = (await response.json()) as { error?: string };
+      if (body.error) message = body.error;
+    } catch {
+      // keep fallback
+    }
+    return { ok: false, status: response.status, message };
+  }
+
+  return { ok: true, data: (await response.json()) as QrResolveResponse };
+}
+
+async function getActivePaymentMethod(
+  tenantId: string,
+  baseUrl: string,
+): Promise<TenantPaymentMethod | null> {
+  const response = await fetch(
+    `${baseUrl}/api/tenant-payment-methods?tenant_id=${encodeURIComponent(tenantId)}`,
+    { cache: "no-store" },
+  );
+  if (!response.ok) return null;
+  const methods = (await response.json()) as TenantPaymentMethod[];
+  return methods.find((m) => m.is_active && m.kind === "bank_transfer") ?? null;
+}
+
+function QrUnavailable({ message }: { message: string }) {
+  return (
+    <main className="flex min-h-dvh items-center justify-center bg-background px-4 py-10">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6 text-center shadow-sm">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+          <QrIcon className="h-7 w-7" />
+        </div>
+        <h1 className="mt-4 text-lg font-semibold text-foreground">
+          Código QR no disponible
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">{message}</p>
+        <p className="mt-4 text-xs text-muted-foreground">
+          Si crees que es un error, contacta al negocio que te entregó este QR.
+        </p>
+      </div>
+    </main>
+  );
+}
+
+export default async function QrPage({ params }: QrPageProps) {
+  const { token } = await params;
+  const baseUrl = await getRequestOrigin();
+  const result = await getSession(token, baseUrl);
+
+  if (!result.ok) {
+    return <QrUnavailable message={result.message} />;
+  }
+
+  const session = result.data;
+
+  if (session.kind === "payment") {
+    const activePaymentMethod = await getActivePaymentMethod(
+      session.tenant.id,
+      baseUrl,
+    );
+    return (
+      <PaymentQRClient
+        token={token}
+        tenant={session.tenant}
+        qrCode={session.qr_code}
+        activePaymentMethod={activePaymentMethod}
+      />
+    );
+  }
+
+  // Single-use staff 'order' ticket: the order is already built — show the lean
+  // review-and-pay screen. A spent ticket keeps its order as a read-only
+  // receipt even though it resolves active:false.
+  if (session.kind === "order") {
+    if (!session.order) {
+      return (
+        <QrUnavailable message="Este pedido ya fue pagado o ya no está disponible." />
+      );
+    }
+    return (
+      <OrderTicketScreen
+        token={token}
+        tenant={session.tenant}
+        orderId={session.order.id}
+        initialOrder={session.order}
+      />
+    );
+  }
+
+  // For "table" we hand off to the client wrapper so the fingerprint (which
+  // lives in localStorage) can be sent to /api/qr/resolve. This is required to
+  // persist the device row and surface the customer's saved display_name.
+  return <TableSession token={token} />;
+}

@@ -7,7 +7,7 @@ import { ArrowRight, Check, Save } from "lucide-react";
 import { useActiveTenant, useTenantStore } from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
 import type { SitePage } from "@/types/tenantSitePages";
-import { SiteContentForm } from "@/features/configuracion/components/SiteContentForm";
+import { SiteContentForm } from "@/features/configuracion/components/site-content/SiteContentForm";
 import {
   update as updateTenant,
   list as listTenants,
@@ -34,6 +34,7 @@ export function SiteWebConfigSection({
   const [publicStoreLoading, setPublicStoreLoading] = useState(false);
   const [themeColor, setThemeColor] = useState("");
   const [whatsappPhone, setWhatsappPhone] = useState("");
+  const [whatsappOrdersEnabled, setWhatsappOrdersEnabled] = useState(false);
   const [instagramUrl, setInstagramUrl] = useState("");
   const [facebookUrl, setFacebookUrl] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
@@ -83,6 +84,7 @@ export function SiteWebConfigSection({
     setWhatsappPhone(
       (activeTenant as { whatsapp_phone?: string }).whatsapp_phone ?? "",
     );
+    setWhatsappOrdersEnabled((activeTenant as { whatsapp_orders_enabled?: boolean }).whatsapp_orders_enabled === true);
     const sl = (
       activeTenant as {
         social_links?: {
@@ -161,6 +163,7 @@ export function SiteWebConfigSection({
     try {
       await updateTenant(activeTenant.id, {
         whatsapp_phone: whatsappPhone.trim() || undefined,
+        whatsapp_orders_enabled: whatsappOrdersEnabled,
         social_links: {
           instagram: instagramUrl.trim() || undefined,
           facebook: facebookUrl.trim() || undefined,
@@ -186,7 +189,7 @@ export function SiteWebConfigSection({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex flex-col xl:h-full xl:min-h-0">
       <div className="shrink-0 p-4 pb-0 sm:p-5 sm:pb-0">
         <div className="flex rounded-xl bg-muted/40 p-1 gap-0.5">
           {SITIO_TABS.map((tab) => {
@@ -213,7 +216,7 @@ export function SiteWebConfigSection({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-6 pt-4 sm:px-5 sm:pb-6 sm:pt-4">
+      <div className="px-4 pb-6 pt-4 sm:px-5 sm:pb-6 sm:pt-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:overscroll-contain">
         {activeTab === "general" && (
           <SiteWebGeneralTab
             tenantSlug={tenantSlug}
@@ -236,6 +239,8 @@ export function SiteWebConfigSection({
           <SiteWebRedesTab
             whatsappPhone={whatsappPhone}
             onWhatsappPhoneChange={setWhatsappPhone}
+            whatsappOrdersEnabled={whatsappOrdersEnabled}
+            onWhatsappOrdersEnabledChange={setWhatsappOrdersEnabled}
             instagramUrl={instagramUrl}
             onInstagramUrlChange={setInstagramUrl}
             facebookUrl={facebookUrl}
@@ -288,13 +293,13 @@ export function SiteWebConfigSection({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-border/60 bg-background shadow-[0_-2px_8px_rgba(0,0,0,0.04)] px-4 py-3 sm:px-5 min-h-[60px] flex items-center">
+      <div className="shrink-0 border-t border-border/60 bg-background shadow-[0_-2px_8px_rgba(0,0,0,0.04)] px-4 py-3 sm:px-5 min-h-15 flex items-center">
         {activeTab === "general" && (
           <button
             type="submit"
             form="appearance-form"
             disabled={appearanceLoading || !appearanceDirty}
-            className="flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Check className="h-4 w-4 shrink-0" aria-hidden />
             {appearanceLoading ? "Guardando…" : "Guardar apariencia"}
@@ -305,7 +310,7 @@ export function SiteWebConfigSection({
             type="submit"
             form="redes-form"
             disabled={redesLoading}
-            className="flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Save className="h-4 w-4 shrink-0" aria-hidden />
             {redesLoading ? "Guardando…" : "Guardar redes"}
@@ -319,7 +324,7 @@ export function SiteWebConfigSection({
         {activeTab === "promociones" && (
           <Link
             href={`/dashboard/${tenantSlug}/promociones`}
-            className="flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
             Administrar promociones
             <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />

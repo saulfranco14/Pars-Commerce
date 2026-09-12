@@ -1,5 +1,37 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import type { Database } from "@/types/database.types";
+
+type ProductUpdate = Database["public"]["Tables"]["products"]["Update"];
+
+type ProductSlugConflict = {
+  id: string;
+  deleted_at: string | null;
+};
+
+function slugConflictMessage(slug: string, archived: boolean) {
+  return archived
+    ? `El identificador "${slug}" pertenece a un producto archivado. Restáuralo o cambia el slug antes de guardar.`
+    : `Ya existe un producto con el identificador "${slug}". Cambia el nombre o el slug antes de guardar.`;
+}
+
+async function findSlugConflict(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tenantId: string,
+  slug: string,
+  excludeProductId?: string,
+): Promise<ProductSlugConflict | null> {
+  let query = supabase
+    .from("products")
+    .select("id, deleted_at")
+    .eq("tenant_id", tenantId)
+    .eq("slug", slug);
+
+  if (excludeProductId) query = query.neq("id", excludeProductId);
+
+  const { data } = await query.maybeSingle();
+  return data ?? null;
+}
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -222,6 +254,33 @@ export async function POST(request: Request) {
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "");
 
+  const slugConflict = await findSlugConflict(
+    supabase,
+    tenant_id,
+    normalizedSlug,
+  );
+  if (slugConflict) {
+    return NextResponse.json(
+      {
+        error: slugConflictMessage(
+          normalizedSlug,
+          slugConflict.deleted_at !== null,
+        ),
+      },
+      { status: 409 },
+    );
+  }
+
+  if (
+    stock !== undefined &&
+    (!Number.isFinite(Number(stock)) || Number(stock) < 0)
+  ) {
+    return NextResponse.json(
+      { error: "El stock debe ser un número mayor o igual a 0." },
+      { status: 400 },
+    );
+  }
+
   const urls = Array.isArray(image_urls)
     ? image_urls.filter((u) => typeof u === "string" && u.trim())
     : [];
@@ -255,16 +314,25 @@ export async function POST(request: Request) {
 
   if (productError) {
     if (productError.code === "23505") {
+      const concurrentConflict = await findSlugConflict(
+        supabase,
+        tenant_id,
+        normalizedSlug,
+      );
       return NextResponse.json(
-        { error: "Slug or SKU already exists for this tenant" },
+        {
+          error: slugConflictMessage(
+            normalizedSlug,
+            concurrentConflict?.deleted_at !== null,
+          ),
+        },
         { status: 409 },
       );
     }
     return NextResponse.json({ error: productError.message }, { status: 500 });
   }
 
-  const initialQty =
-    typeof stock === "number" && stock >= 0 ? Math.floor(stock) : 0;
+  const initialQty = stock !== undefined ? Math.floor(Number(stock)) : 0;
   const { error: invError } = await supabase.from("product_inventory").insert({
     product_id: product.id,
     quantity: initialQty,
@@ -372,7 +440,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const updates: Record<string, unknown> = {
+  const updates: ProductUpdate = {
     updated_at: new Date().toISOString(),
   };
   if (name !== undefined) updates.name = name.trim();
@@ -382,6 +450,34 @@ export async function PATCH(request: Request) {
       .trim()
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9-]/g, "");
+
+    const slugConflict = await findSlugConflict(
+      supabase,
+      productForAuth.tenant_id,
+      updates.slug,
+      product_id,
+    );
+    if (slugConflict) {
+      return NextResponse.json(
+        {
+          error: slugConflictMessage(
+            updates.slug,
+            slugConflict.deleted_at !== null,
+          ),
+        },
+        { status: 409 },
+      );
+    }
+  }
+
+  if (
+    stock !== undefined &&
+    (!Number.isFinite(Number(stock)) || Number(stock) < 0)
+  ) {
+    return NextResponse.json(
+      { error: "El stock debe ser un número mayor o igual a 0." },
+      { status: 400 },
+    );
   }
   if (sku !== undefined) updates.sku = sku?.trim() || null;
   if (description !== undefined)
@@ -449,8 +545,21 @@ export async function PATCH(request: Request) {
 
   if (error) {
     if (error.code === "23505") {
+      const concurrentConflict = updates.slug
+        ? await findSlugConflict(
+            supabase,
+            productForAuth.tenant_id,
+            updates.slug,
+            product_id,
+          )
+        : null;
       return NextResponse.json(
-        { error: "Slug or SKU already exists for this tenant" },
+        {
+          error: slugConflictMessage(
+            updates.slug ?? "este identificador",
+            concurrentConflict?.deleted_at !== null,
+          ),
+        },
         { status: 409 },
       );
     }
@@ -469,12 +578,18 @@ export async function PATCH(request: Request) {
     }
   }
 
-  if (typeof stock === "number" && stock >= 0) {
-    const qty = Math.floor(stock);
+  if (stock !== undefined) {
+    const qty = Math.floor(Number(stock));
     const { error: invError } = await supabase
       .from("product_inventory")
-      .update({ quantity: qty })
-      .eq("product_id", product_id);
+      .upsert(
+        {
+          product_id,
+          quantity: qty,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "product_id" },
+      );
 
     if (invError) {
       return NextResponse.json(

@@ -13,7 +13,7 @@ import type {
 } from "@/types/loans";
 
 const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://commerce.pars.com.mx";
+  process.env.NEXT_PUBLIC_APP_URL ?? "https://tlaco.mx";
 const WEBHOOK_URL = `${APP_URL}/api/mercadopago/webhook`;
 
 // POST /api/mercadopago/create-bulk-loan-preference
@@ -63,6 +63,13 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!customer.name) {
+    return NextResponse.json(
+      { error: "El cliente no tiene nombre registrado" },
+      { status: 400 },
+    );
+  }
+
   // Obtener y validar cada préstamo
   const loanIds = loanItems.map((l) => l.loan_id);
   const { data: dbLoans, error: loansError } = await supabase
@@ -100,7 +107,7 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    if (item.amount > dbLoan.amount_pending) {
+    if (item.amount > (dbLoan.amount_pending ?? 0)) {
       return NextResponse.json(
         {
           error: `El monto para "${dbLoan.concept}" supera el saldo pendiente`,
@@ -151,7 +158,7 @@ export async function POST(request: Request) {
         items: finalItems,
         payer: buildPayerFromCustomer({
           customerName: customer.name,
-          customerEmail: customer.email ?? undefined,
+          customerEmail: customer.email ?? "",
           customerPhone: customer.phone ?? undefined,
         }),
         back_urls: {
@@ -163,7 +170,7 @@ export async function POST(request: Request) {
         notification_url: WEBHOOK_URL,
         // El external_reference identifica este como pago bulk
         external_reference: `bulk_loan:${loanIds.join(",")}`,
-        statement_descriptor: "PARS COMMERCE",
+        statement_descriptor: "TLACO",
         payment_methods: {
           installments: 12,
         },

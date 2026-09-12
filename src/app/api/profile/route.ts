@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import type { Database } from "@/types/database.types";
+import { normalizeMexicanPhone } from "@/lib/phone";
+
+type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
 export async function GET() {
   const supabase = await createClient();
@@ -72,12 +76,26 @@ export async function PATCH(request: Request) {
     avatar_url?: string;
   };
 
-  const updates: Record<string, unknown> = {
+  const updates: ProfileUpdate = {
     updated_at: new Date().toISOString(),
   };
   if (display_name !== undefined)
     updates.display_name = display_name?.trim() ?? null;
-  if (phone !== undefined) updates.phone = phone?.trim() ?? null;
+  if (phone !== undefined) {
+    const rawPhone = phone?.trim() ?? "";
+    if (!rawPhone) {
+      updates.phone = null;
+    } else {
+      const normalizedPhone = normalizeMexicanPhone(rawPhone);
+      if (!normalizedPhone) {
+        return NextResponse.json(
+          { error: "Escribe un teléfono mexicano válido de 10 dígitos." },
+          { status: 400 },
+        );
+      }
+      updates.phone = normalizedPhone;
+    }
+  }
   if (avatar_url !== undefined) updates.avatar_url = avatar_url?.trim() ?? null;
 
   const { data: profile, error } = await supabase

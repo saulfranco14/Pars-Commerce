@@ -1,0 +1,122 @@
+"use client";
+
+import Image from "next/image";
+
+import { getInitials } from "@/features/qr/helpers/format";
+
+import type { BrandImageProps } from "@/features/qr/interfaces/brandImage";
+
+const DEFAULT_SIZES = "(max-width: 640px) 96px, 128px";
+
+/**
+ * Shared image tile with a 3-tier fallback so no customer-facing card ever
+ * shows a bare placeholder icon (see DESIGN_SYSTEM.md — the amount/brand must
+ * carry the screen). Resolution cascade:
+ *
+ *   1. `src`      → the actual photo (product image), object-cover.
+ *   2. `logoUrl`  → the tenant's logo, object-contain on a soft tile.
+ *   3. `name`     → a colored tile with the business initials.
+ *   4. (fallback) → the Tlaco coin on an accent gradient.
+ *
+ * Pure presentational: no fetch, no state. Uses next/image (configured for
+ * *.supabase.co in next.config.ts) so every photo is served AVIF/WebP at the
+ * tile's real size instead of shipping the original upload — the same 96px
+ * card tile no longer downloads a multi-MB phone-camera photo.
+ */
+export function BrandImage({
+  src,
+  logoUrl,
+  name,
+  alt,
+  className = "",
+  rounded = "rounded-none",
+  sizes = DEFAULT_SIZES,
+  fallbackScale = "default",
+  priority = false,
+}: BrandImageProps) {
+  const tileBase = `relative flex items-center justify-center overflow-hidden ${rounded} ${className}`;
+  const trimmedName = name?.trim() ?? "";
+  const loading = priority ? undefined : ("lazy" as const);
+
+  // Tier 1 — product photo.
+  if (src) {
+    return (
+      <div className={`${tileBase} bg-border-soft/30`}>
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          loading={loading}
+          priority={priority}
+          sizes={sizes}
+          className="object-cover"
+        />
+      </div>
+    );
+  }
+
+  // Tier 2 — tenant logo. object-cover + inherited radius so a logo that ships
+  // with its own (often dark) square background fills the tile cleanly instead
+  // of floating boxed inside padding.
+  if (logoUrl) {
+    return (
+      <div className={`${tileBase} bg-border-soft/30`}>
+        <Image
+          src={logoUrl}
+          alt={alt}
+          fill
+          loading={loading}
+          priority={priority}
+          sizes={sizes}
+          className={`object-cover ${rounded}`}
+        />
+      </div>
+    );
+  }
+
+  // Tier 3 — business initials.
+  if (trimmedName) {
+    return (
+      <div
+        className={`${tileBase} bg-linear-to-br from-accent/10 to-accent/25`}
+        aria-label={alt}
+        role="img"
+      >
+        <span
+          className={`${
+            fallbackScale === "lg" ? "text-6xl" : "text-2xl"
+          } font-bold uppercase tracking-tight text-accent/70`}
+        >
+          {getInitials(trimmedName)}
+        </span>
+      </div>
+    );
+  }
+
+  // Tier 4 — la moneda de Tlaco. Es la única superficie del producto donde
+  // aparece nuestra marca en una tarjeta del cliente, así que va la moneda y
+  // no un ícono genérico: el `Sparkles` con el nombre de la marca al lado no
+  // decía nada.
+  return (
+    <div
+      className={`${tileBase} bg-linear-to-br from-accent/15 to-accent/30`}
+      aria-label={alt}
+      role="img"
+    >
+      <svg
+        viewBox="0 0 32 32"
+        className={fallbackScale === "lg" ? "h-20 w-20" : "h-8 w-8"}
+        aria-hidden
+      >
+        <mask id="brand-image-coin">
+          <rect width="32" height="32" fill="#fff" />
+          <circle cx="16" cy="16" r="6" fill="#000" />
+        </mask>
+        <g mask="url(#brand-image-coin)">
+          <circle cx="16" cy="16" r="15" fill="var(--coin-face)" />
+          <path d="M16 1a15 15 0 0 1 0 30z" fill="var(--coin-edge)" />
+        </g>
+      </svg>
+    </div>
+  );
+}

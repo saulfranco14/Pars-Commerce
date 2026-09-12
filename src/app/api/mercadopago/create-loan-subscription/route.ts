@@ -5,7 +5,7 @@ import { MercadoPagoConfig } from "mercadopago";
 import type { CreateLoanSubscriptionPayload } from "@/types/loans";
 
 const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://commerce.pars.com.mx";
+  process.env.NEXT_PUBLIC_APP_URL ?? "https://tlaco.mx";
 
 // POST /api/mercadopago/create-loan-subscription
 // Crea una suscripción (PreApproval) en MP para cobros automáticos de un préstamo
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
   // Calcular repeticiones si aplica (installments)
   let repetitions: number | undefined;
   if (loan.payment_plan_type === "installments" && chargeAmount > 0) {
-    repetitions = Math.ceil(loan.amount_pending / chargeAmount);
+    repetitions = Math.ceil((loan.amount_pending ?? 0) / chargeAmount);
   }
   // recurring = sin límite de repeticiones (cobra hasta que se cancele manualmente)
 

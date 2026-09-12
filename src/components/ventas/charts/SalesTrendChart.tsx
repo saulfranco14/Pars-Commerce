@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { ChartHeader } from "./ChartHeader";
+import { COLOR_REVENUE } from "@/features/ventas/constants/chartColors";
 import type { SalesByDayItem } from "@/app/api/sales-analytics/route";
 
 interface SalesTrendChartProps {
@@ -38,7 +39,7 @@ export function SalesTrendChart({
 
   if (loading) {
     return (
-      <div className="min-h-[260px] rounded-xl border border-border bg-surface-raised p-3 sm:p-4 flex flex-col justify-center">
+      <div className="min-h-65 rounded-xl border border-border bg-surface-raised p-3 sm:p-4 flex flex-col justify-center">
         <ChartHeader
           title="Tendencia de ventas"
           description="Ventas por día. Los picos muestran días con ventas, los valles días sin actividad."
@@ -61,7 +62,7 @@ export function SalesTrendChart({
           dateFrom={dateFrom}
           dateTo={dateTo}
         />
-        <div className="mt-4 h-[180px] flex items-center justify-center">
+        <div className="mt-4 h-45 flex items-center justify-center">
           <p className="text-sm text-muted-foreground">Sin datos en el período</p>
         </div>
       </div>
@@ -76,7 +77,7 @@ export function SalesTrendChart({
         dateFrom={dateFrom}
         dateTo={dateTo}
       />
-      <div className="h-[200px] w-full min-w-[120px] sm:h-[220px] min-h-[180px]">
+      <div className="h-50 w-full min-w-30 sm:h-55 min-h-45">
         <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 400, height: 200 }}>
           <LineChart
             data={chartData}
@@ -109,7 +110,7 @@ export function SalesTrendChart({
             <Line
               type="monotone"
               dataKey="total_revenue"
-              stroke="#ec4899"
+              stroke={COLOR_REVENUE}
               strokeWidth={2}
               dot={{ r: chartData.length <= 14 ? 4 : 2 }}
               connectNulls

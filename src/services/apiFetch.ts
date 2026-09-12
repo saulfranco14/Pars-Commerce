@@ -1,6 +1,6 @@
 export async function apiFetch(
   url: string,
-  options?: RequestInit
+  options?: RequestInit,
 ): Promise<unknown> {
   const res = await fetch(url, {
     ...options,
@@ -15,4 +15,8 @@ export async function apiFetch(
     throw new Error(message);
   }
   return data;
+}
+
+export function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
 }

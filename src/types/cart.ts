@@ -28,6 +28,8 @@ export interface CheckoutPickupPayload {
   customer_email: string;
   customer_phone: string;
   msi_option?: MsiOption;
+  /** ISO de la hora de recolección. `null` = pasa cuando esté listo. */
+  scheduled_for?: string | null;
 }
 
 export interface CheckoutPickupResponse {
@@ -47,6 +49,8 @@ export interface CheckoutSubscriptionPayload {
   frequency: number;
   frequency_type: "weeks" | "months";
   msi_option?: MsiOption;
+  /** ISO de la hora de recolección. `null` = pasa cuando esté listo. */
+  scheduled_for?: string | null;
 }
 
 export interface CheckoutSubscriptionResponse {

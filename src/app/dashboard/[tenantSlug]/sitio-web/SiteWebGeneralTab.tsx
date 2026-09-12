@@ -1,12 +1,13 @@
 "use client";
 
-import { Check, ExternalLink, Palette } from "lucide-react";
+import { Check, CheckCircle2, ExternalLink, Palette } from "lucide-react";
 import {
   VARIANT_STYLES,
   COLOR_PRESETS,
 } from "@/features/sitio-web/constants/templateStyles";
 import type { SiteWebGeneralTabProps } from "@/features/sitio-web/interfaces/siteWebGeneralTab";
 import { TemplateSelector } from "@/components/site/TemplateSelector";
+import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
 
 function TemplateMiniPreview({
   variant,
@@ -109,7 +110,7 @@ export function SiteWebGeneralTab({
   appearanceSuccess,
   onSaveAppearance,
 }: SiteWebGeneralTabProps) {
-  const previewColor = themeColor.trim() || "#6366f1";
+  const previewColor = themeColor.trim() || DEFAULT_TENANT_ACCENT;
 
   return (
     <form
@@ -117,12 +118,44 @@ export function SiteWebGeneralTab({
       onSubmit={onSaveAppearance}
       className="space-y-5"
     >
+      <div
+        className={`rounded-xl border px-4 py-3 ${
+          publicStoreEnabled
+            ? "border-emerald-200 bg-emerald-50"
+            : "border-amber-200 bg-amber-50"
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <span
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+              publicStoreEnabled
+                ? "bg-emerald-500/10 text-emerald-700"
+                : "bg-amber-500/10 text-amber-800"
+            }`}
+          >
+            <CheckCircle2 className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">
+              {publicStoreEnabled
+                ? "Tu tienda pública está activa"
+                : "Tu tienda todavía no es visible para clientes"}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {publicStoreEnabled
+                ? "Comparte tu enlace o termina de personalizar el contenido y la apariencia."
+                : "Cuando tu catálogo esté listo, activa la opción Tienda pública de abajo para publicar tu enlace."}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <label
               htmlFor="publicStore"
-              className="flex min-h-[44px] min-w-[44px] shrink-0 cursor-pointer items-center justify-center"
+              className="flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center"
               aria-label="Activar tienda pública"
             >
               <input
@@ -139,7 +172,9 @@ export function SiteWebGeneralTab({
                 Tienda pública
               </span>
               <span className="block text-xs text-muted-foreground">
-                Los clientes pueden visitar tu sitio
+                {publicStoreEnabled
+                  ? "Los clientes ya pueden visitar tu sitio"
+                  : "Actívala cuando quieras que los clientes visiten tu sitio"}
               </span>
             </div>
             {publicStoreLoading && (
@@ -153,7 +188,7 @@ export function SiteWebGeneralTab({
               href={`/sitio/${tenantSlug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 cursor-pointer"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 cursor-pointer"
             >
               <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
               Ver mi sitio
@@ -182,7 +217,7 @@ export function SiteWebGeneralTab({
                 value={themeColor}
                 onChange={(e) => onThemeColorChange(e.target.value)}
                 className="h-9 min-w-0 flex-1 rounded-lg border border-border/80 bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30"
-                placeholder="#6366f1"
+                placeholder="#3483fa"
                 maxLength={7}
               />
             </div>

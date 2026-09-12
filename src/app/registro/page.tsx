@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import * as yup from "yup";
@@ -9,134 +8,88 @@ import {
   Check,
   ArrowRight,
   Sparkles,
-  Mail,
+  CheckCircle2,
 } from "lucide-react";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { BrandPanel } from "@/features/auth/components/BrandPanel";
+import { MobileAuthHeader } from "@/features/auth/components/MobileAuthHeader";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { registroSchema } from "@/features/auth/validations/registroForm";
 import { BENEFITS } from "@/features/auth/constants/benefits";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
+import { createClient } from "@/lib/supabase/client";
 
 const inputClass =
-  "input-form mt-1 block w-full min-h-[44px] rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+  "input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
 
-function BrandPanel() {
-  return (
-    <div className="relative hidden lg:flex lg:flex-1 items-center justify-center overflow-hidden">
-      {/* Dot pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.03] dark:opacity-[0.06]"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
-          backgroundSize: "24px 24px",
-        }}
-        aria-hidden
-      />
-      {/* Glow blob */}
-      <div
-        className="absolute bottom-1/3 left-1/2 -translate-x-1/2 translate-y-1/2 h-80 w-80 rounded-full bg-accent/10 blur-[100px]"
-        aria-hidden
-      />
+// Título, lista y remate propios del registro — mismo molde que el panel de
+// login (`BrandPanel`), contenido distinto porque responde a otra pregunta
+// ("por qué registrarme" en vez de "por qué confiar").
+const REGISTRO_BRAND = {
+  title: "Digitaliza tu negocio hoy",
+  subtitle:
+    "Crea tu tienda en línea, gestiona productos, recibe pedidos y cobra con tarjeta. Empiezas gratis y creces cuando tu operación lo pida.",
+  items: BENEFITS,
+  footnote: "Sin tarjeta de crédito para empezar. Cambia o cancela desde tu panel.",
+};
 
-      <div className="relative z-10 max-w-sm px-8">
-        <div className="flex items-center gap-3 mb-8">
-          <Image
-            src="/android-chrome-192x192.png"
-            alt=""
-            width={40}
-            height={40}
-            className="h-10 w-10"
-          />
-          <span className="text-xl font-bold text-foreground">
-            Pars Commerce
-          </span>
-        </div>
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">
-          Digitaliza tu negocio hoy
-        </h2>
-        <p className="mt-2 text-muted-foreground leading-relaxed">
-          Crea tu tienda en linea, gestiona productos, recibe pedidos y cobra
-          con MercadoPago. Todo gratis.
-        </p>
-
-        <div className="mt-8 space-y-3">
-          {BENEFITS.map(({ icon: Icon, text }) => (
-            <div key={text} className="flex items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10">
-                <Icon className="h-4 w-4 text-accent" aria-hidden />
-              </div>
-              <span className="text-sm text-foreground">{text}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Pricing highlight */}
-        <div className="mt-8 rounded-xl border border-accent/20 bg-accent/5 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="h-4 w-4 text-accent" aria-hidden />
-            <span className="text-sm font-semibold text-foreground">
-              Plan Gratis — $0/mes
-            </span>
-          </div>
-          <div className="space-y-1.5">
-            {[
-              "Productos ilimitados",
-              "Pagos con MercadoPago",
-              "Tu propia tienda web",
-            ].map((f) => (
-              <div key={f} className="flex items-center gap-2">
-                <Check
-                  className="h-3.5 w-3.5 text-accent shrink-0"
-                  aria-hidden
-                />
-                <span className="text-xs text-muted-foreground">{f}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <p className="mt-6 text-xs text-muted-foreground/60">
-          Sin tarjeta de credito. Sin comisiones de plataforma.
-        </p>
-      </div>
+// Único bloque que login no tiene — se pasa como children al panel
+// compartido en vez de duplicar todo el componente por esta diferencia.
+const registroPricingHighlight = (
+  <div className="mt-8 rounded-xl border border-accent/20 bg-accent/5 p-4">
+    <div className="mb-2 flex items-center gap-2">
+      <Sparkles className="h-4 w-4 text-accent" aria-hidden />
+      <span className="text-sm font-semibold text-foreground">
+        Plan Gratis — $0/mes
+      </span>
     </div>
-  );
-}
+    <div className="space-y-1.5">
+      {["Hasta 5 mesas activas", "Cobros con tarjeta", "Tu propia tienda web"].map(
+        (f) => (
+          <div key={f} className="flex items-center gap-2">
+            <Check className="h-3.5 w-3.5 shrink-0 text-accent" aria-hidden />
+            <span className="text-xs text-muted-foreground">{f}</span>
+          </div>
+        ),
+      )}
+    </div>
+  </div>
+);
 
 function SuccessMessage({
   email,
-  onClose,
+  onStart,
+  entering,
+  startError,
 }: {
   email: string;
-  onClose: () => void;
+  onStart: () => void;
+  entering: boolean;
+  startError: string | null;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 text-center">
+    <div className="px-2 text-center sm:px-4 lg:px-0">
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
-        <Mail className="h-8 w-8 text-emerald-500" aria-hidden />
+        <CheckCircle2 className="h-8 w-8 text-emerald-600" aria-hidden />
       </div>
-      <h2 className="text-2xl font-bold text-foreground">¡Registro exitoso!</h2>
-      <p className="mt-2 text-muted-foreground">
-        Hemos enviado un correo de confirmación a:
-      </p>
+      <h2 className="text-2xl font-bold text-foreground">¡Tu cuenta ya fue creada!</h2>
+      <p className="mt-2 text-muted-foreground">Todo está listo para comenzar.</p>
       <p className="mt-1 font-semibold text-foreground break-all">{email}</p>
       <p className="mt-4 text-sm text-muted-foreground">
-        Revisa tu bandeja de entrada y haz clic en el enlace para activar tu
-        cuenta.
+        El siguiente paso es crear tu negocio y elegir cómo quieres empezar a vender.
       </p>
       <div className="mt-6 space-y-3">
-        <Link
-          href="/login"
-          className="block w-full rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
-        >
-          Ir al login
-        </Link>
+        {startError && (
+          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm text-red-700" role="alert">
+            {startError}
+          </p>
+        )}
         <button
-          onClick={onClose}
-          className="block w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-surface-raised"
+          type="button"
+          onClick={onStart}
+          disabled={entering}
+          className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-lg bg-accent px-4 py-2.5 text-sm font-bold text-accent-foreground shadow-sm shadow-accent/15 transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
         >
-          Registrar otra cuenta
+          {entering ? "Preparando tu espacio…" : "Crear mi negocio"}
         </button>
       </div>
     </div>
@@ -152,6 +105,8 @@ export default function RegistroPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
+  const [entering, setEntering] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -185,10 +140,10 @@ export default function RegistroPage() {
         }),
       });
 
+      const payload = (await response.json()) as { error?: string };
       if (!response.ok) {
-        const errorData = await response.json();
         throw new Error(
-          errorData.error || "Error al enviar el correo de confirmación"
+          payload.error || "No pudimos crear tu cuenta"
         );
       }
 
@@ -202,37 +157,29 @@ export default function RegistroPage() {
     }
   }
 
-  const logoBlock = (
-    <div className="flex flex-col items-center">
-      <div className="relative mb-3">
-        <div
-          className="absolute inset-0 scale-150 rounded-3xl bg-accent opacity-25 blur-2xl"
-          aria-hidden
-        />
-        <Image
-          src="/android-chrome-192x192.png"
-          alt=""
-          width={64}
-          height={64}
-          className="relative h-16 w-16 rounded-2xl"
-          priority
-        />
-      </div>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-        Pars Commerce
-      </p>
-    </div>
-  );
+  async function handleStart() {
+    setEntering(true);
+    setStartError(null);
+    const { error: signInError } = await createClient().auth.signInWithPassword({
+      email: registeredEmail,
+      password,
+    });
+    if (signInError) {
+      setStartError(resolveUserError(signInError, "supabase"));
+      setEntering(false);
+      return;
+    }
+    router.push("/dashboard/crear-negocio");
+    router.refresh();
+  }
 
   // Mostrar mensaje de éxito
   if (success) {
     return (
       <div className="flex min-h-screen flex-col lg:flex-row">
-        <BrandPanel />
+        <BrandPanel {...REGISTRO_BRAND}>{registroPricingHighlight}</BrandPanel>
         <div className="relative flex min-h-dvh flex-1 flex-col items-center justify-center bg-background px-4 py-6 sm:py-8">
-          <div className="absolute right-4 top-4 z-20">
-            <ThemeToggle />
-          </div>
+          <MobileAuthHeader accountHref="/login" accountLabel="Iniciar sesión" />
           <div
             className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04] lg:hidden"
             style={{
@@ -242,16 +189,12 @@ export default function RegistroPage() {
             }}
             aria-hidden
           />
-          <div className="relative w-full max-w-md animate-auth-enter pb-8 sm:pb-0">
-            <div className="mb-8 lg:hidden">{logoBlock}</div>
+          <div className="relative w-full max-w-md animate-auth-enter pb-8 pt-20 sm:pb-0 lg:pt-0">
             <SuccessMessage
               email={registeredEmail}
-              onClose={() => {
-                setSuccess(false);
-                setEmail("");
-                setPassword("");
-                setRegisteredEmail("");
-              }}
+              onStart={() => void handleStart()}
+              entering={entering}
+              startError={startError}
             />
           </div>
         </div>
@@ -262,11 +205,11 @@ export default function RegistroPage() {
   // Formulario de registro
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <BrandPanel />
+      <BrandPanel {...REGISTRO_BRAND} animated>
+        {registroPricingHighlight}
+      </BrandPanel>
       <div className="relative flex min-h-dvh flex-1 flex-col items-center justify-center bg-background px-4 py-6 sm:py-8">
-        <div className="absolute right-4 top-4 z-20">
-          <ThemeToggle />
-        </div>
+        <MobileAuthHeader accountHref="/login" accountLabel="Iniciar sesión" />
         {/* Mobile subtle background decoration */}
         <div
           className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04] lg:hidden"
@@ -277,9 +220,8 @@ export default function RegistroPage() {
           }}
           aria-hidden
         />
-        <div className="relative w-full max-w-sm animate-auth-enter pb-8 sm:pb-0">
-          <div className="mb-8 lg:hidden">{logoBlock}</div>
-          <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
+        <div className="relative w-full max-w-sm animate-auth-enter pb-8 pt-20 sm:pb-0 lg:pt-0">
+          <div className="px-2 sm:px-4 lg:px-0">
             <h1 className="text-xl font-bold text-foreground sm:text-2xl">
               Crear cuenta
             </h1>
@@ -356,7 +298,7 @@ export default function RegistroPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group w-full min-h-[48px] rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
+                className="group w-full min-h-12 cursor-pointer rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 flex items-center justify-center gap-2"
               >
                 {loading ? "Creando cuenta..." : "Crear cuenta gratis"}
                 {!loading && (
@@ -366,6 +308,26 @@ export default function RegistroPage() {
                   />
                 )}
               </button>
+
+              {/* Los términos dicen que la cuenta se crea aceptándolos, así que
+                  el consentimiento tiene que estar visible aquí. */}
+              <p className="mt-4 text-center text-xs leading-relaxed text-muted-foreground">
+                Al crear tu cuenta aceptas los{" "}
+                <Link
+                  href="/terminos"
+                  className="font-medium text-accent underline-offset-2 hover:underline"
+                >
+                  Términos de servicio
+                </Link>{" "}
+                y el{" "}
+                <Link
+                  href="/privacidad"
+                  className="font-medium text-accent underline-offset-2 hover:underline"
+                >
+                  Aviso de Privacidad
+                </Link>
+                .
+              </p>
             </form>
 
             {/* Mobile benefits */}
@@ -390,7 +352,7 @@ export default function RegistroPage() {
                 href="/login"
                 className="font-semibold text-accent transition-colors hover:text-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 rounded"
               >
-                Iniciar sesion
+                Iniciar sesión
               </Link>
             </p>
           </div>

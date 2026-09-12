@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { ChevronDown, User, Package, Wrench } from "lucide-react";
 import { StatusBadge } from "@/components/orders/StatusBadge";
+import { PickupBadge } from "@/features/orders/components/order/PickupBadge";
 import { TicketDownloadActions } from "@/components/orders/TicketDownloadActions";
 import { formatOrderDate, formatOrderDateFull } from "@/lib/formatDate";
 import { getPaymentMethodConfig } from "@/lib/formatPaymentMethod";
@@ -149,6 +150,10 @@ export function OrderCardMobile({
             </div>
             <div className="flex flex-col items-end gap-1.5 pt-0.5">
               <StatusBadge status={order.status} cancelledFrom={order.cancelled_from} />
+              <PickupBadge
+                scheduledFor={order.scheduled_for}
+                status={order.status}
+              />
               <span className="text-[10px] font-mono tabular-nums text-muted-foreground/60">
                 #{order.id.slice(0, 8)}
               </span>
@@ -241,7 +246,7 @@ export function OrderCardMobile({
         role="region"
         aria-labelledby={`order-${order.id}-items-trigger`}
         className={`overflow-hidden border-t border-border/40 bg-background/30 transition-[max-height,opacity] duration-300 ease-out ${
-          expanded ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+          expanded ? "max-h-100 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="space-y-2 p-3">
@@ -304,7 +309,7 @@ export function OrderCardMobile({
       {/* ── Receipt footer ── */}
       {(isPaid || order.status === "pending_pickup") && (
         <div
-          className="flex min-h-[52px] items-center justify-between gap-3 border-t border-border/40 bg-background/20 pl-4 pr-3 py-2"
+          className="flex min-h-13 items-center justify-between gap-3 border-t border-border/40 bg-background/20 pl-4 pr-3 py-2"
           onClick={(e) => e.stopPropagation()}
           role="group"
         >

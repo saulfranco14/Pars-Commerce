@@ -104,7 +104,7 @@ export function MobileCheckoutSheet({
             type="submit"
             form="m-checkout-form"
             disabled={submitting}
-            className="w-full min-h-[52px] cursor-pointer rounded-xl px-6 py-3.5 text-base font-semibold text-white shadow-sm transition-opacity hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full min-h-13 cursor-pointer rounded-xl px-6 py-3.5 text-base font-semibold text-white shadow-sm transition-opacity hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
             style={{ backgroundColor: accentColor }}
           >
             {submitLabel}

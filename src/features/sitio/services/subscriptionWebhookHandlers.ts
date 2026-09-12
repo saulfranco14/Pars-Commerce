@@ -1,4 +1,8 @@
+import type { Database } from "@/types/database.types";
+
 type SupabaseAdminClient = ReturnType<typeof import("@/lib/supabase/admin").createAdminClient>;
+type SubscriptionUpdate =
+  Database["public"]["Tables"]["subscriptions"]["Update"];
 
 // =============================================================================
 // Handler: cobro de suscripción de storefront (compra recurrente / cuotas)
@@ -128,7 +132,7 @@ export async function handleStoreSubscriptionPayment(
     subscription.total_installments &&
     newCompleted >= subscription.total_installments;
 
-  const subUpdate: Record<string, unknown> = {
+  const subUpdate: SubscriptionUpdate = {
     completed_installments: newCompleted,
     updated_at: new Date().toISOString(),
   };

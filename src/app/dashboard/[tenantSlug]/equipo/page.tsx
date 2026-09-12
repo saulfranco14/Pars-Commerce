@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
-import { Plus } from "lucide-react";
-import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import { PauseCircle, PlayCircle, Plus, Users } from "lucide-react";
+import { useActiveTenant } from "@/stores/useTenantStore";
 import type { TeamMember } from "@/types/team";
 import type { TenantRoleOption } from "@/services/tenantRolesService";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { FAB } from "@/components/ui/FAB";
+import { PageHeader } from "@/components/admin/PageHeader";
 import {
   TableWrapper,
   tableHeaderRowClass,
@@ -18,17 +19,34 @@ import {
   tableBodyCellClass,
   tableBodyCellMutedClass,
 } from "@/components/ui/TableWrapper";
-import { updateRole, remove as removeMember } from "@/services/teamService";
+import { setMemberStatus, updateRole, remove as removeMember } from "@/services/teamService";
 import { swrFetcher } from "@/lib/swrFetcher";
-import { btnPrimaryHeader, btnDanger } from "@/components/ui/buttonClasses";
+import { isAbortError } from "@/services/apiFetch";
+import { btnDanger } from "@/components/ui/buttonClasses";
 import { teamKey, tenantRolesKey } from "@/features/equipo/helpers/swrKeys";
+import { TeamMemberFormSheet } from "@/features/equipo/components/TeamMemberFormSheet";
+import { MemberRoleSelect } from "@/features/equipo/components/MemberRoleSelect";
 
 export default function EquipoPage() {
   const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("nuevo") === "1") setCreateOpen(true);
+  }, [searchParams]);
+
+  function closeCreate() {
+    setCreateOpen(false);
+    if (searchParams.get("nuevo") === "1") {
+      router.replace(`/dashboard/${tenantSlug}/equipo`);
+    }
+  }
 
   const teamKeyValue = activeTenant ? teamKey(activeTenant.id) : null;
   const rolesKeyValue = activeTenant ? tenantRolesKey(activeTenant.id) : null;
@@ -49,7 +67,9 @@ export default function EquipoPage() {
   const members = Array.isArray(membersData) ? membersData : [];
   const roles = Array.isArray(rolesData) ? rolesData : [];
 
-  const displayError = error ?? (teamError ? "No se pudo cargar el equipo" : null);
+  const displayError =
+    error ??
+    (teamError && !isAbortError(teamError) ? "No se pudo cargar el equipo" : null);
 
   async function handleRoleChange(membershipId: string, roleId: string) {
     setUpdatingId(membershipId);
@@ -78,6 +98,24 @@ export default function EquipoPage() {
     }
   }
 
+  async function handleStatus(member: TeamMember) {
+    const action = member.status === "suspended" ? "reactivate" : "suspend";
+    const reason = action === "suspend" ? prompt("Indica el motivo de la suspensión:") : undefined;
+    if (action === "suspend" && !reason?.trim()) return;
+    setUpdatingId(member.id);
+    try {
+      await setMemberStatus(member.id, action, reason ?? undefined);
+      await mutateTeam();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo actualizar el acceso");
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  const statusLabel = (status: TeamMember["status"]) => status === "active" ? "Activa" : status === "invited" ? "Invitada" : "Suspendida";
+  const statusTone = (status: TeamMember["status"]) => status === "active" ? "bg-emerald-50 text-emerald-700" : status === "invited" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700";
+
   if (!activeTenant) {
     return (
       <div className="text-sm text-muted-foreground">
@@ -89,18 +127,24 @@ export default function EquipoPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto">
       <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
-          Equipo
-        </h1>
-        <Link
-          href={`/dashboard/${tenantSlug}/equipo/nuevo`}
-          className={btnPrimaryHeader}
-        >
-          <Plus className="h-4 w-4 shrink-0" aria-hidden />
-          Agregar miembro
-        </Link>
+      <PageHeader
+        title="Equipo"
+        description={`${members.length} ${members.length === 1 ? "persona tiene" : "personas tienen"} acceso. Puedes agregar a todas las que tu negocio necesite.`}
+      />
+
+      <div className="flex items-center gap-2 rounded-xl border border-border bg-surface-raised px-3 py-2 text-sm text-muted-foreground">
+        <Users className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+        El equipo no tiene un límite de personas; controla el acceso con roles.
       </div>
+
+      {/* Único punto de creación — FAB en móvil y desktop. */}
+      <FAB
+        onClick={() => setCreateOpen(true)}
+        aria-label="Agregar miembro"
+        alwaysVisible
+      >
+        <Plus className="h-6 w-6 shrink-0" aria-hidden />
+      </FAB>
 
       {displayError && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
@@ -117,7 +161,7 @@ export default function EquipoPage() {
       ) : members.length === 0 ? (
         <div className="rounded-xl border border-border bg-surface-raised p-6 text-center">
           <p className="text-sm text-muted">
-            No hay miembros. Agrega uno con &quot;Agregar miembro&quot;.
+            Aún no hay miembros adicionales. Puedes agregar a todas las personas que necesites.
           </p>
         </div>
       ) : (
@@ -134,31 +178,22 @@ export default function EquipoPage() {
                 <p className="mt-0.5 break-all text-sm text-muted">
                   {m.email || "—"}
                 </p>
-                <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border-soft pt-4">
-                  <select
+                <span className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone(m.status)}`}>{statusLabel(m.status)}</span>
+                <div className="mt-4 flex flex-wrap items-start gap-3 border-t border-border-soft pt-4">
+                  <MemberRoleSelect
+                    roles={roles}
                     value={m.role_id}
-                    onChange={(e) => handleRoleChange(m.id, e.target.value)}
+                    onChange={(roleId) => handleRoleChange(m.id, roleId)}
                     disabled={updatingId === m.id || m.role_name === "owner"}
-                    className="input-form select-custom min-h-[44px] flex-1 rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50"
-                    aria-label={`Rol de ${m.display_name || m.email}`}
-                  >
-                    {roles.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.name}
-                      </option>
-                    ))}
-                  </select>
-                  {m.role_name !== "owner" && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemove(m.id)}
-                      disabled={updatingId === m.id}
-                      className={btnDanger}
-                      aria-label={`Quitar a ${m.display_name || m.email}`}
-                    >
-                      {updatingId === m.id ? "..." : "Quitar"}
+                    ariaLabel={`Rol de ${m.display_name || m.email}`}
+                    className="flex-1"
+                  />
+                  {m.role_name !== "owner" && <div className="flex min-h-11 flex-1 gap-2">
+                    <button type="button" onClick={() => handleStatus(m)} disabled={updatingId === m.id || m.status === "invited"} className="inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg border border-border px-3 text-sm font-semibold disabled:opacity-50">
+                      {m.status === "suspended" ? <PlayCircle className="h-4 w-4" /> : <PauseCircle className="h-4 w-4" />}{m.status === "suspended" ? "Reactivar" : "Suspender"}
                     </button>
-                  )}
+                    <button type="button" onClick={() => handleRemove(m.id)} disabled={updatingId === m.id} className={btnDanger}>Quitar</button>
+                  </div>}
                 </div>
               </div>
             ))}
@@ -171,6 +206,7 @@ export default function EquipoPage() {
                     <th className={tableHeaderCellClass}>Nombre</th>
                     <th className={tableHeaderCellClass}>Email</th>
                     <th className={tableHeaderCellClass}>Rol</th>
+                    <th className={tableHeaderCellClass}>Estado</th>
                     <th className={tableHeaderCellRightClass}>Acciones</th>
                   </tr>
                 </thead>
@@ -184,35 +220,23 @@ export default function EquipoPage() {
                         {m.email || "—"}
                       </td>
                       <td className={tableBodyCellClass}>
-                        <select
+                        <MemberRoleSelect
+                          roles={roles}
                           value={m.role_id}
-                          onChange={(e) =>
-                            handleRoleChange(m.id, e.target.value)
-                          }
+                          onChange={(roleId) => handleRoleChange(m.id, roleId)}
                           disabled={
                             updatingId === m.id || m.role_name === "owner"
                           }
-                          className="input-form select-custom min-h-[44px] rounded-xl border px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50"
-                        >
-                          {roles.map((r) => (
-                            <option key={r.id} value={r.id}>
-                              {r.name}
-                            </option>
-                          ))}
-                        </select>
+                          ariaLabel={`Rol de ${m.display_name || m.email}`}
+                          className="max-w-xs"
+                        />
                       </td>
+                      <td className={tableBodyCellClass}><span className={`rounded-full px-2 py-1 text-xs font-semibold ${statusTone(m.status)}`}>{statusLabel(m.status)}</span></td>
                       <td className="px-4 py-3 text-right">
-                        {m.role_name !== "owner" && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemove(m.id)}
-                            disabled={updatingId === m.id}
-                            className={btnDanger}
-                            aria-label={`Quitar a ${m.display_name || m.email}`}
-                          >
-                            {updatingId === m.id ? "..." : "Quitar"}
-                          </button>
-                        )}
+                        {m.role_name !== "owner" && <div className="flex justify-end gap-2">
+                          <button type="button" onClick={() => handleStatus(m)} disabled={updatingId === m.id || m.status === "invited"} className="min-h-11 rounded-lg border border-border px-3 text-sm font-semibold disabled:opacity-50">{m.status === "suspended" ? "Reactivar" : "Suspender"}</button>
+                          <button type="button" onClick={() => handleRemove(m.id)} disabled={updatingId === m.id} className={btnDanger}>{updatingId === m.id ? "..." : "Quitar"}</button>
+                        </div>}
                       </td>
                     </tr>
                   ))}
@@ -223,6 +247,16 @@ export default function EquipoPage() {
         </>
       )}
       </div>
+
+      <TeamMemberFormSheet
+        isOpen={createOpen}
+        tenantId={activeTenant.id}
+        onClose={closeCreate}
+        onAdded={async () => {
+          await mutateTeam();
+          closeCreate();
+        }}
+      />
     </div>
   );
 }

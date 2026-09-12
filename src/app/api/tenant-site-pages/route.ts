@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
+import type { Json } from "@/types/database.types";
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -105,7 +106,7 @@ export async function PATCH(request: Request) {
   let query = admin
     .from("tenant_site_pages")
     .update({
-      content: finalContent,
+      content: finalContent as Json,
       updated_at: new Date().toISOString(),
     })
     .eq("tenant_id", tenant_id);
@@ -113,7 +114,7 @@ export async function PATCH(request: Request) {
   if (page_id) {
     query = query.eq("id", page_id);
   } else {
-    query = query.eq("slug", slug);
+    query = query.eq("slug", String(slug));
   }
 
   const { data: updated, error } = await query.select("id, slug, content").single();

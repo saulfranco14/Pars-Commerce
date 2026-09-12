@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { ChartHeader } from "./ChartHeader";
+import { COLOR_REVENUE } from "@/features/ventas/constants/chartColors";
 import type {
   SalesByWeekItem,
   SalesByDayItem,
@@ -59,7 +60,7 @@ export function SalesByWeekChart({
 
   if (loading) {
     return (
-      <div className="min-h-[260px] rounded-xl border border-border bg-surface-raised p-3 sm:p-4 flex flex-col justify-center">
+      <div className="min-h-65 rounded-xl border border-border bg-surface-raised p-3 sm:p-4 flex flex-col justify-center">
         <ChartHeader
           title="Ventas por período"
           description={description}
@@ -82,7 +83,7 @@ export function SalesByWeekChart({
           dateFrom={dateFrom}
           dateTo={dateTo}
         />
-        <div className="mt-4 h-[180px] flex items-center justify-center">
+        <div className="mt-4 h-45 flex items-center justify-center">
           <p className="text-sm text-muted-foreground">Sin datos en el período</p>
         </div>
       </div>
@@ -97,7 +98,7 @@ export function SalesByWeekChart({
         dateFrom={dateFrom}
         dateTo={dateTo}
       />
-      <div className="h-[200px] w-full min-w-[120px] sm:h-[220px] min-h-[180px]">
+      <div className="h-50 w-full min-w-30 sm:h-55 min-h-45">
         <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 400, height: 200 }}>
           <BarChart
             data={chartData}
@@ -122,7 +123,7 @@ export function SalesByWeekChart({
             />
             <Bar
               dataKey="total_revenue"
-              fill="#ec4899"
+              fill={COLOR_REVENUE}
               radius={[4, 4, 0, 0]}
             />
           </BarChart>

@@ -47,8 +47,18 @@ export interface Tenant {
   theme_color: string | null;
   description: string | null;
   public_store_enabled: boolean;
+  /**
+   * `false` = el sitio muestra el catálogo pero no acepta pedidos nuevos.
+   * Distinto de `public_store_enabled`, que apaga la tienda entera.
+   */
+  accepting_orders?: boolean;
   settings: Json | null;
   whatsapp_phone?: string | null;
+  whatsapp_orders_enabled?: boolean;
+  is_demo?: boolean;
+  demo_key?: string | null;
+  catalog_template_id?: string | null;
+  catalog_template_version?: number | null;
   social_links?: TenantSocialLinks | null;
   address?: TenantAddress | null;
   sales_config?: TenantSalesConfig | null;
@@ -88,5 +98,17 @@ export type OrderStatus =
   | "in_progress"
   | "completed"
   | "pending_payment"
+  | "pending_pickup"
+  | "pending_subscription"
+  | "installment_active"
+  | "partial"
   | "paid"
   | "cancelled";
+
+export type OrderSource =
+  | "dashboard"
+  | "public_store"
+  | "qr_payment"
+  | "qr_table";
+
+export type OrderType = "dine_in" | "takeaway" | "qr_payment";

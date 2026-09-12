@@ -59,7 +59,7 @@ export function CreateEditHeader({
       <div className="hidden md:block">
         <Link
           href={backHref}
-          className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
           aria-label={label}
         >
           <Icon className="h-4 w-4 shrink-0" aria-hidden />

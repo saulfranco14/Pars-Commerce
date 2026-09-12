@@ -4,15 +4,19 @@ import type { MsiOption } from "@/constants/commissionConfig";
 import type { RecurringPurchasesConfig } from "@/types/subscriptions";
 
 import { CheckoutFormFields } from "@/features/checkout/components/cart/CheckoutFormFields";
-import { FeesBreakdownCard } from "@/features/checkout/components/cart/FeesBreakdownCard";
-import { FrequencyPicker } from "@/features/checkout/components/cart/FrequencyPicker";
-import { InstallmentsPicker } from "@/features/checkout/components/cart/InstallmentsPicker";
-import { MsiBreakdownCard } from "@/features/checkout/components/cart/MsiBreakdownCard";
-import { MsiPicker } from "@/features/checkout/components/cart/MsiPicker";
-import { PaymentModeTabs } from "@/features/checkout/components/cart/PaymentModeTabs";
+import { PickupTimePicker } from "@/features/checkout/components/cart/PickupTimePicker";
+import type { PickupSchedulingConfig } from "@/features/checkout/interfaces/pickupSchedule";
+import type { BusinessHours } from "@/features/configuracion/interfaces/businessHours";
+import { FeesBreakdownCard } from "@/features/checkout/components/payment-plan/FeesBreakdownCard";
+import { FrequencyPicker } from "@/features/checkout/components/payment-plan/FrequencyPicker";
+import { InstallmentsPicker } from "@/features/checkout/components/payment-plan/InstallmentsPicker";
+import { MsiBreakdownCard } from "@/features/checkout/components/payment-plan/MsiBreakdownCard";
+import { MsiPicker } from "@/features/checkout/components/payment-plan/MsiPicker";
+import { PaymentModeTabs } from "@/features/checkout/components/payment-plan/PaymentModeTabs";
 import type { CartFrequency } from "@/features/checkout/helpers/cartFrequency";
 import type { FeeBreakdown } from "@/features/checkout/hooks/usePaymentMode";
 import type { PaymentMode } from "@/features/checkout/interfaces/paymentMode";
+import { MessageCircle } from "lucide-react";
 
 interface CheckoutBodyProps {
   variant: "desktop" | "mobile";
@@ -20,13 +24,24 @@ interface CheckoutBodyProps {
     customer_name: string;
     customer_email: string;
     customer_phone: string;
+    scheduled_for: string;
   };
   fieldErrors: Record<string, string>;
   onFormFieldChange: (
-    field: "customer_name" | "customer_email" | "customer_phone",
+    field:
+      | "customer_name"
+      | "customer_email"
+      | "customer_phone"
+      | "scheduled_for",
     value: string,
   ) => void;
+  /** Ventana de recolección del negocio. Con `enabled: false` no se pinta nada. */
+  pickupScheduling: PickupSchedulingConfig;
+  /** `null` = el negocio no dio de alta horarios. */
+  businessHours: BusinessHours | null;
   onSubmit: (e: React.FormEvent) => void;
+  onWhatsAppOrder?: () => void;
+  whatsappOrdersEnabled?: boolean;
   submitting: boolean;
   submitLabel: string;
   submitDisclaimer: string;
@@ -53,18 +68,14 @@ interface CheckoutBodyProps {
   } | null;
 }
 
-/**
- * Cuerpo común del checkout — usado tanto en el aside de desktop como en el
- * bottom-sheet de mobile. Compone subtotal, selector de modo, MSI,
- * frecuencia, desgloses y formulario, sincronizando todos los IDs y `form`
- * para que los handlers funcionen con submit nativo.
- */
 export function CheckoutBody({
   variant,
   formState,
   fieldErrors,
   onFormFieldChange,
   onSubmit,
+  onWhatsAppOrder,
+  whatsappOrdersEnabled = false,
   submitting,
   submitLabel,
   submitDisclaimer,
@@ -85,6 +96,8 @@ export function CheckoutBody({
   msiBaseAmount,
   viableMsiOptions,
   msiBreakdown,
+  pickupScheduling,
+  businessHours,
 }: CheckoutBodyProps) {
   const idPrefix = variant === "mobile" ? "m-" : "";
   const formId = `${idPrefix}checkout-form`;
@@ -180,15 +193,26 @@ export function CheckoutBody({
           onUpdate={onFormFieldChange}
         />
 
+        <PickupTimePicker
+          config={pickupScheduling}
+          businessHours={businessHours}
+          value={formState.scheduled_for}
+          onChange={(v) => onFormFieldChange("scheduled_for", v)}
+          accentColor={accentColor}
+          disabled={submitting}
+          error={fieldErrors.scheduled_for}
+        />
+
         {variant === "desktop" && (
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full min-h-[48px] cursor-pointer rounded-xl px-6 py-4 font-semibold text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
-            style={{ backgroundColor: accentColor }}
-          >
-            {submitLabel}
-          </button>
+          <div className="space-y-2">
+            <button type="submit" disabled={submitting} className="w-full min-h-12 cursor-pointer rounded-xl px-6 py-4 font-semibold text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2" style={{ backgroundColor: accentColor }}>{submitLabel}</button>
+            {whatsappOrdersEnabled && onWhatsAppOrder && (
+              <button type="button" disabled={submitting} onClick={onWhatsAppOrder} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:opacity-50"><MessageCircle className="h-4 w-4" aria-hidden />Pedir por WhatsApp</button>
+            )}
+          </div>
+        )}
+        {variant === "mobile" && whatsappOrdersEnabled && onWhatsAppOrder && (
+          <button type="button" disabled={submitting} onClick={onWhatsAppOrder} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:opacity-50"><MessageCircle className="h-4 w-4" aria-hidden />Pedir por WhatsApp</button>
         )}
       </form>
 

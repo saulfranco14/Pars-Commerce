@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendEmail } from "@/lib/email/sendgrid";
-import { confirmationEmailTemplate } from "@/lib/email/templates";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAppUrl } from "@/lib/env/appUrl";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 
 export async function POST(request: NextRequest) {
@@ -16,14 +13,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const redirectUrl = `${getAppUrl()}/login`;
     const supabase = createAdminClient();
 
-    const { data, error } = await supabase.auth.admin.generateLink({
-      type: "signup",
+    // El alta no depende de SendGrid. Auth queda confirmado para permitir
+    // iniciar sesión; la aprobación diferida se guarda en el perfil de Tlaco.
+    const { error } = await supabase.auth.admin.createUser({
       email,
       password,
-      options: { redirectTo: redirectUrl },
+      email_confirm: true,
     });
 
     if (error) {
@@ -33,29 +30,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const actionLink = data?.properties?.action_link;
-    if (!actionLink) {
-      return NextResponse.json(
-        { error: "No se pudo generar el link de confirmación" },
-        { status: 500 },
-      );
-    }
-
-    const confirmUrl = actionLink.startsWith("http")
-      ? actionLink
-      : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/${actionLink}`;
-
-    await sendEmail({
-      to: email,
-      subject: "Confirma tu cuenta - Pars Commerce",
-      html: confirmationEmailTemplate(confirmUrl),
-    });
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { status: 201 });
   } catch (error: unknown) {
-    console.error("Error sending confirmation email:", error);
+    console.error("Error creating confirmation request:", error);
     return NextResponse.json(
-      { error: resolveUserError(error, "sendgrid") || resolveUserError(error, null) },
+      { error: resolveUserError(error, "supabase") || resolveUserError(error, null) },
       { status: 500 },
     );
   }

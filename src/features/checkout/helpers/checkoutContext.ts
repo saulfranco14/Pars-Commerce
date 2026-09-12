@@ -22,4 +22,14 @@ export interface CheckoutContext {
   installments: number;
   frequency: number;
   frequencyType: "weeks" | "months";
+  /**
+   * Optional override for MP back_urls. Used by QR-payment flows that want
+   * the customer to land back on a branded `/q/{token}/...` page instead
+   * of the generic storefront confirmation route.
+   */
+  backUrls?: {
+    success: string;
+    failure: string;
+    pending: string;
+  };
 }

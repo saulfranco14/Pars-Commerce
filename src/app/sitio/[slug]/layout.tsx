@@ -1,20 +1,39 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { LayoutSwitcher } from "./layouts/LayoutSwitcher";
+import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
+import { OrdersClosedNotice } from "@/features/checkout/components/cart/OrdersClosedNotice";
+import { getSolutionByDemoSlug } from "@/features/solutions/solutionCatalog";
+import { DemoStorePreview } from "@/features/solutions/DemoStorePreview";
 
 interface LayoutProps {
   children: React.ReactNode;
   params: Promise<{ slug: string }>;
 }
 
+// Solution pages own the commercial SEO intent. Demo stores are useful for
+// visitors but should not compete with their corresponding landing page.
+export async function generateMetadata({ params }: Pick<LayoutProps, "params">): Promise<Metadata> {
+  const { slug } = await params;
+  if (getSolutionByDemoSlug(slug)) return { robots: { index: false, follow: true } };
+  return {};
+}
+
 export default async function SitioLayout({ children, params }: LayoutProps) {
   const { slug } = await params;
+  // Las rutas demo siempre muestran el recorrido comercial, incluso después de
+  // crear su tenant real. Así el enlace público explica qué se está viendo en
+  // Tlaco y no se vuelve una tienda genérica sin contexto.
+  const demoSolution = getSolutionByDemoSlug(slug);
+  if (demoSolution) return <DemoStorePreview solution={demoSolution} />;
+
   const supabase = createAdminClient();
 
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
     .select(
-      "id, name, description, logo_url, theme_color, slug, whatsapp_phone, social_links, site_template_id",
+      "id, name, description, logo_url, theme_color, slug, whatsapp_phone, social_links, site_template_id, accepting_orders",
     )
     .eq("slug", slug)
     .single();
@@ -35,15 +54,47 @@ export default async function SitioLayout({ children, params }: LayoutProps) {
     }
   }
 
-  const { data: pages } = await supabase
-    .from("tenant_site_pages")
-    .select("id, slug, title, position")
-    .eq("tenant_id", tenant.id)
-    .eq("is_enabled", true)
-    .order("position", { ascending: true });
+  const [pagesRes, catalogRes] = await Promise.all([
+    supabase
+      .from("tenant_site_pages")
+      .select("id, slug, title, position")
+      .eq("tenant_id", tenant.id)
+      .eq("is_enabled", true)
+      .order("position", { ascending: true }),
+    supabase
+      .from("products")
+      .select("type")
+      .eq("tenant_id", tenant.id)
+      .eq("is_public", true)
+      .is("deleted_at", null),
+  ]);
 
-  const navPages = pages ?? [];
-  const accentColor = tenant.theme_color?.trim() || "#6366f1";
+  const catalogItems = catalogRes.data ?? [];
+  const productsCount = catalogItems.filter((item) => item.type === "product").length;
+  const servicesCount = catalogItems.filter((item) => item.type === "service").length;
+  const navPages = (pagesRes.data ?? []).flatMap((page) => {
+    if (page.slug !== "productos") return [page];
+
+    const catalogLinks = [];
+    if (productsCount > 0) {
+      catalogLinks.push({
+        ...page,
+        id: `${page.id}:products`,
+        title: `Productos (${productsCount})`,
+        href: `/sitio/${slug}/productos?type=product`,
+      });
+    }
+    if (servicesCount > 0) {
+      catalogLinks.push({
+        ...page,
+        id: `${page.id}:services`,
+        title: `Servicios (${servicesCount})`,
+        href: `/sitio/${slug}/productos?type=service`,
+      });
+    }
+    return catalogLinks;
+  });
+  const accentColor = tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT;
 
   const layoutTenant = {
     id: tenant.id,
@@ -63,6 +114,14 @@ export default async function SitioLayout({ children, params }: LayoutProps) {
       navPages={navPages}
       accentColor={accentColor}
     >
+      {/* En todas las páginas y no solo en el carrito: si el aviso viviera
+          solo en el checkout, el cliente armaría su pedido entero antes de
+          enterarse de que no se puede. */}
+      {tenant.accepting_orders === false && (
+        <div className="mb-4">
+          <OrdersClosedNotice businessName={tenant.name} />
+        </div>
+      )}
       {children}
     </LayoutSwitcher>
   );
