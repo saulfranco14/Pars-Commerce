@@ -31,7 +31,10 @@ export async function GET(request: Request) {
   const ids = data.users.map((user) => user.id);
   const [profilesResult, membershipsResult, platformAdminsResult] = await Promise.all([
     ids.length
-      ? admin.from("profiles").select("id, display_name, email, phone, created_at").in("id", ids)
+      ? admin
+          .from("profiles")
+          .select("id, display_name, email, phone, created_at, email_verification_status")
+          .in("id", ids)
       : Promise.resolve({ data: [] }),
     ids.length
       ? admin
@@ -64,9 +67,9 @@ export async function GET(request: Request) {
     const isSuspended = Boolean(bannedUntil && new Date(bannedUntil).getTime() > now);
     const accountStatus = isSuspended
       ? "suspended"
-      : authUser.email_confirmed_at
-        ? "active"
-        : "pending";
+      : profile?.email_verification_status === "pending"
+        ? "pending"
+        : "active";
 
     return {
       id: authUser.id,

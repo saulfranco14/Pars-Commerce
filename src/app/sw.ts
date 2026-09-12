@@ -11,27 +11,22 @@ declare global {
 declare const self: ServiceWorkerGlobalScope;
 
 /**
- * Custom rules for the live QR customer flow, matched BEFORE the stock
+ * Custom rules for live and authenticated data, matched BEFORE the stock
  * defaultCache.
  *
- * `/api/qr/` GETs (pulse, bill, admin-view, resolve) and every mutation
- * (items, fulfillment, payments, close, merge...) are NetworkOnly — every
- * one of them is either live polling data or a state-changing action, and
- * NetworkFirst was caching each successful response in "qr-api" and
- * occasionally serving that stale copy back on a subsequent request (the
- * cause of a real bug: a customer's tracker staying on an old
- * fulfillment_status for a full extra polling cycle after staff advanced
- * it). A network blip on one of these should surface as a visible error
- * the UI already handles, not a silent stale read.
+ * Every `/api/` request is NetworkOnly. The stock Serwist cache otherwise
+ * applies NetworkFirst to API GETs, which is unsafe for sessions, platform
+ * permissions, balances, orders and the live QR flow. A failed response must
+ * never be replayed from a service worker cache to another user/session.
  *
  * Only the customer-facing DOCUMENT shell (`/q/**` pages) keeps
  * NetworkFirst — that's static UI chrome, not per-request state, so a
  * short-lived fallback on a network blip is safe and improves resilience.
  */
-const qrRuntimeCaching: RuntimeCaching[] = [
+const appRuntimeCaching: RuntimeCaching[] = [
   {
     matcher: ({ sameOrigin, url }) =>
-      sameOrigin && url.pathname.startsWith("/api/qr/"),
+      sameOrigin && url.pathname.startsWith("/api/"),
     handler: new NetworkOnly(),
   },
   {
@@ -51,7 +46,7 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: [...qrRuntimeCaching, ...defaultCache],
+  runtimeCaching: [...appRuntimeCaching, ...defaultCache],
   fallbacks: {
     entries: [
       {

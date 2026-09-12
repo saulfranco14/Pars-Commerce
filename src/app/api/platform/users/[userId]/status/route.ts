@@ -42,6 +42,20 @@ export async function PATCH(
   const { error } = await admin.auth.admin.updateUserById(userId, attributes);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  if (status === "verified") {
+    const { error: profileError } = await admin
+      .from("profiles")
+      .update({
+        email_verification_status: "active",
+        email_verification_reviewed_at: new Date().toISOString(),
+        email_verification_reviewed_by: gate.user.id,
+      })
+      .eq("id", userId);
+    if (profileError) {
+      return NextResponse.json({ error: profileError.message }, { status: 500 });
+    }
+  }
+
   await admin.from("platform_activity_events" as never).insert({
     actor_id: gate.user.id,
     action:

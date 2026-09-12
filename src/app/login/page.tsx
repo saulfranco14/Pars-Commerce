@@ -65,6 +65,7 @@ const inputBase =
   "input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2";
 const inputNormal = `${inputBase} focus:border-accent focus:ring-accent/20`;
 const inputError = `${inputBase} border-red-400 focus:border-red-400 focus:ring-red-400/20`;
+const invalidRefreshToken = /invalid refresh token|refresh token not found/i;
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
@@ -150,6 +151,15 @@ function LoginForm() {
         })
         .catch(() => setInviteMode(false));
     } else {
+      // A token may have been revoked in Supabase (for example after a
+      // password change or an old session). Clear only that local stale
+      // session so the person can sign in again instead of staying stuck in a
+      // refresh loop.
+      supabase.auth.getSession().then(({ error }) => {
+        if (error && invalidRefreshToken.test(error.message)) {
+          void supabase.auth.signOut({ scope: "local" });
+        }
+      });
       setInviteMode(false);
     }
   }, [router, next]);

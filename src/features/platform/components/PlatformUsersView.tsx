@@ -5,7 +5,6 @@ import useSWR from "swr";
 import {
   AlertTriangle,
   Building2,
-  Mail,
   Search,
   ShieldCheck,
   UserCheck,
@@ -59,7 +58,6 @@ export function PlatformUsersView() {
   const [action, setAction] = useState<{ type: AccountAction; user: PlatformUser } | null>(null);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
-  const [resendingId, setResendingId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; tone: ToastTone } | null>(null);
 
   const key = `/api/platform/users?page=${page}&per_page=10&status=${filter}&q=${encodeURIComponent(deferredSearch)}`;
@@ -108,28 +106,12 @@ export function PlatformUsersView() {
       action.type === "suspend"
         ? "Cuenta suspendida."
         : action.type === "verify"
-          ? "Cuenta activada y correo confirmado."
+          ? "Validación interna aprobada."
           : "Cuenta reactivada.";
     setAction(null);
     setReason("");
     setBusy(false);
     setToast({ message: successMessage, tone: "success" });
-  }
-
-  async function resendVerification(user: PlatformUser) {
-    setResendingId(user.id);
-    const response = await fetch(`/api/platform/users/${user.id}/resend-verification`, {
-      method: "POST",
-    });
-    if (!response.ok) {
-      setToast({
-        message: await readApiError(response, "No se pudo reenviar el correo."),
-        tone: "error",
-      });
-    } else {
-      setToast({ message: `Enlace de activación enviado a ${user.email}.`, tone: "success" });
-    }
-    setResendingId(null);
   }
 
   if (isLoading && !data) {
@@ -237,8 +219,6 @@ export function PlatformUsersView() {
       <UserDetailSheet
         user={selectedUser}
         onClose={() => setSelectedUser(null)}
-        resending={resendingId === selectedUser?.id}
-        onResend={resendVerification}
         onAction={beginAction}
       />
 
@@ -289,8 +269,8 @@ export function PlatformUsersView() {
         onConfirm={executeAction}
         loading={busy}
         title="Activar cuenta manualmente"
-        description="Confirma el correo sin esperar a que la persona abra el enlace. Después podrá iniciar sesión."
-        confirmLabel="Activar cuenta"
+        description="Aprueba la validación interna de esta cuenta. La persona ya puede usar Tlaco mientras la revisión está pendiente."
+        confirmLabel="Aprobar validación"
         icon={ShieldCheck}
       />
 
@@ -329,7 +309,7 @@ function UserMobileCard({ user, onOpen }: { user: PlatformUser; onOpen: () => vo
   );
 }
 
-function UserDetailSheet({ user, onClose, resending, onResend, onAction }: { user: PlatformUser | null; onClose: () => void; resending: boolean; onResend: (user: PlatformUser) => Promise<void>; onAction: (type: AccountAction, user: PlatformUser) => void }) {
+function UserDetailSheet({ user, onClose, onAction }: { user: PlatformUser | null; onClose: () => void; onAction: (type: AccountAction, user: PlatformUser) => void }) {
   const meta = user ? STATUS_META[user.status] : STATUS_META.active;
   return (
     <FormSheet
@@ -343,12 +323,7 @@ function UserDetailSheet({ user, onClose, resending, onResend, onAction }: { use
         <div className="grid gap-2 sm:flex sm:justify-end">
           <button type="button" onClick={onClose} className="min-h-12 rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground">Cerrar</button>
           {user.status === "pending" && (
-            <>
-              <button type="button" onClick={() => void onResend(user)} disabled={resending} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground disabled:opacity-50">
-                <Mail className="h-4 w-4" aria-hidden />{resending ? "Enviando…" : "Reenviar enlace"}
-              </button>
-              <button type="button" onClick={() => onAction("verify", user)} className="min-h-12 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground">Activar cuenta</button>
-            </>
+            <button type="button" onClick={() => onAction("verify", user)} className="min-h-12 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground">Aprobar validación</button>
           )}
           {user.status === "suspended" && <button type="button" onClick={() => onAction("reactivate", user)} className="min-h-12 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground">Reactivar cuenta</button>}
           {user.status === "active" && !user.is_self && <button type="button" onClick={() => onAction("suspend", user)} className="min-h-12 rounded-xl bg-red-600 px-4 text-sm font-bold text-white">Suspender cuenta</button>}
@@ -365,7 +340,7 @@ function UserDetailSheet({ user, onClose, resending, onResend, onAction }: { use
           <dl className="grid grid-cols-2 gap-3 rounded-xl bg-surface-raised p-4 text-sm">
             <Detail label="Teléfono" value={user.phone || "No registrado"} />
             <Detail label="Alta" value={formatDate(user.created_at)} />
-            <Detail label="Correo confirmado" value={formatDate(user.email_confirmed_at)} />
+            <Detail label="Validación interna" value={user.status === "pending" ? "Pendiente de revisión" : "Aprobada"} />
             <Detail label="Último acceso" value={formatDate(user.last_sign_in_at)} />
           </dl>
           <section>

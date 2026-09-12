@@ -13,6 +13,8 @@ export interface LayoutNavPage {
   id: string;
   slug: string;
   title: string;
+  /** Algunos enlaces del encabezado necesitan conservar filtros del catálogo. */
+  href?: string;
 }
 
 export interface SiteLayoutProps {

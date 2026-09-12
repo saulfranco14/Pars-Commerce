@@ -23,6 +23,8 @@ interface PaymentMethodStepProps {
   error?: string | null;
   /** Ask an anonymous customer for a phone on manual methods. */
   requirePhone?: boolean;
+  /** Show an optional phone field on manual methods. */
+  allowPhone?: boolean;
 }
 
 /**
@@ -41,13 +43,17 @@ export function PaymentMethodStep({
   loading,
   error,
   requirePhone = false,
+  allowPhone = false,
 }: PaymentMethodStepProps) {
   const [phone, setPhone] = useState("");
   // Manual methods (cash/transfer) validated by staff need a way to reach the
   // customer; MP tracks itself. Only ask when the caller opts in (order ticket).
   const isManual = method === "efectivo" || method === "transferencia";
-  const askPhone = requirePhone && isManual;
-  const phoneOk = !askPhone || phone.replace(/\D/g, "").length >= 10;
+  const showPhone = isManual && (requirePhone || allowPhone);
+  const phoneDigits = phone.replace(/\D/g, "").length;
+  const phoneOk =
+    !showPhone ||
+    (requirePhone ? phoneDigits >= 10 : phoneDigits === 0 || phoneDigits >= 10);
 
   const isTransferencia = method === "transferencia";
   const key = isTransferencia
@@ -97,10 +103,10 @@ export function PaymentMethodStep({
       )}
       {method === "mercadopago" && <MercadoPagoStep amount={amount} />}
 
-      {askPhone && (
+      {showPhone && (
         <label className="block">
           <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Tu celular
+            Tu celular{requirePhone ? "" : " (opcional)"}
           </span>
           <div className="relative">
             <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -114,7 +120,9 @@ export function PaymentMethodStep({
             />
           </div>
           <p className="mt-1.5 text-xs text-muted-foreground">
-            Lo usamos para vincular tu pago. No te llegará spam.
+            {requirePhone
+              ? "Lo usamos para vincular tu pago. No te llegará spam."
+              : "Puedes agregarlo ahora o continuar sin número."}
           </p>
         </label>
       )}
@@ -139,7 +147,7 @@ export function PaymentMethodStep({
       ) : (
         <button
           type="button"
-          onClick={() => onConfirm(askPhone ? phone : undefined)}
+          onClick={() => onConfirm(phoneDigits >= 10 ? phone : undefined)}
           disabled={!canConfirm}
           className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 transition-all"
         >

@@ -14,8 +14,8 @@ import {
 export const STATUS_LABELS: Record<string, string> = {
   draft: "Borrador",
   assigned: "Asignada",
-  in_progress: "En progreso",
-  completed: "Completada",
+  in_progress: "En preparación",
+  completed: "Lista para cobro",
   pending_payment: "Pago pendiente",
   pending_pickup: "Pendiente recoger",
   partial: "Pago parcial",

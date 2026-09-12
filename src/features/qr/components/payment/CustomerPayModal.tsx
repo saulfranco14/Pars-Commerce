@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Heart, ShieldCheck } from "lucide-react";
 
 import { formatCurrency } from "@/features/qr/helpers/format";
 import {
@@ -23,6 +23,7 @@ interface CustomerPayModalProps {
   onConfirm: (
     method: CustomerPayMethod,
     customerPhone?: string,
+    tipAmount?: number,
   ) => Promise<void> | void;
   total: number;
   tenantId: string;
@@ -33,6 +34,10 @@ interface CustomerPayModalProps {
   description?: string;
   /** Ask an anonymous customer for a phone on manual methods (order tickets). */
   requirePhone?: boolean;
+  /** Offer, but do not require, a phone on manual methods (table orders). */
+  allowPhone?: boolean;
+  /** Available only when the order has a real attendant to receive a tip. */
+  tipAvailable?: boolean;
 }
 
 /**
@@ -60,13 +65,21 @@ export function CustomerPayModal({
   error,
   description,
   requirePhone = false,
+  allowPhone = false,
+  tipAvailable = false,
 }: CustomerPayModalProps) {
   const [mounted, setMounted] = useState(false);
   const [selected, setSelected] = useState<CustomerPayMethod | null>(null);
+  const [tipPercent, setTipPercent] = useState(0);
+  const tipAmount = Math.round(((total * tipPercent) / 100) * 100) / 100;
+  const payableTotal = total + tipAmount;
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
-    if (isOpen) setSelected(null);
+    if (isOpen) {
+      setSelected(null);
+      setTipPercent(0);
+    }
   }, [isOpen]);
   useEffect(() => {
     if (!isOpen) return;
@@ -129,8 +142,13 @@ export function CustomerPayModal({
               : "Pagar mi cuenta"}
           </h2>
           <p className="mt-0.5 text-4xl font-bold tracking-tight text-foreground">
-            {formatCurrency(total)}
+            {formatCurrency(payableTotal)}
           </p>
+          {tipAmount > 0 && (
+            <p className="mt-1 text-xs font-semibold text-muted-foreground">
+              Cuenta {formatCurrency(total)} + propina {formatCurrency(tipAmount)}
+            </p>
+          )}
           {description && !showingDetails && (
             <p className="mt-1 text-xs text-muted-foreground">{description}</p>
           )}
@@ -143,13 +161,14 @@ export function CustomerPayModal({
           {showingDetails ? (
             <PaymentMethodStep
               method={selected}
-              amount={total}
+              amount={payableTotal}
               tenantId={tenantId}
               tenantName={tenantName}
               tableLabel={tableLabel}
               requirePhone={requirePhone}
+              allowPhone={allowPhone}
               onConfirm={async (phone) => {
-                await onConfirm(selected, phone);
+                await onConfirm(selected, phone, tipAmount);
               }}
               onBack={() => setSelected(null)}
               loading={loading}
@@ -186,6 +205,40 @@ export function CustomerPayModal({
                   );
                 })}
               </div>
+
+              {tipAvailable && (
+                <section className="mt-5 rounded-2xl border border-border bg-background p-3.5">
+                  <div className="flex items-start gap-2.5">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                      <Heart className="h-4 w-4" aria-hidden />
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-bold text-foreground">¿Quieres incluir propina?</h3>
+                      <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
+                        Se cobra junto con tu cuenta y llega a quien te atendió.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-4 gap-2">
+                    {[0, 10, 15, 20].map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={tipPercent === value}
+                        aria-label={value === 0 ? "Sin propina" : `Agregar ${value}% de propina`}
+                        onClick={() => setTipPercent(value)}
+                        className={`min-h-11 rounded-xl border px-2 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
+                          tipPercent === value
+                            ? "border-accent bg-accent text-accent-foreground"
+                            : "border-border bg-surface text-foreground hover:bg-border-soft/60"
+                        }`}
+                      >
+                        {value === 0 ? "No" : `${value}%`}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
 
               <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
                 <ShieldCheck className="h-3.5 w-3.5" />

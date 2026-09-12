@@ -8,6 +8,7 @@ import {
 import {
   QR_TABLE_PREFIX,
   QR_TABLE_GROUP_PREFIX,
+  QR_TABLE_PAYMENT_PREFIX,
 } from "@/features/qr/services/tableMpWebhookService";
 
 import {
@@ -21,6 +22,8 @@ export interface CreatePreferenceInput {
   fingerprint?: string | null;
   baseUrl: string;
   qrToken: string;
+  /** Optional tip collected by the same Mercado Pago checkout. */
+  tipAmount?: number;
 }
 
 export interface CreatePreferenceResult {
@@ -36,7 +39,7 @@ export async function createTableMpPreference(
   const { data: order } = await admin
     .from("orders")
     .select(
-      "id, tenant_id, status, fulfillment_status, source, order_type, total, balance_due",
+      "id, tenant_id, status, fulfillment_status, source, order_type, total, balance_due, assigned_to",
     )
     .eq("id", input.orderId)
     .single();
@@ -56,6 +59,20 @@ export async function createTableMpPreference(
       ok: false,
       error: { code: "conflict", message: "La orden fue cancelada" },
     };
+
+  const tipAmount = Math.round(Number(input.tipAmount ?? 0) * 100) / 100;
+  if (!Number.isFinite(tipAmount) || tipAmount < 0) {
+    return { ok: false, error: { code: "validation", message: "La propina no es válida" } };
+  }
+  if (tipAmount > 0 && !order.assigned_to) {
+    return {
+      ok: false,
+      error: {
+        code: "conflict",
+        message: "La propina estará disponible cuando el negocio asigne a quien te atendió.",
+      },
+    };
+  }
   const gateOnReady = requiresReadyBeforePayment(order.source, order.order_type);
 
   let amount: number;
@@ -150,6 +167,16 @@ export async function createTableMpPreference(
     };
   }
 
+  const payableAmount = amount + tipAmount;
+  // Preserve the existing references for a normal table payment. A separate
+  // reference is only needed when the webhook must split the MP transaction
+  // into order money + tip money without putting the tip in sales totals.
+  if (tipAmount > 0) {
+    const scope = targetGroupId ? "group" : "full";
+    const entityId = targetGroupId ?? order.id;
+    externalReference = `${QR_TABLE_PAYMENT_PREFIX}${scope}:${entityId}:${Math.round(tipAmount * 100)}`;
+  }
+
   const base = input.baseUrl.replace(/\/$/, "");
   const successUrl = new URL(
     `${base}/q/${encodeURIComponent(input.qrToken)}/table/payment/result`,
@@ -170,6 +197,15 @@ export async function createTableMpPreference(
             unit_price: amount,
             currency_id: "MXN",
           },
+          ...(tipAmount > 0
+            ? [{
+                id: `${externalReference}:tip`,
+                title: "Propina",
+                quantity: 1,
+                unit_price: tipAmount,
+                currency_id: "MXN",
+              }]
+            : []),
         ],
         external_reference: externalReference,
         notification_url: `${base}/api/mercadopago/webhook`,
@@ -184,6 +220,7 @@ export async function createTableMpPreference(
           order_id: order.id,
           split_group_id: targetGroupId ?? null,
           fee_absorbed_by: "business",
+          tip_amount: tipAmount,
         },
       },
     });
@@ -203,7 +240,7 @@ export async function createTableMpPreference(
       data: {
         preferenceId: preference.id,
         initPoint: preference.init_point,
-        amount,
+        amount: payableAmount,
       },
     };
   } catch (err) {

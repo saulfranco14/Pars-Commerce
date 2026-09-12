@@ -2,9 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, CreditCard, Loader2, Receipt, Send, X } from "lucide-react";
+import {
+  ChevronRight,
+  CreditCard,
+  Loader2,
+  Receipt,
+  Send,
+  ShoppingBag,
+  Trash2,
+} from "lucide-react";
 
 import { FormSheet } from "@/components/ui/FormSheet";
+import {
+  btnCustomerPrimary,
+  btnCustomerSecondary,
+  btnCustomerSuccess,
+  btnIconDanger,
+} from "@/components/ui/buttonClasses";
 import { formatCurrency } from "@/features/qr/helpers/format";
 
 import type { CartEntry } from "@/features/qr/interfaces/tableCart";
@@ -34,8 +48,9 @@ interface TableCtaBarProps {
  * <CustomerScreen>'s footer slot — it does NOT position itself). Two states:
  *
  *  1. No staged items → single "Ver cuenta" CTA (or hint if no order yet).
- *  2. Staged items    → "Ver cuenta" icon button + "Enviar pedido · $X" CTA
- *     with an item-count badge and a chip list of staged items.
+ *  2. Staged items    → a compact, tappable order summary followed by the
+ *     primary "Enviar pedido" CTA. The summary opens a readable review sheet
+ *     instead of overflowing the footer with tiny removable chips.
  *
  * Navigation to the bill uses the router (not a bare <Link>) so we can show an
  * immediate spinner while the next screen loads — no dead "nothing happened"
@@ -60,7 +75,6 @@ export function TableCtaBar({
   const [detailOpen, setDetailOpen] = useState(false);
   const hasItems = entries.length > 0;
   const reviewTotal = orderTotal + total;
-  const reviewItemCount = (sentItems?.length ?? 0) + entries.length;
 
   function goToBill() {
     if (!orderId || navigating) return;
@@ -70,28 +84,6 @@ export function TableCtaBar({
 
   return (
     <div>
-      {hasItems && (
-        <div className="mb-2 flex flex-wrap gap-1.5">
-          {entries.map((e) => (
-            <div
-              key={e.product_id}
-              className="flex items-center gap-1 rounded-full bg-border-soft/60 px-2.5 py-1 text-xs font-medium text-foreground"
-            >
-              <span>{e.quantity}×</span>
-              <span className="max-w-30 truncate">{e.product_name}</span>
-              <button
-                type="button"
-                onClick={() => onDecrement(e.product_id)}
-                aria-label={`Quitar ${e.product_name}`}
-                className="ml-0.5 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* When ready to pay, surface it as a banner above the CTA so the
           "ya puedes pagar" moment is unmissable even mid-scroll. */}
       {!hasItems && hasSentItems && isReady && (
@@ -107,11 +99,11 @@ export function TableCtaBar({
               type="button"
               onClick={goToBill}
               disabled={navigating}
-              className={`inline-flex min-h-13.5 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-4 text-base font-bold shadow-md transition-all active:scale-[0.99] disabled:opacity-70 ${
+              className={`${
                 hasSentItems && isReady
-                  ? "bg-emerald-600 text-white shadow-emerald-600/25 hover:bg-emerald-700"
-                  : "bg-accent text-accent-foreground shadow-accent/20 hover:bg-accent/90"
-              }`}
+                  ? btnCustomerSuccess
+                  : btnCustomerPrimary
+              } w-full`}
             >
               {navigating ? (
                 <>
@@ -144,17 +136,35 @@ export function TableCtaBar({
           <div className="w-full space-y-2">
             <button
               type="button"
+              onClick={() => setDetailOpen(true)}
+              className={`${btnCustomerSecondary} w-full justify-between text-left`}
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <ShoppingBag className="h-5 w-5 shrink-0 text-muted-foreground" />
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-foreground">
+                    Pedido actual
+                  </span>
+                  <span className="block text-xs font-medium text-muted-foreground">
+                    {itemCount} {itemCount === 1 ? "artículo" : "artículos"} por enviar
+                  </span>
+                </span>
+              </span>
+              <span className="flex shrink-0 items-center gap-1.5 text-sm font-bold text-foreground">
+                {formatCurrency(total)}
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </span>
+            </button>
+            <button
+              type="button"
               onClick={onSend}
               disabled={saving}
-              className="relative inline-flex min-h-13.5 flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className={`${btnCustomerPrimary} w-full`}
             >
-              <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-[11px] font-bold text-background shadow">
-                {itemCount}
-              </span>
               {saving ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Enviando...
+                  Enviando pedido...
                 </>
               ) : (
                 <>
@@ -163,25 +173,6 @@ export function TableCtaBar({
                 </>
               )}
             </button>
-            {orderId && (
-              <button
-                type="button"
-                onClick={() => setDetailOpen(true)}
-                className="flex min-h-12 w-full cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:bg-border-soft/40 active:scale-[0.99]"
-              >
-                <Receipt className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="text-sm font-bold text-foreground">
-                  Detalle de compra
-                </span>
-                <span className="ml-auto text-sm font-bold text-foreground">
-                  {formatCurrency(reviewTotal)}
-                </span>
-                <span className="rounded-full bg-border-soft/60 px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-                  {reviewItemCount}
-                </span>
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </button>
-            )}
           </div>
         )}
       </div>
@@ -190,7 +181,7 @@ export function TableCtaBar({
         isOpen={detailOpen}
         onClose={() => setDetailOpen(false)}
         title="Detalle de compra"
-        description="Revisa los productos antes de enviar tu pedido."
+        description="Revisa lo enviado y lo que falta por enviar antes de confirmar."
         icon={Receipt}
         maxWidth="max-w-md"
       >
@@ -213,12 +204,28 @@ export function TableCtaBar({
               key={`staged-${entry.product_id}`}
               className="flex items-start justify-between gap-3 border-b border-border-soft/50 pb-2.5 last:border-0 last:pb-0"
             >
-              <p className="text-sm font-semibold text-foreground">
-                {entry.quantity}× {entry.product_name}
-              </p>
-              <span className="shrink-0 text-sm font-bold text-foreground">
-                {formatCurrency(entry.quantity * entry.unit_price)}
-              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">
+                  {entry.quantity}× {entry.product_name}
+                </p>
+                <p className="mt-0.5 text-xs font-medium text-accent">
+                  Por enviar
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1.5">
+                <span className="text-sm font-bold text-foreground">
+                  {formatCurrency(entry.quantity * entry.unit_price)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onDecrement(entry.product_id)}
+                  className={btnIconDanger}
+                  aria-label={`Quitar una unidad de ${entry.product_name}`}
+                  title={`Quitar una unidad de ${entry.product_name}`}
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden />
+                </button>
+              </div>
             </li>
           ))}
         </ul>

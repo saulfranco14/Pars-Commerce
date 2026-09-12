@@ -5,10 +5,33 @@ import { useOrder } from "@/features/orders/hooks/useOrder";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import type { OrderItem } from "@/features/orders/interfaces/orderDetail";
-import { Plus, Tag } from "lucide-react";
+import { Package, Plus, Tag, Trash2, Wrench } from "lucide-react";
 import { AddItemModal } from "@/components/orders/AddItemModal";
 import { OrderActionButtons } from "@/features/orders/components/order/OrderActionButtons";
 import { DiscountModal } from "@/features/orders/components/payment/DiscountModal";
+import { btnIconDanger, btnPrimary } from "@/components/ui/buttonClasses";
+
+function ItemThumbnail({ item }: { item: OrderItem }) {
+  const product = item.product;
+
+  return (
+    <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-border-soft/50">
+      {product?.image_url ? (
+        // Tenant images can be served from different Storage domains.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={product.image_url}
+          alt=""
+          className="h-full w-full object-cover"
+        />
+      ) : product?.type === "service" ? (
+        <Wrench className="h-4 w-4 text-accent" aria-hidden />
+      ) : (
+        <Package className="h-4 w-4 text-muted" aria-hidden />
+      )}
+    </span>
+  );
+}
 
 export function OrderItemsTable() {
   const {
@@ -38,10 +61,12 @@ export function OrderItemsTable() {
   if (!order) return null;
 
   return (
-    <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised text-left shadow-sm">
+    <div className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised text-left shadow-sm">
       <div className="flex shrink-0 items-center justify-between border-b border-border p-3">
         <div>
-          <h2 className="text-base font-semibold text-foreground">Items de la orden</h2>
+          <h2 className="text-base font-semibold text-foreground">
+            Productos y servicios
+          </h2>
           {order.order_type && (
             <p className="mt-0.5 text-xs text-muted-foreground">
               {order.order_type === "dine_in" && "Tipo: Mesa"}
@@ -55,18 +80,26 @@ export function OrderItemsTable() {
           <button
             type="button"
             onClick={() => setAddItemOpen(true)}
-            className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            className={btnPrimary}
           >
             <Plus className="h-4 w-4" aria-hidden />
-            Agregar item
+            Agregar
           </button>
         )}
       </div>
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-contain md:max-h-75">
+      <div className="flex min-h-52 min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-contain md:max-h-75">
         {items.length === 0 ? (
-          <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-4 text-center text-sm text-muted">
-            No hay items. Agrega productos o servicios.
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-border-soft text-muted">
+              <Package className="h-5 w-5" aria-hidden />
+            </span>
+            <p className="mt-3 text-sm font-medium text-foreground">
+              Esta orden aún está vacía
+            </p>
+            <p className="mt-1 max-w-xs text-sm text-muted">
+              Agrega los productos o servicios que llevará el cliente.
+            </p>
           </div>
         ) : (
           <>
@@ -74,56 +107,57 @@ export function OrderItemsTable() {
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex flex-col gap-2 p-3 hover:bg-border-soft/20"
+                  className="flex gap-3 p-3 hover:bg-border-soft/20"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0 flex flex-wrap items-center gap-1.5">
-                      <p className="text-sm font-medium text-foreground">
+                  <ItemThumbnail item={item} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex flex-1 flex-wrap items-center gap-1.5">
+                        <p className="truncate text-sm font-medium text-foreground">
                         {item.product?.name ?? "—"}
-                      </p>
-                      {item.is_wholesale && (
-                        <span className="inline-block rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-medium text-teal-800">
-                          Mayoreo
-                        </span>
+                        </p>
+                        {item.is_wholesale && (
+                          <span className="inline-block rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+                            Mayoreo
+                          </span>
+                        )}
+                      </div>
+                      {canAddRemoveItems && (
+                        <button
+                          type="button"
+                          onClick={() => setItemToRemove(item)}
+                          disabled={actionLoading}
+                          className={`${btnIconDanger} -mr-1 -mt-1 min-h-9 min-w-9`}
+                          aria-label={`Quitar ${item.product?.name ?? "producto"}`}
+                          title="Quitar de la orden"
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden />
+                        </button>
                       )}
                     </div>
+                    <div className="mt-1 flex items-center justify-between gap-2 text-sm">
+                      <span className="text-muted-foreground">
+                        {item.quantity} × ${Number(item.unit_price).toFixed(2)}
+                        {Number(item.wholesale_savings ?? 0) > 0 && (
+                          <span className="ml-1.5 font-medium text-emerald-700">
+                            Ahorro ${Number(item.wholesale_savings).toFixed(2)}
+                          </span>
+                        )}
+                      </span>
+                      <span className="font-semibold tabular-nums text-foreground">
+                        ${Number(item.subtotal).toFixed(2)}
+                      </span>
+                    </div>
                     <span
-                      className={`shrink-0 px-2 py-0.5 text-[10px] font-bold rounded uppercase ${
+                      className={`mt-1 inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
                         item.product?.type === "service"
-                          ? "bg-teal-50 text-teal-700"
+                          ? "bg-accent/10 text-accent"
                           : "bg-border-soft text-muted-foreground"
                       }`}
                     >
-                      {item.product?.type === "service"
-                        ? "Servicio"
-                        : "Producto"}
+                      {item.product?.type === "service" ? "Servicio" : "Producto"}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      {item.quantity} × ${Number(item.unit_price).toFixed(2)}
-                      {Number(item.wholesale_savings ?? 0) > 0 && (
-                        <span className="ml-1.5 text-teal-600 font-medium">
-                          (ahorro ${Number(item.wholesale_savings).toFixed(2)})
-                        </span>
-                      )}
-                    </span>
-                    <span className="font-semibold text-foreground tabular-nums">
-                      ${Number(item.subtotal).toFixed(2)}
-                    </span>
-                  </div>
-                  {canAddRemoveItems && (
-                    <div className="pt-1">
-                      <button
-                        type="button"
-                        onClick={() => setItemToRemove(item)}
-                        disabled={actionLoading}
-                        className="text-xs text-red-600 font-medium hover:text-red-700 disabled:opacity-50"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
@@ -145,20 +179,23 @@ export function OrderItemsTable() {
                 {items.map((item) => (
                   <tr key={item.id} className="hover:bg-border-soft/20">
                     <td className="px-4 py-3 text-foreground font-medium">
-                      <span className="inline-flex items-center gap-1.5">
-                        {item.product?.name ?? "—"}
-                        {item.is_wholesale && (
-                          <span className="inline-block rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-medium text-teal-800">
-                            Mayoreo
-                          </span>
-                        )}
+                      <span className="flex items-center gap-3">
+                        <ItemThumbnail item={item} />
+                        <span className="min-w-0">
+                          <span className="block truncate">{item.product?.name ?? "—"}</span>
+                          {item.is_wholesale && (
+                            <span className="mt-1 inline-block rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+                              Mayoreo
+                            </span>
+                          )}
+                        </span>
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span
                         className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded uppercase ${
                           item.product?.type === "service"
-                            ? "bg-teal-50 text-teal-700"
+                            ? "bg-accent/10 text-accent"
                             : "bg-border-soft text-muted-foreground"
                         }`}
                       >
@@ -174,7 +211,7 @@ export function OrderItemsTable() {
                       <span>
                         ${Number(item.unit_price).toFixed(2)}
                         {Number(item.wholesale_savings ?? 0) > 0 && (
-                          <span className="block text-[10px] text-teal-600 font-medium">
+                          <span className="block text-[10px] font-medium text-emerald-700">
                             ahorro ${Number(item.wholesale_savings).toFixed(2)}
                           </span>
                         )}
@@ -189,9 +226,11 @@ export function OrderItemsTable() {
                           type="button"
                           onClick={() => setItemToRemove(item)}
                           disabled={actionLoading}
-                          className="text-red-600 font-medium hover:text-red-700 disabled:opacity-50"
-                        >
-                          Quitar
+                        className={btnIconDanger}
+                        aria-label={`Quitar ${item.product?.name ?? "producto"}`}
+                        title="Quitar de la orden"
+                      >
+                          <Trash2 className="h-4 w-4" aria-hidden />
                         </button>
                       </td>
                     )}
@@ -214,10 +253,10 @@ export function OrderItemsTable() {
 
           {totalWholesaleSavings > 0 && (
             <div className="flex justify-between items-center w-full text-sm py-1">
-              <span className="text-teal-700 font-medium">
+              <span className="font-medium text-emerald-700">
                 Ahorro por mayoreo
               </span>
-              <span className="tabular-nums font-medium text-teal-700">
+              <span className="font-medium tabular-nums text-emerald-700">
                 ${totalWholesaleSavings.toFixed(2)}
               </span>
             </div>
@@ -306,8 +345,8 @@ export function OrderItemsTable() {
             setItemToRemove(null);
           }
         }}
-        title="Quitar item"
-        message={`¿Estás seguro de que deseas quitar "${itemToRemove?.product?.name}" de la orden?`}
+        title="Quitar de la orden"
+        message={`¿Quieres quitar "${itemToRemove?.product?.name}" de esta orden?`}
         confirmLabel="Quitar"
         confirmDanger={true}
         loading={actionLoading}

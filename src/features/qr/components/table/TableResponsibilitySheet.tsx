@@ -3,6 +3,10 @@
 import { ReceiptText, UserRoundCheck } from "lucide-react";
 
 import { FormSheet } from "@/components/ui/FormSheet";
+import {
+  btnCustomerPrimary,
+  btnCustomerSecondary,
+} from "@/components/ui/buttonClasses";
 
 interface TableResponsibilitySheetProps {
   isOpen: boolean;
@@ -40,7 +44,7 @@ export function TableResponsibilitySheet({
             type="button"
             onClick={onClaim}
             disabled={loading}
-            className="flex min-h-13.5 w-full items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
+            className={`${btnCustomerPrimary} w-full`}
           >
             <UserRoundCheck className="h-5 w-5" />
             {loading ? "Guardando..." : "Sí, llevaré la cuenta"}
@@ -49,7 +53,7 @@ export function TableResponsibilitySheet({
             type="button"
             onClick={onDefer}
             disabled={loading}
-            className="flex min-h-12 w-full items-center justify-center rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40 disabled:opacity-60"
+            className={`${btnCustomerSecondary} min-h-12 w-full text-sm`}
           >
             Cada quien paga lo suyo
           </button>
