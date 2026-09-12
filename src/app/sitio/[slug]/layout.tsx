@@ -54,14 +54,46 @@ export default async function SitioLayout({ children, params }: LayoutProps) {
     }
   }
 
-  const { data: pages } = await supabase
-    .from("tenant_site_pages")
-    .select("id, slug, title, position")
-    .eq("tenant_id", tenant.id)
-    .eq("is_enabled", true)
-    .order("position", { ascending: true });
+  const [pagesRes, catalogRes] = await Promise.all([
+    supabase
+      .from("tenant_site_pages")
+      .select("id, slug, title, position")
+      .eq("tenant_id", tenant.id)
+      .eq("is_enabled", true)
+      .order("position", { ascending: true }),
+    supabase
+      .from("products")
+      .select("type")
+      .eq("tenant_id", tenant.id)
+      .eq("is_public", true)
+      .is("deleted_at", null),
+  ]);
 
-  const navPages = pages ?? [];
+  const catalogItems = catalogRes.data ?? [];
+  const productsCount = catalogItems.filter((item) => item.type === "product").length;
+  const servicesCount = catalogItems.filter((item) => item.type === "service").length;
+  const navPages = (pagesRes.data ?? []).flatMap((page) => {
+    if (page.slug !== "productos") return [page];
+
+    const catalogLinks = [];
+    if (productsCount > 0) {
+      catalogLinks.push({
+        ...page,
+        id: `${page.id}:products`,
+        title: `Productos (${productsCount})`,
+        href: `/sitio/${slug}/productos?type=product`,
+      });
+    }
+    if (servicesCount > 0) {
+      catalogLinks.push({
+        ...page,
+        id: `${page.id}:services`,
+        title: `Servicios (${servicesCount})`,
+        href: `/sitio/${slug}/productos?type=service`,
+      });
+    }
+    return catalogLinks;
+  });
   const accentColor = tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT;
 
   const layoutTenant = {

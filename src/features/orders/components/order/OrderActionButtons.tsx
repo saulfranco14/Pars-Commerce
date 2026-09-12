@@ -193,11 +193,13 @@ export function OrderActionButtons({
             disabled={actionLoading || !canStartOrComplete}
             className={`w-full min-w-0 shrink-0 sm:w-auto ${btnPrimary}`}
             title={
-              hasNoItems ? "Agrega al menos un item para iniciar" : undefined
+              hasNoItems
+                ? "Agrega al menos un producto o servicio para continuar"
+                : undefined
             }
           >
             <PlayCircle className="h-4 w-4 shrink-0" aria-hidden />
-            Iniciar sin asignar
+            Pasar a preparación
           </button>
         )}
         {!showExpressButton && order.status === "assigned" && (
@@ -207,11 +209,13 @@ export function OrderActionButtons({
             disabled={actionLoading || !canStartOrComplete}
             className={`w-full min-w-0 shrink-0 sm:w-auto ${btnPrimary}`}
             title={
-              hasNoItems ? "Agrega al menos un item para iniciar" : undefined
+              hasNoItems
+                ? "Agrega al menos un producto o servicio para continuar"
+                : undefined
             }
           >
             <PlayCircle className="h-4 w-4 shrink-0" aria-hidden />
-            Iniciar trabajo
+            Pasar a preparación
           </button>
         )}
         {!showExpressButton && order.status === "in_progress" && (
@@ -222,12 +226,12 @@ export function OrderActionButtons({
             className={`w-full min-w-0 shrink-0 sm:w-auto ${btnSuccess}`}
             title={
               hasNoItems
-                ? "La orden debe tener items para completar"
+                ? "La orden debe tener productos o servicios para continuar"
                 : undefined
             }
           >
             <CheckCircle className="h-4 w-4 shrink-0" aria-hidden />
-            Marcar completado
+            Lista para cobro
           </button>
         )}
         {order.status === "completed" && (

@@ -167,6 +167,8 @@ export async function createPaymentIntent(payload: {
   fingerprint: string;
   /** Anonymous customer phone to link the ticket (optional). */
   customerPhone?: string | null;
+  /** Optional tip collected in the same checkout, kept separate from sales. */
+  tipAmount?: number;
 }): Promise<PaymentIntentResult> {
   return apiFetch("/api/qr/table/payment/intent", {
     method: "POST",
@@ -176,6 +178,7 @@ export async function createPaymentIntent(payload: {
       group_id: payload.groupId ?? null,
       method: payload.method,
       customer_phone: payload.customerPhone ?? null,
+      tip_amount: payload.tipAmount ?? 0,
     }),
   }) as Promise<PaymentIntentResult>;
 }
@@ -193,6 +196,8 @@ export async function createMpPreference(payload: {
   groupId?: string | null;
   qrToken: string;
   fingerprint: string;
+  /** Optional tip collected in the same checkout, kept separate from sales. */
+  tipAmount?: number;
 }): Promise<MpPreferenceResult> {
   return apiFetch("/api/qr/table/payment/mp-preference", {
     method: "POST",
@@ -201,6 +206,7 @@ export async function createMpPreference(payload: {
       order_id: payload.orderId,
       group_id: payload.groupId ?? null,
       qr_token: payload.qrToken,
+      tip_amount: payload.tipAmount ?? 0,
     }),
   }) as Promise<MpPreferenceResult>;
 }

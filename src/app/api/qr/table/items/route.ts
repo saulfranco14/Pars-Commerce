@@ -54,8 +54,11 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  if (!body.customer_phone?.trim() || !normalizeMxPhone(body.customer_phone)) {
-    return NextResponse.json({ error: "Confirma un teléfono válido antes de enviar tu pedido" }, { status: 400 });
+  if (body.customer_phone?.trim() && !normalizeMxPhone(body.customer_phone)) {
+    return NextResponse.json(
+      { error: "Ingresa un teléfono válido o déjalo vacío por ahora" },
+      { status: 400 },
+    );
   }
   if (displayName.length > 40) {
     return NextResponse.json(

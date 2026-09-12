@@ -12,6 +12,7 @@ interface NavPage {
   id: string;
   slug: string;
   title: string;
+  href?: string;
 }
 
 interface SiteHeaderProps {
@@ -97,7 +98,7 @@ export default function SiteHeader({
                 {navPages.map((p) => (
                   <Link
                     key={p.id}
-                    href={`/sitio/${slug}/${p.slug}`}
+                    href={p.href ?? `/sitio/${slug}/${p.slug}`}
                     className={`flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 ${navLinkClass}`}
                   >
                     {p.title}
@@ -145,7 +146,7 @@ export default function SiteHeader({
             {navPages.map((p) => (
               <Link
                 key={p.id}
-                href={`/sitio/${slug}/${p.slug}`}
+                href={p.href ?? `/sitio/${slug}/${p.slug}`}
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex min-h-12 cursor-pointer items-center rounded-xl px-4 py-3 text-base font-medium ${mobileLinkClass}`}
               >

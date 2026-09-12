@@ -12,6 +12,11 @@ import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
 import { QrPreview } from "@/features/qr/components/qr-create/QrPreview";
 import { useQrActions } from "@/features/qr/hooks/useQrActions";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import {
+  btnDanger,
+  btnSecondary,
+  btnWarning,
+} from "@/components/ui/buttonClasses";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
 
@@ -143,30 +148,42 @@ export default function QrDetailPage() {
         businessName={activeTenant.name}
       />
 
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={requestToggle}
-          disabled={busy}
-          className={`inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-border-soft/40 disabled:cursor-not-allowed disabled:opacity-60 ${
-            qr.is_active
-              ? "border-amber-200 text-amber-800"
-              : "border-emerald-200 text-emerald-700"
-          }`}
-        >
-          <Power className="h-4 w-4" />
-          {busy ? "..." : qr.is_active ? "Desactivar" : "Activar"}
-        </button>
-        <button
-          type="button"
-          onClick={requestArchive}
-          disabled={busy}
-          className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border border-red-200 bg-surface px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <Archive className="h-4 w-4" />
-          Archivar
-        </button>
-      </div>
+      <section className="space-y-3 border-t border-border-soft pt-5">
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">
+            Administración del QR
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {qr.is_active
+              ? "Desactívalo temporalmente si no debe aceptar escaneos."
+              : "Actívalo para que vuelva a funcionar al escanearlo."}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+          <button
+            type="button"
+            onClick={requestToggle}
+            disabled={busy}
+            className={`${qr.is_active ? btnWarning : btnSecondary} w-full sm:w-auto`}
+          >
+            <Power className="h-4 w-4" />
+            {busy
+              ? "Procesando..."
+              : qr.is_active
+                ? "Desactivar QR"
+                : "Activar QR"}
+          </button>
+          <button
+            type="button"
+            onClick={requestArchive}
+            disabled={busy}
+            className={`${btnDanger} w-full sm:w-auto`}
+          >
+            <Archive className="h-4 w-4" />
+            Archivar QR
+          </button>
+        </div>
+      </section>
 
       <div className="rounded-xl border border-border bg-surface p-4">
         <dl className="space-y-2 text-sm">
@@ -196,7 +213,10 @@ export default function QrDetailPage() {
             <div className="flex items-center justify-between">
               <dt className="text-muted-foreground">Monto sugerido</dt>
               <dd>
-                ${Number(qr.preset_amount).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                $
+                {Number(qr.preset_amount).toLocaleString("es-MX", {
+                  minimumFractionDigits: 2,
+                })}
               </dd>
             </div>
           )}

@@ -14,11 +14,13 @@ import { syncSplitOrderPaymentTotals } from "@/features/qr/services/tablePayment
 export const QR_TABLE_PREFIX = "qr_table:";
 export const QR_TABLE_GROUP_PREFIX = "qr_table_group:";
 export const QR_TIP_PREFIX = "qr_tip:";
+/** One Mercado Pago checkout that contains both the bill and a tip. */
+export const QR_TABLE_PAYMENT_PREFIX = "qr_table_payment:";
 
 export function isQrTableReference(ref: string): boolean {
   return (
     ref.startsWith(QR_TABLE_PREFIX) || ref.startsWith(QR_TABLE_GROUP_PREFIX)
-    || ref.startsWith(QR_TIP_PREFIX)
+    || ref.startsWith(QR_TIP_PREFIX) || ref.startsWith(QR_TABLE_PAYMENT_PREFIX)
   );
 }
 
@@ -38,6 +40,39 @@ export async function handleQrTableMpPayment({
   feeAmount,
 }: HandleArgs) {
   const now = new Date().toISOString();
+
+  if (externalReference.startsWith(QR_TABLE_PAYMENT_PREFIX)) {
+    const match = new RegExp(
+      `^${QR_TABLE_PAYMENT_PREFIX}(full|group):([0-9a-f-]{36}):(\\d+)$`,
+      "i",
+    ).exec(externalReference);
+    if (!match) {
+      console.error("qr_table webhook: invalid combined payment reference", externalReference);
+      return;
+    }
+    const [, scope, entityId, tipCents] = match;
+    const tipAmount = Number(tipCents) / 100;
+    if (scope === "group") {
+      await settleSplitGroup(admin, {
+        groupId: entityId,
+        mpPaymentId,
+        amount,
+        tipAmount,
+        feeAmount,
+        now,
+      });
+    } else {
+      await settleFullOrder(admin, {
+        orderId: entityId,
+        mpPaymentId,
+        amount,
+        tipAmount,
+        feeAmount,
+        now,
+      });
+    }
+    return;
+  }
 
   if (externalReference.startsWith(QR_TIP_PREFIX)) {
     const paymentId = externalReference.slice(QR_TIP_PREFIX.length);
@@ -66,12 +101,14 @@ async function settleFullOrder(
     orderId: string;
     mpPaymentId: string;
     amount: number;
+    tipAmount?: number;
+    feeAmount?: number;
     now: string;
   },
 ) {
   const { data: order } = await admin
     .from("orders")
-    .select("id, status, total")
+    .select("id, status, total, assigned_to")
     .eq("id", args.orderId)
     .single();
 
@@ -90,15 +127,28 @@ async function settleFullOrder(
     })
     .eq("id", order.id);
 
+  const tipAmount = Math.max(0, Number(args.tipAmount ?? 0));
+  const collectedAmount = Math.max(0, Number(args.amount));
+  const feeAmount = Math.max(0, Number(args.feeAmount ?? 0));
+  const tipFeeAmount = collectedAmount > 0
+    ? Math.round((feeAmount * tipAmount / collectedAmount) * 100) / 100
+    : 0;
   const { error: payErr } = await admin.from("payments").insert({
     order_id: order.id,
     provider: "mercadopago",
     external_id: args.mpPaymentId,
     status: "approved",
-    amount: args.amount,
+    // `amount` is strictly the order payment. The collected transaction can
+    // include a tip, but sales/commissions must never include it.
+    amount: Number(order.total),
+    tip_amount: tipAmount,
+    tip_recipient_user_id: tipAmount > 0 ? order.assigned_to : null,
+    processing_fee_amount: feeAmount,
+    tip_fee_amount: tipFeeAmount,
+    tip_net_amount: Math.max(0, tipAmount - tipFeeAmount),
     payment_kind: "single",
-    metadata: { source: "qr_table_mp_webhook" },
-  });
+    metadata: { source: "qr_table_mp_webhook", collected_amount: collectedAmount },
+  } as never);
   if (payErr && payErr.code !== "23505") {
     console.error("qr_table webhook: payment insert failed", payErr);
   }
@@ -110,7 +160,8 @@ async function settleFullOrder(
     action: "payment.succeeded",
     payload: {
       method: "mercadopago",
-      amount: args.amount,
+      amount: Number(order.total),
+      tip_amount: tipAmount,
       kind: "full",
       mp_payment_id: args.mpPaymentId,
     },
@@ -125,6 +176,8 @@ async function settleSplitGroup(
     groupId: string;
     mpPaymentId: string;
     amount: number;
+    tipAmount?: number;
+    feeAmount?: number;
     now: string;
   },
 ) {
@@ -149,16 +202,31 @@ async function settleSplitGroup(
 
   // See settleFullOrder: external_id + the unique index give idempotency
   // against re-delivered webhooks; swallow 23505, log anything else.
+  const tipAmount = Math.max(0, Number(args.tipAmount ?? 0));
+  const collectedAmount = Math.max(0, Number(args.amount));
+  const feeAmount = Math.max(0, Number(args.feeAmount ?? 0));
+  const tipFeeAmount = collectedAmount > 0
+    ? Math.round((feeAmount * tipAmount / collectedAmount) * 100) / 100
+    : 0;
+  const { data: recipientOrder } = tipAmount > 0
+    ? await admin.from("orders").select("assigned_to").eq("id", group.order_id).maybeSingle()
+    : { data: null };
+  const recipient = recipientOrder?.assigned_to ?? null;
   const { error: payErr } = await admin.from("payments").insert({
     order_id: group.order_id,
     provider: "mercadopago",
     external_id: args.mpPaymentId,
     status: "approved",
-    amount: args.amount,
+    amount: Number(group.total),
+    tip_amount: tipAmount,
+    tip_recipient_user_id: tipAmount > 0 ? recipient : null,
+    processing_fee_amount: feeAmount,
+    tip_fee_amount: tipFeeAmount,
+    tip_net_amount: Math.max(0, tipAmount - tipFeeAmount),
     payment_kind: "partial",
     split_group_id: args.groupId,
-    metadata: { source: "qr_table_mp_webhook" },
-  });
+    metadata: { source: "qr_table_mp_webhook", collected_amount: collectedAmount },
+  } as never);
   if (payErr && payErr.code !== "23505") {
     console.error("qr_table webhook: split payment insert failed", payErr);
   }
@@ -181,7 +249,8 @@ async function settleSplitGroup(
     payload: {
       split_group_id: args.groupId,
       method: "mercadopago",
-      amount: args.amount,
+      amount: Number(group.total),
+      tip_amount: tipAmount,
       mp_payment_id: args.mpPaymentId,
     },
   });

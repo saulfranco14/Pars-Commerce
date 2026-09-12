@@ -214,6 +214,45 @@ describe("confirmPayment (T1.2)", () => {
   });
 });
 
+describe("propina integrada al cobro", () => {
+  it("cobra la propina junto con la cuenta sin aumentar el saldo de la orden", async () => {
+    const db = createFakeSupabase({
+      orders: [
+        {
+          id: "o-tip",
+          tenant_id: "t1",
+          status: "in_progress",
+          fulfillment_status: "received",
+          source: "kiosk",
+          order_type: "takeaway",
+          total: 100,
+          balance_due: 100,
+          assigned_to: "attendant-1",
+        },
+      ],
+      order_split_groups: [],
+      payments: [],
+    });
+
+    const result = await createPaymentIntent(asClient(db), {
+      orderId: "o-tip",
+      method: "efectivo",
+      fingerprint: null,
+      tipAmount: 15,
+    });
+
+    expect(result).toMatchObject({ ok: true, data: { amount: 115, tipAmount: 15 } });
+    const payment = db.rowsOf("payments")[0];
+    expect(payment).toMatchObject({
+      amount: 100,
+      tip_amount: 15,
+      tip_recipient_user_id: "attendant-1",
+    });
+    // The payment group remains the actual debt only; the extra $15 is not a sale.
+    expect(db.rowsOf("order_split_groups")[0]?.total).toBe(100);
+  });
+});
+
 describe("payGroup (T1.3)", () => {
   it("returns not_found when the group does not exist", async () => {
     const db = createFakeSupabase({ order_split_groups: [] });

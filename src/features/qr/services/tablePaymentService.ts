@@ -50,6 +50,13 @@ function err(
  */
 const NOT_READY_ERROR = err("conflict", NOT_READY_MESSAGE);
 
+/** Currency input enters through public endpoints: normalize it once before
+ * persisting, so a client can never introduce fractional-cent tip values. */
+function normalizeTipAmount(value: unknown): number | null {
+  const amount = Math.round(Number(value ?? 0) * 100) / 100;
+  return Number.isFinite(amount) && amount >= 0 ? amount : null;
+}
+
 /**
  * Whether every split group of an order is paid — the signal to mark the whole
  * order as paid. The confirm-payment and pay-group flows both need this exact
@@ -133,12 +140,15 @@ export interface CreatePaymentIntentInput {
   fingerprint: string | null;
   /** Anonymous customer (no session): phone to link the ticket to. */
   customerPhone?: string | null;
+  /** Optional tip paid in the same checkout, separate from the order debt. */
+  tipAmount?: number;
 }
 
 export interface CreatePaymentIntentResult {
   paymentId: string | null;
   splitGroupId: string;
   amount: number;
+  tipAmount: number;
   method: IntentMethod;
 }
 
@@ -237,7 +247,7 @@ export async function createPaymentIntent(
   const { data: order } = await admin
     .from("orders")
     .select(
-      "id, tenant_id, status, fulfillment_status, source, order_type, total, balance_due",
+      "id, tenant_id, status, fulfillment_status, source, order_type, total, balance_due, assigned_to",
     )
     .eq("id", input.orderId)
     .single();
@@ -247,6 +257,15 @@ export async function createPaymentIntent(
     return err("conflict", "La orden ya está pagada");
   if (order.status === "cancelled")
     return err("conflict", "La orden fue cancelada");
+
+  const tipAmount = normalizeTipAmount(input.tipAmount);
+  if (tipAmount === null) return err("validation", "La propina no es válida");
+  if (tipAmount > 0 && !order.assigned_to) {
+    return err(
+      "conflict",
+      "La propina estará disponible cuando el negocio asigne a quien te atendió.",
+    );
+  }
 
   const gateOnReady = requiresReadyBeforePayment(order.source, order.order_type);
 
@@ -387,6 +406,8 @@ export async function createPaymentIntent(
       provider: "manual",
       status: "pending",
       amount: intentAmount,
+      tip_amount: tipAmount,
+      tip_recipient_user_id: tipAmount > 0 ? order.assigned_to : null,
       payment_kind: "partial",
       split_group_id: targetGroupId,
       metadata: {
@@ -394,6 +415,7 @@ export async function createPaymentIntent(
         method: input.method,
         device_id: deviceId,
         customer_phone: phone,
+        collected_total: intentAmount + tipAmount,
       },
     })
     .select("id")
@@ -409,6 +431,7 @@ export async function createPaymentIntent(
       split_group_id: targetGroupId,
       method: input.method,
       amount: intentAmount,
+      tip_amount: tipAmount,
       payment_id: paymentRow?.id,
     },
   });
@@ -419,7 +442,8 @@ export async function createPaymentIntent(
       paymentId: paymentRow?.id ?? null,
       // `targetGroupId` was guaranteed to be set above (either reused or created).
       splitGroupId: targetGroupId as string,
-      amount: intentAmount,
+      amount: intentAmount + tipAmount,
+      tipAmount,
       method: input.method,
     },
   };

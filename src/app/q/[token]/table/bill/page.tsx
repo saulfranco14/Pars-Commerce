@@ -26,7 +26,6 @@ import { CustomerMergeSheet } from "@/features/qr/components/customer/CustomerMe
 import { MergeRequestBanner } from "@/features/qr/components/table/MergeRequestBanner";
 import { PaymentReceipt } from "@/features/qr/components/payment/PaymentReceipt";
 import { OrderReceiptCard } from "@/features/qr/components/order-ticket/OrderReceiptCard";
-import { TipCard } from "@/features/qr/components/payment/TipCard";
 
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { getLastOrderId } from "@/features/qr/helpers/deviceFingerprint";
@@ -371,14 +370,6 @@ export default function TableBillPage() {
   } else if (isOrderPaid) {
     footer = (
       <div className="space-y-2">
-        {fingerprint && data.order.tip_available && (
-          <TipCard
-            orderId={data.order.id}
-            total={Number(data.order.total)}
-            fingerprint={fingerprint}
-            onDone={() => void refresh()}
-          />
-        )}
         <button
           type="button"
           onClick={() => setDetailOpen(true)}
@@ -602,6 +593,8 @@ export default function TableBillPage() {
           tableLabel={data.qr_code?.label}
           loading={paymentFlow.submitting}
           error={paymentFlow.error}
+          allowPhone
+          tipAvailable={data.order.tip_available}
           description={
             paymentFlow.target?.kind === "group"
               ? `Pago de ${paymentFlow.target.group.label}`

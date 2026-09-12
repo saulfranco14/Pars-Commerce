@@ -12,11 +12,26 @@ import { createAdminClient } from "@/lib/supabase/admin";
  */
 export async function isPlatformAdmin(userId: string): Promise<boolean> {
   if (!userId) return false;
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("platform_admins")
-    .select("user_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-  return !!data;
+
+  try {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("platform_admins")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("No se pudo verificar el rol de platform admin.", error);
+      return false;
+    }
+
+    return !!data;
+  } catch (error) {
+    // This check only grants extra UI/permissions. Failing closed prevents a
+    // missing service-role key or an unavailable table from breaking the
+    // whole dashboard, while never granting platform access by mistake.
+    console.error("No se pudo inicializar la verificación de platform admin.", error);
+    return false;
+  }
 }

@@ -77,6 +77,10 @@ export interface AdminViewPendingPayment {
   order_id: string;
   split_group_id: string | null;
   amount: number;
+  /** Propina cobrada junto con la cuenta; nunca forma parte de la venta. */
+  tip_amount: number;
+  /** Monto que el personal debe validar físicamente. */
+  payable_amount: number;
   status: string;
   method: string;
   created_at: string;
@@ -173,7 +177,7 @@ export async function getTableAdminView(
     admin
       .from("payments")
       .select(
-        "id, order_id, split_group_id, amount, status, metadata, created_at",
+        "id, order_id, split_group_id, amount, tip_amount, status, metadata, created_at",
       )
       .eq("order_id", orderId)
       .eq("status", "pending")
@@ -247,6 +251,8 @@ export async function getTableAdminView(
         order_id: p.order_id,
         split_group_id: p.split_group_id,
         amount: Number(p.amount),
+        tip_amount: Number(p.tip_amount ?? 0),
+        payable_amount: Number(p.amount) + Number(p.tip_amount ?? 0),
         status: p.status,
         method,
         created_at: p.created_at,

@@ -10,16 +10,23 @@ import { NextResponse } from "next/server";
  * just the boolean for the logged-in user.
  */
 export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
+    if (!user) {
+      return NextResponse.json({ isPlatformAdmin: false });
+    }
+
+    return NextResponse.json({
+      isPlatformAdmin: await isPlatformAdmin(user.id),
+    });
+  } catch (error) {
+    // This endpoint only controls optional platform navigation. Never make a
+    // transient auth/configuration failure break the dashboard shell.
+    console.error("No se pudo obtener el usuario para platform admin.", error);
     return NextResponse.json({ isPlatformAdmin: false });
   }
-
-  return NextResponse.json({
-    isPlatformAdmin: await isPlatformAdmin(user.id),
-  });
 }

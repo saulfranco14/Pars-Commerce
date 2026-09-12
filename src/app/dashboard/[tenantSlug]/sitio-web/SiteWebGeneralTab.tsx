@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ExternalLink, Palette } from "lucide-react";
+import { Check, CheckCircle2, ExternalLink, Palette } from "lucide-react";
 import {
   VARIANT_STYLES,
   COLOR_PRESETS,
@@ -118,6 +118,38 @@ export function SiteWebGeneralTab({
       onSubmit={onSaveAppearance}
       className="space-y-5"
     >
+      <div
+        className={`rounded-xl border px-4 py-3 ${
+          publicStoreEnabled
+            ? "border-emerald-200 bg-emerald-50"
+            : "border-amber-200 bg-amber-50"
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <span
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+              publicStoreEnabled
+                ? "bg-emerald-500/10 text-emerald-700"
+                : "bg-amber-500/10 text-amber-800"
+            }`}
+          >
+            <CheckCircle2 className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">
+              {publicStoreEnabled
+                ? "Tu tienda pública está activa"
+                : "Tu tienda todavía no es visible para clientes"}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {publicStoreEnabled
+                ? "Comparte tu enlace o termina de personalizar el contenido y la apariencia."
+                : "Cuando tu catálogo esté listo, activa la opción Tienda pública de abajo para publicar tu enlace."}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background p-4 shadow-sm">
           <div className="flex items-center gap-3">
@@ -140,7 +172,9 @@ export function SiteWebGeneralTab({
                 Tienda pública
               </span>
               <span className="block text-xs text-muted-foreground">
-                Los clientes pueden visitar tu sitio
+                {publicStoreEnabled
+                  ? "Los clientes ya pueden visitar tu sitio"
+                  : "Actívala cuando quieras que los clientes visiten tu sitio"}
               </span>
             </div>
             {publicStoreLoading && (
