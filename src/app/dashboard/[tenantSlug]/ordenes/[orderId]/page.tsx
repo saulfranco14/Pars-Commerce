@@ -171,7 +171,7 @@ function OrderDetailContent() {
           printContainer,
         )}
 
-      <div className="no-print flex min-h-0 min-w-0 h-full w-full max-w-5xl mx-auto flex-1 flex-col overflow-x-hidden overflow-y-auto pb-48 lg:pb-6 sm:max-w-5xl md:pb-0">
+      <div className="no-print mx-auto flex w-full max-w-5xl flex-1 flex-col overflow-x-hidden overflow-y-auto pb-52 sm:max-w-5xl md:pb-6">
         <div className="shrink-0">
           <OrderHeader />
         </div>
@@ -191,8 +191,8 @@ function OrderDetailContent() {
             {error}
           </div>
         )}
-        <div className="mt-0 lg:mt-4 flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-          <div className="order-1 min-h-0 min-w-0 flex-1 md:order-3">
+        <div className="mt-3 flex min-w-0 flex-col gap-3 lg:mt-4">
+          <div className="order-1 min-w-0 md:order-3">
             <OrderItemsTable />
           </div>
           {/* Si hay dinero esperando confirmación, es lo primero que el

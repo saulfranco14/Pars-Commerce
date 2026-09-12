@@ -3,6 +3,7 @@
 import { CheckCircle2 } from "lucide-react";
 
 import { QrPreview } from "@/features/qr/components/qr-create/QrPreview";
+import { btnPrimary, btnSecondary } from "@/components/ui/buttonClasses";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
 
@@ -38,18 +39,18 @@ export function CreatedQrSuccess({ qr, onCreateAnother, onDone }: CreatedQrSucce
         presetAmount={qr.preset_amount}
       />
 
-      <div className="flex flex-col-reverse items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <button
           type="button"
           onClick={onCreateAnother}
-          className="min-h-11 cursor-pointer rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-border-soft/40"
+          className={`${btnSecondary} w-full sm:w-auto`}
         >
           {isTable ? "Crear otra mesa" : "Crear otro QR"}
         </button>
         <button
           type="button"
           onClick={onDone}
-          className="min-h-11 cursor-pointer rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+          className={`${btnPrimary} w-full sm:w-auto`}
         >
           {doneLabel}
         </button>

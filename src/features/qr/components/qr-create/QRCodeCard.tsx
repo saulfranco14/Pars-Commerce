@@ -16,9 +16,9 @@ import {
 
 import { AdminListCard } from "@/components/admin/AdminListCard";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { adminActionButtonPrimary, adminActionButtonSecondary } from "@/components/admin/actionButtonClasses";
 import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { btnPrimary, btnSecondary } from "@/components/ui/buttonClasses";
 import { buildPublicQrUrl } from "@/features/qr/helpers/buildPublicQrUrl";
 import { formatCurrency } from "@/features/qr/helpers/format";
 
@@ -90,13 +90,13 @@ export function QRCodeCard({
       type="button"
       onClick={() => onPreview?.(code)}
       aria-label="Ver QR ampliado"
-      className={`flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border bg-white p-2 transition-transform hover:scale-105 ${
+      className={`flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border bg-white p-2 transition-transform hover:scale-105 ${
         isInactive ? "grayscale" : ""
       }`}
     >
       <QRCodeCanvas
         value={url}
-        size={64}
+        size={52}
         level="M"
         marginSize={0}
         bgColor="#ffffff"
@@ -178,7 +178,7 @@ export function QRCodeCard({
             <button
               type="button"
               onClick={handleCopy}
-              className={`flex-1 ${adminActionButtonSecondary} min-h-11`}
+              className={`${btnSecondary} flex-1 px-3`}
             >
               {copied ? (
                 <>
@@ -194,7 +194,7 @@ export function QRCodeCard({
             </button>
             <Link
               href={`/dashboard/${tenantSlug}/qr/${code.id}`}
-              className={`flex-1 ${adminActionButtonPrimary} min-h-11`}
+              className={`${btnPrimary} flex-1 px-3`}
             >
               <Eye className="h-3.5 w-3.5" />
               Detalle

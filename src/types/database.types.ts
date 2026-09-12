@@ -1563,6 +1563,9 @@ export type Database = {
           created_at: string
           display_name: string | null
           email: string | null
+          email_verification_reviewed_at: string | null
+          email_verification_reviewed_by: string | null
+          email_verification_status: string
           id: string
           phone: string | null
           role_type: number | null
@@ -1573,6 +1576,9 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
+          email_verification_reviewed_at?: string | null
+          email_verification_reviewed_by?: string | null
+          email_verification_status?: string
           id: string
           phone?: string | null
           role_type?: number | null
@@ -1583,6 +1589,9 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
+          email_verification_reviewed_at?: string | null
+          email_verification_reviewed_by?: string | null
+          email_verification_status?: string
           id?: string
           phone?: string | null
           role_type?: number | null

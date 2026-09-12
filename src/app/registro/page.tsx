@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import * as yup from "yup";
 import {
   Check,
   ArrowRight,
   Sparkles,
-  Mail,
+  CheckCircle2,
 } from "lucide-react";
 import { BrandPanel } from "@/features/auth/components/BrandPanel";
 import { MobileAuthHeader } from "@/features/auth/components/MobileAuthHeader";
@@ -15,6 +16,7 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 import { registroSchema } from "@/features/auth/validations/registroForm";
 import { BENEFITS } from "@/features/auth/constants/benefits";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
+import { createClient } from "@/lib/supabase/client";
 
 const inputClass =
   "input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
@@ -55,38 +57,39 @@ const registroPricingHighlight = (
 
 function SuccessMessage({
   email,
-  onClose,
+  onStart,
+  entering,
+  startError,
 }: {
   email: string;
-  onClose: () => void;
+  onStart: () => void;
+  entering: boolean;
+  startError: string | null;
 }) {
   return (
     <div className="px-2 text-center sm:px-4 lg:px-0">
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
-        <Mail className="h-8 w-8 text-emerald-500" aria-hidden />
+        <CheckCircle2 className="h-8 w-8 text-emerald-600" aria-hidden />
       </div>
-      <h2 className="text-2xl font-bold text-foreground">¡Registro exitoso!</h2>
-      <p className="mt-2 text-muted-foreground">
-        Hemos enviado un correo de confirmación a:
-      </p>
+      <h2 className="text-2xl font-bold text-foreground">¡Tu cuenta ya fue creada!</h2>
+      <p className="mt-2 text-muted-foreground">Todo está listo para comenzar.</p>
       <p className="mt-1 font-semibold text-foreground break-all">{email}</p>
       <p className="mt-4 text-sm text-muted-foreground">
-        Revisa tu bandeja de entrada y haz clic en el enlace para activar tu
-        cuenta.
+        El siguiente paso es crear tu negocio y elegir cómo quieres empezar a vender.
       </p>
       <div className="mt-6 space-y-3">
-        <Link
-          href="/login"
-          className="block w-full cursor-pointer rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
-        >
-          Ir al login
-        </Link>
+        {startError && (
+          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm text-red-700" role="alert">
+            {startError}
+          </p>
+        )}
         <button
           type="button"
-          onClick={onClose}
-          className="block w-full cursor-pointer rounded-xl border border-border bg-surface px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-surface-raised"
+          onClick={onStart}
+          disabled={entering}
+          className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-lg bg-accent px-4 py-2.5 text-sm font-bold text-accent-foreground shadow-sm shadow-accent/15 transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
         >
-          Registrar otra cuenta
+          {entering ? "Preparando tu espacio…" : "Crear mi negocio"}
         </button>
       </div>
     </div>
@@ -94,6 +97,7 @@ function SuccessMessage({
 }
 
 export default function RegistroPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +105,8 @@ export default function RegistroPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
+  const [entering, setEntering] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -134,10 +140,10 @@ export default function RegistroPage() {
         }),
       });
 
+      const payload = (await response.json()) as { error?: string };
       if (!response.ok) {
-        const errorData = await response.json();
         throw new Error(
-          errorData.error || "Error al enviar el correo de confirmación"
+          payload.error || "No pudimos crear tu cuenta"
         );
       }
 
@@ -149,6 +155,22 @@ export default function RegistroPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleStart() {
+    setEntering(true);
+    setStartError(null);
+    const { error: signInError } = await createClient().auth.signInWithPassword({
+      email: registeredEmail,
+      password,
+    });
+    if (signInError) {
+      setStartError(resolveUserError(signInError, "supabase"));
+      setEntering(false);
+      return;
+    }
+    router.push("/dashboard/crear-negocio");
+    router.refresh();
   }
 
   // Mostrar mensaje de éxito
@@ -170,12 +192,9 @@ export default function RegistroPage() {
           <div className="relative w-full max-w-md animate-auth-enter pb-8 pt-20 sm:pb-0 lg:pt-0">
             <SuccessMessage
               email={registeredEmail}
-              onClose={() => {
-                setSuccess(false);
-                setEmail("");
-                setPassword("");
-                setRegisteredEmail("");
-              }}
+              onStart={() => void handleStart()}
+              entering={entering}
+              startError={startError}
             />
           </div>
         </div>

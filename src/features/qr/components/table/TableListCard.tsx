@@ -5,10 +5,7 @@ import { ClipboardList, QrCode as QrIcon, Store, Users } from "lucide-react";
 
 import { AdminListCard } from "@/components/admin/AdminListCard";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import {
-  adminActionButtonPrimary,
-  adminActionButtonSecondary,
-} from "@/components/admin/actionButtonClasses";
+import { btnPrimary, btnSecondary } from "@/components/ui/buttonClasses";
 import { ConfettiBurst } from "@/features/qr/components/ConfettiBurst";
 import { getFulfillmentStatusMeta } from "@/features/qr/constants/fulfillmentStatusMeta";
 import { formatCurrency } from "@/features/qr/helpers/format";
@@ -65,7 +62,7 @@ export function TableListCard({
 
   const thumbnail = (
     <span
-      className={`relative flex h-11 w-11 items-center justify-center rounded-xl ${
+      className={`relative flex h-16 w-16 items-center justify-center rounded-xl ${
         occupied
           ? "bg-amber-100 text-amber-700"
           : "bg-emerald-100 text-emerald-700"
@@ -113,7 +110,7 @@ export function TableListCard({
             type="button"
             onClick={() => onViewQr(table)}
             disabled={disabled}
-            className={`flex-1 disabled:cursor-not-allowed disabled:opacity-55 ${adminActionButtonSecondary}`}
+            className={`${btnSecondary} flex-1 px-3 disabled:cursor-not-allowed disabled:opacity-55`}
           >
             <QrIcon className="h-3.5 w-3.5" />
             Ver QR
@@ -122,7 +119,7 @@ export function TableListCard({
             type="button"
             onClick={() => onViewDetail(table.id)}
             disabled={disabled}
-            className={`flex-1 disabled:cursor-not-allowed disabled:opacity-55 ${adminActionButtonPrimary}`}
+            className={`${btnPrimary} flex-1 px-3 disabled:cursor-not-allowed disabled:opacity-55`}
           >
             <ClipboardList className="h-3.5 w-3.5" />
             {occupied ? "Ver actividad" : "Detalle"}

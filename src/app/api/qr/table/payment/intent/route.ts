@@ -13,6 +13,7 @@ interface RequestBody {
   method: IntentMethod;
   /** Anonymous customer phone to link the ticket (optional). */
   customer_phone?: string;
+  tip_amount?: number;
 }
 
 function isIntentMethod(value: unknown): value is IntentMethod {
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
     method: body.method,
     fingerprint,
     customerPhone: body.customer_phone ?? null,
+    tipAmount: body.tip_amount,
   });
 
   if (!result.ok) return serviceErrorToResponse(result.error);

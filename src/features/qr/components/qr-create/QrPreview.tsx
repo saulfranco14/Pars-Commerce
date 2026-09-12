@@ -6,6 +6,7 @@ import { Check, Copy, CreditCard, Download, ExternalLink, Store } from "lucide-r
 
 import { buildPublicQrUrl } from "@/features/qr/helpers/buildPublicQrUrl";
 import { formatCurrency } from "@/features/qr/helpers/format";
+import { btnPrimary, btnSecondary } from "@/components/ui/buttonClasses";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
 
@@ -117,18 +118,19 @@ export function QrPreview({
 
       <div className="w-full space-y-2">
         <p className="text-xs font-medium text-muted-foreground">URL pública</p>
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-border-soft/30 px-3 py-2">
+        <div className="flex min-h-11 items-center gap-2 rounded-lg border border-border bg-border-soft/30 px-3 py-2">
           <span className="flex-1 truncate font-mono text-xs text-foreground">
             {url}
           </span>
         </div>
       </div>
 
-      <div className="flex w-full flex-wrap items-center justify-center gap-2">
+      <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3">
         <button
           type="button"
           onClick={handleCopy}
-          className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground hover:bg-border-soft/40"
+          className={`${btnSecondary} min-w-0 px-3`}
+          aria-live="polite"
         >
           {copied ? (
             <>
@@ -146,7 +148,7 @@ export function QrPreview({
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground hover:bg-border-soft/40"
+          className={`${btnSecondary} min-w-0 px-3`}
         >
           <ExternalLink className="h-4 w-4" />
           Probar
@@ -154,7 +156,7 @@ export function QrPreview({
         <button
           type="button"
           onClick={handleDownload}
-          className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+          className={`${btnPrimary} col-span-2 px-3 sm:col-span-1`}
         >
           <Download className="h-4 w-4" />
           Descargar PNG

@@ -8,6 +8,7 @@ interface RequestBody {
   order_id: string;
   group_id?: string | null;
   qr_token: string;
+  tip_amount?: number;
 }
 
 export async function POST(request: Request) {
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
     fingerprint,
     qrToken: body.qr_token,
     baseUrl,
+    tipAmount: body.tip_amount,
   });
 
   if (!result.ok) return serviceErrorToResponse(result.error);

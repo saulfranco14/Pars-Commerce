@@ -22,6 +22,31 @@ describe("isQrTableReference", () => {
     expect(isQrTableReference("qr_table:o1")).toBe(true);
     expect(isQrTableReference("qr_table_group:g1")).toBe(true);
     expect(isQrTableReference("loan:x")).toBe(false);
+    expect(isQrTableReference("qr_table_payment:full:11111111-1111-1111-1111-111111111111:1500")).toBe(true);
+  });
+});
+
+describe("handleQrTableMpPayment — cuenta y propina en un solo checkout", () => {
+  it("separa venta y propina cuando Mercado Pago cobra ambas juntas", async () => {
+    const orderId = "11111111-1111-1111-1111-111111111111";
+    const db = createFakeSupabase({
+      orders: [{ id: orderId, status: "pending_payment", total: 100, qr_code_id: null, assigned_to: "attendant-1" }],
+    });
+
+    await handleQrTableMpPayment({
+      admin: asClient(db),
+      externalReference: `qr_table_payment:full:${orderId}:1500`,
+      mpPaymentId: "mp-tip-1",
+      amount: 115,
+      feeAmount: 3,
+    });
+
+    expect(db.rowsOf("orders")[0]).toMatchObject({ paid_total: 100, balance_due: 0 });
+    expect(db.rowsOf("payments")[0]).toMatchObject({
+      amount: 100,
+      tip_amount: 15,
+      tip_recipient_user_id: "attendant-1",
+    });
   });
 });
 

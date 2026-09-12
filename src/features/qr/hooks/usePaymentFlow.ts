@@ -19,6 +19,7 @@ export interface PendingPayment {
   splitGroupId: string;
   method: CustomerPayMethod;
   amount: number;
+  tipAmount: number;
   submittedAt: string;
 }
 
@@ -61,7 +62,11 @@ export function usePaymentFlow({
     setPending(null);
   }
 
-  async function confirmIntent(method: CustomerPayMethod, customerPhone?: string) {
+  async function confirmIntent(
+    method: CustomerPayMethod,
+    customerPhone?: string,
+    tipAmount = 0,
+  ) {
     if (!target) return;
     const amount =
       target.kind === "group"
@@ -77,6 +82,7 @@ export function usePaymentFlow({
           groupId: target.kind === "group" ? target.group.id : null,
           qrToken,
           fingerprint,
+          tipAmount,
         });
         // Hard redirect to Mercado Pago checkout. The customer comes back to
         // /q/{token}/table/payment/result?... which polls until paid.
@@ -90,12 +96,14 @@ export function usePaymentFlow({
         method,
         fingerprint,
         customerPhone: customerPhone ?? null,
+        tipAmount,
       });
       setPending({
         paymentId: result.payment_id,
         splitGroupId: result.split_group_id,
         method,
-        amount,
+        amount: amount + tipAmount,
+        tipAmount,
         submittedAt: new Date().toISOString(),
       });
       setTarget(null);

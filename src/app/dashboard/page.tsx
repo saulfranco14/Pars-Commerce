@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { PageHeader } from "@/components/admin/PageHeader";
@@ -26,8 +26,10 @@ import type { TicketSettings } from "@/types/ticketSettings";
 import type { OrderListItem } from "@/types/orders";
 import {
   ArrowRight,
+  CheckCircle2,
   ClipboardList,
   Clock,
+  Globe2,
   Plus,
   Repeat,
   ShoppingBag,
@@ -49,12 +51,169 @@ import { getPeriodDates } from "@/features/ventas/helpers/periodDates";
 import { salesByUser } from "@/features/ventas/helpers/salesByUser";
 import { orderContentType } from "@/features/orders/helpers/orderContentType";
 
+function FirstSaleGuide({
+  tenantSlug,
+  catalogReady,
+  catalogLoading,
+  orderCreated,
+  storePublished,
+  onCreateOrder,
+}: {
+  tenantSlug: string;
+  catalogReady: boolean;
+  catalogLoading: boolean;
+  orderCreated: boolean;
+  storePublished: boolean;
+  onCreateOrder: () => void;
+}) {
+  const completedSteps = [catalogReady, orderCreated, storePublished].filter(
+    Boolean,
+  ).length;
+  const currentStep = !catalogReady ? 1 : !orderCreated ? 2 : 3;
+  const catalogLabel = catalogLoading
+    ? "Revisando tu catálogo…"
+    : catalogReady
+      ? "Catálogo listo"
+      : "Agrega lo que vendes";
+
+  function stepClass(completed: boolean, active: boolean) {
+    if (completed)
+      return "border-emerald-200 bg-emerald-50 hover:border-emerald-300";
+    if (active) return "border-accent bg-surface-raised shadow-sm";
+    return "border-border bg-surface-raised hover:border-accent/40 hover:bg-surface";
+  }
+
+  function iconClass(completed: boolean, active: boolean) {
+    if (completed) return "bg-emerald-500/10 text-emerald-700";
+    if (active) return "bg-accent text-accent-foreground";
+    return "bg-border-soft text-muted";
+  }
+
+  return (
+    <section
+      aria-labelledby="ruta-primera-venta"
+      className="rounded-2xl border border-accent/20 bg-accent/5 p-4 shadow-sm sm:p-5"
+    >
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+            Primeros pasos
+          </p>
+          <h2
+            id="ruta-primera-venta"
+            className="mt-1 text-lg font-bold tracking-tight text-foreground"
+          >
+            Tu ruta a la primera venta
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Configura lo esencial una vez y después opera todo desde Tlaco.
+          </p>
+        </div>
+        <span className="inline-flex w-fit rounded-full border border-border bg-surface-raised px-2.5 py-1 text-xs font-medium text-muted-foreground">
+          {completedSteps} de 3 listos
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-3">
+        <Link
+          href={`/dashboard/${tenantSlug}/productos`}
+          className={`group flex min-h-25 items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 ${stepClass(catalogReady, currentStep === 1)}`}
+        >
+          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClass(catalogReady, currentStep === 1)}`}>
+            {catalogReady ? (
+              <CheckCircle2 className="h-5 w-5" aria-hidden />
+            ) : (
+              <ShoppingBag className="h-5 w-5" aria-hidden />
+            )}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-xs font-semibold text-muted-foreground">
+              1. Catálogo
+            </span>
+            <span className="mt-0.5 block text-sm font-semibold text-foreground">
+              {catalogLabel}
+            </span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              {catalogReady
+                ? "Productos y servicios con precio e imagen."
+                : "Crea o revisa lo que vas a vender."}
+            </span>
+          </span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5" aria-hidden />
+        </Link>
+
+        <button
+          type="button"
+          onClick={onCreateOrder}
+          className={`group flex min-h-25 items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${stepClass(orderCreated, currentStep === 2)}`}
+        >
+          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClass(orderCreated, currentStep === 2)}`}>
+            {orderCreated ? (
+              <CheckCircle2 className="h-5 w-5" aria-hidden />
+            ) : (
+              <ClipboardList className="h-5 w-5" aria-hidden />
+            )}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-xs font-semibold text-muted-foreground">
+              2. Primera orden
+            </span>
+            <span className="mt-0.5 block text-sm font-semibold text-foreground">
+              {orderCreated ? "Primera orden registrada" : "Registra una venta de prueba"}
+            </span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              {orderCreated
+                ? "Ya conoces el flujo de venta."
+                : "Agrega lo que vendes y conoce el flujo completo."}
+            </span>
+          </span>
+          {orderCreated ? (
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden />
+          ) : (
+            <Plus className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+          )}
+        </button>
+
+        <Link
+          href={`/dashboard/${tenantSlug}/sitio-web`}
+          className={`group flex min-h-25 items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 ${stepClass(storePublished, currentStep === 3)}`}
+        >
+          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClass(storePublished, currentStep === 3)}`}>
+            {storePublished ? (
+              <CheckCircle2 className="h-5 w-5" aria-hidden />
+            ) : (
+              <Globe2 className="h-5 w-5" aria-hidden />
+            )}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-xs font-semibold text-muted-foreground">
+              3. Tienda web
+            </span>
+            <span className="mt-0.5 block text-sm font-semibold text-foreground">
+              {storePublished ? "Tu tienda ya está publicada" : "Activa y comparte tu enlace"}
+            </span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              {storePublished
+                ? "Configura su apariencia o abre tu sitio público."
+                : "Actívala desde Sitio web cuando esté lista."}
+            </span>
+          </span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5" aria-hidden />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 export default function DashboardPage() {
   const activeTenant = useActiveTenant();
   const [period, setPeriod] = useState<
     "today" | "week" | "fortnight" | "month" | "cutoff"
   >("week");
   const [createOrderOpen, setCreateOrderOpen] = useState(false);
+  const [ordersCreatedByTenant, setOrdersCreatedByTenant] = useState<
+    Record<string, boolean>
+  >({});
 
   // Fetch the last cutoff to use as date_from when period === "cutoff"
   const cutoffsKey =
@@ -137,6 +296,41 @@ export default function DashboardPage() {
 
   const activeTables = useActiveTables(activeTenant?.id ?? null);
 
+  useEffect(() => {
+    if (!activeTenant?.id || orders.length === 0) return;
+    setOrdersCreatedByTenant((current) => {
+      if (current[activeTenant.id]) return current;
+      const next = { ...current, [activeTenant.id]: true };
+      try {
+        window.localStorage.setItem(
+          `tlaco:onboarding:first-order:${activeTenant.id}`,
+          "true",
+        );
+      } catch {
+        // La guía sigue funcionando en esta sesión si el navegador bloquea storage.
+      }
+      return next;
+    });
+  }, [activeTenant?.id, orders.length]);
+
+  useEffect(() => {
+    if (!activeTenant?.id || ordersCreatedByTenant[activeTenant.id]) return;
+    try {
+      if (
+        window.localStorage.getItem(
+          `tlaco:onboarding:first-order:${activeTenant.id}`,
+        ) === "true"
+      ) {
+        setOrdersCreatedByTenant((current) => ({
+          ...current,
+          [activeTenant.id]: true,
+        }));
+      }
+    } catch {
+      // No impedir la experiencia si storage no está disponible.
+    }
+  }, [activeTenant?.id, ordersCreatedByTenant]);
+
   if (!activeTenant) {
     return null;
   }
@@ -181,6 +375,14 @@ export default function DashboardPage() {
               : "Últimos 30 días"
             : "Últimos 30 días";
   const needsAttention = unassignedCount > 0 || activeOrders > 0;
+  const catalogReady =
+    (catalogStats?.products_count ?? 0) +
+      (catalogStats?.services_count ?? 0) >
+    0;
+  const orderCreated =
+    orders.length > 0 || ordersCreatedByTenant[activeTenant.id] === true;
+  const storePublished = activeTenant.public_store_enabled === true;
+  const showFirstSaleGuide = !catalogReady || !orderCreated || !storePublished;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto">
@@ -233,6 +435,17 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
+        )}
+
+        {showFirstSaleGuide && (
+          <FirstSaleGuide
+            tenantSlug={activeTenant.slug}
+            catalogReady={catalogReady}
+            catalogLoading={catalogLoading}
+            orderCreated={orderCreated}
+            storePublished={storePublished}
+            onCreateOrder={() => setCreateOrderOpen(true)}
+          />
         )}
 
         {needsAttention && (

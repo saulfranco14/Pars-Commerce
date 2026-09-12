@@ -314,13 +314,12 @@ export function MesaDetailContent({
           )}
 
           {/* Totals card */}
-          <section className="grid  grid-cols-1 gap-3 rounded-xl border border-border bg-surface p-4 sm:grid-cols-3 mt-8">
+          <section className="grid grid-cols-1 gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:grid-cols-3">
             <div>
               <p className="text-xs text-muted-foreground">Total acumulado</p>
               <p className="mt-0.5 text-xl font-bold text-foreground">
                 {data.order ? formatCurrency(data.order.total) : "—"}
               </p>
-              image.png
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Pagado</p>

@@ -21,6 +21,7 @@ import { QrPreview } from "@/features/qr/components/qr-create/QrPreview";
 import { buildQrCodesKey } from "@/features/qr/helpers/buildQrKey";
 import { useQrActions } from "@/features/qr/hooks/useQrActions";
 import { QrOnboardingOverlay } from "@/components/onboarding/QrOnboardingOverlay";
+import { pageHeaderCta } from "@/components/admin/actionButtonClasses";
 
 import type { QrCode } from "@/features/qr/interfaces/qrCode";
 
@@ -128,7 +129,7 @@ export default function QrCodesPage() {
             <button
               type="button"
               onClick={() => setCreateOpen(true)}
-              className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-2xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] transition-all"
+              className={pageHeaderCta}
             >
               <Plus className="h-4 w-4" />
               Crear primer QR
@@ -159,6 +160,7 @@ export default function QrCodesPage() {
         isOpen={!!previewCode}
         onClose={() => setPreviewCode(null)}
         title={previewCode?.label ?? ""}
+        description="Comparte el enlace, prueba la experiencia o descarga el QR para imprimirlo."
       >
         {previewCode && (
           <QrPreview

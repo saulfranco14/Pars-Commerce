@@ -10,7 +10,7 @@ import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateSt
 
 interface PageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ subcatalog_id?: string }>;
+  searchParams: Promise<{ subcatalog_id?: string; type?: string }>;
 }
 
 function filterActivePromotions(
@@ -31,7 +31,8 @@ export default async function ProductosPage({
   searchParams,
 }: PageProps) {
   const { slug } = await params;
-  const { subcatalog_id } = await searchParams;
+  const { subcatalog_id, type } = await searchParams;
+  const catalogType = type === "product" || type === "service" ? type : null;
   const headersList = await headers();
   const host = headersList.get("host") ?? "";
   const protocol =
@@ -49,7 +50,13 @@ export default async function ProductosPage({
     notFound();
   }
 
-  const [subcatalogsRes, productsRes, promosRes] = await Promise.all([
+  const [
+    subcatalogsRes,
+    productsRes,
+    promosRes,
+    productsCountRes,
+    servicesCountRes,
+  ] = await Promise.all([
     supabase
       .from("product_subcatalogs")
       .select("id, name, slug")
@@ -64,6 +71,7 @@ export default async function ProductosPage({
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (subcatalog_id) q = q.eq("subcatalog_id", subcatalog_id);
+      if (catalogType) q = q.eq("type", catalogType);
       return q;
     })(),
     supabase
@@ -73,6 +81,20 @@ export default async function ProductosPage({
       )
       .eq("tenant_id", tenant.id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenant.id)
+      .eq("type", "product")
+      .eq("is_public", true)
+      .is("deleted_at", null),
+    supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenant.id)
+      .eq("type", "service")
+      .eq("is_public", true)
+      .is("deleted_at", null),
   ]);
 
   const subcatalogs = subcatalogsRes.data ?? [];
@@ -103,6 +125,29 @@ export default async function ProductosPage({
     activePromos,
   );
   const accentColor = tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT;
+  const productsCount = productsCountRes.count ?? 0;
+  const servicesCount = servicesCountRes.count ?? 0;
+  const totalCatalogItems = productsCount + servicesCount;
+  const pageTitle =
+    catalogType === "product"
+      ? "Productos"
+      : catalogType === "service"
+        ? "Servicios"
+        : "Productos y servicios";
+  const pageDescription = catalogType
+    ? `${list.length} ${catalogType === "product" ? "producto" : "servicio"}${list.length !== 1 ? "s" : ""} disponible${list.length !== 1 ? "s" : ""}`
+    : `${productsCount} producto${productsCount !== 1 ? "s" : ""} · ${servicesCount} servicio${servicesCount !== 1 ? "s" : ""} disponible${totalCatalogItems !== 1 ? "s" : ""}`;
+
+  const catalogHref = (
+    nextType: "product" | "service" | null,
+    nextSubcatalogId?: string,
+  ) => {
+    const query = new URLSearchParams();
+    if (nextType) query.set("type", nextType);
+    if (nextSubcatalogId) query.set("subcatalog_id", nextSubcatalogId);
+    const suffix = query.toString();
+    return `/sitio/${slug}/productos${suffix ? `?${suffix}` : ""}`;
+  };
 
   return (
     <div className="space-y-8">
@@ -115,50 +160,89 @@ export default async function ProductosPage({
           <Package className="h-6 w-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-            Productos
-          </h1>
-          <p className="text-sm text-gray-500">
-            {list.length} producto{list.length !== 1 ? "s" : ""} disponible
-            {list.length !== 1 ? "s" : ""}
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{pageTitle}</h1>
+          <p className="text-sm text-gray-500">{pageDescription}</p>
         </div>
       </div>
 
+      {(productsCount > 0 || servicesCount > 0) && (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+            Ver catálogo
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={catalogHref(null)}
+              className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition-all ${
+                !catalogType ? "text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+              style={!catalogType ? { backgroundColor: accentColor } : undefined}
+            >
+              Todo ({totalCatalogItems})
+            </Link>
+            {productsCount > 0 && (
+              <Link
+                href={catalogHref("product")}
+                className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition-all ${
+                  catalogType === "product" ? "text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+                style={catalogType === "product" ? { backgroundColor: accentColor } : undefined}
+              >
+                Productos ({productsCount})
+              </Link>
+            )}
+            {servicesCount > 0 && (
+              <Link
+                href={catalogHref("service")}
+                className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition-all ${
+                  catalogType === "service" ? "text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+                style={catalogType === "service" ? { backgroundColor: accentColor } : undefined}
+              >
+                Servicios ({servicesCount})
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Subcatalog filter */}
       {subcatalogs && subcatalogs.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href={`/sitio/${slug}/productos`}
-            className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition-all ${
-              !subcatalog_id
-                ? "text-white shadow-sm"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-            style={
-              !subcatalog_id ? { backgroundColor: accentColor } : undefined
-            }
-          >
-            Todos
-          </Link>
-          {subcatalogs.map((sc) => (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+            Categorías
+          </p>
+          <div className="flex flex-wrap gap-2">
             <Link
-              key={sc.id}
-              href={`/sitio/${slug}/productos?subcatalog_id=${sc.id}`}
+              href={catalogHref(catalogType)}
               className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition-all ${
-                subcatalog_id === sc.id
+                !subcatalog_id
                   ? "text-white shadow-sm"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
-              style={
-                subcatalog_id === sc.id
-                  ? { backgroundColor: accentColor }
-                  : undefined
-              }
+              style={!subcatalog_id ? { backgroundColor: accentColor } : undefined}
             >
-              {sc.name}
+              Todas
             </Link>
-          ))}
+            {subcatalogs.map((sc) => (
+              <Link
+                key={sc.id}
+                href={catalogHref(catalogType, sc.id)}
+                className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition-all ${
+                  subcatalog_id === sc.id
+                    ? "text-white shadow-sm"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+                style={
+                  subcatalog_id === sc.id
+                    ? { backgroundColor: accentColor }
+                    : undefined
+                }
+              >
+                {sc.name}
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 
@@ -172,7 +256,7 @@ export default async function ProductosPage({
             <Package className="h-10 w-10" style={{ color: accentColor }} />
           </div>
           <p className="mt-5 text-base font-medium text-gray-500">
-            No hay productos disponibles en este momento.
+            No hay {catalogType === "service" ? "servicios" : "productos"} disponibles con este filtro.
           </p>
         </div>
       ) : (
