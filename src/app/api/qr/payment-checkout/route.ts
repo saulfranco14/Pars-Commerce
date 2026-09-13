@@ -165,7 +165,8 @@ export async function POST(request: Request) {
     expiresAt,
     installments: 0,
     frequency: 1,
-    frequencyType: "months",
+      frequencyType: "months",
+      merchantPaymentsEnabled: false,
     // Land back on the branded QR success page when we have a token.
     backUrls: qrToken
       ? {

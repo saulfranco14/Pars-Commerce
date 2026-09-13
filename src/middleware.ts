@@ -2,7 +2,10 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname === "/api/mercadopago/webhook") {
+  if (
+    request.nextUrl.pathname === "/api/mercadopago/webhook" ||
+    request.nextUrl.pathname === "/api/payment-providers/mercadopago/webhook"
+  ) {
     return NextResponse.next();
   }
 
