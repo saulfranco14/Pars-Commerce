@@ -344,6 +344,8 @@ export default function ConfiguracionPage() {
             )}
             {activeTab === "finanzas" && (
               <ConfigFinanzasSection
+                tenantId={activeTenant.id}
+                canManagePayments={activeRole?.name === "owner"}
                 monthlyRent={monthlyRent}
                 onMonthlyRentChange={setMonthlyRent}
                 monthlySalesObjective={monthlySalesObjective}
