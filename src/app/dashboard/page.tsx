@@ -205,6 +205,21 @@ function FirstSaleGuide({
   );
 }
 
+function AssistedSetupGuide({ tenantSlug }: { tenantSlug: string }) {
+  return (
+    <section className="rounded-2xl border border-accent/20 bg-accent/5 p-4 shadow-sm sm:p-5" aria-labelledby="alta-asistida">
+      <p className="text-xs font-semibold uppercase tracking-wider text-accent">Alta asistida</p>
+      <h2 id="alta-asistida" className="mt-1 text-lg font-bold text-foreground">Termina de activar tu negocio</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Puedes preparar todo con calma. Los cobros y pedidos reales se habilitan cuando completes esta revisión.</p>
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        <Link href={`/dashboard/${tenantSlug}/configuracion`} className="min-h-24 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent/40"><p className="text-xs font-semibold text-accent">1. Datos del negocio</p><p className="mt-1 text-sm font-semibold text-foreground">Revisa contacto y horarios</p></Link>
+        <Link href={`/dashboard/${tenantSlug}/productos`} className="min-h-24 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent/40"><p className="text-xs font-semibold text-accent">2. Catálogo</p><p className="mt-1 text-sm font-semibold text-foreground">Confirma precios e inventario</p></Link>
+        <Link href={`/dashboard/${tenantSlug}/configuracion`} className="min-h-24 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent/40"><p className="text-xs font-semibold text-accent">3. Cobros y publicación</p><p className="mt-1 text-sm font-semibold text-foreground">Conecta Mercado Pago y haz una prueba</p></Link>
+      </div>
+    </section>
+  );
+}
+
 export default function DashboardPage() {
   const activeTenant = useActiveTenant();
   const [period, setPeriod] = useState<
@@ -383,6 +398,8 @@ export default function DashboardPage() {
     orders.length > 0 || ordersCreatedByTenant[activeTenant.id] === true;
   const storePublished = activeTenant.public_store_enabled === true;
   const showFirstSaleGuide = !catalogReady || !orderCreated || !storePublished;
+  const assistedSettings = activeTenant.settings as Record<string, unknown> | null | undefined;
+  const isAssistedOnboarding = assistedSettings?.assisted_onboarding === true;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto">
@@ -437,7 +454,9 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {showFirstSaleGuide && (
+        {isAssistedOnboarding && <AssistedSetupGuide tenantSlug={activeTenant.slug} />}
+
+        {showFirstSaleGuide && !isAssistedOnboarding && (
           <FirstSaleGuide
             tenantSlug={activeTenant.slug}
             catalogReady={catalogReady}
