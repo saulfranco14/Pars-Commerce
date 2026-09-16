@@ -15,6 +15,7 @@ import {
   Scissors,
   CalendarClock,
   ClipboardList,
+  FileText,
   Banknote,
   Users,
   Repeat,
@@ -343,6 +344,14 @@ function SidebarContent(props: SidebarContentProps) {
             >
               Órdenes / Tickets
             </NavLink>
+            <NavLink
+              href={`${base}/cotizaciones`}
+              active={pathname === `${base}/cotizaciones`}
+              icon={FileText}
+              onNavigate={onNavigate}
+            >
+              Cotizaciones
+            </NavLink>
             {/* Junto a Órdenes: es la misma mercancía, vista por hora de
                 recolección en vez de por fecha de creación. */}
             <NavLink
@@ -405,6 +414,14 @@ function SidebarContent(props: SidebarContentProps) {
                 onNavigate={onNavigate}
               >
                 Préstamos
+              </NavLink>
+              <NavLink
+                href={`${base}/credito`}
+                active={pathname === `${base}/credito`}
+                icon={Wallet}
+                onNavigate={onNavigate}
+              >
+                Crédito de clientes
               </NavLink>
               <NavLink
                 href={`${base}/clientes`}

@@ -84,7 +84,7 @@ export async function POST(request: Request) {
   const orderTotal = Number(order.total);
   const orderItems = (order.items as unknown[]) ?? [];
   const hasDiscount = orderDiscount > 0;
-  const { total: buyerTotal, mpFee, platformFee } = calcBuyerTotal(orderTotal);
+  const { mpFee, platformFee } = calcBuyerTotal(orderTotal);
 
   const baseItems: {
     id: string;

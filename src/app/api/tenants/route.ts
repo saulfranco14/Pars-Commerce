@@ -28,6 +28,14 @@ export async function GET() {
       .eq("user_id", user.id)
       .eq("status", "invited")
       .or(`invitation_expires_at.is.null,invitation_expires_at.gt.${new Date().toISOString()}`);
+    // Assisted onboarding uses the same membership acceptance proof.  Once the
+    // owner has a verified session, its checklist advances to payment setup;
+    // it never activates live sales by itself.
+    await admin
+      .from("assisted_onboardings" as never)
+      .update({ status: "payments_pending", invitation_accepted_at: new Date().toISOString(), updated_at: new Date().toISOString() } as never)
+      .eq("owner_user_id", user.id)
+      .eq("status", "invited");
   }
 
   const { data: memberships, error } = await supabase
