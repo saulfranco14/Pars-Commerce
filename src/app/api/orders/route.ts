@@ -477,12 +477,14 @@ export async function POST(request: Request) {
   const body = await request.json();
   const {
     tenant_id,
+    customer_id,
     customer_name,
     customer_email,
     customer_phone,
     assigned_to,
   } = body as {
     tenant_id: string;
+    customer_id?: string;
     customer_name?: string;
     customer_email?: string;
     customer_phone?: string;
@@ -494,6 +496,22 @@ export async function POST(request: Request) {
       { error: "tenant_id is required" },
       { status: 400 }
     );
+  }
+
+  if (customer_id) {
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("id")
+      .eq("id", customer_id)
+      .eq("tenant_id", tenant_id)
+      .maybeSingle();
+
+    if (!customer) {
+      return NextResponse.json(
+        { error: "El cliente no pertenece a este negocio." },
+        { status: 400 },
+      );
+    }
   }
 
   const taker = await requirePermission(
@@ -539,6 +557,7 @@ export async function POST(request: Request) {
       source: "dashboard",
       created_by: user.id,
       assigned_to: owner_id,
+      customer_id: customer_id ?? null,
       customer_name: customer_name?.trim() || null,
       customer_email: customer_email?.trim() || null,
       customer_phone: customer_phone?.trim() || null,

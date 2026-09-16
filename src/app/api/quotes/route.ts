@@ -74,7 +74,7 @@ export async function POST(request: Request) {
   const validUntil = body.valid_until ? new Date(body.valid_until) : new Date(Date.now() + 7 * 86400000);
   if (Number.isNaN(validUntil.getTime()) || validUntil <= new Date()) return NextResponse.json({ error: "La vigencia debe estar en el futuro." }, { status: 400 });
   try {
-    const { data: quote, error } = await db.from("quotes").insert({ tenant_id: tenantId, customer_id: customerId, quote_number: quoteNumber(), status: "draft", subtotal, discount, total, internal_notes: body.internal_notes?.trim() || null, customer_note: body.customer_note?.trim() || null, valid_until: validUntil.toISOString(), public_token_hash: tokenHash, public_token_expires_at: validUntil.toISOString(), created_by: user.id, updated_by: user.id }).select("*").single();
+    const { data: quote, error } = await db.from("quotes").insert({ tenant_id: tenantId, customer_id: customerId, quote_number: quoteNumber(), status: "ready_to_send", subtotal, discount, total, internal_notes: body.internal_notes?.trim() || null, customer_note: body.customer_note?.trim() || null, valid_until: validUntil.toISOString(), public_token_hash: tokenHash, public_token_expires_at: validUntil.toISOString(), created_by: user.id, updated_by: user.id }).select("*").single();
     if (error || !quote) throw new Error(error?.message ?? "No pudimos crear la cotización.");
     const { error: itemsError } = await db.from("quote_items").insert(snapshots.map((item) => ({ ...item, quote_id: quote.id })));
     if (itemsError) throw new Error(itemsError.message);

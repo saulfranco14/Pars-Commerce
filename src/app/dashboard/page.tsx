@@ -431,6 +431,13 @@ export default function DashboardPage() {
               <Plus className="h-4 w-4 shrink-0" aria-hidden />
               Nueva Orden
             </button>
+            <Link
+              href={`/dashboard/${activeTenant.slug}/cotizaciones`}
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:border-accent/40 hover:bg-accent/5 sm:w-auto"
+            >
+              <ClipboardList className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+              Nueva cotización
+            </Link>
           </div>
         </div>
 

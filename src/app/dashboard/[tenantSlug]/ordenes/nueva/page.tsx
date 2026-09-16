@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
-import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import { useActiveTenant } from "@/stores/useTenantStore";
 import { ChevronDown } from "lucide-react";
 import { MemberPickerSheet } from "@/components/orders/MemberPickerSheet";
 import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
@@ -16,14 +16,29 @@ import { teamKey } from "@/features/equipo/helpers/swrKeys";
 export default function NuevaOrdenPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
+  const creditCustomerId = searchParams.get("customer_id");
 
   const teamKeyValue = activeTenant ? teamKey(activeTenant.id) : null;
   const { data: teamData } = useSWR<TeamMember[]>(teamKeyValue, swrFetcher, {
     fallbackData: [],
   });
   const team = Array.isArray(teamData) ? teamData : [];
+
+  type CreditCustomer = {
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+  };
+  const { data: creditCustomer } = useSWR<CreditCustomer>(
+    activeTenant && creditCustomerId
+      ? `/api/customers?customer_id=${encodeURIComponent(creditCustomerId)}&tenant_id=${encodeURIComponent(activeTenant.id)}`
+      : null,
+    swrFetcher,
+  );
 
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -32,6 +47,15 @@ export default function NuevaOrdenPage() {
   const [memberPickerOpen, setMemberPickerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [prefillApplied, setPrefillApplied] = useState(false);
+
+  useEffect(() => {
+    if (!creditCustomer || prefillApplied) return;
+    setCustomerName(creditCustomer.name);
+    setCustomerEmail(creditCustomer.email ?? "");
+    setCustomerPhone(creditCustomer.phone ?? "");
+    setPrefillApplied(true);
+  }, [creditCustomer, prefillApplied]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,6 +68,7 @@ export default function NuevaOrdenPage() {
     try {
       const data = (await createOrder({
         tenant_id: activeTenant.id,
+        customer_id: creditCustomerId || undefined,
         customer_name: customerName.trim() || undefined,
         customer_email: customerEmail.trim() || undefined,
         customer_phone: customerPhone.trim() || undefined,
@@ -82,8 +107,9 @@ export default function NuevaOrdenPage() {
       backLabel="Volver a órdenes"
       description={
         <>
-          Crea un ticket en {activeTenant.name}. Podrás agregar productos y
-          cliente después.
+          {creditCustomer
+            ? `La orden quedará vinculada a ${creditCustomer.name}. Después agrega productos y elige “Agregar a crédito” al cobrar.`
+            : `Crea un ticket en ${activeTenant.name}. Podrás agregar productos y cliente después.`}
         </>
       }
       cancelHref={ordersHref}
