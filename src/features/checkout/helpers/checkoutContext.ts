@@ -22,6 +22,8 @@ export interface CheckoutContext {
   installments: number;
   frequency: number;
   frequencyType: "weeks" | "months";
+  /** Set only after a tenant has connected its own payment-provider account. */
+  merchantPaymentsEnabled: boolean;
   /**
    * Optional override for MP back_urls. Used by QR-payment flows that want
    * the customer to land back on a branded `/q/{token}/...` page instead

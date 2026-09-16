@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- billing tables are introduced by the accompanying migration before generated DB types are refreshed. */
 import { MercadoPagoConfig, PreApproval } from "mercadopago";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getTlacoMercadoPagoAccessToken } from "@/features/payment-providers/tlacoBillingCredentials";
 
 import {
   DEFAULT_FREE_ENTITLEMENTS,
@@ -156,10 +157,8 @@ export async function createBillingCheckout(input: {
   if (planError || !plan || Number(plan.amount_mxn) <= 0) {
     throw new Error("Selecciona un plan de pago disponible");
   }
-  // Tlaco uses the same Mercado Pago account for checkout and membership
-  // charges. The separation is by external_reference and billing tables.
-  const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
-  if (!token) throw new Error("No está configurado Mercado Pago para membresías");
+  // This is Tlaco's own SaaS billing account, never a merchant-sale token.
+  const token = getTlacoMercadoPagoAccessToken();
 
   const account = await getBillingAccount(admin, tenantId);
   if (account.plan_code === planCode && account.status === "active") {
@@ -229,8 +228,8 @@ export async function cancelBilling(input: { admin: Db; tenantId: string; actorI
       .select("mp_preapproval_id")
       .eq("tenant_id", tenantId)
       .maybeSingle();
-    if (pending?.mp_preapproval_id && process.env.MERCADOPAGO_ACCESS_TOKEN) {
-      const mp = new PreApproval(new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN }));
+    if (pending?.mp_preapproval_id) {
+      const mp = new PreApproval(new MercadoPagoConfig({ accessToken: getTlacoMercadoPagoAccessToken() }));
       await mp.update({ id: pending.mp_preapproval_id, body: { status: "cancelled" } });
     }
     await admin.from("tenant_billing_accounts").update({
@@ -240,8 +239,8 @@ export async function cancelBilling(input: { admin: Db; tenantId: string; actorI
   } else {
     if (account.status !== "cancelling") {
       const { data } = await admin.from("tenant_billing_accounts").select("mp_preapproval_id").eq("tenant_id", tenantId).single();
-      if (data?.mp_preapproval_id && process.env.MERCADOPAGO_ACCESS_TOKEN) {
-        const mp = new PreApproval(new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN }));
+      if (data?.mp_preapproval_id) {
+        const mp = new PreApproval(new MercadoPagoConfig({ accessToken: getTlacoMercadoPagoAccessToken() }));
         await mp.update({ id: data.mp_preapproval_id, body: { status: "cancelled" } });
       }
       await admin.from("tenant_billing_accounts").update({

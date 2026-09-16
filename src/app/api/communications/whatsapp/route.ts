@@ -10,6 +10,9 @@ const ENTITY_TABLES = {
   order: "orders",
   loan: "loans",
   subscription: "subscriptions",
+  quote: "quotes",
+  loan_payment: "loan_payments",
+  credit_account: "customer_credit_accounts",
   // Agenda currently schedules orders; it does not have a separate table.
   appointment: "orders",
 } as const;
@@ -21,7 +24,7 @@ function isEntityType(value: unknown): value is EntityType {
 }
 
 function safeMessage(type: EntityType, reference: string): string {
-  const label = type === "loan" ? "tu recordatorio" : type === "subscription" ? "la administración de tu suscripción" : type === "appointment" ? "tu cita" : "tu pedido";
+  const label = type === "loan" ? "tu recordatorio" : type === "subscription" ? "la administración de tu suscripción" : type === "appointment" ? "tu cita" : type === "quote" ? "tu cotización" : type === "loan_payment" ? "tu abono" : type === "credit_account" ? "tu saldo" : "tu pedido";
   return `Hola, te compartimos información sobre ${label} (${reference}).`;
 }
 
@@ -30,7 +33,7 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: { tenant_id?: string; entity_type?: unknown; entity_id?: string; recipient_phone?: string | null; event_type?: string };
+  let body: { tenant_id?: string; entity_type?: unknown; entity_id?: string; recipient_phone?: string | null; event_type?: string; share_url?: string };
   try {
     body = await request.json();
   } catch {
@@ -69,7 +72,11 @@ export async function POST(request: Request) {
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({
-    whatsapp_url: `https://wa.me/${phone.slice(1)}?text=${encodeURIComponent(safeMessage(body.entity_type, body.entity_id.slice(0, 8).toUpperCase()))}`,
-  });
+  const publicUrl = body.share_url?.trim();
+  const ownOrigin = new URL(request.url).origin;
+  if (publicUrl && (!publicUrl.startsWith(`${ownOrigin}/comprobante/`) && !publicUrl.startsWith(`${ownOrigin}/cotizacion/`))) {
+    return NextResponse.json({ error: "La liga para compartir no es válida." }, { status: 400 });
+  }
+  const message = `${safeMessage(body.entity_type, body.entity_id.slice(0, 8).toUpperCase())}${publicUrl ? `\n${publicUrl}` : ""}`;
+  return NextResponse.json({ whatsapp_url: `https://wa.me/${phone.slice(1)}?text=${encodeURIComponent(message)}` });
 }

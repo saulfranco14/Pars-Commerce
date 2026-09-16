@@ -28,6 +28,8 @@ import type {
 } from "@/features/checkout/interfaces/publicCheckout";
 import { handlePartialCheckout } from "@/features/checkout/services/partialCheckoutHandler";
 import { handleSingleCheckout } from "@/features/checkout/services/singleCheckoutHandler";
+import { handleMerchantSingleCheckout } from "@/features/checkout/services/merchantSingleCheckoutHandler";
+import { asPaymentProviderAdmin } from "@/features/payment-providers/connectionService";
 import { handleSubscriptionCheckout } from "@/features/checkout/services/subscriptionCheckoutHandler";
 
 import type { RecurringPurchasesConfig } from "@/types/subscriptions";
@@ -73,10 +75,11 @@ export async function executePublicCheckout({
 
   const mode = toMode(payload.mode, modeOverride);
   const admin = createAdminClient();
+  const providerAdmin = asPaymentProviderAdmin(admin);
 
-  const { data: tenant } = await admin
+  const { data: tenant } = await providerAdmin
     .from("tenants")
-    .select("id, slug, settings, accepting_orders")
+    .select("id, slug, settings, accepting_orders, merchant_payments_v2_enabled")
     .eq("id", payload.tenant_id)
     .eq("public_store_enabled", true)
     .single();
@@ -244,9 +247,20 @@ export async function executePublicCheckout({
     installments,
     frequency,
     frequencyType,
+    merchantPaymentsEnabled: tenant.merchant_payments_v2_enabled === true,
   };
 
-  if (mode === "single") return handleSingleCheckout(ctx);
+  if (mode === "single") {
+    return ctx.merchantPaymentsEnabled
+      ? handleMerchantSingleCheckout(ctx)
+      : handleSingleCheckout(ctx);
+  }
+  if (ctx.merchantPaymentsEnabled) {
+    return NextResponse.json(
+      { error: "Este negocio aún está activando pagos a plazos y suscripciones con su propia cuenta. Elige pago único o consulta al negocio." },
+      { status: 409 },
+    );
+  }
   if (mode === "partial") return handlePartialCheckout(ctx);
   return handleSubscriptionCheckout(ctx);
 }

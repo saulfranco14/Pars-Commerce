@@ -5,15 +5,20 @@ import {
   inputClass,
   labelClass,
 } from "@/features/configuracion/constants/formClasses";
+import { MercadoPagoConnectionCard } from "@/features/payment-providers/components/MercadoPagoConnectionCard";
 
 export function ConfigFinanzasSection({
+  tenantId,
+  canManagePayments,
   monthlyRent,
   onMonthlyRentChange,
   monthlySalesObjective,
   onMonthlySalesObjectiveChange,
 }: ConfigFinanzasSectionProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      <MercadoPagoConnectionCard tenantId={tenantId} canManage={canManagePayments} />
+      <div className="border-t border-border-soft pt-5">
       <p className="text-sm text-muted-foreground">
         Renta y objetivo de ventas para el dashboard.
       </p>
@@ -50,6 +55,7 @@ export function ConfigFinanzasSection({
             placeholder="0.00"
           />
         </div>
+      </div>
       </div>
     </div>
   );
