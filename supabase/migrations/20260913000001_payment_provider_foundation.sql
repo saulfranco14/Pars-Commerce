@@ -180,9 +180,9 @@ CREATE OR REPLACE VIEW public.payment_ledger AS
     p.id AS source_id,
     o.tenant_id AS tenant_id,
     p.order_id AS order_id,
-    p.amount AS amount_gross,
-    COALESCE(p.provider_fee_amount, 0) AS fee_amount,
-    p.amount - COALESCE(p.provider_fee_amount, 0) AS net_amount,
+    p.amount::numeric(12,2) AS amount_gross,
+    COALESCE(p.provider_fee_amount, 0)::numeric(12,2) AS fee_amount,
+    (p.amount - COALESCE(p.provider_fee_amount, 0))::numeric(12,2) AS net_amount,
     p.provider AS provider,
     COALESCE(o.payment_method, 'efectivo') AS payment_method,
     (p.funds_owner = 'tlaco') AS is_platform_custodied,
@@ -195,16 +195,16 @@ CREATE OR REPLACE VIEW public.payment_ledger AS
   WHERE p.status IN ('approved', 'paid')
   UNION ALL
   SELECT
-    'loan_payments'::text, lp.id, lp.tenant_id, NULL::uuid, lp.amount,
-    COALESCE(lp.mp_fee_amount, 0), COALESCE(lp.mp_net_amount, lp.amount),
+    'loan_payments'::text, lp.id, lp.tenant_id, NULL::uuid, lp.amount::numeric(12,2),
+    COALESCE(lp.mp_fee_amount, 0)::numeric(12,2), COALESCE(lp.mp_net_amount, lp.amount)::numeric(12,2),
     CASE WHEN lp.payment_method = 'mercadopago' THEN 'mercadopago' ELSE 'manual' END,
     lp.payment_method, (lp.payment_method = 'mercadopago'), lp.mp_payment_id,
     'approved'::text, 'loan'::text, lp.created_at
   FROM public.loan_payments lp
   UNION ALL
   SELECT
-    'subscription_payments'::text, sp.id, sp.tenant_id, sp.order_id, sp.amount,
-    COALESCE(sp.service_fee, 0), COALESCE(sp.net_amount, sp.amount),
+    'subscription_payments'::text, sp.id, sp.tenant_id, sp.order_id, sp.amount::numeric(12,2),
+    COALESCE(sp.service_fee, 0)::numeric(12,2), COALESCE(sp.net_amount, sp.amount)::numeric(12,2),
     'mercadopago'::text, 'mercadopago'::text, true, sp.mp_payment_id,
     sp.status, 'subscription'::text, sp.created_at
   FROM public.subscription_payments sp
