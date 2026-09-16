@@ -8,10 +8,10 @@
 -- Some older Tlaco databases predate this extension. It is safe to enable
 -- repeatedly and is required by the UUID defaults used below and in the
 -- following assisted-onboarding migration.
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
 
 CREATE TABLE IF NOT EXISTS public.payment_provider_connections (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   provider text NOT NULL CHECK (provider IN ('mercadopago')),
   merchant_account_id text,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS public.payment_provider_connections (
 );
 
 CREATE TABLE IF NOT EXISTS public.payment_provider_terminals (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   connection_id uuid NOT NULL REFERENCES public.payment_provider_connections(id) ON DELETE CASCADE,
   provider_terminal_id text NOT NULL,
   branch text,
@@ -57,7 +57,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_provider_terminals_default
   WHERE is_default = true;
 
 CREATE TABLE IF NOT EXISTS public.payment_provider_events (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   provider text NOT NULL,
   provider_event_id text NOT NULL,
   connection_id uuid REFERENCES public.payment_provider_connections(id) ON DELETE SET NULL,
@@ -78,7 +78,7 @@ CREATE INDEX IF NOT EXISTS idx_payment_provider_events_tenant_received
   ON public.payment_provider_events(tenant_id, received_at DESC);
 
 CREATE TABLE IF NOT EXISTS public.tenant_fee_policies (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   scope text NOT NULL CHECK (scope IN ('membership', 'service', 'sale')),
   provider text,
@@ -99,7 +99,7 @@ CREATE INDEX IF NOT EXISTS idx_tenant_fee_policies_active
   WHERE effective_to IS NULL;
 
 CREATE TABLE IF NOT EXISTS public.tenant_billing_items (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   period date NOT NULL,
   source text NOT NULL CHECK (source IN ('membership', 'service', 'sale_fee')),

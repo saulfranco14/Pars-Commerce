@@ -1,11 +1,11 @@
 -- Assisted business provisioning, commercial quotes, customer credit and
 -- private customer documents.  All mutable money paths are server/RPC only.
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
 
 CREATE TABLE IF NOT EXISTS public.assisted_onboardings (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  provisioning_key uuid NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+  id uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
+  provisioning_key uuid NOT NULL DEFAULT extensions.uuid_generate_v4() UNIQUE,
   tenant_id uuid UNIQUE REFERENCES public.tenants(id) ON DELETE CASCADE,
   owner_user_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   owner_email text NOT NULL,
@@ -29,7 +29,7 @@ CREATE INDEX IF NOT EXISTS assisted_onboardings_status_idx
   ON public.assisted_onboardings(status, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS public.assisted_onboarding_events (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   onboarding_id uuid NOT NULL REFERENCES public.assisted_onboardings(id) ON DELETE CASCADE,
   actor_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   event_type text NOT NULL,
@@ -40,7 +40,7 @@ CREATE INDEX IF NOT EXISTS assisted_onboarding_events_onboarding_idx
   ON public.assisted_onboarding_events(onboarding_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS public.quotes (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   customer_id uuid NOT NULL REFERENCES public.customers(id) ON DELETE RESTRICT,
   parent_quote_id uuid REFERENCES public.quotes(id) ON DELETE SET NULL,
@@ -73,7 +73,7 @@ CREATE INDEX IF NOT EXISTS quotes_tenant_status_idx ON public.quotes(tenant_id, 
 CREATE INDEX IF NOT EXISTS quotes_customer_idx ON public.quotes(tenant_id, customer_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS public.quote_items (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   quote_id uuid NOT NULL REFERENCES public.quotes(id) ON DELETE CASCADE,
   product_id uuid NOT NULL REFERENCES public.products(id) ON DELETE RESTRICT,
   name_snapshot text NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS public.quote_items (
 );
 
 CREATE TABLE IF NOT EXISTS public.quote_events (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   quote_id uuid NOT NULL REFERENCES public.quotes(id) ON DELETE CASCADE,
   actor_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   event_type text NOT NULL,
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS public.quote_events (
 CREATE INDEX IF NOT EXISTS quote_events_quote_idx ON public.quote_events(quote_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS public.customer_credit_accounts (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   customer_id uuid NOT NULL REFERENCES public.customers(id) ON DELETE CASCADE,
   credit_limit numeric(12,2) NOT NULL CHECK (credit_limit >= 0),
@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS public.customer_credit_accounts (
 CREATE INDEX IF NOT EXISTS customer_credit_accounts_tenant_idx ON public.customer_credit_accounts(tenant_id, status);
 
 CREATE TABLE IF NOT EXISTS public.customer_credit_movements (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   account_id uuid NOT NULL REFERENCES public.customer_credit_accounts(id) ON DELETE CASCADE,
   tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   movement_type text NOT NULL CHECK (movement_type IN (
@@ -143,7 +143,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS customer_credit_charge_order_unique
 -- Stores the exact outcome of an abono so a browser/network retry cannot
 -- create a second payment or a second saldo a favor.
 CREATE TABLE IF NOT EXISTS public.credit_payment_requests (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   account_id uuid NOT NULL REFERENCES public.customer_credit_accounts(id) ON DELETE CASCADE,
   idempotency_key uuid NOT NULL,
   applied_amount numeric(12,2) NOT NULL DEFAULT 0,
@@ -163,7 +163,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS loans_credit_account_order_unique
   WHERE credit_account_id IS NOT NULL AND order_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS public.customer_document_links (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   entity_type text NOT NULL CHECK (entity_type IN ('quote', 'order', 'loan_payment', 'credit_account')),
   entity_id uuid NOT NULL,
@@ -178,7 +178,7 @@ CREATE INDEX IF NOT EXISTS customer_document_links_entity_idx
   WHERE revoked_at IS NULL;
 
 CREATE TABLE IF NOT EXISTS public.customer_document_link_accesses (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   document_link_id uuid NOT NULL REFERENCES public.customer_document_links(id) ON DELETE CASCADE,
   ip_hash text,
   user_agent text,
