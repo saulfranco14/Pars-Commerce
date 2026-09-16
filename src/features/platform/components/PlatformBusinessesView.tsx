@@ -90,6 +90,11 @@ export function PlatformBusinessesView() {
 
   return (
     <>
+      <div className="flex justify-end">
+        <Link href="/dashboard/plataforma/negocios/nuevo" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground">
+          <Building2 className="h-4 w-4" aria-hidden />Dar de alta negocio
+        </Link>
+      </div>
       <section className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Resumen de negocios">
         <BusinessFilter label="Todos" value={stats.total} active={filter === "all"} onClick={() => changeFilter("all")} />
         <BusinessFilter label="Operando" value={stats.accepting_orders} active={filter === "accepting_orders"} onClick={() => changeFilter("accepting_orders")} tone="success" />

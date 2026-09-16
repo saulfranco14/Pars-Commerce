@@ -13,6 +13,8 @@ export interface FormSectionProps {
 }
 
 export interface ConfigFinanzasSectionProps {
+  tenantId: string;
+  canManagePayments: boolean;
   monthlyRent: string;
   onMonthlyRentChange: (v: string) => void;
   monthlySalesObjective: string;

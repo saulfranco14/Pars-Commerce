@@ -26,6 +26,7 @@ import {
 import { AddendumSheet } from "@/features/orders/components/order/AddendumSheet";
 import type { OrderActionButtonsProps } from "@/features/orders/interfaces/orderActionButtons";
 import { GenerateLinkModal } from "./GenerateLinkModal";
+import { OrderCreditSheet } from "./OrderCreditSheet";
 
 function isExpressOrderEnabled(settings: unknown): boolean {
   if (!settings || typeof settings !== "object") return false;
@@ -50,6 +51,7 @@ export function OrderActionButtons({
     handleMarkAsPaidWithMethod,
     handleGeneratePaymentLink,
     handleExpressToPayment,
+    fetchOrder,
   } = useOrder();
   const activeTenant = useActiveTenant();
   const activeRole = useTenantStore((s) => s.activeRole)();
@@ -60,6 +62,7 @@ export function OrderActionButtons({
     useState(false);
   const [confirmPaymentModalOpen, setConfirmPaymentModalOpen] = useState(false);
   const [generateLinkModalOpen, setGenerateLinkModalOpen] = useState(false);
+  const [creditSheetOpen, setCreditSheetOpen] = useState(false);
 
   if (!order) return null;
 
@@ -254,6 +257,17 @@ export function OrderActionButtons({
               <Smartphone className="h-4 w-4 shrink-0" aria-hidden />
               Generar cobro (MercadoPago)
             </button>
+            {isOwner && (
+              <button
+                type="button"
+                onClick={() => setCreditSheetOpen(true)}
+                disabled={actionLoading}
+                className={`w-full min-w-0 shrink-0 sm:w-auto ${btnBase} border border-border bg-surface text-foreground hover:bg-surface-raised focus-visible:ring-accent`}
+              >
+                <Banknote className="h-4 w-4 shrink-0" aria-hidden />
+                Agregar a crédito
+              </button>
+            )}
           </>
         )}
         {(order.status === "pending_payment" ||
@@ -364,6 +378,17 @@ export function OrderActionButtons({
         customerEmail={order.customer_email}
         loading={actionLoading}
       />
+      {activeTenant && (
+        <OrderCreditSheet
+          open={creditSheetOpen}
+          onClose={() => setCreditSheetOpen(false)}
+          tenantId={activeTenant.id}
+          orderId={order.id}
+          customerId={order.customer_id}
+          total={Number(order.total)}
+          onCharged={fetchOrder}
+        />
+      )}
     </div>
   );
 }

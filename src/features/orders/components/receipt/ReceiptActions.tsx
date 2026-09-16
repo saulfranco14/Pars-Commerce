@@ -5,9 +5,12 @@ import { Printer, Download, Copy, Check, ChevronDown, Share2 } from "lucide-reac
 import { captureReceiptAsPng, downloadReceiptBlob } from "@/lib/receiptExport";
 import { useOrder } from "@/features/orders/hooks/useOrder";
 import { ReceiptPreview } from "@/features/orders/components/receipt/ReceiptPreview";
+import { CustomerDocumentShareAction } from "@/components/communications/CustomerDocumentShareAction";
+import { useActiveTenant } from "@/stores/useTenantStore";
 
 export function ReceiptActions() {
   const { order, businessName, businessAddress, ticketOptions, logoUrl, setError } = useOrder();
+  const activeTenant = useActiveTenant();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -160,6 +163,18 @@ export function ReceiptActions() {
                 {copied ? "¡Copiado!" : "Copiar imagen"}
               </button>
             </div>
+            {activeTenant && (
+              <div className="mt-3 border-t border-border-soft pt-3">
+                <p className="mb-2 text-xs font-semibold text-muted-foreground">Comprobante privado para el cliente</p>
+                <CustomerDocumentShareAction
+                  tenantId={activeTenant.id}
+                  entityType="order"
+                  entityId={order.id}
+                  customerPhone={order.customer_phone}
+                  customerEmail={order.customer_email}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
