@@ -141,7 +141,6 @@ export async function POST(request: Request) {
   const tenant = loan.tenant as unknown as { name: string } | null;
 
   if (customer?.email && tenant?.name) {
-    const newAmountPaid = loan.amount_paid + amount;
     const newAmountPending = amountPending - amount;
     const isFullyPaid = newAmountPending <= 0;
 
