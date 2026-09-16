@@ -1,6 +1,8 @@
 -- Assisted business provisioning, commercial quotes, customer credit and
 -- private customer documents.  All mutable money paths are server/RPC only.
 
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE IF NOT EXISTS public.assisted_onboardings (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   provisioning_key uuid NOT NULL DEFAULT uuid_generate_v4() UNIQUE,

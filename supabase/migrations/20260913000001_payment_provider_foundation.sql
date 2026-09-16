@@ -5,6 +5,11 @@
 -- tagged as `funds_owner = 'tlaco'`, while new merchant connections produce
 -- `funds_owner = 'tenant'` rows and never enter Tlaco settlements.
 
+-- Some older Tlaco databases predate this extension. It is safe to enable
+-- repeatedly and is required by the UUID defaults used below and in the
+-- following assisted-onboarding migration.
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE IF NOT EXISTS public.payment_provider_connections (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
