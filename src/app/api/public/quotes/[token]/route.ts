@@ -49,13 +49,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     const { data: validItems } = await db.from("products").select("id").eq("tenant_id", quote.tenant_id).is("deleted_at", null).in("id", requestedIds);
     if ((validItems?.length ?? 0) !== requestedIds.length) return NextResponse.json({ error: "Uno de los artículos ya no está disponible. Recarga la cotización e inténtalo de nuevo." }, { status: 409 });
   }
-  const { error: updateError } = await db.from("quotes").update({
+  // The status predicate is deliberate: two taps or two browser retries can
+  // never record two customer answers for the same public document.
+  const { data: updatedQuote, error: updateError } = await db.from("quotes").update({
     status,
     customer_change_note: body.action === "changes" ? body.reason?.trim() || null : null,
     customer_requested_items: body.action === "changes" ? requestedItems : null,
     updated_at: new Date().toISOString(),
-  }).eq("id", quote.id);
+  }).eq("id", quote.id).in("status", ["ready_to_send", "sent", "viewed"]).select("id").maybeSingle();
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+  if (!updatedQuote) return NextResponse.json({ error: "Esta cotización ya recibió una respuesta. Actualiza la página para ver su estado actual." }, { status: 409 });
   const { error: eventError } = await db.from("quote_events").insert({ quote_id: quote.id, event_type: status, source: "customer", reason: body.reason?.trim() || null, metadata: body.action === "changes" ? { requested_items: requestedItems } : {} });
   if (eventError) return NextResponse.json({ error: eventError.message }, { status: 500 });
   return NextResponse.json({ success: true, status });
