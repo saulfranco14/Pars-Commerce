@@ -65,6 +65,18 @@ const STATUS: Record<string, string> = {
   superseded: "Reemplazada",
 };
 
+const EVENT_LABEL: Record<string, string> = {
+  created: "Creada",
+  share_opened: "Compartida",
+  viewed: "Vista por cliente",
+  changes_requested: "Cambios solicitados",
+  revision_created: "Nueva versión creada",
+  revision_updated: "Versión ajustada",
+  superseded: "Versión reemplazada",
+  converted: "Convertida en orden",
+  rejected: "Rechazada",
+};
+
 const money = (amount: number | string) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(amount));
 
@@ -93,15 +105,12 @@ export default function CotizacionesPage() {
       grouped.set(quote.quote_number, current);
     }
     return [...grouped.values()]
-      .map((versions) => ({
-        versions: versions.sort((a, b) => (b.version ?? 1) - (a.version ?? 1)),
-      }))
-      .sort((a, b) => new Date(b.versions[0].valid_until).getTime() - new Date(a.versions[0].valid_until).getTime());
+      .map((versions) => {
+        const sorted = versions.sort((a, b) => (b.version ?? 1) - (a.version ?? 1));
+        return { versions: sorted, current: sorted.find((quote) => quote.status !== "superseded") ?? sorted[0] };
+      })
+      .sort((a, b) => new Date(b.current.valid_until).getTime() - new Date(a.current.valid_until).getTime());
   }, [quotes]);
-  const detailVersions = useMemo(
-    () => detail ? (quotes ?? []).filter((quote) => quote.quote_number === detail.quote_number).sort((a, b) => (a.version ?? 1) - (b.version ?? 1)) : [],
-    [detail, quotes],
-  );
 
   function handleCreated(newQuote: CreatedQuote) {
     setCreated(newQuote);
@@ -235,15 +244,17 @@ export default function CotizacionesPage() {
       {isLoading ? <LoadingBlock message="Cargando cotizaciones…" variant="skeleton" /> : quotes?.length ? (
         <div className="grid max-w-5xl gap-3 sm:grid-cols-2">
           {quoteGroups.map((group) => {
-            const quote = group.versions[0];
+            const quote = group.current;
             const versionLabel = group.versions.length > 1 ? `${group.versions.length} versiones` : `Versión ${quote.version ?? 1}`;
             const changeRequest = group.versions.find((version) => version.customer_change_note);
+            const activity = group.versions.flatMap((version) => (version.events ?? []).map((event) => ({ ...event, version: version.version ?? 1 }))).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+            const requestNote = changeRequest?.customer_change_note ?? activity.find((event) => event.event_type === "changes_requested")?.reason;
             return <article key={quote.quote_number} className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="font-mono text-xs text-muted-foreground">{quote.quote_number} · {versionLabel}</p><h2 className="mt-1 truncate font-bold text-foreground">{quote.customer?.name ?? "Cliente"}</h2></div><span className="shrink-0 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-bold text-accent">{STATUS[quote.status] ?? quote.status}</span></div>
               <p className="mt-3 text-2xl font-bold tabular-nums text-foreground">{money(quote.total)}</p>
               <p className="mt-1 text-xs text-muted-foreground">Vigente hasta {new Date(quote.valid_until).toLocaleDateString("es-MX")}</p>
-              {changeRequest && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900"><p className="font-semibold">Cambios solicitados por el cliente</p>{changeRequest.customer_change_note && <p className="mt-1.5 border-t border-amber-200/70 pt-1.5 leading-relaxed">Nota: “{changeRequest.customer_change_note}”</p>}<p className="mt-1.5 text-amber-800">La versión más reciente ya incluye la selección solicitada.</p></div>}
-              {group.versions.length > 1 && <div className="mt-3 rounded-xl bg-surface-raised px-3 py-2 text-xs text-muted-foreground"><p className="font-semibold text-foreground">Historial</p><p className="mt-1">{group.versions.slice().reverse().map((version) => `V${version.version ?? 1}: ${STATUS[version.status] ?? version.status}`).join(" · ")}</p></div>}
+              {(changeRequest || requestNote) && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900"><p className="font-semibold">Cambios solicitados por el cliente</p>{requestNote && <p className="mt-1.5 border-t border-amber-200/70 pt-1.5 leading-relaxed">Nota: “{requestNote}”</p>}<p className="mt-1.5 text-amber-800">La versión más reciente ya incluye la selección solicitada.</p></div>}
+              {(group.versions.length > 1 || activity.length > 1) && <div className="mt-3 rounded-xl bg-surface-raised px-3 py-2 text-xs text-muted-foreground"><p className="font-semibold text-foreground">Historial</p><div className="mt-1 space-y-1">{activity.slice(-4).map((event, index) => <p key={`${event.created_at}-${index}`}>V{event.version} · {EVENT_LABEL[event.event_type] ?? event.event_type}{event.reason ? `: ${event.reason}` : ""}</p>)}</div></div>}
               <div className="mt-4 space-y-2">
                 {["ready_to_send", "sent", "viewed"].includes(quote.status) && <button type="button" disabled={saving} onClick={() => void shareQuote(quote)} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent px-3 text-sm font-bold text-accent-foreground disabled:opacity-50"><Send className="h-4 w-4" />Compartir con cliente</button>}
                 {["changes_requested", "conversion_blocked"].includes(quote.status) && <button type="button" disabled={saving} onClick={() => void createRevision(quote)} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent px-3 text-sm font-bold text-accent-foreground disabled:opacity-50"><Undo2 className="h-4 w-4" />Preparar nueva versión</button>}
