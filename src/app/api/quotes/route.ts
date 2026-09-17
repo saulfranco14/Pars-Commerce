@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   if (!tenantId) return NextResponse.json({ error: "tenant_id es requerido." }, { status: 400 });
   if (!await requirePermission(user.id, tenantId, "orders.read")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const db = createAdminClient() as unknown as SupabaseClient<any>;
-  const { data, error } = await db.from("quotes").select("*, customer:customers(id, name, email, phone), items:quote_items(*)").eq("tenant_id", tenantId).order("created_at", { ascending: false });
+  const { data, error } = await db.from("quotes").select("*, customer:customers(id, name, email, phone), items:quote_items(*), events:quote_events(event_type, source, reason, metadata, created_at)").eq("tenant_id", tenantId).order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data ?? []);
 }

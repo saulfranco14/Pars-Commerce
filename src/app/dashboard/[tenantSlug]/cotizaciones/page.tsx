@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useSWR, { mutate } from "swr";
 import {
   CheckCircle2,
@@ -35,6 +35,8 @@ type QuoteItem = {
 type Quote = {
   id: string;
   quote_number: string;
+  version?: number;
+  parent_quote_id?: string | null;
   status: string;
   total: number | string;
   subtotal?: number | string;
@@ -43,6 +45,7 @@ type Quote = {
   customer_requested_items?: Array<{ product_id: string; quantity: number }> | null;
   customer?: { name?: string; phone?: string | null; email?: string | null } | null;
   items?: QuoteItem[];
+  events?: Array<{ event_type: string; source?: string | null; reason?: string | null; created_at: string }>;
 };
 type ShareQuote = { quote: Quote; url: string };
 
@@ -82,6 +85,23 @@ export default function CotizacionesPage() {
 
   const quoteKey = tenant ? `/api/quotes?tenant_id=${encodeURIComponent(tenant.id)}` : null;
   const { data: quotes, isLoading } = useSWR<Quote[]>(quoteKey, swrFetcher, { fallbackData: [] });
+  const quoteGroups = useMemo(() => {
+    const grouped = new Map<string, Quote[]>();
+    for (const quote of quotes ?? []) {
+      const current = grouped.get(quote.quote_number) ?? [];
+      current.push(quote);
+      grouped.set(quote.quote_number, current);
+    }
+    return [...grouped.values()]
+      .map((versions) => ({
+        versions: versions.sort((a, b) => (b.version ?? 1) - (a.version ?? 1)),
+      }))
+      .sort((a, b) => new Date(b.versions[0].valid_until).getTime() - new Date(a.versions[0].valid_until).getTime());
+  }, [quotes]);
+  const detailVersions = useMemo(
+    () => detail ? (quotes ?? []).filter((quote) => quote.quote_number === detail.quote_number).sort((a, b) => (a.version ?? 1) - (b.version ?? 1)) : [],
+    [detail, quotes],
+  );
 
   function handleCreated(newQuote: CreatedQuote) {
     setCreated(newQuote);
@@ -152,7 +172,11 @@ export default function CotizacionesPage() {
       await mutate(quoteKey);
       setDetail(null);
       if (!result.quote) throw new Error("No pudimos abrir la nueva versión.");
-      setRevisionQuote(result.quote);
+      setRevisionQuote({
+        ...result.quote,
+        customer_change_note: quote.customer_change_note,
+        customer_requested_items: quote.customer_requested_items,
+      });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No pudimos crear la nueva versión.");
     } finally {
@@ -210,12 +234,16 @@ export default function CotizacionesPage() {
 
       {isLoading ? <LoadingBlock message="Cargando cotizaciones…" variant="skeleton" /> : quotes?.length ? (
         <div className="grid max-w-5xl gap-3 sm:grid-cols-2">
-          {quotes.map((quote) => (
-            <article key={quote.id} className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
-              <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="font-mono text-xs text-muted-foreground">{quote.quote_number}</p><h2 className="mt-1 truncate font-bold text-foreground">{quote.customer?.name ?? "Cliente"}</h2></div><span className="shrink-0 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-bold text-accent">{STATUS[quote.status] ?? quote.status}</span></div>
+          {quoteGroups.map((group) => {
+            const quote = group.versions[0];
+            const versionLabel = group.versions.length > 1 ? `${group.versions.length} versiones` : `Versión ${quote.version ?? 1}`;
+            const changeRequest = group.versions.find((version) => version.customer_change_note);
+            return <article key={quote.quote_number} className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="font-mono text-xs text-muted-foreground">{quote.quote_number} · {versionLabel}</p><h2 className="mt-1 truncate font-bold text-foreground">{quote.customer?.name ?? "Cliente"}</h2></div><span className="shrink-0 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-bold text-accent">{STATUS[quote.status] ?? quote.status}</span></div>
               <p className="mt-3 text-2xl font-bold tabular-nums text-foreground">{money(quote.total)}</p>
               <p className="mt-1 text-xs text-muted-foreground">Vigente hasta {new Date(quote.valid_until).toLocaleDateString("es-MX")}</p>
-              {quote.status === "changes_requested" && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900"><p className="font-semibold">El cliente ajustó su selección.</p>{quote.customer_change_note && <p className="mt-1.5 border-t border-amber-200/70 pt-1.5 leading-relaxed">Nota: “{quote.customer_change_note}”</p>}<p className="mt-1.5 text-amber-800">Al preparar la nueva versión verás sus cantidades y artículos ya aplicados.</p></div>}
+              {changeRequest && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900"><p className="font-semibold">Cambios solicitados por el cliente</p>{changeRequest.customer_change_note && <p className="mt-1.5 border-t border-amber-200/70 pt-1.5 leading-relaxed">Nota: “{changeRequest.customer_change_note}”</p>}<p className="mt-1.5 text-amber-800">La versión más reciente ya incluye la selección solicitada.</p></div>}
+              {group.versions.length > 1 && <div className="mt-3 rounded-xl bg-surface-raised px-3 py-2 text-xs text-muted-foreground"><p className="font-semibold text-foreground">Historial</p><p className="mt-1">{group.versions.slice().reverse().map((version) => `V${version.version ?? 1}: ${STATUS[version.status] ?? version.status}`).join(" · ")}</p></div>}
               <div className="mt-4 space-y-2">
                 {["ready_to_send", "sent", "viewed"].includes(quote.status) && <button type="button" disabled={saving} onClick={() => void shareQuote(quote)} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent px-3 text-sm font-bold text-accent-foreground disabled:opacity-50"><Send className="h-4 w-4" />Compartir con cliente</button>}
                 {["changes_requested", "conversion_blocked"].includes(quote.status) && <button type="button" disabled={saving} onClick={() => void createRevision(quote)} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent px-3 text-sm font-bold text-accent-foreground disabled:opacity-50"><Undo2 className="h-4 w-4" />Preparar nueva versión</button>}
@@ -223,8 +251,8 @@ export default function CotizacionesPage() {
                 {quote.status === "draft" && <button type="button" disabled={saving} onClick={() => void updateStatus(quote.id, "ready").then(() => setMessage("Cotización lista para compartir.")).catch((error: unknown) => setMessage(error instanceof Error ? error.message : "No pudimos actualizar la cotización."))} className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-foreground">Dejar lista para compartir</button>}
                 {quote.status === "internal_review" && <button type="button" disabled={saving} onClick={() => void updateStatus(quote.id, "ready").then(() => setMessage("Cotización lista para compartir.")).catch((error: unknown) => setMessage(error instanceof Error ? error.message : "No pudimos actualizar la cotización."))} className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-foreground">Dejar lista para compartir</button>}
               </div>
-            </article>
-          ))}
+            </article>;
+          })}
         </div>
       ) : <div className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center"><FileText className="mx-auto h-8 w-8 text-accent" /><h2 className="mt-3 font-bold text-foreground">Aún no hay cotizaciones</h2><p className="mt-1 text-sm text-muted-foreground">Crea una para compartir precios y convertirla en orden cuando el cliente acepte.</p></div>}
 

@@ -32,6 +32,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   const { db, quote } = await quoteForToken(token);
   if (!quote) return NextResponse.json({ error: "Cotización no encontrada." }, { status: 404 });
   if (new Date(quote.valid_until) < new Date()) return NextResponse.json({ error: "Esta cotización venció." }, { status: 410 });
+  if (body.action === "changes" && !["ready_to_send", "sent", "viewed"].includes(quote.status)) {
+    return NextResponse.json({ error: "Esta cotización ya tiene una respuesta registrada. Espera la nueva versión del negocio." }, { status: 409 });
+  }
   if (body.action === "accept") {
     const { data, error } = await db.rpc("convert_quote_to_order", { p_quote_id: quote.id, p_actor_id: null, p_acceptance_source: "customer" });
     if (error) return NextResponse.json({ error: error.message }, { status: 409 });
@@ -46,12 +49,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     const { data: validItems } = await db.from("products").select("id").eq("tenant_id", quote.tenant_id).is("deleted_at", null).in("id", requestedIds);
     if ((validItems?.length ?? 0) !== requestedIds.length) return NextResponse.json({ error: "Uno de los artículos ya no está disponible. Recarga la cotización e inténtalo de nuevo." }, { status: 409 });
   }
-  await db.from("quotes").update({
+  const { error: updateError } = await db.from("quotes").update({
     status,
     customer_change_note: body.action === "changes" ? body.reason?.trim() || null : null,
     customer_requested_items: body.action === "changes" ? requestedItems : null,
     updated_at: new Date().toISOString(),
   }).eq("id", quote.id);
-  await db.from("quote_events").insert({ quote_id: quote.id, event_type: status, source: "customer", reason: body.reason?.trim() || null, metadata: body.action === "changes" ? { requested_items: requestedItems } : {} });
+  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+  const { error: eventError } = await db.from("quote_events").insert({ quote_id: quote.id, event_type: status, source: "customer", reason: body.reason?.trim() || null, metadata: body.action === "changes" ? { requested_items: requestedItems } : {} });
+  if (eventError) return NextResponse.json({ error: eventError.message }, { status: 500 });
   return NextResponse.json({ success: true, status });
 }

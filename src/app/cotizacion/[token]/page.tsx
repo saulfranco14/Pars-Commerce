@@ -108,7 +108,8 @@ export default function CotizacionPublicaPage() {
       setRequestingChanges(false);
       setReason("");
       setNotice(action === "changes" ? "Tu solicitud fue enviada. El negocio preparará una nueva versión para ti." : action === "accept" ? "¡Listo! El negocio recibió tu aceptación y continuará con tu orden." : "Registramos que no deseas continuar con esta cotización.");
-      await mutate();
+      const nextStatus = action === "changes" ? "changes_requested" : action === "reject" ? "rejected" : result.result === "converted" ? "converted" : "conversion_blocked";
+      await mutate((current) => current ? { ...current, status: nextStatus } : current, false);
     } catch (caught) {
       setNotice(caught instanceof Error ? caught.message : "No pudimos registrar tu respuesta.");
     } finally {
