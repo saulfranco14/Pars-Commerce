@@ -88,9 +88,9 @@ export function OrderItemsTable() {
         )}
       </div>
 
-      <div className="flex min-h-52 min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-contain md:max-h-75">
+      <div className="flex min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-contain md:max-h-75">
         {items.length === 0 ? (
-          <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center">
+          <div className="flex min-h-52 flex-col items-center justify-center p-6 text-center">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-border-soft text-muted">
               <Package className="h-5 w-5" aria-hidden />
             </span>

@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   ClipboardList,
   Clock,
+  CreditCard,
   Globe2,
   Plus,
   Repeat,
@@ -52,11 +53,17 @@ import { getPeriodDates } from "@/features/ventas/helpers/periodDates";
 import { salesByUser } from "@/features/ventas/helpers/salesByUser";
 import { orderContentType } from "@/features/orders/helpers/orderContentType";
 
+type PaymentConnection = {
+  provider: "mercadopago";
+  status: "pending" | "connected" | "expired" | "revoked" | "failed";
+};
+
 function FirstSaleGuide({
   tenantSlug,
   catalogReady,
   catalogLoading,
   orderCreated,
+  paymentsConnected,
   storePublished,
   onCreateOrder,
 }: {
@@ -64,13 +71,14 @@ function FirstSaleGuide({
   catalogReady: boolean;
   catalogLoading: boolean;
   orderCreated: boolean;
+  paymentsConnected: boolean;
   storePublished: boolean;
   onCreateOrder: () => void;
 }) {
-  const completedSteps = [catalogReady, orderCreated, storePublished].filter(
+  const completedSteps = [catalogReady, orderCreated, paymentsConnected, storePublished].filter(
     Boolean,
   ).length;
-  const currentStep = !catalogReady ? 1 : !orderCreated ? 2 : 3;
+  const currentStep = !catalogReady ? 1 : !orderCreated ? 2 : !paymentsConnected ? 3 : 4;
   const catalogLabel = catalogLoading
     ? "Revisando tu catálogo…"
     : catalogReady
@@ -111,11 +119,11 @@ function FirstSaleGuide({
           </p>
         </div>
         <span className="inline-flex w-fit rounded-full border border-border bg-surface-raised px-2.5 py-1 text-xs font-medium text-muted-foreground">
-          {completedSteps} de 3 listos
+          {completedSteps} de 4 listos
         </span>
       </div>
 
-      <div className="mt-4 grid gap-3 lg:grid-cols-3">
+      <div className="mt-4 grid gap-3 lg:grid-cols-2">
         <Link
           href={`/dashboard/${tenantSlug}/productos`}
           className={`group flex min-h-25 items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 ${stepClass(catalogReady, currentStep === 1)}`}
@@ -176,10 +184,37 @@ function FirstSaleGuide({
         </button>
 
         <Link
-          href={`/dashboard/${tenantSlug}/sitio-web`}
-          className={`group flex min-h-25 items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 ${stepClass(storePublished, currentStep === 3)}`}
+          href={`/dashboard/${tenantSlug}/configuracion?tab=finanzas`}
+          className={`group flex min-h-25 items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 ${stepClass(paymentsConnected, currentStep === 3)}`}
         >
-          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClass(storePublished, currentStep === 3)}`}>
+          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClass(paymentsConnected, currentStep === 3)}`}>
+            {paymentsConnected ? (
+              <CheckCircle2 className="h-5 w-5" aria-hidden />
+            ) : (
+              <CreditCard className="h-5 w-5" aria-hidden />
+            )}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-xs font-semibold text-muted-foreground">
+              3. Cobros digitales
+            </span>
+            <span className="mt-0.5 block text-sm font-semibold text-foreground">
+              {paymentsConnected ? "Mercado Pago conectado" : "Conecta tu cuenta de Mercado Pago"}
+            </span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              {paymentsConnected
+                ? "Las ventas web llegarán directo a la cuenta del negocio."
+                : "Acepta el anexo y autoriza tu propia cuenta; Tlaco no recibe esos fondos."}
+            </span>
+          </span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5" aria-hidden />
+        </Link>
+
+        <Link
+          href={`/dashboard/${tenantSlug}/sitio-web`}
+          className={`group flex min-h-25 items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 ${stepClass(storePublished, currentStep === 4)}`}
+        >
+          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClass(storePublished, currentStep === 4)}`}>
             {storePublished ? (
               <CheckCircle2 className="h-5 w-5" aria-hidden />
             ) : (
@@ -188,7 +223,7 @@ function FirstSaleGuide({
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-xs font-semibold text-muted-foreground">
-              3. Tienda web
+              4. Tienda web
             </span>
             <span className="mt-0.5 block text-sm font-semibold text-foreground">
               {storePublished ? "Tu tienda ya está publicada" : "Activa y comparte tu enlace"}
@@ -206,7 +241,7 @@ function FirstSaleGuide({
   );
 }
 
-function AssistedSetupGuide({ tenantSlug }: { tenantSlug: string }) {
+function AssistedSetupGuide({ tenantSlug, paymentsConnected }: { tenantSlug: string; paymentsConnected: boolean }) {
   return (
     <section className="rounded-2xl border border-accent/20 bg-accent/5 p-4 shadow-sm sm:p-5" aria-labelledby="alta-asistida">
       <p className="text-xs font-semibold uppercase tracking-wider text-accent">Alta asistida</p>
@@ -215,7 +250,7 @@ function AssistedSetupGuide({ tenantSlug }: { tenantSlug: string }) {
       <div className="mt-4 grid gap-3 md:grid-cols-3">
         <Link href={`/dashboard/${tenantSlug}/configuracion`} className="min-h-24 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent/40"><p className="text-xs font-semibold text-accent">1. Datos del negocio</p><p className="mt-1 text-sm font-semibold text-foreground">Revisa contacto y horarios</p></Link>
         <Link href={`/dashboard/${tenantSlug}/productos`} className="min-h-24 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent/40"><p className="text-xs font-semibold text-accent">2. Catálogo</p><p className="mt-1 text-sm font-semibold text-foreground">Confirma precios e inventario</p></Link>
-        <Link href={`/dashboard/${tenantSlug}/configuracion`} className="min-h-24 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent/40"><p className="text-xs font-semibold text-accent">3. Cobros y publicación</p><p className="mt-1 text-sm font-semibold text-foreground">Conecta Mercado Pago y haz una prueba</p></Link>
+        <Link href={`/dashboard/${tenantSlug}/configuracion?tab=finanzas`} className={`min-h-24 rounded-xl border p-3 transition-colors ${paymentsConnected ? "border-emerald-200 bg-emerald-50 hover:border-emerald-300" : "border-border bg-surface hover:border-accent/40"}`}><p className={`text-xs font-semibold ${paymentsConnected ? "text-emerald-700" : "text-accent"}`}>3. Cobros del negocio</p><p className="mt-1 text-sm font-semibold text-foreground">{paymentsConnected ? "Mercado Pago ya está conectado" : "Conecta tu cuenta de Mercado Pago"}</p><p className="mt-1 text-xs text-muted-foreground">{paymentsConnected ? "Las ventas digitales se acreditarán directamente en tu cuenta." : "El dinero de tus ventas llega a tu cuenta, no a Tlaco."}</p></Link>
       </div>
     </section>
   );
@@ -349,6 +384,18 @@ export default function DashboardPage() {
     }
   }, [activeTenant?.id, ordersCreatedByTenant]);
 
+  const paymentConnectionsKey = activeTenant
+    ? `/api/payment-providers/connections?tenant_id=${encodeURIComponent(activeTenant.id)}`
+    : null;
+  const { data: paymentConnections = [] } = useSWR<PaymentConnection[]>(
+    paymentConnectionsKey,
+    swrFetcher,
+    { fallbackData: [] },
+  );
+  const paymentsConnected = paymentConnections.some(
+    (connection) => connection.provider === "mercadopago" && connection.status === "connected",
+  );
+
   if (!activeTenant) {
     return null;
   }
@@ -400,7 +447,7 @@ export default function DashboardPage() {
   const orderCreated =
     orders.length > 0 || ordersCreatedByTenant[activeTenant.id] === true;
   const storePublished = activeTenant.public_store_enabled === true;
-  const showFirstSaleGuide = !catalogReady || !orderCreated || !storePublished;
+  const showFirstSaleGuide = !catalogReady || !orderCreated || !paymentsConnected || !storePublished;
   const assistedSettings = activeTenant.settings as Record<string, unknown> | null | undefined;
   const isAssistedOnboarding = assistedSettings?.assisted_onboarding === true;
 
@@ -467,7 +514,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {isAssistedOnboarding && <AssistedSetupGuide tenantSlug={activeTenant.slug} />}
+        {isAssistedOnboarding && <AssistedSetupGuide tenantSlug={activeTenant.slug} paymentsConnected={paymentsConnected} />}
 
         {showFirstSaleGuide && !isAssistedOnboarding && (
           <FirstSaleGuide
@@ -475,6 +522,7 @@ export default function DashboardPage() {
             catalogReady={catalogReady}
             catalogLoading={catalogLoading}
             orderCreated={orderCreated}
+            paymentsConnected={paymentsConnected}
             storePublished={storePublished}
             onCreateOrder={() => setCreateOrderOpen(true)}
           />

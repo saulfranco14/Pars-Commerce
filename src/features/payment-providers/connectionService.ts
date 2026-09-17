@@ -283,6 +283,26 @@ export async function refreshConnectionIfNeeded(admin: ProviderDb, row: Connecti
 
 export async function enableMerchantPayments(admin: ProviderDb, tenantId: string) {
   await admin.from("tenants").update({ merchant_payments_v2_enabled: true }).eq("id", tenantId);
+
+  // An assisted business is ready for the commercial review once its owner
+  // connects a receiver account. This does not publish the store or enable
+  // orders by itself; it only advances the auditable onboarding checklist.
+  const { data: completedOnboardings } = await admin
+    .from("assisted_onboardings")
+    .update({ status: "ready", updated_at: new Date().toISOString() })
+    .eq("tenant_id", tenantId)
+    .in("status", ["accepted", "payments_pending"])
+    .select("id");
+
+  if (completedOnboardings?.length) {
+    await admin.from("assisted_onboarding_events").insert(
+      completedOnboardings.map((onboarding) => ({
+        onboarding_id: onboarding.id,
+        event_type: "mercadopago_connected",
+        metadata: { provider: "mercadopago" },
+      })),
+    );
+  }
 }
 
 export function decryptOauthVerifier(connection: ConnectionRow) {
