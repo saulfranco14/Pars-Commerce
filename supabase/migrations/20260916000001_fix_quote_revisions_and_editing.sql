@@ -1,4 +1,10 @@
--- Quote revisions are cloned from a client-visible version.  Keep all column
+-- Keep the customer's requested selection and note with the original document.
+-- They are copied into the next staff draft; the customer never edits prices.
+ALTER TABLE public.quotes
+  ADD COLUMN IF NOT EXISTS customer_change_note text,
+  ADD COLUMN IF NOT EXISTS customer_requested_items jsonb;
+
+-- Quote revisions are cloned from a client-visible version. Keep all column
 -- references qualified: `quote_id` is also an OUT parameter of this function.
 CREATE OR REPLACE FUNCTION public.create_quote_revision(
   p_quote_id uuid,
@@ -11,6 +17,9 @@ DECLARE
   v_source public.quotes%ROWTYPE;
   v_quote_id uuid;
   v_version integer;
+  v_requested_count integer;
+  v_available_count integer;
+  v_subtotal numeric(12,2);
 BEGIN
   SELECT * INTO v_source FROM public.quotes q WHERE q.id = p_quote_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'QUOTE_NOT_FOUND'; END IF;
@@ -37,15 +46,45 @@ BEGIN
     p_actor_id, p_actor_id
   ) RETURNING id INTO v_quote_id;
 
-  INSERT INTO public.quote_items(
+  IF v_source.customer_requested_items IS NULL OR jsonb_array_length(v_source.customer_requested_items) = 0 THEN
+    INSERT INTO public.quote_items(
     quote_id, product_id, name_snapshot, description_snapshot, image_url_snapshot,
     item_type, quantity, unit_price, subtotal, position
-  )
-  SELECT v_quote_id, qi.product_id, qi.name_snapshot, qi.description_snapshot, qi.image_url_snapshot,
-    qi.item_type, qi.quantity, qi.unit_price, qi.subtotal, qi.position
-  FROM public.quote_items qi
-  WHERE qi.quote_id = v_source.id
-  ORDER BY qi.position;
+    )
+    SELECT v_quote_id, qi.product_id, qi.name_snapshot, qi.description_snapshot, qi.image_url_snapshot,
+      qi.item_type, qi.quantity, qi.unit_price, qi.subtotal, qi.position
+    FROM public.quote_items qi
+    WHERE qi.quote_id = v_source.id
+    ORDER BY qi.position;
+  ELSE
+    SELECT count(*) INTO v_requested_count
+    FROM jsonb_to_recordset(v_source.customer_requested_items) AS requested(product_id uuid, quantity integer)
+    WHERE requested.product_id IS NOT NULL AND requested.quantity > 0;
+    SELECT count(*) INTO v_available_count
+    FROM jsonb_to_recordset(v_source.customer_requested_items) AS requested(product_id uuid, quantity integer)
+    JOIN public.products p ON p.id = requested.product_id
+    WHERE requested.quantity > 0 AND p.tenant_id = v_source.tenant_id AND p.deleted_at IS NULL;
+    IF v_requested_count = 0 OR v_requested_count <> jsonb_array_length(v_source.customer_requested_items) OR v_available_count <> v_requested_count THEN
+      RAISE EXCEPTION 'QUOTE_REQUESTED_ITEM_UNAVAILABLE';
+    END IF;
+
+    INSERT INTO public.quote_items(
+      quote_id, product_id, name_snapshot, description_snapshot, image_url_snapshot,
+      item_type, quantity, unit_price, subtotal, position
+    )
+    SELECT v_quote_id, p.id, COALESCE(previous.name_snapshot, p.name), COALESCE(previous.description_snapshot, p.description), COALESCE(previous.image_url_snapshot, p.image_url),
+      p.type, requested.quantity, COALESCE(previous.unit_price, p.price), COALESCE(previous.unit_price, p.price) * requested.quantity, requested.position - 1
+    FROM jsonb_to_recordset(v_source.customer_requested_items) WITH ORDINALITY AS requested(product_id uuid, quantity integer, position bigint)
+    JOIN public.products p ON p.id = requested.product_id
+    LEFT JOIN public.quote_items previous ON previous.quote_id = v_source.id AND previous.product_id = p.id
+    WHERE requested.quantity > 0
+    ORDER BY requested.position;
+
+    SELECT COALESCE(sum(qi.subtotal), 0) INTO v_subtotal FROM public.quote_items qi WHERE qi.quote_id = v_quote_id;
+    UPDATE public.quotes q
+    SET subtotal = v_subtotal, total = GREATEST(0, v_subtotal - q.discount)
+    WHERE q.id = v_quote_id;
+  END IF;
 
   INSERT INTO public.quote_events(quote_id, actor_id, event_type, source, reason)
   VALUES(v_source.id, p_actor_id, 'superseded', 'staff', NULLIF(btrim(p_reason), ''));
