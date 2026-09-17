@@ -23,5 +23,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 409 });
   const result = Array.isArray(data) ? data[0] : data;
-  return NextResponse.json(result, { status: 201 });
+  const { data: revision, error: readError } = await db
+    .from("quotes")
+    .select("*, customer:customers(id, name, email, phone), items:quote_items(*)")
+    .eq("id", result.quote_id)
+    .eq("tenant_id", quote.tenant_id)
+    .single();
+  if (readError) return NextResponse.json({ error: readError.message }, { status: 500 });
+  return NextResponse.json({ ...result, quote: revision }, { status: 201 });
 }

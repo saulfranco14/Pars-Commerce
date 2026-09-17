@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import useSWR, { mutate } from "swr";
 import {
   CheckCircle2,
-  ClipboardCheck,
   Copy,
   FileText,
   Mail,
@@ -22,15 +21,12 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { swrFetcher } from "@/lib/swrFetcher";
+import { NewQuoteSheet, type CreatedQuote } from "@/features/quotes/components/NewQuoteSheet";
+import { QuoteRevisionSheet } from "@/features/quotes/components/QuoteRevisionSheet";
 
-type Product = {
-  id: string;
-  name: string;
-  price: number;
-  type: "product" | "service";
-};
 type QuoteItem = {
   id?: string;
+  product_id?: string;
   name_snapshot: string;
   quantity: number;
   unit_price?: number | string;
@@ -77,81 +73,17 @@ export default function CotizacionesPage() {
   const [detail, setDetail] = useState<Quote | null>(null);
   const [created, setCreated] = useState<Quote | null>(null);
   const [share, setShare] = useState<ShareQuote | null>(null);
+  const [revisionQuote, setRevisionQuote] = useState<Quote | null>(null);
   const [confirm, setConfirm] = useState<{ quote: Quote; action: "accept" | "reject" } | null>(null);
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [selected, setSelected] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const quoteKey = tenant ? `/api/quotes?tenant_id=${encodeURIComponent(tenant.id)}` : null;
-  const productKey = tenant ? `/api/products?tenant_id=${encodeURIComponent(tenant.id)}` : null;
   const { data: quotes, isLoading } = useSWR<Quote[]>(quoteKey, swrFetcher, { fallbackData: [] });
-  const { data: products } = useSWR<Product[]>(productKey, swrFetcher, { fallbackData: [] });
-  const chosen = useMemo(
-    () => Object.entries(selected)
-      .filter(([, quantity]) => quantity > 0)
-      .map(([product_id, quantity]) => ({ product_id, quantity })),
-    [selected],
-  );
-  const chosenTotal = useMemo(
-    () => chosen.reduce((total, item) => total + (products?.find((product) => product.id === item.product_id)?.price ?? 0) * item.quantity, 0),
-    [chosen, products],
-  );
 
-  function changeQuantity(productId: string, delta: number) {
-    setSelected((current) => {
-      const next = Math.max(0, (current[productId] ?? 0) + delta);
-      if (next === 0) {
-        const rest = { ...current };
-        delete rest[productId];
-        return rest;
-      }
-      return { ...current, [productId]: next };
-    });
-  }
-
-  async function createQuote() {
-    if (!tenant || !customerName.trim() || chosen.length === 0) {
-      setMessage("Indica el nombre del cliente y al menos un producto o servicio.");
-      return;
-    }
-    setSaving(true);
-    setMessage(null);
-    try {
-      const response = await fetch("/api/quotes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tenant_id: tenant.id,
-          customer: { name: customerName, phone: customerPhone || undefined },
-          items: chosen,
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? "No pudimos crear la cotización.");
-
-      const productById = new Map(products?.map((product) => [product.id, product]));
-      const createdQuote: Quote = {
-        ...result.quote,
-        customer: { name: customerName, phone: customerPhone || null },
-        items: chosen.map((item) => {
-          const product = productById.get(item.product_id);
-          const price = Number(product?.price ?? 0);
-          return { name_snapshot: product?.name ?? "Artículo", quantity: item.quantity, unit_price: price, subtotal: price * item.quantity };
-        }),
-      };
-      await mutate(quoteKey);
-      setCreateOpen(false);
-      setCreated(createdQuote);
-      setCustomerName("");
-      setCustomerPhone("");
-      setSelected({});
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "No pudimos crear la cotización.");
-    } finally {
-      setSaving(false);
-    }
+  function handleCreated(newQuote: CreatedQuote) {
+    setCreated(newQuote);
+    void mutate(quoteKey);
   }
 
   async function updateStatus(id: string, action: string) {
@@ -213,11 +145,12 @@ export default function CotizacionesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
-      const result = await response.json();
+      const result = await response.json() as { error?: string; version?: number; quote?: Quote };
       if (!response.ok) throw new Error(result.error ?? "No pudimos crear la nueva versión.");
       await mutate(quoteKey);
       setDetail(null);
-      setMessage(`Se creó la versión ${result.version}. Revisa sus precios antes de compartirla.`);
+      if (!result.quote) throw new Error("No pudimos abrir la nueva versión.");
+      setRevisionQuote(result.quote);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No pudimos crear la nueva versión.");
     } finally {
@@ -274,32 +207,27 @@ export default function CotizacionesPage() {
       {message && <p role="status" className="rounded-xl border border-border bg-surface-raised px-4 py-3 text-sm text-muted-foreground">{message}</p>}
 
       {isLoading ? <LoadingBlock message="Cargando cotizaciones…" variant="skeleton" /> : quotes?.length ? (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid max-w-5xl gap-3 sm:grid-cols-2">
           {quotes.map((quote) => (
             <article key={quote.id} className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="font-mono text-xs text-muted-foreground">{quote.quote_number}</p><h2 className="mt-1 truncate font-bold text-foreground">{quote.customer?.name ?? "Cliente"}</h2></div><span className="shrink-0 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-bold text-accent">{STATUS[quote.status] ?? quote.status}</span></div>
               <p className="mt-3 text-2xl font-bold tabular-nums text-foreground">{money(quote.total)}</p>
               <p className="mt-1 text-xs text-muted-foreground">Vigente hasta {new Date(quote.valid_until).toLocaleDateString("es-MX")}</p>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => setDetail(quote)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/60"><FileText className="h-4 w-4" />Ver detalle</button>
-                {["ready_to_send", "sent", "viewed"].includes(quote.status) && <button type="button" disabled={saving} onClick={() => void shareQuote(quote)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-3 text-sm font-bold text-accent-foreground disabled:opacity-50"><Send className="h-4 w-4" />Compartir</button>}
-                {["ready_to_send", "sent", "viewed"].includes(quote.status) && <button type="button" onClick={() => setConfirm({ quote, action: "accept" })} className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/60"><ShoppingCart className="h-4 w-4" />Registrar aceptación y crear orden</button>}
+              {quote.status === "changes_requested" && <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900">El cliente solicitó cambios. Prepara una nueva versión antes de volver a compartir.</p>}
+              <div className="mt-4 space-y-2">
+                {["ready_to_send", "sent", "viewed"].includes(quote.status) && <button type="button" disabled={saving} onClick={() => void shareQuote(quote)} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent px-3 text-sm font-bold text-accent-foreground disabled:opacity-50"><Send className="h-4 w-4" />Compartir con cliente</button>}
+                {["changes_requested", "conversion_blocked"].includes(quote.status) && <button type="button" disabled={saving} onClick={() => void createRevision(quote)} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent px-3 text-sm font-bold text-accent-foreground disabled:opacity-50"><Undo2 className="h-4 w-4" />Preparar nueva versión</button>}
+                <div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => setDetail(quote)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/60"><FileText className="h-4 w-4" />Detalle</button>{["ready_to_send", "sent", "viewed"].includes(quote.status) && <button type="button" onClick={() => setConfirm({ quote, action: "accept" })} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/60"><ShoppingCart className="h-4 w-4" />Aceptar</button>}</div>
                 {quote.status === "draft" && <button type="button" disabled={saving} onClick={() => void updateStatus(quote.id, "ready").then(() => setMessage("Cotización lista para compartir.")).catch((error: unknown) => setMessage(error instanceof Error ? error.message : "No pudimos actualizar la cotización."))} className="col-span-2 inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-foreground">Dejar lista para compartir</button>}
                 {quote.status === "internal_review" && <button type="button" disabled={saving} onClick={() => void updateStatus(quote.id, "ready").then(() => setMessage("Cotización lista para compartir.")).catch((error: unknown) => setMessage(error instanceof Error ? error.message : "No pudimos actualizar la cotización."))} className="col-span-2 inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-foreground">Dejar lista para compartir</button>}
-                {["changes_requested", "conversion_blocked"].includes(quote.status) && <button type="button" disabled={saving} onClick={() => void createRevision(quote)} className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-foreground"><Undo2 className="h-4 w-4" />Crear nueva versión</button>}
               </div>
             </article>
           ))}
         </div>
       ) : <div className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center"><FileText className="mx-auto h-8 w-8 text-accent" /><h2 className="mt-3 font-bold text-foreground">Aún no hay cotizaciones</h2><p className="mt-1 text-sm text-muted-foreground">Crea una para compartir precios y convertirla en orden cuando el cliente acepte.</p></div>}
 
-      <FormSheet isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Nueva cotización" description="El precio queda guardado aunque cambie tu catálogo." icon={ClipboardCheck} footer={<button type="button" disabled={saving} onClick={() => void createQuote()} className="min-h-12 w-full rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground disabled:opacity-50">{saving ? "Creando…" : "Crear cotización"}</button>}>
-        <div className="space-y-5">
-          <label className="block space-y-2 text-sm font-semibold text-foreground"><span>Nombre del cliente</span><input value={customerName} onChange={(event) => setCustomerName(event.target.value)} className="input-form min-h-12 w-full rounded-xl px-3 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20" placeholder="Ej. Selena García" /></label>
-          <label className="block space-y-2 text-sm font-semibold text-foreground"><span>WhatsApp <span className="font-normal text-muted-foreground">(opcional)</span></span><input value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} inputMode="tel" className="input-form min-h-12 w-full rounded-xl px-3 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20" placeholder="Ej. 55 1234 5678" /><span className="block text-xs font-normal text-muted-foreground">Lo usaremos sólo para abrir el mensaje listo para enviar.</span></label>
-          <section><div className="flex items-end justify-between gap-3"><div><h3 className="text-sm font-bold text-foreground">Productos y servicios</h3><p className="mt-1 text-xs text-muted-foreground">Selecciona lo que el cliente está cotizando.</p></div><p className="shrink-0 text-sm font-bold tabular-nums text-accent">{money(chosenTotal)}</p></div><div className="mt-3 max-h-80 space-y-2 overflow-auto pr-1">{products?.map((product) => { const quantity = selected[product.id] ?? 0; return <div key={product.id} className={`flex min-h-16 items-center gap-3 rounded-xl border p-3 transition-colors ${quantity ? "border-accent/50 bg-accent/5" : "border-border bg-surface-raised"}`}><button type="button" aria-label={quantity ? `Quitar ${product.name}` : `Agregar ${product.name}`} onClick={() => changeQuantity(product.id, quantity ? -quantity : 1)} className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-sm font-bold ${quantity ? "border-accent bg-accent text-accent-foreground" : "border-border bg-surface text-muted-foreground"}`}>{quantity ? "✓" : "+"}</button><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-foreground">{product.name}</p><p className="mt-0.5 text-xs text-muted-foreground">{product.type === "service" ? "Servicio" : "Producto"} · {money(product.price)}</p></div>{quantity > 0 && <div className="flex min-h-10 items-center rounded-lg border border-border bg-surface"><button type="button" aria-label={`Restar ${product.name}`} onClick={() => changeQuantity(product.id, -1)} className="flex h-10 w-9 items-center justify-center text-lg text-muted-foreground hover:text-foreground">−</button><span className="w-7 text-center text-sm font-bold tabular-nums text-foreground">{quantity}</span><button type="button" aria-label={`Sumar ${product.name}`} onClick={() => changeQuantity(product.id, 1)} className="flex h-10 w-9 items-center justify-center text-lg text-accent hover:bg-accent/5">+</button></div>}</div>; })}</div></section>
-        </div>
-      </FormSheet>
+      <NewQuoteSheet isOpen={createOpen} onClose={() => setCreateOpen(false)} tenantId={tenant.id} onCreated={handleCreated} />
+      <QuoteRevisionSheet isOpen={Boolean(revisionQuote)} onClose={() => setRevisionQuote(null)} tenantId={tenant.id} quote={revisionQuote} onSaved={() => { void mutate(quoteKey); setMessage("Nueva versión guardada. Ya puedes compartirla con el cliente."); }} />
 
       <FormSheet isOpen={Boolean(created)} onClose={() => setCreated(null)} title="Cotización creada" description="Ya tiene número, precios congelados y vigencia de 7 días." icon={CheckCircle2} footer={<div className="grid gap-2 sm:grid-cols-2"><button type="button" onClick={() => { if (created) { setDetail(created); setCreated(null); } }} className="min-h-12 rounded-xl border border-border bg-surface text-sm font-semibold text-foreground">Ver detalle</button><button type="button" onClick={() => { if (created) void shareQuote(created); }} className="min-h-12 rounded-xl bg-accent text-sm font-bold text-accent-foreground">Compartir ahora</button></div>}>
         <div className="rounded-2xl border border-border bg-surface-raised p-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Número de cotización</p><p className="mt-1 font-mono text-sm font-bold text-foreground">{created?.quote_number}</p><p className="mt-4 text-3xl font-bold tabular-nums text-foreground">{money(created?.total ?? 0)}</p><p className="mt-1 text-sm text-muted-foreground">Cliente: {created?.customer?.name}</p></div>

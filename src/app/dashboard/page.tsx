@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { OrderCardMobile } from "@/components/orders/OrderCardMobile";
 import { OrderFormSheet } from "@/features/orders/components/OrderFormSheet";
+import { NewQuoteSheet } from "@/features/quotes/components/NewQuoteSheet";
 import { ActiveTablesCard } from "@/features/qr/components/table/ActiveTablesCard";
 import { useActiveTables } from "@/features/qr/hooks/useActiveTables";
 import type {
@@ -226,6 +227,8 @@ export default function DashboardPage() {
     "today" | "week" | "fortnight" | "month" | "cutoff"
   >("week");
   const [createOrderOpen, setCreateOrderOpen] = useState(false);
+  const [createQuoteOpen, setCreateQuoteOpen] = useState(false);
+  const [quoteMessage, setQuoteMessage] = useState<string | null>(null);
   const [ordersCreatedByTenant, setOrdersCreatedByTenant] = useState<
     Record<string, boolean>
   >({});
@@ -431,15 +434,18 @@ export default function DashboardPage() {
               <Plus className="h-4 w-4 shrink-0" aria-hidden />
               Nueva Orden
             </button>
-            <Link
-              href={`/dashboard/${activeTenant.slug}/cotizaciones`}
+            <button
+              type="button"
+              onClick={() => setCreateQuoteOpen(true)}
               className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:border-accent/40 hover:bg-accent/5 sm:w-auto"
             >
               <ClipboardList className="h-4 w-4 shrink-0 text-accent" aria-hidden />
               Nueva cotización
-            </Link>
+            </button>
           </div>
         </div>
+
+        {quoteMessage && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{quoteMessage}</p>}
 
         {period === "cutoff" && lastCutoffEnd && (
           <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3">
@@ -1023,6 +1029,14 @@ export default function DashboardPage() {
         onClose={() => setCreateOrderOpen(false)}
         tenantId={activeTenant.id}
         tenantSlug={activeTenant.slug}
+      />
+      <NewQuoteSheet
+        isOpen={createQuoteOpen}
+        onClose={() => setCreateQuoteOpen(false)}
+        tenantId={activeTenant.id}
+        onCreated={(quote) => {
+          setQuoteMessage(`${quote.quote_number} quedó lista para compartir. Puedes revisarla desde Cotizaciones.`);
+        }}
       />
     </div>
   );
