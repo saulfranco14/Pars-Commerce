@@ -74,7 +74,9 @@ BEGIN
     )
     SELECT v_quote_id, p.id, COALESCE(previous.name_snapshot, p.name), COALESCE(previous.description_snapshot, p.description), COALESCE(previous.image_url_snapshot, p.image_url),
       p.type, requested.quantity, COALESCE(previous.unit_price, p.price), COALESCE(previous.unit_price, p.price) * requested.quantity, requested.position - 1
-    FROM jsonb_to_recordset(v_source.customer_requested_items) WITH ORDINALITY AS requested(product_id uuid, quantity integer, position bigint)
+    FROM ROWS FROM (
+      jsonb_to_recordset(v_source.customer_requested_items) AS (product_id uuid, quantity integer)
+    ) WITH ORDINALITY AS requested(product_id, quantity, position)
     JOIN public.products p ON p.id = requested.product_id
     LEFT JOIN public.quote_items previous ON previous.quote_id = v_source.id AND previous.product_id = p.id
     WHERE requested.quantity > 0
@@ -142,7 +144,9 @@ BEGIN
   )
   SELECT v_quote.id, p.id, p.name, p.description, p.image_url, p.type,
     requested.quantity, p.price, p.price * requested.quantity, requested.position - 1
-  FROM jsonb_to_recordset(p_items) WITH ORDINALITY AS requested(product_id uuid, quantity integer, position bigint)
+  FROM ROWS FROM (
+    jsonb_to_recordset(p_items) AS (product_id uuid, quantity integer)
+  ) WITH ORDINALITY AS requested(product_id, quantity, position)
   JOIN public.products p ON p.id = requested.product_id
   WHERE requested.quantity > 0
   ORDER BY requested.position;

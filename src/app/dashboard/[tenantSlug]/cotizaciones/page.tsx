@@ -9,6 +9,7 @@ import {
   Mail,
   MessageCircle,
   Plus,
+  RefreshCw,
   Send,
   ShoppingCart,
   Undo2,
@@ -65,23 +66,31 @@ const STATUS: Record<string, string> = {
   superseded: "Reemplazada",
 };
 
-const EVENT_LABEL: Record<string, string> = {
-  created: "Creada",
-  share_opened: "Compartida",
-  viewed: "Vista por cliente",
-  changes_requested: "Cambios solicitados",
-  revision_created: "Nueva versión creada",
-  revision_updated: "Versión ajustada",
-  superseded: "Versión reemplazada",
-  converted: "Convertida en orden",
-  rejected: "Rechazada",
-};
-
 const money = (amount: number | string) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(amount));
 
 function normalizePhone(phone: string | null | undefined) {
   return (phone ?? "").replace(/\D/g, "").replace(/^00/, "");
+}
+
+function eventDescription(event: NonNullable<Quote["events"]>[number], version: number) {
+  const prefix = `Versión ${version}`;
+  switch (event.event_type) {
+    case "created": return `${prefix} creada`;
+    case "share_opened": return `${prefix} compartida con el cliente`;
+    case "viewed": return `El cliente revisó la versión ${version}`;
+    case "changes_requested": return `El cliente solicitó ajustes en la versión ${version}`;
+    case "revision_created": return `Se preparó la versión ${version}`;
+    case "revision_updated": return `Se ajustó la versión ${version}`;
+    case "superseded": return `La versión ${version} fue reemplazada`;
+    case "converted": return `${prefix} se convirtió en orden`;
+    case "rejected": return `El cliente no aceptó la versión ${version}`;
+    default: return `${prefix} fue actualizada`;
+  }
+}
+
+function formatShortDate(value: string) {
+  return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short" }).format(new Date(value));
 }
 
 export default function CotizacionesPage() {
@@ -96,7 +105,7 @@ export default function CotizacionesPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   const quoteKey = tenant ? `/api/quotes?tenant_id=${encodeURIComponent(tenant.id)}` : null;
-  const { data: quotes, isLoading } = useSWR<Quote[]>(quoteKey, swrFetcher, { fallbackData: [] });
+  const { data: quotes, isLoading, isValidating, mutate: refreshQuotes } = useSWR<Quote[]>(quoteKey, swrFetcher, { fallbackData: [] });
   const quoteGroups = useMemo(() => {
     const grouped = new Map<string, Quote[]>();
     for (const quote of quotes ?? []) {
@@ -106,7 +115,9 @@ export default function CotizacionesPage() {
     }
     return [...grouped.values()]
       .map((versions) => {
-        const sorted = versions.sort((a, b) => (b.version ?? 1) - (a.version ?? 1));
+        const sorted = [...versions].sort((a, b) => (b.version ?? 1) - (a.version ?? 1));
+        // The latest non-replaced record is the only proposal that can be acted
+        // on. Older versions remain in its history, never as a competing card.
         return { versions: sorted, current: sorted.find((quote) => quote.status !== "superseded") ?? sorted[0] };
       })
       .sort((a, b) => new Date(b.current.valid_until).getTime() - new Date(a.current.valid_until).getTime());
@@ -115,6 +126,12 @@ export default function CotizacionesPage() {
   function handleCreated(newQuote: CreatedQuote) {
     setCreated(newQuote);
     void mutate(quoteKey);
+  }
+
+  async function refreshQuoteList() {
+    setMessage(null);
+    await refreshQuotes();
+    setMessage("Cotizaciones actualizadas con la información más reciente.");
   }
 
   async function updateStatus(id: string, action: string) {
@@ -236,7 +253,7 @@ export default function CotizacionesPage() {
         eyebrow="Ventas"
         title="Cotizaciones"
         description="Crea una propuesta, compártela con claridad y conviértela en orden cuando el cliente acepte."
-        action={<button type="button" onClick={() => setCreateOpen(true)} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground transition-colors hover:bg-accent/90 sm:w-auto"><Plus className="h-4 w-4" />Nueva cotización</button>}
+        action={<div className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-2 sm:flex sm:w-auto"><button type="button" onClick={() => void refreshQuoteList()} disabled={isValidating} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/60 disabled:opacity-60" aria-label="Actualizar cotizaciones"><RefreshCw className={`h-4 w-4 ${isValidating ? "animate-spin" : ""}`} /><span className="sm:hidden">Actualizar</span></button><button type="button" onClick={() => setCreateOpen(true)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground transition-colors hover:bg-accent/90"><Plus className="h-4 w-4" />Nueva cotización</button></div>}
       />
 
       {message && <p role="status" className="rounded-xl border border-border bg-surface-raised px-4 py-3 text-sm text-muted-foreground">{message}</p>}
@@ -245,16 +262,17 @@ export default function CotizacionesPage() {
         <div className="grid max-w-5xl gap-3 sm:grid-cols-2">
           {quoteGroups.map((group) => {
             const quote = group.current;
-            const versionLabel = group.versions.length > 1 ? `${group.versions.length} versiones` : `Versión ${quote.version ?? 1}`;
+            const versionLabel = `Versión actual · V${quote.version ?? 1}`;
             const changeRequest = group.versions.find((version) => version.customer_change_note);
             const activity = group.versions.flatMap((version) => (version.events ?? []).map((event) => ({ ...event, version: version.version ?? 1 }))).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
             const requestNote = changeRequest?.customer_change_note ?? activity.find((event) => event.event_type === "changes_requested")?.reason;
+            const requestIsApplied = Boolean(changeRequest && (quote.version ?? 1) > (changeRequest.version ?? 1));
             return <article key={quote.quote_number} className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
-              <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="font-mono text-xs text-muted-foreground">{quote.quote_number} · {versionLabel}</p><h2 className="mt-1 truncate font-bold text-foreground">{quote.customer?.name ?? "Cliente"}</h2></div><span className="shrink-0 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-bold text-accent">{STATUS[quote.status] ?? quote.status}</span></div>
+              <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="font-mono text-xs text-muted-foreground">{quote.quote_number}</p><p className="mt-1 text-xs font-semibold text-accent">{versionLabel}{group.versions.length > 1 ? ` · ${group.versions.length} en total` : ""}</p><h2 className="mt-1 truncate font-bold text-foreground">{quote.customer?.name ?? "Cliente"}</h2></div><span className="shrink-0 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-bold text-accent">{STATUS[quote.status] ?? quote.status}</span></div>
               <p className="mt-3 text-2xl font-bold tabular-nums text-foreground">{money(quote.total)}</p>
               <p className="mt-1 text-xs text-muted-foreground">Vigente hasta {new Date(quote.valid_until).toLocaleDateString("es-MX")}</p>
-              {(changeRequest || requestNote) && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900"><p className="font-semibold">Cambios solicitados por el cliente</p>{requestNote && <p className="mt-1.5 border-t border-amber-200/70 pt-1.5 leading-relaxed">Nota: “{requestNote}”</p>}<p className="mt-1.5 text-amber-800">La versión más reciente ya incluye la selección solicitada.</p></div>}
-              {(group.versions.length > 1 || activity.length > 1) && <div className="mt-3 rounded-xl bg-surface-raised px-3 py-2 text-xs text-muted-foreground"><p className="font-semibold text-foreground">Historial</p><div className="mt-1 space-y-1">{activity.slice(-4).map((event, index) => <p key={`${event.created_at}-${index}`}>V{event.version} · {EVENT_LABEL[event.event_type] ?? event.event_type}{event.reason ? `: ${event.reason}` : ""}</p>)}</div></div>}
+              {(changeRequest || requestNote) && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-900"><p className="font-semibold">El cliente pidió ajustes</p><p className="mt-1 text-amber-800">{requestIsApplied ? "La versión actual ya contiene la selección que solicitó." : "Prepara una nueva versión para revisar y aplicar la selección solicitada."}</p>{requestNote && <details className="mt-2 border-t border-amber-200/70 pt-2"><summary className="cursor-pointer font-semibold text-amber-900">Ver nota del cliente</summary><p className="mt-2 max-h-28 overflow-auto whitespace-pre-wrap break-words pr-1 leading-relaxed text-amber-900">{requestNote}</p></details>}</div>}
+              {(group.versions.length > 1 || activity.length > 1) && <details className="mt-3 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-xs text-muted-foreground"><summary className="cursor-pointer font-semibold text-foreground">Ver historial de la cotización ({group.versions.length} {group.versions.length === 1 ? "versión" : "versiones"})</summary><ol className="mt-3 space-y-2 border-l border-border pl-3">{activity.slice(-6).reverse().map((event, index) => <li key={`${event.created_at}-${index}`} className="relative"><span className="absolute -left-[17px] top-1 h-2 w-2 rounded-full bg-accent" /><p className="text-foreground">{eventDescription(event, event.version)}</p><p className="mt-0.5 text-muted-foreground">{formatShortDate(event.created_at)}</p></li>)}</ol></details>}
               <div className="mt-4 space-y-2">
                 {["ready_to_send", "sent", "viewed"].includes(quote.status) && <button type="button" disabled={saving} onClick={() => void shareQuote(quote)} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent px-3 text-sm font-bold text-accent-foreground disabled:opacity-50"><Send className="h-4 w-4" />Compartir con cliente</button>}
                 {["changes_requested", "conversion_blocked"].includes(quote.status) && <button type="button" disabled={saving} onClick={() => void createRevision(quote)} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent px-3 text-sm font-bold text-accent-foreground disabled:opacity-50"><Undo2 className="h-4 w-4" />Preparar nueva versión</button>}

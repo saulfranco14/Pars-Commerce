@@ -1,12 +1,6 @@
--- `20260916000001` was applied before customer change requests were added to
--- its local source file. Migrations are immutable once recorded remotely, so
--- apply the schema addition and revised function under a new version.
-ALTER TABLE public.quotes
-  ADD COLUMN IF NOT EXISTS customer_change_note text,
-  ADD COLUMN IF NOT EXISTS customer_requested_items jsonb;
-
--- Copy a client's requested quantities into the next staff-owned draft. The
--- client never changes price snapshots; staff can review/edit the draft later.
+-- Postgres does not allow a typed column definition list directly alongside
+-- WITH ORDINALITY. Use ROWS FROM for the JSON record expansion instead.
+-- This redefines both quote functions already installed by prior migrations.
 CREATE OR REPLACE FUNCTION public.create_quote_revision(
   p_quote_id uuid,
   p_actor_id uuid,
@@ -116,8 +110,76 @@ BEGIN
   RETURN QUERY SELECT v_quote_id AS quote_id, v_version AS version;
 END $$;
 
+CREATE OR REPLACE FUNCTION public.replace_quote_draft_items(
+  p_quote_id uuid,
+  p_actor_id uuid,
+  p_items jsonb
+)
+RETURNS TABLE(quote_id uuid, subtotal numeric, total numeric)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_quote public.quotes%ROWTYPE;
+  v_requested_count integer;
+  v_available_count integer;
+  v_subtotal numeric(12,2);
+  v_total numeric(12,2);
+BEGIN
+  IF jsonb_typeof(p_items) <> 'array' OR jsonb_array_length(p_items) = 0 THEN
+    RAISE EXCEPTION 'QUOTE_ITEMS_REQUIRED';
+  END IF;
+
+  SELECT * INTO v_quote FROM public.quotes q WHERE q.id = p_quote_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'QUOTE_NOT_FOUND'; END IF;
+  IF v_quote.status <> 'draft' THEN RAISE EXCEPTION 'QUOTE_DRAFT_REQUIRED'; END IF;
+
+  SELECT count(*) INTO v_requested_count
+  FROM jsonb_to_recordset(p_items) AS requested(product_id uuid, quantity integer)
+  WHERE requested.product_id IS NOT NULL AND requested.quantity > 0;
+
+  SELECT count(*), COALESCE(sum(p.price * requested.quantity), 0)
+  INTO v_available_count, v_subtotal
+  FROM jsonb_to_recordset(p_items) AS requested(product_id uuid, quantity integer)
+  JOIN public.products p ON p.id = requested.product_id
+  WHERE requested.quantity > 0
+    AND p.tenant_id = v_quote.tenant_id
+    AND p.deleted_at IS NULL;
+
+  IF v_requested_count = 0
+    OR v_requested_count <> jsonb_array_length(p_items)
+    OR v_available_count <> v_requested_count THEN
+    RAISE EXCEPTION 'QUOTE_ITEM_UNAVAILABLE';
+  END IF;
+
+  DELETE FROM public.quote_items qi WHERE qi.quote_id = v_quote.id;
+
+  INSERT INTO public.quote_items(
+    quote_id, product_id, name_snapshot, description_snapshot, image_url_snapshot,
+    item_type, quantity, unit_price, subtotal, position
+  )
+  SELECT v_quote.id, p.id, p.name, p.description, p.image_url, p.type,
+    requested.quantity, p.price, p.price * requested.quantity, requested.position - 1
+  FROM ROWS FROM (
+    jsonb_to_recordset(p_items) AS (product_id uuid, quantity integer)
+  ) WITH ORDINALITY AS requested(product_id, quantity, position)
+  JOIN public.products p ON p.id = requested.product_id
+  WHERE requested.quantity > 0
+  ORDER BY requested.position;
+
+  UPDATE public.quotes q
+  SET subtotal = v_subtotal,
+      total = GREATEST(0, v_subtotal - q.discount),
+      updated_by = p_actor_id,
+      updated_at = now()
+  WHERE q.id = v_quote.id
+  RETURNING q.total INTO v_total;
+
+  INSERT INTO public.quote_events(quote_id, actor_id, event_type, source)
+  VALUES (v_quote.id, p_actor_id, 'revision_updated', 'staff');
+  RETURN QUERY SELECT v_quote.id AS quote_id, v_subtotal AS subtotal, v_total AS total;
+END $$;
+
 REVOKE ALL ON FUNCTION public.create_quote_revision(uuid, uuid, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.create_quote_revision(uuid, uuid, text) TO service_role;
-
--- Ask PostgREST to refresh its schema cache immediately after adding columns.
+REVOKE ALL ON FUNCTION public.replace_quote_draft_items(uuid, uuid, jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.replace_quote_draft_items(uuid, uuid, jsonb) TO service_role;
 NOTIFY pgrst, 'reload schema';
