@@ -178,6 +178,16 @@ export function OrderActionButtons({
   const btnBlue = `${btnBase} bg-blue-600 text-white hover:bg-blue-500 focus-visible:ring-blue-500`;
   const btnDestructive = `${btnBase} border border-red-200 bg-surface text-red-600 hover:bg-red-50 focus-visible:ring-red-500/50`;
 
+  const actionContext = order.status === "pending_acceptance"
+    ? { label: "Solicitud nueva", detail: "Elige si el negocio puede prepararla." }
+    : order.status === "draft" || order.status === "assigned"
+      ? { label: "Siguiente paso", detail: "Revisa el ticket y envíalo a preparación." }
+      : order.status === "in_progress"
+        ? { label: "Siguiente paso", detail: "Confirma cuando el pedido esté listo para cobrar." }
+        : order.status === "completed"
+          ? { label: "Cobrar orden", detail: "Elige cómo registrar el pago del cliente." }
+          : { label: "Acciones de la orden", detail: "Selecciona la acción que necesitas." };
+
   const wrapperClass = embedded
     ? "w-full min-w-0 max-w-full overflow-hidden"
     : "w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-surface-raised p-4 shadow-sm";
@@ -188,6 +198,12 @@ export function OrderActionButtons({
 
   return (
     <div className={wrapperClass}>
+      {fixedBar && (
+        <div className="mb-2 border-b border-border-soft pb-2">
+          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">{actionContext.label}</p>
+          <p className="mt-0.5 text-xs text-foreground">{actionContext.detail}</p>
+        </div>
+      )}
       <div className={flexClass}>
         {order.status === "pending_acceptance" && <>
           <button type="button" onClick={() => setRejectRequestOpen(true)} disabled={requestLoading} className={`w-full min-w-0 shrink-0 sm:w-auto ${btnDestructive}`}><X className="h-4 w-4" aria-hidden />Rechazar solicitud</button>
@@ -376,7 +392,8 @@ export function OrderActionButtons({
         isOpen={assignBeforePaidModalOpen}
         onClose={() => setAssignBeforePaidModalOpen(false)}
         onConfirm={async (assignToId, paymentMethod) => {
-          await handleAssignAndMarkPaid(assignToId, paymentMethod);
+          const paid = await handleAssignAndMarkPaid(assignToId, paymentMethod);
+          if (paid) router.replace(`/dashboard/${tenantSlug}/ordenes`);
           setAssignBeforePaidModalOpen(false);
         }}
         team={team}
@@ -387,7 +404,8 @@ export function OrderActionButtons({
         isOpen={confirmPaymentModalOpen}
         onClose={() => setConfirmPaymentModalOpen(false)}
         onConfirm={async (paymentMethod) => {
-          await handleMarkAsPaidWithMethod(paymentMethod);
+          const paid = await handleMarkAsPaidWithMethod(paymentMethod);
+          if (paid) router.replace(`/dashboard/${tenantSlug}/ordenes`);
           setConfirmPaymentModalOpen(false);
         }}
         total={Number(order.total)}
