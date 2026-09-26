@@ -216,7 +216,6 @@ export default async function PromocionDetallePage({ params }: PageProps) {
               <PromotionDetailActions
                 promotionId={promotion.id}
                 tenantId={tenant.id}
-                sitioSlug={slug}
                 accentColor={accentColor}
                 hasAddableProducts={!!hasAddableProducts}
               />

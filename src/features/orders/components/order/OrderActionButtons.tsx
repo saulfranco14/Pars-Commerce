@@ -63,6 +63,9 @@ export function OrderActionButtons({
   const [confirmPaymentModalOpen, setConfirmPaymentModalOpen] = useState(false);
   const [generateLinkModalOpen, setGenerateLinkModalOpen] = useState(false);
   const [creditSheetOpen, setCreditSheetOpen] = useState(false);
+  const [acceptRequestOpen, setAcceptRequestOpen] = useState(false);
+  const [rejectRequestOpen, setRejectRequestOpen] = useState(false);
+  const [requestLoading, setRequestLoading] = useState(false);
 
   if (!order) return null;
 
@@ -149,6 +152,24 @@ export function OrderActionButtons({
     }
   }
 
+  async function resolvePublicRequest(action: "accept-request" | "reject-request") {
+    setRequestLoading(true);
+    try {
+      const response = await fetch(`/api/orders/${order.id}/${action}`, {
+        method: "POST",
+        headers: action === "reject-request" ? { "Content-Type": "application/json" } : undefined,
+        body: action === "reject-request" ? JSON.stringify({ reason: "El negocio no puede atender este pedido por ahora." }) : undefined,
+      });
+      const result = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(result.error ?? "No pudimos actualizar la solicitud.");
+      await fetchOrder();
+      setAcceptRequestOpen(false);
+      setRejectRequestOpen(false);
+    } finally {
+      setRequestLoading(false);
+    }
+  }
+
   const btnBase =
     "inline-flex min-h-12 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 active:scale-[0.98]";
   const btnPrimary = `${btnBase} bg-accent text-accent-foreground hover:bg-accent/90 focus-visible:ring-accent`;
@@ -167,6 +188,10 @@ export function OrderActionButtons({
   return (
     <div className={wrapperClass}>
       <div className={flexClass}>
+        {order.status === "pending_acceptance" && <>
+          <button type="button" onClick={() => setRejectRequestOpen(true)} disabled={requestLoading} className={`w-full min-w-0 shrink-0 sm:w-auto ${btnDestructive}`}><X className="h-4 w-4" aria-hidden />Rechazar solicitud</button>
+          <button type="button" onClick={() => setAcceptRequestOpen(true)} disabled={requestLoading} className={`w-full min-w-0 shrink-0 sm:w-auto ${btnSuccess}`}><CheckCircle className="h-4 w-4" aria-hidden />Aceptar para preparar</button>
+        </>}
         {showExpressButton && (
           <button
             type="button"
@@ -343,6 +368,8 @@ export function OrderActionButtons({
         confirmDanger={true}
         loading={actionLoading}
       />
+      <ConfirmModal isOpen={acceptRequestOpen} onClose={() => setAcceptRequestOpen(false)} onConfirm={() => void resolvePublicRequest("accept-request")} title="Aceptar solicitud" message="Se validará la disponibilidad y el pedido pasará a preparación. El cliente podrá ver que fue aceptado." confirmLabel="Aceptar pedido" confirmDanger={false} loading={requestLoading} />
+      <ConfirmModal isOpen={rejectRequestOpen} onClose={() => setRejectRequestOpen(false)} onConfirm={() => void resolvePublicRequest("reject-request")} title="Rechazar solicitud" message="El pedido se cancelará y el cliente verá que no puede atenderse por ahora." confirmLabel="Rechazar pedido" confirmDanger loading={requestLoading} />
 
       <AssignBeforePaidModal
         isOpen={assignBeforePaidModalOpen}

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { MessageCircle, Package, ShoppingCart, Eye } from "lucide-react";
 import { addItem } from "@/services/publicCartService";
 import { dispatchCartUpdated } from "@/lib/cartEvents";
@@ -52,7 +51,6 @@ export default function ProductCard({
   baseUrl = "",
   priority = false,
 }: ProductCardProps) {
-  const router = useRouter();
   const fingerprint = useFingerprint();
   const [loading, setLoading] = useState(false);
   const productPath = `/sitio/${sitioSlug}/productos/${product.slug || product.id}`;
@@ -80,8 +78,7 @@ export default function ProductCard({
     setLoading(true);
     try {
       await addItem(tenantId, product.id, 1, fingerprint);
-      dispatchCartUpdated();
-      router.push(`/sitio/${sitioSlug}/carrito`);
+      dispatchCartUpdated({ label: `${product.name} se agregó al carrito` });
     } finally {
       setLoading(false);
     }

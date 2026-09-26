@@ -41,6 +41,7 @@ interface CheckoutBodyProps {
   businessHours: BusinessHours | null;
   onSubmit: (e: React.FormEvent) => void;
   onWhatsAppOrder?: () => void;
+  onRequestOrder?: () => void;
   whatsappOrdersEnabled?: boolean;
   submitting: boolean;
   submitLabel: string;
@@ -75,6 +76,7 @@ export function CheckoutBody({
   onFormFieldChange,
   onSubmit,
   onWhatsAppOrder,
+  onRequestOrder,
   whatsappOrdersEnabled = false,
   submitting,
   submitLabel,
@@ -206,6 +208,7 @@ export function CheckoutBody({
         {variant === "desktop" && (
           <div className="space-y-2">
             <button type="submit" disabled={submitting} className="w-full min-h-12 cursor-pointer rounded-xl px-6 py-4 font-semibold text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2" style={{ backgroundColor: accentColor }}>{submitLabel}</button>
+            {onRequestOrder && <button type="button" disabled={submitting} onClick={onRequestOrder} className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-border bg-surface px-4 py-3 text-sm font-bold text-foreground transition-colors hover:bg-border-soft disabled:opacity-50">Enviar solicitud y pagar al recoger</button>}
             {whatsappOrdersEnabled && onWhatsAppOrder && (
               <button type="button" disabled={submitting} onClick={onWhatsAppOrder} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:opacity-50"><MessageCircle className="h-4 w-4" aria-hidden />Pedir por WhatsApp</button>
             )}
@@ -214,6 +217,7 @@ export function CheckoutBody({
         {variant === "mobile" && whatsappOrdersEnabled && onWhatsAppOrder && (
           <button type="button" disabled={submitting} onClick={onWhatsAppOrder} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:opacity-50"><MessageCircle className="h-4 w-4" aria-hidden />Pedir por WhatsApp</button>
         )}
+        {variant === "mobile" && onRequestOrder && <button type="button" disabled={submitting} onClick={onRequestOrder} className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-border bg-surface px-4 py-3 text-sm font-bold text-foreground transition-colors hover:bg-border-soft disabled:opacity-50">Enviar solicitud y pagar al recoger</button>}
       </form>
 
       {variant === "desktop" && (

@@ -183,6 +183,30 @@ export async function checkoutWhatsApp(
   return data as { success: boolean; order_id: string; whatsapp_url: string };
 }
 
+export async function requestOrder(
+  payload: {
+    tenant_id: string;
+    cart_id: string;
+    customer_name: string;
+    customer_phone: string;
+    customer_email?: string;
+    scheduled_for?: string | null;
+  },
+  fingerprintId: string,
+  idempotencyKey: string,
+): Promise<{ order_id: string; tracking_url: string }> {
+  const res = await fetch("/api/public-order-requests", {
+    method: "POST",
+    headers: { ...getHeaders(fingerprintId), "x-idempotency-key": idempotencyKey },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(typeof (data as { error?: string }).error === "string" ? (data as { error: string }).error : res.statusText);
+  }
+  return data as { order_id: string; tracking_url: string };
+}
+
 export async function checkoutSubscription(
   payload: CheckoutSubscriptionPayload,
   fingerprintId: string

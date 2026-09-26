@@ -64,7 +64,7 @@ export function CheckoutFormFields({
           htmlFor={`${idPrefix}checkout-email`}
           className="block text-sm font-medium text-gray-700"
         >
-          Email
+          Email <span className="font-normal text-gray-500">(opcional para solicitar)</span>
         </label>
         <input
           id={`${idPrefix}checkout-email`}

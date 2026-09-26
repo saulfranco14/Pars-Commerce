@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Tag, ShoppingCart, Clock } from "lucide-react";
 import { addPromotion } from "@/services/publicCartService";
 import { dispatchCartUpdated } from "@/lib/cartEvents";
@@ -44,7 +43,6 @@ export default function PromotionCard({
   accentColor,
   hasAddableProducts,
 }: PromotionCardProps) {
-  const router = useRouter();
   const fingerprint = useFingerprint();
   const [loading, setLoading] = useState(false);
   const promoSlug = promotion.slug || promotion.id;
@@ -57,8 +55,7 @@ export default function PromotionCard({
     setLoading(true);
     try {
       await addPromotion(tenantId, promotion.id, fingerprint);
-      dispatchCartUpdated();
-      router.push(`/sitio/${sitioSlug}/carrito`);
+      dispatchCartUpdated({ label: `${promotion.name} se agregó al carrito` });
     } finally {
       setLoading(false);
     }

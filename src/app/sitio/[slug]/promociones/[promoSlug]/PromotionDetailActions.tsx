@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { ShoppingCart } from "lucide-react";
 import { addPromotion } from "@/services/publicCartService";
 import { dispatchCartUpdated } from "@/lib/cartEvents";
@@ -10,7 +9,6 @@ import { useFingerprint } from "@/hooks/useFingerprint";
 interface PromotionDetailActionsProps {
   promotionId: string;
   tenantId: string;
-  sitioSlug: string;
   accentColor: string;
   hasAddableProducts: boolean;
 }
@@ -18,11 +16,9 @@ interface PromotionDetailActionsProps {
 export default function PromotionDetailActions({
   promotionId,
   tenantId,
-  sitioSlug,
   accentColor,
   hasAddableProducts,
 }: PromotionDetailActionsProps) {
-  const router = useRouter();
   const fingerprint = useFingerprint();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,8 +29,7 @@ export default function PromotionDetailActions({
     setError(null);
     try {
       await addPromotion(tenantId, promotionId, fingerprint);
-      dispatchCartUpdated();
-      router.push(`/sitio/${sitioSlug}/carrito`);
+      dispatchCartUpdated({ label: "Promoción agregada al carrito" });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al agregar");
     } finally {

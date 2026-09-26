@@ -139,6 +139,7 @@ export default function CarritoContent({
     onFormFieldChange: checkoutForm.updateField,
     onSubmit: checkoutForm.handleSubmit,
     onWhatsAppOrder: checkoutForm.handleWhatsAppOrder,
+    onRequestOrder: checkoutForm.handleRequestOrder,
     whatsappOrdersEnabled,
     submitting: checkoutForm.submitting,
     submitLabel,

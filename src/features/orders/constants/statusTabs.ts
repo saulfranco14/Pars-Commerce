@@ -1,6 +1,7 @@
 export const STATUS_TABS: { value: string; label: string }[] = [
   { value: "", label: "Todos" },
   { value: "draft", label: "Borrador" },
+  { value: "pending_acceptance", label: "Solicitudes nuevas" },
   { value: "assigned", label: "Asignada" },
   { value: "in_progress", label: "En progreso / Mesa activa" },
   { value: "pending_payment", label: "Pago pendiente" },

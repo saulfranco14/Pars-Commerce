@@ -174,6 +174,7 @@ export type Database = {
           mp_customer_id: string | null
           name: string
           notes: string | null
+          normalized_phone: string | null
           phone: string | null
           tenant_id: string
           updated_at: string
@@ -186,6 +187,7 @@ export type Database = {
           mp_customer_id?: string | null
           name: string
           notes?: string | null
+          normalized_phone?: string | null
           phone?: string | null
           tenant_id: string
           updated_at?: string
@@ -198,6 +200,7 @@ export type Database = {
           mp_customer_id?: string | null
           name?: string
           notes?: string | null
+          normalized_phone?: string | null
           phone?: string | null
           tenant_id?: string
           updated_at?: string
@@ -1095,6 +1098,10 @@ export type Database = {
           payment_mode: string
           payment_plan_status: string
           promotion_id: string | null
+          public_request_key: string | null
+          accepted_at: string | null
+          rejected_at: string | null
+          rejection_reason: string | null
           qr_code_id: string | null
           scheduled_for: string | null
           source: string
@@ -1141,6 +1148,10 @@ export type Database = {
           payment_mode?: string
           payment_plan_status?: string
           promotion_id?: string | null
+          public_request_key?: string | null
+          accepted_at?: string | null
+          rejected_at?: string | null
+          rejection_reason?: string | null
           qr_code_id?: string | null
           scheduled_for?: string | null
           source?: string
@@ -1187,6 +1198,10 @@ export type Database = {
           payment_mode?: string
           payment_plan_status?: string
           promotion_id?: string | null
+          public_request_key?: string | null
+          accepted_at?: string | null
+          rejected_at?: string | null
+          rejection_reason?: string | null
           qr_code_id?: string | null
           scheduled_for?: string | null
           source?: string
