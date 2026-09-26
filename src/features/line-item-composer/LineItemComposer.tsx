@@ -36,6 +36,7 @@ const money = (value: number) =>
   }).format(value);
 
 const EMPTY_PRODUCTS: ProductListItem[] = [];
+const EMPTY_DRAFT: LineItemDraft[] = [];
 
 function draftStorageKey(key: string) {
   return `tlaco:line-item-draft:${key}`;
@@ -95,7 +96,7 @@ export function LineItemComposer({
   isOpen,
   onClose,
   onCommit,
-  initialItems = [],
+  initialItems = EMPTY_DRAFT,
   title = "Agregar artículos",
   commitLabel,
 }: Props) {
