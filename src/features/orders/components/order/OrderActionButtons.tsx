@@ -68,6 +68,7 @@ export function OrderActionButtons({
   const [requestLoading, setRequestLoading] = useState(false);
 
   if (!order) return null;
+  const orderId = order.id;
 
   const items = order.items ?? [];
   const hasNoItems = items.length === 0;
@@ -155,7 +156,7 @@ export function OrderActionButtons({
   async function resolvePublicRequest(action: "accept-request" | "reject-request") {
     setRequestLoading(true);
     try {
-      const response = await fetch(`/api/orders/${order.id}/${action}`, {
+      const response = await fetch(`/api/orders/${orderId}/${action}`, {
         method: "POST",
         headers: action === "reject-request" ? { "Content-Type": "application/json" } : undefined,
         body: action === "reject-request" ? JSON.stringify({ reason: "El negocio no puede atender este pedido por ahora." }) : undefined,

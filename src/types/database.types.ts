@@ -1099,6 +1099,7 @@ export type Database = {
           payment_plan_status: string
           promotion_id: string | null
           public_request_key: string | null
+          public_tracking_token: string | null
           accepted_at: string | null
           rejected_at: string | null
           rejection_reason: string | null
@@ -1113,6 +1114,7 @@ export type Database = {
           tenant_id: string
           total: number
           updated_at: string
+          whatsapp_request_key: string | null
           work_metadata: Json | null
         }
         Insert: {
@@ -1149,6 +1151,7 @@ export type Database = {
           payment_plan_status?: string
           promotion_id?: string | null
           public_request_key?: string | null
+          public_tracking_token?: string | null
           accepted_at?: string | null
           rejected_at?: string | null
           rejection_reason?: string | null
@@ -1163,6 +1166,7 @@ export type Database = {
           tenant_id: string
           total?: number
           updated_at?: string
+          whatsapp_request_key?: string | null
           work_metadata?: Json | null
         }
         Update: {
@@ -1199,6 +1203,7 @@ export type Database = {
           payment_plan_status?: string
           promotion_id?: string | null
           public_request_key?: string | null
+          public_tracking_token?: string | null
           accepted_at?: string | null
           rejected_at?: string | null
           rejection_reason?: string | null
@@ -1213,6 +1218,7 @@ export type Database = {
           tenant_id?: string
           total?: number
           updated_at?: string
+          whatsapp_request_key?: string | null
           work_metadata?: Json | null
         }
         Relationships: [
@@ -1713,6 +1719,48 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_items: {
+        Row: {
+          created_at: string
+          id: string
+          position: number
+          product_id: string
+          promotion_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position?: number
+          product_id: string
+          promotion_id: string
+          quantity: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position?: number
+          product_id?: string
+          promotion_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_items_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
             referencedColumns: ["id"]
           },
         ]

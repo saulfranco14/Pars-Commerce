@@ -240,7 +240,7 @@ async function handleAddPromotion(
 ): Promise<NextResponse> {
   const { data: promotion, error: promoError } = await supabase
     .from("promotions")
-    .select("id, type, value, quantity, product_ids, bundle_product_ids")
+    .select("id, type, value, quantity, product_ids, bundle_product_ids, promotion_items(product_id, quantity, position)")
     .eq("id", promotionId)
     .eq("tenant_id", tenantId)
     .single();
@@ -252,11 +252,18 @@ async function handleAddPromotion(
     );
   }
 
-  const productIds = [
+  const savedPackItems = promotion.promotion_items ?? [];
+  const legacyProductIds = [
     ...(promotion.product_ids ?? []),
     ...(promotion.bundle_product_ids ?? []),
   ].filter(Boolean) as string[];
-  const uniqueIds = [...new Set(productIds)];
+  const packItems = savedPackItems.length
+    ? savedPackItems.map((item) => ({ product_id: item.product_id, quantity: Number(item.quantity) }))
+    : [...new Set(legacyProductIds)].map((product_id) => ({
+      product_id,
+      quantity: promotion.type === "bundle_price" && legacyProductIds.length === 1 ? Number(promotion.quantity ?? 1) : 1,
+    }));
+  const uniqueIds = [...new Set(packItems.map((item) => item.product_id))];
 
   if (uniqueIds.length === 0) {
     return NextResponse.json(
@@ -276,12 +283,13 @@ async function handleAddPromotion(
     (products ?? []).map((p: { id: string; price: number }) => [p.id, Number(p.price)])
   );
   const promoValue = Number(promotion.value);
-  const promoQty = Number(promotion.quantity ?? 1);
-
   const isBundle = promotion.type === "bundle_price";
-  const bundleTotalUnits = isBundle && uniqueIds.length === 1 ? promoQty : uniqueIds.length;
+  const bundleTotalUnits = isBundle
+    ? packItems.reduce((sum, item) => sum + item.quantity, 0)
+    : uniqueIds.length;
 
-  for (const pid of uniqueIds) {
+  for (const line of packItems) {
+    const pid = line.product_id;
     const basePrice: number = productsMap.get(pid) ?? 0;
     let finalPrice: number;
 
@@ -302,7 +310,7 @@ async function handleAddPromotion(
         finalPrice = basePrice;
     }
 
-    const qty = isBundle ? (uniqueIds.length === 1 ? promoQty : 1) : 1;
+    const qty = isBundle ? line.quantity : 1;
     const { error: upsertErr } = await supabase
       .from("public_cart_items")
       .upsert(
