@@ -10,12 +10,12 @@ type RpcClient = {
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ orderId: string }> },
 ) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { id: orderId } = await params;
+  const { orderId } = await params;
   const body = await request.json().catch(() => ({})) as { items?: BatchLine[] };
   const byProduct = new Map<string, number>();
   for (const line of body.items ?? []) {
