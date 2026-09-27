@@ -171,21 +171,10 @@ function OrderDetailContent() {
           printContainer,
         )}
 
-      <div className="no-print mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-contain pb-52 sm:max-w-5xl md:pb-6">
+      <div className="no-print mx-auto w-full max-w-5xl overflow-visible pb-48 sm:max-w-5xl md:pb-8">
         <div className="shrink-0">
           <OrderHeader />
         </div>
-        {activeTenant?.id && order.customer_phone && (
-          <div className="mt-3 shrink-0">
-            <WhatsAppShareButton
-              tenantId={activeTenant.id}
-              entityType="order"
-              entityId={order.id}
-              recipientPhone={order.customer_phone}
-              eventType="pickup_ready_shared"
-            />
-          </div>
-        )}
         {error && (
           <div className="mt-4 shrink-0 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
@@ -208,6 +197,21 @@ function OrderDetailContent() {
           <OrderPaymentPlanCard />
           {showTicket && (
             <ReceiptActions />
+          )}
+          {activeTenant?.id && order.customer_phone && (
+            <div className="border-t border-border-soft pt-3">
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Comparte el seguimiento de esta orden con el cliente.
+              </p>
+              <WhatsAppShareButton
+                tenantId={activeTenant.id}
+                entityType="order"
+                entityId={order.id}
+                recipientPhone={order.customer_phone}
+                eventType="pickup_ready_shared"
+                buttonClassName="w-full sm:w-auto"
+              />
+            </div>
           )}
         </div>
       </div>
