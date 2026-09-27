@@ -233,7 +233,6 @@ export default function CarritoContent({
           subtotal={subtotal}
           error={combinedError}
           submitting={checkoutForm.submitting}
-          submitLabel={submitLabel}
           submitLabel={checkoutPrimaryLabel}
           submitDisclaimer={checkoutPrimaryDisclaimer}
           accentColor={accentColor}
