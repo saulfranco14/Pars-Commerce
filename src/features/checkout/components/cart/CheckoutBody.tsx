@@ -18,6 +18,8 @@ import type { FeeBreakdown } from "@/features/checkout/hooks/usePaymentMode";
 import type { PaymentMode } from "@/features/checkout/interfaces/paymentMode";
 import { MessageCircle } from "lucide-react";
 
+export type CheckoutIntent = "online" | "request";
+
 interface CheckoutBodyProps {
   variant: "desktop" | "mobile";
   formState: {
@@ -42,6 +44,8 @@ interface CheckoutBodyProps {
   onSubmit: (e: React.FormEvent) => void;
   onWhatsAppOrder?: () => void;
   onRequestOrder?: () => void;
+  checkoutIntent: CheckoutIntent;
+  onCheckoutIntentChange: (intent: CheckoutIntent) => void;
   whatsappOrdersEnabled?: boolean;
   submitting: boolean;
   submitLabel: string;
@@ -77,6 +81,8 @@ export function CheckoutBody({
   onSubmit,
   onWhatsAppOrder,
   onRequestOrder,
+  checkoutIntent,
+  onCheckoutIntentChange,
   whatsappOrdersEnabled = false,
   submitting,
   submitLabel,
@@ -103,9 +109,45 @@ export function CheckoutBody({
 }: CheckoutBodyProps) {
   const idPrefix = variant === "mobile" ? "m-" : "";
   const formId = `${idPrefix}checkout-form`;
+  const isRequest = checkoutIntent === "request";
+  const requestLabel = "Enviar solicitud para recoger";
+  const primaryLabel = isRequest ? requestLabel : submitLabel;
+  const primaryDisclaimer = isRequest
+    ? "El negocio revisará tu solicitud antes de prepararla."
+    : submitDisclaimer;
+  const handleFormSubmit = (event: React.FormEvent) => {
+    if (!isRequest) {
+      onSubmit(event);
+      return;
+    }
+    event.preventDefault();
+    onRequestOrder?.();
+  };
 
   return (
     <>
+      <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-3">
+        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Finaliza en 2 pasos</p>
+        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+          <div className="rounded-lg bg-white px-2.5 py-2 font-semibold text-gray-900 shadow-sm">1. Tus datos</div>
+          <div className="rounded-lg px-2.5 py-2 text-gray-500">2. {isRequest ? "Confirmación" : "Pago seguro"}</div>
+        </div>
+      </div>
+
+      <section>
+        <p className="mb-2 text-sm font-semibold text-gray-900">¿Cómo quieres finalizar?</p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <button type="button" onClick={() => onCheckoutIntentChange("online")} className={`min-h-18 rounded-xl border-2 px-3 py-3 text-left transition-colors ${!isRequest ? "border-accent bg-accent/5" : "border-gray-200 bg-white hover:bg-gray-50"}`} style={!isRequest ? { borderColor: accentColor } : undefined}>
+            <span className="block text-sm font-bold text-gray-900">Pagar en línea</span>
+            <span className="mt-0.5 block text-xs text-gray-500">Confirma tu compra con Mercado Pago.</span>
+          </button>
+          <button type="button" onClick={() => onCheckoutIntentChange("request")} className={`min-h-18 rounded-xl border-2 px-3 py-3 text-left transition-colors ${isRequest ? "border-accent bg-accent/5" : "border-gray-200 bg-white hover:bg-gray-50"}`} style={isRequest ? { borderColor: accentColor } : undefined}>
+            <span className="block text-sm font-bold text-gray-900">Solicitar para recoger</span>
+            <span className="mt-0.5 block text-xs text-gray-500">El negocio confirma antes de preparar.</span>
+          </button>
+        </div>
+      </section>
+
       <div
         className="flex items-center justify-between rounded-xl border-2 px-4 py-4"
         style={{
@@ -122,7 +164,7 @@ export function CheckoutBody({
         </span>
       </div>
 
-      {hasRecurringOptions && (
+      {!isRequest && hasRecurringOptions && (
         <div className="space-y-3">
           <PaymentModeTabs
             paymentMode={paymentMode}
@@ -163,7 +205,7 @@ export function CheckoutBody({
         </div>
       )}
 
-      {paymentMode !== "recurring" && msiBaseAmount > 0 && (
+      {!isRequest && paymentMode !== "recurring" && msiBaseAmount > 0 && (
         <div className="space-y-3">
           <MsiPicker
             paymentMode={paymentMode}
@@ -187,12 +229,13 @@ export function CheckoutBody({
         </div>
       )}
 
-      <form id={formId} onSubmit={onSubmit} className="space-y-4">
+      <form id={formId} onSubmit={handleFormSubmit} className="space-y-4">
         <CheckoutFormFields
           idPrefix={idPrefix}
           form={formState}
           fieldErrors={fieldErrors}
           onUpdate={onFormFieldChange}
+          emailOptional={isRequest}
         />
 
         <PickupTimePicker
@@ -207,8 +250,8 @@ export function CheckoutBody({
 
         {variant === "desktop" && (
           <div className="space-y-2">
-            <button type="submit" disabled={submitting} className="w-full min-h-12 cursor-pointer rounded-xl px-6 py-4 font-semibold text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2" style={{ backgroundColor: accentColor }}>{submitLabel}</button>
-            {onRequestOrder && <button type="button" disabled={submitting} onClick={onRequestOrder} className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-border bg-surface px-4 py-3 text-sm font-bold text-foreground transition-colors hover:bg-border-soft disabled:opacity-50">Enviar solicitud y pagar al recoger</button>}
+            <button type="submit" disabled={submitting} className="w-full min-h-12 cursor-pointer rounded-xl px-6 py-4 font-semibold text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2" style={{ backgroundColor: accentColor }}>{submitting ? "Procesando…" : primaryLabel}</button>
+            <p className="px-1 text-center text-[11px] text-gray-500">{primaryDisclaimer}</p>
             {whatsappOrdersEnabled && onWhatsAppOrder && (
               <button type="button" disabled={submitting} onClick={onWhatsAppOrder} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:opacity-50"><MessageCircle className="h-4 w-4" aria-hidden />Pedir por WhatsApp</button>
             )}
@@ -217,11 +260,10 @@ export function CheckoutBody({
         {variant === "mobile" && whatsappOrdersEnabled && onWhatsAppOrder && (
           <button type="button" disabled={submitting} onClick={onWhatsAppOrder} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:opacity-50"><MessageCircle className="h-4 w-4" aria-hidden />Pedir por WhatsApp</button>
         )}
-        {variant === "mobile" && onRequestOrder && <button type="button" disabled={submitting} onClick={onRequestOrder} className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-border bg-surface px-4 py-3 text-sm font-bold text-foreground transition-colors hover:bg-border-soft disabled:opacity-50">Enviar solicitud y pagar al recoger</button>}
       </form>
 
       {variant === "desktop" && (
-        <p className="text-xs text-gray-500">{submitDisclaimer}</p>
+        <p className="text-xs text-gray-500">{primaryDisclaimer}</p>
       )}
     </>
   );

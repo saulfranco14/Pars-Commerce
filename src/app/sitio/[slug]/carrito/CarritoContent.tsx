@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { CheckoutGuide } from "@/components/onboarding/CheckoutGuide";
 import { useFingerprint } from "@/hooks/useFingerprint";
@@ -24,6 +24,7 @@ import { useCartCheckoutForm } from "@/features/checkout/hooks/useCartCheckoutFo
 import { useCheckoutSheet } from "@/features/checkout/hooks/useCheckoutSheet";
 import { useMsiSelector } from "@/features/checkout/hooks/useMsiSelector";
 import { usePaymentMode } from "@/features/checkout/hooks/usePaymentMode";
+import type { CheckoutIntent } from "@/features/checkout/components/cart/CheckoutBody";
 
 interface CarritoContentProps {
   tenantId: string;
@@ -84,6 +85,7 @@ export default function CarritoContent({
   });
 
   const sheet = useCheckoutSheet();
+  const [checkoutIntent, setCheckoutIntent] = useState<CheckoutIntent>("online");
 
   const cartActions = useCartActions({
     cart,
@@ -115,6 +117,10 @@ export default function CarritoContent({
     perMonth: msiBreakdown?.perMonth ?? 0,
     customerAbsorbsFee,
   });
+  const checkoutPrimaryLabel = checkoutIntent === "request" ? "Enviar solicitud para recoger" : submitLabel;
+  const checkoutPrimaryDisclaimer = checkoutIntent === "request"
+    ? "El negocio revisará tu solicitud antes de preparar el pedido."
+    : submitDisclaimer;
 
   if (isLoading) {
     return (
@@ -140,6 +146,8 @@ export default function CarritoContent({
     onSubmit: checkoutForm.handleSubmit,
     onWhatsAppOrder: checkoutForm.handleWhatsAppOrder,
     onRequestOrder: checkoutForm.handleRequestOrder,
+    checkoutIntent,
+    onCheckoutIntentChange: setCheckoutIntent,
     whatsappOrdersEnabled,
     submitting: checkoutForm.submitting,
     submitLabel,
@@ -226,9 +234,11 @@ export default function CarritoContent({
           error={combinedError}
           submitting={checkoutForm.submitting}
           submitLabel={submitLabel}
-          submitDisclaimer={submitDisclaimer}
+          submitLabel={checkoutPrimaryLabel}
+          submitDisclaimer={checkoutPrimaryDisclaimer}
           accentColor={accentColor}
           onClose={sheet.close}
+          primaryAction={checkoutIntent === "request" ? checkoutForm.handleRequestOrder : undefined}
         >
           <CheckoutBody variant="mobile" {...checkoutBodyProps} />
         </MobileCheckoutSheet>

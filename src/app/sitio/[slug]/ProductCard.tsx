@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MessageCircle, Package, ShoppingCart, Eye } from "lucide-react";
+import { MessageCircle, Package, ShoppingCart, Eye, Check } from "lucide-react";
 import { addItem } from "@/services/publicCartService";
 import { dispatchCartUpdated } from "@/lib/cartEvents";
 import { useFingerprint } from "@/hooks/useFingerprint";
@@ -53,6 +53,7 @@ export default function ProductCard({
 }: ProductCardProps) {
   const fingerprint = useFingerprint();
   const [loading, setLoading] = useState(false);
+  const [added, setAdded] = useState(false);
   const productPath = `/sitio/${sitioSlug}/productos/${product.slug || product.id}`;
   const productUrl = baseUrl ? `${baseUrl}${productPath}` : productPath;
 
@@ -79,13 +80,15 @@ export default function ProductCard({
     try {
       await addItem(tenantId, product.id, 1, fingerprint);
       dispatchCartUpdated({ label: `${product.name} se agregó al carrito` });
+      setAdded(true);
+      window.setTimeout(() => setAdded(false), 1800);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
       {/* Image area */}
       <Link href={productPath} className="relative block aspect-4/3 overflow-hidden bg-gray-50">
         {mainImage ? (
@@ -134,17 +137,15 @@ export default function ProductCard({
       </Link>
 
       {/* Card content */}
-      <div className="flex flex-1 flex-col p-4">
+      <div className="flex min-h-36 flex-1 flex-col p-4">
         <Link href={productPath}>
           <h3 className="line-clamp-2 font-semibold leading-snug text-gray-900 transition-opacity hover:opacity-70">
             {product.name}
           </h3>
         </Link>
-        {product.description && (
-          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-gray-400">
-            {product.description}
-          </p>
-        )}
+        <p className="mt-1 min-h-9 line-clamp-2 text-xs leading-relaxed text-gray-400">
+          {product.description || " "}
+        </p>
         <div className="mt-auto flex items-baseline gap-2 pt-3">
           <span className="text-xl font-bold" style={{ color: accentColor }}>
             ${displayPrice.toFixed(2)}
@@ -167,7 +168,7 @@ export default function ProductCard({
           style={{ backgroundColor: accentColor }}
         >
           <ShoppingCart className="h-4 w-4" />
-          {loading ? "Agregando…" : "Agregar al carrito"}
+          {loading ? "Agregando…" : added ? <><Check className="h-4 w-4" />Agregado</> : "Agregar al carrito"}
         </button>
         {waHref && (
           <a
