@@ -20,6 +20,34 @@ import { MessageCircle } from "lucide-react";
 
 export type CheckoutIntent = "online" | "request";
 
+export function CheckoutIntentPicker({
+  accentColor,
+  onSelect,
+}: {
+  accentColor: string;
+  onSelect: (intent: CheckoutIntent) => void;
+}) {
+  return (
+    <section className="space-y-3">
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Paso 1 de 2</p>
+        <h3 className="mt-1 text-lg font-bold text-gray-900">¿Cómo quieres finalizar?</h3>
+        <p className="mt-1 text-sm text-gray-500">Elige una opción y te mostraremos sólo los datos necesarios.</p>
+      </div>
+      <button type="button" onClick={() => onSelect("online")} className="w-full rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ "--tw-ring-color": accentColor } as React.CSSProperties}>
+        <span className="block text-base font-bold text-gray-900">Pagar en línea</span>
+        <span className="mt-1 block text-sm text-gray-500">Paga de inmediato y recibe confirmación de Mercado Pago.</span>
+        <span className="mt-3 inline-flex min-h-10 items-center rounded-xl px-3 text-sm font-bold text-white" style={{ backgroundColor: accentColor }}>Continuar con pago</span>
+      </button>
+      <button type="button" onClick={() => onSelect("request")} className="w-full rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ "--tw-ring-color": accentColor } as React.CSSProperties}>
+        <span className="block text-base font-bold text-gray-900">Solicitar para recoger</span>
+        <span className="mt-1 block text-sm text-gray-500">El negocio revisa la solicitud antes de prepararla; pagas al recoger.</span>
+        <span className="mt-3 inline-flex min-h-10 items-center rounded-xl border px-3 text-sm font-bold" style={{ borderColor: `${accentColor}55`, color: accentColor }}>Enviar solicitud</span>
+      </button>
+    </section>
+  );
+}
+
 interface CheckoutBodyProps {
   variant: "desktop" | "mobile";
   formState: {
@@ -45,7 +73,7 @@ interface CheckoutBodyProps {
   onWhatsAppOrder?: () => void;
   onRequestOrder?: () => void;
   checkoutIntent: CheckoutIntent;
-  onCheckoutIntentChange: (intent: CheckoutIntent) => void;
+  onCheckoutIntentChange: () => void;
   whatsappOrdersEnabled?: boolean;
   submitting: boolean;
   submitLabel: string;
@@ -127,26 +155,18 @@ export function CheckoutBody({
   return (
     <>
       <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-3">
-        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Finaliza en 2 pasos</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Paso 2 de 2</p>
+            <p className="mt-0.5 text-sm font-semibold text-gray-900">{isRequest ? "Solicitud para recoger" : "Pago en línea"}</p>
+          </div>
+          <button type="button" onClick={onCheckoutIntentChange} className="min-h-10 rounded-lg px-2 text-xs font-semibold text-gray-600 hover:bg-white">Cambiar</button>
+        </div>
         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
           <div className="rounded-lg bg-white px-2.5 py-2 font-semibold text-gray-900 shadow-sm">1. Tus datos</div>
-          <div className="rounded-lg px-2.5 py-2 text-gray-500">2. {isRequest ? "Confirmación" : "Pago seguro"}</div>
+          <div className="rounded-lg bg-white px-2.5 py-2 font-semibold text-gray-900 shadow-sm">2. {isRequest ? "Confirmación" : "Pago seguro"}</div>
         </div>
       </div>
-
-      <section>
-        <p className="mb-2 text-sm font-semibold text-gray-900">¿Cómo quieres finalizar?</p>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <button type="button" onClick={() => onCheckoutIntentChange("online")} className={`min-h-18 rounded-xl border-2 px-3 py-3 text-left transition-colors ${!isRequest ? "border-accent bg-accent/5" : "border-gray-200 bg-white hover:bg-gray-50"}`} style={!isRequest ? { borderColor: accentColor } : undefined}>
-            <span className="block text-sm font-bold text-gray-900">Pagar en línea</span>
-            <span className="mt-0.5 block text-xs text-gray-500">Confirma tu compra con Mercado Pago.</span>
-          </button>
-          <button type="button" onClick={() => onCheckoutIntentChange("request")} className={`min-h-18 rounded-xl border-2 px-3 py-3 text-left transition-colors ${isRequest ? "border-accent bg-accent/5" : "border-gray-200 bg-white hover:bg-gray-50"}`} style={isRequest ? { borderColor: accentColor } : undefined}>
-            <span className="block text-sm font-bold text-gray-900">Solicitar para recoger</span>
-            <span className="mt-0.5 block text-xs text-gray-500">El negocio confirma antes de preparar.</span>
-          </button>
-        </div>
-      </section>
 
       <div
         className="flex items-center justify-between rounded-xl border-2 px-4 py-4"

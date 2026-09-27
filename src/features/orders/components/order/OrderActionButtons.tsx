@@ -27,6 +27,7 @@ import { AddendumSheet } from "@/features/orders/components/order/AddendumSheet"
 import type { OrderActionButtonsProps } from "@/features/orders/interfaces/orderActionButtons";
 import { GenerateLinkModal } from "./GenerateLinkModal";
 import { OrderCreditSheet } from "./OrderCreditSheet";
+import { btnDanger as standardDanger, btnPrimary as standardPrimary, btnSecondary as standardSecondary } from "@/components/ui/buttonClasses";
 
 function isExpressOrderEnabled(settings: unknown): boolean {
   if (!settings || typeof settings !== "object") return false;
@@ -171,12 +172,11 @@ export function OrderActionButtons({
     }
   }
 
-  const btnBase =
-    "inline-flex min-h-12 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 active:scale-[0.98]";
-  const btnPrimary = `${btnBase} bg-accent text-accent-foreground hover:bg-accent/90 focus-visible:ring-accent`;
-  const btnSuccess = `${btnBase} bg-emerald-600 text-white shadow-sm hover:bg-emerald-500 focus-visible:ring-emerald-500`;
-  const btnBlue = `${btnBase} bg-blue-600 text-white hover:bg-blue-500 focus-visible:ring-blue-500`;
-  const btnDestructive = `${btnBase} border border-red-200 bg-surface text-red-600 hover:bg-red-50 focus-visible:ring-red-500/50`;
+  const btnPrimary = `${standardPrimary} min-h-12 rounded-xl px-4 py-3 font-semibold active:scale-[0.98]`;
+  const btnSuccess = `${standardPrimary} min-h-12 rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-500 focus-visible:ring-emerald-500 active:scale-[0.98]`;
+  const btnBlue = `${standardPrimary} min-h-12 rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-500 focus-visible:ring-blue-500 active:scale-[0.98]`;
+  const btnDestructive = `${standardDanger} min-h-12 rounded-xl bg-surface px-4 py-3 font-semibold active:scale-[0.98]`;
+  const btnSecondary = `${standardSecondary} min-h-12 rounded-xl bg-surface px-4 py-3 font-semibold active:scale-[0.98]`;
 
   const actionContext = order.status === "pending_acceptance"
     ? { label: "Solicitud nueva", detail: "Elige si el negocio puede prepararla." }
@@ -206,7 +206,7 @@ export function OrderActionButtons({
       )}
       <div className={flexClass}>
         {order.status === "pending_acceptance" && <>
-          <button type="button" onClick={() => setRejectRequestOpen(true)} disabled={requestLoading} className={`w-full min-w-0 shrink-0 sm:w-auto ${btnDestructive}`}><X className="h-4 w-4" aria-hidden />Rechazar solicitud</button>
+          {!fixedBar && <button type="button" onClick={() => setRejectRequestOpen(true)} disabled={requestLoading} className={`w-full min-w-0 shrink-0 sm:w-auto ${btnDestructive}`}><X className="h-4 w-4" aria-hidden />Rechazar solicitud</button>}
           <button type="button" onClick={() => setAcceptRequestOpen(true)} disabled={requestLoading} className={`w-full min-w-0 shrink-0 sm:w-auto ${btnSuccess}`}><CheckCircle className="h-4 w-4" aria-hidden />Aceptar para preparar</button>
         </>}
         {showExpressButton && (
@@ -220,7 +220,7 @@ export function OrderActionButtons({
             Ir al cobro
           </button>
         )}
-        {showCancel && (
+        {showCancel && !fixedBar && (
           <button
             type="button"
             onClick={() => setCancelModalOpen(true)}
@@ -290,7 +290,7 @@ export function OrderActionButtons({
               <DollarSign className="h-4 w-4 shrink-0" aria-hidden />
               Cobro directo
             </button>
-            <button
+            {!fixedBar && <button
               type="button"
               onClick={() => setGenerateLinkModalOpen(true)}
               disabled={actionLoading}
@@ -298,13 +298,13 @@ export function OrderActionButtons({
             >
               <Smartphone className="h-4 w-4 shrink-0" aria-hidden />
               Generar cobro (MercadoPago)
-            </button>
-            {isOwner && (
+            </button>}
+            {isOwner && !fixedBar && (
               <button
                 type="button"
                 onClick={() => setCreditSheetOpen(true)}
                 disabled={actionLoading}
-                className={`w-full min-w-0 shrink-0 sm:w-auto ${btnBase} border border-border bg-surface text-foreground hover:bg-surface-raised focus-visible:ring-accent`}
+                className={`w-full min-w-0 shrink-0 sm:w-auto ${btnSecondary}`}
               >
                 <Banknote className="h-4 w-4 shrink-0" aria-hidden />
                 Agregar a crédito
@@ -326,33 +326,33 @@ export function OrderActionButtons({
               : "Marcar como pagado"}
           </button>
         )}
-        {showViewLoanButton && (
+        {showViewLoanButton && !fixedBar && (
           <button
             type="button"
             onClick={handleGoToLoan}
-            className={`w-full min-w-0 shrink-0 sm:w-auto ${btnBase} border border-border bg-surface text-foreground hover:bg-surface-raised focus-visible:ring-accent`}
+            className={`w-full min-w-0 shrink-0 sm:w-auto ${btnSecondary}`}
           >
             <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
             Ver préstamo
           </button>
         )}
-        {showRegisterLoanButton && (
+        {showRegisterLoanButton && !fixedBar && (
           <button
             type="button"
             onClick={handleRegisterLoan}
             disabled={actionLoading}
-            className={`w-full min-w-0 shrink-0 sm:w-auto ${btnBase} border border-border bg-surface text-foreground hover:bg-surface-raised focus-visible:ring-accent`}
+            className={`w-full min-w-0 shrink-0 sm:w-auto ${btnSecondary}`}
           >
             <Banknote className="h-4 w-4 shrink-0" aria-hidden />
             Registrar como préstamo
           </button>
         )}
-        {showAddendumButton && (
+        {showAddendumButton && !fixedBar && (
           <button
             type="button"
             onClick={() => setAddendumOpen(true)}
             disabled={actionLoading}
-            className={`w-full min-w-0 shrink-0 sm:w-auto ${btnBase} border border-border bg-surface text-foreground hover:bg-surface-raised focus-visible:ring-accent`}
+            className={`w-full min-w-0 shrink-0 sm:w-auto ${btnSecondary}`}
           >
             <PackagePlus className="h-4 w-4 shrink-0" aria-hidden />
             Agregar lo que faltó
