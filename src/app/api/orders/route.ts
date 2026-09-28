@@ -47,8 +47,10 @@ export async function GET(request: Request) {
         id, order_number, tenant_id, status, fulfillment_status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_id, customer_name, customer_email, customer_phone, parent_order_id,
         subtotal, discount, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, updated_at, scheduled_for,
         created_by, assigned_to, completed_by, completed_at, paid_at,
+        pickup_completed_at, pickup_completed_by,
         payment_method, payment_link, mp_preference_id,
         assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email),
+        pickup_completed_user:profiles!orders_pickup_completed_by_fkey(id, display_name, email),
         items:order_items(id, quantity, unit_price, subtotal, is_wholesale, wholesale_savings, product:products(id, name, type, image_url)),
         payments(id, provider, status, amount, metadata, created_at),
         payment_schedules:order_payment_schedules(id, installment_number, due_date, amount_due, amount_paid, status, paid_at),
@@ -108,7 +110,7 @@ export async function GET(request: Request) {
     .from("orders")
     .select(
       `
-      id, order_number, status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_name, customer_email, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, paid_at, scheduled_for, assigned_to, created_by, payment_method,
+      id, order_number, status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_name, customer_email, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, paid_at, scheduled_for, pickup_completed_at, pickup_completed_by, assigned_to, created_by, payment_method,
       assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email)
       `
     )
@@ -477,12 +479,14 @@ export async function POST(request: Request) {
   const body = await request.json();
   const {
     tenant_id,
+    customer_id,
     customer_name,
     customer_email,
     customer_phone,
     assigned_to,
   } = body as {
     tenant_id: string;
+    customer_id?: string;
     customer_name?: string;
     customer_email?: string;
     customer_phone?: string;
@@ -494,6 +498,22 @@ export async function POST(request: Request) {
       { error: "tenant_id is required" },
       { status: 400 }
     );
+  }
+
+  if (customer_id) {
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("id")
+      .eq("id", customer_id)
+      .eq("tenant_id", tenant_id)
+      .maybeSingle();
+
+    if (!customer) {
+      return NextResponse.json(
+        { error: "El cliente no pertenece a este negocio." },
+        { status: 400 },
+      );
+    }
   }
 
   const taker = await requirePermission(
@@ -539,6 +559,7 @@ export async function POST(request: Request) {
       source: "dashboard",
       created_by: user.id,
       assigned_to: owner_id,
+      customer_id: customer_id ?? null,
       customer_name: customer_name?.trim() || null,
       customer_email: customer_email?.trim() || null,
       customer_phone: customer_phone?.trim() || null,

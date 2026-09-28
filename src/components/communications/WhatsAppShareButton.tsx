@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MessageCircle } from "lucide-react";
+import { btnSecondary } from "@/components/ui/buttonClasses";
 
 interface WhatsAppShareButtonProps {
   tenantId: string;
@@ -10,10 +11,19 @@ interface WhatsAppShareButtonProps {
   recipientPhone: string | null | undefined;
   eventType?: string;
   className?: string;
+  buttonClassName?: string;
 }
 
 /** Central internal action: logging a share is separate from any payment flow. */
-export function WhatsAppShareButton({ tenantId, entityType, entityId, recipientPhone, eventType = "whatsapp_opened", className = "" }: WhatsAppShareButtonProps) {
+export function WhatsAppShareButton({
+  tenantId,
+  entityType,
+  entityId,
+  recipientPhone,
+  eventType = "whatsapp_opened",
+  className = "",
+  buttonClassName = "",
+}: WhatsAppShareButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const share = async () => {
@@ -34,5 +44,18 @@ export function WhatsAppShareButton({ tenantId, entityType, entityId, recipientP
       setLoading(false);
     }
   };
-  return <div className="space-y-1"><button type="button" onClick={() => void share()} disabled={loading || !recipientPhone} className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}><MessageCircle className="h-4 w-4" aria-hidden />{loading ? "Abriendo…" : "Compartir por WhatsApp"}</button>{error && <p role="alert" className="text-xs text-red-600">{error}</p>}</div>;
+  return (
+    <div className={`space-y-1 ${className}`}>
+      <button
+        type="button"
+        onClick={() => void share()}
+        disabled={loading || !recipientPhone}
+        className={`${btnSecondary} min-h-12 rounded-xl px-4 py-3 font-semibold active:scale-[0.98] ${buttonClassName}`}
+      >
+        <MessageCircle className="h-4 w-4 text-emerald-600" aria-hidden />
+        {loading ? "Abriendo WhatsApp…" : "Compartir por WhatsApp"}
+      </button>
+      {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
+    </div>
+  );
 }

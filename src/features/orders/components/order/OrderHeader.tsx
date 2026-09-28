@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { PickupBadge } from "@/features/orders/components/order/PickupBadge";
 import { formatOrderDateFull } from "@/lib/formatDate";
 import { getPaymentMethodConfig } from "@/lib/formatPaymentMethod";
 import { getSourceConfig } from "@/lib/formatSource";
 import { useOrder } from "@/features/orders/hooks/useOrder";
+import { formatAgendaDateTime } from "@/features/orders/helpers/agendaBuckets";
 
 export function OrderHeader() {
   const { order, tenantSlug } = useOrder();
@@ -65,10 +66,19 @@ export function OrderHeader() {
           status={order.status}
           cancelledFrom={order.cancelled_from}
         />
-        <PickupBadge
-          scheduledFor={order.scheduled_for}
-          status={order.status}
-        />
+        <PickupBadge scheduledFor={order.scheduled_for} status={order.status} />
+        {order.pickup_completed_at && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800"
+            title={`Recogido el ${formatAgendaDateTime(order.pickup_completed_at)}`}
+          >
+            <CheckCircle2 className="h-3 w-3 shrink-0" aria-hidden />
+            Recogido
+            {order.pickup_completed_user?.display_name
+              ? ` · ${order.pickup_completed_user.display_name}`
+              : ""}
+          </span>
+        )}
         {order.assigned_user && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-border-soft px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
             <span

@@ -31,7 +31,7 @@ export function MobileCheckoutBar({
           className="ml-auto inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 active:opacity-80 sm:flex-none"
           style={{ backgroundColor: accentColor }}
         >
-          Continuar al pago
+          Finalizar pedido
         </button>
       </div>
     </div>

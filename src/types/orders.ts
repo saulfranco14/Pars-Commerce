@@ -10,6 +10,9 @@ export interface OrderListItem {
   order_type?: "dine_in" | "takeaway" | "qr_payment" | null;
   /** Cuándo pasa el cliente por él. `null` = sin agendar. */
   scheduled_for?: string | null;
+  /** Se oculta de la agenda activa cuando el personal confirma la recolección. */
+  pickup_completed_at?: string | null;
+  pickup_completed_by?: string | null;
   qr_code_id?: string | null;
   table_label?: string | null;
   diner_count?: number | null;
@@ -35,6 +38,7 @@ export interface OrderListItem {
 
 export interface CreateOrderPayload {
   tenant_id: string;
+  customer_id?: string;
   customer_name?: string;
   customer_email?: string;
   customer_phone?: string;

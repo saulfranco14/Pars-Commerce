@@ -17,8 +17,8 @@ export interface OrderContextType {
   fetchOrder: () => Promise<void>;
   handleStatusChange: (newStatus: string) => Promise<void>;
   handleAssign: (assignToId: string) => Promise<void>;
-  handleAssignAndMarkPaid: (assignToId: string, paymentMethod?: string) => Promise<void>;
-  handleMarkAsPaidWithMethod: (paymentMethod: string) => Promise<void>;
+  handleAssignAndMarkPaid: (assignToId: string, paymentMethod?: string) => Promise<boolean>;
+  handleMarkAsPaidWithMethod: (paymentMethod: string) => Promise<boolean>;
   handleExpressToPayment: () => Promise<boolean>;
   handleSaveCustomer: (details: { name: string; email: string; phone: string }) => Promise<void>;
   handleRemoveItem: (itemId: string) => Promise<void>;

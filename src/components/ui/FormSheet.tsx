@@ -36,6 +36,8 @@ interface FormSheetProps {
   footer?: React.ReactNode;
   /** The caller renders its own sticky context header inside the scroll area. */
   hideHeader?: boolean;
+  /** Optional sizing override for long, selection-heavy sheets. */
+  panelClassName?: string;
 }
 
 /**
@@ -60,6 +62,7 @@ export function FormSheet({
   icon: Icon,
   footer,
   hideHeader = false,
+  panelClassName = "",
 }: FormSheetProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -90,7 +93,7 @@ export function FormSheet({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`flex max-h-[92vh] w-full ${maxWidth} flex-col overflow-hidden rounded-t-3xl border-t border-border-soft bg-surface shadow-2xl md:max-h-[88vh] md:rounded-3xl md:border`}
+        className={`flex max-h-[92vh] w-full ${maxWidth} flex-col overflow-hidden rounded-t-3xl border-t border-border-soft bg-surface shadow-2xl md:max-h-[88vh] md:rounded-3xl md:border ${panelClassName}`}
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
         {/* Mobile grabber */}

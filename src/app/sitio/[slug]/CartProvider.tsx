@@ -1,6 +1,9 @@
 "use client";
 
-import { createContext, useContext, useCallback, useEffect } from "react";
+import { createContext, useContext, useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ShoppingCart } from "lucide-react";
 import useSWR from "swr";
 import { getCart } from "@/services/publicCartService";
 import { getCartUpdatedEventName } from "@/lib/cartEvents";
@@ -26,7 +29,7 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-function cartFetcher([_, tenantId, fingerprint]: [string, string, string]) {
+function cartFetcher([, tenantId, fingerprint]: [string, string, string]) {
   return getCart(tenantId, fingerprint);
 }
 
@@ -44,7 +47,12 @@ export function CartProvider({ tenantId, children }: CartProviderProps) {
     revalidateOnFocus: false,
   });
 
-  const onCartUpdated = useCallback(() => mutate(), [mutate]);
+  const [lastAdded, setLastAdded] = useState<string | null>(null);
+  const onCartUpdated = useCallback((event: Event) => {
+    const detail = (event as CustomEvent<{ label?: string }>).detail;
+    setLastAdded(detail?.label ?? "Artículo agregado");
+    void mutate();
+  }, [mutate]);
   useEffect(() => {
     window.addEventListener(getCartUpdatedEventName(), onCartUpdated);
     return () => window.removeEventListener(getCartUpdatedEventName(), onCartUpdated);
@@ -63,8 +71,18 @@ export function CartProvider({ tenantId, children }: CartProviderProps) {
   return (
     <CartContext.Provider value={value}>
       {children}
+      <CartDock lastAdded={lastAdded} />
     </CartContext.Provider>
   );
+}
+
+function CartDock({ lastAdded }: { lastAdded: string | null }) {
+  const { itemsCount, subtotal } = useCartContext();
+  const pathname = usePathname();
+  const match = pathname.match(/^\/sitio\/([^/]+)/);
+  const slug = match?.[1];
+  if (!slug || pathname.endsWith("/carrito") || itemsCount === 0) return null;
+  return <div className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto w-auto max-w-md md:inset-x-auto md:bottom-6 md:right-6"><div className="rounded-2xl border border-border/70 bg-surface/95 p-2 shadow-xl backdrop-blur"><p className="px-2 pb-1 text-xs text-muted-foreground" aria-live="polite">{lastAdded ?? "Tu carrito está listo"}</p><Link href={`/sitio/${slug}/carrito`} className="flex min-h-12 items-center justify-between gap-4 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground transition-transform active:scale-[0.98] md:min-w-72"><span className="flex items-center gap-2"><ShoppingCart className="h-4 w-4" />Ver carrito · {itemsCount}</span><span className="tabular-nums">${Number(subtotal).toFixed(2)}</span></Link></div></div>;
 }
 
 export function useCartContext(): CartContextValue {

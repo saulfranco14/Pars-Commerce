@@ -1,3 +1,4 @@
+import { normalizeWholesaleForProduct } from "@/features/productos/helpers/normalizeWholesale";
 import { create, update } from "@/services/productsService";
 import { deriveSlug } from "@/lib/forms/deriveSlug";
 
@@ -17,6 +18,16 @@ export async function createProductFromForm(
   imageUploadRef: MultiImageUploadRef | null,
 ): Promise<ProductCreated> {
   const finalSlug = (values.slug?.trim() || deriveSlug(values.name)).toLowerCase();
+  const wholesale = normalizeWholesaleForProduct(
+    values.wholesale_min_quantity,
+    values.wholesale_price,
+  );
+  const initialStock =
+    values.track_stock && values.stock != null && !Number.isNaN(values.stock)
+      ? Math.floor(values.stock)
+      : values.track_stock
+        ? 0
+        : undefined;
 
   const created = await create({
     tenant_id: tenantId,
@@ -31,10 +42,10 @@ export async function createProductFromForm(
     theme: values.theme?.trim() || undefined,
     subcatalog_id: values.subcatalog_id || null,
     track_stock: values.track_stock,
-    stock: values.track_stock ? values.stock : undefined,
+    stock: initialStock,
     is_public: values.is_public,
-    wholesale_min_quantity: values.wholesale_min_quantity ?? null,
-    wholesale_price: values.wholesale_price ?? null,
+    wholesale_min_quantity: wholesale.wholesale_min_quantity,
+    wholesale_price: wholesale.wholesale_price,
   });
 
   const uploadedUrls = imageUploadRef

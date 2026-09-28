@@ -21,33 +21,33 @@ interface BuildProductFieldsOptions {
 const hasValue = (v: unknown) => v !== undefined && v !== null && v !== "";
 
 /**
- * Cross-field rules for Producto: the wholesale pair must be set together or
- * both empty, and stock only makes sense (and is required) when track_stock
- * is on. Folded into the same Yup object as the rest of the fields — no
- * manual if-chain in the submit handler.
+ * Cross-field rules for Producto: mayoreo is optional (incomplete pairs are
+ * ignored on save). When both wholesale fields are set, they must be valid.
  */
 export const productCrossFieldRules: CrossFieldRule[] = [
-  {
-    name: "wholesale-pair",
-    message: "Cantidad mínima y precio mayoreo deben ir juntos o ambos vacíos",
-    path: "wholesale_price",
-    test: (values) =>
-      hasValue(values.wholesale_min_quantity) ===
-      hasValue(values.wholesale_price),
-  },
   {
     name: "wholesale-min-quantity",
     message: "Cantidad mínima debe ser mayor o igual a 1",
     path: "wholesale_min_quantity",
-    test: (values) =>
-      !hasValue(values.wholesale_min_quantity) ||
-      Number(values.wholesale_min_quantity) >= 1,
+    test: (values) => {
+      const pairComplete =
+        hasValue(values.wholesale_min_quantity) &&
+        hasValue(values.wholesale_price);
+      if (!pairComplete) return true;
+      return Number(values.wholesale_min_quantity) >= 1;
+    },
   },
   {
-    name: "stock-required-when-tracked",
-    message: "Stock es requerido cuando controlas stock",
-    path: "stock",
-    test: (values) => !values.track_stock || hasValue(values.stock),
+    name: "wholesale-price-min",
+    message: "Precio mayoreo debe ser mayor o igual a 0",
+    path: "wholesale_price",
+    test: (values) => {
+      const pairComplete =
+        hasValue(values.wholesale_min_quantity) &&
+        hasValue(values.wholesale_price);
+      if (!pairComplete) return true;
+      return Number(values.wholesale_price) >= 0;
+    },
   },
 ];
 
@@ -165,7 +165,7 @@ export function buildProductFields(
       icon: Package,
       placeholder: "Ej. 10",
       required: false,
-      hint: "Si defines mayoreo, el precio por unidad es requerido.",
+      hint: "Opcional. Completa cantidad y precio para activar mayoreo en ventas.",
     },
     {
       name: "wholesale_price",
@@ -188,6 +188,8 @@ export function buildProductFields(
       type: "number",
       placeholder: "0",
       required: false,
+      defaultValue: "0",
+      hint: "Si lo dejas vacío, se guarda en 0.",
       disabledUnless: "track_stock",
       yupNumber: (base) =>
         base

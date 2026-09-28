@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { CheckoutGuide } from "@/components/onboarding/CheckoutGuide";
 import { useFingerprint } from "@/hooks/useFingerprint";
@@ -12,7 +12,7 @@ import { CartEmptyState } from "@/features/checkout/components/cart/CartEmptySta
 import { CartItemsList } from "@/features/checkout/components/cart/CartItemsList";
 import { CartSummaryHeader } from "@/features/checkout/components/cart/CartSummaryHeader";
 import { CartTrustBadges } from "@/features/checkout/components/cart/CartTrustBadges";
-import { CheckoutBody } from "@/features/checkout/components/cart/CheckoutBody";
+import { CheckoutBody, CheckoutIntentPicker } from "@/features/checkout/components/cart/CheckoutBody";
 import type { PickupSchedulingConfig } from "@/features/checkout/interfaces/pickupSchedule";
 import type { BusinessHours } from "@/features/configuracion/interfaces/businessHours";
 import { DesktopCheckoutAside } from "@/features/checkout/components/cart/DesktopCheckoutAside";
@@ -24,6 +24,7 @@ import { useCartCheckoutForm } from "@/features/checkout/hooks/useCartCheckoutFo
 import { useCheckoutSheet } from "@/features/checkout/hooks/useCheckoutSheet";
 import { useMsiSelector } from "@/features/checkout/hooks/useMsiSelector";
 import { usePaymentMode } from "@/features/checkout/hooks/usePaymentMode";
+import type { CheckoutIntent } from "@/features/checkout/components/cart/CheckoutBody";
 
 interface CarritoContentProps {
   tenantId: string;
@@ -84,6 +85,7 @@ export default function CarritoContent({
   });
 
   const sheet = useCheckoutSheet();
+  const [checkoutIntent, setCheckoutIntent] = useState<CheckoutIntent | null>(null);
 
   const cartActions = useCartActions({
     cart,
@@ -115,6 +117,10 @@ export default function CarritoContent({
     perMonth: msiBreakdown?.perMonth ?? 0,
     customerAbsorbsFee,
   });
+  const checkoutPrimaryLabel = checkoutIntent === "request" ? "Enviar solicitud para recoger" : submitLabel;
+  const checkoutPrimaryDisclaimer = checkoutIntent === "request"
+    ? "El negocio revisará tu solicitud antes de preparar el pedido."
+    : submitDisclaimer;
 
   if (isLoading) {
     return (
@@ -139,6 +145,9 @@ export default function CarritoContent({
     onFormFieldChange: checkoutForm.updateField,
     onSubmit: checkoutForm.handleSubmit,
     onWhatsAppOrder: checkoutForm.handleWhatsAppOrder,
+    onRequestOrder: checkoutForm.handleRequestOrder,
+    checkoutIntent: checkoutIntent ?? "online",
+    onCheckoutIntentChange: () => setCheckoutIntent(null),
     whatsappOrdersEnabled,
     submitting: checkoutForm.submitting,
     submitLabel,
@@ -203,7 +212,7 @@ export default function CarritoContent({
             los productos y sus cantidades siguen ahí para cuando reabran. */}
         {acceptingOrders && (
           <DesktopCheckoutAside>
-            <CheckoutBody variant="desktop" {...checkoutBodyProps} />
+            {checkoutIntent ? <CheckoutBody variant="desktop" {...checkoutBodyProps} /> : <CheckoutIntentPicker accentColor={accentColor} onSelect={setCheckoutIntent} />}
           </DesktopCheckoutAside>
         )}
       </div>
@@ -224,12 +233,14 @@ export default function CarritoContent({
           subtotal={subtotal}
           error={combinedError}
           submitting={checkoutForm.submitting}
-          submitLabel={submitLabel}
-          submitDisclaimer={submitDisclaimer}
+          submitLabel={checkoutPrimaryLabel}
+          submitDisclaimer={checkoutPrimaryDisclaimer}
           accentColor={accentColor}
           onClose={sheet.close}
+          primaryAction={checkoutIntent === "request" ? checkoutForm.handleRequestOrder : undefined}
+          showPrimaryAction={Boolean(checkoutIntent)}
         >
-          <CheckoutBody variant="mobile" {...checkoutBodyProps} />
+          {checkoutIntent ? <CheckoutBody variant="mobile" {...checkoutBodyProps} /> : <CheckoutIntentPicker accentColor={accentColor} onSelect={setCheckoutIntent} />}
         </MobileCheckoutSheet>
       )}
     </div>

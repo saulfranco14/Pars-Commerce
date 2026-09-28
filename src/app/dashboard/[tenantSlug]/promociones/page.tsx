@@ -7,6 +7,7 @@ import { ConfirmModal } from "@/components/ConfirmModal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { ImageUpload } from "@/components/ImageUpload";
 import { swrFetcher } from "@/lib/swrFetcher";
+import { LineItemComposer, type LineItemDraft } from "@/features/line-item-composer/LineItemComposer";
 import type { Promotion, CreatePromotionPayload, PromotionType } from "@/services/promotionsService";
 import {
   create as createPromotion,
@@ -33,7 +34,6 @@ export default function PromocionesPage() {
   const [validUntil, setValidUntil] = useState("");
   const [description, setDescription] = useState("");
   const [badgeLabel, setBadgeLabel] = useState("");
-  const [quantity, setQuantity] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +41,8 @@ export default function PromocionesPage() {
   const [promotionToDelete, setPromotionToDelete] = useState<Promotion | null>(null);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [selectedSubcatalogIds, setSelectedSubcatalogIds] = useState<string[]>([]);
+  const [packItems, setPackItems] = useState<LineItemDraft[]>([]);
+  const [packPickerOpen, setPackPickerOpen] = useState(false);
 
   const key = activeTenant ? promotionsKey(activeTenant.id) : null;
   const productsKeyValue = activeTenant ? productsKey(activeTenant.id) : null;
@@ -72,8 +74,10 @@ export default function PromocionesPage() {
       if (validFrom.trim()) payload.valid_from = validFrom;
       if (validUntil.trim()) payload.valid_until = validUntil;
       if (type === "bundle_price") {
-        if (selectedProductIds.length > 0) payload.bundle_product_ids = selectedProductIds;
-        if (quantity.trim()) payload.quantity = parseInt(quantity, 10);
+        if (packItems.length > 0) {
+          payload.items = packItems;
+          payload.bundle_product_ids = packItems.map((item) => item.product_id);
+        }
       } else if (selectedProductIds.length > 0) {
         payload.product_ids = selectedProductIds;
       }
@@ -90,10 +94,10 @@ export default function PromocionesPage() {
       setValidUntil("");
       setDescription("");
       setBadgeLabel("");
-      setQuantity("");
       setImageUrl("");
       setSelectedProductIds([]);
       setSelectedSubcatalogIds([]);
+      setPackItems([]);
       setShowForm(false);
       await mutate();
     } catch (e) {
@@ -257,21 +261,6 @@ export default function PromocionesPage() {
                 />
               </div>
             )}
-            {type === "bundle_price" && (
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground">
-                  Cantidad (ej. 6 en 6 por $85)
-                </label>
-                <input
-                  type="number"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  min={1}
-                  className="input-form mt-1 block w-full min-h-10 rounded-lg border px-3 py-2 text-sm"
-                  placeholder="6"
-                />
-              </div>
-            )}
           </div>
           <div>
             <label className="block text-xs font-medium text-muted-foreground">
@@ -287,13 +276,18 @@ export default function PromocionesPage() {
               placeholder="0"
             />
           </div>
-          {(type === "bundle_price" || type === "fixed_price" || type === "percentage" || type === "fixed_amount") && (
+          {type === "bundle_price" && (
+            <section className="rounded-xl border border-border bg-surface p-3">
+              <div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold text-foreground">Artículos del pack</p><p className="mt-1 text-xs text-muted-foreground">El cliente recibirá exactamente estas cantidades.</p></div><span className="rounded-full bg-accent/10 px-2 py-1 text-xs font-bold text-accent">{packItems.reduce((sum, item) => sum + item.quantity, 0)}</span></div>
+              <button type="button" onClick={() => setPackPickerOpen(true)} className="mt-3 min-h-11 w-full rounded-xl border border-accent/30 bg-accent/5 px-3 text-sm font-bold text-accent hover:bg-accent hover:text-accent-foreground">{packItems.length ? "Editar artículos del pack" : "Elegir artículos del pack"}</button>
+            </section>
+          )}
+          {(type === "fixed_price" || type === "percentage" || type === "fixed_amount") && (
           <div>
             <label className="block text-xs font-medium text-muted-foreground">
               Productos aplicables (opcional)
             </label>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {type === "bundle_price" ? "Productos del pack. " : ""}
               Deja vacío para aplicar a todos. Selecciona para limitar la promoción.
             </p>
             <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-border p-2 space-y-1">
@@ -444,6 +438,7 @@ export default function PromocionesPage() {
         onConfirm={handleDeleteConfirm}
         loading={!!deletingId}
       />
+      <LineItemComposer tenantId={activeTenant.id} documentKey="promotion:new-pack" isOpen={packPickerOpen} onClose={() => setPackPickerOpen(false)} initialItems={packItems} title="Armar pack" commitLabel="Usar artículos en el pack" onCommit={async (items) => { setPackItems(items); setPackPickerOpen(false); }} />
       </div>
     </div>
   );

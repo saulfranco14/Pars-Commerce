@@ -11,6 +11,7 @@ interface CheckoutFormFieldsProps {
   form: FormState;
   fieldErrors: Record<string, string>;
   onUpdate: (field: keyof FormState, value: string) => void;
+  emailOptional?: boolean;
 }
 
 const inputBaseClass =
@@ -34,6 +35,7 @@ export function CheckoutFormFields({
   form,
   fieldErrors,
   onUpdate,
+  emailOptional = false,
 }: CheckoutFormFieldsProps) {
   return (
     <>
@@ -64,7 +66,7 @@ export function CheckoutFormFields({
           htmlFor={`${idPrefix}checkout-email`}
           className="block text-sm font-medium text-gray-700"
         >
-          Email
+          Email {emailOptional && <span className="font-normal text-gray-500">(opcional)</span>}
         </label>
         <input
           id={`${idPrefix}checkout-email`}

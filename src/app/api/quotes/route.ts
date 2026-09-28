@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   if (!tenantId) return NextResponse.json({ error: "tenant_id es requerido." }, { status: 400 });
   if (!await requirePermission(user.id, tenantId, "orders.read")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const db = createAdminClient() as unknown as SupabaseClient<any>;
-  const { data, error } = await db.from("quotes").select("*, customer:customers(id, name, email, phone), items:quote_items(*)").eq("tenant_id", tenantId).order("created_at", { ascending: false });
+  const { data, error } = await db.from("quotes").select("*, customer:customers(id, name, email, phone), items:quote_items(*), events:quote_events(event_type, source, reason, metadata, created_at)").eq("tenant_id", tenantId).order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data ?? []);
 }
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
   const validUntil = body.valid_until ? new Date(body.valid_until) : new Date(Date.now() + 7 * 86400000);
   if (Number.isNaN(validUntil.getTime()) || validUntil <= new Date()) return NextResponse.json({ error: "La vigencia debe estar en el futuro." }, { status: 400 });
   try {
-    const { data: quote, error } = await db.from("quotes").insert({ tenant_id: tenantId, customer_id: customerId, quote_number: quoteNumber(), status: "draft", subtotal, discount, total, internal_notes: body.internal_notes?.trim() || null, customer_note: body.customer_note?.trim() || null, valid_until: validUntil.toISOString(), public_token_hash: tokenHash, public_token_expires_at: validUntil.toISOString(), created_by: user.id, updated_by: user.id }).select("*").single();
+    const { data: quote, error } = await db.from("quotes").insert({ tenant_id: tenantId, customer_id: customerId, quote_number: quoteNumber(), status: "ready_to_send", subtotal, discount, total, internal_notes: body.internal_notes?.trim() || null, customer_note: body.customer_note?.trim() || null, valid_until: validUntil.toISOString(), public_token_hash: tokenHash, public_token_expires_at: validUntil.toISOString(), created_by: user.id, updated_by: user.id }).select("*").single();
     if (error || !quote) throw new Error(error?.message ?? "No pudimos crear la cotización.");
     const { error: itemsError } = await db.from("quote_items").insert(snapshots.map((item) => ({ ...item, quote_id: quote.id })));
     if (itemsError) throw new Error(itemsError.message);

@@ -15,6 +15,8 @@ interface MobileCheckoutSheetProps {
   submitting: boolean;
   submitLabel: string;
   submitDisclaimer: string;
+  primaryAction?: () => void;
+  showPrimaryAction?: boolean;
   accentColor: string;
   onClose: () => void;
   children: React.ReactNode;
@@ -29,6 +31,8 @@ export function MobileCheckoutSheet({
   submitting,
   submitLabel,
   submitDisclaimer,
+  primaryAction,
+  showPrimaryAction = true,
   accentColor,
   onClose,
   children,
@@ -99,10 +103,11 @@ export function MobileCheckoutSheet({
           {children}
         </div>
 
-        <div className="shrink-0 border-t border-gray-100 bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur">
+        {showPrimaryAction && <div className="shrink-0 border-t border-gray-100 bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur">
           <button
-            type="submit"
-            form="m-checkout-form"
+            type={primaryAction ? "button" : "submit"}
+            form={primaryAction ? undefined : "m-checkout-form"}
+            onClick={primaryAction}
             disabled={submitting}
             className="w-full min-h-13 cursor-pointer rounded-xl px-6 py-3.5 text-base font-semibold text-white shadow-sm transition-opacity hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
             style={{ backgroundColor: accentColor }}
@@ -114,6 +119,7 @@ export function MobileCheckoutSheet({
             <span>{submitDisclaimer}</span>
           </div>
         </div>
+        }
       </div>
     </div>
   );

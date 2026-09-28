@@ -25,6 +25,9 @@ export function bucketOf(
   now: Date,
 ): AgendaBucketKey | null {
   if (!order.scheduled_for) return null;
+  // Payment and pickup are separate facts: an order remains paid after the
+  // customer leaves. The agenda only contains pending physical handoffs.
+  if (order.pickup_completed_at) return null;
   const when = new Date(order.scheduled_for);
   if (Number.isNaN(when.getTime())) return null;
 

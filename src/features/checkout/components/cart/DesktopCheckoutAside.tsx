@@ -8,8 +8,8 @@ interface DesktopCheckoutAsideProps {
 
 export function DesktopCheckoutAside({ children }: DesktopCheckoutAsideProps) {
   return (
-    <aside className="hidden xl:block">
-      <div className="space-y-5 rounded-xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6 xl:sticky xl:top-6">
+    <aside className="hidden min-h-0 xl:block">
+      <div className="max-h-[calc(100dvh-3rem)] space-y-5 overflow-y-auto overscroll-contain rounded-xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6 xl:sticky xl:top-6">
         <h2 className="text-lg font-semibold text-gray-900">
           Finalizar pedido
         </h2>

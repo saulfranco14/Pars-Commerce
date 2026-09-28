@@ -7,6 +7,7 @@ import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { MultiImageUpload, type MultiImageUploadRef } from "@/components/MultiImageUpload";
 import { ChevronDown, Plus } from "lucide-react";
 import { CreateEditPageLayout } from "@/components/layout/CreateEditPageLayout";
+import { normalizeWholesaleForProduct } from "@/features/productos/helpers/normalizeWholesale";
 import { productFormSchema } from "@/features/productos/validations/productForm";
 import { create } from "@/services/productsService";
 import { swrFetcher } from "@/lib/swrFetcher";
@@ -132,32 +133,28 @@ export default function NuevoProductoPage() {
       return;
     }
 
-    const hasWholesaleMin = wholesaleMinQuantity.trim() !== "";
-    const hasWholesalePrice = wholesalePrice.trim() !== "";
-    if (hasWholesaleMin !== hasWholesalePrice) {
+    const wholesaleMinRaw =
+      wholesaleMinQuantity.trim() === ""
+        ? undefined
+        : parseInt(wholesaleMinQuantity, 10);
+    const wholesalePriceRaw =
+      wholesalePrice.trim() === ""
+        ? undefined
+        : parseFloat(wholesalePrice.replace(",", "."));
+    const wholesale = normalizeWholesaleForProduct(
+      wholesaleMinRaw,
+      wholesalePriceRaw,
+    );
+    if (
+      wholesaleMinQuantity.trim() !== "" &&
+      wholesalePrice.trim() !== "" &&
+      wholesale.wholesale_min_quantity == null
+    ) {
       setFieldErrors({
         wholesale:
-          "Cantidad mínima y precio mayoreo deben ir juntos o ambos vacíos",
+          "Revisa mayoreo: cantidad mínima ≥ 1 y precio ≥ 0, o deja ambos vacíos",
       });
       return;
-    }
-    let wholesaleMinNum: number | undefined;
-    let wholesalePriceNum: number | undefined;
-    if (hasWholesaleMin) {
-      wholesaleMinNum = parseInt(wholesaleMinQuantity, 10);
-      wholesalePriceNum = parseFloat(wholesalePrice.replace(",", "."));
-      if (Number.isNaN(wholesaleMinNum) || wholesaleMinNum < 1) {
-        setFieldErrors({
-          wholesale: "Cantidad mínima debe ser mayor o igual a 1",
-        });
-        return;
-      }
-      if (Number.isNaN(wholesalePriceNum) || wholesalePriceNum < 0) {
-        setFieldErrors({
-          wholesale: "Precio mayoreo debe ser mayor o igual a 0",
-        });
-        return;
-      }
     }
 
     setLoading(true);
@@ -178,8 +175,8 @@ export default function NuevoProductoPage() {
         track_stock: trackStock,
         stock: trackStock && stockNum !== undefined ? stockNum : undefined,
         is_public: isPublic,
-        wholesale_min_quantity: wholesaleMinNum ?? null,
-        wholesale_price: wholesalePriceNum ?? null,
+        wholesale_min_quantity: wholesale.wholesale_min_quantity,
+        wholesale_price: wholesale.wholesale_price,
       });
 
       // 2. Upload pending images using the real product ID
