@@ -28,6 +28,7 @@ import type { OrderActionButtonsProps } from "@/features/orders/interfaces/order
 import { GenerateLinkModal } from "./GenerateLinkModal";
 import { OrderCreditSheet } from "./OrderCreditSheet";
 import { btnDanger as standardDanger, btnPrimary as standardPrimary, btnSecondary as standardSecondary } from "@/components/ui/buttonClasses";
+import { WhatsAppShareButton } from "@/components/communications/WhatsAppShareButton";
 
 function isExpressOrderEnabled(settings: unknown): boolean {
   if (!settings || typeof settings !== "object") return false;
@@ -53,6 +54,7 @@ export function OrderActionButtons({
     handleGeneratePaymentLink,
     handleExpressToPayment,
     fetchOrder,
+    setError,
   } = useOrder();
   const activeTenant = useActiveTenant();
   const activeRole = useTenantStore((s) => s.activeRole)();
@@ -66,6 +68,7 @@ export function OrderActionButtons({
   const [creditSheetOpen, setCreditSheetOpen] = useState(false);
   const [acceptRequestOpen, setAcceptRequestOpen] = useState(false);
   const [rejectRequestOpen, setRejectRequestOpen] = useState(false);
+  const [completePickupOpen, setCompletePickupOpen] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
 
   if (!order) return null;
@@ -95,6 +98,10 @@ export function OrderActionButtons({
   const showAddendumButton =
     can(ORDER_PERMISSIONS.addendum) &&
     ["paid", "completed"].includes(order.status);
+  const showCompletePickup =
+    Boolean(order.scheduled_for) &&
+    order.status === "paid" &&
+    !order.pickup_completed_at;
 
   // Los préstamos siguen siendo del dueño del negocio. No hay un permiso
   // `loans.*` en el sistema todavía, así que aquí sí se compara el rol; en
@@ -172,6 +179,32 @@ export function OrderActionButtons({
     }
   }
 
+  async function completePickup() {
+    setRequestLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/orders/${orderId}/complete-pickup`, {
+        method: "POST",
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+      if (!response.ok) {
+        throw new Error(result.error ?? "No pudimos confirmar la recolección.");
+      }
+      await fetchOrder();
+      setCompletePickupOpen(false);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "No pudimos confirmar la recolección.",
+      );
+    } finally {
+      setRequestLoading(false);
+    }
+  }
+
   const btnPrimary = `${standardPrimary} min-h-12 rounded-xl px-4 py-3 font-semibold active:scale-[0.98]`;
   const btnSuccess = `${standardPrimary} min-h-12 rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-500 focus-visible:ring-emerald-500 active:scale-[0.98]`;
   const btnBlue = `${standardPrimary} min-h-12 rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-500 focus-visible:ring-blue-500 active:scale-[0.98]`;
@@ -184,6 +217,8 @@ export function OrderActionButtons({
       ? { label: "Siguiente paso", detail: "Revisa el ticket y envíalo a preparación." }
       : order.status === "in_progress"
         ? { label: "Siguiente paso", detail: "Confirma cuando el pedido esté listo para cobrar." }
+        : showCompletePickup
+          ? { label: "Recolección programada", detail: "Confirma cuando el cliente ya se llevó su pedido." }
         : order.status === "completed"
           ? { label: "Cobrar orden", detail: "Elige cómo registrar el pago del cliente." }
           : { label: "Acciones de la orden", detail: "Selecciona la acción que necesitas." };
@@ -326,6 +361,17 @@ export function OrderActionButtons({
               : "Marcar como pagado"}
           </button>
         )}
+        {showCompletePickup && (
+          <button
+            type="button"
+            onClick={() => setCompletePickupOpen(true)}
+            disabled={actionLoading}
+            className={`w-full min-w-0 shrink-0 sm:w-auto ${btnSuccess}`}
+          >
+            <CheckCircle className="h-4 w-4 shrink-0" aria-hidden />
+            Confirmar que ya recogió
+          </button>
+        )}
         {showViewLoanButton && !fixedBar && (
           <button
             type="button"
@@ -359,6 +405,21 @@ export function OrderActionButtons({
           </button>
         )}
       </div>
+      {activeTenant?.id && order.customer_phone && (
+        <div className="mt-3 border-t border-border-soft pt-3">
+          <p className="mb-2 text-xs font-medium text-muted-foreground">
+            Comunicación con el cliente
+          </p>
+          <WhatsAppShareButton
+            tenantId={activeTenant.id}
+            entityType="order"
+            entityId={order.id}
+            recipientPhone={order.customer_phone}
+            eventType="pickup_ready_shared"
+            buttonClassName="w-full sm:w-auto"
+          />
+        </div>
+      )}
 
       {activeTenant && (
         <AddendumSheet
@@ -387,6 +448,16 @@ export function OrderActionButtons({
       />
       <ConfirmModal isOpen={acceptRequestOpen} onClose={() => setAcceptRequestOpen(false)} onConfirm={() => void resolvePublicRequest("accept-request")} title="Aceptar solicitud" message="Se validará la disponibilidad y el pedido pasará a preparación. El cliente podrá ver que fue aceptado." confirmLabel="Aceptar pedido" confirmDanger={false} loading={requestLoading} />
       <ConfirmModal isOpen={rejectRequestOpen} onClose={() => setRejectRequestOpen(false)} onConfirm={() => void resolvePublicRequest("reject-request")} title="Rechazar solicitud" message="El pedido se cancelará y el cliente verá que no puede atenderse por ahora." confirmLabel="Rechazar pedido" confirmDanger loading={requestLoading} />
+      <ConfirmModal
+        isOpen={completePickupOpen}
+        onClose={() => setCompletePickupOpen(false)}
+        onConfirm={() => void completePickup()}
+        title="Confirmar recolección"
+        message="Confirma sólo cuando el cliente ya se llevó el pedido. Se registrará quién y cuándo lo cerró."
+        confirmLabel="Sí, ya recogió"
+        confirmDanger={false}
+        loading={requestLoading}
+      />
 
       <AssignBeforePaidModal
         isOpen={assignBeforePaidModalOpen}

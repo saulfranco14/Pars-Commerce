@@ -47,8 +47,10 @@ export async function GET(request: Request) {
         id, order_number, tenant_id, status, fulfillment_status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_id, customer_name, customer_email, customer_phone, parent_order_id,
         subtotal, discount, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, updated_at, scheduled_for,
         created_by, assigned_to, completed_by, completed_at, paid_at,
+        pickup_completed_at, pickup_completed_by,
         payment_method, payment_link, mp_preference_id,
         assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email),
+        pickup_completed_user:profiles!orders_pickup_completed_by_fkey(id, display_name, email),
         items:order_items(id, quantity, unit_price, subtotal, is_wholesale, wholesale_savings, product:products(id, name, type, image_url)),
         payments(id, provider, status, amount, metadata, created_at),
         payment_schedules:order_payment_schedules(id, installment_number, due_date, amount_due, amount_paid, status, paid_at),
@@ -108,7 +110,7 @@ export async function GET(request: Request) {
     .from("orders")
     .select(
       `
-      id, order_number, status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_name, customer_email, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, paid_at, scheduled_for, assigned_to, created_by, payment_method,
+      id, order_number, status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_name, customer_email, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, paid_at, scheduled_for, pickup_completed_at, pickup_completed_by, assigned_to, created_by, payment_method,
       assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email)
       `
     )

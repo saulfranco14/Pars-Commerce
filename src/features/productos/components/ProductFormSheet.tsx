@@ -46,6 +46,7 @@ export function ProductFormSheet({
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [newSubcatalogOpen, setNewSubcatalogOpen] = useState(false);
   const [subcatalogsRefreshKey, setSubcatalogsRefreshKey] = useState(0);
+  const [validationHint, setValidationHint] = useState<string | null>(null);
 
   const fields = buildProductFields(tenantId, {
     onCreateSubcatalog: () => setNewSubcatalogOpen(true),
@@ -79,6 +80,7 @@ export function ProductFormSheet({
   function handleClose() {
     form.resetForm();
     setImageUrls([]);
+    setValidationHint(null);
     onClose();
   }
 
@@ -92,6 +94,14 @@ export function ProductFormSheet({
       maxWidth="max-w-xl"
       footer={
         <div className="flex flex-col gap-2">
+          {validationHint && (
+            <Notification
+              tone="warning"
+              title="Faltan datos obligatorios"
+              message={validationHint}
+              className="rounded-xl px-3 py-2"
+            />
+          )}
           {form.submitError && (
             <Notification
               tone="error"
@@ -103,7 +113,7 @@ export function ProductFormSheet({
           <button
             type="submit"
             form={formId}
-            disabled={form.submitting || !form.isValid}
+            disabled={form.submitting}
             className={btnPrimaryFlex}
           >
             {form.submitting ? "Creando..." : "Guardar"}
@@ -116,7 +126,17 @@ export function ProductFormSheet({
     >
       <form
         id={formId}
-        onSubmit={form.handleSubmit(form.submit)}
+        onSubmit={form.handleSubmit(
+          (values) => {
+            setValidationHint(null);
+            return form.submit(values);
+          },
+          () => {
+            setValidationHint(
+              "Revisa los campos en rojo. Obligatorios: nombre, precio de venta, costo del producto y unidad.",
+            );
+          },
+        )}
         noValidate
         className="space-y-4"
       >

@@ -13,6 +13,7 @@ import {
   btnPrimaryFlex,
   btnSecondaryFlex,
 } from "@/components/ui/buttonClasses";
+import { normalizeWholesaleForProduct } from "@/features/productos/helpers/normalizeWholesale";
 import { productFormSchema } from "@/features/productos/validations/productForm";
 import type { ProductDetail } from "@/types/products";
 import { update } from "@/services/productsService";
@@ -196,32 +197,28 @@ export default function EditarProductoPage() {
       return;
     }
 
-    const hasWholesaleMin = wholesaleMinQuantity.trim() !== "";
-    const hasWholesalePrice = wholesalePrice.trim() !== "";
-    if (hasWholesaleMin !== hasWholesalePrice) {
+    const wholesaleMinRaw =
+      wholesaleMinQuantity.trim() === ""
+        ? undefined
+        : parseInt(wholesaleMinQuantity, 10);
+    const wholesalePriceRaw =
+      wholesalePrice.trim() === ""
+        ? undefined
+        : parseFloat(wholesalePrice.replace(",", "."));
+    const wholesale = normalizeWholesaleForProduct(
+      wholesaleMinRaw,
+      wholesalePriceRaw,
+    );
+    if (
+      wholesaleMinQuantity.trim() !== "" &&
+      wholesalePrice.trim() !== "" &&
+      wholesale.wholesale_min_quantity == null
+    ) {
       setFieldErrors({
         wholesale:
-          "Cantidad mínima y precio mayoreo deben ir juntos o ambos vacíos",
+          "Revisa mayoreo: cantidad mínima ≥ 1 y precio ≥ 0, o deja ambos vacíos",
       });
       return;
-    }
-    let wholesaleMinNum: number | undefined;
-    let wholesalePriceNum: number | undefined;
-    if (hasWholesaleMin) {
-      wholesaleMinNum = parseInt(wholesaleMinQuantity, 10);
-      wholesalePriceNum = parseFloat(wholesalePrice.replace(",", "."));
-      if (Number.isNaN(wholesaleMinNum) || wholesaleMinNum < 1) {
-        setFieldErrors({
-          wholesale: "Cantidad mínima debe ser mayor o igual a 1",
-        });
-        return;
-      }
-      if (Number.isNaN(wholesalePriceNum) || wholesalePriceNum < 0) {
-        setFieldErrors({
-          wholesale: "Precio mayoreo debe ser mayor o igual a 0",
-        });
-        return;
-      }
     }
 
     setLoading(true);
@@ -241,10 +238,8 @@ export default function EditarProductoPage() {
         is_public: isPublic,
         image_urls: imageUrls.length > 0 ? imageUrls : undefined,
         stock: stockNum,
-        wholesale_min_quantity: hasWholesaleMin
-          ? (wholesaleMinNum as number)
-          : null,
-        wholesale_price: hasWholesaleMin ? (wholesalePriceNum as number) : null,
+        wholesale_min_quantity: wholesale.wholesale_min_quantity,
+        wholesale_price: wholesale.wholesale_price,
       });
       await mutate();
       if (activeTenant) {

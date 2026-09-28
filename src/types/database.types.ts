@@ -1092,6 +1092,8 @@ export type Database = {
           order_type: string | null
           paid_at: string | null
           paid_total: number
+          pickup_completed_at: string | null
+          pickup_completed_by: string | null
           parent_order_id: string | null
           payment_link: string | null
           payment_method: string | null
@@ -1144,6 +1146,8 @@ export type Database = {
           order_type?: string | null
           paid_at?: string | null
           paid_total?: number
+          pickup_completed_at?: string | null
+          pickup_completed_by?: string | null
           parent_order_id?: string | null
           payment_link?: string | null
           payment_method?: string | null
@@ -1196,6 +1200,8 @@ export type Database = {
           order_type?: string | null
           paid_at?: string | null
           paid_total?: number
+          pickup_completed_at?: string | null
+          pickup_completed_by?: string | null
           parent_order_id?: string | null
           payment_link?: string | null
           payment_method?: string | null
@@ -1269,6 +1275,13 @@ export type Database = {
             columns: ["parent_order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_pickup_completed_by_fkey"
+            columns: ["pickup_completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {

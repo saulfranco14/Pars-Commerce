@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   CalendarClock,
   CalendarDays,
+  CheckCircle2,
   Clock,
 } from "lucide-react";
 
@@ -17,6 +18,8 @@ import { EmptyState } from "@/components/admin/EmptyState";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
+import { ConfirmModal } from "@/components/ConfirmModal";
+import { btnPrimary } from "@/components/ui/buttonClasses";
 import { AcceptingOrdersToggle } from "@/features/orders/components/agenda/AcceptingOrdersToggle";
 import { BusinessHoursNotice } from "@/features/configuracion/components/BusinessHoursNotice";
 import { readBusinessHours } from "@/features/configuracion/helpers/businessHours";
@@ -46,11 +49,14 @@ export default function AgendaPage() {
   const [acceptingOverride, setAcceptingOverride] = useState<boolean | null>(
     null,
   );
+  const [pickupToClose, setPickupToClose] = useState<OrderListItem | null>(null);
+  const [closingPickup, setClosingPickup] = useState(false);
+  const [closeError, setCloseError] = useState<string | null>(null);
 
   const key = activeTenant
     ? `/api/orders?tenant_id=${encodeURIComponent(activeTenant.id)}&scheduled=1`
     : null;
-  const { data, error, isLoading } = useSWR<OrderListItem[]>(key, swrFetcher, {
+  const { data, error, isLoading, mutate } = useSWR<OrderListItem[]>(key, swrFetcher, {
     fallbackData: [],
     refreshInterval: AGENDA_REFRESH_MS,
   });
@@ -60,6 +66,34 @@ export default function AgendaPage() {
   const now = useMemo(() => new Date(), []);
   const buckets = useMemo(() => groupAgenda(orders, now), [orders, now]);
   const counts = useMemo(() => countAgenda(orders, now), [orders, now]);
+
+  async function completePickup() {
+    if (!pickupToClose) return;
+    setClosingPickup(true);
+    setCloseError(null);
+    try {
+      const response = await fetch(
+        `/api/orders/${pickupToClose.id}/complete-pickup`,
+        { method: "POST" },
+      );
+      const result = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+      if (!response.ok) {
+        throw new Error(result.error ?? "No pudimos confirmar la recolección.");
+      }
+      await mutate();
+      setPickupToClose(null);
+    } catch (error) {
+      setCloseError(
+        error instanceof Error
+          ? error.message
+          : "No pudimos confirmar la recolección.",
+      );
+    } finally {
+      setClosingPickup(false);
+    }
+  }
 
   if (!activeTenant) {
     return (
@@ -129,6 +163,7 @@ export default function AgendaPage() {
           message="No se pudo cargar la agenda. Recarga la página."
         />
       )}
+      {closeError && <Notification tone="error" message={closeError} />}
 
       {isLoading ? (
         <LoadingBlock message="Cargando agenda…" />
@@ -157,10 +192,10 @@ export default function AgendaPage() {
 
               <ul className="divide-y divide-border-soft overflow-hidden rounded-xl border border-border bg-surface-raised">
                 {bucket.orders.map((order) => (
-                  <li key={order.id}>
+                  <li key={order.id} className="flex items-stretch">
                     <Link
                       href={`/dashboard/${tenantSlug}/ordenes/${order.id}`}
-                      className="flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-border-soft/40"
+                      className="flex min-h-14 min-w-0 flex-1 items-center gap-3 px-4 py-3 transition-colors hover:bg-border-soft/40"
                     >
                       {/* Ancho fijo para que las horas aliñen en columna;
                           "Después" trae día y mes, así que necesita más. */}
@@ -195,6 +230,18 @@ export default function AgendaPage() {
                         </span>
                       </div>
                     </Link>
+                    {order.status === "paid" && can(ORDER_PERMISSIONS.write) && (
+                      <div className="flex shrink-0 items-center border-l border-border-soft px-2">
+                        <button
+                          type="button"
+                          onClick={() => setPickupToClose(order)}
+                          className={`${btnPrimary} min-h-11 rounded-lg px-3 text-xs`}
+                        >
+                          <CheckCircle2 className="h-4 w-4" aria-hidden />
+                          Ya vino
+                        </button>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -202,6 +249,20 @@ export default function AgendaPage() {
           ))}
         </div>
       )}
+      <ConfirmModal
+        isOpen={pickupToClose !== null}
+        onClose={() => setPickupToClose(null)}
+        onConfirm={() => void completePickup()}
+        title="Confirmar recolección"
+        message={
+          pickupToClose
+            ? `${pickupToClose.customer_name || "El cliente"} ya se llevó el pedido. Se guardará quién y cuándo lo confirmó.`
+            : ""
+        }
+        confirmLabel="Sí, ya vino"
+        confirmDanger={false}
+        loading={closingPickup}
+      />
     </div>
   );
 }

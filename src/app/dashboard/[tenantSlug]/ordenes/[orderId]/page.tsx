@@ -27,8 +27,6 @@ import { PaymentLinkCard } from "@/features/orders/components/payment/PaymentLin
 import { OrderPaymentPlanCard } from "@/features/orders/components/order/OrderPaymentPlanCard";
 import { ReceiptPreview } from "@/features/orders/components/receipt/ReceiptPreview";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
-import { WhatsAppShareButton } from "@/components/communications/WhatsAppShareButton";
-import { useActiveTenant } from "@/stores/useTenantStore";
 import type { OrderLoanSummary } from "@/features/orders/interfaces/orderDetail";
 
 function formatMXN(n: number) {
@@ -110,7 +108,6 @@ function OrderDetailContent() {
     ticketOptions,
     logoUrl,
   } = useOrder();
-  const activeTenant = useActiveTenant();
   const loan =
     (order as { loan?: OrderLoanSummary | null } | null)?.loan ?? null;
   const [mounted, setMounted] = useState(false);
@@ -197,21 +194,6 @@ function OrderDetailContent() {
           <OrderPaymentPlanCard />
           {showTicket && (
             <ReceiptActions />
-          )}
-          {activeTenant?.id && order.customer_phone && (
-            <div className="border-t border-border-soft pt-3">
-              <p className="mb-2 text-xs font-medium text-muted-foreground">
-                Comparte el seguimiento de esta orden con el cliente.
-              </p>
-              <WhatsAppShareButton
-                tenantId={activeTenant.id}
-                entityType="order"
-                entityId={order.id}
-                recipientPhone={order.customer_phone}
-                eventType="pickup_ready_shared"
-                buttonClassName="w-full sm:w-auto"
-              />
-            </div>
           )}
         </div>
       </div>
