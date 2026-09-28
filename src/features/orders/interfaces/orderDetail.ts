@@ -96,6 +96,14 @@ export interface OrderDetail {
   paid_at: string | null;
   /** Cuándo pasa el cliente por él. `null` = sin agendar. */
   scheduled_for?: string | null;
+  /** Confirmación física de que el cliente ya recogió una orden programada. */
+  pickup_completed_at?: string | null;
+  pickup_completed_by?: string | null;
+  pickup_completed_user?: {
+    id: string;
+    display_name: string | null;
+    email: string | null;
+  } | null;
   assigned_to: string | null;
   assigned_user?: {
     id: string;

@@ -115,8 +115,11 @@ export function AddendumSheet({
       description="Se crea un pedido nuevo ligado a este. La mesa no se vuelve a ocupar."
       icon={PackagePlus}
       dismissible={!saving}
+      panelClassName="h-[82dvh] md:h-[min(42rem,82vh)]"
       footer={
-        <div className="flex gap-2">
+        <div>
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Crear pedido adicional</p>
+          <div className="flex gap-2">
           <button
             type="button"
             onClick={onClose}
@@ -135,6 +138,7 @@ export function AddendumSheet({
               ? "Creando…"
               : `Crear pedido${total > 0 ? ` · ${formatCurrency(total)}` : ""}`}
           </button>
+          </div>
         </div>
       }
     >

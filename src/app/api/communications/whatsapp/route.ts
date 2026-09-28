@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requirePermission } from "@/lib/auth/requirePermission";
+import { normalizeMexicanPhone } from "@/lib/phone";
 
 const E164 = /^\+[1-9]\d{7,14}$/;
 const ENTITY_TABLES = {
@@ -42,8 +43,14 @@ export async function POST(request: Request) {
   if (!body.tenant_id || !body.entity_id || !isEntityType(body.entity_type)) {
     return NextResponse.json({ error: "Entidad de comunicación inválida." }, { status: 400 });
   }
-  const phone = body.recipient_phone?.trim();
-  if (!phone || !E164.test(phone)) {
+  const phoneInput = body.recipient_phone?.trim() ?? "";
+  // Mexico is Tlaco's default market, so a customer phone captured as ten
+  // local digits is sufficient. Explicit E.164 values remain supported for
+  // other countries and are never guessed.
+  const phone = phoneInput.startsWith("+")
+    ? (E164.test(phoneInput) ? phoneInput : null)
+    : normalizeMexicanPhone(phoneInput);
+  if (!phone) {
     return NextResponse.json({ error: "El teléfono debe usar formato internacional, por ejemplo +5215512345678." }, { status: 400 });
   }
 

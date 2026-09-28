@@ -13,6 +13,7 @@ import {
 
 export const STATUS_LABELS: Record<string, string> = {
   draft: "Borrador",
+  pending_acceptance: "Solicitud nueva",
   assigned: "Asignada",
   in_progress: "En preparación",
   completed: "Lista para cobro",
@@ -27,6 +28,7 @@ export const STATUS_LABELS: Record<string, string> = {
 
 export const STATUS_CLASSES: Record<string, string> = {
   draft: "bg-border-soft text-muted-foreground",
+  pending_acceptance: "bg-amber-100 text-amber-800",
   assigned: "bg-blue-100 text-blue-800",
   in_progress: "bg-amber-100 text-amber-800",
   completed: "bg-green-100 text-green-800",
@@ -44,6 +46,7 @@ export const STATUS_ICONS: Record<
   ComponentType<{ className?: string }>
 > = {
   draft: FileText,
+  pending_acceptance: Clock,
   assigned: UserCheck,
   in_progress: Loader2,
   completed: CheckCircle,

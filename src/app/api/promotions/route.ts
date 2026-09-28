@@ -100,6 +100,7 @@ export async function POST(request: Request) {
     subcatalog_ids?: string[];
     quantity?: number;
     bundle_product_ids?: string[];
+    items?: Array<{ product_id?: string; quantity?: number }>;
   };
   try {
     body = await request.json();
@@ -123,6 +124,7 @@ export async function POST(request: Request) {
     subcatalog_ids,
     quantity,
     bundle_product_ids,
+    items,
   } = body;
 
   if (!tenant_id || !name || !type || value == null || value < 0) {
@@ -141,6 +143,18 @@ export async function POST(request: Request) {
   }
 
   const derivedSlug = (slug?.trim() || name.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")) || null;
+  const packItems = new Map<string, number>();
+  for (const item of items ?? []) {
+    const productId = typeof item.product_id === "string" ? item.product_id : "";
+    const itemQuantity = Math.floor(Number(item.quantity));
+    if (!productId || !Number.isFinite(itemQuantity) || itemQuantity < 1 || itemQuantity > 999) {
+      return NextResponse.json({ error: "Los artículos del pack no son válidos." }, { status: 400 });
+    }
+    packItems.set(productId, (packItems.get(productId) ?? 0) + itemQuantity);
+  }
+  if (type === "bundle_price" && packItems.size === 0 && !(bundle_product_ids?.length)) {
+    return NextResponse.json({ error: "Un pack necesita al menos un producto o servicio." }, { status: 400 });
+  }
 
   const admin = createAdminClient();
   const { data: membership } = await admin
@@ -183,13 +197,28 @@ export async function POST(request: Request) {
       badge_label: badge_label?.trim() || null,
       subcatalog_ids: subcatalog_ids?.length ? subcatalog_ids : null,
       quantity: quantity ?? null,
-      bundle_product_ids: bundle_product_ids?.length ? bundle_product_ids : null,
+      bundle_product_ids: packItems.size ? [...packItems.keys()] : (bundle_product_ids?.length ? bundle_product_ids : null),
     })
     .select()
     .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (packItems.size) {
+    const { error: packError } = await admin.from("promotion_items").insert(
+      [...packItems].map(([product_id, itemQuantity], position) => ({
+        promotion_id: promotion.id,
+        product_id,
+        quantity: itemQuantity,
+        position,
+      })),
+    );
+    if (packError) {
+      await admin.from("promotions").delete().eq("id", promotion.id);
+      return NextResponse.json({ error: packError.message }, { status: 500 });
+    }
   }
 
   return NextResponse.json(promotion);

@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 async function quoteForToken(token: string) {
   const db = createAdminClient() as unknown as SupabaseClient<any>;
-  const { data, error } = await db.from("quotes").select("id, tenant_id, quote_number, version, status, subtotal, discount, total, customer_note, valid_until, public_token_expires_at, customer:customers(name), tenant:tenants(name, logo_url), items:quote_items(name_snapshot, description_snapshot, image_url_snapshot, item_type, quantity, unit_price, subtotal, position)").eq("public_token_hash", hashPublicDocumentToken(token)).maybeSingle();
+  const { data, error } = await db.from("quotes").select("id, tenant_id, quote_number, version, status, subtotal, discount, total, customer_note, valid_until, public_token_expires_at, customer:customers(name), tenant:tenants(name, logo_url), items:quote_items(product_id, name_snapshot, description_snapshot, image_url_snapshot, item_type, quantity, unit_price, subtotal, position)").eq("public_token_hash", hashPublicDocumentToken(token)).maybeSingle();
   if (error) throw error;
   return { db, quote: data };
 }
@@ -22,15 +22,19 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     return NextResponse.json({ error: "Esta cotización venció." }, { status: 410 });
   }
   if (quote.status === "sent") await db.from("quotes").update({ status: "viewed", updated_at: new Date().toISOString() }).eq("id", quote.id);
-  return NextResponse.json({ ...quote, status: quote.status === "sent" ? "viewed" : quote.status });
+  const { data: catalog } = await db.from("products").select("id, name, description, image_url, type, price").eq("tenant_id", quote.tenant_id).is("deleted_at", null).order("name");
+  return NextResponse.json({ ...quote, status: quote.status === "sent" ? "viewed" : quote.status, catalog: catalog ?? [] });
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const body = await request.json() as { action?: "accept" | "reject" | "changes"; reason?: string };
+  const body = await request.json() as { action?: "accept" | "reject" | "changes"; reason?: string; requested_items?: Array<{ product_id?: string; quantity?: number }> };
   const { db, quote } = await quoteForToken(token);
   if (!quote) return NextResponse.json({ error: "Cotización no encontrada." }, { status: 404 });
   if (new Date(quote.valid_until) < new Date()) return NextResponse.json({ error: "Esta cotización venció." }, { status: 410 });
+  if (body.action === "changes" && !["ready_to_send", "sent", "viewed"].includes(quote.status)) {
+    return NextResponse.json({ error: "Esta cotización ya tiene una respuesta registrada. Espera la nueva versión del negocio." }, { status: 409 });
+  }
   if (body.action === "accept") {
     const { data, error } = await db.rpc("convert_quote_to_order", { p_quote_id: quote.id, p_actor_id: null, p_acceptance_source: "customer" });
     if (error) return NextResponse.json({ error: error.message }, { status: 409 });
@@ -38,7 +42,28 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   }
   const status = body.action === "reject" ? "rejected" : body.action === "changes" ? "changes_requested" : null;
   if (!status) return NextResponse.json({ error: "Acción inválida." }, { status: 400 });
-  await db.from("quotes").update({ status, updated_at: new Date().toISOString() }).eq("id", quote.id);
-  await db.from("quote_events").insert({ quote_id: quote.id, event_type: status, source: "customer", reason: body.reason?.trim() || null });
+  const requestedItems = (body.requested_items ?? []).map((item) => ({ product_id: typeof item.product_id === "string" ? item.product_id : "", quantity: Math.floor(Number(item.quantity)) }));
+  const changeNote = body.reason?.trim() || null;
+  if (changeNote && changeNote.length > 500) {
+    return NextResponse.json({ error: "La nota para el negocio puede tener hasta 500 caracteres." }, { status: 400 });
+  }
+  if (body.action === "changes") {
+    if (requestedItems.length === 0 || requestedItems.some((item) => !item.product_id || item.quantity <= 0)) return NextResponse.json({ error: "Deja al menos un artículo en tu solicitud." }, { status: 400 });
+    const requestedIds = [...new Set(requestedItems.map((item) => item.product_id))];
+    const { data: validItems } = await db.from("products").select("id").eq("tenant_id", quote.tenant_id).is("deleted_at", null).in("id", requestedIds);
+    if ((validItems?.length ?? 0) !== requestedIds.length) return NextResponse.json({ error: "Uno de los artículos ya no está disponible. Recarga la cotización e inténtalo de nuevo." }, { status: 409 });
+  }
+  // The status predicate is deliberate: two taps or two browser retries can
+  // never record two customer answers for the same public document.
+  const { data: updatedQuote, error: updateError } = await db.from("quotes").update({
+    status,
+    customer_change_note: body.action === "changes" ? changeNote : null,
+    customer_requested_items: body.action === "changes" ? requestedItems : null,
+    updated_at: new Date().toISOString(),
+  }).eq("id", quote.id).in("status", ["ready_to_send", "sent", "viewed"]).select("id").maybeSingle();
+  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+  if (!updatedQuote) return NextResponse.json({ error: "Esta cotización ya recibió una respuesta. Actualiza la página para ver su estado actual." }, { status: 409 });
+  const { error: eventError } = await db.from("quote_events").insert({ quote_id: quote.id, event_type: status, source: "customer", reason: changeNote, metadata: body.action === "changes" ? { requested_items: requestedItems } : {} });
+  if (eventError) return NextResponse.json({ error: eventError.message }, { status: 500 });
   return NextResponse.json({ success: true, status });
 }

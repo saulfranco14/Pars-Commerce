@@ -1,6 +1,11 @@
 import type { CreateOrderItemPayload, OrderItemCreated } from "@/types/orderItems";
 import { apiFetch } from "@/services/apiFetch";
 
+export type BatchOrderItemPayload = {
+  product_id: string;
+  quantity: number;
+};
+
 export async function create(
   payload: CreateOrderItemPayload
 ): Promise<OrderItemCreated> {
@@ -14,5 +19,15 @@ export async function create(
 export async function remove(itemId: string): Promise<void> {
   await apiFetch(`/api/order-items?item_id=${encodeURIComponent(itemId)}`, {
     method: "DELETE",
+  });
+}
+
+export async function createBatch(
+  orderId: string,
+  items: BatchOrderItemPayload[],
+): Promise<void> {
+  await apiFetch(`/api/orders/${encodeURIComponent(orderId)}/items/batch`, {
+    method: "POST",
+    body: JSON.stringify({ items }),
   });
 }

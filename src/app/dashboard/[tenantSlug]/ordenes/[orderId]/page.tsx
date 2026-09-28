@@ -27,8 +27,6 @@ import { PaymentLinkCard } from "@/features/orders/components/payment/PaymentLin
 import { OrderPaymentPlanCard } from "@/features/orders/components/order/OrderPaymentPlanCard";
 import { ReceiptPreview } from "@/features/orders/components/receipt/ReceiptPreview";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
-import { WhatsAppShareButton } from "@/components/communications/WhatsAppShareButton";
-import { useActiveTenant } from "@/stores/useTenantStore";
 import type { OrderLoanSummary } from "@/features/orders/interfaces/orderDetail";
 
 function formatMXN(n: number) {
@@ -110,7 +108,6 @@ function OrderDetailContent() {
     ticketOptions,
     logoUrl,
   } = useOrder();
-  const activeTenant = useActiveTenant();
   const loan =
     (order as { loan?: OrderLoanSummary | null } | null)?.loan ?? null;
   const [mounted, setMounted] = useState(false);
@@ -171,69 +168,32 @@ function OrderDetailContent() {
           printContainer,
         )}
 
-      <div className="no-print mx-auto flex w-full max-w-5xl flex-1 flex-col overflow-x-hidden overflow-y-auto pb-52 sm:max-w-5xl md:pb-6">
+      <div className="no-print mx-auto w-full max-w-5xl overflow-visible pb-48 sm:max-w-5xl md:pb-8">
         <div className="shrink-0">
           <OrderHeader />
         </div>
-        {activeTenant?.id && order.customer_phone && (
-          <div className="mt-3 shrink-0">
-            <WhatsAppShareButton
-              tenantId={activeTenant.id}
-              entityType="order"
-              entityId={order.id}
-              recipientPhone={order.customer_phone}
-              eventType="pickup_ready_shared"
-            />
-          </div>
-        )}
         {error && (
           <div className="mt-4 shrink-0 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
         <div className="mt-3 flex min-w-0 flex-col gap-3 lg:mt-4">
-          <div className="order-1 min-w-0 md:order-3">
-            <OrderItemsTable />
-          </div>
+          <OrderItemsTable />
           {/* Si hay dinero esperando confirmación, es lo primero que el
               mostrador tiene que resolver. */}
-          <div className="order-2 min-w-0 shrink-0 md:order-0">
-            <PendingCashCard />
-          </div>
-          <div className="order-2 min-w-0 shrink-0 md:order-0">
-            <CounterPaymentCard />
-          </div>
-          <div className="order-2 min-w-0 shrink-0 md:order-0">
-            {order.source === "kiosk" ? (
-              <KioskFulfillmentCard />
-            ) : (
-              <OrderFulfillmentCard />
-            )}
-          </div>
-          <div className="order-2 min-w-0 shrink-0 md:order-0">
-            <LinkedOrdersCard />
-          </div>
-          <div className="order-2 min-w-0 shrink-0 md:order-1">
-            <AssignmentCard />
-          </div>
-          <div className="order-3 min-w-0 shrink-0 md:order-2">
-            <CustomerCard />
-          </div>
+          <PendingCashCard />
+          <CounterPaymentCard />
+          {order.source === "kiosk" ? <KioskFulfillmentCard /> : <OrderFulfillmentCard />}
+          <LinkedOrdersCard />
+          <AssignmentCard />
+          <CustomerCard />
           {loan && (
-            <div className="order-4 min-w-0 shrink-0 md:order-4">
-              <OrderLoanCard loan={loan} tenantSlug={tenantSlug} />
-            </div>
+            <OrderLoanCard loan={loan} tenantSlug={tenantSlug} />
           )}
-          <div className="order-5 min-w-0 shrink-0 md:order-5">
-            <PaymentLinkCard />
-          </div>
-          <div className="order-6 min-w-0 shrink-0 md:order-6">
-            <OrderPaymentPlanCard />
-          </div>
+          <PaymentLinkCard />
+          <OrderPaymentPlanCard />
           {showTicket && (
-            <div className="order-7 min-w-0 shrink-0 md:order-7">
-              <ReceiptActions />
-            </div>
+            <ReceiptActions />
           )}
         </div>
       </div>

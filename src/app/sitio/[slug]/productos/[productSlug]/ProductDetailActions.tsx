@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { MessageCircle, ShoppingCart } from "lucide-react";
 import { addItem } from "@/services/publicCartService";
 import { dispatchCartUpdated } from "@/lib/cartEvents";
@@ -10,7 +9,6 @@ import { useFingerprint } from "@/hooks/useFingerprint";
 interface ProductDetailActionsProps {
   productId: string;
   tenantId: string;
-  sitioSlug: string;
   accentColor: string;
   waHref: string | null;
 }
@@ -18,11 +16,9 @@ interface ProductDetailActionsProps {
 export default function ProductDetailActions({
   productId,
   tenantId,
-  sitioSlug,
   accentColor,
   waHref,
 }: ProductDetailActionsProps) {
-  const router = useRouter();
   const fingerprint = useFingerprint();
   const [loading, setLoading] = useState(false);
 
@@ -31,8 +27,7 @@ export default function ProductDetailActions({
     setLoading(true);
     try {
       await addItem(tenantId, productId, 1, fingerprint);
-      dispatchCartUpdated();
-      router.push(`/sitio/${sitioSlug}/carrito`);
+      dispatchCartUpdated({ label: "Producto agregado al carrito" });
     } finally {
       setLoading(false);
     }

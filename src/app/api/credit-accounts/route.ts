@@ -18,11 +18,13 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const tenantId = params.get("tenant_id");
   const customerId = params.get("customer_id");
+  const accountId = params.get("account_id");
   if (!tenantId) return NextResponse.json({ error: "tenant_id es requerido." }, { status: 400 });
   const db = createAdminClient() as unknown as SupabaseClient<any>;
   const { data: membership } = await db.from("tenant_memberships").select("id, status").eq("tenant_id", tenantId).eq("user_id", user.id).eq("status", "active").maybeSingle();
   if (!membership) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   let query = db.from("customer_credit_accounts").select("*, customer:customers(id, name, phone, email), movements:customer_credit_movements(*) ").eq("tenant_id", tenantId).order("created_at", { referencedTable: "customer_credit_movements", ascending: false });
+  if (accountId) query = query.eq("id", accountId);
   if (customerId) query = query.eq("customer_id", customerId);
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

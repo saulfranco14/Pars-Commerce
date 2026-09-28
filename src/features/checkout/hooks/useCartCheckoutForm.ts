@@ -5,6 +5,7 @@ import {
   checkoutPickup,
   checkoutSubscription,
   checkoutWhatsApp,
+  requestOrder,
 } from "@/services/publicCartService";
 import { checkoutFormSchema } from "@/features/orders/validations/checkoutForm";
 import type { MsiOption } from "@/constants/commissionConfig";
@@ -167,6 +168,33 @@ export function useCartCheckoutForm({
     }
   };
 
+  const handleRequestOrder = async () => {
+    if (!cartId || !fingerprint) return;
+    setError(null);
+    setFieldErrors({});
+    const name = form.customer_name.trim();
+    const phone = form.customer_phone.replace(/\D/g, "");
+    const email = form.customer_email.trim();
+    const errors: Record<string, string> = {};
+    if (name.length < 2) errors.customer_name = "Indica tu nombre.";
+    if (phone.length < 10 || phone.length > 15) errors.customer_phone = "Indica un teléfono válido.";
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.customer_email = "Email inválido.";
+    if (Object.keys(errors).length) {
+      setFieldErrors(errors);
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const key = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${cartId}-${Date.now()}`;
+      const result = await requestOrder({ tenant_id: tenantId, cart_id: cartId, customer_name: name, customer_phone: phone, customer_email: email || undefined, scheduled_for: form.scheduled_for || null }, fingerprint, key);
+      window.location.assign(result.tracking_url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No pudimos enviar tu solicitud.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return {
     form,
     fieldErrors,
@@ -176,5 +204,6 @@ export function useCartCheckoutForm({
     updateField,
     handleSubmit,
     handleWhatsAppOrder,
+    handleRequestOrder,
   };
 }

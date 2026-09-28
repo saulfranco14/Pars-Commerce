@@ -38,6 +38,8 @@ export interface CreatePromotionPayload {
   subcatalog_ids?: string[];
   quantity?: number;
   bundle_product_ids?: string[];
+  /** Exact quantities for a public pack. */
+  items?: Array<{ product_id: string; quantity: number }>;
 }
 
 export async function list(

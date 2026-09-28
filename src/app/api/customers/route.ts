@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   const withStats = searchParams.get("with_stats") === "true";
 
   if (customerId) {
-    const { data: customer, error } = await supabase
+    let customerQuery = supabase
       .from("customers")
       .select(
         `
@@ -33,8 +33,11 @@ export async function GET(request: Request) {
         cards:customer_cards(id, mp_card_id, last_four, card_type, holder_name, expiration_month, expiration_year, is_default, is_active, created_at)
       `,
       )
-      .eq("id", customerId)
-      .single();
+      .eq("id", customerId);
+
+    if (tenantId) customerQuery = customerQuery.eq("tenant_id", tenantId);
+
+    const { data: customer, error } = await customerQuery.single();
 
     if (error || !customer) {
       return NextResponse.json(

@@ -1,5 +1,6 @@
 export const STATUS_BORDER: Record<string, string> = {
   draft: "border-l-slate-400",
+  pending_acceptance: "border-l-amber-500",
   assigned: "border-l-blue-500",
   in_progress: "border-l-amber-500",
   completed: "border-l-green-500",
@@ -11,6 +12,7 @@ export const STATUS_BORDER: Record<string, string> = {
 
 export const PRICE_COLOR: Record<string, string> = {
   draft: "text-muted-foreground",
+  pending_acceptance: "text-amber-700",
   assigned: "text-blue-600",
   in_progress: "text-amber-600",
   completed: "text-emerald-600",

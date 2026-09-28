@@ -225,7 +225,6 @@ export default async function ProductoDetallePage({ params }: PageProps) {
               <ProductDetailActions
                 productId={product.id}
                 tenantId={tenant.id}
-                sitioSlug={slug}
                 accentColor={accentColor}
                 waHref={waHref}
               />

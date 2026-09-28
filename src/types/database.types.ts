@@ -174,6 +174,7 @@ export type Database = {
           mp_customer_id: string | null
           name: string
           notes: string | null
+          normalized_phone: string | null
           phone: string | null
           tenant_id: string
           updated_at: string
@@ -186,6 +187,7 @@ export type Database = {
           mp_customer_id?: string | null
           name: string
           notes?: string | null
+          normalized_phone?: string | null
           phone?: string | null
           tenant_id: string
           updated_at?: string
@@ -198,6 +200,7 @@ export type Database = {
           mp_customer_id?: string | null
           name?: string
           notes?: string | null
+          normalized_phone?: string | null
           phone?: string | null
           tenant_id?: string
           updated_at?: string
@@ -1089,12 +1092,19 @@ export type Database = {
           order_type: string | null
           paid_at: string | null
           paid_total: number
+          pickup_completed_at: string | null
+          pickup_completed_by: string | null
           parent_order_id: string | null
           payment_link: string | null
           payment_method: string | null
           payment_mode: string
           payment_plan_status: string
           promotion_id: string | null
+          public_request_key: string | null
+          public_tracking_token: string | null
+          accepted_at: string | null
+          rejected_at: string | null
+          rejection_reason: string | null
           qr_code_id: string | null
           scheduled_for: string | null
           source: string
@@ -1106,6 +1116,7 @@ export type Database = {
           tenant_id: string
           total: number
           updated_at: string
+          whatsapp_request_key: string | null
           work_metadata: Json | null
         }
         Insert: {
@@ -1135,12 +1146,19 @@ export type Database = {
           order_type?: string | null
           paid_at?: string | null
           paid_total?: number
+          pickup_completed_at?: string | null
+          pickup_completed_by?: string | null
           parent_order_id?: string | null
           payment_link?: string | null
           payment_method?: string | null
           payment_mode?: string
           payment_plan_status?: string
           promotion_id?: string | null
+          public_request_key?: string | null
+          public_tracking_token?: string | null
+          accepted_at?: string | null
+          rejected_at?: string | null
+          rejection_reason?: string | null
           qr_code_id?: string | null
           scheduled_for?: string | null
           source?: string
@@ -1152,6 +1170,7 @@ export type Database = {
           tenant_id: string
           total?: number
           updated_at?: string
+          whatsapp_request_key?: string | null
           work_metadata?: Json | null
         }
         Update: {
@@ -1181,12 +1200,19 @@ export type Database = {
           order_type?: string | null
           paid_at?: string | null
           paid_total?: number
+          pickup_completed_at?: string | null
+          pickup_completed_by?: string | null
           parent_order_id?: string | null
           payment_link?: string | null
           payment_method?: string | null
           payment_mode?: string
           payment_plan_status?: string
           promotion_id?: string | null
+          public_request_key?: string | null
+          public_tracking_token?: string | null
+          accepted_at?: string | null
+          rejected_at?: string | null
+          rejection_reason?: string | null
           qr_code_id?: string | null
           scheduled_for?: string | null
           source?: string
@@ -1198,6 +1224,7 @@ export type Database = {
           tenant_id?: string
           total?: number
           updated_at?: string
+          whatsapp_request_key?: string | null
           work_metadata?: Json | null
         }
         Relationships: [
@@ -1248,6 +1275,13 @@ export type Database = {
             columns: ["parent_order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_pickup_completed_by_fkey"
+            columns: ["pickup_completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1698,6 +1732,48 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_items: {
+        Row: {
+          created_at: string
+          id: string
+          position: number
+          product_id: string
+          promotion_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position?: number
+          product_id: string
+          promotion_id: string
+          quantity: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position?: number
+          product_id?: string
+          promotion_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_items_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
             referencedColumns: ["id"]
           },
         ]
