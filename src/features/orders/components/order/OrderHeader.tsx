@@ -8,6 +8,7 @@ import { formatOrderDateFull } from "@/lib/formatDate";
 import { getPaymentMethodConfig } from "@/lib/formatPaymentMethod";
 import { getSourceConfig } from "@/lib/formatSource";
 import { useOrder } from "@/features/orders/hooks/useOrder";
+import { formatAgendaDateTime } from "@/features/orders/helpers/agendaBuckets";
 
 export function OrderHeader() {
   const { order, tenantSlug } = useOrder();
@@ -65,10 +66,7 @@ export function OrderHeader() {
           status={order.status}
           cancelledFrom={order.cancelled_from}
         />
-        <PickupBadge
-          scheduledFor={order.scheduled_for}
-          status={order.status}
-        />
+        <PickupBadge scheduledFor={order.scheduled_for} status={order.status} />
         {order.pickup_completed_at && (
           <span
             className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800"
