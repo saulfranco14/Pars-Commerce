@@ -18,6 +18,7 @@ interface ProductCardProps {
     price: number;
     image_url: string | null;
     image_urls?: string[];
+    type?: string;
   };
   promotion?: ProductPromotionResult | null;
   tenantId: string;
@@ -27,6 +28,7 @@ interface ProductCardProps {
   baseUrl?: string;
   /** true para la primera tarjeta del grid (LCP) */
   priority?: boolean;
+  compact?: boolean;
 }
 
 function buildWhatsAppUrl(
@@ -50,6 +52,7 @@ export default function ProductCard({
   whatsappPhone,
   baseUrl = "",
   priority = false,
+  compact = false,
 }: ProductCardProps) {
   const fingerprint = useFingerprint();
   const [loading, setLoading] = useState(false);
@@ -88,9 +91,9 @@ export default function ProductCard({
   };
 
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       {/* Image area */}
-      <Link href={productPath} className="relative block aspect-4/3 overflow-hidden bg-gray-50">
+      <Link href={productPath} className={`relative block overflow-hidden bg-gray-50 ${compact ? "aspect-[5/4]" : "aspect-4/3"}`}>
         {mainImage ? (
           <>
             <Image
@@ -137,17 +140,17 @@ export default function ProductCard({
       </Link>
 
       {/* Card content */}
-      <div className="flex min-h-36 flex-1 flex-col p-4">
+      <div className={`flex flex-1 flex-col ${compact ? "min-h-28 p-3.5" : "min-h-36 p-4"}`}>
         <Link href={productPath}>
           <h3 className="line-clamp-2 font-semibold leading-snug text-gray-900 transition-opacity hover:opacity-70">
             {product.name}
           </h3>
         </Link>
-        <p className="mt-1 min-h-9 line-clamp-2 text-xs leading-relaxed text-gray-400">
+        <p className={`${compact ? "mt-1 line-clamp-1" : "mt-1 min-h-9 line-clamp-2"} text-xs leading-relaxed text-gray-400`}>
           {product.description || " "}
         </p>
         <div className="mt-auto flex items-baseline gap-2 pt-3">
-          <span className="text-xl font-bold" style={{ color: accentColor }}>
+          <span className={`${compact ? "text-lg" : "text-xl"} font-bold`} style={{ color: accentColor }}>
             ${displayPrice.toFixed(2)}
           </span>
           {showOriginalPrice && (
@@ -159,7 +162,7 @@ export default function ProductCard({
       </div>
 
       {/* Action buttons */}
-      <div className="flex flex-col gap-2 px-4 pb-4">
+      <div className={`flex flex-col gap-2 ${compact ? "px-3.5 pb-3.5" : "px-4 pb-4"}`}>
         <button
           type="button"
           onClick={handleAddToCart}
@@ -168,9 +171,9 @@ export default function ProductCard({
           style={{ backgroundColor: accentColor }}
         >
           <ShoppingCart className="h-4 w-4" />
-          {loading ? "Agregando…" : added ? <><Check className="h-4 w-4" />Agregado</> : "Agregar al carrito"}
+          {loading ? "Agregando…" : added ? <><Check className="h-4 w-4" />Agregado</> : product.type === "service" ? (compact ? "Elegir" : "Elegir servicio") : (compact ? "Agregar" : "Agregar al carrito")}
         </button>
-        {waHref && (
+        {waHref && !compact && (
           <a
             href={waHref}
             target="_blank"

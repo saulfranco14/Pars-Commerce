@@ -2,111 +2,20 @@
 
 import { Check, CheckCircle2, ExternalLink, Palette } from "lucide-react";
 import {
-  VARIANT_STYLES,
   COLOR_PRESETS,
 } from "@/features/sitio-web/constants/templateStyles";
 import type { SiteWebGeneralTabProps } from "@/features/sitio-web/interfaces/siteWebGeneralTab";
 import { TemplateSelector } from "@/components/site/TemplateSelector";
 import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
 
-function TemplateMiniPreview({
-  variant,
-  themeColor,
-}: {
-  variant: string;
-  themeColor: string;
-}) {
-  const s = VARIANT_STYLES[variant] ?? VARIANT_STYLES.classic;
-  const resolve = (val: string) => (val === "accent" ? themeColor : val);
-  const isDark = s.dark ?? false;
-  const textAlpha = isDark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.25)";
-
-  return (
-    <div
-      className="w-full overflow-hidden rounded-t-md"
-      style={{ background: s.bg, aspectRatio: "16/10" }}
-    >
-      <div
-        className="flex items-center gap-1 px-1.5 py-1"
-        style={{
-          background: resolve(s.headerBg),
-          borderBottom: "1px solid rgba(0,0,0,0.06)",
-        }}
-      >
-        <div
-          className="h-1.5 w-1.5 rounded-full shrink-0"
-          style={{ background: themeColor }}
-        />
-        <div
-          className="h-0.5 w-8 rounded-full"
-          style={{
-            background: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.2)",
-          }}
-        />
-      </div>
-      <div
-        className="flex flex-col gap-0.5 px-1.5 py-1.5"
-        style={{ background: resolve(s.heroBg) }}
-      >
-        <div
-          className="h-1 w-14 rounded-full"
-          style={{
-            background:
-              isDark || s.heroBg === "accent"
-                ? "rgba(255,255,255,0.85)"
-                : textAlpha,
-          }}
-        />
-        <div
-          className="h-2 w-10 rounded"
-          style={{
-            background:
-              s.heroBg === "accent" || isDark
-                ? "rgba(255,255,255,0.9)"
-                : themeColor,
-            opacity: 0.95,
-          }}
-        />
-      </div>
-      <div className="grid grid-cols-3 gap-0.5 p-1">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="overflow-hidden rounded-sm"
-            style={{
-              background: s.cardBg,
-              boxShadow: "0 1px 1px rgba(0,0,0,0.04)",
-            }}
-          >
-            <div
-              className="h-3 w-full"
-              style={{ background: `${themeColor}22` }}
-            />
-            <div className="p-0.5">
-              <div
-                className="h-0.5 w-5 rounded-full"
-                style={{ background: textAlpha }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function SiteWebGeneralTab({
   tenantSlug,
   publicStoreEnabled,
-  publicStoreLoading,
-  onTogglePublicStore,
   templates,
   selectedTemplateId,
   onTemplateSelect,
   themeColor,
   onThemeColorChange,
-  appearanceLoading,
-  appearanceDirty,
   appearanceSuccess,
   onSaveAppearance,
 }: SiteWebGeneralTabProps) {
@@ -138,13 +47,13 @@ export function SiteWebGeneralTab({
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground">
               {publicStoreEnabled
-                ? "Tu tienda pública está activa"
-                : "Tu tienda todavía no es visible para clientes"}
+                ? "Tu tienda está publicada"
+                : "Tu tienda se publicará desde la preparación guiada"}
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {publicStoreEnabled
-                ? "Comparte tu enlace o termina de personalizar el contenido y la apariencia."
-                : "Cuando tu catálogo esté listo, activa la opción Tienda pública de abajo para publicar tu enlace."}
+                ? "Personaliza su apariencia aquí. Para dejar de recibir compras utiliza Pausar pedidos, sin ocultar el catálogo."
+                : "Completa contacto, catálogo y cobro; Tlaco publicará el enlace automáticamente."}
             </p>
           </div>
         </div>
@@ -153,35 +62,19 @@ export function SiteWebGeneralTab({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <label
-              htmlFor="publicStore"
-              className="flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center"
-              aria-label="Activar tienda pública"
-            >
-              <input
-                id="publicStore"
-                type="checkbox"
-                checked={publicStoreEnabled}
-                onChange={onTogglePublicStore}
-                disabled={publicStoreLoading}
-                className="h-4 w-4 cursor-pointer rounded border-border focus:ring-2 focus:ring-accent focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60"
-              />
-            </label>
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+              <CheckCircle2 className="h-5 w-5" aria-hidden />
+            </span>
             <div className="min-w-0 flex-1">
               <span className="block text-sm font-medium text-foreground">
-                Tienda pública
+                {publicStoreEnabled ? "Enlace público listo" : "Publicación automática"}
               </span>
               <span className="block text-xs text-muted-foreground">
                 {publicStoreEnabled
-                  ? "Los clientes ya pueden visitar tu sitio"
-                  : "Actívala cuando quieras que los clientes visiten tu sitio"}
+                  ? "Tu catálogo permanece visible aunque pauses pedidos"
+                  : "No necesitas activar nada desde Configuración"}
               </span>
             </div>
-            {publicStoreLoading && (
-              <span className="shrink-0 text-xs text-muted-foreground">
-                Guardando…
-              </span>
-            )}
           </div>
           {publicStoreEnabled && (
             <a

@@ -10,6 +10,7 @@ export interface ProductListItem {
   theme: string | null;
   stock: number;
   created_at: string;
+  sort_order: number;
   subcatalog_id: string | null;
   subcatalog?: { id: string; name: string };
   wholesale_min_quantity?: number | null;
@@ -35,6 +36,7 @@ export interface ProductDetail {
   stock: number;
   created_at?: string;
   updated_at?: string;
+  sort_order: number;
   subcatalog_id: string | null;
   subcatalog?: { id: string; name: string };
   wholesale_min_quantity?: number | null;

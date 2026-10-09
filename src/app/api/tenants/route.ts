@@ -3,6 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import type { Database, Json } from "@/types/database.types";
 import { getAdditionalBusinessAccess } from "@/features/billing/businessExpansion";
+import type { RegistrationIntent } from "@/features/auth/registrationIntent";
+import { ensureCatalogTemplates } from "@/features/catalog/catalogBootstrap";
+import { normalizeMexicanPhone } from "@/lib/phone";
 
 type TenantUpdate = Database["public"]["Tables"]["tenants"]["Update"];
 
@@ -46,7 +49,7 @@ export async function GET() {
       tenant_id,
       role_id,
       accepted_at,
-      tenant:tenants(id, name, slug, business_type, logo_url, theme_color, description, public_store_enabled, accepting_orders, settings, whatsapp_phone, social_links, site_template_id, is_demo, whatsapp_orders_enabled, catalog_template_id, catalog_template_version),
+      tenant:tenants(id, name, slug, business_type, logo_url, theme_color, description, public_store_enabled, accepting_orders, settings, whatsapp_phone, social_links, site_template_id, is_demo, whatsapp_orders_enabled, catalog_template_id, catalog_template_version, catalog_review_status, catalog_approved_at),
       role:tenant_roles(id, name, permissions)
     `
     )
@@ -124,12 +127,13 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { name, slug, business_type, site_template_id, catalog_template_key } = body as {
+  const { name, slug, business_type, site_template_id, catalog_template_key, registration_intent } = body as {
     name: string;
     slug: string;
     business_type?: string;
     site_template_id?: string;
     catalog_template_key?: string;
+    registration_intent?: RegistrationIntent;
   };
 
   if (!name || !slug) {
@@ -139,12 +143,78 @@ export async function POST(request: Request) {
     );
   }
 
-  const normalizedSlug = slug
+  const baseSlug = slug
     .toLowerCase()
     .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
+    .replace(/[^a-z0-9-]/g, "") || "negocio";
+  const storedIntent = user.user_metadata?.registration_intent as
+    | { plan?: string; giro?: string; solution_key?: string; catalog_key?: string; business_name?: string; theme_key?: string; primary_goals?: string[]; catalog_start_mode?: string; onboarding_session_id?: string; phone?: string; assisted?: boolean; consumed_at?: string; tenant_id?: string }
+    | undefined;
+  const storedRegistrationIntent = storedIntent?.consumed_at ? undefined : storedIntent;
+  const effectivePlan = registration_intent?.plan ?? storedRegistrationIntent?.plan ?? "free";
+  const effectiveGiro = registration_intent?.giro ?? storedRegistrationIntent?.giro ?? "otro";
+  const effectiveSolutionKey = registration_intent?.solutionKey ?? storedRegistrationIntent?.solution_key ?? null;
+  const effectiveCatalogStartMode = registration_intent?.catalogStartMode ?? storedRegistrationIntent?.catalog_start_mode ?? "starter";
+  const effectiveOnboardingSessionId = registration_intent?.onboardingSessionId ?? storedRegistrationIntent?.onboarding_session_id ?? null;
+  const effectiveGoals = registration_intent?.primaryGoals ?? storedRegistrationIntent?.primary_goals ?? [];
+  const effectivePhone = normalizeMexicanPhone(
+    registration_intent?.phone ?? storedRegistrationIntent?.phone ?? "",
+  );
+  const effectiveThemeKey = registration_intent?.themeKey ?? storedRegistrationIntent?.theme_key ?? "tlaco";
+  const effectiveAssisted = registration_intent?.assisted ?? storedRegistrationIntent?.assisted ?? false;
+  const effectiveBusinessType = business_type || effectiveGiro;
+  const requestedCatalogKey = catalog_template_key?.trim() || registration_intent?.catalogKey || storedRegistrationIntent?.catalog_key || null;
+  const effectiveCatalogKey = effectiveCatalogStartMode === "own" ? null : requestedCatalogKey;
+
+  if (!effectivePhone) {
+    return NextResponse.json(
+      { error: "Ingresa un WhatsApp mexicano válido de 10 dígitos antes de crear el negocio." },
+      { status: 400 },
+    );
+  }
 
   const admin = createAdminClient();
+
+  // A retry after account creation must resume the same business instead of
+  // creating a duplicate (for example after a slow redirect or lost network).
+  if (registration_intent && storedIntent?.tenant_id) {
+    const { data: existingMembership } = await admin
+      .from("tenant_memberships")
+      .select("tenant:tenants(id, slug)")
+      .eq("user_id", user.id)
+      .eq("tenant_id", storedIntent.tenant_id)
+      .eq("status", "active")
+      .maybeSingle();
+    const existingTenant = Array.isArray(existingMembership?.tenant)
+      ? existingMembership.tenant[0]
+      : existingMembership?.tenant;
+    if (existingTenant) return NextResponse.json(existingTenant);
+  }
+
+  if (effectiveCatalogKey) {
+    await ensureCatalogTemplates(admin);
+  }
+
+  // Los presets comparten un nombre inicial. Resolver el slug aquí permite
+  // que dos negocios elijan ese nombre sin convertir el alta en un error.
+  let normalizedSlug = baseSlug;
+  const { data: occupiedSlug } = await admin
+    .from("tenants")
+    .select("id")
+    .eq("slug", normalizedSlug)
+    .maybeSingle();
+  if (occupiedSlug) {
+    const ownerSuffix = user.id.replace(/-/g, "").slice(0, 6);
+    normalizedSlug = `${baseSlug}-${ownerSuffix}`;
+    const { data: occupiedOwnerSlug } = await admin
+      .from("tenants")
+      .select("id")
+      .eq("slug", normalizedSlug)
+      .maybeSingle();
+    if (occupiedOwnerSlug) {
+      normalizedSlug = `${baseSlug}-${ownerSuffix}-${Date.now().toString(36).slice(-4)}`;
+    }
+  }
 
   const expansion = await getAdditionalBusinessAccess(admin, user.id);
   if (!expansion.can_create) {
@@ -160,8 +230,8 @@ export async function POST(request: Request) {
       p_owner_user_id: user.id,
       p_name: name.trim(),
       p_slug: normalizedSlug,
-      p_business_type: business_type ?? "otro",
-      p_catalog_template_key: catalog_template_key?.trim() || null,
+      p_business_type: effectiveBusinessType,
+      p_catalog_template_key: effectiveCatalogKey,
       p_site_template_id: site_template_id ?? null,
       p_is_demo: false,
       p_demo_key: null,
@@ -177,6 +247,46 @@ export async function POST(request: Request) {
       );
     }
     return NextResponse.json({ error: tenantError.message }, { status: 500 });
+  }
+
+  if (tenant?.id) {
+    await admin
+      .from("tenants")
+      .update({
+        catalog_review_status: effectiveCatalogKey ? "pending" : "not_required",
+        public_store_enabled: true,
+        accepting_orders: false,
+        whatsapp_phone: effectivePhone,
+        theme_color: effectiveThemeKey === "ink" ? "#18243a" : effectiveThemeKey === "terracotta" ? "#b45309" : "#3483fa",
+        settings: {
+          registration_intent: {
+            plan: effectivePlan,
+            giro: effectiveGiro,
+            solution_key: effectiveSolutionKey,
+            catalog_start_mode: effectiveCatalogStartMode,
+            assisted: effectiveAssisted,
+          },
+          onboarding: {
+            status: "in_progress",
+            session_id: effectiveOnboardingSessionId,
+            goals: effectiveGoals,
+            required_steps: ["contact", "catalog", "availability", "payment", "customer_preview"],
+            completed_steps: [],
+          },
+        },
+        updated_at: new Date().toISOString(),
+      } as never)
+      .eq("id", tenant.id);
+    await admin.auth.admin.updateUserById(user.id, {
+      user_metadata: {
+        ...user.user_metadata,
+        registration_intent: {
+          ...(user.user_metadata?.registration_intent ?? {}),
+          consumed_at: new Date().toISOString(),
+          tenant_id: tenant.id,
+        },
+      },
+    });
   }
 
   return NextResponse.json(tenant);
@@ -282,10 +392,19 @@ export async function PATCH(request: Request) {
     updates.public_store_enabled = public_store_enabled;
   if (site_template_id !== undefined)
     updates.site_template_id = site_template_id || null;
-  if (whatsapp_phone !== undefined)
-    updates.whatsapp_phone = whatsapp_phone?.trim() ?? null;
+  const normalizedWhatsApp =
+    whatsapp_phone !== undefined ? normalizeMexicanPhone(whatsapp_phone) : null;
+  if (whatsapp_phone !== undefined) {
+    if (!normalizedWhatsApp) {
+      return NextResponse.json(
+        { error: "Ingresa un WhatsApp mexicano válido de 10 dígitos." },
+        { status: 400 },
+      );
+    }
+    updates.whatsapp_phone = normalizedWhatsApp;
+  }
   if (whatsapp_orders_enabled !== undefined) {
-    const phoneToValidate = whatsapp_phone?.trim() || (await admin.from("tenants").select("whatsapp_phone, is_demo").eq("id", tenant_id).maybeSingle()).data?.whatsapp_phone;
+    const phoneToValidate = normalizedWhatsApp || (await admin.from("tenants").select("whatsapp_phone, is_demo").eq("id", tenant_id).maybeSingle()).data?.whatsapp_phone;
     if (whatsapp_orders_enabled && (!phoneToValidate || !/^\+[1-9]\d{7,14}$/.test(phoneToValidate))) {
       return NextResponse.json({ error: "Configura un WhatsApp en formato internacional antes de recibir pedidos por ese canal." }, { status: 400 });
     }
@@ -305,7 +424,14 @@ export async function PATCH(request: Request) {
       .eq("id", tenant_id)
       .single();
     const current = (existingTenant?.settings as Record<string, unknown>) ?? {};
-    updates.settings = { ...current, ...settingsPayload } as Json;
+    const nextSettings = { ...current, ...settingsPayload };
+    if (settingsPayload.onboarding && typeof settingsPayload.onboarding === "object" && !Array.isArray(settingsPayload.onboarding)) {
+      nextSettings.onboarding = {
+        ...((current.onboarding as Record<string, unknown> | null) ?? {}),
+        ...(settingsPayload.onboarding as Record<string, unknown>),
+      };
+    }
+    updates.settings = nextSettings as Json;
   }
 
   const { data: tenant, error } = await admin

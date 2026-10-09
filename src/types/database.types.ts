@@ -1518,6 +1518,7 @@ export type Database = {
           price: number
           sku: string | null
           slug: string
+          sort_order: number
           subcatalog_id: string | null
           tenant_id: string
           theme: string | null
@@ -1541,6 +1542,7 @@ export type Database = {
           price: number
           sku?: string | null
           slug: string
+          sort_order?: number
           subcatalog_id?: string | null
           tenant_id: string
           theme?: string | null
@@ -1564,6 +1566,7 @@ export type Database = {
           price?: number
           sku?: string | null
           slug?: string
+          sort_order?: number
           subcatalog_id?: string | null
           tenant_id?: string
           theme?: string | null
@@ -2992,6 +2995,10 @@ export type Database = {
       }
       recompute_order_fulfillment: {
         Args: { p_order_id: string }
+        Returns: undefined
+      }
+      reorder_catalog_items: {
+        Args: { p_item_ids: string[]; p_tenant_id: string }
         Returns: undefined
       }
     }

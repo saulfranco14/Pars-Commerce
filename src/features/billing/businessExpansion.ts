@@ -1,13 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- billing tables are introduced by the billing migration. */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const BUSINESS_LIMITS = {
-  free: 1,
-  operation: 2,
-  growth: 3,
-  scale: 12,
-} as const;
-
 /** Server-side source of truth for creating another business. */
 export async function getAdditionalBusinessAccess(
   adminClient: unknown,
@@ -33,17 +26,33 @@ export async function getAdditionalBusinessAccess(
     })
     .map((membership: any) => membership.tenant_id as string);
 
+  if (ownedTenantIds.length === 0) {
+    return {
+      can_create: true,
+      requires_upgrade: false,
+      plan_code: "free",
+      business_limit: 1,
+      businesses_owned: 0,
+    };
+  }
+
   const { data: paidAccounts, error: billingError } = await admin
     .from("tenant_billing_accounts")
-    .select("tenant_id, plan_code")
+    .select("tenant_id, plan_code, plan:billing_plans(entitlements)")
     .in("tenant_id", ownedTenantIds)
     .neq("plan_code", "free")
     .in("status", ["active", "cancelling"]);
   if (billingError) throw new Error(billingError.message);
 
-  const planCode = ((paidAccounts ?? []).map((account: any) => account.plan_code)
-    .sort((left: keyof typeof BUSINESS_LIMITS, right: keyof typeof BUSINESS_LIMITS) => BUSINESS_LIMITS[right] - BUSINESS_LIMITS[left])[0] ?? "free") as keyof typeof BUSINESS_LIMITS;
-  const limit = BUSINESS_LIMITS[planCode] ?? BUSINESS_LIMITS.free;
+  const bestAccount = (paidAccounts ?? [])
+    .map((account: any) => {
+      const plan = Array.isArray(account.plan) ? account.plan[0] : account.plan;
+      const limit = Number(plan?.entitlements?.business_limit ?? 1);
+      return { planCode: String(account.plan_code), limit };
+    })
+    .sort((left, right) => right.limit - left.limit)[0];
+  const planCode = bestAccount?.planCode ?? "free";
+  const limit = bestAccount?.limit ?? 1;
   return {
     can_create: ownedTenantIds.length < limit,
     requires_upgrade: planCode === "free" && ownedTenantIds.length >= limit,

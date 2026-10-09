@@ -4,38 +4,28 @@ import { notFound } from "next/navigation";
 import { LayoutSwitcher } from "./layouts/LayoutSwitcher";
 import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
 import { OrdersClosedNotice } from "@/features/checkout/components/cart/OrdersClosedNotice";
-import { getSolutionByDemoSlug } from "@/features/solutions/solutionCatalog";
-import { DemoStorePreview } from "@/features/solutions/DemoStorePreview";
 
 interface LayoutProps {
   children: React.ReactNode;
   params: Promise<{ slug: string }>;
 }
 
-// Solution pages own the commercial SEO intent. Demo stores are useful for
-// visitors but should not compete with their corresponding landing page.
 export async function generateMetadata({ params }: Pick<LayoutProps, "params">): Promise<Metadata> {
-  const { slug } = await params;
-  if (getSolutionByDemoSlug(slug)) return { robots: { index: false, follow: true } };
+  await params;
   return {};
 }
 
 export default async function SitioLayout({ children, params }: LayoutProps) {
   const { slug } = await params;
-  // Las rutas demo siempre muestran el recorrido comercial, incluso después de
-  // crear su tenant real. Así el enlace público explica qué se está viendo en
-  // Tlaco y no se vuelve una tienda genérica sin contexto.
-  const demoSolution = getSolutionByDemoSlug(slug);
-  if (demoSolution) return <DemoStorePreview solution={demoSolution} />;
-
   const supabase = createAdminClient();
 
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
     .select(
-      "id, name, description, logo_url, theme_color, slug, whatsapp_phone, social_links, site_template_id, accepting_orders",
+      "id, name, description, logo_url, theme_color, slug, whatsapp_phone, social_links, site_template_id, accepting_orders, settings",
     )
     .eq("slug", slug)
+    .eq("public_store_enabled", true)
     .single();
 
   if (tenantError || !tenant) {
@@ -95,6 +85,9 @@ export default async function SitioLayout({ children, params }: LayoutProps) {
     return catalogLinks;
   });
   const accentColor = tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT;
+  const settings = (tenant.settings as Record<string, unknown> | null) ?? {};
+  const onboarding = (settings.onboarding as Record<string, unknown> | null) ?? {};
+  const isPreparing = onboarding.status === "in_progress";
 
   const layoutTenant = {
     id: tenant.id,
@@ -119,7 +112,7 @@ export default async function SitioLayout({ children, params }: LayoutProps) {
           enterarse de que no se puede. */}
       {tenant.accepting_orders === false && (
         <div className="mb-4">
-          <OrdersClosedNotice businessName={tenant.name} />
+          <OrdersClosedNotice businessName={tenant.name} preparing={isPreparing} />
         </div>
       )}
       {children}

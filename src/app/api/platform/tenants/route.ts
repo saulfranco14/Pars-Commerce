@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- catalog review columns ship in the paired migration before generated types refresh. */
 import { NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requirePlatformAdmin } from "../_lib";
 
@@ -23,11 +25,11 @@ export async function GET(request: Request) {
   const status = params.get("status") ?? "all";
   const page = Math.max(Number(params.get("page") ?? 1) || 1, 1);
   const perPage = Math.min(Math.max(Number(params.get("per_page") ?? 10) || 10, 5), 25);
-  const admin = createAdminClient();
+  const admin = createAdminClient() as unknown as SupabaseClient<any>;
   const { data: tenants, error } = await admin
     .from("tenants")
     .select(
-      "id, name, slug, business_type, description, logo_url, public_store_enabled, accepting_orders, whatsapp_phone, created_at, updated_at",
+      "id, name, slug, business_type, description, logo_url, public_store_enabled, accepting_orders, catalog_review_status, whatsapp_phone, created_at, updated_at",
     )
     .order("updated_at", { ascending: false })
     .limit(500);

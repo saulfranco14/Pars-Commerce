@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
+import { PLAN_ORDER } from "@/features/billing/entitlements";
+import { normalizeMexicanPhone } from "@/lib/phone";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const { email, password, intent } = await request.json() as {
+      email?: string;
+      password?: string;
+      intent?: { plan?: string; giro?: string; solutionKey?: string; catalogKey?: string; businessName?: string; themeKey?: string; primaryGoals?: string[]; catalogStartMode?: string; onboardingSessionId?: string; phone?: string; assisted?: boolean };
+    };
 
     if (!email || !password) {
       return NextResponse.json(
@@ -13,6 +19,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const phone = intent?.phone ? normalizeMexicanPhone(intent.phone) : null;
+    if (!phone) {
+      return NextResponse.json({ error: "Ingresa un WhatsApp mexicano de 10 dígitos." }, { status: 400 });
+    }
+    const registrationIntent = {
+      plan: PLAN_ORDER.includes(intent?.plan as never) ? intent?.plan : "free",
+      giro: intent?.giro?.slice(0, 48) ?? "otro",
+      solution_key: intent?.solutionKey?.slice(0, 48) ?? null,
+      catalog_key: intent?.catalogKey?.slice(0, 48) ?? null,
+      business_name: intent?.businessName?.trim().slice(0, 80) || null,
+      theme_key: intent?.themeKey?.slice(0, 32) ?? "tlaco",
+      primary_goals: Array.isArray(intent?.primaryGoals) ? intent.primaryGoals.slice(0, 2) : [],
+      catalog_start_mode: intent?.catalogStartMode ?? "starter",
+      onboarding_session_id: intent?.onboardingSessionId?.slice(0, 80) ?? null,
+      phone,
+      assisted: Boolean(intent?.assisted),
+    };
     const supabase = createAdminClient();
 
     // El alta no depende de SendGrid. Auth queda confirmado para permitir
@@ -21,6 +44,7 @@ export async function POST(request: NextRequest) {
       email,
       password,
       email_confirm: true,
+      user_metadata: { registration_intent: registrationIntent },
     });
 
     if (error) {

@@ -40,6 +40,7 @@ export type PlatformTenant = {
   logo_url: string | null;
   public_store_enabled: boolean;
   accepting_orders: boolean;
+  catalog_review_status: "not_required" | "pending" | "approved" | "changes_requested";
   whatsapp_phone: string | null;
   created_at: string;
   updated_at: string;

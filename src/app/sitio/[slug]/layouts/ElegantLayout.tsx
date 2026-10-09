@@ -56,7 +56,7 @@ export function ElegantLayout({
               {navPages.map((p) => (
                 <Link
                   key={p.id}
-                  href={`/sitio/${tenant.slug}/${p.slug}`}
+                  href={p.href ?? `/sitio/${tenant.slug}/${p.slug}`}
                   className="transition-colors hover:text-stone-900"
                 >
                   {p.title}

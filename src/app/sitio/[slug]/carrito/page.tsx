@@ -20,6 +20,7 @@ export default async function CarritoPage({ params }: PageProps) {
     .from("tenants")
     .select("id, name, theme_color, settings, accepting_orders, whatsapp_orders_enabled")
     .eq("slug", slug)
+    .eq("public_store_enabled", true)
     .single();
 
   if (tenantError || !tenant) {

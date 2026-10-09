@@ -48,6 +48,7 @@ export default async function ConfirmacionPage({
     .from("tenants")
     .select("id, name, theme_color")
     .eq("slug", slug)
+    .eq("public_store_enabled", true)
     .single();
 
   if (tenantError || !tenant) {

@@ -9,13 +9,7 @@ import { swrFetcher } from "@/lib/swrFetcher";
 import type { BillingAccount, BillingPlan, BillingPlanCode } from "@/features/billing/entitlements";
 import { PortfolioDashboard } from "@/features/billing/components/PortfolioDashboard";
 import { ScheduledReports } from "@/features/billing/components/ScheduledReports";
-
-const PLAN_COPY: Record<BillingPlanCode, { summary: string; bullets: string[] }> = {
-  free: { summary: "Empieza a vender sin costo fijo.", bullets: ["5 mesas activas", "Catálogo, QR, órdenes y equipo ilimitado", "Clientes y préstamos manuales"] },
-  operation: { summary: "Para atender más en el piso.", bullets: ["20 mesas activas", "1 kiosko", "Crea otro negocio", "Recomendación para prestar"] },
-  growth: { summary: "Para controlar varias operaciones.", bullets: ["50 mesas y 3 kioskos", "Reportes y exportación", "Vista de hasta 3 negocios"] },
-  scale: { summary: "Para una operación que ya escala.", bullets: ["100 mesas y 10 kioskos", "Hasta 12 negocios juntos", "Reglas de crédito y reportes programados"] },
-};
+import { PLAN_PRESENTATION, planCapabilities } from "@/features/landing/constants/pricing";
 
 function money(value: number) {
   return value === 0 ? "$0" : `$${value.toLocaleString("es-MX")}`;
@@ -110,7 +104,7 @@ export function BillingPlanCard({ tenantId, canManage }: { tenantId: string; can
     return <div className="h-36 animate-pulse rounded-2xl border border-border bg-surface-raised" aria-label="Cargando membresía" />;
   }
   if (!account) return <p className="rounded-xl border border-border bg-surface-raised px-4 py-3 text-sm text-muted-foreground">{accountError?.message ?? "No pudimos cargar la membresía."}</p>;
-  const currentCopy = PLAN_COPY[account.plan_code] ?? PLAN_COPY.free;
+  const currentCopy = PLAN_PRESENTATION[account.plan_code] ?? PLAN_PRESENTATION.free;
   const period = account.current_period_end
     ? new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short", year: "numeric" }).format(new Date(account.current_period_end))
     : null;
@@ -123,7 +117,7 @@ export function BillingPlanCard({ tenantId, canManage }: { tenantId: string; can
             <Sparkles className="h-4 w-4" aria-hidden /> Tu plan
           </div>
           <h2 className="mt-1 text-lg font-bold text-foreground">{account.plan.name}</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">{currentCopy.summary}</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">{currentCopy.promise}</p>
         </div>
         <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-bold text-accent">
           {money(account.plan.amount_mxn)}/mes
@@ -171,15 +165,16 @@ export function BillingPlanCard({ tenantId, canManage }: { tenantId: string; can
             </div>
           ))}
           {!plansLoading && (plans ?? []).map((plan) => {
-            const copy = PLAN_COPY[plan.code];
+            const copy = PLAN_PRESENTATION[plan.code];
             const current = plan.code === account.plan_code;
             return (
-              <article key={plan.code} className={`rounded-2xl border p-4 ${plan.code === "operation" ? "border-accent bg-accent/5" : "border-border bg-surface"}`}>
+              <article key={plan.code} className="rounded-2xl border border-border bg-surface p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <div><h3 className="font-bold text-foreground">{plan.name}</h3><p className="text-xs text-muted-foreground">{copy.summary}</p></div>
+                  <div><h3 className="font-bold text-foreground">{plan.name}</h3><p className="text-xs text-muted-foreground">{copy.promise}</p></div>
                   <p className="shrink-0 text-lg font-bold tabular-nums text-foreground">{money(plan.amount_mxn)}<span className="text-xs font-medium text-muted-foreground">/mes</span></p>
                 </div>
-                <ul className="mt-3 space-y-1.5">{copy.bullets.map((item) => <li key={item} className="flex gap-2 text-sm text-foreground"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />{item}</li>)}</ul>
+                <p className="mt-3 rounded-lg bg-border-soft/45 px-3 py-2 text-xs font-semibold text-foreground">{copy.fit}</p>
+                <ul className="mt-3 space-y-1.5">{planCapabilities(plan).map((item) => <li key={item} className="flex gap-2 text-sm text-foreground"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />{item}</li>)}</ul>
                 {current ? <p className="mt-3 text-sm font-bold text-accent">Plan actual</p> : plan.code !== "free" ? <button type="button" disabled={busy !== null} onClick={() => void upgrade(plan.code)} className="mt-3 min-h-12 w-full rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground disabled:opacity-60">{busy === plan.code ? "Abriendo Mercado Pago…" : `Activar ${plan.name}`}</button> : null}
               </article>
             );

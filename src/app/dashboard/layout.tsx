@@ -16,7 +16,6 @@ import { Menu } from "lucide-react";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { btnPrimary } from "@/components/ui/buttonClasses";
 import { isFocusRoute } from "@/lib/focusRoutes";
-import { OnboardingOverlay } from "@/components/onboarding/OnboardingOverlay";
 import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
 
 export default function DashboardLayout({
@@ -36,6 +35,7 @@ export default function DashboardLayout({
   const activeTenantId = useTenantStore((s) => s.activeTenantId);
   const setActiveTenantId = useTenantStore((s) => s.setActiveTenantId);
   const activeTenant = useActiveTenant();
+  const isPreparingBusiness = pathname === "/dashboard/preparar-negocio";
 
   const pathParts = pathname.split("/").filter(Boolean);
   const tenantSlug =
@@ -88,6 +88,10 @@ export default function DashboardLayout({
     );
   }
 
+  if (isPreparingBusiness) {
+    return <div className="min-h-screen bg-white">{children}</div>;
+  }
+
   return (
     <div className="dashboard-root no-print flex min-h-screen bg-background">
       <div className="no-print md:fixed md:left-0 md:top-0 md:z-20 md:h-screen md:w-64">
@@ -127,6 +131,7 @@ export default function DashboardLayout({
         >
           {pathname === "/dashboard/crear-negocio" ||
           pathname === "/dashboard/perfil" ||
+          pathname === "/dashboard/preparar-negocio" ||
           // Platform routes are cross-tenant (super admin) — they don't belong
           // to a business, so they skip the "select a tenant" gate below.
           pathname === "/dashboard/plataforma" ? (
@@ -167,9 +172,6 @@ export default function DashboardLayout({
             ordersBadgeCount={0}
           />
         )}
-
-      {/* Onboarding — shown once to new users, feels native on mobile & desktop */}
-      <OnboardingOverlay />
     </div>
   );
 }

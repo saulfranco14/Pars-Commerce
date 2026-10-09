@@ -54,3 +54,13 @@ export async function remove(productId: string): Promise<void> {
     { method: "DELETE" }
   );
 }
+
+export async function reorder(
+  tenantId: string,
+  itemIds: string[],
+): Promise<void> {
+  await apiFetch("/api/products/reorder", {
+    method: "POST",
+    body: JSON.stringify({ tenant_id: tenantId, item_ids: itemIds }),
+  });
+}

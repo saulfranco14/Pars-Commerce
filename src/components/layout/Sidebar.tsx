@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 import { FormSheet } from "@/components/ui/FormSheet";
+import type { BillingPlan } from "@/features/billing/entitlements";
 
 interface SidebarProps {
   tenantSlug: string | null;
@@ -105,6 +106,7 @@ function SidebarContent(props: SidebarContentProps) {
   const [checkingExpansion, setCheckingExpansion] = useState(false);
   const [activatingOperation, setActivatingOperation] = useState(false);
   const [expansionError, setExpansionError] = useState<string | null>(null);
+  const [operationPlan, setOperationPlan] = useState<BillingPlan | null>(null);
   const {
     pathname,
     platformView,
@@ -131,8 +133,6 @@ function SidebarContent(props: SidebarContentProps) {
   const canAccessTables =
     userRole === "owner" || userRole === "cashier" || userRole === "waiter";
   const canAccessBankAccounts = userRole === "owner";
-  const ownBusinesses = memberships.filter((membership) => !membership.tenant.is_demo);
-  const demos = memberships.filter((membership) => membership.tenant.is_demo);
 
   function switchBusiness(selected: SidebarContentProps["memberships"][number]) {
     setActiveTenantId(selected.tenant_id);
@@ -170,6 +170,11 @@ function SidebarContent(props: SidebarContentProps) {
         onNavigate?.();
         router.push("/dashboard/crear-negocio");
         return;
+      }
+      const plansResponse = await fetch("/api/public/billing-plans");
+      const plansPayload = await plansResponse.json();
+      if (plansResponse.ok && Array.isArray(plansPayload)) {
+        setOperationPlan(plansPayload.find((plan: BillingPlan) => plan.code === "operation") ?? null);
       }
       setExpansionOpen(true);
     } catch (error) {
@@ -239,8 +244,7 @@ function SidebarContent(props: SidebarContentProps) {
             className="select-custom min-h-12 w-full cursor-pointer rounded-xl border border-border bg-surface px-3 py-2.5 text-sm font-semibold text-foreground transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             aria-label="Cambiar negocio activo"
           >
-            {ownBusinesses.length > 0 && <optgroup label="Mis negocios">{ownBusinesses.map((membership) => <option key={membership.id} value={membership.tenant_id}>{membership.tenant.name}</option>)}</optgroup>}
-            {demos.length > 0 && <optgroup label="Mis demos">{demos.map((membership) => <option key={membership.id} value={membership.tenant_id}>{membership.tenant.name} · Demo</option>)}</optgroup>}
+            <optgroup label="Mis negocios">{memberships.map((membership) => <option key={membership.id} value={membership.tenant_id}>{membership.tenant.name}</option>)}</optgroup>
           </select></>}
           <button
             type="button"
@@ -568,7 +572,11 @@ function SidebarContent(props: SidebarContentProps) {
                 disabled={activatingOperation}
                 className="min-h-12 w-full rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {activatingOperation ? "Abriendo Mercado Pago…" : "Activar Operación · $199/mes"}
+                {activatingOperation
+                  ? "Abriendo Mercado Pago…"
+                  : operationPlan
+                    ? `Activar Operación · $${operationPlan.amount_mxn.toLocaleString("es-MX")}/mes`
+                    : "Revisar precio de Operación"}
               </button>
             )}
             <button
@@ -589,8 +597,8 @@ function SidebarContent(props: SidebarContentProps) {
             <p className="text-sm font-bold text-foreground">Operación incluye</p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               <li>• Crea y administra otro negocio.</li>
-              <li>• Hasta 20 mesas activas.</li>
-              <li>• Un kiosko para tomar pedidos.</li>
+              <li>• Hasta {operationPlan?.entitlements.active_table_limit ?? "—"} mesas activas.</li>
+              <li>• {operationPlan?.entitlements.active_kiosk_limit ?? "—"} kiosco para tomar pedidos.</li>
             </ul>
             <p className="mt-3 text-xs text-muted-foreground">No se cobra aquí: primero revisarás y autorizarás el pago en Mercado Pago.</p>
           </div>

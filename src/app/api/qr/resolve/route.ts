@@ -372,12 +372,13 @@ export async function GET(request: Request) {
       admin
         .from("products")
         .select(
-          "id, name, slug, type, price, image_url, subcatalog_id, description",
+          "id, name, slug, type, price, image_url, subcatalog_id, description, sort_order",
         )
         .eq("tenant_id", tenant.id)
         .eq("is_public", true)
         .is("deleted_at", null)
-        .order("name"),
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true }),
       admin
         .from("promotions")
         .select(
