@@ -289,7 +289,7 @@ export async function POST(request: Request) {
     ? image_urls.filter((u) => typeof u === "string" && u.trim())
     : [];
   const firstImage = urls[0] ?? image_url?.trim() ?? null;
-  let orderQuery = supabase
+  const orderQuery = supabase
     .from("products")
     .select("sort_order")
     .eq("tenant_id", tenant_id)
@@ -595,16 +595,14 @@ export async function PATCH(request: Request) {
 
   if (stock !== undefined) {
     const qty = Math.floor(Number(stock));
-    const { error: invError } = await supabase
-      .from("product_inventory")
-      .upsert(
-        {
-          product_id,
-          quantity: qty,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "product_id" },
-      );
+    const { error: invError } = await supabase.from("product_inventory").upsert(
+      {
+        product_id,
+        quantity: qty,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "product_id" },
+    );
 
     if (invError) {
       return NextResponse.json(
