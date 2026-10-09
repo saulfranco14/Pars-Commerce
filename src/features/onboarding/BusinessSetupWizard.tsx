@@ -24,7 +24,6 @@ import {
   Trash2,
   X,
   WalletCards,
-  ShieldCheck,
 } from "lucide-react";
 
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
@@ -935,7 +934,10 @@ export function BusinessSetupWizard() {
         <div className="mx-auto max-w-3xl">
           <SetupProgress step={step} />
         </div>
-        <div className="mx-auto mt-7 flex min-h-[calc(100dvh-11rem)] max-w-3xl flex-col [&>section]:flex-1 sm:mt-9">
+        {/* On a phone, short steps should finish with their action instead of
+            reserving a screen-sized blank area. Desktop retains the stable
+            step envelope where the extra room is useful. */}
+        <div className="mx-auto mt-7 max-w-3xl sm:mt-9 lg:flex lg:min-h-[calc(100dvh-11rem)] lg:flex-col lg:[&>section]:flex-1">
           {step === 0 ? (
             <section>
               <p className="text-sm font-bold text-accent">PASO 1 DE 5</p>
