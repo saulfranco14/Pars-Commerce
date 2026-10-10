@@ -2,10 +2,15 @@ export interface CatalogItemDefinition {
   name: string;
   price: number;
   type: "product" | "service";
+  description?: string;
+  category?: string;
+  imageUrl?: string;
+  imageAlt?: string;
 }
 
 export interface CatalogDefinition {
   key: string;
+  version?: number;
   businessType: string;
   name: string;
   description: string;
@@ -13,17 +18,33 @@ export interface CatalogDefinition {
   services: CatalogItemDefinition[];
 }
 
-const imageUrl = "/catalog/demo-product.svg";
+const imageUrl = "/catalog/starter-product.svg";
 
 function productItems(names: string[], base: number, step: number): CatalogItemDefinition[] {
-  return names.map((name, index) => ({ name, price: base + index * step, type: "product" }));
+  return names.map((name, index) => ({
+    name,
+    price: base + index * step,
+    type: "product",
+    category: "Productos",
+    description: `${name} listo para publicar y editar según la disponibilidad del negocio.`,
+    imageUrl,
+    imageAlt: name,
+  }));
 }
 
 function serviceItems(names: string[], base: number, step: number): CatalogItemDefinition[] {
-  return names.map((name, index) => ({ name, price: base + index * step, type: "service" }));
+  return names.map((name, index) => ({
+    name,
+    price: base + index * step,
+    type: "service",
+    category: "Servicios",
+    description: `${name} con precio de referencia editable antes de recibir solicitudes.`,
+    imageUrl,
+    imageAlt: name,
+  }));
 }
 
-export const DEMO_CATALOGS: CatalogDefinition[] = [
+const GENERIC_STARTER_CATALOGS: CatalogDefinition[] = [
   {
     key: "tienda", businessType: "tienda", name: "Tienda de abarrotes", description: "Productos diarios, recargas y entrega local.",
     products: productItems(["Arroz 1 kg", "Frijol 900 g", "Aceite vegetal", "Leche entera", "Huevos 12 pzas", "Pan de caja", "Refresco 2 L", "Agua 1.5 L", "Papas clásicas", "Galletas surtidas", "Detergente 1 kg", "Jabón corporal", "Papel higiénico", "Atún en lata", "Café soluble"], 18, 11),
@@ -80,6 +101,15 @@ export const DEMO_CATALOGS: CatalogDefinition[] = [
     services: serviceItems(["Lavado básico", "Lavado completo", "Lavado de motor", "Aspirado interior", "Encerado", "Pulido de faros", "Detallado interior", "Lavado de vestiduras", "Sanitización", "Servicio a domicilio"], 120, 95),
   },
 ];
+
+// Los tres giros principales usan catálogos editoriales completos. El resto
+// conserva el catálogo genérico hasta su siguiente fase de lanzamiento.
+import { PRIMARY_STARTER_CATALOGS } from "@/features/catalog/starterCatalogs";
+
+export const STARTER_CATALOGS: CatalogDefinition[] = GENERIC_STARTER_CATALOGS.map(
+  (catalog) =>
+    PRIMARY_STARTER_CATALOGS.find((primary) => primary.key === catalog.key) ?? catalog,
+);
 
 export function catalogImageUrl(): string {
   return imageUrl;

@@ -7,6 +7,7 @@ import { requirePlatformAdmin } from "@/app/api/platform/_lib";
 import { sendAssistedOnboardingEmail } from "@/lib/assistedOnboardingEmail";
 import { getAppUrl } from "@/lib/env/appUrl";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createPreviewLink } from "@/features/preview/previewLinks";
 
 type AssistedPayload = {
   name?: string;
@@ -72,6 +73,14 @@ export async function POST(request: Request) {
   } as never) as { data: unknown; error: { message: string } | null };
   if (provisionError) return NextResponse.json({ error: provisionError.message }, { status: 500 });
   const result = (Array.isArray(provisioned) ? provisioned[0] : provisioned) as { onboarding_id?: string; tenant_id?: string; tenant_slug?: string } | null;
+  if (result?.tenant_id && body.catalog_template_key) {
+    await admin.from("tenants").update({
+      catalog_review_status: "pending",
+      public_store_enabled: true,
+      accepting_orders: false,
+      updated_at: new Date().toISOString(),
+    } as never).eq("id", result.tenant_id);
+  }
 
   let emailDelivery: "sent" | "failed" | "not_needed" = profile?.id ? "not_needed" : "sent";
   if (!profile?.id && invitationUrl) {
@@ -87,7 +96,10 @@ export async function POST(request: Request) {
     event_type: "invitation_generated",
     metadata: { email_delivery: emailDelivery, existing_user: Boolean(profile?.id) },
   });
-  return NextResponse.json({ ...result, provisioning_key: key, invitation_url: invitationUrl, email_delivery: emailDelivery }, { status: 201 });
+  const preview = result?.tenant_id
+    ? await createPreviewLink(admin, { tenantId: result.tenant_id, createdBy: gate.user.id, expiresInHours: 72 })
+    : null;
+  return NextResponse.json({ ...result, provisioning_key: key, invitation_url: invitationUrl, preview_url: preview ? `${getAppUrl()}/vista-previa/${preview.token}` : null, preview_expires_at: preview?.expiresAt ?? null, email_delivery: emailDelivery }, { status: 201 });
 }
 
 export async function GET() {

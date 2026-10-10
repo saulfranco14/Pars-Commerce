@@ -49,6 +49,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
     .from("tenants")
     .select("id, name, theme_color, whatsapp_phone")
     .eq("slug", slug)
+    .eq("public_store_enabled", true)
     .single();
 
   if (tenantError || !tenant) {

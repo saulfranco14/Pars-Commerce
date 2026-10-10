@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { PageHeader } from "@/components/admin/PageHeader";
@@ -39,6 +39,7 @@ import {
   Trophy,
   UserPlus,
   Wrench,
+  X,
 } from "lucide-react";
 import { OrderCardMobile } from "@/components/orders/OrderCardMobile";
 import { OrderFormSheet } from "@/features/orders/components/OrderFormSheet";
@@ -52,11 +53,87 @@ import type {
 import { getPeriodDates } from "@/features/ventas/helpers/periodDates";
 import { salesByUser } from "@/features/ventas/helpers/salesByUser";
 import { orderContentType } from "@/features/orders/helpers/orderContentType";
+import { CatalogApprovalCard } from "@/features/catalog/components/CatalogApprovalCard";
 
 type PaymentConnection = {
   provider: "mercadopago";
   status: "pending" | "connected" | "expired" | "revoked" | "failed";
 };
+
+const subscribeToNoBrowserEvents = () => () => {};
+
+function FirstDashboardLaunch({
+  tenantId,
+  tenantSlug,
+  businessName,
+  onCreateOrder,
+}: {
+  tenantId: string;
+  tenantSlug: string;
+  businessName: string;
+  onCreateOrder: () => void;
+}) {
+  const [dismissedInSession, setDismissedInSession] = useState(false);
+  const [activeAction, setActiveAction] = useState(0);
+  const storageKey = `tlaco:first-dashboard:${tenantId}`;
+  const dismissedPreviously = useSyncExternalStore(
+    subscribeToNoBrowserEvents,
+    () => {
+      try {
+        return window.localStorage.getItem(storageKey) === "dismissed";
+      } catch {
+        return false;
+      }
+    },
+    () => true,
+  );
+
+  function dismiss() {
+    setDismissedInSession(true);
+    try {
+      window.localStorage.setItem(storageKey, "dismissed");
+    } catch {
+      // El recorrido sólo se oculta durante esta sesión si storage no está disponible.
+    }
+  }
+
+  async function copyStore() {
+    await navigator.clipboard.writeText(`${window.location.origin}/sitio/${tenantSlug}`);
+    setActiveAction(1);
+  }
+
+  if (dismissedPreviously || dismissedInSession) return null;
+
+  const actionClass = (index: number) =>
+    `group flex min-h-24 items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+      activeAction === index
+        ? "border-accent bg-accent/5 shadow-sm"
+        : "border-border bg-surface hover:border-accent/40"
+    }`;
+
+  return (
+    <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5" aria-labelledby="negocio-listo-title">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Sitio publicado · pedidos activos</p>
+          <h2 id="negocio-listo-title" className="mt-1 text-xl font-bold tracking-tight text-foreground">{businessName} ya está funcionando</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Estas son las cuatro acciones que usarás todos los días. Empieza por la resaltada.</p>
+        </div>
+        <button type="button" onClick={dismiss} aria-label="Cerrar recorrido inicial" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted hover:bg-border-soft hover:text-foreground"><X className="h-4 w-4" /></button>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <button type="button" onFocus={() => setActiveAction(0)} onClick={() => void copyStore()} className={actionClass(0)}><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent text-white"><Globe2 className="h-5 w-5" /></span><span><span className="block text-xs font-semibold text-muted-foreground">1. COMPARTIR</span><span className="mt-1 block text-sm font-bold text-foreground">Copiar enlace de mi tienda</span></span></button>
+        <Link href={`/dashboard/${tenantSlug}/ordenes`} onFocus={() => setActiveAction(1)} className={actionClass(1)}><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent"><ClipboardList className="h-5 w-5" /></span><span><span className="block text-xs font-semibold text-muted-foreground">2. ATENDER</span><span className="mt-1 block text-sm font-bold text-foreground">Ver pedidos</span></span></Link>
+        <button type="button" onFocus={() => setActiveAction(2)} onClick={onCreateOrder} className={actionClass(2)}><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent"><CreditCard className="h-5 w-5" /></span><span><span className="block text-xs font-semibold text-muted-foreground">3. COBRAR</span><span className="mt-1 block text-sm font-bold text-foreground">Registrar una venta</span></span></button>
+        <Link href={`/dashboard/${tenantSlug}/productos`} onFocus={() => setActiveAction(3)} className={actionClass(3)}><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent"><ShoppingBag className="h-5 w-5" /></span><span><span className="block text-xs font-semibold text-muted-foreground">4. EDITAR</span><span className="mt-1 block text-sm font-bold text-foreground">Cambiar productos</span></span></Link>
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-3 border-t border-border-soft pt-4">
+        <span className="text-xs font-medium text-muted-foreground">Acción {activeAction + 1} de 4</span>
+        <button type="button" onClick={() => activeAction === 3 ? dismiss() : setActiveAction((current) => current + 1)} className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-accent hover:bg-accent/5">{activeAction === 3 ? "Terminar recorrido" : "Ver siguiente"}<ArrowRight className="h-4 w-4" /></button>
+      </div>
+    </section>
+  );
+}
 
 function FirstSaleGuide({
   tenantSlug,
@@ -447,8 +524,10 @@ export default function DashboardPage() {
   const orderCreated =
     orders.length > 0 || ordersCreatedByTenant[activeTenant.id] === true;
   const storePublished = activeTenant.public_store_enabled === true;
-  const showFirstSaleGuide = !catalogReady || !orderCreated || !paymentsConnected || !storePublished;
   const assistedSettings = activeTenant.settings as Record<string, unknown> | null | undefined;
+  const onboardingSettings = (assistedSettings?.onboarding as Record<string, unknown> | null) ?? {};
+  const preparationComplete = onboardingSettings.status === "active";
+  const showFirstSaleGuide = !preparationComplete && (!catalogReady || !orderCreated || !paymentsConnected || !storePublished);
   const isAssistedOnboarding = assistedSettings?.assisted_onboarding === true;
 
   return (
@@ -493,6 +572,25 @@ export default function DashboardPage() {
         </div>
 
         {quoteMessage && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{quoteMessage}</p>}
+
+        {preparationComplete && (
+          <FirstDashboardLaunch
+            tenantId={activeTenant.id}
+            tenantSlug={activeTenant.slug}
+            businessName={activeTenant.name}
+            onCreateOrder={() => setCreateOrderOpen(true)}
+          />
+        )}
+
+        {activeTenant.catalog_review_status === "pending" && (
+          <CatalogApprovalCard
+            tenantId={activeTenant.id}
+            tenantSlug={activeTenant.slug}
+            businessName={activeTenant.name}
+            productCount={catalogStats?.products_count ?? 0}
+            serviceCount={catalogStats?.services_count ?? 0}
+          />
+        )}
 
         {period === "cutoff" && lastCutoffEnd && (
           <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3">

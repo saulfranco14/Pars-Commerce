@@ -15,43 +15,43 @@ export const ICON_MAP: Record<string, LucideIcon> = {
 export const DEFAULT_CARDS: SitePageCard[] = [
   {
     icon: "heart",
-    title: "Bienestar",
+    title: "Atención directa",
     description:
-      "Creemos en el bienestar como pilar de una vida plena. Ofrecemos productos de calidad para redescubrir y disfrutar.",
+      "Consulta dudas con el negocio y recibe seguimiento de tu pedido en el mismo lugar.",
   },
   {
     icon: "shield",
-    title: "Calidad garantizada",
+    title: "Compra con claridad",
     description:
-      "Productos certificados, seguros y fabricados con materiales premium. Tu satisfacción es nuestra prioridad.",
+      "Ve productos, precios, promociones y disponibilidad antes de confirmar tu compra.",
   },
   {
     icon: "lock",
-    title: "Discreción total",
+    title: "Pago confirmado",
     description:
-      "Respetamos tu privacidad. Empaque sin marca identificable y entrega confidencial para comprar con tranquilidad.",
+      "Elige el método disponible y conserva el estado de pago dentro de tu pedido.",
   },
   {
     icon: "gift",
-    title: "Entrega personalizada",
+    title: "Entrega a tu manera",
     description:
-      "Adaptamos nuestro servicio a tu comodidad y preferencias. Elige la opción que mejor te funcione.",
+      "Solicita entrega, recolección o atención en sitio según las opciones de este negocio.",
   },
 ];
 
 export const DEFAULT_PURCHASE_STEPS: SitePagePurchaseStep[] = [
   {
-    title: "Selecciona tu producto",
+    title: "Explora y agrega",
     description:
-      "Explora nuestro catálogo y elige el producto perfecto para ti.",
+      "Revisa el catálogo, promociones y precios; agrega lo que necesitas al carrito.",
   },
   {
-    title: "Realiza tu pedido",
-    description: "Contáctanos por WhatsApp con tu selección.",
+    title: "Elige cómo recibirlo",
+    description: "Selecciona entrega, recolección o una fecha disponible y confirma tu pedido.",
   },
   {
-    title: "Recibe y disfruta",
+    title: "Sigue la confirmación",
     description:
-      "Tu paquete lo podrás en nuestro negocio o lo llevaremos a tu domicilio.",
+      "El negocio recibe tu orden, confirma el pago y te avisa cuando esté lista.",
   },
 ];

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Link from "next/link";
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import {
   ArrowRight,
@@ -75,11 +76,15 @@ const FEATURES = [
 // ─── Component ─────────────────────────────────────────────────
 interface BusinessCreatedSuccessProps {
   businessName: string;
+  businessSlug?: string;
+  selectedPlan?: "free" | "operation" | "growth" | "scale";
   onGoToDashboard: () => void;
 }
 
 export function BusinessCreatedSuccess({
   businessName,
+  businessSlug,
+  selectedPlan = "free",
   onGoToDashboard,
 }: BusinessCreatedSuccessProps) {
   const confettiRef = useRef<ConfettiPiece[]>(generateConfetti());
@@ -147,7 +152,7 @@ export function BusinessCreatedSuccess({
               className="text-2xl font-bold tracking-tight text-foreground"
               style={{ animation: "float-up 0.4s 0.4s both" }}
             >
-              ¡Negocio creado!
+              Tu tienda está lista
             </h1>
 
             {/* Business name badge — matches LandingHero pill */}
@@ -164,8 +169,8 @@ export function BusinessCreatedSuccess({
               className="mt-3 text-sm leading-relaxed text-muted-foreground"
               style={{ animation: "float-up 0.4s 0.5s both" }}
             >
-              Tu negocio está listo. Empieza a gestionarlo todo desde el
-              dashboard.
+              Tu sitio ya está publicado. Confirma contacto, precios y
+              disponibilidad para comenzar a recibir pedidos.
             </p>
           </div>
 
@@ -199,19 +204,29 @@ export function BusinessCreatedSuccess({
 
           {/* ── CTA ─────────────────────────────────────────── */}
           <div
-            className="px-5 pb-6"
+            className="space-y-2 px-5 pb-6"
             style={{ animation: "float-up 0.4s 0.65s both" }}
           >
             <button
               onClick={onGoToDashboard}
               className="group inline-flex w-full min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
             >
-              Ir al Dashboard
+              Terminar preparación
               <ArrowRight
                 className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
                 aria-hidden
               />
             </button>
+            {businessSlug && (
+              <Link href={`/dashboard/${businessSlug}/productos`} className="flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft/40">
+                Editar únicamente excepciones
+              </Link>
+            )}
+            {selectedPlan !== "free" && (
+              <p className="rounded-lg bg-border-soft/50 px-3 py-2 text-center text-xs leading-5 text-muted-foreground">
+                Consideraste el plan <b className="text-foreground">{selectedPlan === "operation" ? "Operación" : selectedPlan === "growth" ? "Crecimiento" : "Escala"}</b>. No está activo ni se realizó ningún cobro; podrás confirmarlo después desde tu panel.
+              </p>
+            )}
           </div>
         </div>
 

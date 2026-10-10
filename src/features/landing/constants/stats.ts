@@ -21,8 +21,8 @@ export const STATS = [
   },
   {
     icon: TrendingUp,
-    value: "$0",
-    label: "comisión de plataforma",
+    value: "Claro",
+    label: "costos antes de cobrar",
     // Oro, no rosa: DESIGN_SYSTEM.md §3 reserva rojo/rosa a error y
     // destructivo, y este es justo el caso que el oro cubre (momento de valor:
     // el precio). El texto usa el paso --coin-ink porque el oro puro no pasa

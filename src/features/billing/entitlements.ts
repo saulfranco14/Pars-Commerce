@@ -8,6 +8,7 @@ export type BillingStatus =
   | "cancelled";
 
 export interface TenantEntitlements {
+  business_limit: number;
   active_table_limit: number;
   active_kiosk_limit: number;
   credit_recommendation: boolean;
@@ -46,6 +47,7 @@ export const PLAN_ORDER: BillingPlanCode[] = [
 ];
 
 export const DEFAULT_FREE_ENTITLEMENTS: TenantEntitlements = {
+  business_limit: 1,
   active_table_limit: 5,
   active_kiosk_limit: 0,
   credit_recommendation: false,
@@ -58,7 +60,7 @@ export const DEFAULT_FREE_ENTITLEMENTS: TenantEntitlements = {
 
 export function hasBillingCapability(
   entitlements: TenantEntitlements,
-  capability: keyof Omit<TenantEntitlements, "active_table_limit" | "active_kiosk_limit" | "portfolio_dashboard_limit" | "scheduled_report_frequency">,
+  capability: keyof Omit<TenantEntitlements, "business_limit" | "active_table_limit" | "active_kiosk_limit" | "portfolio_dashboard_limit" | "scheduled_report_frequency">,
 ) {
   return Boolean(entitlements[capability]);
 }

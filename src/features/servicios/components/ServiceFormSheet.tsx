@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { FolderTree, Wrench } from "lucide-react";
 
@@ -27,6 +27,7 @@ interface ServiceFormSheetProps {
   onClose: () => void;
   tenantId: string;
   onCreated: () => void;
+  initialSubcatalogId?: string;
 }
 
 /**
@@ -41,6 +42,7 @@ export function ServiceFormSheet({
   onClose,
   tenantId,
   onCreated,
+  initialSubcatalogId = "",
 }: ServiceFormSheetProps) {
   const formId = useId();
   const newSubcatalogFormId = useId();
@@ -60,6 +62,12 @@ export function ServiceFormSheet({
     setImageUrls([]);
     onCreated();
   });
+
+  useEffect(() => {
+    if (isOpen && initialSubcatalogId) {
+      form.setValue("subcatalog_id" as never, initialSubcatalogId as never);
+    }
+  }, [isOpen, initialSubcatalogId]);
 
   const newSubcatalogForm = useSchemaForm<SubcatalogFormValues>(
     subcatalogFields,

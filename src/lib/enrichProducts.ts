@@ -12,6 +12,7 @@ export interface ProductBase {
   price: number;
   image_url: string | null;
   subcatalog_id?: string | null;
+  type?: "product" | "service" | string;
 }
 
 export interface EnrichedProduct extends ProductBase {

@@ -63,7 +63,7 @@ export async function GET(request: Request) {
     const { data: product, error: prodError } = await supabase
       .from("products")
       .select(
-        "id, name, slug, sku, description, price, cost_price, commission_amount, unit, type, track_stock, is_public, image_url, created_at, updated_at, subcatalog_id, wholesale_min_quantity, wholesale_price, product_subcatalogs(id, name)",
+        "id, name, slug, sku, description, price, cost_price, commission_amount, unit, type, track_stock, is_public, image_url, created_at, updated_at, sort_order, subcatalog_id, wholesale_min_quantity, wholesale_price, product_subcatalogs(id, name)",
       )
       .eq("id", productId)
       .is("deleted_at", null)
@@ -108,11 +108,12 @@ export async function GET(request: Request) {
   let query = supabase
     .from("products")
     .select(
-      "id, name, slug, sku, description, price, cost_price, commission_amount, unit, type, track_stock, is_public, image_url, created_at, subcatalog_id, wholesale_min_quantity, wholesale_price, product_subcatalogs(id, name)",
+      "id, name, slug, sku, description, price, cost_price, commission_amount, unit, type, track_stock, is_public, image_url, created_at, sort_order, subcatalog_id, wholesale_min_quantity, wholesale_price, product_subcatalogs(id, name)",
     )
     .eq("tenant_id", tid)
     .is("deleted_at", null)
-    .order("created_at", { ascending: false });
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
 
   if (type === "product" || type === "service") {
     query = query.eq("type", type);
@@ -126,7 +127,10 @@ export async function GET(request: Request) {
     query = query.eq("is_public", false);
   }
   if (q && q.length >= 2) {
-    query = query.ilike("name", `%${q}%`).limit(100);
+    const safeQuery = q.replace(/[,%]/g, "");
+    query = query
+      .or(`name.ilike.%${safeQuery}%,sku.ilike.%${safeQuery}%`)
+      .limit(100);
   }
 
   const { data: products, error } = await query;
@@ -285,6 +289,16 @@ export async function POST(request: Request) {
     ? image_urls.filter((u) => typeof u === "string" && u.trim())
     : [];
   const firstImage = urls[0] ?? image_url?.trim() ?? null;
+  const orderQuery = supabase
+    .from("products")
+    .select("sort_order")
+    .eq("tenant_id", tenant_id)
+    .eq("type", type?.trim() || "product")
+    .is("deleted_at", null)
+    .order("sort_order", { ascending: false })
+    .limit(1);
+  const { data: lastOrderedItem } = await orderQuery.maybeSingle();
+  const nextSortOrder = (lastOrderedItem?.sort_order ?? -1) + 1;
 
   const { data: product, error: productError } = await supabase
     .from("products")
@@ -303,6 +317,7 @@ export async function POST(request: Request) {
       track_stock: track_stock ?? true,
       is_public: is_public ?? true,
       image_url: firstImage,
+      sort_order: nextSortOrder,
       subcatalog_id: subcatalog_id ?? null,
       wholesale_min_quantity: hasWholesaleMin
         ? Math.floor(Number(wholesale_min_quantity))
@@ -580,16 +595,14 @@ export async function PATCH(request: Request) {
 
   if (stock !== undefined) {
     const qty = Math.floor(Number(stock));
-    const { error: invError } = await supabase
-      .from("product_inventory")
-      .upsert(
-        {
-          product_id,
-          quantity: qty,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "product_id" },
-      );
+    const { error: invError } = await supabase.from("product_inventory").upsert(
+      {
+        product_id,
+        quantity: qty,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "product_id" },
+    );
 
     if (invError) {
       return NextResponse.json(

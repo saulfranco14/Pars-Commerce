@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Store, Menu, X } from "lucide-react";
+import { Store, Menu, Search, X } from "lucide-react";
 import CartBadge from "./CartBadge";
 import { useCartContext } from "./CartProvider";
 
@@ -69,7 +69,7 @@ export default function SiteHeader({
   return (
     <>
       <header className={headerClass}>
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
           <Link
             href={`/sitio/${slug}`}
             className="flex min-h-11 shrink-0 cursor-pointer items-center gap-2 text-xl font-bold tracking-tight transition-colors duration-200 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
@@ -104,9 +104,23 @@ export default function SiteHeader({
                     {p.title}
                   </Link>
                 ))}
+                <Link
+                  href={`/sitio/${slug}/productos`}
+                  aria-label="Buscar en el catálogo"
+                  className={`flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 ${navLinkClass}`}
+                >
+                  <Search className="h-4 w-4" aria-hidden />
+                </Link>
                 <CartBadge sitioSlug={slug} accentColor={accentColor} />
               </nav>
               <div className="flex items-center gap-1 md:hidden">
+                <Link
+                  href={`/sitio/${slug}/productos`}
+                  aria-label="Buscar en el catálogo"
+                  className={`flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg transition-colors ${menuButtonClass}`}
+                >
+                  <Search className="h-5 w-5" aria-hidden />
+                </Link>
                 <CartBadge sitioSlug={slug} accentColor={accentColor} />
                 <button
                   type="button"

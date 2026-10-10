@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tlaco Onboarding UX"
+  short_description: "Flujos de alta claros, estables y accionables"
+  default_prompt: "Usa $tlaco-onboarding-ux para diseñar o corregir el onboarding de Tlaco sin perder datos ni contexto."

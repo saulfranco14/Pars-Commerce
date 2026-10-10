@@ -31,7 +31,6 @@ export function SiteWebConfigSection({
   const [activeTab, setActiveTab] = useState<SitioTab>("general");
 
   const [publicStoreEnabled, setPublicStoreEnabled] = useState(false);
-  const [publicStoreLoading, setPublicStoreLoading] = useState(false);
   const [themeColor, setThemeColor] = useState("");
   const [whatsappPhone, setWhatsappPhone] = useState("");
   const [whatsappOrdersEnabled, setWhatsappOrdersEnabled] = useState(false);
@@ -97,28 +96,10 @@ export function SiteWebConfigSection({
     setInstagramUrl(sl?.instagram ?? "");
     setFacebookUrl(sl?.facebook ?? "");
     setTwitterUrl(sl?.twitter ?? "");
-  }, [activeTenant?.id]);
+  }, [activeTenant]);
 
   function handleTabChange(tab: SitioTab) {
     setActiveTab(tab);
-  }
-
-  async function handleTogglePublicStore(
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) {
-    const checked = e.target.checked;
-    if (!activeTenant) return;
-    setPublicStoreLoading(true);
-    try {
-      await updateTenant(activeTenant.id, { public_store_enabled: checked });
-      setPublicStoreEnabled(checked);
-      const list = (await listTenants()) as MembershipItem[];
-      setMemberships(list ?? []);
-    } catch {
-      setPublicStoreEnabled(!checked);
-    } finally {
-      setPublicStoreLoading(false);
-    }
   }
 
   async function handleSaveAppearance(e: React.FormEvent) {
@@ -221,8 +202,6 @@ export function SiteWebConfigSection({
           <SiteWebGeneralTab
             tenantSlug={tenantSlug}
             publicStoreEnabled={publicStoreEnabled}
-            publicStoreLoading={publicStoreLoading}
-            onTogglePublicStore={handleTogglePublicStore}
             templates={templates}
             selectedTemplateId={selectedTemplateId}
             onTemplateSelect={handleTemplateSelect}

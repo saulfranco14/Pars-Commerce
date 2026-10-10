@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
@@ -19,27 +19,31 @@ import { BUSINESS_TYPES } from "@/constants/businessTypes";
 import { TemplateSelector } from "@/components/site/TemplateSelector";
 import { CreateCancelActions } from "@/components/layout/CreateCancelActions";
 import type { CatalogTemplatePreview } from "@/features/catalog/types";
+import { parseRegistrationIntent } from "@/features/auth/registrationIntent";
 
 export default function CrearNegocioPage() {
   const formId = useId();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const registrationIntent = parseRegistrationIntent(searchParams);
   const setMemberships = useTenantStore((s) => s.setMemberships);
   const setActiveTenantId = useTenantStore((s) => s.setActiveTenantId);
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [businessType, setBusinessType] = useState(() => searchParams.get("giro") ?? "");
+  const [name, setName] = useState(() => registrationIntent.businessName ?? "");
+  const [slug, setSlug] = useState(() => deriveSlug(registrationIntent.businessName ?? ""));
+  const [businessType, setBusinessType] = useState(() => registrationIntent.giro === "otro" ? "" : registrationIntent.giro);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
     null,
   );
   const [useStarterCatalog, setUseStarterCatalog] = useState(true);
-  const [selectedCatalogKey, setSelectedCatalogKey] = useState<string | null>(null);
+  const [selectedCatalogKey, setSelectedCatalogKey] = useState<string | null>(() => registrationIntent.catalogKey ?? null);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [createdBusinessName, setCreatedBusinessName] = useState<string | null>(
-    null,
-  );
+  const [createdBusiness, setCreatedBusiness] = useState<{
+    id: string;
+    name: string;
+    slug: string;
+  } | null>(null);
 
   const { data: templatesData } = useSWR<SiteTemplate[]>(
     "/api/site-templates",
@@ -52,11 +56,18 @@ export default function CrearNegocioPage() {
     swrFetcher,
     { fallbackData: [] },
   );
-  const catalogTemplates = Array.isArray(catalogData) ? catalogData : [];
+  const catalogTemplates = useMemo(
+    () => (Array.isArray(catalogData) ? catalogData : []),
+    [catalogData],
+  );
 
   useEffect(() => {
+    if (registrationIntent.catalogKey && catalogTemplates.some((template) => template.key === registrationIntent.catalogKey)) {
+      setSelectedCatalogKey(registrationIntent.catalogKey);
+      return;
+    }
     setSelectedCatalogKey(catalogTemplates[0]?.key ?? null);
-  }, [businessType, catalogTemplates]);
+  }, [businessType, catalogTemplates, registrationIntent.catalogKey]);
 
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
@@ -107,7 +118,8 @@ export default function CrearNegocioPage() {
         business_type: businessType.trim(),
         site_template_id: selectedTemplateId ?? undefined,
         catalog_template_key: useStarterCatalog ? selectedCatalogKey ?? undefined : undefined,
-      })) as { id: string };
+        registration_intent: registrationIntent,
+      })) as { id: string; slug?: string };
       const list = (await listTenants()) as MembershipItem[];
       setMemberships(list);
       setActiveTenantId(tenant.id);
@@ -118,7 +130,11 @@ export default function CrearNegocioPage() {
           console.error("Error al guardar el ID del negocio en localStorage");
         }
       }
-      setCreatedBusinessName(name.trim());
+      setCreatedBusiness({
+        id: tenant.id,
+        name: name.trim(),
+        slug: tenant.slug ?? finalSlug,
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al crear el negocio");
     } finally {
@@ -126,11 +142,13 @@ export default function CrearNegocioPage() {
     }
   }
 
-  if (createdBusinessName) {
+  if (createdBusiness) {
     return (
       <BusinessCreatedSuccess
-        businessName={createdBusinessName}
-        onGoToDashboard={() => router.push("/dashboard")}
+        businessName={createdBusiness.name}
+        businessSlug={createdBusiness.slug}
+        selectedPlan={registrationIntent.plan}
+        onGoToDashboard={() => router.push(`/dashboard/preparar-negocio?tenant=${encodeURIComponent(createdBusiness.id)}`)}
       />
     );
   }
