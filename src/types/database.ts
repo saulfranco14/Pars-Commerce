@@ -59,6 +59,8 @@ export interface Tenant {
   demo_key?: string | null;
   catalog_template_id?: string | null;
   catalog_template_version?: number | null;
+  catalog_review_status?: "not_required" | "pending" | "approved" | "changes_requested";
+  catalog_approved_at?: string | null;
   social_links?: TenantSocialLinks | null;
   address?: TenantAddress | null;
   sales_config?: TenantSalesConfig | null;

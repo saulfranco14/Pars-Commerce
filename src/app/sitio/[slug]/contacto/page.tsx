@@ -19,6 +19,7 @@ export default async function ContactoPage({ params }: PageProps) {
     .from("tenants")
     .select("id, name, theme_color, settings")
     .eq("slug", slug)
+    .eq("public_store_enabled", true)
     .single();
 
   if (tenantError || !tenant) {

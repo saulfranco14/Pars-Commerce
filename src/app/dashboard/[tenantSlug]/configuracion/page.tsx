@@ -99,7 +99,7 @@ export default function ConfiguracionPage() {
   const [loading, setLoading] = useState(false);
   const [logoError, setLogoError] = useState<string | null>(null);
   const [logoSaving, setLogoSaving] = useState(false);
-  const [billingOpen, setBillingOpen] = useState(false);
+  const [billingOpen, setBillingOpen] = useState(() => searchParams.get("membresia") === "1");
 
   async function handleLogoChange(url: string | null) {
     if (!activeTenant) return;
@@ -419,7 +419,7 @@ export default function ConfiguracionPage() {
               />
             )}
 
-            <section className="mt-5 rounded-xl border border-border bg-surface p-1.5">
+            <section id="membresia" className="mt-5 scroll-mt-24 rounded-xl border border-border bg-surface p-1.5">
               <button
                 type="button"
                 onClick={() => setBillingOpen((open) => !open)}

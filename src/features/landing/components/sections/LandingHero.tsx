@@ -75,22 +75,9 @@ export function LandingHero() {
               ))}
             </ul>
 
-            <div className="mt-7 flex items-center gap-3">
-              <div className="flex -space-x-2">
-                {["P", "M", "S", "L"].map((initial) => (
-                  <div
-                    key={initial}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-accent/15 text-xs font-semibold text-accent"
-                  >
-                    {initial}
-                  </div>
-                ))}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">+50 negocios</span>{" "}
-                ya confían en Tlaco
-              </p>
-            </div>
+            <Link href="/soluciones/tienda" className="mt-7 inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:border-accent/40 hover:bg-accent/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
+              Probar cómo funciona una tienda <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
           </div>
         </div>
       </div>

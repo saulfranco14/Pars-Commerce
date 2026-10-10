@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { FolderTree, Package } from "lucide-react";
 
@@ -31,6 +31,7 @@ interface ProductFormSheetProps {
   onClose: () => void;
   tenantId: string;
   onCreated: () => void;
+  initialSubcatalogId?: string;
 }
 
 export function ProductFormSheet({
@@ -38,6 +39,7 @@ export function ProductFormSheet({
   onClose,
   tenantId,
   onCreated,
+  initialSubcatalogId = "",
 }: ProductFormSheetProps) {
   const formId = useId();
   const newSubcatalogFormId = useId();
@@ -62,6 +64,12 @@ export function ProductFormSheet({
     },
     productCrossFieldRules,
   );
+
+  useEffect(() => {
+    if (isOpen && initialSubcatalogId) {
+      form.setValue("subcatalog_id" as never, initialSubcatalogId as never);
+    }
+  }, [isOpen, initialSubcatalogId]);
 
   const newSubcatalogForm = useSchemaForm<SubcatalogFormValues>(
     subcatalogFields,

@@ -56,7 +56,7 @@ export function MinimalLayout({
               {navPages.map((p) => (
                 <Link
                   key={p.id}
-                  href={`/sitio/${tenant.slug}/${p.slug}`}
+                  href={p.href ?? `/sitio/${tenant.slug}/${p.slug}`}
                   className="text-gray-500 transition-colors hover:text-gray-900"
                 >
                   {p.title}

@@ -56,7 +56,7 @@ export function OrganicLayout({
                 {navPages.map((p) => (
                   <li key={p.id}>
                     <Link
-                      href={`/sitio/${tenant.slug}/${p.slug}`}
+                      href={p.href ?? `/sitio/${tenant.slug}/${p.slug}`}
                       className="text-sm text-stone-600 transition-colors hover:text-stone-900"
                     >
                       {p.title}

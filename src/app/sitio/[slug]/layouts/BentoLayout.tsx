@@ -64,7 +64,7 @@ export function BentoLayout({
                   {navPages.map((p) => (
                     <li key={p.id}>
                       <Link
-                        href={`/sitio/${tenant.slug}/${p.slug}`}
+                        href={p.href ?? `/sitio/${tenant.slug}/${p.slug}`}
                         className="text-sm text-gray-600 transition-colors hover:text-gray-900"
                       >
                         {p.title}

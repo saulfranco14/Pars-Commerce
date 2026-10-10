@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   CreditCard,
   LockKeyhole,
+  Link2,
   MapPin,
   Search,
   Store,
@@ -171,7 +172,7 @@ export function PlatformBusinessesView() {
         {data && <PlatformPagination page={data.page} totalPages={data.total_pages} total={data.total} itemLabel="negocios encontrados" onChange={setPage} />}
       </section>
 
-      <BusinessDetailSheet tenant={selectedTenant} onClose={() => setSelectedTenant(null)} />
+      <BusinessDetailSheet key={selectedTenant?.id ?? "closed"} tenant={selectedTenant} onClose={() => setSelectedTenant(null)} />
     </>
   );
 }
@@ -204,10 +205,47 @@ function BusinessMobileCard({ tenant, onOpen }: { tenant: PlatformTenant; onOpen
 }
 
 function BusinessDetailSheet({ tenant, onClose }: { tenant: PlatformTenant | null; onClose: () => void }) {
+  const [actionBusy, setActionBusy] = useState<"preview" | "approval" | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [acceptanceSource, setAcceptanceSource] = useState<"whatsapp" | "call">("whatsapp");
+  const [acceptanceNote, setAcceptanceNote] = useState("");
   const status = tenant ? businessStatus(tenant) : { label: "", tone: "neutral" as const };
   const location = tenant?.address
     ? [tenant.address.city, tenant.address.state, tenant.address.country].filter(Boolean).join(", ")
     : "Sin ubicación registrada";
+
+  async function createPreview() {
+    if (!tenant) return;
+    setActionBusy("preview");
+    setActionMessage(null);
+    try {
+      const response = await fetch("/api/platform/preview-links", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tenant_id: tenant.id, expires_in_hours: 72 }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "No pudimos crear la vista previa");
+      await navigator.clipboard.writeText(payload.preview_url);
+      setActionMessage("Vista previa privada copiada. Vence en 72 horas.");
+    } catch (value) {
+      setActionMessage(value instanceof Error ? value.message : "No pudimos crear la vista previa");
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
+  async function recordAcceptance() {
+    if (!tenant) return;
+    setActionBusy("approval");
+    setActionMessage(null);
+    try {
+      const response = await fetch("/api/catalog-approval", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tenant_id: tenant.id, acceptance_source: acceptanceSource, note: acceptanceNote }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "No pudimos registrar la aceptación");
+      setActionMessage("Aceptación registrada. El catálogo quedó publicado con pedidos pausados.");
+    } catch (value) {
+      setActionMessage(value instanceof Error ? value.message : "No pudimos registrar la aceptación");
+    } finally {
+      setActionBusy(null);
+    }
+  }
   return (
     <FormSheet
       isOpen={Boolean(tenant)}
@@ -267,6 +305,20 @@ function BusinessDetailSheet({ tenant, onClose }: { tenant: PlatformTenant | nul
           </section>
 
           {tenant.description && <section><h3 className="text-sm font-bold text-foreground">Descripción</h3><p className="mt-1 text-sm text-muted-foreground">{tenant.description}</p></section>}
+
+          <section className="rounded-xl border border-accent/20 bg-accent/5 p-4" aria-labelledby="operator-preparation-title">
+            <h3 id="operator-preparation-title" className="text-sm font-bold text-foreground">Entrega y aceptación del catálogo</h3>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">Comparte una vista privada o registra aquí una aceptación que recibiste por WhatsApp o llamada. Se conserva fuente, fecha, operador y nota.</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <button type="button" onClick={() => void createPreview()} disabled={actionBusy !== null} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-foreground disabled:opacity-60"><Link2 className="h-4 w-4" />{actionBusy === "preview" ? "Creando…" : "Copiar vista previa"}</button>
+              <label htmlFor="acceptance-source" className="sr-only">Fuente de aceptación</label>
+              <select id="acceptance-source" value={acceptanceSource} onChange={(event) => setAcceptanceSource(event.target.value as "whatsapp" | "call")} className="select-custom min-h-11 rounded-xl border border-border bg-surface px-3 text-sm text-foreground"><option value="whatsapp">Aceptación por WhatsApp</option><option value="call">Aceptación por llamada</option></select>
+              <label htmlFor="acceptance-note" className="sr-only">Nota o referencia de la conversación</label>
+              <input id="acceptance-note" value={acceptanceNote} onChange={(event) => setAcceptanceNote(event.target.value)} className="input-form min-h-11 rounded-xl border border-border bg-surface px-3 text-sm sm:col-span-2" placeholder="Nota o referencia de la conversación" />
+              <button type="button" onClick={() => void recordAcceptance()} disabled={actionBusy !== null || tenant.catalog_review_status === "approved"} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-3 text-sm font-bold text-accent-foreground disabled:opacity-50 sm:col-span-2"><CheckCircle2 className="h-4 w-4" />{tenant.catalog_review_status === "approved" ? "Catálogo ya aprobado" : actionBusy === "approval" ? "Registrando…" : "Registrar aceptación y publicar catálogo"}</button>
+            </div>
+            {actionMessage && <p className="mt-3 rounded-lg bg-surface px-3 py-2 text-xs font-semibold text-foreground" role="status">{actionMessage}</p>}
+          </section>
 
           <section className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">

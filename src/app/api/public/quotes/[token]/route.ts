@@ -22,7 +22,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     return NextResponse.json({ error: "Esta cotización venció." }, { status: 410 });
   }
   if (quote.status === "sent") await db.from("quotes").update({ status: "viewed", updated_at: new Date().toISOString() }).eq("id", quote.id);
-  const { data: catalog } = await db.from("products").select("id, name, description, image_url, type, price").eq("tenant_id", quote.tenant_id).is("deleted_at", null).order("name");
+  const { data: catalog } = await db.from("products").select("id, name, description, image_url, type, price, sort_order").eq("tenant_id", quote.tenant_id).is("deleted_at", null).order("sort_order", { ascending: true }).order("name", { ascending: true });
   return NextResponse.json({ ...quote, status: quote.status === "sent" ? "viewed" : quote.status, catalog: catalog ?? [] });
 }
 

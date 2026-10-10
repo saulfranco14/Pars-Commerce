@@ -35,12 +35,13 @@ export async function GET() {
   const { data: rawProducts } = await admin
     .from("products")
     .select(
-      "id, name, description, price, image_url, subcatalog_id, product_subcatalogs(id, name)",
+      "id, name, description, price, image_url, subcatalog_id, sort_order, product_subcatalogs(id, name)",
     )
     .eq("tenant_id", device.tenantId)
     .eq("is_public", true)
     .is("deleted_at", null)
-    .order("name");
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
 
   // La galería vive en `product_images`, no en una columna — igual que en
   // /api/qr/resolve.

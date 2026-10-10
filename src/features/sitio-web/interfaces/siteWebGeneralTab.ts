@@ -3,8 +3,6 @@ import type { SiteTemplate } from "@/services/siteTemplatesService";
 export interface SiteWebGeneralTabProps {
   tenantSlug: string;
   publicStoreEnabled: boolean;
-  publicStoreLoading: boolean;
-  onTogglePublicStore: (e: React.ChangeEvent<HTMLInputElement>) => void;
   templates: SiteTemplate[];
   selectedTemplateId: string | null;
   onTemplateSelect: (t: SiteTemplate) => void;

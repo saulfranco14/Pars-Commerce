@@ -5,7 +5,9 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import { useActiveTenant } from "@/stores/useTenantStore";
-import { FolderTree, Pencil, Plus, Trash2 } from "lucide-react";
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { FolderTree, GripVertical, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { FAB } from "@/components/ui/FAB";
 import { FilterTabs } from "@/components/ui/FilterTabs";
@@ -24,16 +26,15 @@ import { swrFetcher } from "@/lib/swrFetcher";
 import { isAbortError } from "@/services/apiFetch";
 import type { ProductListItem } from "@/types/products";
 import type { Subcatalog } from "@/types/subcatalogs";
-import { remove } from "@/services/productsService";
+import { remove, reorder } from "@/services/productsService";
 import {
   btnPrimary,
-  btnSecondaryFlex,
-  btnDanger,
   btnSecondarySmall,
   btnDangerSmall,
 } from "@/components/ui/buttonClasses";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { ProductFormSheet } from "@/features/productos/components/ProductFormSheet";
+import { SortableCatalogCard } from "@/components/catalog/SortableCatalogCard";
 
 const subcatalogsKey = (tenantId: string) =>
   `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
@@ -41,6 +42,7 @@ const subcatalogsKey = (tenantId: string) =>
 function buildProductsKey(
   tenantId: string,
   subcatalogId: string,
+  search: string,
 ): string | null {
   if (!tenantId) return null;
   const params = new URLSearchParams({
@@ -50,6 +52,7 @@ function buildProductsKey(
   if (subcatalogId) {
     params.set("subcatalog_id", subcatalogId);
   }
+  if (search.trim().length >= 2) params.set("q", search.trim());
   return `/api/products?${params}`;
 }
 
@@ -71,6 +74,14 @@ export default function ProductosPage() {
     () => searchParams.get("subcatalog_id") ?? "",
   );
   const [createOpen, setCreateOpen] = useState(false);
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [sortMode, setSortMode] = useState(() => searchParams.get("sort") ?? "manual");
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [reordering, setReordering] = useState(false);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   useEffect(() => {
     const urlValue = searchParams.get("subcatalog_id") ?? "";
@@ -86,15 +97,27 @@ export default function ProductosPage() {
   function closeCreate() {
     setCreateOpen(false);
     if (searchParams.get("nuevo") === "1") {
-      router.replace(`/dashboard/${tenantSlug}/productos`);
+      const next = new URLSearchParams(searchParams.toString());
+      next.delete("nuevo");
+      router.replace(`/dashboard/${tenantSlug}/productos${next.size ? `?${next}` : ""}`);
     }
+  }
+
+  function updateListUrl(next: { subcatalog?: string; q?: string; sort?: string }) {
+    const query = new URLSearchParams(searchParams.toString());
+    query.delete("nuevo");
+    const subcatalog = next.subcatalog ?? subcatalogFilter;
+    const q = next.q ?? search;
+    const sort = next.sort ?? sortMode;
+    subcatalog ? query.set("subcatalog_id", subcatalog) : query.delete("subcatalog_id");
+    q.trim() ? query.set("q", q.trim()) : query.delete("q");
+    sort !== "manual" ? query.set("sort", sort) : query.delete("sort");
+    router.replace(`/dashboard/${tenantSlug}/productos${query.size ? `?${query}` : ""}`, { scroll: false });
   }
 
   function handleSubcatalogChange(value: string) {
     setSubcatalogFilter(value);
-    const path = `/dashboard/${tenantSlug}/productos`;
-    const query = value ? `?subcatalog_id=${encodeURIComponent(value)}` : "";
-    router.replace(path + query, { scroll: false });
+    updateListUrl({ subcatalog: value });
   }
 
   const subcatalogsKeyValue = activeTenant
@@ -113,7 +136,7 @@ export default function ProductosPage() {
   const [actionError, setActionError] = useState<string | null>(null);
 
   const key = activeTenant
-    ? buildProductsKey(activeTenant.id, subcatalogFilter)
+    ? buildProductsKey(activeTenant.id, subcatalogFilter, search)
     : null;
   const {
     data: productsData,
@@ -122,6 +145,38 @@ export default function ProductosPage() {
     mutate,
   } = useSWR<ProductListItem[]>(key, swrFetcher, { fallbackData: [] });
   const products = Array.isArray(productsData) ? productsData : [];
+  const visibleProducts = [...products].sort((a, b) => {
+    if (sortMode === "az") return a.name.localeCompare(b.name, "es");
+    if (sortMode === "za") return b.name.localeCompare(a.name, "es");
+    return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+  });
+  const currentQuery = searchParams.toString();
+  const currentReturnPath = `/dashboard/${tenantSlug}/productos${currentQuery ? `?${currentQuery}` : ""}`;
+  const editHref = (id: string) =>
+    `/dashboard/${tenantSlug}/productos/${id}?returnTo=${encodeURIComponent(currentReturnPath)}`;
+
+  async function moveProduct(sourceId: string, targetId: string) {
+    if (!activeTenant || sourceId === targetId || search.trim() || sortMode !== "manual") return;
+    const sourceIndex = visibleProducts.findIndex((item) => item.id === sourceId);
+    const targetIndex = visibleProducts.findIndex((item) => item.id === targetId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+    const next = [...visibleProducts];
+    const [moved] = next.splice(sourceIndex, 1);
+    next.splice(targetIndex, 0, moved);
+    setActionError(null);
+    setReordering(true);
+    await mutate(next.map((item, index) => ({ ...item, sort_order: index })), false);
+    try {
+      await reorder(activeTenant.id, next.map((item) => item.id));
+      await mutate();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "No se pudo guardar el orden");
+      await mutate();
+    } finally {
+      setReordering(false);
+    }
+  }
+
   const error =
     actionError ??
     (swrError && !isAbortError(swrError)
@@ -202,6 +257,16 @@ export default function ProductosPage() {
             ariaLabel="Filtrar por subcatalog"
           />
         </div>
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+          <label className="flex min-h-11 items-center gap-2 rounded-xl border border-border bg-surface-raised px-3 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15">
+            <Search className="h-4 w-4 text-muted" aria-hidden />
+            <input value={search} onChange={(event) => setSearch(event.target.value)} onBlur={() => updateListUrl({ q: search })} onKeyDown={(event) => { if (event.key === "Enter") updateListUrl({ q: search }); }} placeholder="Buscar por nombre o SKU" className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none" />
+          </label>
+          <select value={sortMode} onChange={(event) => { const value = event.target.value; setSortMode(value); updateListUrl({ sort: value }); }} className="min-h-11 rounded-xl border border-border bg-surface-raised px-3 text-sm font-medium">
+            <option value="manual">Orden de la tienda</option><option value="az">Nombre A–Z</option><option value="za">Nombre Z–A</option>
+          </select>
+        </div>
+        <p className="text-xs text-muted">{search.trim() || sortMode !== "manual" ? "Limpia la búsqueda y elige “Orden de la tienda” para acomodar los productos." : reordering ? "Guardando el nuevo orden…" : "Mantén presionado el asa y arrastra para acomodar lo que tu cliente verá primero."}</p>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -211,7 +276,7 @@ export default function ProductosPage() {
             message="Cargando productos"
             skeletonRows={6}
           />
-        ) : products.length === 0 ? (
+        ) : visibleProducts.length === 0 ? (
           <div className="rounded-xl border border-border bg-surface-raised p-8 text-center">
             <p className="text-sm text-muted">
               No hay productos{subcatalogFilter ? " en este subcatálogo" : ""}.
@@ -228,80 +293,42 @@ export default function ProductosPage() {
           </div>
         ) : (
           <>
-            <div className="space-y-4 md:hidden">
-              {products.map((p) => (
-                <div
-                  key={p.id}
-                  className="rounded-xl border border-border bg-surface-raised p-4"
-                >
-                    <div className="flex gap-3">
-                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-border-soft sm:h-16 sm:w-16">
-                        {p.image_url ? (
-                          <img
-                            src={p.image_url}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <span className="flex h-full w-full items-center justify-center text-xs text-muted">
-                            —
-                          </span>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-foreground">{p.name}</p>
-                        {(p.subcatalog || p.theme) && (
-                          <div className="mt-0.5 flex flex-wrap gap-1.5">
-                            {p.subcatalog && (
-                              <span className="inline-flex rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                                {p.subcatalog.name}
-                              </span>
-                            )}
-                            {p.theme && (
-                              <span className="text-xs text-muted">
-                                Tema: {p.theme}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        <p className="mt-1 text-base font-medium text-foreground">
-                          ${Number(p.price).toFixed(2)}
-                        </p>
-                        <p className="text-xs text-muted">
-                          {p.unit || "unit"}
-                          {p.sku ? ` · ${p.sku}` : ""}
-                          {" · "}
-                          Stock: {p.stock}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-4 flex gap-2 border-t border-border-soft pt-4">
-                      <Link
-                        href={`/dashboard/${tenantSlug}/productos/${p.id}`}
-                        className={`flex-1 ${btnSecondaryFlex}`}
-                      >
-                        <Pencil className="h-4 w-4 shrink-0" aria-hidden />
-                        Editar
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => openDeleteModal(p)}
-                        disabled={deletingId === p.id}
-                        className={`flex-1 ${btnDanger}`}
-                        aria-label={`Eliminar ${p.name}`}
-                      >
-                        <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
-                        {deletingId === p.id ? "..." : "Eliminar"}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={({ active }) => setDraggedId(String(active.id))}
+              onDragCancel={() => setDraggedId(null)}
+              onDragEnd={({ active, over }) => {
+                setDraggedId(null);
+                if (over) void moveProduct(String(active.id), String(over.id));
+              }}
+            >
+              <SortableContext items={visibleProducts.map((product) => product.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-3 md:hidden">
+                  {visibleProducts.map((p) => (
+                    <SortableCatalogCard
+                      key={p.id}
+                      id={p.id}
+                      name={p.name}
+                      imageUrl={p.image_url}
+                      price={Number(p.price)}
+                      tag={p.subcatalog?.name ?? p.theme ?? null}
+                      detail={`${p.unit || "unit"}${p.sku ? ` · ${p.sku}` : ""} · Stock: ${p.stock}`}
+                      disabled={Boolean(search.trim()) || sortMode !== "manual" || reordering}
+                      editHref={editHref(p.id)}
+                      deleting={deletingId === p.id}
+                      onDelete={() => openDeleteModal(p)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
             <div className="hidden md:block">
               <TableWrapper>
                 <table className="min-w-full">
                   <thead>
                     <tr className={tableHeaderRowClass}>
+                      <th className={tableHeaderCellClass}><span className="sr-only">Orden</span></th>
                       <th className={tableHeaderCellClass}>Imagen</th>
                       <th className={tableHeaderCellClass}>Nombre</th>
                       <th className={tableHeaderCellClass}>SKU</th>
@@ -312,8 +339,9 @@ export default function ProductosPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {products.map((p) => (
-                      <tr key={p.id} className={tableBodyRowClass}>
+                    {visibleProducts.map((p) => (
+                      <tr key={p.id} draggable={!search.trim() && sortMode === "manual" && !reordering} onDragStart={() => setDraggedId(p.id)} onDragEnd={() => setDraggedId(null)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedId) void moveProduct(draggedId, p.id); }} className={`${tableBodyRowClass} ${draggedId === p.id ? "opacity-50" : ""}`}>
+                        <td className={tableBodyCellClass}><GripVertical className={`h-5 w-5 ${search.trim() || sortMode !== "manual" ? "text-muted/30" : "cursor-grab text-muted"}`} aria-hidden /></td>
                         <td className={tableBodyCellClass}>
                           {p.image_url ? (
                             <img
@@ -359,7 +387,7 @@ export default function ProductosPage() {
                         <td className={tableBodyCellClass}>
                           <div className="flex justify-end gap-2">
                             <Link
-                              href={`/dashboard/${tenantSlug}/productos/${p.id}`}
+                              href={editHref(p.id)}
                               className={btnSecondarySmall}
                             >
                               <Pencil
@@ -412,6 +440,7 @@ export default function ProductosPage() {
         isOpen={createOpen}
         onClose={closeCreate}
         tenantId={activeTenant.id}
+        initialSubcatalogId={subcatalogFilter}
         onCreated={async () => {
           await mutate();
           closeCreate();

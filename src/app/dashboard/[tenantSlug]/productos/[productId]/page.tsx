@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useId } from "react";
 import { createPortal } from "react-dom";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import { useSWRConfig } from "swr";
@@ -34,10 +34,28 @@ export default function EditarProductoPage() {
   }, []);
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { mutate: globalMutate } = useSWRConfig();
   const productId = params.productId as string;
   const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
+  const productsPath = `/dashboard/${tenantSlug}/productos`;
+  const requestedReturnTo = searchParams.get("returnTo");
+  const returnTo =
+    (requestedReturnTo === productsPath || requestedReturnTo?.startsWith(`${productsPath}?`))
+      ? requestedReturnTo
+      : productsPath;
+
+  function returnPathAfterSave(nextSubcatalogId: string) {
+    if (!product || (product.subcatalog_id ?? "") === nextSubcatalogId) return returnTo;
+    const query = new URLSearchParams(returnTo.split("?")[1] ?? "");
+    nextSubcatalogId
+      ? query.set("subcatalog_id", nextSubcatalogId)
+      : query.delete("subcatalog_id");
+    query.delete("q");
+    const suffix = query.toString();
+    return `${productsPath}${suffix ? `?${suffix}` : ""}`;
+  }
 
   const productKeyValue = productId ? productKey(productId) : null;
   const subcatalogsKeyValue = activeTenant
@@ -252,7 +270,7 @@ export default function EditarProductoPage() {
             ),
         );
       }
-      router.push(`/dashboard/${tenantSlug}/productos`);
+      router.push(returnPathAfterSave(subcatalogId));
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al guardar");
@@ -266,7 +284,7 @@ export default function EditarProductoPage() {
       <div className="text-sm text-muted-foreground p-6">
         {fetchError}{" "}
         <Link
-          href={`/dashboard/${tenantSlug}/productos`}
+          href={returnTo}
           className="inline-flex min-h-11 items-center gap-2 font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
@@ -284,7 +302,7 @@ export default function EditarProductoPage() {
     <div className="mx-auto max-w-4xl space-y-4">
       <div className="shrink-0 pb-4">
         <Link
-          href={`/dashboard/${tenantSlug}/productos`}
+          href={returnTo}
           className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
@@ -655,7 +673,7 @@ export default function EditarProductoPage() {
                 }}
               >
                 <Link
-                  href={`/dashboard/${tenantSlug}/productos`}
+                  href={returnTo}
                   className={`${btnSecondaryFlex} w-full`}
                 >
                   <X className="h-4 w-4 shrink-0" aria-hidden />
@@ -676,7 +694,7 @@ export default function EditarProductoPage() {
           {/* Desktop: inline inside form */}
           <div className="hidden md:flex md:flex-row-reverse md:gap-3 md:px-8 md:py-4">
             <Link
-              href={`/dashboard/${tenantSlug}/productos`}
+              href={returnTo}
               className={`${btnSecondaryFlex} md:w-auto md:flex-none`}
             >
               <X className="h-4 w-4 shrink-0" aria-hidden />

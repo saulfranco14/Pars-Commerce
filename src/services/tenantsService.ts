@@ -11,6 +11,7 @@ export async function create(payload: {
   business_type?: string;
   site_template_id?: string;
   catalog_template_key?: string;
+  registration_intent?: import("@/features/auth/registrationIntent").RegistrationIntent;
 }): Promise<unknown> {
   const data = await apiFetch("/api/tenants", {
     method: "POST",
