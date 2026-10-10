@@ -2579,6 +2579,7 @@ export type Database = {
           id: string
           invited_at: string | null
           role_id: string
+          status: string
           tenant_id: string
           updated_at: string
           user_id: string
@@ -2589,6 +2590,7 @@ export type Database = {
           id?: string
           invited_at?: string | null
           role_id: string
+          status?: string
           tenant_id: string
           updated_at?: string
           user_id: string
@@ -2599,6 +2601,7 @@ export type Database = {
           id?: string
           invited_at?: string | null
           role_id?: string
+          status?: string
           tenant_id?: string
           updated_at?: string
           user_id?: string
@@ -2837,6 +2840,9 @@ export type Database = {
           accepting_orders: boolean
           banner_url: string | null
           business_type: string | null
+          catalog_approved_at: string | null
+          catalog_approved_by: string | null
+          catalog_review_status: string
           catalog_template_id: string | null
           catalog_template_version: number | null
           created_at: string
@@ -2861,6 +2867,9 @@ export type Database = {
           accepting_orders?: boolean
           banner_url?: string | null
           business_type?: string | null
+          catalog_approved_at?: string | null
+          catalog_approved_by?: string | null
+          catalog_review_status?: string
           catalog_template_id?: string | null
           catalog_template_version?: number | null
           created_at?: string
@@ -2885,6 +2894,9 @@ export type Database = {
           accepting_orders?: boolean
           banner_url?: string | null
           business_type?: string | null
+          catalog_approved_at?: string | null
+          catalog_approved_by?: string | null
+          catalog_review_status?: string
           catalog_template_id?: string | null
           catalog_template_version?: number | null
           created_at?: string

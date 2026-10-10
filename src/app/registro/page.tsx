@@ -409,7 +409,7 @@ function RegistroContent() {
                 <div className="flex items-start gap-3">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground"><Store className="h-4 w-4" aria-hidden /></span>
                   <div>
-                    <p className="text-sm font-bold text-foreground">{intent.businessName || solution?.preset.defaultName || "Tu negocio"}</p>
+                    <p className="text-sm font-bold text-foreground">{intent.businessName || "Tu negocio"}</p>
                     <p className="mt-0.5 text-xs leading-5 text-muted-foreground">Conservaremos el giro, catálogo y plan que viste. {PLAN_PRESENTATION[intent.plan].promise}</p>
                   </div>
                 </div>
