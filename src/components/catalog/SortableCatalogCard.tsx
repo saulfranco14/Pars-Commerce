@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Pencil, Trash2 } from "lucide-react";
+import { GripVertical, PackagePlus, Pencil, Trash2 } from "lucide-react";
 
 import { btnDanger, btnSecondaryFlex } from "@/components/ui/buttonClasses";
 
@@ -18,6 +18,7 @@ interface SortableCatalogCardProps {
   editHref: string;
   deleting?: boolean;
   onDelete: () => void;
+  onQuickUpdate?: () => void;
 }
 
 /**
@@ -37,6 +38,7 @@ export function SortableCatalogCard({
   editHref,
   deleting = false,
   onDelete,
+  onQuickUpdate,
 }: SortableCatalogCardProps) {
   const {
     attributes,
@@ -83,7 +85,18 @@ export function SortableCatalogCard({
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold text-foreground">{name}</p>
+          <div className="flex items-center gap-1">
+            <p className="min-w-0 flex-1 truncate font-semibold text-foreground">{name}</p>
+            {onQuickUpdate ? <button
+              type="button"
+              onClick={onQuickUpdate}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border text-accent transition-colors hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+              aria-label={`Actualizar existencias o precio de ${name}`}
+              title="Actualizar existencias o precio"
+            >
+              <PackagePlus className="h-4 w-4" aria-hidden />
+            </button> : null}
+          </div>
           {tag ? (
             <span className="mt-0.5 inline-flex rounded-md bg-accent/10 px-1.5 py-0.5 text-[11px] font-medium text-accent">
               {tag}

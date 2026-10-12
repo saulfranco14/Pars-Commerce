@@ -6,6 +6,7 @@ export interface ProductListItem {
   price: number;
   unit: string;
   type: string;
+  track_stock?: boolean;
   image_url: string | null;
   theme: string | null;
   stock: number;

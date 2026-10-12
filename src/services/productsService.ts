@@ -64,3 +64,27 @@ export async function reorder(
     body: JSON.stringify({ tenant_id: tenantId, item_ids: itemIds }),
   });
 }
+
+export type QuickInventoryUpdate = {
+  variantId?: string | null;
+  stockOperation: "receive" | "set";
+  stockQuantity?: number | null;
+  price?: number | null;
+  note?: string | null;
+};
+
+export async function quickInventoryUpdate(
+  productId: string,
+  update: QuickInventoryUpdate,
+): Promise<void> {
+  await apiFetch(`/api/products/${encodeURIComponent(productId)}/quick-inventory`, {
+    method: "POST",
+    body: JSON.stringify({
+      variant_id: update.variantId ?? null,
+      stock_operation: update.stockOperation,
+      stock_quantity: update.stockQuantity ?? null,
+      price: update.price ?? null,
+      note: update.note ?? null,
+    }),
+  });
+}

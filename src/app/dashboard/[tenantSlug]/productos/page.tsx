@@ -7,7 +7,7 @@ import useSWR from "swr";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { FolderTree, GripVertical, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { FolderTree, GripVertical, PackagePlus, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { FAB } from "@/components/ui/FAB";
 import { FilterTabs } from "@/components/ui/FilterTabs";
@@ -35,6 +35,7 @@ import {
 import { PageHeader } from "@/components/admin/PageHeader";
 import { ProductFormSheet } from "@/features/productos/components/ProductFormSheet";
 import { SortableCatalogCard } from "@/components/catalog/SortableCatalogCard";
+import { QuickInventoryUpdateSheet } from "@/features/productos/components/QuickInventoryUpdateSheet";
 
 const subcatalogsKey = (tenantId: string) =>
   `/api/subcatalogs?tenant_id=${encodeURIComponent(tenantId)}`;
@@ -134,6 +135,7 @@ export default function ProductosPage() {
   const [productToDelete, setProductToDelete] =
     useState<ProductListItem | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [quickUpdateProduct, setQuickUpdateProduct] = useState<ProductListItem | null>(null);
 
   const key = activeTenant
     ? buildProductsKey(activeTenant.id, subcatalogFilter, search)
@@ -318,6 +320,7 @@ export default function ProductosPage() {
                       editHref={editHref(p.id)}
                       deleting={deletingId === p.id}
                       onDelete={() => openDeleteModal(p)}
+                      onQuickUpdate={() => setQuickUpdateProduct(p)}
                     />
                   ))}
                 </div>
@@ -355,9 +358,20 @@ export default function ProductosPage() {
                         </td>
                         <td className={tableBodyCellClass}>
                           <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1.5">
                             <span className="font-medium text-foreground">
                               {p.name}
                             </span>
+                              <button
+                                type="button"
+                                onClick={() => setQuickUpdateProduct(p)}
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-accent transition-colors hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                                aria-label={`Actualizar existencias o precio de ${p.name}`}
+                                title="Actualizar existencias o precio"
+                              >
+                                <PackagePlus className="h-4 w-4" aria-hidden />
+                              </button>
+                            </div>
                             <div className="flex flex-wrap gap-1.5">
                               {p.subcatalog && (
                                 <span className="inline-flex rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
@@ -444,6 +458,15 @@ export default function ProductosPage() {
         onCreated={async () => {
           await mutate();
           closeCreate();
+        }}
+      />
+
+      <QuickInventoryUpdateSheet
+        product={quickUpdateProduct}
+        isOpen={quickUpdateProduct !== null}
+        onClose={() => setQuickUpdateProduct(null)}
+        onSaved={async () => {
+          await mutate();
         }}
       />
     </div>
