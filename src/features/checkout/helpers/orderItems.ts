@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Commerce schema types are regenerated after the migration rollout. */
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { CartItemRow } from "@/features/checkout/helpers/cartItemMappers";

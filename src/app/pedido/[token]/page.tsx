@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- tenant storage uses signed URLs. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- Commerce schema types are regenerated after the migration rollout. */
 import { notFound } from "next/navigation";
 import { Camera, CheckCircle2, Clock3, Landmark, LockKeyhole, PackageCheck, ReceiptText, Star, Store, Truck, XCircle } from "lucide-react";
 

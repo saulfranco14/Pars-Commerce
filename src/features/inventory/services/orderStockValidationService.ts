@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Commerce schema types are regenerated after the migration rollout. */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface StockRequestItem {

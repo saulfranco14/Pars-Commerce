@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Reads the recently migrated variants column until Supabase types are regenerated. */
 import { createAdminClient } from "@/lib/supabase/admin";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -20,7 +21,7 @@ import type {
 } from "@/types/tenantSitePages";
 import ProductCard from "../ProductCard";
 import PromotionCard from "../promociones/PromotionCard";
-import { enrichProducts } from "@/lib/enrichProducts";
+import { enrichProducts, type ProductBase } from "@/lib/enrichProducts";
 import type { PromotionForPrice } from "@/lib/promotionPrice";
 import {
   ICON_MAP,
@@ -54,6 +55,13 @@ export default async function InicioPage({ params }: PageProps) {
     headersList.get("x-forwarded-proto") === "https" ? "https" : "http";
   const baseUrl = host ? `${protocol}://${host}` : "";
   const supabase = createAdminClient();
+  // La migración de variantes ya está aplicada en la base, pero la definición
+  // local de Supabase puede ir un despliegue detrás. Esta vista pública necesita
+  // `has_variants` para abrir el selector correcto, así que aislamos esa lectura
+  // sin degradar toda la respuesta a `SelectQueryError`.
+  const productsTable = supabase.from("products") as unknown as {
+    select: (columns: string) => any;
+  };
 
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
@@ -74,8 +82,7 @@ export default async function InicioPage({ params }: PageProps) {
       .eq("slug", "inicio")
       .eq("is_enabled", true)
       .single(),
-    supabase
-      .from("products")
+    productsTable
       // Keep the public store compatible while a database migration is rolling out.
       // A missing presentation-only order column must never hide a merchant's catalog.
       .select(
@@ -87,8 +94,7 @@ export default async function InicioPage({ params }: PageProps) {
       .is("deleted_at", null)
       .order("name", { ascending: true })
       .limit(6),
-    supabase
-      .from("products")
+    productsTable
       .select(
         "id, name, slug, description, price, image_url, subcatalog_id, type, has_variants",
       )
@@ -107,7 +113,10 @@ export default async function InicioPage({ params }: PageProps) {
       .order("created_at", { ascending: false }),
   ]);
 
-  const products = [...(productsRes.data ?? []), ...(servicesRes.data ?? [])];
+  const products = [
+    ...(productsRes.data ?? []),
+    ...(servicesRes.data ?? []),
+  ] as ProductBase[];
   const productIds = products.map((p) => p.id);
   const { data: imagesData } =
     productIds.length > 0
@@ -137,7 +146,7 @@ export default async function InicioPage({ params }: PageProps) {
       description: p.description,
       price: Number(p.price),
       image_url: p.image_url,
-      type: p.type,
+      type: p.type ?? "product",
     })),
     images,
     promosForPrice,
