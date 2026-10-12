@@ -165,21 +165,21 @@ export default async function ProductosPage({
           <Package className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl">{pageTitle}</h1>
-          <p className="text-sm text-gray-500">{pageDescription}</p>
+          <h1 className="site-canvas-heading text-2xl font-bold tracking-tight sm:text-3xl">{pageTitle}</h1>
+          <p className="site-canvas-copy text-sm">{pageDescription}</p>
         </div>
         </div>
         <Link href={`/sitio/${slug}`} style={{ color: accentColor }} className="hidden min-h-11 items-center text-sm font-semibold hover:underline sm:inline-flex">Inicio</Link>
       </div>
 
-      <div className="sticky top-[65px] z-30 -mx-4 border-y border-gray-200 bg-gray-50/95 px-4 py-3 shadow-sm backdrop-blur-sm sm:top-[73px] sm:mx-0 sm:rounded-2xl sm:border sm:px-3">
+      <div className="site-catalog-filter sticky top-[65px] z-30 -mx-4 border-y px-4 py-3 shadow-sm backdrop-blur-sm sm:top-[73px] sm:mx-0 sm:rounded-2xl sm:border sm:px-3">
       {(productsCount > 0 || servicesCount > 0) && (
         <div className="overflow-x-auto pb-1">
           <div className="flex min-w-max gap-2">
             <Link
               href={catalogHref(null)}
               className={`inline-flex min-h-10 items-center rounded-xl px-4 text-sm font-semibold transition-colors ${
-                !catalogType ? "text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                !catalogType ? "text-white shadow-sm" : "site-catalog-chip hover:brightness-95"
               }`}
               style={!catalogType ? { backgroundColor: accentColor } : undefined}
             >
@@ -189,7 +189,7 @@ export default async function ProductosPage({
               <Link
                 href={catalogHref("product")}
                 className={`inline-flex min-h-10 items-center rounded-xl px-4 text-sm font-semibold transition-colors ${
-                  catalogType === "product" ? "text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  catalogType === "product" ? "text-white shadow-sm" : "site-catalog-chip hover:brightness-95"
                 }`}
                 style={catalogType === "product" ? { backgroundColor: accentColor } : undefined}
               >
@@ -200,7 +200,7 @@ export default async function ProductosPage({
               <Link
                 href={catalogHref("service")}
                 className={`inline-flex min-h-10 items-center rounded-xl px-4 text-sm font-semibold transition-colors ${
-                  catalogType === "service" ? "text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  catalogType === "service" ? "text-white shadow-sm" : "site-catalog-chip hover:brightness-95"
                 }`}
                 style={catalogType === "service" ? { backgroundColor: accentColor } : undefined}
               >
@@ -215,7 +215,7 @@ export default async function ProductosPage({
         {catalogType ? <input type="hidden" name="type" value={catalogType} /> : null}
         {subcatalog_id ? <input type="hidden" name="subcatalog_id" value={subcatalog_id} /> : null}
         <Search className="h-5 w-5 text-gray-400" aria-hidden />
-        <input name="q" defaultValue={searchQuery ?? ""} placeholder={`Buscar ${catalogType === "service" ? "servicios" : catalogType === "product" ? "productos" : "en la tienda"}`} className="h-12 min-w-0 flex-1 bg-transparent text-sm outline-none" />
+        <input name="q" defaultValue={searchQuery ?? ""} placeholder={`Buscar ${catalogType === "service" ? "servicios" : catalogType === "product" ? "productos" : "en la tienda"}`} className="h-12 min-w-0 flex-1 bg-transparent text-sm text-gray-950 outline-none placeholder:text-gray-400" />
         <button type="submit" className="min-h-10 rounded-lg px-3 text-sm font-bold text-white" style={{ backgroundColor: accentColor }}>Buscar</button>
       </form>
 
@@ -229,7 +229,7 @@ export default async function ProductosPage({
               className={`inline-flex min-h-10 items-center rounded-xl px-4 text-sm font-semibold transition-colors ${
                 !subcatalog_id
                   ? "text-white shadow-sm"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  : "site-catalog-chip hover:brightness-95"
               }`}
               style={!subcatalog_id ? { backgroundColor: accentColor } : undefined}
             >
@@ -242,7 +242,7 @@ export default async function ProductosPage({
                 className={`inline-flex min-h-10 items-center rounded-xl px-4 text-sm font-semibold transition-colors ${
                   subcatalog_id === sc.id
                     ? "text-white shadow-sm"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    : "site-catalog-chip hover:brightness-95"
                 }`}
                 style={
                   subcatalog_id === sc.id
@@ -273,7 +273,7 @@ export default async function ProductosPage({
         </div>
       ) : (
         <section aria-label="Resultados del catálogo">
-          <div className="mb-4 flex items-baseline justify-between gap-3"><h2 className="text-lg font-bold tracking-tight text-gray-950">{searchQuery?.trim() ? "Resultados" : catalogType === "service" ? "Servicios disponibles" : catalogType === "product" ? "Productos disponibles" : "Disponible ahora"}</h2><p className="shrink-0 text-sm text-gray-500">{list.length} {list.length === 1 ? "resultado" : "resultados"}</p></div>
+          <div className="mb-4 flex items-baseline justify-between gap-3"><h2 className="site-canvas-heading text-lg font-bold tracking-tight">{searchQuery?.trim() ? "Resultados" : catalogType === "service" ? "Servicios disponibles" : catalogType === "product" ? "Productos disponibles" : "Disponible ahora"}</h2><p className="site-canvas-copy shrink-0 text-sm">{list.length} {list.length === 1 ? "resultado" : "resultados"}</p></div>
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {list.map((item) => (
             <ProductCard

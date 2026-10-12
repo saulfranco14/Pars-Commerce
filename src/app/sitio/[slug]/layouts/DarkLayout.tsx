@@ -14,7 +14,7 @@ export function DarkLayout({
 }: SiteLayoutProps) {
   return (
     <div
-      className="flex min-h-screen flex-col bg-gray-950 text-gray-100"
+      className="site-template site-template-dark flex min-h-screen flex-col bg-gray-950 text-gray-100"
       style={{ ["--accent" as string]: accentColor }}
     >
       <div
@@ -31,7 +31,7 @@ export function DarkLayout({
           tenantId={tenant.id}
           variant="dark"
         />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">
+        <main className="site-template-main mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">
           {children}
         </main>
       </CartProvider>
@@ -48,11 +48,11 @@ export function DarkLayout({
                 {tenant.name}
               </Link>
               {tenant.description && (
-                <p className="mt-2 text-sm text-gray-500">{tenant.description}</p>
+                <p className="mt-2 text-sm text-gray-300">{tenant.description}</p>
               )}
             </div>
             <div>
-              <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-300">
                 Navegación
               </h4>
               <ul className="space-y-2">
@@ -60,7 +60,7 @@ export function DarkLayout({
                   <li key={p.id}>
                     <Link
                       href={p.href ?? `/sitio/${tenant.slug}/${p.slug}`}
-                      className="text-sm text-gray-500 transition-colors hover:text-white"
+                      className="text-sm text-gray-300 transition-colors hover:text-white"
                     >
                       {p.title}
                     </Link>
@@ -69,7 +69,7 @@ export function DarkLayout({
               </ul>
             </div>
             <div>
-              <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-300">
                 Contacto
               </h4>
               <div className="flex gap-2">
@@ -87,7 +87,7 @@ export function DarkLayout({
               </div>
             </div>
           </div>
-          <div className="mt-8 border-t border-gray-800 pt-6 text-center text-xs text-gray-600">
+          <div className="mt-8 border-t border-gray-800 pt-6 text-center text-xs text-gray-400">
             © {new Date().getFullYear()} {tenant.name}
           </div>
         </div>

@@ -27,6 +27,7 @@ import { PaymentLinkCard } from "@/features/orders/components/payment/PaymentLin
 import { OrderPaymentPlanCard } from "@/features/orders/components/order/OrderPaymentPlanCard";
 import { ReceiptPreview } from "@/features/orders/components/receipt/ReceiptPreview";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { MobileActionBar } from "@/components/layout/MobileActionBar";
 import type { OrderLoanSummary } from "@/features/orders/interfaces/orderDetail";
 
 function formatMXN(n: number) {
@@ -198,18 +199,9 @@ function OrderDetailContent() {
         </div>
       </div>
 
-      {mounted &&
-        createPortal(
-          <div
-            className="no-print fixed bottom-0 left-0 right-0 z-40 rounded-t-[28px] border-x border-t border-border bg-surface px-4 pt-4 shadow-[0_-12px_32px_rgba(15,23,42,0.14)] md:hidden"
-            style={{
-              paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
-            }}
-          >
-            <OrderActionButtons presentation="fixed" />
-          </div>,
-          document.body,
-        )}
+      <MobileActionBar className="no-print md:hidden">
+        <OrderActionButtons presentation="fixed" />
+      </MobileActionBar>
     </>
   );
 }

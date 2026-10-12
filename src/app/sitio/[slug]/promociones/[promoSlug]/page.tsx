@@ -127,7 +127,7 @@ export default async function PromocionDetallePage({ params }: PageProps) {
     <div className="space-y-6">
       <Link
         href={`/sitio/${slug}/promociones`}
-        className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
+        className="site-canvas-copy inline-flex items-center gap-2 text-sm font-medium transition-colors hover:text-gray-900"
       >
         <ArrowLeft className="h-4 w-4" />
         Volver a promociones
