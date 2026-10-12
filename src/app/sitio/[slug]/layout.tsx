@@ -22,9 +22,9 @@ export default async function SitioLayout({ children, params }: LayoutProps) {
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
     .select(
-      "id, name, description, logo_url, theme_color, slug, whatsapp_phone, social_links, site_template_id, accepting_orders, settings",
+      "id, name, description, logo_url, theme_color, slug, site_slug, whatsapp_phone, social_links, site_template_id, accepting_orders, settings",
     )
-    .eq("slug", slug)
+    .eq("site_slug", slug)
     .eq("public_store_enabled", true)
     .single();
 
@@ -95,7 +95,7 @@ export default async function SitioLayout({ children, params }: LayoutProps) {
     description: tenant.description,
     logo_url: tenant.logo_url,
     theme_color: tenant.theme_color,
-    slug: tenant.slug,
+    slug: tenant.site_slug,
     whatsapp_phone: tenant.whatsapp_phone,
     social_links: (tenant.social_links as Record<string, string> | null) ?? {},
   };

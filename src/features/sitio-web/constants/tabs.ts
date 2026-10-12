@@ -1,6 +1,6 @@
-import { FileText, Globe, Settings, Tag } from "lucide-react";
+import { Banknote, FileText, Globe, Settings, Tag } from "lucide-react";
 
-export type SitioTab = "general" | "redes" | "contenido" | "promociones";
+export type SitioTab = "general" | "redes" | "cobros" | "contenido" | "promociones";
 
 export const SITIO_TABS: {
   value: SitioTab;
@@ -10,6 +10,7 @@ export const SITIO_TABS: {
 }[] = [
   { value: "general", label: "General", shortLabel: "General", icon: Settings },
   { value: "redes", label: "Redes", shortLabel: "Redes", icon: Globe },
+  { value: "cobros", label: "Cobros y entregas", shortLabel: "Cobros", icon: Banknote },
   {
     value: "contenido",
     label: "Contenido",

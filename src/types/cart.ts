@@ -3,6 +3,7 @@ import { MsiOption } from "@/constants/commissionConfig";
 export interface PublicCartItem {
   id: string;
   product_id: string;
+  product_variant_id?: string | null;
   quantity: number;
   price_snapshot: number;
   promotion_id?: string | null;
@@ -12,6 +13,11 @@ export interface PublicCartItem {
     slug: string | null;
     image_url: string | null;
   };
+  variant?: {
+    id: string;
+    selection_key: string;
+    image_url: string | null;
+  } | null;
 }
 
 export interface PublicCartResponse {

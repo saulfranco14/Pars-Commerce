@@ -15,7 +15,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ orderId: 
   if (!order) return NextResponse.json({ error: "Pedido no encontrado." }, { status: 404 });
   if (!await requirePermission(user.id, order.tenant_id, "order.take")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (order.status !== "pending_acceptance") return NextResponse.json({ error: "Este pedido ya fue atendido." }, { status: 409 });
-  const { data: items } = await admin.from("order_items").select("product_id, quantity").eq("order_id", orderId);
+  const { data: items } = await admin.from("order_items").select("product_id, product_variant_id, quantity").eq("order_id", orderId);
   const stock = await validateOrderStock(admin, order.tenant_id, items ?? []);
   if (!stock.ok) return NextResponse.json({ error: stock.message }, { status: 409 });
   const { error } = await admin.from("orders").update({ status: "assigned", accepted_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", orderId).eq("status", "pending_acceptance");

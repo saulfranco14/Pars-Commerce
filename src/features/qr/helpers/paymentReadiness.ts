@@ -4,15 +4,20 @@
  * En una mesa sí: el cliente pide, le llega, y paga al final — cobrar antes de
  * servir es cobrar por algo que todavía no vio.
  *
- * En la pantalla de autoservicio y en el mostrador es al revés: el cliente pide,
- * paga, y se va con su número a esperar. Ahí la guarda dejaba el ticket sin
- * forma de cobrarse, porque nadie está atendiendo esa pantalla para marcarlo
- * listo.
+ * En autoservicio, mostrador y ecommerce es al revés: el cliente pide, paga y
+ * después el negocio prepara y entrega. Ahí `paid` abre la postventa; no cierra
+ * la operación.
  *
  * El origen desconocido (`null`, pedidos viejos) se trata como mesa: es la regla
  * más estricta y no afloja nada de lo que ya estaba en producción.
  */
-const PAY_ON_PICKUP: ReadonlySet<string> = new Set(["kiosk", "staff"]);
+const PAY_BEFORE_FULFILLMENT: ReadonlySet<string> = new Set([
+  "kiosk",
+  "staff",
+  // En ecommerce el pago abre la postventa: preparar, marcar listo y después
+  // entregar o confirmar la recolección. `paid` no significa trabajo cerrado.
+  "public_store",
+]);
 
 /** Estaba copiado en tres servicios; se lee igual en los tres. */
 export const NOT_READY_MESSAGE =
@@ -26,5 +31,5 @@ export function requiresReadyBeforePayment(
   // a table, the service context becomes dine-in and follows table payment
   // rules even though the order still originated at a kiosk.
   if (orderType === "dine_in") return true;
-  return !PAY_ON_PICKUP.has((source ?? "").trim());
+  return !PAY_BEFORE_FULFILLMENT.has((source ?? "").trim());
 }

@@ -26,7 +26,7 @@ export default async function PromocionesPage({ params }: PageProps) {
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
     .select("id, name, theme_color, whatsapp_phone")
-    .eq("slug", slug)
+    .eq("site_slug", slug)
     .eq("public_store_enabled", true)
     .single();
 
@@ -64,7 +64,7 @@ export default async function PromocionesPage({ params }: PageProps) {
     const [productsRes, imagesRes] = await Promise.all([
       supabase
         .from("products")
-        .select("id, name, slug, description, price, image_url, subcatalog_id")
+        .select("id, name, slug, description, price, image_url, subcatalog_id, has_variants")
         .in("id", allProductIds)
         .eq("tenant_id", tenant.id)
         .eq("is_public", true)

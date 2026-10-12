@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   canAccessOrder,
   resolveOrderAccess,
 } from "@/features/orders/services/orderAccessService";
 import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
+import { resolveOrderFulfillmentMethod } from "@/features/orders/helpers/resolveOrderFulfillmentMethod";
 
 export async function POST(
   _request: Request,
@@ -13,24 +15,45 @@ export async function POST(
 ) {
   const { orderId } = await params;
   const supabase = await createClient();
+  const admin = createAdminClient() as unknown as {
+    from: (table: string) => any;
+  };
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: order, error: orderError } = await supabase
+  const { data: order, error: orderError } = await admin
     .from("orders")
-    .select("id, tenant_id, status, assigned_to, created_by, scheduled_for, pickup_completed_at")
+    .select("id, tenant_id, status, source, fulfillment_status, fulfillment_method, total, paid_total, paid_at, payment_verification_status, assigned_to, created_by, scheduled_for, pickup_completed_at")
     .eq("id", orderId)
     .maybeSingle();
   if (orderError || !order) {
     return NextResponse.json({ error: orderError?.message ?? "No encontramos la orden." }, { status: 404 });
   }
-  if (!order.scheduled_for) {
-    return NextResponse.json({ error: "Esta orden no tiene una recolección programada." }, { status: 409 });
+  const { data: deliveryDetails } = await admin
+    .from("order_delivery_details")
+    .select("address_text, pickup_point_id")
+    .eq("order_id", orderId)
+    .maybeSingle();
+  const fulfillmentMethod = resolveOrderFulfillmentMethod({
+    ...order,
+    delivery_details: deliveryDetails,
+  });
+  const isPickup = fulfillmentMethod === "pickup";
+  if (!isPickup) {
+    return NextResponse.json({ error: "Esta orden no es para recolección." }, { status: 409 });
   }
-  if (order.status !== "paid") {
+  const paymentSettled =
+    order.status === "paid" ||
+    Boolean(order.paid_at) ||
+    Number(order.paid_total ?? 0) >= Number(order.total) ||
+    order.payment_verification_status === "approved";
+  if (!paymentSettled) {
     return NextResponse.json({ error: "Primero registra el cobro antes de confirmar la recolección." }, { status: 409 });
+  }
+  if (order.source === "public_store" && order.fulfillment_status !== "ready") {
+    return NextResponse.json({ error: "Primero marca el pedido como listo." }, { status: 409 });
   }
 
   const access = await resolveOrderAccess(user.id, order.tenant_id);
@@ -45,9 +68,16 @@ export async function POST(
   }
 
   const completedAt = new Date().toISOString();
-  const { data: updated, error: updateError } = await supabase
+  const { data: updated, error: updateError } = await admin
     .from("orders")
-    .update({ pickup_completed_at: completedAt, pickup_completed_by: user.id, updated_at: completedAt })
+    .update({
+      status: "completed",
+      completed_at: completedAt,
+      completed_by: user.id,
+      pickup_completed_at: completedAt,
+      pickup_completed_by: user.id,
+      updated_at: completedAt,
+    })
     .eq("id", order.id)
     .is("pickup_completed_at", null)
     .select("id, pickup_completed_at, pickup_completed_by")
@@ -55,7 +85,13 @@ export async function POST(
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
   if (!updated) return NextResponse.json({ success: true, already_completed: true });
 
-  await supabase.from("order_activity_log").insert({
+  await admin.from("order_delivery_events").insert({
+    order_id: order.id,
+    type: "pickup_completed",
+    created_by: user.id,
+  });
+
+  await admin.from("order_activity_log").insert({
     order_id: order.id,
     actor_type: "member",
     actor_id: user.id,

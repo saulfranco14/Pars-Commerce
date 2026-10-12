@@ -32,14 +32,14 @@ export default function ProductImageGallery({
   return (
     <div className="space-y-3">
       {/* Main image */}
-      <div className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-gray-50">
+      <div className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-white">
         <Image
           key={mainUrl}
           src={mainUrl}
           alt={productName}
           fill
-          sizes="(max-width: 768px) 100vw, 50vw"
-          className="object-cover transition-transform duration-500"
+          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 52vw, 620px"
+          className="object-contain p-1 transition-transform duration-500 sm:p-2"
           priority
           quality={80}
         />

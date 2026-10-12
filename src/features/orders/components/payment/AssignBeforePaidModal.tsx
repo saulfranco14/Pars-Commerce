@@ -2,33 +2,36 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { UserPlus, Check, DollarSign } from "lucide-react";
+import { UserPlus, Check, DollarSign, Loader2, X } from "lucide-react";
 import type { AssignBeforePaidModalProps } from "@/features/orders/interfaces/orderModals";
 import {
   PAYMENT_METHODS,
   type PaymentMethodId,
 } from "@/features/orders/constants/paymentMethods";
+import { btnSecondary } from "@/components/ui/buttonClasses";
 
 export function AssignBeforePaidModal({
   isOpen,
   onClose,
   onConfirm,
   team,
+  lockedPaymentMethod = null,
   loading = false,
 }: AssignBeforePaidModalProps) {
   const [assignTo, setAssignTo] = useState("");
   const [paymentMethod, setPaymentMethod] =
     useState<PaymentMethodId>("efectivo");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const fixedMethod = normalizePaymentMethod(lockedPaymentMethod);
 
   useEffect(() => {
     if (!isOpen) return;
     setAssignTo("");
-    setPaymentMethod("efectivo");
+    setPaymentMethod(fixedMethod ?? "efectivo");
     createClient()
       .auth.getUser()
       .then(({ data: { user } }) => setCurrentUserId(user?.id ?? null));
-  }, [isOpen]);
+  }, [fixedMethod, isOpen]);
 
   const isCurrentUserInTeam =
     currentUserId && team.some((t) => t.user_id === currentUserId);
@@ -52,10 +55,10 @@ export function AssignBeforePaidModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="assign-before-paid-title"
-      onClick={onClose}
+      onClick={loading ? undefined : onClose}
     >
       <div
-        className="w-full max-h-[92vh] max-w-md flex flex-col overflow-hidden rounded-t-2xl border-t border-border-soft bg-surface-raised shadow-lg md:max-h-none md:rounded-xl md:border"
+        className="flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[28px] border-t border-border-soft bg-surface-raised shadow-2xl md:max-h-none md:rounded-3xl md:border"
         onClick={(e) => e.stopPropagation()}
         style={{
           paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
@@ -103,6 +106,7 @@ export function AssignBeforePaidModal({
                   id="assign-select"
                   value={assignTo}
                   onChange={(e) => setAssignTo(e.target.value)}
+                  disabled={loading}
                   className="select-custom min-h-10 flex-1 rounded-lg border border-border bg-border-soft/50 px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                   required
                 >
@@ -117,6 +121,7 @@ export function AssignBeforePaidModal({
                   <button
                     type="button"
                     onClick={handleAssignToMe}
+                    disabled={loading}
                     className="inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
                   >
                     <UserPlus className="h-4 w-4 shrink-0" aria-hidden />
@@ -127,9 +132,25 @@ export function AssignBeforePaidModal({
             </div>
 
             <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-muted">
+              <p className="block text-xs font-medium uppercase tracking-wide text-muted">
                 Método de pago
-              </label>
+              </p>
+              {fixedMethod ? (
+                <div className="mt-1.5">
+                  {PAYMENT_METHODS.filter(({ id }) => id === fixedMethod).map(
+                    ({ id, label, icon: Icon, colorClass }) => (
+                      <div key={id} className="flex min-h-14 items-center gap-3 rounded-xl border border-accent bg-accent/5 px-4">
+                        <Icon className={`h-5 w-5 shrink-0 ${colorClass}`} aria-hidden />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-foreground">{label}</p>
+                          <p className="text-xs text-muted-foreground">Elegido por el cliente; no se puede cambiar aquí.</p>
+                        </div>
+                        <Check className="h-5 w-5 text-accent" aria-hidden />
+                      </div>
+                    ),
+                  )}
+                </div>
+              ) : (
               <div className="mt-1.5 grid grid-cols-2 gap-2">
                 {PAYMENT_METHODS.map(
                   ({ id, label, icon: Icon, colorClass }) => {
@@ -139,6 +160,7 @@ export function AssignBeforePaidModal({
                         key={id}
                         type="button"
                         onClick={() => setPaymentMethod(id)}
+                        disabled={loading}
                         className={`relative flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
                           isSelected
                             ? "border-accent bg-accent/5"
@@ -167,6 +189,7 @@ export function AssignBeforePaidModal({
                   },
                 )}
               </div>
+              )}
             </div>
           </form>
         </div>
@@ -176,8 +199,9 @@ export function AssignBeforePaidModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-base font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 md:max-w-35 md:border md:border-border"
+            className={`${btnSecondary} min-h-12 w-full rounded-xl text-base md:max-w-35`}
           >
+            <X className="h-4 w-4" aria-hidden />
             Cancelar
           </button>
           <button
@@ -186,11 +210,23 @@ export function AssignBeforePaidModal({
             disabled={loading || !assignTo}
             className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-base font-semibold text-accent-foreground shadow-sm transition-all duration-200 hover:bg-accent/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100"
           >
-            <DollarSign className="h-5 w-5 shrink-0" aria-hidden />
-            {loading ? "Guardando…" : "Asignar y cobrar"}
+            {loading ? <Loader2 className="h-5 w-5 shrink-0 animate-spin" aria-hidden /> : <DollarSign className="h-5 w-5 shrink-0" aria-hidden />}
+            {loading
+              ? "Confirmando pago…"
+              : fixedMethod === "transferencia"
+                ? "Asignar y confirmar transferencia"
+                : "Asignar y cobrar"}
           </button>
         </div>
       </div>
     </div>
   );
+}
+
+function normalizePaymentMethod(value?: string | null): PaymentMethodId | null {
+  if (value === "bank_transfer" || value === "transferencia") return "transferencia";
+  if (value === "cash" || value === "efectivo") return "efectivo";
+  if (value === "mercadopago") return "mercadopago";
+  if (value === "card" || value === "tarjeta") return "tarjeta";
+  return null;
 }

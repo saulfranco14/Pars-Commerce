@@ -15,6 +15,7 @@ export interface OrderContextType {
   ticketOptions: TicketSettings;
   logoUrl: string | null;
   fetchOrder: () => Promise<void>;
+  replaceOrder: (nextOrder: OrderDetail) => Promise<void>;
   handleStatusChange: (newStatus: string) => Promise<void>;
   handleAssign: (assignToId: string) => Promise<void>;
   handleAssignAndMarkPaid: (assignToId: string, paymentMethod?: string) => Promise<boolean>;

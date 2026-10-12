@@ -43,7 +43,7 @@ export default async function ProductosPage({
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
     .select("id, name, theme_color, whatsapp_phone")
-    .eq("slug", slug)
+    .eq("site_slug", slug)
     .eq("public_store_enabled", true)
     .single();
 
@@ -67,7 +67,7 @@ export default async function ProductosPage({
       let q = supabase
         .from("products")
         // Do not let an optional ordering migration make a published catalog empty.
-        .select("id, name, slug, description, price, image_url, subcatalog_id, type")
+        .select("id, name, slug, description, price, image_url, subcatalog_id, type, has_variants")
         .eq("tenant_id", tenant.id)
         .eq("is_public", true)
         .is("deleted_at", null)

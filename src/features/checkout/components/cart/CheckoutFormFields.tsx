@@ -12,10 +12,11 @@ interface CheckoutFormFieldsProps {
   fieldErrors: Record<string, string>;
   onUpdate: (field: keyof FormState, value: string) => void;
   emailOptional?: boolean;
+  disabled?: boolean;
 }
 
 const inputBaseClass =
-  "mt-1 w-full min-h-11 rounded-xl border bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:ring-2";
+  "mt-1 w-full min-h-11 rounded-xl border bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:ring-2 disabled:cursor-wait disabled:bg-gray-100 disabled:text-gray-500";
 
 function inputClass(hasError: boolean): string {
   return `${inputBaseClass} ${
@@ -36,6 +37,7 @@ export function CheckoutFormFields({
   fieldErrors,
   onUpdate,
   emailOptional = false,
+  disabled = false,
 }: CheckoutFormFieldsProps) {
   return (
     <>
@@ -54,6 +56,7 @@ export function CheckoutFormFields({
           onChange={(e) => onUpdate("customer_name", e.target.value)}
           className={inputClass(Boolean(fieldErrors.customer_name))}
           placeholder="Tu nombre"
+          disabled={disabled}
         />
         {fieldErrors.customer_name && (
           <p className="mt-1 text-sm text-red-600">
@@ -76,6 +79,7 @@ export function CheckoutFormFields({
           onChange={(e) => onUpdate("customer_email", e.target.value)}
           className={inputClass(Boolean(fieldErrors.customer_email))}
           placeholder="correo@ejemplo.com"
+          disabled={disabled}
         />
         {fieldErrors.customer_email && (
           <p className="mt-1 text-sm text-red-600">
@@ -104,6 +108,7 @@ export function CheckoutFormFields({
           }}
           className={inputClass(Boolean(fieldErrors.customer_phone))}
           placeholder="5512345678"
+          disabled={disabled}
         />
         {fieldErrors.customer_phone && (
           <p className="mt-1 text-sm text-red-600">

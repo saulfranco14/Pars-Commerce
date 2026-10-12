@@ -39,14 +39,14 @@ export function useCartActions({
 }: UseCartActionsParams) {
   const [error, setError] = useState<string | null>(null);
 
-  const handleQuantityChange = async (productId: string, quantity: number) => {
+  const handleQuantityChange = async (itemId: string, quantity: number) => {
     if (!cart || !fingerprint || quantity < 1) return;
     const updatedItems = items.map((it) =>
-      it.product_id === productId ? { ...it, quantity } : it,
+      it.id === itemId ? { ...it, quantity } : it,
     );
-    const item = updatedItems.find((it) => it.product_id === productId);
+    const item = updatedItems.find((it) => it.id === itemId);
     const price = item ? Number(item.price_snapshot) : 0;
-    const oldQty = items.find((i) => i.product_id === productId)?.quantity ?? 0;
+    const oldQty = items.find((i) => i.id === itemId)?.quantity ?? 0;
     const newSubtotal = subtotal + (quantity - oldQty) * price;
     mutate(
       {
@@ -59,7 +59,7 @@ export function useCartActions({
     );
     setError(null);
     try {
-      await updateItemQuantity(cart.id, productId, quantity, fingerprint);
+      await updateItemQuantity(cart.id, itemId, quantity, fingerprint);
       dispatchCartUpdated();
     } catch (e) {
       mutate();
@@ -67,10 +67,10 @@ export function useCartActions({
     }
   };
 
-  const handleRemove = async (productId: string) => {
+  const handleRemove = async (itemId: string) => {
     if (!cart || !fingerprint) return;
-    const filtered = items.filter((it) => it.product_id !== productId);
-    const removed = items.find((it) => it.product_id === productId);
+    const filtered = items.filter((it) => it.id !== itemId);
+    const removed = items.find((it) => it.id === itemId);
     const newSubtotal = removed
       ? subtotal - Number(removed.price_snapshot) * removed.quantity
       : subtotal;
@@ -85,7 +85,7 @@ export function useCartActions({
     );
     setError(null);
     try {
-      await removeItem(cart.id, productId, fingerprint);
+      await removeItem(cart.id, itemId, fingerprint);
       dispatchCartUpdated();
     } catch (e) {
       mutate();

@@ -8,8 +8,8 @@ import type { PublicCartItem } from "@/services/publicCartService";
 interface CartItemRowProps {
   item: PublicCartItem;
   accentColor: string;
-  onQuantityChange: (productId: string, quantity: number) => void;
-  onRemove: (productId: string) => void;
+  onQuantityChange: (itemId: string, quantity: number) => void;
+  onRemove: (itemId: string) => void;
 }
 
 export function CartItemRow({
@@ -20,7 +20,7 @@ export function CartItemRow({
 }: CartItemRowProps) {
   const product = Array.isArray(item.product) ? item.product[0] : item.product;
   const name = product?.name ?? "Producto";
-  const imageUrl = product?.image_url ?? null;
+  const imageUrl = item.variant?.image_url ?? product?.image_url ?? null;
   const price = Number(item.price_snapshot);
   const qty = item.quantity;
   const itemSubtotal = price * qty;
@@ -44,6 +44,7 @@ export function CartItemRow({
       </div>
       <div className="min-w-0 flex-1">
         <h3 className="font-semibold text-gray-900 line-clamp-2">{name}</h3>
+        {item.variant?.selection_key ? <p className="mt-0.5 text-xs font-medium text-gray-500">{item.variant.selection_key.replaceAll(":", " ")}</p> : null}
         {item.promotion_id && (
           <span className="mt-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
             Promoción
@@ -59,7 +60,7 @@ export function CartItemRow({
           <button
             type="button"
             onClick={() =>
-              onQuantityChange(item.product_id, Math.max(1, qty - 1))
+              onQuantityChange(item.id, Math.max(1, qty - 1))
             }
             className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300/30"
             aria-label="Reducir cantidad"
@@ -71,7 +72,7 @@ export function CartItemRow({
           </span>
           <button
             type="button"
-            onClick={() => onQuantityChange(item.product_id, qty + 1)}
+            onClick={() => onQuantityChange(item.id, qty + 1)}
             className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300/30"
             aria-label="Aumentar cantidad"
           >
@@ -79,7 +80,7 @@ export function CartItemRow({
           </button>
           <button
             type="button"
-            onClick={() => onRemove(item.product_id)}
+            onClick={() => onRemove(item.id)}
             className="ml-auto flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/20"
             aria-label="Eliminar"
           >

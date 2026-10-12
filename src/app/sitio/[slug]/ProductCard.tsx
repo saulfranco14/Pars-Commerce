@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MessageCircle, Package, ShoppingCart, Eye, Check } from "lucide-react";
+import { MessageCircle, Package, ShoppingCart, Eye, Check, SlidersHorizontal } from "lucide-react";
 import { addItem } from "@/services/publicCartService";
 import { dispatchCartUpdated } from "@/lib/cartEvents";
 import { useFingerprint } from "@/hooks/useFingerprint";
@@ -19,6 +19,7 @@ interface ProductCardProps {
     image_url: string | null;
     image_urls?: string[];
     type?: string;
+    has_variants?: boolean;
   };
   promotion?: ProductPromotionResult | null;
   tenantId: string;
@@ -163,16 +164,27 @@ export default function ProductCard({
 
       {/* Action buttons */}
       <div className={`flex flex-col gap-2 ${compact ? "px-3.5 pb-3.5" : "px-4 pb-4"}`}>
-        <button
-          type="button"
-          onClick={handleAddToCart}
-          disabled={loading || !fingerprint}
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all active:scale-95 disabled:opacity-50"
-          style={{ backgroundColor: accentColor }}
-        >
-          <ShoppingCart className="h-4 w-4" />
-          {loading ? "Agregando…" : added ? <><Check className="h-4 w-4" />Agregado</> : product.type === "service" ? (compact ? "Elegir" : "Elegir servicio") : (compact ? "Agregar" : "Agregar al carrito")}
-        </button>
+        {product.has_variants ? (
+          <Link
+            href={productPath}
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all active:scale-95"
+            style={{ backgroundColor: accentColor }}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            Elegir talla o color
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={loading || !fingerprint}
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all active:scale-95 disabled:opacity-50"
+            style={{ backgroundColor: accentColor }}
+          >
+            <ShoppingCart className="h-4 w-4" />
+            {loading ? "Agregando…" : added ? <><Check className="h-4 w-4" />Agregado</> : product.type === "service" ? (compact ? "Elegir" : "Elegir servicio") : (compact ? "Agregar" : "Agregar al carrito")}
+          </button>
+        )}
         {waHref && !compact && (
           <a
             href={waHref}

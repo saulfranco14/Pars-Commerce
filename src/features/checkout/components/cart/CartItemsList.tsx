@@ -7,8 +7,8 @@ import { CartItemRow } from "@/features/checkout/components/cart/CartItemRow";
 interface CartItemsListProps {
   items: PublicCartItem[];
   accentColor: string;
-  onQuantityChange: (productId: string, quantity: number) => void;
-  onRemove: (productId: string) => void;
+  onQuantityChange: (itemId: string, quantity: number) => void;
+  onRemove: (itemId: string) => void;
 }
 
 export function CartItemsList({

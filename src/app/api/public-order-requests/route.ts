@@ -138,6 +138,9 @@ export async function POST(request: Request) {
       await admin.from("orders").delete().eq("id", order.id);
       throw error;
     }
+    // La solicitud ya quedó registrada y puede seguirse con su token; el
+    // carrito deja de ser un borrador para que no se duplique al volver.
+    await admin.from("public_cart_items").delete().eq("cart_id", cart.id);
     return NextResponse.json({ success: true, order_id: order.id, tracking_url: `/pedido/${order.public_tracking_token}` }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "No pudimos enviar la solicitud." }, { status: 500 });

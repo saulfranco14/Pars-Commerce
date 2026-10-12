@@ -1,25 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, X, DollarSign } from "lucide-react";
+import { Check, X, DollarSign, Loader2 } from "lucide-react";
 import {
   PAYMENT_METHODS,
   type PaymentMethodId,
 } from "@/features/orders/constants/paymentMethods";
 import type { ConfirmPaymentModalProps } from "@/features/orders/interfaces/orderModals";
+import { btnSecondary } from "@/components/ui/buttonClasses";
 
 export function ConfirmPaymentModal({
   isOpen,
   onClose,
   onConfirm,
   total,
+  lockedPaymentMethod = null,
   loading = false,
 }: ConfirmPaymentModalProps) {
   const [selected, setSelected] = useState<PaymentMethodId>("efectivo");
+  const fixedMethod = normalizePaymentMethod(lockedPaymentMethod);
 
   useEffect(() => {
-    if (isOpen) setSelected("efectivo");
-  }, [isOpen]);
+    if (isOpen) setSelected(fixedMethod ?? "efectivo");
+  }, [fixedMethod, isOpen]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,10 +39,10 @@ export function ConfirmPaymentModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-payment-title"
-      onClick={onClose}
+      onClick={loading ? undefined : onClose}
     >
       <div
-        className="w-full max-h-[92vh] max-w-md flex flex-col overflow-hidden rounded-t-2xl border-t border-border-soft bg-surface-raised shadow-lg md:max-h-none md:rounded-xl md:border"
+        className="flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[28px] border-t border-border-soft bg-surface-raised shadow-2xl md:max-h-none md:rounded-3xl md:border"
         onClick={(e) => e.stopPropagation()}
         style={{
           paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
@@ -65,21 +68,24 @@ export function ConfirmPaymentModal({
             ${Number(total).toFixed(2)}
           </p>
           <p className="mt-4 text-sm font-medium text-foreground">
-            Selecciona el método de pago:
+            {fixedMethod ? "Método elegido por el cliente" : "Selecciona el método de pago:"}
           </p>
           <form
             id="confirm-payment-form"
             onSubmit={handleSubmit}
             className="mt-3 space-y-3"
           >
-            <div className="grid grid-cols-2 gap-2">
-              {PAYMENT_METHODS.map(({ id, label, icon: Icon, colorClass }) => {
+            <div className={`grid gap-2 ${fixedMethod ? "grid-cols-1" : "grid-cols-2"}`}>
+              {PAYMENT_METHODS.filter(({ id }) => !fixedMethod || id === fixedMethod).map(({ id, label, icon: Icon, colorClass }) => {
                 const isSelected = selected === id;
                 return (
                   <button
                     key={id}
                     type="button"
-                    onClick={() => setSelected(id)}
+                    onClick={() => {
+                      if (!fixedMethod) setSelected(id);
+                    }}
+                    disabled={loading}
                     className={`relative flex min-h-11 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border px-3 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
                       isSelected
                         ? "border-accent bg-accent/5"
@@ -87,7 +93,7 @@ export function ConfirmPaymentModal({
                     }`}
                   >
                     {isSelected && (
-                      <span
+                        <span
                         className="absolute right-2 top-2 text-accent"
                         aria-hidden
                       >
@@ -103,8 +109,9 @@ export function ConfirmPaymentModal({
                         isSelected ? "text-accent" : "text-muted-foreground"
                       }`}
                     >
-                      {label}
-                    </span>
+                          {label}
+                        </span>
+                        {fixedMethod ? <span className="text-xs text-muted-foreground">No se puede cambiar en esta orden.</span> : null}
                   </button>
                 );
               })}
@@ -116,8 +123,9 @@ export function ConfirmPaymentModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-base font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:max-w-35 md:border md:border-border"
+            className={`${btnSecondary} min-h-12 w-full rounded-xl text-base md:max-w-35`}
           >
+            <X className="h-4 w-4" aria-hidden />
             Cancelar
           </button>
           <button
@@ -126,11 +134,19 @@ export function ConfirmPaymentModal({
             disabled={loading}
             className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-base font-semibold text-accent-foreground shadow-sm transition-all duration-200 hover:bg-accent/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            <DollarSign className="h-5 w-5 shrink-0" aria-hidden />
-            {loading ? "Guardando…" : "Confirmar cobro"}
+            {loading ? <Loader2 className="h-5 w-5 shrink-0 animate-spin" aria-hidden /> : <DollarSign className="h-5 w-5 shrink-0" aria-hidden />}
+            {loading ? "Confirmando pago…" : "Confirmar cobro"}
           </button>
         </div>
       </div>
     </div>
   );
+}
+
+function normalizePaymentMethod(value?: string | null): PaymentMethodId | null {
+  if (value === "bank_transfer" || value === "transferencia") return "transferencia";
+  if (value === "cash" || value === "efectivo") return "efectivo";
+  if (value === "mercadopago") return "mercadopago";
+  if (value === "card" || value === "tarjeta") return "tarjeta";
+  return null;
 }

@@ -58,7 +58,7 @@ export default async function InicioPage({ params }: PageProps) {
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
     .select("id, name, description, theme_color, whatsapp_phone")
-    .eq("slug", slug)
+    .eq("site_slug", slug)
     .eq("public_store_enabled", true)
     .single();
 
@@ -78,7 +78,7 @@ export default async function InicioPage({ params }: PageProps) {
       .from("products")
       // Keep the public store compatible while a database migration is rolling out.
       // A missing presentation-only order column must never hide a merchant's catalog.
-      .select("id, name, slug, description, price, image_url, subcatalog_id, type")
+      .select("id, name, slug, description, price, image_url, subcatalog_id, type, has_variants")
       .eq("tenant_id", tenant.id)
       .eq("type", "product")
       .eq("is_public", true)
@@ -87,7 +87,7 @@ export default async function InicioPage({ params }: PageProps) {
       .limit(6),
     supabase
       .from("products")
-      .select("id, name, slug, description, price, image_url, subcatalog_id, type")
+      .select("id, name, slug, description, price, image_url, subcatalog_id, type, has_variants")
       .eq("tenant_id", tenant.id)
       .eq("type", "service")
       .eq("is_public", true)

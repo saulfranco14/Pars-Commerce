@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import * as yup from "yup";
 
 import {
@@ -7,6 +7,8 @@ import {
   checkoutWhatsApp,
   requestOrder,
 } from "@/services/publicCartService";
+import { checkoutPublic } from "@/features/checkout/services/publicCheckoutClient";
+import type { CheckoutFulfillmentMethod, CheckoutPaymentMethod, CheckoutDeliveryAddress } from "@/features/checkout/interfaces/publicCheckout";
 import { checkoutFormSchema } from "@/features/orders/validations/checkoutForm";
 import type { MsiOption } from "@/constants/commissionConfig";
 
@@ -24,6 +26,10 @@ interface CartCheckoutFormParams {
   selectedInstallments: number;
   selectedFrequency: CartFrequency;
   msiOption: MsiOption;
+  fulfillmentMethod?: CheckoutFulfillmentMethod;
+  paymentMethod?: CheckoutPaymentMethod;
+  pickupPointId?: string;
+  delivery?: CheckoutDeliveryAddress;
 }
 
 interface CheckoutFormState {
@@ -49,11 +55,28 @@ export function useCartCheckoutForm({
   selectedInstallments,
   selectedFrequency,
   msiOption,
+  fulfillmentMethod = "pickup",
+  paymentMethod = "mercadopago",
+  pickupPointId,
+  delivery,
 }: CartCheckoutFormParams) {
   const [form, setForm] = useState<CheckoutFormState>(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const submissionLock = useRef(false);
+
+  const beginSubmitting = () => {
+    if (submissionLock.current) return false;
+    submissionLock.current = true;
+    setSubmitting(true);
+    return true;
+  };
+
+  const finishSubmitting = () => {
+    submissionLock.current = false;
+    setSubmitting(false);
+  };
 
   const updateField = (field: keyof CheckoutFormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -64,7 +87,7 @@ export function useCartCheckoutForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cartId || !fingerprint) return;
+    if (!cartId || !fingerprint || submitting || !beginSubmitting()) return;
     setError(null);
     setFieldErrors({});
 
@@ -77,22 +100,9 @@ export function useCartCheckoutForm({
         },
         { abortEarly: false },
       );
-      setSubmitting(true);
-
       if (paymentMode === "single") {
-        const result = await checkoutPickup(
-          {
-            tenant_id: tenantId,
-            cart_id: cartId,
-            customer_name: validated.customer_name,
-            customer_email: validated.customer_email,
-            customer_phone: validated.customer_phone,
-            msi_option: msiOption,
-            scheduled_for: form.scheduled_for || null,
-          },
-          fingerprint,
-        );
-        window.location.href = result.redirect_url;
+        const result = await checkoutPublic({ tenant_id: tenantId, cart_id: cartId, customer_name: validated.customer_name, customer_email: validated.customer_email, customer_phone: validated.customer_phone, mode: "single", msi_option: msiOption, scheduled_for: form.scheduled_for || null, fulfillment_method: fulfillmentMethod, payment_method: paymentMethod, pickup_point_id: pickupPointId, delivery }, fingerprint);
+        window.location.href = result.next_action === "open_tracking" && result.tracking_url ? result.tracking_url : result.redirect_url ?? result.payment_link ?? "/";
         return;
       }
 
@@ -128,12 +138,12 @@ export function useCartCheckoutForm({
         );
       }
     } finally {
-      setSubmitting(false);
+      finishSubmitting();
     }
   };
 
   const handleWhatsAppOrder = async () => {
-    if (!cartId || !fingerprint) return;
+    if (!cartId || !fingerprint || submitting || !beginSubmitting()) return;
     setError(null);
     setFieldErrors({});
     try {
@@ -142,7 +152,6 @@ export function useCartCheckoutForm({
         customer_email: form.customer_email.trim(),
         customer_phone: form.customer_phone.trim(),
       }, { abortEarly: false });
-      setSubmitting(true);
       const idempotencyKey = typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
         : `${cartId}-${Date.now()}`;
@@ -164,12 +173,12 @@ export function useCartCheckoutForm({
         setError(err instanceof Error ? err.message : "No pudimos preparar el pedido por WhatsApp.");
       }
     } finally {
-      setSubmitting(false);
+      finishSubmitting();
     }
   };
 
   const handleRequestOrder = async () => {
-    if (!cartId || !fingerprint) return;
+    if (!cartId || !fingerprint || submitting || submissionLock.current) return;
     setError(null);
     setFieldErrors({});
     const name = form.customer_name.trim();
@@ -183,15 +192,15 @@ export function useCartCheckoutForm({
       setFieldErrors(errors);
       return;
     }
+    if (!beginSubmitting()) return;
     try {
-      setSubmitting(true);
       const key = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${cartId}-${Date.now()}`;
       const result = await requestOrder({ tenant_id: tenantId, cart_id: cartId, customer_name: name, customer_phone: phone, customer_email: email || undefined, scheduled_for: form.scheduled_for || null }, fingerprint, key);
       window.location.assign(result.tracking_url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No pudimos enviar tu solicitud.");
     } finally {
-      setSubmitting(false);
+      finishSubmitting();
     }
   };
 

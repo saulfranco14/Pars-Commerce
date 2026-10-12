@@ -10,6 +10,8 @@ export interface CheckoutContext {
   tenantSlug: string;
   recurringConfig: RecurringPurchasesConfig;
   cartItems: CartItemRow[];
+  /** Fixed delivery charge validated against the tenant configuration. */
+  deliveryFee: number;
   subtotal: number;
   customerId: string | null;
   order: {

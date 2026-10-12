@@ -20,11 +20,14 @@ describe("requiresReadyBeforePayment", () => {
     expect(requiresReadyBeforePayment("staff")).toBe(false);
   });
 
+  it("NO espera en ecommerce: pagar abre la preparación y entrega", () => {
+    expect(requiresReadyBeforePayment("public_store")).toBe(false);
+  });
+
   it("un origen desconocido espera — no afloja nada de lo ya publicado", () => {
     expect(requiresReadyBeforePayment(null)).toBe(true);
     expect(requiresReadyBeforePayment(undefined)).toBe(true);
     expect(requiresReadyBeforePayment("")).toBe(true);
-    expect(requiresReadyBeforePayment("public_store")).toBe(true);
   });
 
   it("no se cuela por espacios alrededor", () => {

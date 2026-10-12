@@ -14,6 +14,7 @@ export interface FormSectionProps {
 
 export interface ConfigFinanzasSectionProps {
   tenantId: string;
+  tenantSlug: string;
   canManagePayments: boolean;
   monthlyRent: string;
   onMonthlyRentChange: (v: string) => void;

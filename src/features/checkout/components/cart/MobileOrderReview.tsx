@@ -15,16 +15,16 @@ export function MobileOrderReview({
   totalUnits,
 }: MobileOrderReviewProps) {
   return (
-    <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3">
-      <div className="flex items-center justify-between gap-3 pb-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+    <details className="group rounded-xl border border-gray-100 bg-gray-50/60">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-600">
           Tu pedido
-        </p>
-        <span className="text-xs font-medium text-gray-500 tabular-nums">
-          {totalUnits} {totalUnits === 1 ? "pieza" : "piezas"}
         </span>
-      </div>
-      <ul className="space-y-2">
+        <span className="text-xs font-medium text-gray-500 tabular-nums">
+          {totalUnits} {totalUnits === 1 ? "pieza" : "piezas"} · <span className="font-semibold text-blue-600 group-open:hidden">Ver detalle</span><span className="hidden font-semibold text-blue-600 group-open:inline">Ocultar</span>
+        </span>
+      </summary>
+      <ul className="max-h-64 space-y-2 overflow-y-auto border-t border-gray-100 px-3 py-3">
         {items.map((item) => {
           const product = Array.isArray(item.product)
             ? item.product[0]
@@ -65,6 +65,6 @@ export function MobileOrderReview({
           );
         })}
       </ul>
-    </div>
+    </details>
   );
 }

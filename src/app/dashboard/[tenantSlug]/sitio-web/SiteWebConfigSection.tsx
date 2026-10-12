@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import useSWR from "swr";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Check, Save } from "lucide-react";
 import { useActiveTenant, useTenantStore } from "@/stores/useTenantStore";
 import type { MembershipItem } from "@/stores/useTenantStore";
@@ -16,6 +17,7 @@ import type { SiteTemplate } from "@/services/siteTemplatesService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { SiteWebGeneralTab } from "./SiteWebGeneralTab";
 import { SiteWebRedesTab } from "./SiteWebRedesTab";
+import { FulfillmentSettingsPanel } from "@/features/sitio-web/components/FulfillmentSettingsPanel";
 
 import { SITIO_TABS, type SitioTab } from "@/features/sitio-web/constants/tabs";
 import type { SiteWebConfigSectionProps } from "@/features/sitio-web/interfaces/siteWebConfig";
@@ -28,7 +30,13 @@ export function SiteWebConfigSection({
 }: SiteWebConfigSectionProps) {
   const activeTenant = useActiveTenant();
   const setMemberships = useTenantStore((s) => s.setMemberships);
-  const [activeTab, setActiveTab] = useState<SitioTab>("general");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const initialTab: SitioTab = SITIO_TABS.some((tab) => tab.value === requestedTab)
+    ? requestedTab as SitioTab
+    : "general";
+  const [activeTab, setActiveTab] = useState<SitioTab>(initialTab);
 
   const [publicStoreEnabled, setPublicStoreEnabled] = useState(false);
   const [themeColor, setThemeColor] = useState("");
@@ -98,8 +106,17 @@ export function SiteWebConfigSection({
     setTwitterUrl(sl?.twitter ?? "");
   }, [activeTenant]);
 
+  useEffect(() => {
+    if (SITIO_TABS.some((tab) => tab.value === requestedTab)) {
+      setActiveTab(requestedTab as SitioTab);
+    }
+  }, [requestedTab]);
+
   function handleTabChange(tab: SitioTab) {
     setActiveTab(tab);
+    router.replace(`/dashboard/${tenantSlug}/sitio-web?tab=${tab}`, {
+      scroll: false,
+    });
   }
 
   async function handleSaveAppearance(e: React.FormEvent) {
@@ -233,6 +250,8 @@ export function SiteWebConfigSection({
           />
         )}
 
+        {activeTab === "cobros" && <FulfillmentSettingsPanel tenantId={activeTenant.id} tenantSlug={tenantSlug} />}
+
         {activeTab === "contenido" && publicStoreEnabled && (
           <SiteContentForm
             tenantId={activeTenant.id}
@@ -272,7 +291,7 @@ export function SiteWebConfigSection({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-border/60 bg-background shadow-[0_-2px_8px_rgba(0,0,0,0.04)] px-4 py-3 sm:px-5 min-h-15 flex items-center">
+      {activeTab !== "cobros" && <div className="shrink-0 border-t border-border/60 bg-background shadow-[0_-2px_8px_rgba(0,0,0,0.04)] px-4 py-3 sm:px-5 min-h-15 flex items-center">
         {activeTab === "general" && (
           <button
             type="submit"
@@ -309,7 +328,7 @@ export function SiteWebConfigSection({
             <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
           </Link>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

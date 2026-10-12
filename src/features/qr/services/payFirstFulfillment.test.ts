@@ -49,6 +49,15 @@ describe("avanzar el trabajo de un pedido YA PAGADO", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("sitio web: el pago inicia la postventa, no cierra el pedido", async () => {
+    const result = await advanceFulfillment(
+      asClient(order("public_store", "paid", "received")),
+      { orderId: "o1", target: "in_progress", actorUserId: "u1" },
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.fulfillmentStatus).toBe("in_progress");
+  });
+
   it("mesa pagada: sigue rechazando — ahí pagado es terminado", async () => {
     const result = await advanceFulfillment(
       asClient(order("qr_table", "paid", "ready")),

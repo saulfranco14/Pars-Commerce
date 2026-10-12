@@ -35,7 +35,10 @@ export function PickupTimePicker({
     () => buildPickupPresets(config, now, businessHours),
     [config, now, businessHours],
   );
-  const bounds = useMemo(() => scheduleBounds(config, now), [config, now]);
+  const bounds = useMemo(() => {
+    const next = scheduleBounds(config, now);
+    return { ...next, earliest: new Date(next.earliest.getTime() + 5 * 60_000) };
+  }, [config, now]);
 
   const closedWarning = useMemo(() => {
     if (!value || !businessHours) return null;

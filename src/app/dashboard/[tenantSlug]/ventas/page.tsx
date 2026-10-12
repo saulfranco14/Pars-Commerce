@@ -13,6 +13,7 @@ import { VentasPorOrden } from "@/components/ventas/VentasPorOrden";
 import { VentasPagosTab } from "@/components/ventas/VentasPagosTab";
 import { VentasCortesTab } from "@/components/ventas/VentasCortesTab";
 import { SalesOnboardingOverlay } from "@/components/onboarding/SalesOnboardingOverlay";
+import { ExportReportSheet } from "@/components/ventas/ExportReportSheet";
 
 const VentasResumen = dynamic(
   () =>
@@ -399,6 +400,12 @@ export default function VentasPage() {
           <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
             Ventas y Comisiones
           </h1>
+          <ExportReportSheet
+            tenantId={activeTenant.id}
+            reportType={activeTab === "pagos" ? "commissions" : "sales"}
+            defaultFrom={dateFrom}
+            defaultTo={dateTo}
+          />
         </div>
 
         <VentasFilters
