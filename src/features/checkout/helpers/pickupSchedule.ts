@@ -135,6 +135,12 @@ export function buildPickupPresets(
   hours: BusinessHours | null = null,
 ): PickupPreset[] {
   const { earliest, latest } = scheduleBounds(config, now);
+  // A preset offered exactly at the minimum becomes invalid while the client
+  // types their name. Five minutes of operational margin prevents that race.
+  const safeEarliest = roundUpMinutes(
+    new Date(earliest.getTime() + 5 * MINUTE_MS),
+    5,
+  );
 
   const relative: PickupPreset[] = [
     { id: "1h", label: "En 1 hora", value: new Date(now.getTime() + 60 * MINUTE_MS) },
@@ -144,12 +150,12 @@ export function buildPickupPresets(
 
   const presets = relative.filter(
     (c) =>
-      c.value >= earliest &&
+      c.value >= safeEarliest &&
       c.value <= latest &&
       (!hours || isOpenAt(hours, c.value)),
   );
 
-  const reopening = openingPreset(config, now, hours, earliest, latest);
+  const reopening = openingPreset(config, now, hours, safeEarliest, latest);
   if (reopening) presets.push(reopening);
 
   return presets;
@@ -172,6 +178,7 @@ function openingPreset(
       : null;
   }
 
+  const alreadyOpen = isOpenAt(hours, earliest);
   const opens = nextOpening(hours, earliest);
   if (!opens || opens > latest) return null;
 
@@ -181,10 +188,17 @@ function openingPreset(
   return {
     id: "abre",
     label: sameDay
-      ? `Hoy al abrir (${formatClock(opens)})`
+      ? alreadyOpen
+        ? `Hoy a las ${formatClock(opens)}`
+        : `Hoy al abrir (${formatClock(opens)})`
       : `${capitalize(formatWeekday(opens))} al abrir (${formatClock(opens)})`,
     value: opens,
   };
+}
+
+function roundUpMinutes(date: Date, interval: number): Date {
+  const step = interval * MINUTE_MS;
+  return new Date(Math.ceil(date.getTime() / step) * step);
 }
 
 function formatClock(date: Date): string {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useId } from "react";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Check, ChevronDown, Sparkles } from "lucide-react";
 import {
@@ -43,6 +43,8 @@ import { BillingPlanCard } from "@/features/billing/components/BillingPlanCard";
 
 export default function ConfiguracionPage() {
   const formId = useId();
+  const params = useParams();
+  const tenantSlug = params.tenantSlug as string;
   const activeTenant = useActiveTenant();
   const can = usePermission();
   const activeRole = useTenantStore((s) => s.activeRole());
@@ -349,6 +351,7 @@ export default function ConfiguracionPage() {
                 {paymentProviderResult === "error" && <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">No se pudo completar la conexión con Mercado Pago. Revisa la cuenta e inténtalo de nuevo.</p>}
                 <ConfigFinanzasSection
                   tenantId={activeTenant.id}
+                  tenantSlug={tenantSlug}
                   canManagePayments={activeRole?.name === "owner"}
                   monthlyRent={monthlyRent}
                   onMonthlyRentChange={setMonthlyRent}

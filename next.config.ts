@@ -15,21 +15,81 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/demo", destination: "/soluciones/tienda", permanent: true },
-      { source: "/demo/abarrotes", destination: "/soluciones/tienda", permanent: true },
-      { source: "/demo/boutique", destination: "/soluciones/ropa", permanent: true },
-      { source: "/demo/autolavado", destination: "/soluciones/autolavado", permanent: true },
-      { source: "/demo/:vertical", destination: "/soluciones/:vertical", permanent: true },
-      { source: "/sitio/demo-abarrotes-la-esquina", destination: "/soluciones/tienda", permanent: true },
-      { source: "/sitio/demo-panaderia-la-espiga", destination: "/soluciones/panaderia", permanent: true },
-      { source: "/sitio/demo-deposito-el-barril", destination: "/soluciones/deposito-cerveza", permanent: true },
-      { source: "/sitio/demo-materiales-la-obra", destination: "/soluciones/materiales", permanent: true },
-      { source: "/sitio/demo-tacos-don-chuy", destination: "/soluciones/taqueria", permanent: true },
-      { source: "/sitio/demo-veterinaria-patitas", destination: "/soluciones/veterinaria", permanent: true },
-      { source: "/sitio/demo-mundo-mascota", destination: "/soluciones/mascotas", permanent: true },
-      { source: "/sitio/demo-boutique-luna", destination: "/soluciones/ropa", permanent: true },
-      { source: "/sitio/demo-sneaker-point", destination: "/soluciones/tenis", permanent: true },
-      { source: "/sitio/demo-cafe-niebla", destination: "/soluciones/cafeteria", permanent: true },
-      { source: "/sitio/demo-autolavado-brillo-azul", destination: "/soluciones/autolavado", permanent: true },
+      {
+        source: "/demo/abarrotes",
+        destination: "/soluciones/tienda",
+        permanent: true,
+      },
+      {
+        source: "/demo/boutique",
+        destination: "/soluciones/ropa",
+        permanent: true,
+      },
+      {
+        source: "/demo/autolavado",
+        destination: "/soluciones/autolavado",
+        permanent: true,
+      },
+      {
+        source: "/demo/:vertical",
+        destination: "/soluciones/:vertical",
+        permanent: true,
+      },
+      {
+        source: "/sitio/demo-abarrotes-la-esquina",
+        destination: "/soluciones/tienda",
+        permanent: true,
+      },
+      {
+        source: "/sitio/demo-panaderia-la-espiga",
+        destination: "/soluciones/panaderia",
+        permanent: true,
+      },
+      {
+        source: "/sitio/demo-deposito-el-barril",
+        destination: "/soluciones/deposito-cerveza",
+        permanent: true,
+      },
+      {
+        source: "/sitio/demo-materiales-la-obra",
+        destination: "/soluciones/materiales",
+        permanent: true,
+      },
+      {
+        source: "/sitio/demo-tacos-don-chuy",
+        destination: "/soluciones/taqueria",
+        permanent: true,
+      },
+      {
+        source: "/sitio/demo-veterinaria-patitas",
+        destination: "/soluciones/veterinaria",
+        permanent: true,
+      },
+      {
+        source: "/sitio/demo-mundo-mascota",
+        destination: "/soluciones/mascotas",
+        permanent: true,
+      },
+      {
+        source: "/sitio/demo-boutique-luna",
+        destination: "/soluciones/ropa",
+        permanent: true,
+      },
+      {
+        source: "/sitio/demo-sneaker-point",
+        destination: "/soluciones/tenis",
+        permanent: true,
+      },
+      {
+        source: "/sitio/demo-cafe-niebla",
+        destination: "/soluciones/cafeteria",
+        permanent: true,
+      },
+      {
+        source: "/sitio/demo-autolavado-brillo-azul",
+        destination: "/soluciones/autolavado",
+        permanent: true,
+      },
     ];
   },
   experimental: {

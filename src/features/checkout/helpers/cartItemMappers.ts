@@ -3,6 +3,7 @@ export type CartItemRow = {
   quantity: number;
   price_snapshot: number;
   promotion_id?: string | null;
+  product_variant_id?: string | null;
   product:
     | {
         id: string;

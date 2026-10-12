@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Store, Truck } from "lucide-react";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { PickupBadge } from "@/features/orders/components/order/PickupBadge";
 import { formatOrderDateFull } from "@/lib/formatDate";
@@ -9,13 +9,23 @@ import { getPaymentMethodConfig } from "@/lib/formatPaymentMethod";
 import { getSourceConfig } from "@/lib/formatSource";
 import { useOrder } from "@/features/orders/hooks/useOrder";
 import { formatAgendaDateTime } from "@/features/orders/helpers/agendaBuckets";
+import { resolveOrderFulfillmentMethod } from "@/features/orders/helpers/resolveOrderFulfillmentMethod";
 
 export function OrderHeader() {
   const { order, tenantSlug } = useOrder();
 
   if (!order) return null;
 
-  const isPaid = order.status === "paid" || order.status === "completed";
+  const isPaid =
+    order.status === "paid" ||
+    Boolean(order.paid_at) ||
+    Number(order.paid_total ?? 0) >= Number(order.total) ||
+    order.payment_verification_status === "approved";
+  const fulfillmentMethod = resolveOrderFulfillmentMethod(order);
+  const visibleStatus =
+    order.source === "public_store" && isPaid && order.status === "completed"
+      ? "paid"
+      : order.status;
   const paymentConfig = order.payment_method
     ? getPaymentMethodConfig(order.payment_method)
     : null;
@@ -54,26 +64,39 @@ export function OrderHeader() {
               </span>
             );
           })()}
-        {order.order_type && (
+        {order.source === "public_store" && fulfillmentMethod ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+            {fulfillmentMethod === "delivery" ? (
+              <Truck className="h-3.5 w-3.5" aria-hidden />
+            ) : (
+              <Store className="h-3.5 w-3.5" aria-hidden />
+            )}
+            {fulfillmentMethod === "delivery"
+              ? "Entrega a domicilio"
+              : "Recolección en negocio"}
+          </span>
+        ) : order.order_type ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-border-soft px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
             {order.order_type === "dine_in" && "Mesa"}
             {order.order_type === "takeaway" && "Para llevar"}
             {order.order_type === "qr_payment" && "Cobro QR"}
             {order.table_label ? ` · ${order.table_label}` : ""}
           </span>
-        )}
+        ) : null}
         <StatusBadge
-          status={order.status}
+          status={visibleStatus}
           cancelledFrom={order.cancelled_from}
         />
-        <PickupBadge scheduledFor={order.scheduled_for} status={order.status} />
-        {order.pickup_completed_at && (
+        {fulfillmentMethod === "pickup" ? (
+          <PickupBadge scheduledFor={order.scheduled_for} status={order.status} />
+        ) : null}
+        {fulfillmentMethod === "pickup" && order.pickup_completed_at && (
           <span
             className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800"
-            title={`Recogido el ${formatAgendaDateTime(order.pickup_completed_at)}`}
+            title={`Entregado el ${formatAgendaDateTime(order.pickup_completed_at)}`}
           >
             <CheckCircle2 className="h-3 w-3 shrink-0" aria-hidden />
-            Recogido
+            Entregado
             {order.pickup_completed_user?.display_name
               ? ` · ${order.pickup_completed_user.display_name}`
               : ""}

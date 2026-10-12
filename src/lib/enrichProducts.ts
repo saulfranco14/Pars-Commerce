@@ -13,6 +13,7 @@ export interface ProductBase {
   image_url: string | null;
   subcatalog_id?: string | null;
   type?: "product" | "service" | string;
+  has_variants?: boolean;
 }
 
 export interface EnrichedProduct extends ProductBase {

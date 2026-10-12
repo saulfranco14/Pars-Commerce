@@ -17,7 +17,7 @@ export function ClassicLayout({
 }: SiteLayoutProps) {
   return (
     <div
-      className="flex min-h-screen flex-col bg-gray-50 text-gray-900"
+      className="flex min-h-screen flex-col bg-[#f5f5f7] text-gray-900"
       style={{ ["--accent" as string]: accentColor }}
     >
       <div
@@ -35,13 +35,13 @@ export function ClassicLayout({
           navPages={navPages}
           tenantId={tenant.id}
         />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-4 sm:px-6">
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-5 sm:px-6 sm:py-7">
           {children}
         </main>
       </CartProvider>
       <HideOnCheckout>
       <footer className="mt-auto border-t border-gray-200 bg-gray-900 text-gray-300">
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
           <div className="grid gap-8 sm:grid-cols-3">
             <div>
               <Link

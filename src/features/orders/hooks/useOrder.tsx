@@ -49,11 +49,26 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     : null;
   const teamKeyValue = activeTenant?.id ? teamKey(activeTenant.id) : null;
 
-  // Se refresca solo: el cliente puede declarar su pago desde el celular
-  // mientras el mostrador tiene este detalle abierto.
+  // Sólo se refresca mientras esperamos una acción externa. Una orden pagada
+  // o terminada cambia desde este mismo panel y se actualiza con `mutate`, sin
+  // mantener una consulta periódica a Supabase.
   const { data: orderData, error: orderError, isLoading, mutate } = useSWR<
     OrderDetail | null
-  >(orderKey, swrFetcher, { refreshInterval: ORDER_DETAIL_REFRESH_MS });
+  >(orderKey, swrFetcher, {
+    refreshInterval: (latest) => {
+      if (!latest) return 0;
+      const proofAlreadySubmitted =
+        latest.payment_verification_status === "proof_submitted";
+      const waitsForCustomer =
+        (latest.status === "pending_payment" && !proofAlreadySubmitted) ||
+        latest.payment_verification_status === "proof_required" ||
+        latest.payment_verification_status === "rejected";
+      return waitsForCustomer ? ORDER_DETAIL_REFRESH_MS : 0;
+    },
+    dedupingInterval: 5_000,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+  });
 
   const { data: teamData } = useSWR<TeamMember[]>(teamKeyValue, swrFetcher);
 
@@ -72,6 +87,10 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
 
   const fetchOrder = async () => {
     await mutate();
+  };
+
+  const replaceOrder = async (nextOrder: OrderDetail) => {
+    await mutate(nextOrder, { revalidate: false });
   };
 
   useEffect(() => {
@@ -272,6 +291,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
         ticketOptions,
         logoUrl,
         fetchOrder,
+        replaceOrder,
         handleStatusChange,
         handleAssign,
         handleAssignAndMarkPaid,

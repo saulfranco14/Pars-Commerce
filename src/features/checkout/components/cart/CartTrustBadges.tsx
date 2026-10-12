@@ -9,9 +9,9 @@ interface TrustBadge {
 }
 
 const BADGES: TrustBadge[] = [
-  { icon: ShieldCheck, text: "Pago protegido con Mercado Pago" },
-  { icon: BadgeCheck, text: "Confirmación inmediata al pagar" },
-  { icon: Sparkles, text: "Cambios de pago según tu preferencia" },
+  { icon: ShieldCheck, text: "Tus datos se usan sólo para este pedido" },
+  { icon: BadgeCheck, text: "Confirmación y seguimiento del pedido" },
+  { icon: Sparkles, text: "Entrega o recolección según tu preferencia" },
 ];
 
 export function CartTrustBadges() {

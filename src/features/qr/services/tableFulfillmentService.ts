@@ -89,9 +89,9 @@ export async function advanceFulfillment(
     return err("conflict", "La orden fue cancelada");
 
   // En una mesa el cobro va al final, así que "pagada" significa terminada y
-  // mover su preparación después no tiene sentido. Donde el cliente paga por
-  // adelantado es lo contrario: paga y su pedido queda POR HACER, y este es el
-  // único lugar donde el personal puede avanzarlo.
+  // mover su preparación después no tiene sentido. En autoservicio, mostrador
+  // y ecommerce ocurre lo contrario: el pago abre la postventa y el pedido
+  // todavía debe prepararse, salir a ruta o quedar listo para recoger.
   if (
     order.status === "paid" &&
     requiresReadyBeforePayment(order.source)

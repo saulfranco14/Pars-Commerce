@@ -19,6 +19,7 @@ import {
   STATUS_BORDER,
   PRICE_COLOR,
 } from "@/features/orders/constants/orderCard";
+import { FulfillmentBadge } from "@/features/orders/components/order/FulfillmentBadge";
 
 function accordionLabel(p: number, s: number, expanded: boolean): string {
   if (expanded) return "Ocultar detalle";
@@ -150,6 +151,13 @@ export function OrderCardMobile({
             </div>
             <div className="flex flex-col items-end gap-1.5 pt-0.5">
               <StatusBadge status={order.status} cancelledFrom={order.cancelled_from} />
+              <FulfillmentBadge
+                source={order.source}
+                orderStatus={order.status}
+                fulfillmentStatus={order.fulfillment_status}
+                fulfillmentMethod={order.fulfillment_method}
+                eventTypes={order.delivery_event_types}
+              />
               <PickupBadge
                 scheduledFor={order.scheduled_for}
                 status={order.status}

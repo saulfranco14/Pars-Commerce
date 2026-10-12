@@ -22,6 +22,7 @@ export async function handleSingleCheckout(
     tenantSlug,
     recurringConfig,
     cartItems,
+    deliveryFee,
     subtotal,
     order,
     origin,
@@ -71,6 +72,9 @@ export async function handleSingleCheckout(
 
   const mpItems = [
     ...baseItems,
+    ...(deliveryFee > 0
+      ? [{ id: "delivery-fee", title: "Entrega a domicilio", quantity: 1, unit_price: deliveryFee, currency_id: "MXN" as const }]
+      : []),
     ...(mpFeeRounded > 0 && customerAbsorbsFee
       ? [
           {

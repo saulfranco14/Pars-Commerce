@@ -10,6 +10,7 @@ import { AddItemModal } from "@/components/orders/AddItemModal";
 import { OrderActionButtons } from "@/features/orders/components/order/OrderActionButtons";
 import { DiscountModal } from "@/features/orders/components/payment/DiscountModal";
 import { btnIconDanger, btnPrimary } from "@/components/ui/buttonClasses";
+import { resolveOrderFulfillmentMethod } from "@/features/orders/helpers/resolveOrderFulfillmentMethod";
 
 function ItemThumbnail({ item }: { item: OrderItem }) {
   const product = item.product;
@@ -59,6 +60,7 @@ export function OrderItemsTable() {
   );
 
   if (!order) return null;
+  const fulfillmentMethod = resolveOrderFulfillmentMethod(order);
 
   return (
     <div className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised text-left shadow-sm">
@@ -67,14 +69,20 @@ export function OrderItemsTable() {
           <h2 className="text-base font-semibold text-foreground">
             Productos y servicios
           </h2>
-          {order.order_type && (
+          {order.source === "public_store" && fulfillmentMethod ? (
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {fulfillmentMethod === "delivery"
+                ? "Entrega a domicilio"
+                : "Recolección en negocio"}
+            </p>
+          ) : order.order_type ? (
             <p className="mt-0.5 text-xs text-muted-foreground">
               {order.order_type === "dine_in" && "Tipo: Mesa"}
               {order.order_type === "takeaway" && "Tipo: Para llevar"}
               {order.order_type === "qr_payment" && "Tipo: Cobro QR"}
               {order.table_label ? ` · ${order.table_label}` : ""}
             </p>
-          )}
+          ) : null}
         </div>
         {canAddRemoveItems && activeTenant && (
           <button
@@ -307,7 +315,7 @@ export function OrderItemsTable() {
       </div>
 
       <div className="shrink-0 hidden border-t border-border p-3 md:block">
-        <OrderActionButtons embedded />
+        <OrderActionButtons presentation="inline" />
       </div>
 
       {activeTenant && (

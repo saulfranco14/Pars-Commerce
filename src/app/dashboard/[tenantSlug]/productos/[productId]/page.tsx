@@ -1,18 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef, useId } from "react";
-import { createPortal } from "react-dom";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import { useSWRConfig } from "swr";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { MultiImageUpload } from "@/components/MultiImageUpload";
-import { ArrowLeft, X, Check } from "lucide-react";
-import {
-  btnPrimaryFlex,
-  btnSecondaryFlex,
-} from "@/components/ui/buttonClasses";
+import { ArrowLeft, ChevronDown, Check } from "lucide-react";
+import { CreateCancelActions } from "@/components/layout/CreateCancelActions";
 import { normalizeWholesaleForProduct } from "@/features/productos/helpers/normalizeWholesale";
 import { productFormSchema } from "@/features/productos/validations/productForm";
 import type { ProductDetail } from "@/types/products";
@@ -20,6 +16,10 @@ import { update } from "@/services/productsService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { Subcatalog } from "@/types/subcatalogs";
 import { SubcatalogSelect } from "@/components/forms/SubcatalogSelect";
+import {
+  ProductCommerceDetails,
+  type ProductCommerceDetailsHandle,
+} from "@/features/productos/components/ProductCommerceDetails";
 
 const productKey = (id: string) =>
   `/api/products?product_id=${encodeURIComponent(id)}`;
@@ -28,10 +28,6 @@ const subcatalogsKey = (tenantId: string) =>
 
 export default function EditarProductoPage() {
   const formId = useId();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -98,7 +94,9 @@ export default function EditarProductoPage() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [hasVariants, setHasVariants] = useState(false);
   const syncedProductIdRef = useRef<string | null>(null);
+  const commerceDetailsRef = useRef<ProductCommerceDetailsHandle>(null);
 
   useEffect(() => {
     if (!product || syncedProductIdRef.current === product.id) return;
@@ -195,8 +193,8 @@ export default function EditarProductoPage() {
       setFieldErrors({ cost_price: "El costo debe ser mayor o igual a 0" });
       return;
     }
-    const stockNum = stock.trim() === "" ? undefined : parseInt(stock, 10);
-    if (stockNum !== undefined && (Number.isNaN(stockNum) || stockNum < 0)) {
+    const stockNum = hasVariants || stock.trim() === "" ? undefined : parseInt(stock, 10);
+    if (!hasVariants && stockNum !== undefined && (Number.isNaN(stockNum) || stockNum < 0)) {
       setError("Stock debe ser un número mayor o igual a 0");
       return;
     }
@@ -252,13 +250,14 @@ export default function EditarProductoPage() {
         unit: unit.trim() || "unit",
         theme: theme.trim() || undefined,
         subcatalog_id: subcatalogId || null,
-        track_stock: trackStock,
+        track_stock: hasVariants ? true : trackStock,
         is_public: isPublic,
         image_urls: imageUrls.length > 0 ? imageUrls : undefined,
         stock: stockNum,
         wholesale_min_quantity: wholesale.wholesale_min_quantity,
         wholesale_price: wholesale.wholesale_price,
       });
+      await commerceDetailsRef.current?.save();
       await mutate();
       if (activeTenant) {
         await globalMutate(
@@ -317,13 +316,22 @@ export default function EditarProductoPage() {
       </div>
 
       <div className="rounded-xl border border-border bg-surface-raised shadow-sm">
-        <form id={formId} onSubmit={handleSubmit} className="flex flex-col">
-          <div className="flex-1 overflow-y-auto p-6 pb-40 md:pb-8 md:p-8">
+        <form id={formId} onSubmit={handleSubmit} className="flex flex-col pb-40 md:pb-0">
+          <div className="space-y-3 p-3 sm:p-5 md:p-8">
             {error && (
               <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
                 {error}
               </div>
             )}
+            <details className="group overflow-hidden rounded-xl border border-border bg-surface">
+              <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none sm:px-5">
+                <span>
+                  <span className="block font-bold text-foreground">Información general</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">Nombre, categoría y datos de venta.</span>
+                </span>
+                <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+              </summary>
+              <div className="border-t border-border p-4 sm:p-5">
             <div className="flex flex-col gap-8 md:flex-row md:items-start">
               <div className="min-w-0 flex-1">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -388,9 +396,15 @@ export default function EditarProductoPage() {
                       inputMode="decimal"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      disabled={hasVariants}
+                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:bg-border-soft/50 disabled:text-muted-foreground"
                       placeholder="0.00"
                     />
+                    {hasVariants ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Se calculará con el precio más bajo de tus variantes.
+                      </p>
+                    ) : null}
                     {fieldErrors.price && (
                       <p className="mt-1 text-sm text-red-600">
                         {fieldErrors.price}
@@ -422,6 +436,15 @@ export default function EditarProductoPage() {
                       </p>
                     )}
                   </div>
+                  <details className="group rounded-xl border border-border bg-surface-raised md:col-span-2">
+                    <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-bold text-foreground [&::-webkit-details-marker]:hidden">
+                      <span>
+                        Más información y control
+                        <span className="mt-0.5 block text-xs font-normal text-muted-foreground">SKU, categoría, inventario, visibilidad y mayoreo.</span>
+                      </span>
+                      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+                    </summary>
+                    <div className="grid grid-cols-1 gap-6 border-t border-border p-4 md:grid-cols-2">
                   <div>
                     <label
                       htmlFor="sku"
@@ -582,7 +605,7 @@ export default function EditarProductoPage() {
                     )}
                   </details>
 
-                  {product.type === "product" && (
+                  {product.type === "product" && !hasVariants && (
                     <div className="md:col-span-2">
                       <label
                         htmlFor="stock"
@@ -602,7 +625,7 @@ export default function EditarProductoPage() {
                   )}
 
                   <div className="flex flex-wrap gap-6 md:col-span-2">
-                    <label className="flex cursor-pointer items-center gap-2">
+                    {!hasVariants ? <label className="flex cursor-pointer items-center gap-2">
                       <input
                         type="checkbox"
                         checked={trackStock}
@@ -612,7 +635,11 @@ export default function EditarProductoPage() {
                       <span className="text-sm text-muted-foreground">
                         Controlar stock
                       </span>
-                    </label>
+                    </label> : (
+                      <p className="rounded-lg bg-accent/5 px-3 py-2 text-sm font-medium text-accent">
+                        El stock se controla por cada talla y color.
+                      </p>
+                    )}
                     <label className="flex cursor-pointer items-center gap-2">
                       <input
                         type="checkbox"
@@ -642,10 +669,24 @@ export default function EditarProductoPage() {
                       placeholder="Descripción del producto"
                     />
                   </div>
+                    </div>
+                  </details>
                 </div>
               </div>
-              {activeTenant && (
-                <div className="shrink-0 rounded-lg border border-border bg-border-soft/50 p-4 md:w-72">
+            </div>
+              </div>
+            </details>
+
+            {activeTenant ? (
+              <details className="group overflow-hidden rounded-xl border border-border bg-surface">
+                <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none sm:px-5">
+                  <span>
+                    <span className="block font-bold text-foreground">Imágenes</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">Fotos generales que verá tu cliente.</span>
+                  </span>
+                  <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+                </summary>
+                <div className="border-t border-border p-4 sm:p-5">
                   <MultiImageUpload
                     tenantId={activeTenant.id}
                     productId={productId}
@@ -656,59 +697,25 @@ export default function EditarProductoPage() {
                     }}
                   />
                 </div>
-              )}
-            </div>
+              </details>
+            ) : null}
+
+            <ProductCommerceDetails
+              ref={commerceDetailsRef}
+              productId={productId}
+              basePrice={Number(price.replace(",", ".")) || 0}
+              onVariantModeChange={setHasVariants}
+            />
           </div>
 
-          {/* Mobile: portal at body to bypass ancestor transform */}
-          {mounted &&
-            createPortal(
-              <div
-                className="fixed bottom-0 left-0 right-0 z-9998 flex shrink-0 flex-col gap-3 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:hidden"
-                style={{
-                  paddingBottom:
-                    "max(1rem, calc(1rem + env(safe-area-inset-bottom)))",
-                  paddingLeft: "max(1rem, env(safe-area-inset-left, 1rem))",
-                  paddingRight: "max(1rem, env(safe-area-inset-right, 1rem))",
-                }}
-              >
-                <Link
-                  href={returnTo}
-                  className={`${btnSecondaryFlex} w-full`}
-                >
-                  <X className="h-4 w-4 shrink-0" aria-hidden />
-                  Cancelar
-                </Link>
-                <button
-                  type="submit"
-                  form={formId}
-                  disabled={loading}
-                  className={`${btnPrimaryFlex} w-full`}
-                >
-                  <Check className="h-4 w-4 shrink-0" aria-hidden />
-                  {loading ? "Guardando…" : "Guardar"}
-                </button>
-              </div>,
-              document.body,
-            )}
-          {/* Desktop: inline inside form */}
-          <div className="hidden md:flex md:flex-row-reverse md:gap-3 md:px-8 md:py-4">
-            <Link
-              href={returnTo}
-              className={`${btnSecondaryFlex} md:w-auto md:flex-none`}
-            >
-              <X className="h-4 w-4 shrink-0" aria-hidden />
-              Cancelar
-            </Link>
-            <button
-              type="submit"
-              disabled={loading}
-              className={`${btnPrimaryFlex} md:w-auto md:flex-none`}
-            >
-              <Check className="h-4 w-4 shrink-0" aria-hidden />
-              {loading ? "Guardando…" : "Guardar"}
-            </button>
-          </div>
+          <CreateCancelActions
+            createLabel="Guardar cambios"
+            cancelHref={returnTo}
+            loading={loading}
+            loadingLabel="Guardando…"
+            createIcon={<Check className="h-4 w-4 shrink-0" aria-hidden />}
+            formId={formId}
+          />
         </form>
       </div>
     </div>

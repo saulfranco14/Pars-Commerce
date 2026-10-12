@@ -146,6 +146,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "No se pudo preparar el pedido." }, { status: 500 });
   }
 
+  // WhatsApp se abre después de crear el pedido; ya no debe dejar el mismo
+  // borrador disponible para una segunda orden.
+  await admin.from("public_cart_items").delete().eq("cart_id", cart.id);
+
   return NextResponse.json({
     success: true,
     order_id: order.id,

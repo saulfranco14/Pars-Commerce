@@ -64,6 +64,34 @@ export interface OrderLoanSummary {
   concept: string;
 }
 
+export interface OrderDeliveryEvent {
+  id: string;
+  type: "out_for_delivery" | "delivered" | "pickup_completed" | string;
+  note?: string | null;
+  photo_path?: string | null;
+  created_at: string;
+  created_by?: string | null;
+}
+
+export interface OrderDeliveryDetails {
+  recipient_name?: string | null;
+  recipient_phone?: string | null;
+  address_text?: string | null;
+  reference?: string | null;
+  pickup_point_id?: string | null;
+}
+
+export interface OrderTransferProof {
+  id: string;
+  status: "pending_review" | "approved" | "rejected" | string;
+  file_type: string;
+  amount_claimed?: number | null;
+  rejection_reason?: string | null;
+  created_at: string;
+  /** URL firmada y temporal; nunca se persiste en el navegador. */
+  signed_url?: string | null;
+}
+
 export interface OrderDetail {
   id: string;
   /** Los 8 del id en mayúsculas. Es el número que el cliente canta al pagar. */
@@ -75,6 +103,13 @@ export interface OrderDetail {
    * sin hacer (el cliente pagó por adelantado).
    */
   fulfillment_status?: string | null;
+  /** Cómo recibirá el cliente el pedido del sitio. */
+  fulfillment_method?: "delivery" | "pickup" | null;
+  delivery_fee?: number | null;
+  payment_verification_status?: string | null;
+  delivery_details?: OrderDeliveryDetails | null;
+  delivery_events?: OrderDeliveryEvent[];
+  transfer_proofs?: OrderTransferProof[];
   cancelled_from?: string | null;
   source?: OrderSource | null;
   order_type?: "dine_in" | "takeaway" | "qr_payment" | null;

@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Commerce schema types are regenerated after the migration rollout. */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface StockRequestItem {
   product_id: string;
+  product_variant_id?: string | null;
   quantity: number;
 }
 
@@ -19,34 +21,73 @@ export async function validateOrderStock(
   tenantId: string,
   items: StockRequestItem[],
 ): Promise<StockValidationResult> {
-  const requested = new Map<string, number>();
+  const requestedProducts = new Map<string, number>();
+  const requestedVariants = new Map<string, { productId: string; quantity: number }>();
   for (const item of items) {
     const quantity = Number(item.quantity);
     if (!item.product_id || !Number.isFinite(quantity) || quantity <= 0) {
       continue;
     }
-    requested.set(
-      item.product_id,
-      (requested.get(item.product_id) ?? 0) + quantity,
-    );
+    if (item.product_variant_id) {
+      const current = requestedVariants.get(item.product_variant_id);
+      requestedVariants.set(item.product_variant_id, {
+        productId: item.product_id,
+        quantity: (current?.quantity ?? 0) + quantity,
+      });
+    } else {
+      requestedProducts.set(item.product_id, (requestedProducts.get(item.product_id) ?? 0) + quantity);
+    }
   }
 
-  const productIds = [...requested.keys()];
+  const productIds = [...new Set([
+    ...requestedProducts.keys(),
+    ...[...requestedVariants.values()].map((item) => item.productId),
+  ])];
   if (productIds.length === 0) return { ok: true };
 
-  const { data: products } = await admin
-    .from("products")
-    .select("id, name, type, track_stock")
-    .eq("tenant_id", tenantId)
-    .in("id", productIds)
-    .is("deleted_at", null);
+  type InventoryDb = { from: (table: string) => any };
+  const db = admin as unknown as InventoryDb;
+  const variantIds = [...requestedVariants.keys()];
+  const [{ data: products }, variantsResult] = await Promise.all([
+    db.from("products").select("id, name, type, track_stock, has_variants").eq("tenant_id", tenantId).in("id", productIds).is("deleted_at", null),
+    variantIds.length
+      ? db.from("product_variants").select("id, product_id, selection_key, stock, is_active, archived_at").in("id", variantIds)
+      : Promise.resolve({ data: [] }),
+  ]);
 
-  const trackedProducts = (products ?? []).filter(
-    (product) => product.type === "product" && product.track_stock,
+  const productById = new Map((products ?? []).map((product: { id: string }) => [product.id, product]));
+  const variantById = new Map((variantsResult.data ?? []).map((variant: { id: string }) => [variant.id, variant]));
+
+  for (const [variantId, request] of requestedVariants) {
+    const product = productById.get(request.productId) as { name?: string } | undefined;
+    const variant = variantById.get(variantId) as { product_id: string; selection_key: string; stock: number; is_active: boolean; archived_at: string | null } | undefined;
+    if (!product || !variant || variant.product_id !== request.productId || !variant.is_active || variant.archived_at) {
+      return { ok: false, message: "Una talla o color seleccionado ya no está disponible." };
+    }
+    if (Number(variant.stock) < request.quantity) {
+      return {
+        ok: false,
+        message: `No hay existencias suficientes de ${product.name ?? "este producto"} (${variant.selection_key.replaceAll(":", " ")}). Disponible: ${Math.max(0, Number(variant.stock))}.`,
+      };
+    }
+  }
+
+  for (const product of products ?? []) {
+    if (product.has_variants && requestedProducts.has(product.id)) {
+      return { ok: false, message: `Elige talla o color para ${product.name}.` };
+    }
+  }
+
+  type ProductStockRow = { id: string; name: string; type: string; track_stock: boolean; has_variants?: boolean };
+  type InventoryRow = { product_id: string; quantity: number | string };
+  const productRows = (products ?? []) as ProductStockRow[];
+  const trackedProducts = productRows.filter(
+    (product) =>
+      product.type === "product" && product.track_stock && !product.has_variants && requestedProducts.has(product.id),
   );
   if (trackedProducts.length === 0) return { ok: true };
 
-  const { data: inventory } = await admin
+  const { data: inventory } = await db
     .from("product_inventory")
     .select("product_id, quantity")
     .in(
@@ -54,11 +95,11 @@ export async function validateOrderStock(
       trackedProducts.map((product) => product.id),
     );
   const quantityByProduct = new Map(
-    (inventory ?? []).map((row) => [row.product_id, Number(row.quantity)]),
+    ((inventory ?? []) as InventoryRow[]).map((row) => [row.product_id, Number(row.quantity)]),
   );
 
   for (const product of trackedProducts) {
-    const needed = requested.get(product.id) ?? 0;
+    const needed = requestedProducts.get(product.id) ?? 0;
     const available = Math.max(0, quantityByProduct.get(product.id) ?? 0);
     if (available < needed) {
       return {

@@ -8,8 +8,12 @@
  */
 export const ORDERS_LIST_REFRESH_MS = 15_000;
 
-/** El detalle va más seguido: es donde se ve llegar el pago del cliente. */
-export const ORDER_DETAIL_REFRESH_MS = 10_000;
+/**
+ * El detalle sólo consulta mientras espera una acción externa (por ejemplo,
+ * que el cliente suba un comprobante). Las acciones del personal actualizan
+ * el caché de forma explícita, por lo que no necesitan polling constante.
+ */
+export const ORDER_DETAIL_REFRESH_MS = 30_000;
 
 /** La agenda mira horas, no minutos. */
 export const AGENDA_REFRESH_MS = 30_000;

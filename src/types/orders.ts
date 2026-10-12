@@ -5,6 +5,9 @@ export interface OrderListItem {
   /** Los 8 del id en mayúsculas. Es el número que el cliente canta al pagar. */
   order_number?: string | null;
   status: string;
+  fulfillment_status?: string | null;
+  fulfillment_method?: "delivery" | "pickup" | null;
+  delivery_event_types?: string[];
   cancelled_from?: string | null;
   source?: OrderSource | null;
   order_type?: "dine_in" | "takeaway" | "qr_payment" | null;
