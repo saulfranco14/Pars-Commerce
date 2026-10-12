@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, RefreshCw, Sparkles, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { TransferProofUpload } from "./TransferProofUpload";
+import { MobileActionBar } from "@/components/layout/MobileActionBar";
 
 type TrackingOrderFooterProps = {
   total: number;
@@ -119,8 +120,7 @@ export function TrackingOrderFooter({
 
   return (
     <>
-    <div className="fixed inset-x-0 bottom-0 z-20 rounded-t-[28px] border-x border-t border-border bg-white px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-4 shadow-[0_-12px_32px_rgba(15,23,42,0.14)] sm:left-1/2 sm:right-auto sm:w-[min(42rem,calc(100%-3rem))] sm:-translate-x-1/2">
-      <div className="mx-auto max-w-2xl">
+    <MobileActionBar className="sm:left-1/2 sm:right-auto sm:w-[min(42rem,calc(100%-3rem))] sm:-translate-x-1/2" contentClassName="max-w-2xl">
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Total del pedido</p>
@@ -129,8 +129,7 @@ export function TrackingOrderFooter({
           <span className="mb-1 rounded-full bg-blue-50 px-2.5 py-1 text-right text-[11px] font-semibold text-blue-800">{updated ? "Actualizado ahora" : status}</span>
         </div>
         {button}
-      </div>
-    </div>
+    </MobileActionBar>
     {proofOpen ? (
       <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="proof-sheet-title">
         <button type="button" className="absolute inset-0 cursor-default" onClick={() => setProofOpen(false)} aria-label="Cerrar" />

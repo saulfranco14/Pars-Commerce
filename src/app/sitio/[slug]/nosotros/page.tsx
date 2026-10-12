@@ -44,10 +44,10 @@ export default async function NosotrosPage({ params }: PageProps) {
           <Users className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="site-canvas-heading text-2xl font-bold">
             {content.title || "Nosotros"}
           </h1>
-          <p className="text-sm text-gray-500">Conoce más sobre nosotros</p>
+          <p className="site-canvas-copy text-sm">Conoce más sobre nosotros</p>
         </div>
       </div>
 

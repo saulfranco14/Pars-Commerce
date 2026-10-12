@@ -40,16 +40,16 @@ export default function SiteHeader({
     ? "sticky top-0 z-50 border-b border-gray-800 bg-gray-900/98 shadow-sm backdrop-blur-sm"
     : "sticky top-0 z-50 border-b border-gray-200/80 bg-white/98 shadow-sm backdrop-blur-sm";
   const navLinkClass = isDark
-    ? "text-gray-400 hover:bg-gray-800 hover:text-white"
+    ? "text-gray-300 hover:bg-gray-800 hover:text-white"
     : "text-gray-600 hover:bg-gray-100 hover:text-gray-900";
   const menuButtonClass = isDark
-    ? "text-gray-400 hover:bg-gray-800 hover:text-white"
+    ? "text-gray-300 hover:bg-gray-800 hover:text-white"
     : "text-gray-600 hover:bg-gray-100 hover:text-gray-900";
   const mobilePanelClass = isDark
     ? "bg-gray-900 border-gray-800"
     : "bg-white border-gray-200";
   const mobileLinkClass = isDark
-    ? "text-gray-300 hover:bg-gray-800"
+    ? "text-gray-200 hover:bg-gray-800"
     : "text-gray-700 hover:bg-gray-100";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { itemsCount } = useCartContext();
@@ -111,7 +111,7 @@ export default function SiteHeader({
                   <Search className="h-4 w-4" aria-hidden />
                   Buscar
                 </Link>
-                <CartBadge sitioSlug={slug} accentColor={accentColor} />
+                <CartBadge sitioSlug={slug} accentColor={accentColor} variant={variant} />
               </nav>
               <div className="flex items-center gap-1 md:hidden">
                 <Link
@@ -121,7 +121,7 @@ export default function SiteHeader({
                 >
                   <Search className="h-5 w-5" aria-hidden />
                 </Link>
-                <CartBadge sitioSlug={slug} accentColor={accentColor} />
+                <CartBadge sitioSlug={slug} accentColor={accentColor} variant={variant} />
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen((o) => !o)}

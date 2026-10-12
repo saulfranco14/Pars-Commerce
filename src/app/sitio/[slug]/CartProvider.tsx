@@ -9,6 +9,7 @@ import { getCart } from "@/services/publicCartService";
 import { getCartUpdatedEventName } from "@/lib/cartEvents";
 import { useFingerprint } from "@/hooks/useFingerprint";
 import type { PublicCartItem } from "@/services/publicCartService";
+import { MobileActionBar } from "@/components/layout/MobileActionBar";
 
 interface CartData {
   cart: { id: string; tenant_id: string } | null;
@@ -81,16 +82,28 @@ function CartDock({ lastAdded }: { lastAdded: string | null }) {
   const pathname = usePathname();
   const match = pathname.match(/^\/sitio\/([^/]+)/);
   const slug = match?.[1];
-  if (!slug || pathname.endsWith("/carrito") || itemsCount === 0) return null;
+  const isProductDetail = /^\/sitio\/[^/]+\/productos\/[^/]+$/.test(pathname);
+  if (!slug || pathname.endsWith("/carrito") || isProductDetail || itemsCount === 0) return null;
   return (
     <>
-      <div className="h-24 md:hidden" aria-hidden />
-      <div className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 md:inset-x-auto md:bottom-6 md:right-6 md:w-auto md:max-w-md">
+      <div className="h-32 md:hidden" aria-hidden />
+      <MobileActionBar className="md:hidden" contentClassName="max-w-md">
+        <div className="px-1">
+          <p className="px-2 pb-1.5 text-xs text-muted-foreground" aria-live="polite">
+            {lastAdded ?? "Tu carrito está listo"}
+          </p>
+          <Link href={`/sitio/${slug}/carrito`} className="flex min-h-12 items-center justify-between gap-4 rounded-2xl bg-accent px-4 text-sm font-bold text-accent-foreground transition-transform active:scale-[0.98] md:min-w-72">
+            <span className="flex items-center gap-2"><ShoppingCart className="h-4 w-4" />Ver carrito · {itemsCount}</span>
+            <span className="tabular-nums">${Number(subtotal).toFixed(2)}</span>
+          </Link>
+        </div>
+      </MobileActionBar>
+      <div className="fixed bottom-6 right-6 z-40 hidden w-auto max-w-md md:block">
         <div className="rounded-2xl border border-border/70 bg-surface/98 p-2 shadow-xl backdrop-blur">
           <p className="px-2 pb-1 text-xs text-muted-foreground" aria-live="polite">
             {lastAdded ?? "Tu carrito está listo"}
           </p>
-          <Link href={`/sitio/${slug}/carrito`} className="flex min-h-12 items-center justify-between gap-4 rounded-2xl bg-accent px-4 text-sm font-bold text-accent-foreground transition-transform active:scale-[0.98] md:min-w-72">
+          <Link href={`/sitio/${slug}/carrito`} className="flex min-h-12 min-w-72 items-center justify-between gap-4 rounded-2xl bg-accent px-4 text-sm font-bold text-accent-foreground transition-transform active:scale-[0.98]">
             <span className="flex items-center gap-2"><ShoppingCart className="h-4 w-4" />Ver carrito · {itemsCount}</span>
             <span className="tabular-nums">${Number(subtotal).toFixed(2)}</span>
           </Link>

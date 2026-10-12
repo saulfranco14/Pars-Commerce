@@ -1364,7 +1364,7 @@ export function BusinessSetupWizard() {
               {error}
             </p>
           ) : null}
-          <div className="sticky bottom-0 z-20 -mx-4 mt-8 flex items-center justify-between gap-3 border-t border-border-soft bg-white/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 backdrop-blur sm:mx-0 sm:px-0">
+          <div className="sticky bottom-0 z-20 -mx-4 mt-8 flex items-center justify-between gap-3 rounded-t-[28px] border-x border-t border-border bg-surface px-4 pb-[max(0.875rem,calc(0.875rem+env(safe-area-inset-bottom)))] pt-4 shadow-[0_-12px_32px_rgba(15,23,42,0.14)] sm:mx-0 sm:rounded-none sm:border-x-0 sm:border-border-soft sm:bg-white/95 sm:px-0 sm:shadow-none">
             <button
               type="button"
               onClick={() =>

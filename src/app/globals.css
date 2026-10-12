@@ -125,6 +125,71 @@
   }
 }
 
+/* Public-store theme tokens.  The store content is shared by all layouts, so
+   page-level gray utilities cannot decide contrast by themselves.  These
+   tokens keep a dark canvas readable without turning the white commerce cards
+   into dark cards (product detail, cart and checkout intentionally remain
+   paper-like surfaces). */
+.site-template {
+  --site-canvas-heading: #0f172a;
+  --site-canvas-copy: #475569;
+  --site-canvas-muted: #64748b;
+  --site-canvas-border: rgb(203 213 225 / 0.82);
+  --site-filter-bg: rgb(248 250 252 / 0.96);
+  --site-filter-surface: #ffffff;
+  --site-filter-text: #475569;
+  --site-tint-text: #0f172a;
+  --site-tint-copy: #475569;
+}
+
+.site-template-dark {
+  --site-canvas-heading: #f8fafc;
+  --site-canvas-copy: #cbd5e1;
+  --site-canvas-muted: #94a3b8;
+  --site-canvas-border: rgb(71 85 105 / 0.72);
+  --site-filter-bg: rgb(15 23 42 / 0.94);
+  --site-filter-surface: #172033;
+  --site-filter-text: #dbe5f3;
+  --site-tint-text: #f8fafc;
+  --site-tint-copy: #d3dce9;
+}
+
+.site-canvas-heading { color: var(--site-canvas-heading); }
+.site-canvas-copy { color: var(--site-canvas-copy); }
+.site-canvas-muted { color: var(--site-canvas-muted); }
+.site-canvas-tint-title { color: var(--site-tint-text); }
+.site-canvas-tint-copy { color: var(--site-tint-copy); }
+
+.site-catalog-filter {
+  border-color: var(--site-canvas-border);
+  background-color: var(--site-filter-bg);
+}
+
+.site-catalog-chip {
+  background-color: var(--site-filter-surface);
+  color: var(--site-filter-text);
+}
+
+/* Safety net for site pages created before the semantic classes above. The
+   public store has a deliberately paper-like card system, so the exception is
+   important: only text sitting directly on the dark canvas is inverted.
+   Text inside white/light cards keeps its ink color and continues to meet
+   contrast there. */
+.site-template-dark .site-template-main
+  :is(.text-gray-950, .text-gray-900, .text-gray-800, .text-slate-950, .text-slate-900):not(:is(.bg-white *, .bg-gray-50 *, .bg-gray-100 *, .bg-slate-50 *, .bg-slate-100 *)) {
+  color: var(--site-canvas-heading) !important;
+}
+
+.site-template-dark .site-template-main
+  :is(.text-gray-700, .text-gray-600, .text-slate-700, .text-slate-600):not(:is(.bg-white *, .bg-gray-50 *, .bg-gray-100 *, .bg-slate-50 *, .bg-slate-100 *)) {
+  color: var(--site-canvas-copy) !important;
+}
+
+.site-template-dark .site-template-main
+  :is(.text-gray-500, .text-gray-400, .text-slate-500, .text-slate-400):not(:is(.bg-white *, .bg-gray-50 *, .bg-gray-100 *, .bg-slate-50 *, .bg-slate-100 *)) {
+  color: var(--site-canvas-muted) !important;
+}
+
 html.dark .alert-error {
   border-color: rgb(248 113 113 / 0.5);
   background-color: rgb(127 29 29 / 0.35);

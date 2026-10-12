@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR, { mutate } from "swr";
@@ -27,6 +26,7 @@ import {
   btnDanger,
 } from "@/components/ui/buttonClasses";
 import { BottomSheet } from "@/components/ui/BottomSheet";
+import { MobileActionBar } from "@/components/layout/MobileActionBar";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { WhatsAppShareButton } from "@/components/communications/WhatsAppShareButton";
 import { swrFetcher } from "@/lib/swrFetcher";
@@ -136,12 +136,6 @@ export default function LoanDetailPage() {
   >(null);
   const [copied, setCopied] = useState(false);
   const [checkingSubscription, setCheckingSubscription] = useState(false);
-
-  // Portal mount
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   async function handleRegisterPayment(e: React.FormEvent) {
     e.preventDefault();
@@ -1001,21 +995,13 @@ export default function LoanDetailPage() {
         </div>
       )}
 
-      {/* Bottom action bar — Mobile only (portal) */}
-      {isActive &&
-        mounted &&
-        createPortal(
-          <div
-            className="fixed bottom-0 left-0 right-0 z-40 rounded-t-2xl bg-surface shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:hidden"
-            style={{
-              paddingBottom:
-                "max(1rem, calc(1rem + env(safe-area-inset-bottom)))",
-            }}
-          >
+      {/* Bottom action bar — mobile uses the shared safe-area surface. */}
+      {isActive && (
+          <MobileActionBar className="md:hidden">
             {!confirmCancel ? (
               <>
                 {/* Acciones principales */}
-                <div className="flex gap-2 px-4 pt-4">
+                <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => {
@@ -1053,12 +1039,12 @@ export default function LoanDetailPage() {
                   )}
                 </div>
                 {mpLinkError && (
-                  <p className="px-4 pt-1.5 text-xs text-red-600">
+                  <p className="pt-1.5 text-xs text-red-600">
                     {mpLinkError}
                   </p>
                 )}
                 {/* Cancelar — separado visualmente */}
-                <div className="px-4 pt-2 pb-0">
+                <div className="pt-2">
                   <button
                     type="button"
                     onClick={() => setConfirmCancel(true)}
@@ -1070,7 +1056,7 @@ export default function LoanDetailPage() {
                 </div>
               </>
             ) : (
-              <div className="px-4 pt-4 space-y-2">
+              <div className="space-y-2">
                 <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-3 py-3">
                   <AlertTriangle
                     className="mt-0.5 h-4 w-4 shrink-0 text-red-600"
@@ -1110,8 +1096,7 @@ export default function LoanDetailPage() {
                 </div>
               </div>
             )}
-          </div>,
-          document.body,
+          </MobileActionBar>
         )}
 
       {/* Pago — BottomSheet en mobile */}

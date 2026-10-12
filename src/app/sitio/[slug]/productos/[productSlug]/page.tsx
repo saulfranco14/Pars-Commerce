@@ -103,11 +103,11 @@ function RelatedRail({
         <div>
           <h2
             id={`${title.replace(/\s+/g, "-").toLowerCase()}-title`}
-            className="text-2xl font-bold tracking-[-0.025em] text-gray-950 sm:text-3xl"
+            className="site-canvas-heading text-2xl font-bold tracking-[-0.025em] sm:text-3xl"
           >
             {title}
           </h2>
-          <p className="mt-1 text-sm text-gray-500">{description}</p>
+          <p className="site-canvas-copy mt-1 text-sm">{description}</p>
         </div>
       </div>
       <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
@@ -306,10 +306,10 @@ export default async function ProductoDetallePage({ params }: PageProps) {
   }>;
 
   return (
-    <div className="space-y-9 pb-12 sm:space-y-12 sm:pb-16">
+    <div className="space-y-9 pb-[calc(10rem+env(safe-area-inset-bottom))] sm:space-y-12 md:pb-16">
       <Link
         href={`/sitio/${slug}/productos`}
-        className="inline-flex min-h-11 mb-2 items-center gap-2 rounded-xl px-2 text-sm font-semibold text-gray-600 transition-colors hover:bg-white hover:text-gray-950"
+        className="site-canvas-copy inline-flex min-h-11 mb-2 items-center gap-2 rounded-xl px-2 text-sm font-semibold transition-colors hover:bg-white hover:text-gray-950"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Seguir comprando
@@ -355,6 +355,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
 
           <div className="mt-6 flex flex-wrap items-end gap-x-3 gap-y-1">
             <span
+              id="product-price"
               className="text-[2.5rem] font-bold tracking-[-0.04em]"
               style={{ color: accentColor }}
             >
@@ -384,6 +385,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
             <ProductDetailActions
               productId={product.id}
               tenantId={tenant.id}
+              price={displayPrice}
               accentColor={accentColor}
               waHref={waHref}
             />
