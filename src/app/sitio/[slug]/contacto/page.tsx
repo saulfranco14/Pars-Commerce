@@ -83,10 +83,10 @@ export default async function ContactoPage({ params }: PageProps) {
           <MessageCircle className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="site-canvas-heading text-2xl font-bold">
             {content.title || "Contacto"}
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="site-canvas-copy text-sm">
             Estamos para ayudarte
           </p>
         </div>

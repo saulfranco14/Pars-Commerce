@@ -125,7 +125,7 @@ export function CheckoutFulfillmentStep({
   };
 
   const footer = (
-    <div className="border-t border-gray-200 bg-white px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 xl:px-5 xl:pb-4">
+    <div className="rounded-t-[28px] border-x border-t border-border bg-white px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-4 shadow-[0_-12px_32px_rgba(15,23,42,0.14)] xl:rounded-none xl:border-x-0 xl:px-5 xl:pb-4 xl:shadow-none">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="text-xs text-gray-500">
           <p>{fulfillment === "delivery" ? "Entrega a domicilio" : "Recolección"}</p>
@@ -137,7 +137,7 @@ export function CheckoutFulfillmentStep({
         type="button"
         disabled={tab === "fulfillment" ? !fulfillmentComplete : !fulfillmentComplete || !paymentAvailable}
         onClick={() => tab === "fulfillment" ? setTab("payment") : onContinue(selection)}
-        className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl px-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl px-4 text-base font-bold text-white shadow-sm transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
         style={{ backgroundColor: accentColor }}
       >
         {tab === "fulfillment" ? "Continuar a forma de pago" : "Continuar con mis datos"}

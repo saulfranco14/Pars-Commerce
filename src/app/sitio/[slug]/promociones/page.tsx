@@ -111,10 +111,10 @@ export default async function PromocionesPage({ params }: PageProps) {
           <Tag className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+          <h1 className="site-canvas-heading text-2xl font-bold sm:text-3xl">
             Promociones
           </h1>
-          <p className="mt-0.5 text-sm text-gray-500">
+          <p className="site-canvas-copy mt-0.5 text-sm">
             Aprovecha nuestras ofertas especiales
           </p>
         </div>
@@ -133,7 +133,7 @@ export default async function PromocionesPage({ params }: PageProps) {
       ) : (
         <>
           <section>
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">
+            <h2 className="site-canvas-heading mb-4 text-lg font-semibold">
               Ofertas destacadas
             </h2>
             <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3">

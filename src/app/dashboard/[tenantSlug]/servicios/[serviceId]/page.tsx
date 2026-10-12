@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useId } from "react";
-import { createPortal } from "react-dom";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, X, Check } from "lucide-react";
@@ -18,6 +17,7 @@ import { update } from "@/services/productsService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { Subcatalog } from "@/types/subcatalogs";
 import { SubcatalogSelect } from "@/components/forms/SubcatalogSelect";
+import { MobileActionBar } from "@/components/layout/MobileActionBar";
 
 const productKey = (id: string) =>
   `/api/products?product_id=${encodeURIComponent(id)}`;
@@ -26,10 +26,6 @@ const subcatalogsKey = (tenantId: string) =>
 
 export default function EditarServicioPage() {
   const formId = useId();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -468,25 +464,7 @@ export default function EditarServicioPage() {
             </div>
           </div>
 
-          {/* Mobile: portal at body to bypass ancestor transform */}
-          {mounted &&
-            createPortal(
-              <div
-                className="fixed bottom-0 left-0 right-0 z-9998 flex shrink-0 flex-col gap-3 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:hidden"
-                style={{
-                  paddingBottom:
-                    "max(1rem, calc(1rem + env(safe-area-inset-bottom)))",
-                  paddingLeft: "max(1rem, env(safe-area-inset-left, 1rem))",
-                  paddingRight: "max(1rem, env(safe-area-inset-right, 1rem))",
-                }}
-              >
-                <Link
-                  href={returnTo}
-                  className={`${btnSecondaryFlex} w-full`}
-                >
-                  <X className="h-4 w-4 shrink-0" aria-hidden />
-                  Cancelar
-                </Link>
+          <MobileActionBar className="md:hidden" contentClassName="flex flex-col gap-3">
                 <button
                   type="submit"
                   form={formId}
@@ -496,9 +474,14 @@ export default function EditarServicioPage() {
                   <Check className="h-4 w-4 shrink-0" aria-hidden />
                   {loading ? "Guardando…" : "Guardar"}
                 </button>
-              </div>,
-              document.body,
-            )}
+                <Link
+                  href={returnTo}
+                  className={`${btnSecondaryFlex} w-full`}
+                >
+                  <X className="h-4 w-4 shrink-0" aria-hidden />
+                  Cancelar
+                </Link>
+          </MobileActionBar>
           {/* Desktop: inline inside form */}
           <div className="hidden md:flex md:flex-row-reverse md:gap-3 md:px-8 md:py-4">
             <Link

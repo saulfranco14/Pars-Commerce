@@ -66,8 +66,8 @@ export default async function CarritoPage({ params }: PageProps) {
           <ShoppingCart className="h-6 w-6" aria-hidden />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Carrito</h1>
-          <p className="mt-0.5 text-sm text-gray-500">Revisa tu pedido y finaliza</p>
+          <h1 className="site-canvas-heading text-2xl font-bold tracking-tight">Carrito</h1>
+          <p className="site-canvas-copy mt-0.5 text-sm">Revisa tu pedido y finaliza</p>
         </div>
       </div>
       <CarritoContent

@@ -37,7 +37,7 @@ export function LayoutSwitcher({
   const LayoutComponent = LAYOUT_MAP[layoutVariant] ?? ClassicLayout;
 
   return (
-    <div className="min-w-0 overflow-x-hidden">
+    <div className="site-template min-w-0 overflow-x-hidden">
       <LayoutComponent tenant={tenant} navPages={navPages} accentColor={accentColor}>
         {children}
       </LayoutComponent>

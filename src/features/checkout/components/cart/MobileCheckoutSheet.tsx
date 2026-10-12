@@ -115,7 +115,7 @@ export function MobileCheckoutSheet({
           {children}
         </div>
 
-        {showPrimaryAction && <div className="shrink-0 border-t border-gray-100 bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur">
+        {showPrimaryAction && <div className="shrink-0 rounded-t-[28px] border-x border-t border-border bg-white px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-4 shadow-[0_-12px_32px_rgba(15,23,42,0.14)]">
           <div className="mb-2 flex items-center justify-between gap-3 text-sm">
             <span className="text-gray-600">Total del pedido</span>
             <strong className="tabular-nums text-gray-950">${subtotal.toFixed(2)}</strong>
@@ -125,7 +125,7 @@ export function MobileCheckoutSheet({
             form={primaryAction ? undefined : "m-checkout-form"}
             onClick={primaryAction}
             disabled={submitting}
-            className="inline-flex min-h-13 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-base font-semibold text-white shadow-sm transition-opacity hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-13 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-base font-bold text-white shadow-sm transition-opacity hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
             style={{ backgroundColor: accentColor }}
           >
             {submitting ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <ArrowRight className="h-5 w-5" aria-hidden />}

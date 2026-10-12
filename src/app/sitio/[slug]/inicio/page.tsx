@@ -362,10 +362,10 @@ export default async function InicioPage({ params }: PageProps) {
         <section>
           <div className="mb-6 flex items-end justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+              <h2 className="site-canvas-heading text-2xl font-bold sm:text-3xl">
                 Lo más nuevo
               </h2>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="site-canvas-copy mt-1 text-sm">
                 Productos para descubrir y agregar a tu pedido
               </p>
             </div>
@@ -414,10 +414,10 @@ export default async function InicioPage({ params }: PageProps) {
         <section>
           <div className="mb-6 flex items-end justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+              <h2 className="site-canvas-heading text-2xl font-bold sm:text-3xl">
                 Servicios para ti
               </h2>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="site-canvas-copy mt-1 text-sm">
                 Elige, agenda o solicita atención desde el mismo sitio
               </p>
             </div>
@@ -519,11 +519,11 @@ export default async function InicioPage({ params }: PageProps) {
         <section>
           <div className="mb-6 flex items-end justify-between">
             <div>
-              <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-900 sm:text-3xl">
+              <h2 className="site-canvas-heading flex items-center gap-2 text-2xl font-bold sm:text-3xl">
                 <Tag className="h-6 w-6" style={{ color: accentColor }} />
                 Promociones vigentes
               </h2>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="site-canvas-copy mt-1 text-sm">
                 Ofertas por tiempo limitado
               </p>
             </div>
@@ -611,10 +611,10 @@ export default async function InicioPage({ params }: PageProps) {
               >
                 <IconComponent className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 font-bold text-gray-900">
+              <h3 className="site-canvas-tint-title mt-4 font-bold">
                 {item.title || "Card"}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-gray-600">
+              <p className="site-canvas-tint-copy mt-2 text-sm leading-relaxed">
                 {item.description || ""}
               </p>
             </div>
@@ -711,7 +711,7 @@ export default async function InicioPage({ params }: PageProps) {
           className="rounded-2xl px-8 py-5"
           style={{ backgroundColor: `${accentColor}15` }}
         >
-          <p className="text-center font-semibold text-gray-800">
+          <p className="site-canvas-tint-title text-center font-semibold">
             {deliveryBannerText}
           </p>
         </section>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
-  Check,
   Loader2,
   MessageCircle,
   PackageCheck,
@@ -12,6 +13,8 @@ import {
 import { addItem } from "@/services/publicCartService";
 import { dispatchCartUpdated } from "@/lib/cartEvents";
 import { useFingerprint } from "@/hooks/useFingerprint";
+import { useCartContext } from "../../CartProvider";
+import { MobileActionBar } from "@/components/layout/MobileActionBar";
 
 type OptionGroup = { id: string; name: string; display_order: number };
 type OptionValue = {
@@ -40,6 +43,7 @@ type VariantData = {
 interface ProductDetailActionsProps {
   productId: string;
   tenantId: string;
+  price: number;
   accentColor: string;
   waHref: string | null;
 }
@@ -47,16 +51,32 @@ interface ProductDetailActionsProps {
 export default function ProductDetailActions({
   productId,
   tenantId,
+  price,
   accentColor,
   waHref,
 }: ProductDetailActionsProps) {
   const fingerprint = useFingerprint();
+  const pathname = usePathname();
+  const { items, itemsCount } = useCartContext();
   const [loading, setLoading] = useState(false);
   const [variants, setVariants] = useState<VariantData | null>(null);
   const [selected, setSelected] = useState<Record<string, string>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
+  const [mainPriceVisible, setMainPriceVisible] = useState(true);
+
+  useEffect(() => {
+    const priceElement = document.getElementById("product-price");
+    if (!priceElement) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setMainPriceVisible(entry.isIntersecting),
+      { threshold: 0.15 },
+    );
+    observer.observe(priceElement);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -139,13 +159,58 @@ export default function ProductDetailActions({
       await addItem(tenantId, productId, 1, fingerprint, selectedVariant?.id);
       dispatchCartUpdated({ label: "Producto agregado al carrito" });
       setAdded(true);
-      window.setTimeout(() => setAdded(false), 1800);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "No se pudo agregar al carrito.");
     } finally {
       setLoading(false);
     }
   };
+  const selectedItemAlreadyInCart =
+    !needsSelection &&
+    items.some(
+      (item) =>
+        item.product_id === productId &&
+        (!selectedVariant?.id || item.product_variant_id === selectedVariant.id),
+    );
+  const cartHref = pathname.replace(/\/productos\/[^/]+$/, "/carrito");
+  const shouldShowCartAction = added || selectedItemAlreadyInCart;
+  const actionPrice = Number(selectedVariant?.price ?? price);
+
+  const renderPrimaryCartAction = () =>
+    shouldShowCartAction ? (
+      <Link
+        href={cartHref}
+        className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl px-6 text-base font-bold text-white shadow-sm transition-[transform,box-shadow,opacity] hover:shadow-md active:scale-[0.985]"
+        style={{ backgroundColor: accentColor }}
+      >
+        <ShoppingCart className="h-5 w-5" aria-hidden />
+        Ver carrito · {itemsCount}
+      </Link>
+    ) : (
+      <button
+        type="button"
+        onClick={handleAddToCart}
+        disabled={loading || !fingerprint || unavailable || needsSelection}
+        aria-busy={loading}
+        className="flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-6 text-base font-bold text-white shadow-sm transition-[transform,box-shadow,opacity] hover:shadow-md active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50"
+        style={{ backgroundColor: accentColor }}
+      >
+        {loading ? (
+          <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+        ) : (
+          <ShoppingCart className="h-5 w-5" aria-hidden />
+        )}
+        {loading
+          ? "Agregando…"
+          : loadingOptions
+            ? "Cargando opciones…"
+            : unavailable
+              ? "Agotado"
+              : needsSelection
+                ? "Elige tus opciones"
+                : "Agregar al carrito"}
+      </button>
+    );
 
   return (
     <div className="flex flex-col gap-4 pt-5">
@@ -177,6 +242,7 @@ export default function ProductDetailActions({
                     aria-pressed={active}
                     onClick={() => {
                       setActionError(null);
+                      setAdded(false);
                       setSelected((current) => ({
                         ...current,
                         [group.id]: value.id,
@@ -268,33 +334,7 @@ export default function ProductDetailActions({
         </p>
       ) : null}
 
-      <button
-        type="button"
-        onClick={handleAddToCart}
-        disabled={loading || !fingerprint || unavailable || needsSelection}
-        aria-busy={loading}
-        className="flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-6 text-base font-bold text-white shadow-sm transition-[transform,box-shadow,opacity] hover:shadow-md active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50"
-        style={{ backgroundColor: accentColor }}
-      >
-        {loading ? (
-          <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-        ) : added ? (
-          <Check className="h-5 w-5" aria-hidden />
-        ) : (
-          <ShoppingCart className="h-5 w-5" aria-hidden />
-        )}
-        {loading
-          ? "Agregando…"
-          : added
-            ? "Agregado al carrito"
-            : loadingOptions
-              ? "Cargando opciones…"
-              : unavailable
-                ? "Agotado"
-                : needsSelection
-                  ? "Elige tus opciones"
-                  : "Agregar al carrito"}
-      </button>
+      <div className="hidden md:block">{renderPrimaryCartAction()}</div>
 
       {waHref ? (
         <a
@@ -307,6 +347,18 @@ export default function ProductDetailActions({
           Preguntar por WhatsApp
         </a>
       ) : null}
+
+      <MobileActionBar className="md:hidden" contentClassName="space-y-2">
+        {!mainPriceVisible ? (
+          <div className="flex items-center justify-between gap-3 px-1 text-sm">
+            <span className="font-medium text-muted-foreground">Precio</span>
+            <strong className="text-lg font-bold tabular-nums text-foreground">
+              ${actionPrice.toFixed(2)}
+            </strong>
+          </div>
+        ) : null}
+        {renderPrimaryCartAction()}
+      </MobileActionBar>
     </div>
   );
 }
