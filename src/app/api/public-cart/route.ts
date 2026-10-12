@@ -334,17 +334,23 @@ async function handleAddPromotion(
     );
   }
 
-  const { data: products } = await supabase
+  const commerce = supabase as unknown as CommerceAdmin;
+  const { data: products } = await commerce
     .from("products")
     .select("id, price, has_variants")
     .in("id", uniqueIds)
     .eq("tenant_id", tenantId)
     .eq("is_public", true);
 
+  const promotionProducts = (products ?? []) as Array<{
+    id: string;
+    price: number | string;
+    has_variants?: boolean;
+  }>;
   const productsMap = new Map(
-    (products ?? []).map((p: { id: string; price: number }) => [p.id, Number(p.price)])
+    promotionProducts.map((p) => [p.id, Number(p.price)])
   );
-  if ((products ?? []).some((product: { has_variants?: boolean }) => product.has_variants)) {
+  if (promotionProducts.some((product) => product.has_variants)) {
     return NextResponse.json(
       { error: "Elige la talla o el color del producto antes de aplicar esta promoción." },
       { status: 400 },

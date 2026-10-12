@@ -193,7 +193,7 @@ export async function executePublicCheckout({
     return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
   }
 
-  const normalizedItems = cartItems as CartItemRow[];
+  const normalizedItems = cartItems as unknown as CartItemRow[];
   const cartSubtotal = calcCartSubtotal(normalizedItems);
   const deliveryFee = fulfillmentMethod === "delivery" ? Number(config?.delivery_fee ?? 0) : 0;
   const subtotal = cartSubtotal + deliveryFee;

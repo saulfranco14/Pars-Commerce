@@ -78,8 +78,11 @@ export async function validateOrderStock(
     }
   }
 
-  const trackedProducts = (products ?? []).filter(
-    (product: { id: string; type: string; track_stock: boolean; has_variants?: boolean }) =>
+  type ProductStockRow = { id: string; name: string; type: string; track_stock: boolean; has_variants?: boolean };
+  type InventoryRow = { product_id: string; quantity: number | string };
+  const productRows = (products ?? []) as ProductStockRow[];
+  const trackedProducts = productRows.filter(
+    (product) =>
       product.type === "product" && product.track_stock && !product.has_variants && requestedProducts.has(product.id),
   );
   if (trackedProducts.length === 0) return { ok: true };
@@ -92,7 +95,7 @@ export async function validateOrderStock(
       trackedProducts.map((product) => product.id),
     );
   const quantityByProduct = new Map(
-    (inventory ?? []).map((row) => [row.product_id, Number(row.quantity)]),
+    ((inventory ?? []) as InventoryRow[]).map((row) => [row.product_id, Number(row.quantity)]),
   );
 
   for (const product of trackedProducts) {

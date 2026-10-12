@@ -64,7 +64,7 @@ export default async function PromocionesPage({ params }: PageProps) {
     const [productsRes, imagesRes] = await Promise.all([
       supabase
         .from("products")
-        .select("id, name, slug, description, price, image_url, subcatalog_id, has_variants")
+        .select("id, name, slug, description, price, image_url, subcatalog_id")
         .in("id", allProductIds)
         .eq("tenant_id", tenant.id)
         .eq("is_public", true)

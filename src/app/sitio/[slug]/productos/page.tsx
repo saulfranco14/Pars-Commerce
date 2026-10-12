@@ -67,7 +67,7 @@ export default async function ProductosPage({
       let q = supabase
         .from("products")
         // Do not let an optional ordering migration make a published catalog empty.
-        .select("id, name, slug, description, price, image_url, subcatalog_id, type, has_variants")
+        .select("id, name, slug, description, price, image_url, subcatalog_id, type")
         .eq("tenant_id", tenant.id)
         .eq("is_public", true)
         .is("deleted_at", null)

@@ -52,7 +52,7 @@ export function resolveOrderActionAvailability({
       order.payment_verification_status ?? "",
     );
 
-  const fulfillmentMethod = resolveOrderFulfillmentMethod(order);
+  const fulfillmentMethod = resolveOrderFulfillmentMethod(order) ?? "pickup";
   const completionType =
     fulfillmentMethod === "delivery" ? "delivered" : "pickup_completed";
   const deliveryEvents = order.delivery_events ?? [];

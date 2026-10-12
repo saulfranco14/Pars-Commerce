@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/auth/requirePermission";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { validateOrderStock } from "@/features/inventory/services/orderStockValidationService";
+import {
+  type StockRequestItem,
+  validateOrderStock,
+} from "@/features/inventory/services/orderStockValidationService";
 
 export async function POST(_: Request, { params }: { params: Promise<{ orderId: string }> }) {
   const supabase = await createClient();
@@ -16,7 +19,10 @@ export async function POST(_: Request, { params }: { params: Promise<{ orderId: 
   if (!await requirePermission(user.id, order.tenant_id, "order.take")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (order.status !== "pending_acceptance") return NextResponse.json({ error: "Este pedido ya fue atendido." }, { status: 409 });
   const { data: items } = await admin.from("order_items").select("product_id, product_variant_id, quantity").eq("order_id", orderId);
-  const stock = await validateOrderStock(admin, order.tenant_id, items ?? []);
+  // `product_variant_id` is part of the commerce migration. Keep this API
+  // boundary explicit while generated Supabase types catch up with the schema.
+  const stockItems = (items ?? []) as unknown as StockRequestItem[];
+  const stock = await validateOrderStock(admin, order.tenant_id, stockItems);
   if (!stock.ok) return NextResponse.json({ error: stock.message }, { status: 409 });
   const { error } = await admin.from("orders").update({ status: "assigned", accepted_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", orderId).eq("status", "pending_acceptance");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

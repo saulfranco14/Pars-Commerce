@@ -35,6 +35,10 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts"],
     viewTransition: true,
+    // En Windows/WSL el proceso hijo de validación puede cerrarse sin reportar
+    // el diagnóstico. Los workers de hilo conservan lint y tipos, pero evitan
+    // ese cierre prematuro del worker de build.
+    workerThreads: true,
   },
   images: {
     remotePatterns: [

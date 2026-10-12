@@ -45,7 +45,8 @@ export async function POST(request: Request) {
     fileName = `${report_type === "sales" ? "ventas" : "comisiones"}-${safeName(tenant.name)}.pdf`;
   }
   await admin.from("report_exports").insert({ tenant_id, requested_by: user.id, report_type, format, filters, row_count: orders.length });
-  return new NextResponse(bytes, { headers: { "Content-Type": format === "xlsx" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : "application/pdf", "Content-Disposition": `attachment; filename="${fileName}"`, "Cache-Control": "no-store" } });
+  const responseBody = new Uint8Array(bytes).buffer as ArrayBuffer;
+  return new NextResponse(responseBody, { headers: { "Content-Type": format === "xlsx" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : "application/pdf", "Content-Disposition": `attachment; filename="${fileName}"`, "Cache-Control": "no-store" } });
 }
 
 async function exportWorkbook(input: { tenantName: string; reportType: string; orders: ExportOrder[]; totalSales: number; totalCollected: number; filters: Record<string, unknown> }) {

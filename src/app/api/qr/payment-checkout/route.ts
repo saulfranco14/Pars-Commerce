@@ -154,6 +154,7 @@ export async function POST(request: Request) {
         },
       },
     ],
+    deliveryFee: 0,
     subtotal: total,
     customerId,
     order,

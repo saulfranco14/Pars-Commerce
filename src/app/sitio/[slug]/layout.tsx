@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- site_slug was added by the commerce migration and generated types are pending refresh. */
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -18,8 +19,9 @@ export async function generateMetadata({ params }: Pick<LayoutProps, "params">):
 export default async function SitioLayout({ children, params }: LayoutProps) {
   const { slug } = await params;
   const supabase = createAdminClient();
+  const db = supabase as unknown as { from: (table: string) => any };
 
-  const { data: tenant, error: tenantError } = await supabase
+  const { data: tenant, error: tenantError } = await db
     .from("tenants")
     .select(
       "id, name, description, logo_url, theme_color, slug, site_slug, whatsapp_phone, social_links, site_template_id, accepting_orders, settings",
@@ -34,7 +36,7 @@ export default async function SitioLayout({ children, params }: LayoutProps) {
 
   let layoutVariant = "classic";
   if (tenant.site_template_id) {
-    const { data: template } = await supabase
+    const { data: template } = await db
       .from("site_templates")
       .select("layout_variant")
       .eq("id", tenant.site_template_id)
@@ -45,13 +47,13 @@ export default async function SitioLayout({ children, params }: LayoutProps) {
   }
 
   const [pagesRes, catalogRes] = await Promise.all([
-    supabase
+    db
       .from("tenant_site_pages")
       .select("id, slug, title, position")
       .eq("tenant_id", tenant.id)
       .eq("is_enabled", true)
       .order("position", { ascending: true }),
-    supabase
+    db
       .from("products")
       .select("type")
       .eq("tenant_id", tenant.id)
@@ -59,10 +61,11 @@ export default async function SitioLayout({ children, params }: LayoutProps) {
       .is("deleted_at", null),
   ]);
 
-  const catalogItems = catalogRes.data ?? [];
+  const catalogItems = (catalogRes.data ?? []) as Array<{ type: string }>;
   const productsCount = catalogItems.filter((item) => item.type === "product").length;
   const servicesCount = catalogItems.filter((item) => item.type === "service").length;
-  const navPages = (pagesRes.data ?? []).flatMap((page) => {
+  type SitePage = { id: string; slug: string; title: string; position: number; href?: string };
+  const navPages = ((pagesRes.data ?? []) as SitePage[]).flatMap((page) => {
     if (page.slug !== "productos") return [page];
 
     const catalogLinks = [];
