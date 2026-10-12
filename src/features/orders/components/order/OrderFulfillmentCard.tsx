@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Loader2, PackageCheck, Undo2 } from "lucide-react";
+import { Check, Loader2, MapPin, PackageCheck, Undo2 } from "lucide-react";
 
 import { Notification } from "@/components/ui/Notification";
 import { FULFILLMENT_STEPS } from "@/features/qr/constants/fulfillmentStatusMeta";
 import { useOrder } from "@/features/orders/hooks/useOrder";
 import { advanceOrderFulfillment } from "@/features/orders/services/fulfillmentClientService";
 import { usePermission } from "@/stores/useTenantStore";
+import { CommerceFulfillmentTracker } from "@/features/orders/components/tracking/CommerceFulfillmentTracker";
 
 import type { FulfillmentStatus } from "@/features/qr/services/tableFulfillmentService";
+import { resolveOrderFulfillmentMethod } from "@/features/orders/helpers/resolveOrderFulfillmentMethod";
 
 /** Solo el verbo del botón es de aquí; el orden y las etiquetas son compartidos. */
 const ADVANCE_LABEL: Record<string, string> = {
@@ -25,7 +27,12 @@ const STEPS = FULFILLMENT_STEPS.map((step) => ({
 }));
 
 /** Orígenes donde el cliente se va con un número y el trabajo queda pendiente. */
-const TRACKED_SOURCES = new Set(["kiosk", "staff", "qr_table"]);
+const TRACKED_SOURCES = new Set([
+  "kiosk",
+  "staff",
+  "qr_table",
+  "public_store",
+]);
 
 /**
  * Avance del trabajo, aparte del cobro.
@@ -44,6 +51,65 @@ export function OrderFulfillmentCard() {
   if (!order) return null;
   if (!TRACKED_SOURCES.has(order.source ?? "")) return null;
   if (order.status === "cancelled") return null;
+  if (
+    order.source === "public_store" &&
+    !["paid", "completed"].includes(order.status)
+  )
+    return null;
+  if (order.source === "public_store") {
+    const fulfillmentMethod = resolveOrderFulfillmentMethod(order);
+    const deliveryEvents = order.delivery_events ?? [];
+    const hasPickupCompletionEvent = deliveryEvents.some(
+      (event) => event.type === "pickup_completed",
+    );
+    const trackerEvents =
+      fulfillmentMethod === "pickup" &&
+      order.pickup_completed_at &&
+      !hasPickupCompletionEvent
+        ? [
+            ...deliveryEvents,
+            {
+              id: `pickup-${order.id}`,
+              type: "pickup_completed",
+              created_at: order.pickup_completed_at,
+              photo_path: null,
+            },
+          ]
+        : deliveryEvents;
+    return (
+      <div className="space-y-3">
+        <CommerceFulfillmentTracker
+          fulfillmentMethod={fulfillmentMethod}
+          fulfillmentStatus={order.fulfillment_status}
+          events={trackerEvents}
+          audience="business"
+        />
+        {fulfillmentMethod === "delivery" &&
+        order.delivery_details?.address_text ? (
+          <section className="rounded-2xl border border-border bg-surface-raised p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                <MapPin className="h-5 w-5" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  Dirección de entrega
+                </p>
+                <p className="mt-1 text-sm font-semibold leading-5 text-foreground">
+                  {order.delivery_details.address_text}
+                </p>
+                {order.delivery_details.reference ? (
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    Referencia: {order.delivery_details.reference}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </section>
+        ) : null}
+      </div>
+    );
+  }
 
   const current = (order.fulfillment_status ?? "received") as FulfillmentStatus;
   const currentIndex = STEPS.findIndex((s) => s.status === current);

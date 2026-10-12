@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Commerce schema types are regenerated after the migration rollout. */
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getMexicoDateBounds } from "@/lib/dateBounds";
 import { NextResponse } from "next/server";
 
@@ -11,6 +13,7 @@ import { orderSearchFilter } from "@/features/orders/helpers/orderSearchFilter";
 import { requirePermission } from "@/lib/auth/requirePermission";
 import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
+import { resolveOrderFulfillmentMethod } from "@/features/orders/helpers/resolveOrderFulfillmentMethod";
 
 import type { Database } from "@/types/database.types";
 
@@ -31,6 +34,7 @@ export async function GET(request: Request) {
   const tenantId = searchParams.get("tenant_id");
   const orderId = searchParams.get("order_id");
   const status = searchParams.get("status");
+  const fulfillment = searchParams.get("fulfillment")?.trim() ?? "";
   const dateFrom = searchParams.get("date_from");
   const dateTo = searchParams.get("date_to");
   const scope = searchParams.get("scope");
@@ -40,11 +44,17 @@ export async function GET(request: Request) {
   const scheduledOnly = searchParams.get("scheduled") === "1";
 
   if (orderId) {
-    const { data: order, error: orderError } = await supabase
+    // Estas columnas pertenecen al flujo ecommerce y todavía pueden no estar
+    // reflejadas en el archivo generado de tipos. La consulta sigue siendo
+    // segura: el acceso al tenant se valida inmediatamente después.
+    const commerce = supabase as unknown as {
+      from: (table: string) => any;
+    };
+    const { data: order, error: orderError } = await commerce
       .from("orders")
       .select(
         `
-        id, order_number, tenant_id, status, fulfillment_status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_id, customer_name, customer_email, customer_phone, parent_order_id,
+        id, order_number, tenant_id, status, fulfillment_status, fulfillment_method, delivery_fee, payment_verification_status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_id, customer_name, customer_email, customer_phone, parent_order_id,
         subtotal, discount, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, updated_at, scheduled_for,
         created_by, assigned_to, completed_by, completed_at, paid_at,
         pickup_completed_at, pickup_completed_by,
@@ -82,16 +92,78 @@ export async function GET(request: Request) {
     // Los pedidos complementarios ligados a este. Va en consulta aparte y no
     // como relación anidada porque `orders` se referencia a sí misma y
     // PostgREST necesitaría desambiguar la FK en cada `select` del archivo.
-    const { data: addenda } = await supabase
-      .from("orders")
-      .select("id, status, total, created_at")
-      .eq("parent_order_id", order.id)
-      .order("created_at", { ascending: true });
+    const admin = createAdminClient() as unknown as {
+      from: (table: string) => any;
+      storage: {
+        from: (bucket: string) => {
+          createSignedUrl: (path: string, expiresIn: number) => Promise<{
+            data: { signedUrl?: string } | null;
+          }>;
+        };
+      };
+    };
+    const [
+      { data: addenda },
+      { data: deliveryDetails },
+      { data: deliveryEvents },
+      { data: transferProofs },
+    ] =
+      await Promise.all([
+        commerce
+          .from("orders")
+          .select("id, status, total, created_at")
+          .eq("parent_order_id", order.id)
+          .order("created_at", { ascending: true }),
+        commerce
+          .from("order_delivery_details")
+          .select(
+            "recipient_name, recipient_phone, address_text, reference, pickup_point_id",
+          )
+          .eq("order_id", order.id)
+          .maybeSingle(),
+        commerce
+          .from("order_delivery_events")
+          .select("id, type, note, photo_path, created_at, created_by")
+          .eq("order_id", order.id)
+          .order("created_at", { ascending: true }),
+        order.payment_verification_status === "proof_submitted"
+          ? admin
+              .from("order_transfer_proofs")
+              .select(
+                "id, status, file_type, amount_claimed, rejection_reason, storage_path, created_at",
+              )
+              .eq("order_id", order.id)
+              .eq("status", "pending_review")
+              .order("created_at", { ascending: false })
+              .limit(1)
+          : Promise.resolve({ data: [] }),
+      ]);
+
+    const latestProof = Array.isArray(transferProofs) ? transferProofs[0] : null;
+    const signedProof = latestProof?.storage_path
+      ? await admin.storage
+          .from("order-payment-proofs")
+          .createSignedUrl(latestProof.storage_path, 60 * 10)
+      : null;
+    const safeTransferProof = latestProof
+      ? {
+          id: latestProof.id,
+          status: latestProof.status,
+          file_type: latestProof.file_type,
+          amount_claimed: latestProof.amount_claimed,
+          rejection_reason: latestProof.rejection_reason,
+          created_at: latestProof.created_at,
+          signed_url: signedProof?.data?.signedUrl ?? null,
+        }
+      : null;
 
     const normalized = {
       ...order,
       loan: Array.isArray(loans) && loans.length > 0 ? loans[0] : null,
       addenda: addenda ?? [],
+      delivery_details: deliveryDetails ?? null,
+      delivery_events: deliveryEvents ?? [],
+      transfer_proofs: safeTransferProof ? [safeTransferProof] : [],
     };
     return NextResponse.json(normalized);
   }
@@ -106,11 +178,30 @@ export async function GET(request: Request) {
   const access = await resolveOrderAccess(user.id, tenantId);
   if (!access.ok) return serviceErrorToResponse(access.error);
 
-  let query = supabase
+  const allowedFulfillmentFilters = new Set([
+    "",
+    "received",
+    "in_progress",
+    "ready",
+    "out_for_delivery",
+    "delivered",
+  ]);
+  if (!allowedFulfillmentFilters.has(fulfillment)) {
+    return NextResponse.json(
+      { error: "Filtro de postventa no válido." },
+      { status: 400 },
+    );
+  }
+
+  const commerce = supabase as unknown as {
+    from: (table: string) => any;
+  };
+
+  let query = commerce
     .from("orders")
     .select(
       `
-      id, order_number, status, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_name, customer_email, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, paid_at, scheduled_for, pickup_completed_at, pickup_completed_by, assigned_to, created_by, payment_method,
+      id, order_number, status, fulfillment_status, fulfillment_method, cancelled_from, source, order_type, qr_code_id, table_label, diner_count, customer_name, customer_email, total, paid_total, balance_due, payment_mode, payment_plan_status, created_at, paid_at, scheduled_for, pickup_completed_at, pickup_completed_by, assigned_to, created_by, payment_method,
       assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email)
       `
     )
@@ -162,10 +253,76 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const list = orders ?? [];
+  let list = orders ?? [];
   if (list.length === 0) return NextResponse.json([]);
 
-  const orderIds = list.map((o) => o.id);
+  // La postventa es un eje distinto al cobro. Los eventos de ruta/entrega no
+  // viven en `orders.status`, así que se consultan juntos y se proyectan en la
+  // bandeja sin convertir "pagada" en "terminada".
+  const candidateOrderIds = list.map((order: { id: string }) => order.id);
+  const admin = createAdminClient() as unknown as {
+    from: (table: string) => any;
+  };
+  const [{ data: deliveryEvents }, { data: deliveryDetails }] =
+    await Promise.all([
+      admin
+        .from("order_delivery_events")
+        .select("order_id, type")
+        .in("order_id", candidateOrderIds),
+      admin
+        .from("order_delivery_details")
+        .select("order_id, address_text, pickup_point_id")
+        .in("order_id", candidateOrderIds),
+    ]);
+  const deliveryEventTypesByOrder: Record<string, string[]> = {};
+  for (const event of deliveryEvents ?? []) {
+    const row = event as { order_id: string; type: string };
+    deliveryEventTypesByOrder[row.order_id] ??= [];
+    deliveryEventTypesByOrder[row.order_id].push(row.type);
+  }
+  const deliveryDetailsByOrder: Record<
+    string,
+    { address_text?: string | null; pickup_point_id?: string | null }
+  > = {};
+  for (const detail of deliveryDetails ?? []) {
+    const row = detail as {
+      order_id: string;
+      address_text?: string | null;
+      pickup_point_id?: string | null;
+    };
+    deliveryDetailsByOrder[row.order_id] = row;
+  }
+
+  if (fulfillment) {
+    list = list.filter((order: any) => {
+      if (order.source !== "public_store") return false;
+      const eventTypes = deliveryEventTypesByOrder[order.id] ?? [];
+      const method = resolveOrderFulfillmentMethod({
+        ...order,
+        delivery_details: deliveryDetailsByOrder[order.id],
+      });
+      const finished = eventTypes.some((type) =>
+        method === "delivery"
+          ? type === "delivered"
+          : type === "pickup_completed",
+      );
+      const inTransit = eventTypes.includes("out_for_delivery") && !finished;
+      if (fulfillment === "delivered") return finished;
+      if (fulfillment === "out_for_delivery") return inTransit;
+      if (
+        !["paid", "completed"].includes(order.status) ||
+        finished ||
+        inTransit
+      ) {
+        return false;
+      }
+      return (order.fulfillment_status ?? "received") === fulfillment;
+    });
+  }
+
+  if (list.length === 0) return NextResponse.json([]);
+
+  const orderIds = list.map((o: { id: string }) => o.id);
   const { data: items } = await supabase
     .from("order_items")
     .select("order_id, product_id")
@@ -214,12 +371,20 @@ export async function GET(request: Request) {
     addendaCountByOrder[pid] = (addendaCountByOrder[pid] ?? 0) + 1;
   }
 
-  const withType = list.map((o) => ({
-    ...o,
-    products_count: productsCountByOrder[o.id] ?? 0,
-    services_count: servicesCountByOrder[o.id] ?? 0,
-    addenda_count: addendaCountByOrder[o.id] ?? 0,
-  }));
+  const withType = list.map((o: any) => {
+    const deliveryDetail = deliveryDetailsByOrder[o.id] ?? null;
+    return {
+      ...o,
+      fulfillment_method: resolveOrderFulfillmentMethod({
+        ...o,
+        delivery_details: deliveryDetail,
+      }),
+      delivery_event_types: deliveryEventTypesByOrder[o.id] ?? [],
+      products_count: productsCountByOrder[o.id] ?? 0,
+      services_count: servicesCountByOrder[o.id] ?? 0,
+      addenda_count: addendaCountByOrder[o.id] ?? 0,
+    };
+  });
 
   return NextResponse.json(withType);
 }

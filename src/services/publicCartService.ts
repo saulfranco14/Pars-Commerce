@@ -45,7 +45,8 @@ export async function addItem(
   tenantId: string,
   productId: string,
   quantity: number,
-  fingerprintId: string
+  fingerprintId: string,
+  productVariantId?: string,
 ): Promise<{ success: boolean; cart_id: string }> {
   const res = await fetch("/api/public-cart", {
     method: "POST",
@@ -54,6 +55,7 @@ export async function addItem(
       tenant_id: tenantId,
       product_id: productId,
       quantity,
+      product_variant_id: productVariantId,
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -93,7 +95,7 @@ export async function addPromotion(
 
 export async function updateItemQuantity(
   cartId: string,
-  productId: string,
+  itemId: string,
   quantity: number,
   fingerprintId: string
 ): Promise<void> {
@@ -102,7 +104,7 @@ export async function updateItemQuantity(
     headers: getHeaders(fingerprintId),
     body: JSON.stringify({
       cart_id: cartId,
-      product_id: productId,
+      item_id: itemId,
       quantity,
     }),
   });
@@ -118,10 +120,10 @@ export async function updateItemQuantity(
 
 export async function removeItem(
   cartId: string,
-  productId: string,
+  itemId: string,
   fingerprintId: string
 ): Promise<void> {
-  const url = `/api/public-cart?cart_id=${encodeURIComponent(cartId)}&product_id=${encodeURIComponent(productId)}`;
+  const url = `/api/public-cart?cart_id=${encodeURIComponent(cartId)}&item_id=${encodeURIComponent(itemId)}`;
   const res = await fetch(url, {
     method: "DELETE",
     headers: getHeaders(fingerprintId),

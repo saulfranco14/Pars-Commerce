@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import useSWR from "swr";
-import { Link2, Plus, Scissors, SlidersHorizontal, X } from "lucide-react";
+import { Link2, Plus, Scissors, SlidersHorizontal } from "lucide-react";
 import { FAB } from "@/components/ui/FAB";
 import { OrdersFilterSheet } from "@/components/orders/OrdersFilterSheet";
 import { OrderFormSheet } from "@/features/orders/components/OrderFormSheet";
@@ -26,12 +26,11 @@ import {
 import { formatOrderDate, formatOrderDateFull } from "@/lib/formatDate";
 import { mergeTicketSettings } from "@/types/ticketSettings";
 import type { TicketSettings } from "@/types/ticketSettings";
-import { DATE_MIN, getTodayStr, clampDate } from "@/lib/dateValidation";
+import { getTodayStr, clampDate } from "@/lib/dateValidation";
 import { formatPaymentMethod } from "@/lib/formatPaymentMethod";
 import { getSourceConfig } from "@/lib/formatSource";
 import { swrFetcher } from "@/lib/swrFetcher";
 import type { OrderListItem } from "@/types/orders";
-import { STATUS_TABS } from "@/features/orders/constants/statusTabs";
 import { SCOPE_TABS } from "@/features/orders/constants/scopeTabs";
 import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import { buildOrdersKey } from "@/features/orders/helpers/buildOrdersKey";
@@ -39,6 +38,7 @@ import { ORDERS_LIST_REFRESH_MS } from "@/features/orders/constants/refresh";
 import { PickupBadge } from "@/features/orders/components/order/PickupBadge";
 import { OrderSearchField } from "@/features/orders/components/order/OrderSearchField";
 import { orderContentType } from "@/features/orders/helpers/orderContentType";
+import { FulfillmentBadge } from "@/features/orders/components/order/FulfillmentBadge";
 
 import type { OrdersScope } from "@/features/orders/interfaces/ordersQuery";
 
@@ -53,11 +53,13 @@ export default function OrdenesPage() {
   const [statusFilter, setStatusFilter] = useState(
     () => searchParams.get("status") ?? "",
   );
+  const [fulfillmentFilter, setFulfillmentFilter] = useState(
+    () => searchParams.get("fulfillment") ?? "",
+  );
   const [chosenScope, setChosenScope] = useState<OrdersScope | null>(null);
   const scope: OrdersScope = chosenScope ?? (canViewAll ? "all" : "mine");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [dateFiltersOpen, setDateFiltersOpen] = useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -96,12 +98,12 @@ export default function OrdenesPage() {
       setDateFrom(clampDate(desde.toISOString().slice(0, 10)));
       setDateTo(todayStr);
     }
-    setDateFiltersOpen(false);
   }
 
   const ordersKey = buildOrdersKey({
     tenantId: activeTenant?.id,
     status: statusFilter,
+    fulfillment: fulfillmentFilter,
     dateFrom,
     dateTo,
     scope,
@@ -147,14 +149,15 @@ export default function OrdenesPage() {
             <button
               type="button"
               onClick={() => setFilterSheetOpen(true)}
-              className={`inline-flex min-h-(--touch-target,44px) min-w-(--touch-target,44px) items-center justify-center gap-1.5 rounded-lg text-sm font-medium transition-colors md:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                hasDateFilter || statusFilter
+              className={`inline-flex min-h-(--touch-target,44px) min-w-(--touch-target,44px) items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                hasDateFilter || statusFilter || fulfillmentFilter
                   ? "bg-accent/15 text-accent hover:bg-accent/20"
                   : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
               }`}
               aria-label="Filtrar órdenes"
             >
               <SlidersHorizontal className="h-5 w-5 shrink-0" aria-hidden />
+              <span className="hidden md:inline">Filtrar</span>
             </button>
           </div>
           <button
@@ -174,6 +177,10 @@ export default function OrdenesPage() {
           dateTo={dateTo}
           onDateFromChange={setDateFrom}
           onDateToChange={setDateTo}
+          status={statusFilter}
+          fulfillment={fulfillmentFilter}
+          onStatusChange={setStatusFilter}
+          onFulfillmentChange={setFulfillmentFilter}
           onQuickDate={setQuickDate}
           onApply={() => setFilterSheetOpen(false)}
         />
@@ -188,131 +195,6 @@ export default function OrdenesPage() {
             ariaLabel="Filtrar por quién atiende"
           />
         )}
-
-        <div>
-          <FilterTabs
-            tabs={STATUS_TABS}
-            activeValue={statusFilter}
-            onTabChange={setStatusFilter}
-            ariaLabel="Filtrar por estado"
-          />
-
-          <div className="hidden md:block">
-            <div className="flex items-center gap-2 my-4">
-              <button
-                type="button"
-                onClick={() => setDateFiltersOpen((o) => !o)}
-                className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                  hasDateFilter
-                    ? "bg-accent/15 text-accent hover:bg-accent/20"
-                    : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
-                }`}
-                aria-expanded={dateFiltersOpen}
-              >
-                <SlidersHorizontal
-                  className="h-3.5 w-3.5 shrink-0"
-                  aria-hidden
-                />
-                {hasDateFilter
-                  ? `Fechas: ${dateFrom || "—"} a ${dateTo || "—"}`
-                  : "Filtrar por fecha"}
-              </button>
-              {hasDateFilter && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDateFrom("");
-                    setDateTo("");
-                  }}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                  aria-label="Limpiar fechas"
-                >
-                  <X className="h-3.5 w-3.5" aria-hidden />
-                </button>
-              )}
-            </div>
-
-            {dateFiltersOpen && (
-              <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface-raised p-3">
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setQuickDate("hoy")}
-                    className={`min-h-9 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                      dateFrom &&
-                      dateTo &&
-                      dateFrom === dateTo &&
-                      dateFrom === getTodayStr()
-                        ? "bg-accent/15 text-accent ring-1 ring-accent/30"
-                        : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
-                    }`}
-                  >
-                    Hoy
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setQuickDate("ayer")}
-                    className="min-h-9 rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
-                  >
-                    Ayer
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setQuickDate("7dias")}
-                    className="min-h-9 rounded-lg px-3 py-1.5 text-xs font-medium bg-border-soft/60 text-muted-foreground transition-colors hover:bg-border-soft hover:text-foreground"
-                  >
-                    7 días
-                  </button>
-                  {lastCutoffEnd && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDateFrom(lastCutoffEnd);
-                        setDateTo(getTodayStr());
-                        setDateFiltersOpen(false);
-                      }}
-                      className={`min-h-9 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                        dateFrom === lastCutoffEnd
-                          ? "bg-accent/15 text-accent ring-1 ring-accent/30"
-                          : "bg-border-soft/60 text-muted-foreground hover:bg-border-soft hover:text-foreground"
-                      }`}
-                    >
-                      Último corte
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <label className="flex flex-1 flex-col gap-1">
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Desde
-                    </span>
-                    <input
-                      type="date"
-                      value={dateFrom}
-                      min={DATE_MIN}
-                      max={getTodayStr()}
-                      onChange={(e) => setDateFrom(clampDate(e.target.value))}
-                      className="input-form min-h-10 w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                    />
-                  </label>
-                  <label className="flex flex-1 flex-col gap-1">
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Hasta
-                    </span>
-                    <input
-                      type="date"
-                      value={dateTo}
-                      min={DATE_MIN}
-                      max={getTodayStr()}
-                      onChange={(e) => setDateTo(clampDate(e.target.value))}
-                      className="input-form min-h-10 w-full rounded-lg border px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                    />
-                  </label>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* Banner: viendo desde último corte */}
         {lastCutoffEnd && dateFrom === lastCutoffEnd && (
@@ -367,7 +249,7 @@ export default function OrdenesPage() {
                   dateFrom === dateTo &&
                   dateFrom === getTodayStr()
                     ? "No hay órdenes para hoy."
-                    : `No hay órdenes${statusFilter ? " con este estado" : ""}${hasDateFilter ? " en las fechas seleccionadas" : ""}.`}{" "}
+                    : `No hay órdenes${fulfillmentFilter ? " en esta etapa de preparación o entrega" : statusFilter ? " con este estado" : ""}${hasDateFilter ? " en las fechas seleccionadas" : ""}.`}{" "}
                   Crea una con &quot;Nueva orden&quot;.
                 </p>
                 <button
@@ -507,6 +389,13 @@ export default function OrdenesPage() {
                               <StatusBadge
                                 status={o.status}
                                 cancelledFrom={o.cancelled_from}
+                              />
+                              <FulfillmentBadge
+                                source={o.source}
+                                orderStatus={o.status}
+                                fulfillmentStatus={o.fulfillment_status}
+                                fulfillmentMethod={o.fulfillment_method}
+                                eventTypes={o.delivery_event_types}
                               />
                               {(o.status === "paid" ||
                                 o.status === "completed") &&

@@ -65,5 +65,15 @@ export function parseBody(raw: unknown): PublicCheckoutPayload | null {
     // Se pasa crudo: validarlo aquí exigiría la config del negocio, que este
     // helper no tiene. Lo valida el orquestador con `validateScheduledFor`.
     scheduled_for: body.scheduled_for ?? null,
+    fulfillment_method:
+      body.fulfillment_method === "delivery" || body.fulfillment_method === "pickup"
+        ? body.fulfillment_method
+        : undefined,
+    pickup_point_id: body.pickup_point_id,
+    delivery: body.delivery,
+    payment_method:
+      body.payment_method === "mercadopago" || body.payment_method === "bank_transfer" || body.payment_method === "cash"
+        ? body.payment_method
+        : undefined,
   };
 }

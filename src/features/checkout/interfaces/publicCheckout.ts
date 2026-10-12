@@ -1,6 +1,18 @@
 import type { MsiOption } from "@/constants/commissionConfig";
 
 export type CheckoutMode = "single" | "subscription" | "partial";
+export type CheckoutPaymentMethod = "mercadopago" | "bank_transfer" | "cash";
+export type CheckoutFulfillmentMethod = "delivery" | "pickup";
+
+export interface CheckoutDeliveryAddress {
+  recipient_name: string;
+  phone: string;
+  address_text: string;
+  reference?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  mapbox_feature_id?: string;
+}
 
 export interface PublicCheckoutPayload {
   tenant_id: string;
@@ -18,6 +30,11 @@ export interface PublicCheckoutPayload {
    * recoge cuando esté listo. NO es entrega a domicilio.
    */
   scheduled_for?: string | null;
+  /** Delivery and payment are deliberately separate decisions. */
+  fulfillment_method?: CheckoutFulfillmentMethod;
+  pickup_point_id?: string;
+  delivery?: CheckoutDeliveryAddress;
+  payment_method?: CheckoutPaymentMethod;
 }
 
 export interface PublicCheckoutResponse {
@@ -28,5 +45,6 @@ export interface PublicCheckoutResponse {
   subscription_id?: string;
   payment_link?: string;
   redirect_url?: string;
-  next_action: "open_payment_link" | "retry_or_change_mode";
+  next_action: "open_payment_link" | "retry_or_change_mode" | "open_tracking";
+  tracking_url?: string;
 }

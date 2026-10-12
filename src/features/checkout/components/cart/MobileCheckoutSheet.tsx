@@ -1,8 +1,9 @@
 "use client";
 
-import { Lock, ShieldCheck, X } from "lucide-react";
+import { ArrowRight, Loader2, Lock, ShieldCheck, X } from "lucide-react";
 
 import type { PublicCartItem } from "@/services/publicCartService";
+import type { CheckoutPaymentMethod } from "@/features/checkout/interfaces/publicCheckout";
 
 import { MobileOrderReview } from "@/features/checkout/components/cart/MobileOrderReview";
 
@@ -17,6 +18,8 @@ interface MobileCheckoutSheetProps {
   submitDisclaimer: string;
   primaryAction?: () => void;
   showPrimaryAction?: boolean;
+  selectionFooterId?: string;
+  paymentMethod: CheckoutPaymentMethod;
   accentColor: string;
   onClose: () => void;
   children: React.ReactNode;
@@ -33,10 +36,19 @@ export function MobileCheckoutSheet({
   submitDisclaimer,
   primaryAction,
   showPrimaryAction = true,
+  selectionFooterId,
+  paymentMethod,
   accentColor,
   onClose,
   children,
 }: MobileCheckoutSheetProps) {
+  const securityMessage =
+    paymentMethod === "bank_transfer"
+      ? "Tu comprobante será privado y el negocio deberá validarlo."
+      : paymentMethod === "cash"
+        ? "No se hará ningún cargo: pagarás al recoger."
+        : "Pago seguro y protegido con Mercado Pago.";
+
   return (
     <div
       className="fixed inset-0 z-50 xl:hidden"
@@ -48,13 +60,14 @@ export function MobileCheckoutSheet({
         className={`absolute inset-0 bg-black/55 backdrop-blur-[2px] transition-opacity duration-200 ${
           visible ? "opacity-100" : "opacity-0"
         }`}
-        onClick={onClose}
+        onClick={submitting ? undefined : onClose}
         aria-hidden
       />
       <div
-        className={`absolute inset-x-0 bottom-0 flex max-h-[94vh] flex-col rounded-t-2xl bg-white shadow-2xl transition-transform duration-300 ease-out will-change-transform ${
+        className={`absolute inset-x-0 bottom-0 flex max-h-[94vh] flex-col rounded-t-[28px] bg-white shadow-2xl transition-transform duration-300 ease-out will-change-transform ${
           visible ? "translate-y-0" : "translate-y-full"
         }`}
+        aria-busy={submitting}
       >
         <div className="relative shrink-0 border-b border-gray-100 px-4 pb-3 pt-3">
           <div
@@ -77,7 +90,8 @@ export function MobileCheckoutSheet({
             <button
               type="button"
               onClick={onClose}
-              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50"
+              disabled={submitting}
+              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-wait disabled:opacity-50"
               aria-label="Cerrar"
             >
               <X className="h-4 w-4" />
@@ -96,23 +110,26 @@ export function MobileCheckoutSheet({
 
           <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/70 px-3 py-2">
             <ShieldCheck className="h-4 w-4 shrink-0 text-gray-500" />
-            <p className="text-xs text-gray-600">
-              Pago seguro y protegido con Mercado Pago.
-            </p>
+            <p className="text-xs text-gray-600">{securityMessage}</p>
           </div>
           {children}
         </div>
 
         {showPrimaryAction && <div className="shrink-0 border-t border-gray-100 bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur">
+          <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+            <span className="text-gray-600">Total del pedido</span>
+            <strong className="tabular-nums text-gray-950">${subtotal.toFixed(2)}</strong>
+          </div>
           <button
             type={primaryAction ? "button" : "submit"}
             form={primaryAction ? undefined : "m-checkout-form"}
             onClick={primaryAction}
             disabled={submitting}
-            className="w-full min-h-13 cursor-pointer rounded-xl px-6 py-3.5 text-base font-semibold text-white shadow-sm transition-opacity hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-13 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-base font-semibold text-white shadow-sm transition-opacity hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
             style={{ backgroundColor: accentColor }}
           >
-            {submitLabel}
+            {submitting ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <ArrowRight className="h-5 w-5" aria-hidden />}
+            {submitting ? "Creando tu pedido…" : submitLabel}
           </button>
           <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-gray-500">
             <Lock className="h-3 w-3" />
@@ -120,6 +137,7 @@ export function MobileCheckoutSheet({
           </div>
         </div>
         }
+        {!showPrimaryAction && selectionFooterId ? <div id={selectionFooterId} className="shrink-0" /> : null}
       </div>
     </div>
   );

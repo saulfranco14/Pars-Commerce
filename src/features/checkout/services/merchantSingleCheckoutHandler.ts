@@ -22,7 +22,7 @@ import type { PublicCheckoutResponse } from "@/features/checkout/interfaces/publ
 export async function handleMerchantSingleCheckout(
   ctx: CheckoutContext,
 ): Promise<NextResponse<PublicCheckoutResponse | { error: string }>> {
-  const { admin, payload, cartItems, subtotal, order, origin, tenantSlug, idempotencyKey, expiresAt, backUrls } = ctx;
+  const { admin, payload, cartItems, subtotal, deliveryFee, order, origin, tenantSlug, idempotencyKey, expiresAt, backUrls } = ctx;
   try {
     const { connection, accessToken } = await getConnectedMercadoPagoConnection(admin, payload.tenant_id);
     const capabilities = connection.capabilities as Record<string, unknown> | null;
@@ -55,10 +55,13 @@ export async function handleMerchantSingleCheckout(
       notificationUrl: `${origin}/api/payment-providers/mercadopago/webhook`,
       payerEmail: payload.customer_email.trim(),
       marketplaceFee: fee.marketplaceFee,
-      items: cartItems.map((item) => {
-        const product = mapCartItemProduct(item);
-        return { id: product.id, title: product.name, quantity: item.quantity, unit_price: Number(item.price_snapshot), currency_id: "MXN" as const };
-      }),
+      items: [
+        ...cartItems.map((item) => {
+          const product = mapCartItemProduct(item);
+          return { id: product.id, title: product.name, quantity: item.quantity, unit_price: Number(item.price_snapshot), currency_id: "MXN" as const };
+        }),
+        ...(deliveryFee > 0 ? [{ id: "delivery-fee", title: "Entrega a domicilio", quantity: 1, unit_price: deliveryFee, currency_id: "MXN" as const }] : []),
+      ],
       backUrls: backUrls ?? {
         success: `${origin}/sitio/${tenantSlug}/confirmacion?status=success&order_id=${order.id}&mode=single`,
         failure: `${origin}/sitio/${tenantSlug}/confirmacion?status=failure&order_id=${order.id}&mode=single`,

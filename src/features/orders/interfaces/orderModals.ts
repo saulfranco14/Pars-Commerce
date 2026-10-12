@@ -5,6 +5,7 @@ export interface AssignBeforePaidModalProps {
   onClose: () => void;
   onConfirm: (assignToId: string, paymentMethod: string) => Promise<void>;
   team: TeamMemberOption[];
+  lockedPaymentMethod?: string | null;
   loading?: boolean;
 }
 
@@ -13,6 +14,7 @@ export interface ConfirmPaymentModalProps {
   onClose: () => void;
   onConfirm: (paymentMethod: string) => Promise<void>;
   total: number;
+  lockedPaymentMethod?: string | null;
   loading?: boolean;
 }
 

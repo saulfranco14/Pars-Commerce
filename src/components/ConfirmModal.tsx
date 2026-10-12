@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { X, Check, Trash2 } from "lucide-react";
+import { X, Check, Loader2, Trash2 } from "lucide-react";
+import { btnSecondary } from "@/components/ui/buttonClasses";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -32,10 +33,10 @@ export function ConfirmModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-modal-title"
-      onClick={onClose}
+      onClick={loading ? undefined : onClose}
     >
       <div
-        className="w-full max-w-sm rounded-xl border border-border bg-surface-raised p-6 shadow-lg"
+        className="w-full max-w-sm rounded-2xl border border-border bg-surface-raised p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <h3
@@ -50,7 +51,7 @@ export function ConfirmModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-border-soft/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className={`${btnSecondary} min-h-12 flex-1 rounded-xl`}
           >
             <X className="h-4 w-4 shrink-0" aria-hidden />
             Cancelar
@@ -61,16 +62,18 @@ export function ConfirmModal({
             disabled={loading}
             className={
               confirmDanger
-                ? "inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition-colors duration-200 hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-                : "inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+                ? "inline-flex min-h-12 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition-colors duration-200 hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+                : "inline-flex min-h-12 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors duration-200 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
             }
           >
-            {confirmDanger ? (
+            {loading ? (
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+            ) : confirmDanger ? (
               <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
             ) : (
               <Check className="h-4 w-4 shrink-0" aria-hidden />
             )}
-            {loading ? "..." : confirmLabel}
+            {loading ? "Procesando…" : confirmLabel}
           </button>
         </div>
       </div>

@@ -7,6 +7,7 @@ import type { OrdersQuery } from "@/features/orders/interfaces/ordersQuery";
 export function buildOrdersKey({
   tenantId,
   status,
+  fulfillment,
   dateFrom,
   dateTo,
   scope,
@@ -15,6 +16,7 @@ export function buildOrdersKey({
   if (!tenantId) return null;
   const params = new URLSearchParams({ tenant_id: tenantId });
   if (status) params.set("status", status);
+  if (fulfillment) params.set("fulfillment", fulfillment);
   if (dateFrom) params.set("date_from", dateFrom);
   if (dateTo) params.set("date_to", dateTo);
   // "all" is the server default; omitting it keeps the key stable.

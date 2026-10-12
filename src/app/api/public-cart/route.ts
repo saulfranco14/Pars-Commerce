@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+/* eslint-disable @typescript-eslint/no-explicit-any -- Commerce schema types are regenerated after the migration rollout. */
 import { NextResponse } from "next/server";
 import {
   buildProductPromoMap,
@@ -6,6 +8,16 @@ import {
 } from "@/lib/promotionPrice";
 
 const FINGERPRINT_HEADER = "x-fingerprint-id";
+type CommerceAdmin = { from: (table: string) => any };
+type PublicCartRow = {
+  id: string;
+  product_id: string;
+  product_variant_id: string | null;
+  quantity: number;
+  price_snapshot: number | string;
+  promotion_id: string | null;
+  product: { id: string; name: string; slug: string; image_url: string | null } | null;
+};
 
 function getFingerprint(request: Request): string | null {
   return request.headers.get(FINGERPRINT_HEADER)?.trim() || null;
@@ -44,6 +56,7 @@ export async function GET(request: Request) {
     .select(`
       id,
       product_id,
+      product_variant_id,
       quantity,
       price_snapshot,
       promotion_id,
@@ -56,15 +69,28 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: itemsError.message }, { status: 500 });
   }
 
-  const subtotal = (items ?? []).reduce(
+  const rawItems = (items ?? []) as unknown as PublicCartRow[];
+  const variantIds = rawItems.flatMap((item) => item.product_variant_id ? [item.product_variant_id] : []);
+  const variantById = new Map<string, { id: string; selection_key: string; image_url: string | null }>();
+  if (variantIds.length > 0) {
+    const commerce = createAdminClient() as unknown as CommerceAdmin;
+    const { data: variants } = await commerce.from("product_variants").select("id, selection_key, image_url").in("id", variantIds);
+    for (const variant of variants ?? []) variantById.set(variant.id, variant);
+  }
+  const hydratedItems = rawItems.map((item) => ({
+    ...item,
+    variant: item.product_variant_id ? variantById.get(item.product_variant_id) ?? null : null,
+  }));
+
+  const subtotal = hydratedItems.reduce(
     (sum, i) => sum + Number(i.price_snapshot) * i.quantity,
     0
   );
-  const itemsCount = (items ?? []).reduce((sum, i) => sum + i.quantity, 0);
+  const itemsCount = hydratedItems.reduce((sum, i) => sum + i.quantity, 0);
 
   return NextResponse.json({
     cart: { id: cart.id, tenant_id: cart.tenant_id },
-    items: items ?? [],
+    items: hydratedItems,
     subtotal,
     items_count: itemsCount,
   });
@@ -81,14 +107,14 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { tenant_id?: string; product_id?: string; promotion_id?: string; quantity?: number };
+  let body: { tenant_id?: string; product_id?: string; product_variant_id?: string; promotion_id?: string; quantity?: number };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { tenant_id, product_id, promotion_id, quantity = 1 } = body;
+  const { tenant_id, product_id, product_variant_id, promotion_id, quantity = 1 } = body;
 
   if (!tenant_id) {
     return NextResponse.json(
@@ -149,9 +175,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: product, error: productError } = await supabase
+  const commerce = createAdminClient() as unknown as CommerceAdmin;
+  const { data: product, error: productError } = await commerce
     .from("products")
-    .select("id, price")
+    .select("id, price, has_variants")
     .eq("id", product_id)
     .eq("tenant_id", tenant_id)
     .eq("is_public", true)
@@ -167,6 +194,26 @@ export async function POST(request: Request) {
   const basePrice = Number(product.price);
   let priceSnapshot = basePrice;
   let promotionId: string | null = null;
+  let selectedVariant: { id: string; price: number | string; stock: number; track_stock: boolean; is_active: boolean; archived_at: string | null } | null = null;
+  if (product.has_variants && !product_variant_id) {
+    return NextResponse.json({ error: "Elige talla o color antes de agregar este producto." }, { status: 400 });
+  }
+  if (product_variant_id) {
+    const { data: variant } = await commerce
+      .from("product_variants")
+      .select("id, price, stock, track_stock, is_active, archived_at")
+      .eq("id", product_variant_id)
+      .eq("product_id", product_id)
+      .maybeSingle();
+    if (!variant || variant.is_active !== true || variant.archived_at) {
+      return NextResponse.json({ error: "Esta combinación ya no está disponible." }, { status: 409 });
+    }
+    if (variant.track_stock && Number(variant.stock) < quantity) {
+      return NextResponse.json({ error: "No hay existencias suficientes para esta combinación." }, { status: 409 });
+    }
+    selectedVariant = variant;
+    priceSnapshot = Number(variant.price);
+  }
 
   const { data: promotions } = await supabase
     .from("promotions")
@@ -208,18 +255,33 @@ export async function POST(request: Request) {
     quantity: number;
     price_snapshot: number;
     promotion_id?: string | null;
+    product_variant_id: string | null;
   } = {
     cart_id: cartId,
     product_id: product_id,
     quantity,
     price_snapshot: Math.round(priceSnapshot * 100) / 100,
+    product_variant_id: product_variant_id ?? null,
   };
   if (promotionId) upsertData.promotion_id = promotionId;
+
+  if (product_variant_id) {
+    const { data: line } = await commerce.from("public_cart_items").select("id, quantity").eq("cart_id", cartId).eq("product_id", product_id).eq("product_variant_id", product_variant_id).maybeSingle();
+    const nextQuantity = Number(line?.quantity ?? 0) + quantity;
+    if (selectedVariant?.track_stock && Number(selectedVariant.stock) < nextQuantity) {
+      return NextResponse.json({ error: `Sólo hay ${selectedVariant.stock} piezas disponibles de esta combinación.` }, { status: 409 });
+    }
+    const result = line
+      ? await commerce.from("public_cart_items").update({ quantity: nextQuantity, price_snapshot: upsertData.price_snapshot, promotion_id: promotionId }).eq("id", line.id)
+      : await commerce.from("public_cart_items").insert(upsertData);
+    if (result.error) return NextResponse.json({ error: result.error.message }, { status: 500 });
+    return NextResponse.json({ success: true, cart_id: cartId });
+  }
 
   const { error: upsertError } = await supabase
     .from("public_cart_items")
     .upsert(upsertData, {
-      onConflict: "cart_id,product_id",
+      onConflict: "cart_id,product_id,product_variant_id",
       ignoreDuplicates: false,
     });
 
@@ -272,16 +334,28 @@ async function handleAddPromotion(
     );
   }
 
-  const { data: products } = await supabase
+  const commerce = supabase as unknown as CommerceAdmin;
+  const { data: products } = await commerce
     .from("products")
-    .select("id, price")
+    .select("id, price, has_variants")
     .in("id", uniqueIds)
     .eq("tenant_id", tenantId)
     .eq("is_public", true);
 
+  const promotionProducts = (products ?? []) as Array<{
+    id: string;
+    price: number | string;
+    has_variants?: boolean;
+  }>;
   const productsMap = new Map(
-    (products ?? []).map((p: { id: string; price: number }) => [p.id, Number(p.price)])
+    promotionProducts.map((p) => [p.id, Number(p.price)])
   );
+  if (promotionProducts.some((product) => product.has_variants)) {
+    return NextResponse.json(
+      { error: "Elige la talla o el color del producto antes de aplicar esta promoción." },
+      { status: 400 },
+    );
+  }
   const promoValue = Number(promotion.value);
   const isBundle = promotion.type === "bundle_price";
   const bundleTotalUnits = isBundle
@@ -320,8 +394,9 @@ async function handleAddPromotion(
           quantity: qty,
           price_snapshot: Math.round(finalPrice * 100) / 100,
           promotion_id: promotionId,
+          product_variant_id: null,
         },
-        { onConflict: "cart_id,product_id", ignoreDuplicates: false }
+        { onConflict: "cart_id,product_id,product_variant_id", ignoreDuplicates: false }
       );
 
     if (upsertErr) {
@@ -343,18 +418,18 @@ export async function PATCH(request: Request) {
     );
   }
 
-  let body: { cart_id?: string; product_id?: string; quantity?: number };
+  let body: { cart_id?: string; item_id?: string; quantity?: number };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { cart_id, product_id, quantity } = body;
+  const { cart_id, item_id, quantity } = body;
 
-  if (!cart_id || !product_id) {
+  if (!cart_id || !item_id) {
     return NextResponse.json(
-      { error: "cart_id and product_id are required" },
+      { error: "cart_id and item_id are required" },
       { status: 400 }
     );
   }
@@ -376,17 +451,25 @@ export async function PATCH(request: Request) {
         .from("public_cart_items")
         .delete()
         .eq("cart_id", cart_id)
-        .eq("product_id", product_id);
+        .eq("id", item_id);
 
       if (delError) {
         return NextResponse.json({ error: delError.message }, { status: 500 });
       }
     } else {
+      const commerce = createAdminClient() as unknown as CommerceAdmin;
+      const { data: cartLine } = await commerce.from("public_cart_items").select("id, product_variant_id").eq("id", item_id).eq("cart_id", cart_id).maybeSingle();
+      if (!cartLine) return NextResponse.json({ error: "El artículo ya no está en el carrito." }, { status: 404 });
+      if (cartLine.product_variant_id) {
+        const { data: variant } = await commerce.from("product_variants").select("stock, is_active, archived_at").eq("id", cartLine.product_variant_id).maybeSingle();
+        if (!variant || !variant.is_active || variant.archived_at) return NextResponse.json({ error: "Esta combinación ya no está disponible." }, { status: 409 });
+        if (Number(variant.stock) < quantity) return NextResponse.json({ error: `Sólo hay ${variant.stock} piezas disponibles de esta combinación.` }, { status: 409 });
+      }
       const { error: updateError } = await supabase
         .from("public_cart_items")
         .update({ quantity })
         .eq("cart_id", cart_id)
-        .eq("product_id", product_id);
+        .eq("id", item_id);
 
       if (updateError) {
         return NextResponse.json({ error: updateError.message }, { status: 500 });
@@ -402,11 +485,11 @@ export async function DELETE(request: Request) {
   const fingerprint = getFingerprint(request);
   const { searchParams } = new URL(request.url);
   const cartId = searchParams.get("cart_id");
-  const productId = searchParams.get("product_id");
+  const itemId = searchParams.get("item_id");
 
-  if (!fingerprint || !cartId || !productId) {
+  if (!fingerprint || !cartId || !itemId) {
     return NextResponse.json(
-      { error: "x-fingerprint-id header, cart_id and product_id are required" },
+      { error: "x-fingerprint-id header, cart_id and item_id are required" },
       { status: 400 }
     );
   }
@@ -426,7 +509,7 @@ export async function DELETE(request: Request) {
     .from("public_cart_items")
     .delete()
     .eq("cart_id", cartId)
-    .eq("product_id", productId);
+    .eq("id", itemId);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

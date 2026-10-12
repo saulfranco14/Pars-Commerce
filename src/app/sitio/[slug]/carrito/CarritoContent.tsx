@@ -12,7 +12,7 @@ import { CartEmptyState } from "@/features/checkout/components/cart/CartEmptySta
 import { CartItemsList } from "@/features/checkout/components/cart/CartItemsList";
 import { CartSummaryHeader } from "@/features/checkout/components/cart/CartSummaryHeader";
 import { CartTrustBadges } from "@/features/checkout/components/cart/CartTrustBadges";
-import { CheckoutBody, CheckoutIntentPicker } from "@/features/checkout/components/cart/CheckoutBody";
+import { CheckoutBody } from "@/features/checkout/components/cart/CheckoutBody";
 import type { PickupSchedulingConfig } from "@/features/checkout/interfaces/pickupSchedule";
 import type { BusinessHours } from "@/features/configuracion/interfaces/businessHours";
 import { DesktopCheckoutAside } from "@/features/checkout/components/cart/DesktopCheckoutAside";
@@ -24,7 +24,12 @@ import { useCartCheckoutForm } from "@/features/checkout/hooks/useCartCheckoutFo
 import { useCheckoutSheet } from "@/features/checkout/hooks/useCheckoutSheet";
 import { useMsiSelector } from "@/features/checkout/hooks/useMsiSelector";
 import { usePaymentMode } from "@/features/checkout/hooks/usePaymentMode";
-import type { CheckoutIntent } from "@/features/checkout/components/cart/CheckoutBody";
+import {
+  CheckoutFulfillmentStep,
+  createInitialCheckoutSelection,
+  type CheckoutFulfillmentSelection,
+  type PublicCheckoutOptions,
+} from "@/features/checkout/components/cart/CheckoutFulfillmentStep";
 
 interface CarritoContentProps {
   tenantId: string;
@@ -36,6 +41,7 @@ interface CarritoContentProps {
   /** `false` = el negocio pausó los pedidos; el catálogo sigue visible. */
   acceptingOrders: boolean;
   whatsappOrdersEnabled: boolean;
+  checkoutOptions: PublicCheckoutOptions;
 }
 
 export default function CarritoContent({
@@ -47,6 +53,7 @@ export default function CarritoContent({
   businessHours,
   acceptingOrders,
   whatsappOrdersEnabled,
+  checkoutOptions,
 }: CarritoContentProps) {
   const fingerprint = useFingerprint();
   const { cart, items, subtotal, isLoading, mutate } = useCartContext();
@@ -59,6 +66,22 @@ export default function CarritoContent({
     () => items.reduce((sum, item) => sum + item.quantity, 0),
     [items],
   );
+  const [checkoutDraft, setCheckoutDraft] =
+    useState<CheckoutFulfillmentSelection>(() =>
+      createInitialCheckoutSelection(checkoutOptions),
+    );
+  const [checkoutSelection, setCheckoutSelection] =
+    useState<CheckoutFulfillmentSelection | null>(null);
+  const activeFulfillment =
+    checkoutSelection?.fulfillment ?? checkoutDraft.fulfillment;
+  const activePayment = checkoutSelection?.payment ?? checkoutDraft.payment;
+  const checkoutTotal =
+    subtotal +
+    (activeFulfillment === "delivery" ? checkoutOptions.deliveryFee : 0);
+  const selectedPickupPoint = checkoutOptions.pickupPoints.find(
+    (point) => point.id === (checkoutSelection?.pickupPointId ?? checkoutDraft.pickupPointId),
+  );
+  const effectivePickupHours = selectedPickupPoint?.business_hours ?? businessHours;
 
   const {
     paymentMode,
@@ -69,7 +92,7 @@ export default function CarritoContent({
     setSelectedFrequency,
     installmentOptions,
     feeBreakdown,
-  } = usePaymentMode({ subtotal, recurringConfig });
+  } = usePaymentMode({ subtotal: checkoutTotal, recurringConfig });
 
   const {
     msiOption,
@@ -79,13 +102,12 @@ export default function CarritoContent({
     msiBreakdown,
   } = useMsiSelector({
     paymentMode,
-    subtotal,
+    subtotal: checkoutTotal,
     selectedInstallments,
     feeAbsorbedBy: recurringConfig.fee_absorbed_by,
   });
 
   const sheet = useCheckoutSheet();
-  const [checkoutIntent, setCheckoutIntent] = useState<CheckoutIntent | null>(null);
 
   const cartActions = useCartActions({
     cart,
@@ -103,12 +125,16 @@ export default function CarritoContent({
     selectedInstallments,
     selectedFrequency,
     msiOption,
+    fulfillmentMethod: checkoutSelection?.fulfillment,
+    paymentMethod: checkoutSelection?.payment,
+    pickupPointId: checkoutSelection?.pickupPointId,
+    delivery: checkoutSelection?.delivery,
   });
 
   const combinedError = checkoutForm.error ?? cartActions.error;
-  const singlePayAmount = msiBreakdown ? msiBreakdown.total : subtotal;
+  const singlePayAmount = msiBreakdown ? msiBreakdown.total : checkoutTotal;
   const customerAbsorbsFee =
-    recurringConfig.fee_absorbed_by === "customer" && singlePayAmount > subtotal;
+    recurringConfig.fee_absorbed_by === "customer" && singlePayAmount > checkoutTotal;
   const { submitLabel, submitDisclaimer } = getSubmitLabels({
     submitting: checkoutForm.submitting,
     paymentMode,
@@ -117,10 +143,55 @@ export default function CarritoContent({
     perMonth: msiBreakdown?.perMonth ?? 0,
     customerAbsorbsFee,
   });
-  const checkoutPrimaryLabel = checkoutIntent === "request" ? "Enviar solicitud para recoger" : submitLabel;
-  const checkoutPrimaryDisclaimer = checkoutIntent === "request"
-    ? "El negocio revisará tu solicitud antes de preparar el pedido."
-    : submitDisclaimer;
+  const checkoutPrimaryLabel = checkoutForm.submitting
+    ? "Creando tu pedido…"
+    : activePayment === "bank_transfer"
+      ? "Crear pedido y subir comprobante"
+      : activePayment === "cash"
+        ? "Enviar pedido para recoger"
+        : submitLabel;
+  const checkoutPrimaryDisclaimer =
+    activePayment === "bank_transfer"
+      ? activeFulfillment === "delivery"
+        ? "El negocio validará tu transferencia antes de enviar el pedido a tu domicilio."
+        : "El negocio validará tu transferencia y te avisará cuándo recoger."
+      : activePayment === "cash"
+        ? "El negocio confirmará cuándo estará listo; pagarás al recoger."
+        : activeFulfillment === "delivery"
+          ? "Pagarás con Mercado Pago y el negocio entregará en la dirección indicada."
+          : submitDisclaimer;
+
+  const continueFromFulfillment = (
+    selection: CheckoutFulfillmentSelection,
+  ) => {
+    if (selection.payment !== "mercadopago") setPaymentMode("single");
+    if (selection.fulfillment === "delivery" && selection.delivery) {
+      if (!checkoutForm.form.customer_name.trim()) {
+        checkoutForm.updateField(
+          "customer_name",
+          selection.delivery.recipient_name,
+        );
+      }
+      if (!checkoutForm.form.customer_phone.trim()) {
+        checkoutForm.updateField(
+          "customer_phone",
+          selection.delivery.phone.replace(/\D/g, "").slice(0, 12),
+        );
+      }
+    }
+    setCheckoutSelection(selection);
+  };
+  const updateCheckoutDraft = (next: CheckoutFulfillmentSelection) => {
+    if (
+      next.pickupPointId !== checkoutDraft.pickupPointId &&
+      checkoutForm.form.scheduled_for
+    ) {
+      // Each location may publish a different schedule. A time selected for
+      // one branch must never silently travel to another one.
+      checkoutForm.updateField("scheduled_for", "");
+    }
+    setCheckoutDraft(next);
+  };
 
   if (isLoading) {
     return (
@@ -145,14 +216,14 @@ export default function CarritoContent({
     onFormFieldChange: checkoutForm.updateField,
     onSubmit: checkoutForm.handleSubmit,
     onWhatsAppOrder: checkoutForm.handleWhatsAppOrder,
-    onRequestOrder: checkoutForm.handleRequestOrder,
-    checkoutIntent: checkoutIntent ?? "online",
-    onCheckoutIntentChange: () => setCheckoutIntent(null),
+    fulfillmentMethod: checkoutSelection?.fulfillment ?? checkoutDraft.fulfillment,
+    checkoutPaymentMethod: checkoutSelection?.payment ?? checkoutDraft.payment,
+    onCheckoutSelectionChange: () => setCheckoutSelection(null),
     whatsappOrdersEnabled,
     submitting: checkoutForm.submitting,
-    submitLabel,
-    submitDisclaimer,
-    subtotal,
+    submitLabel: checkoutPrimaryLabel,
+    submitDisclaimer: checkoutPrimaryDisclaimer,
+    subtotal: checkoutTotal,
     accentColor,
     hasRecurringOptions,
     recurringConfig,
@@ -170,7 +241,9 @@ export default function CarritoContent({
     viableMsiOptions,
     msiBreakdown,
     pickupScheduling,
-    businessHours,
+    businessHours: effectivePickupHours,
+    pickupPointName: selectedPickupPoint?.name,
+    pickupPointAddress: selectedPickupPoint?.address_text,
   };
 
   return (
@@ -211,8 +284,25 @@ export default function CarritoContent({
         {/* Con la recepción cerrada desaparece el checkout, no el carrito:
             los productos y sus cantidades siguen ahí para cuando reabran. */}
         {acceptingOrders && (
-          <DesktopCheckoutAside>
-            {checkoutIntent ? <CheckoutBody variant="desktop" {...checkoutBodyProps} /> : <CheckoutIntentPicker accentColor={accentColor} onSelect={setCheckoutIntent} />}
+          <DesktopCheckoutAside
+            footerId="desktop-checkout-fulfillment-footer"
+            paymentMethod={activePayment}
+            totalUnits={totalUnits}
+            total={checkoutTotal}
+          >
+            {!checkoutSelection ? (
+              <CheckoutFulfillmentStep
+                options={checkoutOptions}
+                selection={checkoutDraft}
+                subtotal={subtotal}
+                accentColor={accentColor}
+                footerContainerId="desktop-checkout-fulfillment-footer"
+                onSelectionChange={updateCheckoutDraft}
+                onContinue={continueFromFulfillment}
+              />
+            ) : (
+              <CheckoutBody variant="desktop" {...checkoutBodyProps} />
+            )}
           </DesktopCheckoutAside>
         )}
       </div>
@@ -230,17 +320,30 @@ export default function CarritoContent({
           visible={sheet.visible}
           items={items}
           totalUnits={totalUnits}
-          subtotal={subtotal}
+          subtotal={checkoutTotal}
           error={combinedError}
           submitting={checkoutForm.submitting}
           submitLabel={checkoutPrimaryLabel}
           submitDisclaimer={checkoutPrimaryDisclaimer}
           accentColor={accentColor}
           onClose={sheet.close}
-          primaryAction={checkoutIntent === "request" ? checkoutForm.handleRequestOrder : undefined}
-          showPrimaryAction={Boolean(checkoutIntent)}
+          showPrimaryAction={Boolean(checkoutSelection)}
+          selectionFooterId="mobile-checkout-fulfillment-footer"
+          paymentMethod={activePayment}
         >
-          {checkoutIntent ? <CheckoutBody variant="mobile" {...checkoutBodyProps} /> : <CheckoutIntentPicker accentColor={accentColor} onSelect={setCheckoutIntent} />}
+          {!checkoutSelection ? (
+            <CheckoutFulfillmentStep
+              options={checkoutOptions}
+              selection={checkoutDraft}
+              subtotal={subtotal}
+              accentColor={accentColor}
+              footerContainerId="mobile-checkout-fulfillment-footer"
+              onSelectionChange={updateCheckoutDraft}
+              onContinue={continueFromFulfillment}
+            />
+          ) : (
+            <CheckoutBody variant="mobile" {...checkoutBodyProps} />
+          )}
         </MobileCheckoutSheet>
       )}
     </div>

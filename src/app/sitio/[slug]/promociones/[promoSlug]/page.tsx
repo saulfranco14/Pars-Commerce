@@ -33,7 +33,7 @@ export default async function PromocionDetallePage({ params }: PageProps) {
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
     .select("id, name, theme_color, whatsapp_phone")
-    .eq("slug", slug)
+    .eq("site_slug", slug)
     .eq("public_store_enabled", true)
     .single();
 

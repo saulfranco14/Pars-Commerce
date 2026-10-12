@@ -168,7 +168,7 @@ function OrderDetailContent() {
           printContainer,
         )}
 
-      <div className="no-print mx-auto w-full max-w-5xl overflow-visible pb-48 sm:max-w-5xl md:pb-8">
+      <div className="no-print mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-5xl flex-col pb-[calc(11rem+env(safe-area-inset-bottom))] sm:max-w-5xl md:min-h-0 md:pb-8">
         <div className="shrink-0">
           <OrderHeader />
         </div>
@@ -177,36 +177,36 @@ function OrderDetailContent() {
             {error}
           </div>
         )}
-        <div className="mt-3 flex min-w-0 flex-col gap-3 lg:mt-4">
+        <div className="mt-3 flex min-w-0 flex-1 flex-col gap-3 pb-2 lg:mt-4 md:pb-0">
           <OrderItemsTable />
           {/* Si hay dinero esperando confirmación, es lo primero que el
               mostrador tiene que resolver. */}
           <PendingCashCard />
           <CounterPaymentCard />
-          {order.source === "kiosk" ? <KioskFulfillmentCard /> : <OrderFulfillmentCard />}
+          {order.source === "kiosk" ? (
+            <KioskFulfillmentCard />
+          ) : (
+            <OrderFulfillmentCard />
+          )}
           <LinkedOrdersCard />
           <AssignmentCard />
           <CustomerCard />
-          {loan && (
-            <OrderLoanCard loan={loan} tenantSlug={tenantSlug} />
-          )}
+          {loan && <OrderLoanCard loan={loan} tenantSlug={tenantSlug} />}
           <PaymentLinkCard />
           <OrderPaymentPlanCard />
-          {showTicket && (
-            <ReceiptActions />
-          )}
+          {showTicket && <ReceiptActions />}
         </div>
       </div>
 
       {mounted &&
         createPortal(
           <div
-            className="no-print fixed left-0 right-0 bottom-0 z-40 rounded-t-2xl border-t border-border bg-surface px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:hidden"
+            className="no-print fixed bottom-0 left-0 right-0 z-40 rounded-t-[28px] border-x border-t border-border bg-surface px-4 pt-4 shadow-[0_-12px_32px_rgba(15,23,42,0.14)] md:hidden"
             style={{
               paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
             }}
           >
-            <OrderActionButtons embedded fixedBar />
+            <OrderActionButtons presentation="fixed" />
           </div>,
           document.body,
         )}

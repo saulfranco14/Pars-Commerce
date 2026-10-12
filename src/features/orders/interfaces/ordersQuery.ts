@@ -11,6 +11,8 @@ export type OrdersScope = "mine" | "all";
 export interface OrdersQuery {
   tenantId: string | undefined;
   status: string;
+  /** Etapa física posterior al pago de un pedido del sitio. */
+  fulfillment?: string;
   dateFrom: string;
   dateTo: string;
   scope: OrdersScope;
