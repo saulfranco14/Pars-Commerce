@@ -92,9 +92,9 @@ export default function ProductCard({
   };
 
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+    <article className="group flex h-full flex-col overflow-hidden rounded-[20px] border border-gray-200 bg-white shadow-[0_12px_32px_-26px_rgba(15,23,42,0.55)] transition-[box-shadow,border-color] duration-300 hover:border-gray-300 hover:shadow-[0_18px_38px_-24px_rgba(15,23,42,0.3)]">
       {/* Image area */}
-      <Link href={productPath} className={`relative block overflow-hidden bg-gray-50 ${compact ? "aspect-[5/4]" : "aspect-4/3"}`}>
+      <Link href={productPath} className={`relative block overflow-hidden bg-gray-100 ${compact ? "aspect-square sm:aspect-[5/4]" : "aspect-4/3"}`}>
         {mainImage ? (
           <>
             <Image
@@ -102,12 +102,11 @@ export default function ProductCard({
               alt={product.name}
               fill
               sizes="(max-width: 640px) 78vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              className="object-cover transition-transform duration-500 group-hover:scale-[1.025]"
               priority={priority}
               quality={75}
             />
-            {/* Hover overlay */}
-            <div className="absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            <div className="absolute inset-0 hidden items-center justify-center bg-black/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100 sm:flex">
               <span className="flex translate-y-2 items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-semibold text-gray-900 shadow-lg transition-transform duration-300 group-hover:translate-y-0">
                 <Eye className="h-3.5 w-3.5" />
                 Ver detalle
@@ -141,17 +140,20 @@ export default function ProductCard({
       </Link>
 
       {/* Card content */}
-      <div className={`flex flex-1 flex-col ${compact ? "min-h-28 p-3.5" : "min-h-36 p-4"}`}>
+      <div className={`flex flex-1 flex-col ${compact ? "min-h-[118px] p-3.5" : "min-h-36 p-4"}`}>
+        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400">
+          {product.type === "service" ? "Servicio" : "Producto"}
+        </p>
         <Link href={productPath}>
-          <h3 className="line-clamp-2 font-semibold leading-snug text-gray-900 transition-opacity hover:opacity-70">
+          <h3 className="line-clamp-2 text-[15px] font-bold leading-snug text-gray-950 transition-opacity hover:opacity-70 sm:text-base">
             {product.name}
           </h3>
         </Link>
-        <p className={`${compact ? "mt-1 line-clamp-1" : "mt-1 min-h-9 line-clamp-2"} text-xs leading-relaxed text-gray-400`}>
+        <p className={`${compact ? "mt-1 line-clamp-1" : "mt-1 min-h-9 line-clamp-2"} text-xs leading-relaxed text-gray-500`}>
           {product.description || " "}
         </p>
         <div className="mt-auto flex items-baseline gap-2 pt-3">
-          <span className={`${compact ? "text-lg" : "text-xl"} font-bold`} style={{ color: accentColor }}>
+          <span className={`${compact ? "text-lg" : "text-xl"} font-bold tracking-tight`} style={{ color: accentColor }}>
             ${displayPrice.toFixed(2)}
           </span>
           {showOriginalPrice && (
@@ -167,7 +169,7 @@ export default function ProductCard({
         {product.has_variants ? (
           <Link
             href={productPath}
-            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all active:scale-95"
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white transition-all active:scale-[0.98]"
             style={{ backgroundColor: accentColor }}
           >
             <SlidersHorizontal className="h-4 w-4" />
@@ -178,7 +180,8 @@ export default function ProductCard({
             type="button"
             onClick={handleAddToCart}
             disabled={loading || !fingerprint}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all active:scale-95 disabled:opacity-50"
+            aria-busy={loading}
+            className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white transition-all active:scale-[0.98] disabled:cursor-wait disabled:opacity-50"
             style={{ backgroundColor: accentColor }}
           >
             <ShoppingCart className="h-4 w-4" />
@@ -198,6 +201,6 @@ export default function ProductCard({
           </a>
         )}
       </div>
-    </div>
+    </article>
   );
 }

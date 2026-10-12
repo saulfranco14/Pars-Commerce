@@ -89,71 +89,89 @@ export default function ProductReviewsList({
   if (!total || averageRating === null) return null;
 
   return (
-    <section aria-labelledby="product-reviews-title" className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7 lg:p-8">
-      <div className="flex flex-col gap-4 border-b border-gray-100 pb-5 sm:flex-row sm:items-end sm:justify-between">
+    <section
+      aria-labelledby="product-reviews-title"
+      className="grid overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm lg:grid-cols-[280px_minmax(0,1fr)]"
+    >
+      <div className="flex flex-col justify-between bg-gray-950 p-5 text-white sm:p-7 lg:p-8">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/55">
             Opiniones de compras reales
           </p>
-          <h2 id="product-reviews-title" className="mt-1 text-2xl font-bold text-gray-950">
+          <h2
+            id="product-reviews-title"
+            className="mt-2 text-2xl font-bold tracking-[-0.025em]"
+          >
             Reseñas verificadas
           </h2>
+          <p className="mt-3 text-sm leading-6 text-white/60">
+            Sólo pueden opinar quienes terminaron una compra.
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-3xl font-bold tabular-nums text-gray-950">
+
+        <div className="mt-6 flex items-end gap-3 lg:mt-10">
+          <span className="text-5xl font-bold leading-none tabular-nums">
             {averageRating.toFixed(1)}
           </span>
-          <div>
+          <div className="pb-0.5">
             <ReviewStars rating={Math.round(averageRating)} />
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1.5 text-xs text-white/55">
               {total} {total === 1 ? "reseña" : "reseñas"}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-2">
-        {reviews.map((review) => (
-          <article
-            key={review.id}
-            className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4 [content-visibility:auto]"
+      <div className="min-w-0 p-4 sm:p-6 lg:p-8">
+        <div className={`grid gap-3 ${reviews.length > 1 ? "md:grid-cols-2" : ""}`}>
+          {reviews.map((review) => (
+            <article
+              key={review.id}
+              className="flex min-h-36 flex-col rounded-2xl border border-gray-200 bg-gray-50/70 p-4 [content-visibility:auto] sm:p-5"
+            >
+              <ReviewStars rating={Number(review.rating)} />
+              <p className="mt-3 flex-1 text-sm leading-6 text-gray-700">
+                {review.comment?.trim() ||
+                  "Calificación verificada sin comentario."}
+              </p>
+              <p className="mt-4 text-xs font-medium text-gray-400">
+                Compra verificada
+                {review.published_at
+                  ? ` · ${new Intl.DateTimeFormat("es-MX", {
+                      month: "short",
+                      year: "numeric",
+                    }).format(new Date(review.published_at))}`
+                  : ""}
+              </p>
+            </article>
+          ))}
+        </div>
+
+        {error ? (
+          <p
+            className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700"
+            role="alert"
           >
-            <ReviewStars rating={Number(review.rating)} />
-            <p className="mt-3 text-sm leading-6 text-gray-700">
-              {review.comment?.trim() || "Calificación verificada sin comentario."}
-            </p>
-            <p className="mt-3 text-xs font-medium text-gray-400">
-              Compra verificada
-              {review.published_at
-                ? ` · ${new Intl.DateTimeFormat("es-MX", {
-                    month: "short",
-                    year: "numeric",
-                  }).format(new Date(review.published_at))}`
-                : ""}
-            </p>
-          </article>
-        ))}
+            {error}
+          </p>
+        ) : null}
+
+        {hasMore ? (
+          <button
+            type="button"
+            onClick={() => void loadMore()}
+            disabled={loading}
+            aria-busy={loading}
+            className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-bold text-gray-900 transition-colors hover:bg-gray-50 disabled:cursor-wait disabled:opacity-60 sm:w-auto"
+            style={{ borderColor: `${accentColor}55`, color: accentColor }}
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : null}
+            {loading ? "Cargando reseñas…" : "Ver más reseñas"}
+          </button>
+        ) : null}
       </div>
-
-      {error ? (
-        <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
-          {error}
-        </p>
-      ) : null}
-
-      {hasMore ? (
-        <button
-          type="button"
-          onClick={() => void loadMore()}
-          disabled={loading}
-          aria-busy={loading}
-          className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-900 transition-colors hover:bg-gray-50 disabled:cursor-wait disabled:opacity-60 sm:w-auto"
-          style={{ borderColor: `${accentColor}55`, color: accentColor }}
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
-          {loading ? "Cargando reseñas…" : "Ver más reseñas"}
-        </button>
-      ) : null}
     </section>
   );
 }

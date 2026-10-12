@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   ArrowLeft,
   BadgeCheck,
-  ChevronDown,
   PackageCheck,
   Ruler,
   Shirt,
@@ -99,22 +98,22 @@ function RelatedRail({
     <section
       aria-labelledby={`${title.replace(/\s+/g, "-").toLowerCase()}-title`}
     >
-      <div className="mb-4 sm:flex sm:items-end sm:justify-between">
+      <div className="mb-5 sm:flex sm:items-end sm:justify-between">
         <div>
           <h2
             id={`${title.replace(/\s+/g, "-").toLowerCase()}-title`}
-            className="text-2xl font-bold tracking-tight text-gray-950"
+            className="text-2xl font-bold tracking-[-0.025em] text-gray-950 sm:text-3xl"
           >
             {title}
           </h2>
           <p className="mt-1 text-sm text-gray-500">{description}</p>
         </div>
       </div>
-      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
+      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
         {products.map((related) => (
           <div
             key={related.id}
-            className="w-[78vw] max-w-[290px] shrink-0 snap-start sm:w-auto sm:max-w-none"
+            className="w-[72vw] max-w-[252px] shrink-0 snap-start sm:w-auto sm:max-w-none"
           >
             <ProductCard
               product={related}
@@ -306,17 +305,17 @@ export default async function ProductoDetallePage({ params }: PageProps) {
   }>;
 
   return (
-    <div className="space-y-10 pb-10 sm:space-y-14 sm:pb-14">
+    <div className="space-y-9 pb-12 sm:space-y-12 sm:pb-16">
       <Link
         href={`/sitio/${slug}/productos`}
-        className="inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-950 mb-2"
+        className="inline-flex min-h-11 mb-2 items-center gap-2 rounded-xl px-2 text-sm font-semibold text-gray-600 transition-colors hover:bg-white hover:text-gray-950"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
-        Volver al catálogo
+        Seguir comprando
       </Link>
 
-      <article className="overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm lg:grid lg:grid-cols-[minmax(0,0.98fr)_minmax(420px,0.82fr)] lg:items-stretch">
-        <section className="relative min-w-0 bg-gray-50 p-3 sm:p-5 lg:p-6">
+      <article className="overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_20px_55px_-40px_rgba(15,23,42,0.4)] lg:grid lg:grid-cols-[minmax(0,1.08fr)_minmax(390px,0.92fr)] lg:items-stretch">
+        <section className="relative min-w-0 bg-[#f4f5f7] p-2 sm:p-5 lg:p-7">
           {badgeText ? (
             <span className="absolute left-6 top-6 z-10 rounded-full bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-md">
               {badgeText}
@@ -329,32 +328,33 @@ export default async function ProductoDetallePage({ params }: PageProps) {
           />
         </section>
 
-        <section className="min-w-0 border-t border-gray-100 px-5 py-6 sm:px-7 sm:py-8 lg:border-l lg:border-t-0 lg:px-9 lg:py-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
-            {product.type === "service" ? "Servicio" : "Producto"}
-          </p>
-          <h1 className="mt-2 max-w-xl text-3xl font-bold leading-tight tracking-tight text-gray-950 sm:text-4xl lg:text-[2.6rem]">
+        <section className="min-w-0 border-t border-gray-100 px-5 py-7 sm:px-8 sm:py-9 lg:border-l lg:border-t-0 lg:px-10 lg:py-12">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-gray-500">
+              {product.type === "service" ? "Servicio" : "Producto"}
+            </p>
+            {averageRating !== null ? (
+              <a
+                href="#resenas"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700"
+              >
+                <span className="text-amber-500" aria-hidden>
+                  ★
+                </span>
+                {averageRating.toFixed(1)}
+                <span className="font-normal text-gray-500">
+                  ({reviewsTotal})
+                </span>
+              </a>
+            ) : null}
+          </div>
+          <h1 className="mt-3 max-w-xl text-[2rem] font-bold leading-[1.08] tracking-[-0.035em] text-gray-950 sm:text-4xl lg:text-[2.75rem]">
             {product.name}
           </h1>
 
-          {averageRating !== null ? (
-            <a
-              href="#resenas"
-              className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg text-sm font-semibold text-gray-700"
-            >
-              <span className="text-amber-500" aria-hidden>
-                ★
-              </span>
-              {averageRating.toFixed(1)}
-              <span className="font-normal text-gray-500">
-                · {reviewsTotal} {reviewsTotal === 1 ? "reseña" : "reseñas"}
-              </span>
-            </a>
-          ) : null}
-
-          <div className="mt-5 flex flex-wrap items-end gap-x-3 gap-y-1">
+          <div className="mt-6 flex flex-wrap items-end gap-x-3 gap-y-1">
             <span
-              className="text-4xl font-bold tracking-tight"
+              className="text-[2.5rem] font-bold tracking-[-0.04em]"
               style={{ color: accentColor }}
             >
               ${displayPrice.toFixed(2)}
@@ -374,12 +374,12 @@ export default async function ProductoDetallePage({ params }: PageProps) {
           ) : null}
 
           {product.description ? (
-            <p className="mt-5 whitespace-pre-wrap text-base leading-7 text-gray-600 lg:max-w-prose">
+            <p className="mt-6 line-clamp-3 whitespace-pre-wrap text-base leading-7 text-gray-600 lg:max-w-prose">
               {product.description}
             </p>
           ) : null}
 
-          <div className="mt-8">
+          <div className="mt-7 border-t border-gray-100 pt-1">
             <ProductDetailActions
               productId={product.id}
               tenantId={tenant.id}
@@ -388,35 +388,35 @@ export default async function ProductoDetallePage({ params }: PageProps) {
             />
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:mt-8">
-            <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+          <div className="mt-6 grid grid-cols-3 divide-x divide-gray-100 border-t border-gray-100 pt-5">
+            <div className="px-2 text-center first:pl-0 sm:text-left">
               <BadgeCheck
                 className="h-5 w-5"
                 style={{ color: accentColor }}
                 aria-hidden
               />
-              <p className="mt-2 text-xs font-semibold text-gray-700">
-                Compra registrada
+              <p className="mt-2 text-[11px] font-semibold leading-4 text-gray-700 sm:text-xs">
+                Compra protegida
               </p>
             </div>
-            <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+            <div className="px-2 text-center sm:px-3 sm:text-left">
               <PackageCheck
                 className="h-5 w-5"
                 style={{ color: accentColor }}
                 aria-hidden
               />
-              <p className="mt-2 text-xs font-semibold text-gray-700">
-                Seguimiento del pedido
+              <p className="mt-2 text-[11px] font-semibold leading-4 text-gray-700 sm:text-xs">
+                Sigue tu pedido
               </p>
             </div>
-            <div className="col-span-2 rounded-xl border border-gray-100 bg-gray-50 p-3 sm:col-span-1">
+            <div className="px-2 text-center last:pr-0 sm:pl-3 sm:text-left">
               <Sparkles
                 className="h-5 w-5"
                 style={{ color: accentColor }}
                 aria-hidden
               />
-              <p className="mt-2 text-xs font-semibold text-gray-700">
-                Atención del negocio
+              <p className="mt-2 text-[11px] font-semibold leading-4 text-gray-700 sm:text-xs">
+                Atención directa
               </p>
             </div>
           </div>
@@ -426,65 +426,52 @@ export default async function ProductoDetallePage({ params }: PageProps) {
       {product.description || customerDetails.length > 0 ? (
         <section
           aria-labelledby="product-information-title"
-          className="rounded-[28px] bg-gray-50 p-4 sm:p-6"
+          className="grid overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm lg:grid-cols-[0.72fr_1.28fr]"
         >
-          <h2
-            id="product-information-title"
-            className="text-2xl font-bold tracking-tight text-gray-950"
-          >
-            Conoce lo que estás eligiendo
-          </h2>
-          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          <div className="bg-gray-950 px-5 py-7 text-white sm:px-7 sm:py-9 lg:px-9 lg:py-10">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/55">
+              Detalles del artículo
+            </p>
+            <h2
+              id="product-information-title"
+              className="mt-2 text-2xl font-bold tracking-[-0.025em] sm:text-3xl"
+            >
+              Lo importante antes de elegir.
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-white/65">
+              Descripción, materiales y cuidados reunidos para decidir con
+              claridad.
+            </p>
+          </div>
+          <div className="grid gap-px bg-gray-200 sm:grid-cols-2">
             {product.description ? (
-              <details
-                className="group rounded-2xl border border-gray-200 bg-white shadow-sm"
-                open
+              <article
+                className={`bg-white p-5 sm:p-6 ${customerDetails.length === 0 ? "sm:col-span-2" : ""}`}
               >
-                <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 font-semibold text-gray-950 sm:px-5">
-                  Descripción
-                  <ChevronDown
-                    className="h-5 w-5 text-gray-400 transition-transform group-open:rotate-180"
-                    aria-hidden
-                  />
-                </summary>
-                <p className="border-t border-gray-100 px-4 py-4 whitespace-pre-wrap text-sm leading-6 text-gray-600 sm:px-5">
+                <h3 className="text-sm font-bold text-gray-950">Descripción</h3>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-600">
                   {product.description}
                 </p>
-              </details>
+              </article>
             ) : null}
 
-            {customerDetails.length > 0 ? (
-              <details className="group rounded-2xl border border-gray-200 bg-white shadow-sm">
-                <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 font-semibold text-gray-950 sm:px-5">
-                  Materiales, cuidados y medidas
-                  <ChevronDown
-                    className="h-5 w-5 text-gray-400 transition-transform group-open:rotate-180"
-                    aria-hidden
-                  />
-                </summary>
-                <dl className="space-y-4 border-t border-gray-100 px-4 py-4 sm:px-5">
-                  {customerDetails.map(({ label, value, icon: Icon }) => (
-                    <div key={label} className="flex gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-50">
-                        <Icon
-                          className="h-4 w-4"
-                          style={{ color: accentColor }}
-                          aria-hidden
-                        />
-                      </span>
-                      <div>
-                        <dt className="text-sm font-semibold text-gray-950">
-                          {label}
-                        </dt>
-                        <dd className="mt-1 whitespace-pre-wrap text-sm leading-6 text-gray-600">
-                          {value}
-                        </dd>
-                      </div>
-                    </div>
-                  ))}
-                </dl>
-              </details>
-            ) : null}
+            {customerDetails.map(({ label, value, icon: Icon }) => (
+              <article key={label} className="bg-white p-5 sm:p-6">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-50">
+                    <Icon
+                      className="h-4 w-4"
+                      style={{ color: accentColor }}
+                      aria-hidden
+                    />
+                  </span>
+                  <h3 className="text-sm font-bold text-gray-950">{label}</h3>
+                </div>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-600">
+                  {value}
+                </p>
+              </article>
+            ))}
           </div>
         </section>
       ) : null}

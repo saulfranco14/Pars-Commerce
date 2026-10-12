@@ -69,10 +69,10 @@ export default function SiteHeader({
   return (
     <>
       <header className={headerClass}>
-        <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6">
           <Link
             href={`/sitio/${slug}`}
-            className="flex min-h-11 shrink-0 cursor-pointer items-center gap-2 text-xl font-bold tracking-tight transition-colors duration-200 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
+            className="flex min-h-11 min-w-0 shrink cursor-pointer items-center gap-2 rounded-lg text-lg font-bold tracking-[-0.02em] transition-colors duration-200 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 sm:text-xl"
             style={{ color: accentColor }}
           >
             {logoUrl ? (
@@ -87,7 +87,7 @@ export default function SiteHeader({
             ) : (
               <Store className="h-6 w-6 shrink-0" aria-hidden />
             )}
-            <span className="truncate">{tenantName}</span>
+            <span className="max-w-[158px] truncate sm:max-w-[240px]">{tenantName}</span>
           </Link>
           {!checkoutFocus && (
             <>
@@ -106,10 +106,10 @@ export default function SiteHeader({
                 ))}
                 <Link
                   href={`/sitio/${slug}/productos`}
-                  aria-label="Buscar en el catálogo"
-                  className={`flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 ${navLinkClass}`}
+                  className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 ${navLinkClass}`}
                 >
                   <Search className="h-4 w-4" aria-hidden />
+                  Buscar
                 </Link>
                 <CartBadge sitioSlug={slug} accentColor={accentColor} />
               </nav>
