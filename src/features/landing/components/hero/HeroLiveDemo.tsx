@@ -3,7 +3,7 @@
 import { Pointer, Smartphone, Store, Zap } from "lucide-react";
 
 import { useHeroDemo } from "@/features/landing/hooks/useHeroDemo";
-import { HeroDashboard } from "@/features/landing/components/hero/HeroDashboard";
+import { HeroPanelPhone } from "@/features/landing/components/hero/HeroPanelPhone";
 import { HeroGuideCard } from "@/features/landing/components/hero/HeroGuideCard";
 import { HeroModuleTabs } from "@/features/landing/components/hero/HeroModuleTabs";
 import { HeroPanelEcho } from "@/features/landing/components/hero/HeroPanelEcho";
@@ -79,26 +79,26 @@ export function HeroLiveDemo() {
         />
       </div>
 
-      <div className="mt-5 flex flex-col items-center lg:flex-row lg:items-start">
+      <div className="mt-5 flex flex-col items-center lg:flex-row lg:items-start lg:justify-center">
         <div className="shrink-0">
           <DeviceLabel icon={Smartphone} role="Tu cliente" hint={!touched} />
           <HeroPhone beat={beat} sandbox={sandbox} controls={controls} tapKey={tapKey} />
         </div>
 
-        <div className="hidden shrink-0 items-center self-start px-1.5 pt-44 lg:flex" aria-hidden>
-          <span className="h-px w-3 bg-accent/40" />
-          <span className="flex h-6 w-6 items-center justify-center rounded-full border border-accent/30 bg-accent/10">
-            <Zap className="h-3 w-3 text-accent" />
+        <div className="hidden shrink-0 items-center self-start px-3 pt-48 lg:flex" aria-hidden>
+          <span className="h-px w-5 bg-accent/40" />
+          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-accent/30 bg-accent/10">
+            <Zap className="h-3.5 w-3.5 text-accent" />
           </span>
-          <span className="h-px w-3 bg-accent/40" />
+          <span className="h-px w-5 bg-accent/40" />
         </div>
 
         <div className="flex w-full justify-center lg:hidden">
           <HeroPanelEcho beat={beat} panel={panel} />
         </div>
-        <div className="hidden w-full min-w-0 lg:block">
-          <DeviceLabel icon={Store} role="Tu panel, al instante" />
-          <HeroDashboard beat={beat} panel={panel} />
+        <div className="hidden shrink-0 lg:block">
+          <DeviceLabel icon={Store} role="Tu celular, al instante" />
+          <HeroPanelPhone beat={beat} panel={panel} />
         </div>
       </div>
     </div>

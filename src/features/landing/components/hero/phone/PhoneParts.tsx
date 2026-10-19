@@ -180,3 +180,12 @@ export function CategoryChips({
     </div>
   );
 }
+
+/** Marco de celular compartido por el lado del cliente y el del negocio. */
+export function PhoneShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="w-68 touch-manipulation rounded-[1.6rem] border border-border bg-surface-raised p-1.5 shadow-card lg:w-60">
+      <div className="relative overflow-hidden rounded-[1.3rem] bg-surface">{children}</div>
+    </div>
+  );
+}

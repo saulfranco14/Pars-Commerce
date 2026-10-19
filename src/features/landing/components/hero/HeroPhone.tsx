@@ -1,3 +1,4 @@
+import { PhoneShell } from "@/features/landing/components/hero/phone/PhoneParts";
 import { CheckoutView } from "@/features/landing/components/hero/phone/CheckoutView";
 import { LoanView } from "@/features/landing/components/hero/phone/LoanView";
 import { MenuView } from "@/features/landing/components/hero/phone/MenuView";
@@ -42,21 +43,17 @@ export function HeroPhone({
   const View = VIEWS[beat.phone.view];
 
   return (
-    <div className="relative">
-      <div className="w-68 touch-manipulation rounded-[1.6rem] border border-border bg-surface-raised p-1.5 shadow-card lg:w-60">
-        <div className="relative overflow-hidden rounded-[1.3rem] bg-surface">
-          <div key={beat.key} className="animate-fade-in-up flex h-100 flex-col">
-            <View sandbox={sandbox} controls={controls} />
-          </div>
-          {tapKey > 0 && (
-            <span
-              key={tapKey}
-              className="animate-hero-tap pointer-events-none absolute bottom-3 left-1/2 h-14 w-14 -translate-x-1/2 rounded-full bg-accent"
-              aria-hidden
-            />
-          )}
-        </div>
+    <PhoneShell>
+      <div key={beat.key} className="animate-fade-in-up flex h-100 flex-col">
+        <View sandbox={sandbox} controls={controls} />
       </div>
-    </div>
+      {tapKey > 0 && (
+        <span
+          key={tapKey}
+          className="animate-hero-tap pointer-events-none absolute bottom-3 left-1/2 h-14 w-14 -translate-x-1/2 rounded-full bg-accent"
+          aria-hidden
+        />
+      )}
+    </PhoneShell>
   );
 }
