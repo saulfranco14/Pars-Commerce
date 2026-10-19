@@ -1,6 +1,6 @@
 import { CheckCircle2 } from "lucide-react";
 
-import { SolutionSelectorGrid } from "@/features/solutions/SolutionSelectorGrid";
+import { SolutionSelectorGrid } from "@/features/solutions/components/SolutionSelectorGrid";
 
 const STARTER_INCLUDES = [
   "15 productos de inicio",

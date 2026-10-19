@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { FocusedSolutionExperience } from "@/features/solutions/FocusedSolutionExperience";
+import { FocusedSolutionExperience } from "@/features/solutions/components/FocusedSolutionExperience";
 import { SOLUTIONS, getSolutionByVertical } from "@/features/solutions/solutionCatalog";
 
 export function generateStaticParams() {

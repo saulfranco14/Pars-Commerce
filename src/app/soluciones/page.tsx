@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
-import { SolutionSelectorGrid } from "@/features/solutions/SolutionSelectorGrid";
+import { SolutionSelectorGrid } from "@/features/solutions/components/SolutionSelectorGrid";
 
 export const metadata: Metadata = {
   title: "Elige una solución para tu negocio",
