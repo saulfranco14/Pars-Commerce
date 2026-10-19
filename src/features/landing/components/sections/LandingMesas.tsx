@@ -1,18 +1,13 @@
 import Link from "next/link";
 import { ArrowRight, QrCode } from "lucide-react";
 
-import { MesasDemoSimulator } from "@/features/landing/components/mesas/MesasDemoSimulator";
 import { MesasPainSolution } from "@/features/landing/components/mesas/MesasPainSolution";
 import { MesasAudiencePicker } from "@/features/landing/components/mesas/MesasAudiencePicker";
 
 /**
- * Sección de mesas + código QR. Es la función más difícil de "contar" con texto,
- * así que el centro es una demo que el prospecto puede tocar: ve las MISMAS
- * pantallas que vería su cliente, en el mismo orden.
- *
- * Orden intencional: primero se reconoce en el problema (pain/solution), luego
- * vive el flujo (demo), luego confirma que aplica a su rubro (audiencias), y
- * hasta entonces se le pide registrarse.
+ * Mesas + QR a fondo: primero se reconoce en el problema (pain/solution),
+ * luego confirma que aplica a su rubro (audiencias) y hasta entonces se le
+ * pide registrarse. La demo tocable vive en el hero; aquí no se repite.
  */
 export function LandingMesas() {
   return (
@@ -35,33 +30,20 @@ export function LandingMesas() {
             <span className="text-accent">Tú solo entregas.</span>
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-muted-foreground sm:text-lg">
-            Pega un QR en la mesa o el mostrador. Tu cliente escanea, arma su
-            pedido, ve cuándo está listo y paga solo — sin app, sin terminal y
-            sin que tu personal anote nada.
+            Pega un QR en la mesa o el mostrador. Tu cliente escanea con su
+            cámara, arma su pedido, ve cuándo está listo y paga desde su
+            celular. Tu equipo solo entrega.
           </p>
         </div>
 
         <MesasPainSolution />
-
-        <div className="mt-20">
-          <div className="text-center">
-            <h3 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-              Míralo como lo vive tu cliente
-            </h3>
-            <p className="mx-auto mt-3 max-w-xl text-[15px] text-muted-foreground">
-              Estas son las pantallas reales de la plataforma. Toca cada paso y
-              recórrelo tú mismo antes de crear tu cuenta.
-            </p>
-          </div>
-          <MesasDemoSimulator />
-        </div>
 
         <MesasAudiencePicker />
 
         <div className="mt-14 flex flex-col items-center gap-3 text-center">
           <Link
             href="/registro"
-            className="group inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-base font-semibold text-accent-foreground transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background sm:w-auto"
+            className="group inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-base font-semibold text-accent-foreground transition-colors hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-auto"
           >
             Crear mi QR gratis
             <ArrowRight
@@ -70,7 +52,7 @@ export function LandingMesas() {
             />
           </Link>
           <p className="text-sm text-muted-foreground">
-            Sin costo para empezar · Sin terminal · Sin mensualidad
+            $0 al mes para empezar · Sin terminal
           </p>
         </div>
       </div>
