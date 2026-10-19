@@ -26,17 +26,16 @@ export function LandingFooter() {
           <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10">
             <Sparkles className="h-6 w-6 text-accent" aria-hidden />
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            ¿Listo para digitalizar tu negocio?
+          <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            Tu cliente ya trae el celular en la mano.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
-            Únete a los negocios que ya usan Tlaco para gestionar productos, recibir pedidos y
-            vender en línea.
+            Crea tu cuenta, elige tu giro y comparte tu QR o tu tienda hoy mismo.
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
               href="/registro"
-              className="group inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+              className="group inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               Crear cuenta gratis
               <ArrowRight
@@ -46,12 +45,12 @@ export function LandingFooter() {
             </Link>
             <Link
               href="/login"
-              className="inline-flex min-h-12 cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-6 py-3.5 text-base font-medium text-foreground transition-colors duration-200 hover:bg-border-soft/50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+              className="inline-flex min-h-12 cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-6 py-3.5 text-base font-medium text-foreground transition-colors duration-200 hover:bg-border-soft/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               Ya tengo cuenta
             </Link>
           </div>
-          <p className="mt-6 text-sm text-muted-foreground">Sin tarjeta de crédito.</p>
+          <p className="mt-6 text-sm text-muted-foreground">$0 al mes para empezar · Sin tarjeta</p>
         </div>
       </div>
 
