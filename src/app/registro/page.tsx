@@ -22,6 +22,7 @@ import { BENEFITS } from "@/features/auth/constants/benefits";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 import { createClient } from "@/lib/supabase/client";
 import { track } from "@vercel/analytics";
+import { getAcquisitionProps } from "@/lib/acquisition";
 import { parseRegistrationIntent } from "@/features/auth/registrationIntent";
 import { getSolutionByVertical } from "@/features/solutions/solutionCatalog";
 import { PLAN_PRESENTATION } from "@/features/landing/constants/pricing";
@@ -271,7 +272,7 @@ function RegistroContent() {
 
     setLoading(true);
     const fullIntent = { ...intent, phone };
-    try { track("registration_started", { plan: intent.plan, giro: intent.giro, solution: intent.solutionKey ?? "direct" }); } catch { /* La analítica no bloquea el registro. */ }
+    try { track("registration_started", { plan: intent.plan, giro: intent.giro, solution: intent.solutionKey ?? "direct", ...getAcquisitionProps() }); } catch { /* La analítica no bloquea el registro. */ }
 
     try {
       const response = await fetch("/api/auth/send-confirmation", {
@@ -294,7 +295,7 @@ function RegistroContent() {
       const cleanEmail = email.trim();
       setRegisteredEmail(cleanEmail);
       setSuccess(true);
-      try { track("registration_completed", { plan: intent.plan, giro: intent.giro, solution: intent.solutionKey ?? "direct" }); } catch { /* La analítica no bloquea el registro. */ }
+      try { track("registration_completed", { plan: intent.plan, giro: intent.giro, solution: intent.solutionKey ?? "direct", ...getAcquisitionProps() }); } catch { /* La analítica no bloquea el registro. */ }
       void handleStart(cleanEmail);
     } catch (err: unknown) {
       console.error("Error en registro:", err);

@@ -4,6 +4,7 @@ import { SwrProvider } from "@/components/providers/SwrProvider";
 import { Analytics } from "@vercel/analytics/next";
 import { AuthHashRedirect } from "@/components/auth/AuthHashRedirect";
 import { ServiceWorkerFreshnessGuard } from "@/features/qr/components/ServiceWorkerFreshnessGuard";
+import { AcquisitionCapture } from "@/components/analytics/AcquisitionCapture";
 
 export const metadata: Metadata = {
   title: "Tlaco",
@@ -61,6 +62,7 @@ export default function RootLayout({
           <ServiceWorkerFreshnessGuard />
           {children}
           <Analytics />
+          <AcquisitionCapture />
           <div id="ticket-print-portal" aria-hidden="true" />
         </SwrProvider>
       </body>
