@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { LandingNav } from "@/features/landing/components/sections/LandingNav";
 import { LandingHero } from "@/features/landing/components/sections/LandingHero";
 import { LandingStats } from "@/features/landing/components/sections/LandingStats";
@@ -10,6 +12,17 @@ import { LandingComingSoon } from "@/features/landing/components/sections/Landin
 import { LandingPricing } from "@/features/landing/components/sections/LandingPricing";
 import { LandingFaq } from "@/features/landing/components/sections/LandingFaq";
 import { LandingFooter } from "@/features/landing/components/sections/LandingFooter";
+
+const TITLE = "Tu cliente pide y paga desde su celular";
+const DESCRIPTION =
+  "Mesas con QR, tienda en línea, cuotas y crédito en una sola cuenta. Tu cliente pide y paga desde su celular y tú lo ves en tu panel al instante. Empieza gratis.";
+
+export const metadata: Metadata = {
+  title: { absolute: `Tlaco · ${TITLE}` },
+  description: DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: { title: `${TITLE}. Tú lo ves al instante.`, description: DESCRIPTION, url: "/" },
+};
 
 /**
  * Narrativa pensada para tráfico de campañas, en este orden a propósito:

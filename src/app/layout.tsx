@@ -5,10 +5,14 @@ import { Analytics } from "@vercel/analytics/next";
 import { AuthHashRedirect } from "@/components/auth/AuthHashRedirect";
 import { ServiceWorkerFreshnessGuard } from "@/features/qr/components/ServiceWorkerFreshnessGuard";
 import { AcquisitionCapture } from "@/components/analytics/AcquisitionCapture";
+import { getAppUrl } from "@/lib/env/appUrl";
 
 export const metadata: Metadata = {
-  title: "Tlaco",
+  metadataBase: new URL(getAppUrl()),
+  title: { default: "Tlaco", template: "%s · Tlaco" },
   description: "Todo tu negocio en un solo lugar: catálogo, pedidos, cobros y tu dinero",
+  openGraph: { siteName: "Tlaco", locale: "es_MX", type: "website" },
+  twitter: { card: "summary_large_image" },
   manifest: "/site.webmanifest",
   appleWebApp: {
     capable: true,

@@ -6,7 +6,7 @@ import { LegalDocument } from "@/features/legal/components/LegalDocument";
 import { PRIVACY } from "@/features/legal/constants/privacy";
 
 export const metadata: Metadata = {
-  title: "Aviso de Privacidad · Tlaco",
+  title: "Aviso de Privacidad",
   description:
     "Qué datos personales tratamos, para qué, y cómo ejercer tus derechos ARCO.",
 };

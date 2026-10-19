@@ -7,7 +7,7 @@ import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { hashPreviewToken } from "@/features/preview/previewLinks";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export const metadata: Metadata = { title: "Vista previa privada · Tlaco", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Vista previa privada", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 export default async function PrivatePreviewPage({ params }: { params: Promise<{ token: string }> }) {
