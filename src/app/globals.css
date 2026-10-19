@@ -475,11 +475,28 @@ body {
   animation: hero-tap 0.7s ease-out both;
 }
 
+/* Laser sweeping the QR on the scan screen — invites the first tap. */
+@keyframes hero-scan-line {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(5.25rem);
+  }
+}
+
+.animate-hero-scan-line {
+  animation: hero-scan-line 2.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-hero-sync-flash,
   .animate-hero-row-in,
   .animate-hero-live-pulse,
-  .animate-hero-tap {
+  .animate-hero-tap,
+  .animate-hero-scan-line {
     animation: none;
   }
 
