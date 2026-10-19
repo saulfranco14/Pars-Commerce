@@ -4,7 +4,7 @@ export const COMPANY = {
   address: "Unión 19, Xochitenco, Chimalhuacán, Estado de México",
   privacyEmail: "tlaco.commerce@gmail.com",
   supportEmail: "tlaco.commerce@gmail.com",
-  domain: "tlaco.mx",
+  domain: "tlaco.app",
 } as const;
 
 export const LEGAL_UPDATED_AT = "26 de julio de 2026";

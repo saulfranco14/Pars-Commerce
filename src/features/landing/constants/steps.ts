@@ -1,6 +1,6 @@
 import { QrCode, Store, UserPlus } from "lucide-react";
 
-/** `detail` es un dato verificable de cada paso; la URL refleja la ruta real `/sitio/[slug]`. */
+/** `detail` es un dato verificable de cada paso; la URL refleja la ruta real `/sitio/[slug]` en tlaco.app. */
 export const STEPS = [
   {
     icon: UserPlus,
@@ -14,7 +14,7 @@ export const STEPS = [
     step: 2,
     title: "Elige tu giro",
     description: "Tu catálogo de inicio y tu tienda en línea quedan listos. Los editas cuando quieras.",
-    detail: "tlaco.mx/sitio/tu-negocio",
+    detail: "tlaco.app/sitio/tu-negocio",
   },
   {
     icon: QrCode,

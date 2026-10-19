@@ -1,3 +1,5 @@
+import { PRODUCTION_APP_URL } from "@/lib/env/appUrl";
+
 import type { CatalogItemDefinition } from "@/features/catalog/catalogDefinitions";
 
 /** Pesos sin centavos: los precios de ejemplo del recorrido son redondos. */
@@ -13,7 +15,7 @@ export function catalogItemKey(item: CatalogItemDefinition): string {
   return `${item.type}:${item.name}`;
 }
 
+/** Siempre producción: el QR se escanea con un celular, que no llega a localhost ni a previews. */
 export function solutionPreviewUrl(path: string): string {
-  const base = (process.env.NEXT_PUBLIC_APP_URL ?? "https://tlaco.mx").replace(/\/$/, "");
-  return `${base}/soluciones/${path}#recorrido`;
+  return `${PRODUCTION_APP_URL}/soluciones/${path}#recorrido`;
 }

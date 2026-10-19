@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
 
 import { SOLUTIONS } from "@/features/solutions/solutionCatalog";
+import { getPublicAppUrl } from "@/lib/env/appUrl";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://tlaco.mx").replace(/\/$/, "");
+  const baseUrl = getPublicAppUrl();
   const now = new Date();
   return [
     { url: baseUrl, lastModified: now, changeFrequency: "weekly", priority: 1 },
