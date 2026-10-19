@@ -7,7 +7,6 @@ import { LandingBusinessSolutions } from "@/features/landing/components/sections
 import { LandingPlatform } from "@/features/landing/components/sections/LandingPlatform";
 import { LandingMesas } from "@/features/landing/components/sections/LandingMesas";
 import { LandingHowItWorks } from "@/features/landing/components/sections/LandingHowItWorks";
-import { LandingShowflow } from "@/features/landing/components/sections/LandingShowflow";
 import { LandingComingSoon } from "@/features/landing/components/sections/LandingComingSoon";
 import { LandingPricing } from "@/features/landing/components/sections/LandingPricing";
 import { LandingFaq } from "@/features/landing/components/sections/LandingFaq";
@@ -31,7 +30,7 @@ export const metadata: Metadata = {
  *  2. Stats       — las promesas concretas (tiempo, costo, sin terminal).
  *  3. Soluciones  — tu giro ya viene armado: el freno "me da flojera empezar".
  *  4. Plataforma / Mesas — todo lo que hace y la función estrella a fondo.
- *  5. Cómo empezar / Showflow — qué tiene que hacer él.
+ *  5. Cómo empezar — qué tiene que hacer él, en tres pasos.
  *  6. Precios / FAQ — objeciones. "Lo que viene" va al final: lo que aún no
  *     existe no debe interrumpir el argumento de venta.
  *
@@ -50,7 +49,6 @@ export default function Home() {
         <LandingPlatform />
         <LandingMesas />
         <LandingHowItWorks />
-        <LandingShowflow />
         <LandingPricing />
         <LandingFaq />
         <LandingComingSoon />

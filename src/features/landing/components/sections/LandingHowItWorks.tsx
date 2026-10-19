@@ -2,56 +2,42 @@ import { STEPS } from "@/features/landing/constants/steps";
 
 export function LandingHowItWorks() {
   return (
-    <section id="como-funciona" className="border-t border-border py-16 sm:py-24">
+    <section id="como-funciona" className="scroll-mt-20 border-t border-border py-14 sm:py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-accent" aria-hidden />
-          <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Tres pasos para comenzar
+          <h2 className="text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            Vendes hoy mismo en tres pasos
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-            Sin configuraciones complejas. En minutos tendrás tu tienda en línea.
+          <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
+            Sin instalar nada ni contratar a nadie.
           </p>
         </div>
 
-        <div className="relative mt-12 grid gap-8 sm:grid-cols-3">
-          <div
-            className="absolute top-15 left-[16.67%] right-[16.67%] hidden border-t border-dashed border-border sm:block"
-            aria-hidden
-          />
-
+        <ol className="mt-10 grid gap-3 sm:grid-cols-3 sm:gap-6">
           {STEPS.map(({ icon: Icon, step, title, description, detail }) => (
-            <div
+            <li
               key={step}
-              className="relative flex flex-col overflow-hidden rounded-xl border border-border bg-surface-raised p-6 text-center"
+              className="flex gap-4 rounded-xl border border-border bg-surface-raised p-5 sm:flex-col sm:gap-0 sm:p-6"
             >
-              <span
-                className="absolute top-3 right-4 text-5xl font-bold text-accent/[0.07] select-none"
-                aria-hidden
-              >
-                {step}
-              </span>
-
-              <div className="relative mx-auto">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                  <Icon className="h-7 w-7" aria-hidden />
+              <div className="relative h-12 w-12 shrink-0 sm:mx-auto sm:h-14 sm:w-14">
+                <div className="flex h-full w-full items-center justify-center rounded-xl bg-accent/10 text-accent">
+                  <Icon className="h-6 w-6 sm:h-7 sm:w-7" aria-hidden />
                 </div>
                 <span
-                  className="absolute -top-1.5 -left-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground"
+                  className="absolute -left-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground"
                   aria-hidden
                 >
                   {step}
                 </span>
               </div>
-
-              <h3 className="mt-4 font-semibold text-foreground">{title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{description}</p>
-              <p className="mt-3 text-xs font-medium font-mono text-accent">
-                {detail}
-              </p>
-            </div>
+              <div className="min-w-0 sm:mt-4 sm:text-center">
+                <h3 className="font-semibold text-foreground">{title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{description}</p>
+                <p className="mt-2 text-xs font-semibold text-accent">{detail}</p>
+              </div>
+            </li>
           ))}
-        </div>
+        </ol>
       </div>
     </section>
   );
