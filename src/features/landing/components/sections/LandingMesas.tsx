@@ -2,18 +2,12 @@ import Link from "next/link";
 import { ArrowRight, QrCode } from "lucide-react";
 
 import { MesasPainSolution } from "@/features/landing/components/mesas/MesasPainSolution";
-import { MesasAudiencePicker } from "@/features/landing/components/mesas/MesasAudiencePicker";
 
-/**
- * Mesas + QR a fondo: primero se reconoce en el problema (pain/solution),
- * luego confirma que aplica a su rubro (audiencias) y hasta entonces se le
- * pide registrarse. La demo tocable vive en el hero; aquí no se repite.
- */
 export function LandingMesas() {
   return (
     <section
       id="mesas-qr"
-      className="border-t border-border bg-surface/50 py-16 sm:py-24"
+      className="border-t border-border bg-surface/50 py-16 sm:py-10"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="text-center">
@@ -37,8 +31,6 @@ export function LandingMesas() {
         </div>
 
         <MesasPainSolution />
-
-        <MesasAudiencePicker />
 
         <div className="mt-14 flex flex-col items-center gap-3 text-center">
           <Link
