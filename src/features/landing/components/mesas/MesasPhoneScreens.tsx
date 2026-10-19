@@ -261,7 +261,7 @@ export function PaidScreen() {
           $284.00
         </p>
         <p className="mt-1 text-[11px] text-muted-foreground">
-          Mesa 4 · Mercado Pago
+          Mesa 4 · Pago con tarjeta
         </p>
       </div>
       <div className="flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5">
@@ -272,7 +272,7 @@ export function PaidScreen() {
       </div>
       <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
         <ShieldCheck className="h-3 w-3" aria-hidden />
-        Pago protegido por Mercado Pago
+        Pago protegido y cifrado
       </p>
     </div>
   );
