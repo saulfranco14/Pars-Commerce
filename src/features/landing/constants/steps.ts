@@ -4,7 +4,7 @@ export const STEPS = [
   {
     icon: UserPlus,
     step: 1,
-    title: "Registrate",
+    title: "Regístrate",
     description: "Crea tu cuenta en segundos. Sin tarjeta para empezar.",
     detail: "30 segundos",
   },

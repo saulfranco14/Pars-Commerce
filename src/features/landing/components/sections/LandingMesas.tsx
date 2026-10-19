@@ -31,7 +31,7 @@ export function LandingMesas() {
             Mesas y código QR
           </div>
           <h2 className="mx-auto mt-5 max-w-3xl text-2xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Tu cliente pide y paga desde su celular.{" "}
+            Pega un QR y nadie vuelve a anotar pedidos.{" "}
             <span className="text-accent">Tú solo entregas.</span>
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-muted-foreground sm:text-lg">

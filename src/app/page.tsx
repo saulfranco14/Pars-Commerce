@@ -1,6 +1,6 @@
 import { LandingNav } from "@/features/landing/components/sections/LandingNav";
 import { LandingHero } from "@/features/landing/components/sections/LandingHero";
-import { LandingLogos } from "@/features/landing/components/sections/LandingLogos";
+import { LandingStats } from "@/features/landing/components/sections/LandingStats";
 import { LandingBusinessSolutions } from "@/features/landing/components/sections/LandingBusinessSolutions";
 import { LandingPlatform } from "@/features/landing/components/sections/LandingPlatform";
 import { LandingMesas } from "@/features/landing/components/sections/LandingMesas";
@@ -9,22 +9,21 @@ import { LandingShowflow } from "@/features/landing/components/sections/LandingS
 import { LandingComingSoon } from "@/features/landing/components/sections/LandingComingSoon";
 import { LandingPricing } from "@/features/landing/components/sections/LandingPricing";
 import { LandingFaq } from "@/features/landing/components/sections/LandingFaq";
-import { LandingCta } from "@/features/landing/components/sections/LandingCta";
 import { LandingFooter } from "@/features/landing/components/sections/LandingFooter";
 
 /**
- * Narrativa de la landing, en este orden a propósito:
+ * Narrativa pensada para tráfico de campañas, en este orden a propósito:
  *
- *  1. Hero        — VE el producto funcionando (dos dispositivos en vivo).
- *  2. Logos       — prueba social rápida.
- *  3. Plataforma  — todo lo que hace, contado desde el dueño Y desde el cliente.
- *  4. Mesas/QR    — la función estrella, a fondo y tocable.
+ *  1. Hero        — la diferencia en una frase + la demo tocable.
+ *  2. Stats       — las promesas concretas (tiempo, costo, sin terminal).
+ *  3. Soluciones  — tu giro ya viene armado: el freno "me da flojera empezar".
+ *  4. Plataforma / Mesas — todo lo que hace y la función estrella a fondo.
  *  5. Cómo empezar / Showflow — qué tiene que hacer él.
- *  6. Lo que viene / Precios / FAQ / CTA.
+ *  6. Precios / FAQ — objeciones. "Lo que viene" va al final: lo que aún no
+ *     existe no debe interrumpir el argumento de venta.
  *
- * `LandingFeatures` y `LandingBentoShowcase` se retiraron: eran versiones
- * parciales del inventario que `LandingPlatform` ya cuenta completo y con las
- * dos perspectivas. Tres secciones de features seguidas competían entre ellas.
+ * El CTA de cierre vive en el footer; tener otro bloque igual justo antes
+ * repetía la misma pregunta dos veces seguidas.
  */
 export default function Home() {
   return (
@@ -33,16 +32,15 @@ export default function Home() {
       <div className="h-13" aria-hidden />
       <main>
         <LandingHero />
-        <LandingLogos />
+        <LandingStats />
         <LandingBusinessSolutions />
         <LandingPlatform />
         <LandingMesas />
         <LandingHowItWorks />
         <LandingShowflow />
-        <LandingComingSoon />
         <LandingPricing />
         <LandingFaq />
-        <LandingCta />
+        <LandingComingSoon />
       </main>
       <LandingFooter />
     </div>
