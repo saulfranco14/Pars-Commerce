@@ -6,7 +6,8 @@ import useSWR from "swr";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { PeriodSelector } from "@/components/admin/PeriodSelector";
 import { pageHeaderCta } from "@/components/admin/actionButtonClasses";
-import { useActiveTenant } from "@/stores/useTenantStore";
+import { useActiveTenant, useCanOpenSection, usePermission } from "@/stores/useTenantStore";
+import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import {
@@ -335,6 +336,16 @@ function AssistedSetupGuide({ tenantSlug, paymentsConnected }: { tenantSlug: str
 
 export default function DashboardPage() {
   const activeTenant = useActiveTenant();
+  // Home is the first screen every role lands on: each block shows only to who can act on it.
+  const can = usePermission();
+  const canOpen = useCanOpenSection();
+  const canSetup = can("settings.write");
+  const canSeeMoney = can("money.read");
+  const canSeeTables = can("qr.read");
+  const canAssign = can(ORDER_PERMISSIONS.assign);
+  const canTakeOrders = can(ORDER_PERMISSIONS.take);
+  const canSeeCatalog = canOpen("productos");
+  const canSeeSubscriptions = canOpen("suscripciones");
   const [period, setPeriod] = useState<
     "today" | "week" | "fortnight" | "month" | "cutoff"
   >("week");
@@ -552,28 +563,32 @@ export default function DashboardPage() {
                 },
               ]}
             />
-            <button
-              type="button"
-              onClick={() => setCreateOrderOpen(true)}
-              className={`${pageHeaderCta} w-full justify-center whitespace-nowrap sm:w-auto`}
-            >
-              <Plus className="h-4 w-4 shrink-0" aria-hidden />
-              Nueva Orden
-            </button>
-            <button
-              type="button"
-              onClick={() => setCreateQuoteOpen(true)}
-              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:border-accent/40 hover:bg-accent/5 sm:w-auto"
-            >
-              <ClipboardList className="h-4 w-4 shrink-0 text-accent" aria-hidden />
-              Nueva cotización
-            </button>
+            {canTakeOrders && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setCreateOrderOpen(true)}
+                  className={`${pageHeaderCta} w-full justify-center whitespace-nowrap sm:w-auto`}
+                >
+                  <Plus className="h-4 w-4 shrink-0" aria-hidden />
+                  Nueva Orden
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCreateQuoteOpen(true)}
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:border-accent/40 hover:bg-accent/5 sm:w-auto"
+                >
+                  <ClipboardList className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+                  Nueva cotización
+                </button>
+              </>
+            )}
           </div>
         </div>
 
         {quoteMessage && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{quoteMessage}</p>}
 
-        {preparationComplete && (
+        {canSetup && preparationComplete && (
           <FirstDashboardLaunch
             tenantId={activeTenant.id}
             tenantSlug={activeTenant.slug}
@@ -582,7 +597,7 @@ export default function DashboardPage() {
           />
         )}
 
-        {activeTenant.catalog_review_status === "pending" && (
+        {canSetup && activeTenant.catalog_review_status === "pending" && (
           <CatalogApprovalCard
             tenantId={activeTenant.id}
             tenantSlug={activeTenant.slug}
@@ -592,7 +607,7 @@ export default function DashboardPage() {
           />
         )}
 
-        {period === "cutoff" && lastCutoffEnd && (
+        {canSeeMoney && period === "cutoff" && lastCutoffEnd && (
           <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3">
             <Scissors className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
             <div className="min-w-0">
@@ -612,9 +627,9 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {isAssistedOnboarding && <AssistedSetupGuide tenantSlug={activeTenant.slug} paymentsConnected={paymentsConnected} />}
+        {canSetup && isAssistedOnboarding && <AssistedSetupGuide tenantSlug={activeTenant.slug} paymentsConnected={paymentsConnected} />}
 
-        {showFirstSaleGuide && !isAssistedOnboarding && (
+        {canSetup && showFirstSaleGuide && !isAssistedOnboarding && (
           <FirstSaleGuide
             tenantSlug={activeTenant.slug}
             catalogReady={catalogReady}
@@ -658,7 +673,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
-              {unassignedCount > 0 && (
+              {canAssign && unassignedCount > 0 && (
                 <div className="flex items-center gap-2.5 rounded-xl bg-border-soft/60 px-3 py-2">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-border-soft text-muted-foreground">
                     <UserPlus className="h-4 w-4" />
@@ -681,13 +696,14 @@ export default function DashboardPage() {
 
         {/* Hidden entirely when no table has a customer connected right now —
             an idle dashboard has no business showing an empty section. */}
-        {activeTables.tables.length > 0 && (
+        {canSeeTables && activeTables.tables.length > 0 && (
           <ActiveTablesCard
             tables={activeTables.tables}
             tenantSlug={activeTenant.slug}
           />
         )}
 
+        {canSeeMoney && (
         <section>
           <div className="mb-3 flex items-baseline justify-between gap-4">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
@@ -752,7 +768,9 @@ export default function DashboardPage() {
             </Link>
           </div>
         </section>
+        )}
 
+        {canSeeCatalog && (
         <section>
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">
             Catálogo
@@ -790,8 +808,9 @@ export default function DashboardPage() {
             </Link>
           </div>
         </section>
+        )}
 
-        {activeSubsCount > 0 && (
+        {canSeeSubscriptions && activeSubsCount > 0 && (
           <section>
             <div className="mb-3 flex items-baseline justify-between gap-4">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
@@ -837,7 +856,7 @@ export default function DashboardPage() {
           </section>
         )}
 
-        {unassignedCount > 0 && (
+        {canAssign && unassignedCount > 0 && (
           <Link
             href={`/dashboard/${activeTenant.slug}/ordenes`}
             className="flex cursor-pointer items-center gap-3 rounded-xl border border-amber-200/80 bg-amber-50/80 p-4 text-amber-900 transition-colors duration-200 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 sm:p-4"
@@ -856,7 +875,7 @@ export default function DashboardPage() {
           </Link>
         )}
 
-        {userSales.length > 0 && (
+        {canSeeMoney && userSales.length > 0 && (
           <section>
             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted">
               <Trophy className="h-4 w-4 text-amber-500" />
