@@ -7,7 +7,6 @@ import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions"
 import {
   advanceAllDevicesFulfillment,
   advanceDeviceFulfillment,
-  advanceFulfillment,
   advanceItemFulfillment,
   type FulfillmentStatus,
 } from "@/features/qr/services/tableFulfillmentService";
@@ -33,7 +32,7 @@ function isFulfillmentStatus(value: unknown): value is FulfillmentStatus {
 
 /**
  * Staff advances the preparation state of a table order
- * (received → in_progress → ready). Requires the `qr.fulfill` permission
+ * (received → in_progress → ready). Requires `orders.prepare` (`qr.fulfill` still counts)
  * (owner + waiter). This adapts HTTP; the rules live in
  * `tableFulfillmentService.advanceFulfillment`.
  */
@@ -145,8 +144,9 @@ export async function POST(request: Request, context: RouteContext) {
     });
   }
 
-  // Legacy order-level advance (kept for backward compatibility).
-  const result = await advanceFulfillment(admin, {
+  // Order-level advance moves every product line too: changing only the
+  // summary left lines "received" on an order that read "ready".
+  const result = await advanceAllDevicesFulfillment(admin, {
     orderId,
     target: body.status,
     actorUserId: user.id,
