@@ -14,6 +14,7 @@ import { requirePermission } from "@/lib/auth/requirePermission";
 import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
 import { resolveOrderFulfillmentMethod } from "@/features/orders/helpers/resolveOrderFulfillmentMethod";
+import { isTableServiceOrder } from "@/features/orders/helpers/isTableServiceOrder";
 
 import type { Database } from "@/types/database.types";
 
@@ -62,7 +63,7 @@ export async function GET(request: Request) {
         assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email),
         pickup_completed_user:profiles!orders_pickup_completed_by_fkey(id, display_name, email),
         items:order_items(id, quantity, unit_price, subtotal, is_wholesale, wholesale_savings, product:products(id, name, type, image_url)),
-        payments(id, provider, status, amount, metadata, created_at),
+        payments(id, provider, status, amount, tip_amount, metadata, created_at),
         payment_schedules:order_payment_schedules(id, installment_number, due_date, amount_due, amount_paid, status, paid_at),
         loan:loans!loans_order_id_fkey(id, status, amount, amount_pending, concept)
       `
@@ -446,7 +447,7 @@ export async function PATCH(request: Request) {
 
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("id, status, tenant_id, subtotal, total, paid_total, assigned_to, created_by")
+    .select("id, status, tenant_id, subtotal, total, paid_total, assigned_to, created_by, source, order_type, qr_code_id, table_label")
     .eq("id", order_id)
     .single();
 
@@ -454,6 +455,15 @@ export async function PATCH(request: Request) {
     return NextResponse.json(
       { error: fetchError?.message ?? "Order not found" },
       { status: 404 }
+    );
+  }
+
+  // A table is settled through its account (customer payments, tips, split
+  // groups); flipping the status here would leave all of that pending.
+  if ((status === "paid" || status === "completed") && isTableServiceOrder(order)) {
+    return NextResponse.json(
+      { error: "Las mesas se cobran con su cuenta: confirma el pago del cliente o cóbralo en Caja." },
+      { status: 409 }
     );
   }
 

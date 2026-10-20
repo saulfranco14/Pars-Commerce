@@ -10,6 +10,8 @@ type ResolveOrderActionContextInput = {
   fulfillmentAction: CommerceFulfillmentActionKind | null;
   hasFinishedDelivery: boolean;
   paymentSettled: boolean;
+  isTableOrder?: boolean;
+  hasPendingCustomerPayment?: boolean;
 };
 
 export type OrderActionContext = {
@@ -28,7 +30,26 @@ export function resolveOrderActionContext({
   fulfillmentAction,
   hasFinishedDelivery,
   paymentSettled,
+  isTableOrder = false,
+  hasPendingCustomerPayment = false,
 }: ResolveOrderActionContextInput): OrderActionContext {
+  // A table has no delivery step and is paid through its account.
+  if (isTableOrder) {
+    if (hasPendingCustomerPayment) {
+      return {
+        label: "El cliente ya reportó su pago",
+        detail: "Confírmalo con «Recibí el dinero» aquí o en Caja.",
+      };
+    }
+    if (paymentSettled || status === "paid") {
+      return { label: "Mesa pagada", detail: "Todo está cobrado. No queda nada pendiente." };
+    }
+    return {
+      label: "Se cobra al final",
+      detail: "Cuando el cliente pague, confírmalo aquí o desde Caja.",
+    };
+  }
+
   if (showTransferProofReview) {
     return {
       label: "Comprobante recibido",
