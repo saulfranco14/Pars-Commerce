@@ -53,6 +53,16 @@ export function useMenuEditor() {
     edit({ ...prefs, groups: keys });
   }
 
+  /** Whole module on or off; a locked entry (Configuración) always stays. */
+  function toggleGroup(group: MenuGroupKey) {
+    const paths = orderedGroupItems(group, prefs)
+      .filter((i) => !i.locked)
+      .map((i) => i.path);
+    const anyVisible = paths.some((p) => !prefs.hidden.includes(p));
+    const others = prefs.hidden.filter((p) => !paths.includes(p));
+    edit({ ...prefs, hidden: anyVisible ? [...others, ...paths] : others });
+  }
+
   function toggle(path: string) {
     const hidden = prefs.hidden.includes(path) ? prefs.hidden.filter((p) => p !== path) : [...prefs.hidden, path];
     edit({ ...prefs, hidden });
@@ -82,6 +92,7 @@ export function useMenuEditor() {
     done,
     move,
     moveGroup,
+    toggleGroup,
     toggle,
     discard: () => setDraft(null),
     save: () => save(),
