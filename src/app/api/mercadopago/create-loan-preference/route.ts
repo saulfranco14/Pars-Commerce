@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { preferenceClient } from "@/lib/mercadopago";
 import { buildPayerFromCustomer } from "@/lib/mercadopagoPayer";
+import { getPublicAppUrl } from "@/lib/env/appUrl";
 import {
   calcLoanBuyerTotal,
   calcLoanBusinessAbsorbsFee,
@@ -11,8 +12,7 @@ import type {
   MpFeeAbsorbedBy,
 } from "@/types/loans";
 
-const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://tlaco.mx";
+const APP_URL = getPublicAppUrl();
 const WEBHOOK_URL = `${APP_URL}/api/mercadopago/webhook`;
 
 // POST /api/mercadopago/create-loan-preference

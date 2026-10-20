@@ -1,4 +1,5 @@
 import { MSI_OPTIONS } from "@/constants/commissionConfig";
+import { getPublicAppUrl } from "@/lib/env/appUrl";
 import type { MsiOption } from "@/constants/commissionConfig";
 
 import type {
@@ -7,8 +8,7 @@ import type {
 } from "@/features/checkout/interfaces/publicCheckout";
 
 const FINGERPRINT_HEADER = "x-fingerprint-id";
-const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://tlaco.mx";
+const APP_URL = getPublicAppUrl();
 
 export function getFingerprint(request: Request): string | null {
   return request.headers.get(FINGERPRINT_HEADER)?.trim() || null;

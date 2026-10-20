@@ -6,7 +6,7 @@ import { LegalDocument } from "@/features/legal/components/LegalDocument";
 import { TERMS } from "@/features/legal/constants/terms";
 
 export const metadata: Metadata = {
-  title: "Términos de servicio · Tlaco",
+  title: "Términos de servicio",
   description: "Las reglas de uso de la plataforma Tlaco.",
 };
 

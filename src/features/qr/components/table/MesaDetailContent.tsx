@@ -314,7 +314,7 @@ export function MesaDetailContent({
           )}
 
           {/* Totals card */}
-          <section className="grid grid-cols-1 gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:grid-cols-3">
+          <section className="grid grid-cols-1 gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:grid-cols-3 mt-8">
             <div>
               <p className="text-xs text-muted-foreground">Total acumulado</p>
               <p className="mt-0.5 text-xl font-bold text-foreground">

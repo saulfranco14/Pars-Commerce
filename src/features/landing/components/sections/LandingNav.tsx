@@ -24,7 +24,7 @@ export function LandingNav() {
       }`}
     >
       <nav
-        className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6"
+        className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8"
         aria-label="Navegación principal"
       >
         <Link

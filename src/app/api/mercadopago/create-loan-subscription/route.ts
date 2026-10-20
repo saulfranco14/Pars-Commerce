@@ -2,10 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { PreApproval } from "mercadopago";
 import { MercadoPagoConfig } from "mercadopago";
+import { getPublicAppUrl } from "@/lib/env/appUrl";
 import type { CreateLoanSubscriptionPayload } from "@/types/loans";
 
-const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://tlaco.mx";
+const APP_URL = getPublicAppUrl();
 
 // POST /api/mercadopago/create-loan-subscription
 // Crea una suscripción (PreApproval) en MP para cobros automáticos de un préstamo

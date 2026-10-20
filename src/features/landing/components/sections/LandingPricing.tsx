@@ -35,14 +35,14 @@ export async function LandingPricing() {
               const copy = PLAN_PRESENTATION[plan.code];
               const daily = plan.amount_mxn / 30;
               return (
-                <article key={plan.code} className="flex min-h-[430px] flex-col rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                <article key={plan.code} className="flex h-full flex-col rounded-2xl border border-border bg-surface p-5 shadow-sm">
                   <p className="text-xs font-bold uppercase tracking-wider text-accent">{copy.eyebrow}</p>
                   <h3 className="mt-1 text-xl font-black text-foreground">{plan.name}</h3>
-                  <p className="mt-3 min-h-16 text-sm leading-6 text-muted-foreground">{copy.promise}</p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground xl:min-h-12">{copy.promise}</p>
                   <p className="mt-4 text-3xl font-black tabular-nums text-foreground">{money(plan.amount_mxn)}<span className="text-sm font-medium text-muted-foreground">/mes</span></p>
                   <p className="mt-1 text-xs text-muted-foreground">{plan.amount_mxn === 0 ? "Sin costo fijo" : `Equivale a ${money(daily)} al día aprox.`}</p>
                   <div className="my-4 rounded-xl bg-border-soft/50 p-3 text-xs font-semibold leading-5 text-foreground">{copy.fit}</div>
-                  <ul className="space-y-2.5">
+                  <ul className="mb-6 space-y-2.5">
                     {planCapabilities(plan).map((capability) => <li key={capability} className="flex gap-2 text-sm text-foreground"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{capability}</li>)}
                   </ul>
                   <Link href={`/registro?plan=${plan.code}`} className="mt-auto flex min-h-12 items-center justify-center rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
