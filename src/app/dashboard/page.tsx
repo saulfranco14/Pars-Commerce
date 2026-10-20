@@ -937,6 +937,7 @@ export default function DashboardPage() {
           </section>
         )}
 
+        {canSeeMoney && (
         <section
           className={
             salesByItem.products.length > 0 && salesByItem.services.length > 0
@@ -1067,6 +1068,7 @@ export default function DashboardPage() {
             </>
           )}
         </section>
+        )}
 
         <section>
           <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
