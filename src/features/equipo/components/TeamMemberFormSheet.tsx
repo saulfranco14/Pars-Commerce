@@ -6,7 +6,7 @@ import { CheckCircle2, UserPlus, X } from "lucide-react";
 
 import { FormSheet } from "@/components/ui/FormSheet";
 import { Notification } from "@/components/ui/Notification";
-import { btnPrimaryFlex, btnSecondary } from "@/components/ui/buttonClasses";
+import { btnWorkPrimary, btnWorkSecondary } from "@/components/ui/buttonClasses";
 import { StaffCredentialsCard } from "@/features/equipo/components/StaffCredentialsCard";
 import { useSchemaForm } from "@/lib/forms/useSchemaForm";
 import { SchemaFormFields } from "@/lib/forms/SchemaFormFields";
@@ -65,7 +65,7 @@ export function TeamMemberFormSheet({
         title={result.credentials ? "Cuenta lista" : "Agregado al equipo"}
         maxWidth="max-w-md"
         footer={
-          <button type="button" onClick={handleClose} className={btnPrimaryFlex}>
+          <button type="button" onClick={handleClose} className={`${btnWorkSecondary} w-full`}>
             <X className="h-4 w-4" aria-hidden />
             Cerrar
           </button>
@@ -96,12 +96,12 @@ export function TeamMemberFormSheet({
             type="submit"
             form={formId}
             disabled={form.submitting || !form.isValid}
-            className={btnPrimaryFlex}
+            className={`${btnWorkPrimary} w-full`}
           >
             <UserPlus className="h-4 w-4" aria-hidden />
             {form.submitting ? "Agregando..." : "Agregar"}
           </button>
-          <button type="button" onClick={handleClose} className={btnSecondary}>
+          <button type="button" onClick={handleClose} className={`${btnWorkSecondary} w-full`}>
             Cancelar
           </button>
         </div>

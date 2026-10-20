@@ -4,7 +4,7 @@ import { KeyRound, Loader2, X } from "lucide-react";
 
 import { FormSheet } from "@/components/ui/FormSheet";
 import { Notification } from "@/components/ui/Notification";
-import { btnPrimaryFlex, btnSecondary } from "@/components/ui/buttonClasses";
+import { btnWorkPrimary, btnWorkSecondary } from "@/components/ui/buttonClasses";
 import { StaffCredentialsCard } from "@/features/equipo/components/StaffCredentialsCard";
 import { StaffPasswordInput } from "@/features/equipo/components/StaffPasswordInput";
 
@@ -24,17 +24,17 @@ export function MemberPasswordSheet({ sheet }: { sheet: ReturnType<typeof useMem
       dismissible={!sheet.saving}
       footer={
         sheet.credentials ? (
-          <button type="button" onClick={sheet.close} className={btnPrimaryFlex}>
+          <button type="button" onClick={sheet.close} className={`${btnWorkSecondary} w-full`}>
             <X className="h-4 w-4" aria-hidden />
             Cerrar
           </button>
         ) : (
           <div className="flex flex-col gap-2">
-            <button type="submit" form="member-password-form" disabled={sheet.saving} className={btnPrimaryFlex}>
+            <button type="submit" form="member-password-form" disabled={sheet.saving} className={`${btnWorkPrimary} w-full`}>
               {sheet.saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <KeyRound className="h-4 w-4" aria-hidden />}
               {sheet.saving ? "Guardando…" : "Guardar contraseña"}
             </button>
-            <button type="button" onClick={sheet.close} className={btnSecondary}>
+            <button type="button" onClick={sheet.close} className={`${btnWorkSecondary} w-full`}>
               Cancelar
             </button>
           </div>

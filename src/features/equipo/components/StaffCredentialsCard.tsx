@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Copy, MessageCircle } from "lucide-react";
 
-import { btnPrimary } from "@/components/ui/buttonClasses";
+import { btnWorkSuccess } from "@/components/ui/buttonClasses";
 
 import { staffCredentialsMessage } from "@/features/equipo/helpers/staffCredentialsMessage";
 
@@ -56,7 +56,7 @@ export function StaffCredentialsCard({ credentials, name }: { credentials: Staff
         href={`https://wa.me/?text=${encodeURIComponent(message)}`}
         target="_blank"
         rel="noopener noreferrer"
-        className={`${btnPrimary} w-full`}
+        className={`${btnWorkSuccess} w-full`}
       >
         <MessageCircle className="h-4 w-4" aria-hidden />
         Enviar por WhatsApp

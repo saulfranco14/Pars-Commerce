@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Loader2, Plus } from "lucide-react";
 
 import { FormSheet } from "@/components/ui/FormSheet";
-import { btnPrimaryFlex, btnSecondary } from "@/components/ui/buttonClasses";
+import { btnWorkPrimary, btnWorkSecondary } from "@/components/ui/buttonClasses";
 
 import { roleLabel } from "@/features/equipo/constants/roleDescriptions";
 import { roleNameError } from "@/features/equipo/helpers/rolePermissions";
@@ -51,11 +51,11 @@ export function NewRoleSheet({ isOpen, roles, onClose, onCreate }: NewRoleSheetP
       dismissible={!saving}
       footer={
         <div className="flex flex-col gap-2">
-          <button type="submit" form="new-role-form" disabled={saving} className={btnPrimaryFlex}>
+          <button type="submit" form="new-role-form" disabled={saving} className={`${btnWorkPrimary} w-full`}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}
             Crear rol
           </button>
-          <button type="button" onClick={close} className={btnSecondary}>
+          <button type="button" onClick={close} className={`${btnWorkSecondary} w-full`}>
             Cancelar
           </button>
         </div>
