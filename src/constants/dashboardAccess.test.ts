@@ -40,9 +40,9 @@ describe("qué ve cada rol de sistema en el menú", () => {
     expect(all.every((s) => roleHasAnyPermission("owner", [], sectionPermissions(s)))).toBe(true);
   });
 
-  it("el mesero ve su operación y el catálogo, pero no dinero ni datos de crédito", () => {
+  it("el mesero solo ve su operación: ni catálogo, ni dinero, ni datos de crédito", () => {
     expect(visibleSections("waiter")).toEqual(
-      ["agenda", "cotizaciones", "mesas", "ordenes", "pedidos", "productos", "servicios"].sort(),
+      ["agenda", "cotizaciones", "mesas", "ordenes", "pedidos"].sort(),
     );
   });
 

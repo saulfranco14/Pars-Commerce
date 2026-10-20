@@ -8,9 +8,10 @@
  * decides what to SHOW, not what to allow.
  */
 export const DASHBOARD_SECTION_PERMISSIONS: Record<string, readonly string[]> = {
-  // Taking orders needs the catalog, so order takers can browse it too.
-  productos: ["products.read", "order.take"],
-  servicios: ["products.read", "order.take"],
+  // Catalog and stock are for who manages them. Order takers still pick products
+  // inside the order sheet, which reads the catalog through its own API.
+  productos: ["products.read"],
+  servicios: ["products.read"],
   ordenes: ["orders.read"],
   pedidos: ["order.take"],
   cotizaciones: ["orders.read", "order.take"],
