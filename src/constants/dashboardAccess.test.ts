@@ -55,8 +55,8 @@ describe("qué ve cada rol de sistema en el menú", () => {
   });
 
   it("preparación y entregas solo ven pedidos", () => {
-    expect(visibleSections("preparer")).toEqual(["agenda", "cotizaciones", "ordenes"]);
-    expect(visibleSections("courier")).toEqual(["agenda", "cotizaciones", "ordenes"]);
+    expect(visibleSections("preparer")).toEqual(["agenda", "ordenes"]);
+    expect(visibleSections("courier")).toEqual(["agenda", "ordenes"]);
   });
 
   it("ningún rol de sistema que no sea owner ve dinero, equipo o configuración", () => {

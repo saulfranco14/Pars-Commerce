@@ -14,7 +14,7 @@ export const DASHBOARD_SECTION_PERMISSIONS: Record<string, readonly string[]> = 
   servicios: ["products.read"],
   ordenes: ["orders.read"],
   pedidos: ["order.take"],
-  cotizaciones: ["orders.read", "order.take"],
+  cotizaciones: ["order.take"],
   agenda: ["orders.read"],
   mesas: ["qr.read"],
   qr: ["qr.write"],

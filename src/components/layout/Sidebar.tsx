@@ -256,7 +256,7 @@ function SidebarContent(props: SidebarContentProps) {
           >
             <optgroup label="Mis negocios">{memberships.map((membership) => <option key={membership.id} value={membership.tenant_id}>{membership.tenant.name}</option>)}</optgroup>
           </select></>}
-          <button
+          {userRole === "owner" && (<button
             type="button"
             onClick={() => void createAnotherBusiness()}
             disabled={checkingExpansion}
@@ -264,7 +264,7 @@ function SidebarContent(props: SidebarContentProps) {
           >
             <Plus className="h-4 w-4 shrink-0 text-accent" aria-hidden />
             {checkingExpansion ? "Validando plan…" : "Crear otro negocio"}
-          </button>
+          </button>)}
         </div>
       )}
       <nav className="flex min-h-0 flex-1 flex-col space-y-1 overflow-auto p-4">
