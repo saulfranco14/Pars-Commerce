@@ -6,6 +6,7 @@ import { ArrowLeft, Check, Loader2, RotateCcw, Undo2 } from "lucide-react";
 
 import { useMenuEditor } from "@/features/configuracion/hooks/useMenuEditor";
 import { Notification } from "@/components/ui/Notification";
+import { MobileActionBar } from "@/components/layout/MobileActionBar";
 import { btnWorkPrimary, btnWorkSecondary } from "@/components/ui/buttonClasses";
 import { MenuEditor } from "@/features/configuracion/components/menu/MenuEditor";
 
@@ -13,8 +14,21 @@ export default function MenuSettingsPage() {
   const params = useParams();
   const editor = useMenuEditor();
 
+  const actions = (
+    <div className="grid grid-cols-2 gap-2">
+      <button type="button" onClick={editor.discard} disabled={editor.saving} className={btnWorkSecondary}>
+        <Undo2 className="h-4 w-4" aria-hidden />
+        Descartar
+      </button>
+      <button type="button" onClick={editor.save} disabled={editor.saving} className={btnWorkPrimary}>
+        {editor.saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Check className="h-4 w-4" aria-hidden />}
+        Guardar
+      </button>
+    </div>
+  );
+
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-4 pb-28">
+    <div className="mx-auto w-full max-w-2xl space-y-4 pb-32 md:pb-6">
       <Link
         href={`/dashboard/${params.tenantSlug as string}/configuracion`}
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -48,21 +62,12 @@ export default function MenuSettingsPage() {
       <MenuEditor editor={editor} />
 
       {editor.dirty && (
-        <div
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-4 pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur md:inset-x-auto md:bottom-6 md:left-1/2 md:w-full md:max-w-2xl md:-translate-x-1/2 md:rounded-2xl md:border md:pb-3"
-          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
-        >
-          <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={editor.discard} disabled={editor.saving} className={btnWorkSecondary}>
-              <Undo2 className="h-4 w-4" aria-hidden />
-              Descartar
-            </button>
-            <button type="button" onClick={editor.save} disabled={editor.saving} className={btnWorkPrimary}>
-              {editor.saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Check className="h-4 w-4" aria-hidden />}
-              Guardar
-            </button>
+        <>
+          <MobileActionBar className="md:hidden">{actions}</MobileActionBar>
+          <div className="sticky bottom-4 z-20 hidden rounded-2xl border border-border bg-surface/95 p-3 shadow-lg backdrop-blur md:block">
+            {actions}
           </div>
-        </div>
+        </>
       )}
     </div>
   );
