@@ -69,8 +69,9 @@ export const MENU_ITEMS: readonly MenuItemDef[] = [
   { path: "novedades", label: "Novedades", icon: Sparkles, group: "administracion" },
 ];
 
-/** What a business chose: order (by path) and which entries it hides. */
+/** What a business chose: group order, entry order (by path) and which entries it hides. */
 export interface MenuPreferences {
+  groups: MenuGroupKey[];
   order: string[];
   hidden: string[];
 }
@@ -79,11 +80,28 @@ const KNOWN_PATHS = new Set(MENU_ITEMS.map((i) => i.path));
 
 /** Reads `tenants.settings.menu`, ignoring anything that isn't a known entry. */
 export function menuPreferencesOf(settings: unknown): MenuPreferences {
-  const menu = (settings as { menu?: { order?: unknown; hidden?: unknown } } | null)?.menu;
+  const menu = (settings as { menu?: { groups?: unknown; order?: unknown; hidden?: unknown } } | null)?.menu;
   const clean = (value: unknown) =>
     Array.isArray(value) ? value.filter((v): v is string => typeof v === "string" && KNOWN_PATHS.has(v)) : [];
   const lockedPaths = new Set(MENU_ITEMS.filter((i) => i.locked).map((i) => i.path));
-  return { order: clean(menu?.order), hidden: clean(menu?.hidden).filter((p) => !lockedPaths.has(p)) };
+  const groupKeys = new Set<string>(MENU_GROUPS.map((g) => g.key));
+  const groups = Array.isArray(menu?.groups)
+    ? (menu.groups as unknown[]).filter((g): g is MenuGroupKey => typeof g === "string" && groupKeys.has(g))
+    : [];
+  return {
+    groups: [...new Set(groups)],
+    order: clean(menu?.order),
+    hidden: clean(menu?.hidden).filter((p) => !lockedPaths.has(p)),
+  };
+}
+
+/** Groups in the business's order; a group it never placed keeps its default spot after the rest. */
+export function orderedGroups(prefs: MenuPreferences): (typeof MENU_GROUPS)[number][] {
+  const rank = (key: MenuGroupKey) => {
+    const i = prefs.groups.indexOf(key);
+    return i === -1 ? prefs.groups.length + MENU_GROUPS.findIndex((g) => g.key === key) : i;
+  };
+  return [...MENU_GROUPS].sort((a, b) => rank(a.key) - rank(b.key));
 }
 
 export function menuItemSection(item: MenuItemDef): string | null {
@@ -106,7 +124,7 @@ export function resolveMenu(
   canOpen: (section: string | null) => boolean,
 ): { key: MenuGroupKey; label: string; items: MenuItemDef[] }[] {
   const hidden = new Set(prefs.hidden);
-  return MENU_GROUPS.map((group) => ({
+  return orderedGroups(prefs).map((group) => ({
     ...group,
     items: orderedGroupItems(group.key, prefs).filter((i) => !hidden.has(i.path) && canOpen(menuItemSection(i))),
   })).filter((g) => g.items.length > 0);

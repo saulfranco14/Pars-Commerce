@@ -12,11 +12,11 @@ const roleCan = (role: string) => (section: string | null) =>
 describe("menuPreferencesOf", () => {
   it("ignora entradas desconocidas y nunca oculta Configuración", () => {
     const prefs = menuPreferencesOf({ menu: { order: ["mesas", "inventado"], hidden: ["configuracion", "qr", 3] } });
-    expect(prefs).toEqual({ order: ["mesas"], hidden: ["qr"] });
+    expect(prefs).toEqual({ groups: [], order: ["mesas"], hidden: ["qr"] });
   });
 
   it("sin preferencias, todo en su orden de siempre", () => {
-    expect(menuPreferencesOf(null)).toEqual({ order: [], hidden: [] });
+    expect(menuPreferencesOf(null)).toEqual({ groups: [], order: [], hidden: [] });
   });
 });
 
@@ -32,6 +32,11 @@ describe("resolveMenu", () => {
     const groups = resolveMenu(menuPreferencesOf(null), roleCan("preparer"));
     expect(groups.map((g) => g.key)).toEqual(["operacion"]);
     expect(groups[0].items.map((i) => i.path)).toEqual(["operacion/preparacion"]);
+  });
+
+  it("los grupos completos se pueden reordenar", () => {
+    const prefs = menuPreferencesOf({ menu: { groups: ["gestion", "operacion", "inventado"] } });
+    expect(resolveMenu(prefs, ownerCan).map((g) => g.key)).toEqual(["gestion", "operacion", "cobranza", "administracion"]);
   });
 
   it("un grupo sin entradas visibles no aparece", () => {

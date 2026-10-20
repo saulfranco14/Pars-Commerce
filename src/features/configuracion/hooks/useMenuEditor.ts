@@ -6,14 +6,14 @@ import { mutate } from "swr";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { update as updateTenant } from "@/services/tenantsService";
 import {
-  MENU_GROUPS,
   menuPreferencesOf,
   orderedGroupItems,
+  orderedGroups,
 } from "@/constants/dashboardMenu";
 
 import type { MenuGroupKey, MenuPreferences } from "@/constants/dashboardMenu";
 
-const EMPTY: MenuPreferences = { order: [], hidden: [] };
+const EMPTY: MenuPreferences = { groups: [], order: [], hidden: [] };
 
 /** Draft of the business menu: reorder within a group, show or hide, then save for everyone. */
 export function useMenuEditor() {
@@ -37,10 +37,20 @@ export function useMenuEditor() {
     const to = from + delta;
     if (from < 0 || to < 0 || to >= items.length) return;
     [items[from], items[to]] = [items[to], items[from]];
-    const order = MENU_GROUPS.flatMap((g) =>
+    const order = orderedGroups(prefs).flatMap((g) =>
       g.key === group ? items : orderedGroupItems(g.key, prefs).map((i) => i.path),
     );
     edit({ ...prefs, order });
+  }
+
+  /** Moves a whole group (header and all its entries) up or down the menu. */
+  function moveGroup(group: MenuGroupKey, delta: -1 | 1) {
+    const keys = orderedGroups(prefs).map((g) => g.key);
+    const from = keys.indexOf(group);
+    const to = from + delta;
+    if (from < 0 || to < 0 || to >= keys.length) return;
+    [keys[from], keys[to]] = [keys[to], keys[from]];
+    edit({ ...prefs, groups: keys });
   }
 
   function toggle(path: string) {
@@ -71,6 +81,7 @@ export function useMenuEditor() {
     error,
     done,
     move,
+    moveGroup,
     toggle,
     discard: () => setDraft(null),
     save: () => save(),

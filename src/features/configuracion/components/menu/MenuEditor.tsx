@@ -1,27 +1,51 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Lock } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronsDown, ChevronsUp, Lock } from "lucide-react";
 
-import { MENU_GROUPS, orderedGroupItems } from "@/constants/dashboardMenu";
+import { orderedGroupItems, orderedGroups } from "@/constants/dashboardMenu";
 
 import type { MenuEditorProps } from "@/features/configuracion/interfaces/menuEditor";
 
 const arrowButton =
   "inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30";
 
-/** The business's menu, group by group: arrows reorder, the switch shows or hides. */
+/** The business's menu: double arrows move a whole group, single arrows an entry, the switch shows or hides. */
 export function MenuEditor({ editor }: MenuEditorProps) {
   const hidden = new Set(editor.prefs.hidden);
 
   return (
     <div className="space-y-4">
-      {MENU_GROUPS.map((group) => {
+      {orderedGroups(editor.prefs).map((group, groupIndex, groups) => {
         const items = orderedGroupItems(group.key, editor.prefs);
         return (
           <section key={group.key} className="rounded-2xl border border-border bg-surface p-4" aria-labelledby={`menu-${group.key}`}>
-            <h2 id={`menu-${group.key}`} className="mb-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              {group.label}
-            </h2>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 id={`menu-${group.key}`} className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                {group.label}
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => editor.moveGroup(group.key, -1)}
+                  disabled={groupIndex === 0 || editor.saving}
+                  aria-label={`Subir el grupo ${group.label}`}
+                  title="Subir el grupo completo"
+                  className={arrowButton}
+                >
+                  <ChevronsUp className="h-4 w-4" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => editor.moveGroup(group.key, 1)}
+                  disabled={groupIndex === groups.length - 1 || editor.saving}
+                  aria-label={`Bajar el grupo ${group.label}`}
+                  title="Bajar el grupo completo"
+                  className={arrowButton}
+                >
+                  <ChevronsDown className="h-4 w-4" aria-hidden />
+                </button>
+              </div>
+            </div>
             <ul className="space-y-2">
               {items.map((item, index) => {
                 const Icon = item.icon;
