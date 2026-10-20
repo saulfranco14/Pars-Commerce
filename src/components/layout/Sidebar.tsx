@@ -5,7 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { useSessionStore } from "@/stores/useSessionStore";
-import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
+import { useTenantStore, useActiveTenant, useCanOpenSection } from "@/stores/useTenantStore";
+import { dashboardSectionOf } from "@/constants/dashboardAccess";
 import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
 import {
   X,
@@ -37,6 +38,10 @@ import { usePwaInstall } from "@/hooks/usePwaInstall";
 import { FormSheet } from "@/components/ui/FormSheet";
 import type { BillingPlan } from "@/features/billing/entitlements";
 
+// Group headers only render when the role can open at least one link under them.
+const ADMIN_SECTIONS = ["ventas", "liquidaciones", "equipo", "sitio-web", "configuracion", "novedades"];
+const COLLECTION_SECTIONS = ["prestamos", "credito", "clientes"];
+
 interface SidebarProps {
   tenantSlug: string | null;
   mobileOpen?: boolean;
@@ -57,6 +62,9 @@ function NavLink({
   icon?: React.ComponentType<{ className?: string }>;
   onNavigate?: () => void;
 }) {
+  const canOpen = useCanOpenSection();
+  if (!canOpen(dashboardSectionOf(href))) return null;
+
   return (
     <Link
       href={href}
@@ -128,11 +136,13 @@ function SidebarContent(props: SidebarContentProps) {
     (m) => m.tenant_id === activeTenantId,
   );
   const userRole = activeMembership?.role?.name || "member";
-  const canAccessTeamAndSettings = userRole === "owner";
-  const canAccessQr = userRole === "owner";
-  const canAccessTables =
-    userRole === "owner" || userRole === "cashier" || userRole === "waiter";
-  const canAccessBankAccounts = userRole === "owner";
+  // Account ownership (other businesses, billing) stays an owner check; menu visibility is by permission.
+  const canOpen = useCanOpenSection();
+  const canAccessTeamAndSettings = ADMIN_SECTIONS.some(canOpen);
+  const canAccessCollections = COLLECTION_SECTIONS.some(canOpen);
+  const canAccessQr = canOpen("qr");
+  const canAccessTables = canOpen("mesas");
+  const canAccessBankAccounts = canOpen("configuracion");
 
   function switchBusiness(selected: SidebarContentProps["memberships"][number]) {
     setActiveTenantId(selected.tenant_id);
@@ -404,7 +414,7 @@ function SidebarContent(props: SidebarContentProps) {
               </NavLink>
             )}
 
-            <div className="mt-4 border-t border-border-soft pt-4">
+            {canAccessCollections && (<div className="mt-4 border-t border-border-soft pt-4">
               <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                 Cobranza
               </p>
@@ -438,7 +448,7 @@ function SidebarContent(props: SidebarContentProps) {
               >
                 Clientes
               </NavLink>
-            </div>
+            </div>)}
 
             {canAccessTeamAndSettings && (
               <div className="mt-4 border-t border-border-soft pt-4">

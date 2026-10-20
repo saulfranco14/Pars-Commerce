@@ -11,6 +11,7 @@ import { useTenantStore, useActiveTenant } from "@/stores/useTenantStore";
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { SectionGate } from "@/components/auth/SectionGate";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Menu } from "lucide-react";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
@@ -158,7 +159,9 @@ export default function DashboardLayout({
               Selecciona un negocio en el menú.
             </div>
           ) : activeTenant ? (
-            children
+            <SectionGate pathname={pathname} homeHref={tenantSlug ? `/dashboard/${tenantSlug}` : "/dashboard"}>
+              {children}
+            </SectionGate>
           ) : (
             <div className="text-sm text-muted">Cargando negocio...</div>
           )}
