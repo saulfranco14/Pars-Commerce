@@ -14,6 +14,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { releaseTableQrIfPaid } from "@/features/qr/helpers/releaseTableQrIfPaid";
+import { orderCloseErrorMessage } from "@/features/qr/helpers/orderCloseError";
 import {
   NOT_READY_MESSAGE,
   requiresReadyBeforePayment,
@@ -91,7 +92,7 @@ export async function syncSplitOrderPaymentTotals(
   admin: SupabaseClient,
   orderId: string,
   options: { now: string; method?: string },
-): Promise<{ allPaid: boolean }> {
+): Promise<{ allPaid: boolean; closeError?: string }> {
   const { data: groups, error } = await admin
     .from("order_split_groups")
     .select("total, paid_total, balance_due, payment_status")
@@ -110,7 +111,7 @@ export async function syncSplitOrderPaymentTotals(
   );
   const allPaid = groups.every((group) => group.payment_status === "paid");
 
-  await admin
+  const { error: updateError } = await admin
     .from("orders")
     .update({
       paid_total: paidTotal,
@@ -126,6 +127,8 @@ export async function syncSplitOrderPaymentTotals(
     })
     .eq("id", orderId);
 
+  // The order did not close (e.g. stock): report it instead of a silent half-close.
+  if (updateError) return { allPaid: false, closeError: orderCloseErrorMessage(updateError) };
   return { allPaid };
 }
 
@@ -475,7 +478,17 @@ export async function confirmPayment(
 
   if (!payment) return err("not_found", "Pago no encontrado");
   if (payment.status === "approved") {
-    return { ok: true, data: { allPaid: false, orderId: payment.order_id } };
+    // Confirming again retries closing the order, e.g. after fixing stock.
+    if (!payment.split_group_id) {
+      return { ok: true, data: { allPaid: false, orderId: payment.order_id } };
+    }
+    const retry = await syncSplitOrderPaymentTotals(admin, payment.order_id, {
+      now: new Date().toISOString(),
+      method: (payment.metadata as { method?: string } | null)?.method ?? "manual",
+    });
+    if (retry.closeError) return err("conflict", retry.closeError);
+    if (retry.allPaid) await releaseTableQrIfPaid(admin, payment.order_id);
+    return { ok: true, data: { allPaid: retry.allPaid, orderId: payment.order_id } };
   }
 
   const { data: order } = await admin
@@ -501,13 +514,19 @@ export async function confirmPayment(
     } as never)
     .eq("id", payment.id);
 
+  let previousGroup: { paid_total: number; balance_due: number; payment_status: string } | null = null;
   if (payment.split_group_id) {
     const { data: group } = await admin
       .from("order_split_groups")
-      .select("id, total")
+      .select("id, total, paid_total, balance_due, payment_status")
       .eq("id", payment.split_group_id)
       .single();
     if (group) {
+      previousGroup = {
+        paid_total: Number(group.paid_total ?? 0),
+        balance_due: Number(group.balance_due ?? group.total),
+        payment_status: group.payment_status as string,
+      };
       await admin
         .from("order_split_groups")
         .update({
@@ -521,8 +540,9 @@ export async function confirmPayment(
   }
 
   let allPaid = false;
+  let closeError: string | undefined;
   if (payment.split_group_id) {
-    ({ allPaid } = await syncSplitOrderPaymentTotals(admin, order.id, {
+    ({ allPaid, closeError } = await syncSplitOrderPaymentTotals(admin, order.id, {
       now,
       method,
     }));
@@ -562,6 +582,18 @@ export async function confirmPayment(
     // A tip is paid after the order is already settled. It must never change
     // the original method, revenue aggregate, or balance of that order.
     allPaid = true;
+  }
+
+  if (closeError) {
+    // Undo so the payment stays "por confirmar" and can be confirmed again once fixed.
+    await admin.from("payments").update({ status: "pending", updated_at: now } as never).eq("id", payment.id);
+    if (payment.split_group_id && previousGroup) {
+      await admin
+        .from("order_split_groups")
+        .update({ ...previousGroup, updated_at: now })
+        .eq("id", payment.split_group_id);
+    }
+    return err("conflict", closeError);
   }
 
   await admin.from("order_activity_log").insert({
