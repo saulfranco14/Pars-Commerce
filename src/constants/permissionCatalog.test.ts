@@ -8,7 +8,7 @@ import {
   withRequiredPermissions,
 } from "@/constants/permissionCatalog";
 
-const MIGRATION = "supabase/migrations/20261019000001_operations_roles_permissions.sql";
+const MIGRATION = "supabase/migrations/20261019230000_operations_roles_permissions.sql";
 
 /** Every key inside a `'[...]'::jsonb` literal in the migration. */
 function seededPermissions(): Set<string> {

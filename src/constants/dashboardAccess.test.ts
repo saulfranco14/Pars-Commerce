@@ -7,7 +7,7 @@ import {
 } from "@/constants/dashboardAccess";
 import { roleHasAnyPermission } from "@/lib/auth/permissions";
 
-// Same lists `handle_new_tenant()` seeds (20261019000001), owner aside.
+// Same lists `handle_new_tenant()` seeds (20261019230000), owner aside.
 const SYSTEM_ROLES: Record<string, string[]> = {
   member: ["sales.read", "sales.write", "sales.view_all", "sales.view_assigned", "sales.assign", "sales.update_assigned", "products.read", "products.write", "inventory.read", "inventory.write", "promotions.read", "promotions.write", "reports.read", "team.read", "orders.read", "orders.write", "orders.view_assigned", "order.take"],
   cashier: ["sales.read", "sales.write", "sales.view_all", "sales.view_assigned", "orders.read", "orders.write", "orders.view_all", "orders.view_assigned", "orders.assign", "orders.close", "payments.write", "qr.read", "order.take"],
