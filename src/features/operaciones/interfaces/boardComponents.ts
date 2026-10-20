@@ -65,6 +65,14 @@ export interface BoardAccordionProps {
   renderOrder: (order: BoardOrder) => ReactNode;
 }
 
+export interface BoardRefreshButtonProps {
+  refreshing: boolean;
+  /** When the board last loaded (ms), or null before the first load. */
+  updatedAt: number | null;
+  intervalMs: number;
+  onRefresh: () => void;
+}
+
 export interface StationTabsProps {
   tenantSlug: string;
   active: StationKey;

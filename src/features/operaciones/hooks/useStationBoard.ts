@@ -28,10 +28,16 @@ import type { OrderDeliveryEventType } from "@/features/orders/services/orderAct
 
 /** One station's columns plus the actions its cards can run; every action refreshes the board. */
 export function useStationBoard(tenantId: string | null, station: StationKey, view: BoardView = "active") {
-  const { data, error, isLoading, mutate } = useSWR<StationBoard>(
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const { data, error, isLoading, isValidating, mutate } = useSWR<StationBoard>(
     tenantId ? stationBoardKey(tenantId, station, view) : null,
     swrFetcher,
-    { refreshInterval: BOARD_REFRESH_MS, revalidateOnFocus: true, keepPreviousData: true },
+    {
+      refreshInterval: BOARD_REFRESH_MS,
+      revalidateOnFocus: true,
+      keepPreviousData: true,
+      onSuccess: () => setUpdatedAt(Date.now()),
+    },
   );
   // The order id, "order:item" while one product line moves, or "pay:id" for a payment.
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -58,6 +64,8 @@ export function useStationBoard(tenantId: string | null, station: StationKey, vi
   return {
     board: data ?? null,
     loading: isLoading && !data,
+    refreshing: isValidating,
+    updatedAt,
     loadError: error && !isAbortError(error) ? (error instanceof Error ? error.message : "No se pudo cargar.") : null,
     actionError,
     notice,
@@ -71,7 +79,13 @@ export function useStationBoard(tenantId: string | null, station: StationKey, vi
     assign: (order: { id: string; number: string; originLabel: string }, member: { userId: string; name: string }) =>
       run(
         order.id,
-        () => updateOrder(order.id, { assigned_to: member.userId }),
+        async () => {
+          const saved = (await updateOrder(order.id, { assigned_to: member.userId })) as { assigned_to?: string | null };
+          // Say so instead of looking done when the server kept someone else.
+          if (saved?.assigned_to !== member.userId) {
+            throw new Error(`No se pudo pasar ${order.originLabel} a ${member.name}. Vuelve a intentarlo.`);
+          }
+        },
         `${order.originLabel} (#${order.number}) ahora la atiende ${member.name}.`,
       ),
     respondRequest: (orderId: string, action: "accept-request" | "reject-request") =>

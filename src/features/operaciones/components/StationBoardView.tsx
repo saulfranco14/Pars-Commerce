@@ -8,7 +8,6 @@ import {
   Inbox,
   LayoutList,
   Plus,
-  RefreshCw,
   Rows3,
 } from "lucide-react";
 
@@ -25,11 +24,13 @@ import { Notification } from "@/components/ui/Notification";
 import { btnPrimary, btnSecondary } from "@/components/ui/buttonClasses";
 import { DeliveryCompletionSheet } from "@/features/orders/components/order/DeliveryCompletionSheet";
 import { BoardAccordion } from "@/features/operaciones/components/BoardAccordion";
+import { BoardRefreshButton } from "@/features/operaciones/components/BoardRefreshButton";
 import { BoardOrderCard } from "@/features/operaciones/components/BoardOrderCard";
 import { StationCardActions } from "@/features/operaciones/components/StationCardActions";
 import { StationTabs } from "@/features/operaciones/components/StationTabs";
 
 import { formatCurrency } from "@/features/qr/helpers/format";
+import { BOARD_REFRESH_MS } from "@/features/operaciones/constants/stations";
 
 import type { BoardOrder } from "@/features/operaciones/interfaces/board";
 import type { StationBoardViewProps } from "@/features/operaciones/interfaces/boardComponents";
@@ -165,15 +166,12 @@ export function StationBoardView({
                 )}
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => board.refresh()}
-              aria-label="Actualizar"
-              title="Se actualiza solo cada minuto"
-              className={iconButton}
-            >
-              <RefreshCw className="h-4 w-4" aria-hidden />
-            </button>
+            <BoardRefreshButton
+              refreshing={board.refreshing}
+              updatedAt={board.updatedAt}
+              intervalMs={BOARD_REFRESH_MS}
+              onRefresh={() => void board.refresh()}
+            />
             {station.key === "mis-pedidos" && can("order.take") && (
               <Link
                 href={`/dashboard/${tenantSlug}/ordenes/nueva`}
