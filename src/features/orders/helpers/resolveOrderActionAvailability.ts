@@ -7,7 +7,8 @@ import type {
 
 type ResolveOrderActionAvailabilityInput = {
   order: OrderDetail;
-  canAdvanceFulfillment: boolean;
+  canPrepare: boolean;
+  canDeliver: boolean;
   canReviewTransferProof: boolean;
 };
 
@@ -28,7 +29,8 @@ export type OrderActionAvailability = {
  */
 export function resolveOrderActionAvailability({
   order,
-  canAdvanceFulfillment,
+  canPrepare,
+  canDeliver,
   canReviewTransferProof,
 }: ResolveOrderActionAvailabilityInput): OrderActionAvailability {
   const isPublicStoreOrder = order.source === "public_store";
@@ -80,26 +82,26 @@ export function resolveOrderActionAvailability({
   const needsDeliveryEvidence =
     isPublicStoreOrder &&
     paymentSettled &&
-    canAdvanceFulfillment &&
+    canDeliver &&
     fulfillmentFinished &&
     !evidenceEvent;
   const showStartPreparation =
     isPublicStoreOrder &&
     paymentSettled &&
-    canAdvanceFulfillment &&
+    canPrepare &&
     order.status !== "pending_acceptance" &&
     fulfillmentStatus === "received" &&
     !fulfillmentFinished;
   const showMarkReady =
     isPublicStoreOrder &&
     paymentSettled &&
-    canAdvanceFulfillment &&
+    canPrepare &&
     fulfillmentStatus === "in_progress" &&
     !fulfillmentFinished;
   const showOutForDelivery =
     isPublicStoreOrder &&
     paymentSettled &&
-    canAdvanceFulfillment &&
+    canDeliver &&
     fulfillmentMethod === "delivery" &&
     fulfillmentStatus === "ready" &&
     !hasOutForDelivery &&
@@ -107,7 +109,7 @@ export function resolveOrderActionAvailability({
   const showConfirmDelivery =
     isPublicStoreOrder &&
     paymentSettled &&
-    canAdvanceFulfillment &&
+    canDeliver &&
     fulfillmentMethod === "delivery" &&
     hasOutForDelivery &&
     !fulfillmentFinished;
@@ -116,7 +118,7 @@ export function resolveOrderActionAvailability({
     !order.pickup_completed_at &&
     !fulfillmentFinished &&
     ((isPublicStoreOrder &&
-      canAdvanceFulfillment &&
+      canDeliver &&
       fulfillmentMethod === "pickup" &&
       fulfillmentStatus === "ready") ||
       (!isPublicStoreOrder && Boolean(order.scheduled_for)));

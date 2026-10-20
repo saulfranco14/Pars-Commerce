@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requirePermission } from "@/lib/auth/requirePermission";
+import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import { resolveOrderFulfillmentMethod } from "@/features/orders/helpers/resolveOrderFulfillmentMethod";
 
 type CommerceAdmin = { from: (table: string) => any; storage: any };
@@ -33,7 +34,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
     ...order,
     delivery_details: deliveryDetails,
   });
-  const canFulfill = await requirePermission(user.id, order.tenant_id, "qr.fulfill");
+  const canFulfill = await requirePermission(user.id, order.tenant_id, ORDER_PERMISSIONS.deliver);
   if (!canFulfill) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { data: existingEvents } = await admin

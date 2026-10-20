@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requirePermission } from "@/lib/auth/requirePermission";
+import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import {
   advanceAllDevicesFulfillment,
   advanceDeviceFulfillment,
@@ -77,7 +78,7 @@ export async function POST(request: Request, context: RouteContext) {
   const permission = await requirePermission(
     user.id,
     order.tenant_id,
-    "qr.fulfill",
+    ORDER_PERMISSIONS.prepare,
   );
   if (!permission) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

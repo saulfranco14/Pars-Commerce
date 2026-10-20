@@ -19,7 +19,8 @@ type ResolveOrderActionModelInput = {
   canClose: boolean;
   canAddendum: boolean;
   canReviewTransferProof: boolean;
-  canAdvanceFulfillment: boolean;
+  canPrepare: boolean;
+  canDeliver: boolean;
   actionLoading: boolean;
   requestLoading: boolean;
   fulfillmentLoading: boolean;
@@ -45,7 +46,8 @@ export function resolveOrderActionModel({
   canClose,
   canAddendum,
   canReviewTransferProof,
-  canAdvanceFulfillment,
+  canPrepare,
+  canDeliver,
   actionLoading,
   requestLoading,
   fulfillmentLoading,
@@ -53,7 +55,8 @@ export function resolveOrderActionModel({
   const canStartOrComplete = (order.items?.length ?? 0) > 0;
   const availability = resolveOrderActionAvailability({
     order,
-    canAdvanceFulfillment,
+    canPrepare,
+    canDeliver,
     canReviewTransferProof,
   });
   const isEditableStatus = ["draft", "assigned", "in_progress"].includes(
