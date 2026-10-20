@@ -13,7 +13,7 @@ import {
 import { addItem } from "@/services/publicCartService";
 import { dispatchCartUpdated } from "@/lib/cartEvents";
 import { useFingerprint } from "@/hooks/useFingerprint";
-import { useCartContext } from "../../CartProvider";
+import { useCartContext } from "@/features/sitio/components/cart/CartProvider";
 import { MobileActionBar } from "@/components/layout/MobileActionBar";
 
 type OptionGroup = { id: string; name: string; display_order: number };

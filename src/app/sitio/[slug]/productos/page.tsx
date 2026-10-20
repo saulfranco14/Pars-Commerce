@@ -1,295 +1,115 @@
-import { createAdminClient } from "@/lib/supabase/admin";
-import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { Package, Search } from "lucide-react";
-import ProductCard from "../ProductCard";
-import { enrichProducts } from "@/lib/enrichProducts";
-import type { PromotionForPrice } from "@/lib/promotionPrice";
-import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
+import { SearchX } from "lucide-react";
+
+import { CatalogToolbar } from "@/features/sitio/components/catalog/CatalogToolbar";
+import { ProductGrid } from "@/features/sitio/components/catalog/ProductGrid";
+import { ServiceList } from "@/features/sitio/components/catalog/ServiceList";
+import { StoreEmptyState } from "@/features/sitio/components/StoreEmptyState";
+import { StorePageHeader } from "@/features/sitio/components/StorePageHeader";
+
+import { StoreSectionHeader } from "@/features/sitio/components/StoreSectionHeader";
+
+import { CATALOG_SORT_VALUES } from "@/features/sitio/constants/catalog";
+import { collectionLayout, groupCatalogByType } from "@/features/sitio/helpers/catalogMedia";
+import { catalogHref } from "@/features/sitio/helpers/storeLinks";
+import {
+  getCatalogIndex,
+  getStoreTenant,
+  listCatalogItems,
+} from "@/features/sitio/services/storefrontService";
+
+import type { CatalogState } from "@/features/sitio/interfaces/storeCatalog";
+import type { CatalogSort } from "@/features/sitio/interfaces/storefront";
+import type { Metadata } from "next";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ subcatalog_id?: string; type?: string; q?: string }>;
+  searchParams: Promise<{ subcatalog_id?: string; type?: string; q?: string; sort?: string }>;
 }
 
-function filterActivePromotions(
-  rows: { valid_from?: string | null; valid_until?: string | null }[],
-): unknown[] {
-  const now = new Date();
-  return rows.filter((p) => {
-    const from = p.valid_from ? new Date(p.valid_from) : null;
-    const until = p.valid_until ? new Date(p.valid_until) : null;
-    if (from && from > now) return false;
-    if (until && until < now) return false;
-    return true;
-  });
+function readCatalogState(raw: Awaited<PageProps["searchParams"]>): CatalogState {
+  return {
+    type: raw.type === "product" || raw.type === "service" ? raw.type : null,
+    subcatalogId: raw.subcatalog_id || null,
+    q: raw.q?.trim() || null,
+    sort: CATALOG_SORT_VALUES.has(raw.sort as CatalogSort) ? (raw.sort as CatalogSort) : "featured",
+  };
 }
 
-export default async function ProductosPage({
-  params,
-  searchParams,
-}: PageProps) {
+function pageTitle(state: CatalogState): string {
+  if (state.q) return `Resultados para “${state.q}”`;
+  if (state.type === "product") return "Productos";
+  if (state.type === "service") return "Servicios";
+  return "Catálogo";
+}
+
+export async function generateMetadata({ searchParams }: Pick<PageProps, "searchParams">): Promise<Metadata> {
+  return { title: pageTitle(readCatalogState(await searchParams)) };
+}
+
+export default async function ProductosPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
-  const { subcatalog_id, type, q: searchQuery } = await searchParams;
-  const catalogType = type === "product" || type === "service" ? type : null;
-  const headersList = await headers();
-  const host = headersList.get("host") ?? "";
-  const protocol =
-    headersList.get("x-forwarded-proto") === "https" ? "https" : "http";
-  const baseUrl = host ? `${protocol}://${host}` : "";
-  const supabase = createAdminClient();
+  const state = readCatalogState(await searchParams);
+  const tenant = await getStoreTenant(slug);
+  if (!tenant) notFound();
 
-  const { data: tenant, error: tenantError } = await supabase
-    .from("tenants")
-    .select("id, name, theme_color, whatsapp_phone")
-    .eq("site_slug", slug)
-    .eq("public_store_enabled", true)
-    .single();
-
-  if (tenantError || !tenant) {
-    notFound();
-  }
-
-  const [
-    subcatalogsRes,
-    productsRes,
-    promosRes,
-    productsCountRes,
-    servicesCountRes,
-  ] = await Promise.all([
-    supabase
-      .from("product_subcatalogs")
-      .select("id, name, slug")
-      .eq("tenant_id", tenant.id)
-      .order("name", { ascending: true }),
-    (() => {
-      let q = supabase
-        .from("products")
-        // Do not let an optional ordering migration make a published catalog empty.
-        .select("id, name, slug, description, price, image_url, subcatalog_id, type")
-        .eq("tenant_id", tenant.id)
-        .eq("is_public", true)
-        .is("deleted_at", null)
-        .order("name", { ascending: true });
-      if (subcatalog_id) q = q.eq("subcatalog_id", subcatalog_id);
-      if (catalogType) q = q.eq("type", catalogType);
-      if (searchQuery?.trim()) q = q.ilike("name", `%${searchQuery.trim().replace(/[,%]/g, "")}%`);
-      return q;
-    })(),
-    supabase
-      .from("promotions")
-      .select(
-        "id, type, value, quantity, product_ids, bundle_product_ids, badge_label, valid_from, valid_until",
-      )
-      .eq("tenant_id", tenant.id)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("products")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenant.id)
-      .eq("type", "product")
-      .eq("is_public", true)
-      .is("deleted_at", null),
-    supabase
-      .from("products")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenant.id)
-      .eq("type", "service")
-      .eq("is_public", true)
-      .is("deleted_at", null),
+  const [catalog, items] = await Promise.all([
+    getCatalogIndex(tenant.id),
+    listCatalogItems({
+      tenantId: tenant.id,
+      type: state.type,
+      subcatalogId: state.subcatalogId,
+      search: state.q,
+      sort: state.sort,
+    }),
   ]);
 
-  const subcatalogs = subcatalogsRes.data ?? [];
-  const products = productsRes.data ?? [];
-  const productIds = products.map((p) => p.id);
-
-  const { data: imagesData } =
-    productIds.length > 0
-      ? await supabase
-          .from("product_images")
-          .select("product_id, url, position")
-          .in("product_id", productIds)
-      : { data: [] };
-  const images = imagesData ?? [];
-  const activePromos = filterActivePromotions(
-    promosRes.data ?? [],
-  ) as PromotionForPrice[];
-  const list = enrichProducts(
-    products.map((p) => ({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      description: p.description,
-      price: Number(p.price),
-      image_url: p.image_url,
-      type: p.type,
-    })),
-    images,
-    activePromos,
-  );
-  const accentColor = tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT;
-  const productsCount = productsCountRes.count ?? 0;
-  const servicesCount = servicesCountRes.count ?? 0;
-  const totalCatalogItems = productsCount + servicesCount;
-  const pageTitle =
-    catalogType === "product"
-      ? "Productos"
-      : catalogType === "service"
-        ? "Servicios"
-        : "Productos y servicios";
-  const pageDescription = catalogType
-    ? `${list.length} ${catalogType === "product" ? "producto" : "servicio"}${list.length !== 1 ? "s" : ""} disponible${list.length !== 1 ? "s" : ""}`
-    : `${productsCount} producto${productsCount !== 1 ? "s" : ""} · ${servicesCount} servicio${servicesCount !== 1 ? "s" : ""} disponible${totalCatalogItems !== 1 ? "s" : ""}`;
-
-  const catalogHref = (
-    nextType: "product" | "service" | null,
-    nextSubcatalogId?: string,
-  ) => {
-    const query = new URLSearchParams();
-    if (nextType) query.set("type", nextType);
-    if (nextSubcatalogId) query.set("subcatalog_id", nextSubcatalogId);
-    if (searchQuery?.trim()) query.set("q", searchQuery.trim());
-    const suffix = query.toString();
-    return `/sitio/${slug}/productos${suffix ? `?${suffix}` : ""}`;
-  };
+  const category = catalog.categories.find((entry) => entry.id === state.subcatalogId);
+  const noun = state.type === "service" ? "servicio" : state.type === "product" ? "producto" : "artículo";
+  const countLabel = `${items.length} ${noun}${items.length === 1 ? "" : "s"}${category ? ` en ${category.name}` : ""}`;
+  const filtered = Boolean(state.q || state.subcatalogId || state.type);
+  const groups = groupCatalogByType(items);
 
   return (
-    <div className="space-y-6 pb-3 sm:space-y-8">
-      <div className="flex items-center justify-between gap-4 pt-1 sm:pt-4">
-        <div className="flex min-w-0 items-center gap-3">
-        <div
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm"
-          style={{ backgroundColor: accentColor }}
-        >
-          <Package className="h-5 w-5" />
-        </div>
-        <div className="min-w-0">
-          <h1 className="site-canvas-heading text-2xl font-bold tracking-tight sm:text-3xl">{pageTitle}</h1>
-          <p className="site-canvas-copy text-sm">{pageDescription}</p>
-        </div>
-        </div>
-        <Link href={`/sitio/${slug}`} style={{ color: accentColor }} className="hidden min-h-11 items-center text-sm font-semibold hover:underline sm:inline-flex">Inicio</Link>
-      </div>
+    <div className="space-y-5 sm:space-y-6">
+      <StorePageHeader title={pageTitle(state)} description={countLabel} />
+      <CatalogToolbar slug={slug} state={state} counts={catalog.counts} categories={catalog.categories} />
 
-      <div className="site-catalog-filter sticky top-[65px] z-30 -mx-4 border-y px-4 py-3 shadow-sm backdrop-blur-sm sm:top-[73px] sm:mx-0 sm:rounded-2xl sm:border sm:px-3">
-      {(productsCount > 0 || servicesCount > 0) && (
-        <div className="overflow-x-auto pb-1">
-          <div className="flex min-w-max gap-2">
-            <Link
-              href={catalogHref(null)}
-              className={`inline-flex min-h-10 items-center rounded-xl px-4 text-sm font-semibold transition-colors ${
-                !catalogType ? "text-white shadow-sm" : "site-catalog-chip hover:brightness-95"
-              }`}
-              style={!catalogType ? { backgroundColor: accentColor } : undefined}
-            >
-              Todo ({totalCatalogItems})
-            </Link>
-            {productsCount > 0 && (
-              <Link
-                href={catalogHref("product")}
-                className={`inline-flex min-h-10 items-center rounded-xl px-4 text-sm font-semibold transition-colors ${
-                  catalogType === "product" ? "text-white shadow-sm" : "site-catalog-chip hover:brightness-95"
-                }`}
-                style={catalogType === "product" ? { backgroundColor: accentColor } : undefined}
-              >
-                Productos ({productsCount})
-              </Link>
-            )}
-            {servicesCount > 0 && (
-              <Link
-                href={catalogHref("service")}
-                className={`inline-flex min-h-10 items-center rounded-xl px-4 text-sm font-semibold transition-colors ${
-                  catalogType === "service" ? "text-white shadow-sm" : "site-catalog-chip hover:brightness-95"
-                }`}
-                style={catalogType === "service" ? { backgroundColor: accentColor } : undefined}
-              >
-                Servicios ({servicesCount})
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
-
-      <form action={`/sitio/${slug}/productos`} className="mt-2 flex min-h-12 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 shadow-sm focus-within:ring-2" style={{ outlineColor: accentColor }}>
-        {catalogType ? <input type="hidden" name="type" value={catalogType} /> : null}
-        {subcatalog_id ? <input type="hidden" name="subcatalog_id" value={subcatalog_id} /> : null}
-        <Search className="h-5 w-5 text-gray-400" aria-hidden />
-        <input name="q" defaultValue={searchQuery ?? ""} placeholder={`Buscar ${catalogType === "service" ? "servicios" : catalogType === "product" ? "productos" : "en la tienda"}`} className="h-12 min-w-0 flex-1 bg-transparent text-sm text-gray-950 outline-none placeholder:text-gray-400" />
-        <button type="submit" className="min-h-10 rounded-lg px-3 text-sm font-bold text-white" style={{ backgroundColor: accentColor }}>Buscar</button>
-      </form>
-
-      {/* Subcatalog filter */}
-      {subcatalogs && subcatalogs.length > 0 && (
-        <div className="mt-2 overflow-x-auto pb-1">
-          <span className="sr-only">Categorías</span>
-          <div className="flex min-w-max gap-2">
-            <Link
-              href={catalogHref(catalogType)}
-              className={`inline-flex min-h-10 items-center rounded-xl px-4 text-sm font-semibold transition-colors ${
-                !subcatalog_id
-                  ? "text-white shadow-sm"
-                  : "site-catalog-chip hover:brightness-95"
-              }`}
-              style={!subcatalog_id ? { backgroundColor: accentColor } : undefined}
-            >
-              Todas
-            </Link>
-            {subcatalogs.map((sc) => (
-              <Link
-                key={sc.id}
-                href={catalogHref(catalogType, sc.id)}
-                className={`inline-flex min-h-10 items-center rounded-xl px-4 text-sm font-semibold transition-colors ${
-                  subcatalog_id === sc.id
-                    ? "text-white shadow-sm"
-                    : "site-catalog-chip hover:brightness-95"
-                }`}
-                style={
-                  subcatalog_id === sc.id
-                    ? { backgroundColor: accentColor }
-                    : undefined
-                }
-              >
-                {sc.name}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-      </div>
-
-      {/* Product grid */}
-      {list.length === 0 ? (
-        <div className="rounded-3xl bg-white py-20 text-center shadow-sm">
-          <div
-            className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl"
-            style={{ backgroundColor: `${accentColor}15` }}
+      {items.length > 0 ? (
+        groups.map((group) => (
+          <section
+            key={group.id}
+            aria-labelledby={groups.length > 1 ? `catalog-${group.id}` : undefined}
+            aria-label={groups.length > 1 ? undefined : "Resultados del catálogo"}
+            className="pt-2"
           >
-            <Package className="h-10 w-10" style={{ color: accentColor }} />
-          </div>
-          <p className="mt-5 text-base font-medium text-gray-500">
-            No hay {catalogType === "service" ? "servicios" : "productos"} disponibles con este filtro.
-          </p>
-        </div>
+            {groups.length > 1 ? (
+              <StoreSectionHeader
+                id={`catalog-${group.id}`}
+                title={group.title}
+                subtitle={`${group.items.length} disponibles`}
+              />
+            ) : null}
+            {group.id === "services" && collectionLayout(group.items) === "text" ? (
+              <div className="rounded-3xl bg-(--store-surface) px-4 shadow-sm ring-1 ring-(--store-hairline) sm:px-6">
+                <ServiceList items={group.items} tenantId={tenant.id} slug={slug} />
+              </div>
+            ) : (
+              <ProductGrid items={group.items} tenantId={tenant.id} slug={slug} />
+            )}
+          </section>
+        ))
       ) : (
-        <section aria-label="Resultados del catálogo">
-          <div className="mb-4 flex items-baseline justify-between gap-3"><h2 className="site-canvas-heading text-lg font-bold tracking-tight">{searchQuery?.trim() ? "Resultados" : catalogType === "service" ? "Servicios disponibles" : catalogType === "product" ? "Productos disponibles" : "Disponible ahora"}</h2><p className="site-canvas-copy shrink-0 text-sm">{list.length} {list.length === 1 ? "resultado" : "resultados"}</p></div>
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {list.map((item) => (
-            <ProductCard
-              key={item.id}
-              product={item}
-              promotion={item.promotion}
-              tenantId={tenant.id}
-              sitioSlug={slug}
-              accentColor={accentColor}
-              whatsappPhone={tenant.whatsapp_phone ?? null}
-              baseUrl={baseUrl}
-              compact
-            />
-          ))}
-        </div>
-        </section>
+        <StoreEmptyState
+          icon={SearchX}
+          title={state.q ? `Sin resultados para “${state.q}”` : "Nada por aquí todavía"}
+          description={
+            state.q
+              ? "Revisa la ortografía o prueba con una palabra más general."
+              : "Este negocio aún no publica artículos con este filtro."
+          }
+          action={filtered ? { href: catalogHref(slug), label: "Ver todo el catálogo" } : undefined}
+        />
       )}
     </div>
   );
