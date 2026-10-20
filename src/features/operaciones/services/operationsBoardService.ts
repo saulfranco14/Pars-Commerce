@@ -20,8 +20,10 @@ import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 import type { BoardOrderRow } from "@/features/operaciones/helpers/boardColumns";
 import type {
   BoardAbilities,
+  BoardOrder,
   BoardTeamMember,
   BoardView,
+  CollectedSummary,
   StationBoard,
 } from "@/features/operaciones/interfaces/board";
 
@@ -33,7 +35,7 @@ const MAX_ORDERS = 200;
 const HIDDEN_STATUSES = "(cancelled,draft,pending_subscription)";
 
 const ORDER_COLUMNS =
-  "id, order_number, status, fulfillment_status, fulfillment_method, source, order_type, table_label, created_at, updated_at, scheduled_for, customer_name, customer_phone, total, paid_total, balance_due, paid_at, assigned_to, created_by";
+  "id, order_number, status, fulfillment_status, fulfillment_method, source, order_type, table_label, created_at, updated_at, scheduled_for, customer_name, customer_phone, total, paid_total, balance_due, paid_at, payment_method, assigned_to, created_by";
 
 export async function getStationBoard(
   admin: Admin,
@@ -63,9 +65,11 @@ export async function getStationBoard(
     .select(ORDER_COLUMNS)
     .eq("tenant_id", input.tenantId)
     .not("status", "in", HIDDEN_STATUSES)
-    .or(`updated_at.gte.${since},scheduled_for.gte.${since}`)
     .order("created_at", { ascending: false })
     .limit(MAX_ORDERS);
+  const cajaHistory = meta.key === "caja" && view === "done";
+  // Caja's history is what was paid today, however old the order is.
+  query = cajaHistory ? query.gte("paid_at", todayStart) : query.or(`updated_at.gte.${since},scheduled_for.gte.${since}`);
 
   if (meta.key === "mis-pedidos") {
     query = query.or(`assigned_to.eq.${input.userId},created_by.eq.${input.userId}`);
@@ -92,7 +96,7 @@ export async function getStationBoard(
 
   const ids = rows.map((r) => r.id);
   const userIds = [...new Set(rows.map((r) => r.assigned_to).filter((id): id is string => Boolean(id)))];
-  const [items, details, events, profiles, activity, pendingPayments] = await Promise.all([
+  const [items, details, events, profiles, activity, pendingPayments, approvedPayments] = await Promise.all([
     ids.length
       ? db
           .from("order_items")
@@ -107,11 +111,11 @@ export async function getStationBoard(
       ? db.from("order_delivery_events").select("order_id, type, created_at, created_by").in("order_id", ids)
       : { data: [] },
     userIds.length ? db.from("profiles").select("id, display_name, email").in("id", userIds) : { data: [] },
-    view === "done" && meta.key === "preparacion" && ids.length
+    view === "done" && (meta.key === "preparacion" || cajaHistory) && ids.length
       ? db
           .from("order_activity_log")
           .select("order_id, actor_id, created_at, payload")
-          .eq("action", "fulfillment.changed")
+          .eq("action", cajaHistory ? "payment.confirmed" : "fulfillment.changed")
           .in("order_id", ids)
           .order("created_at", { ascending: true })
       : { data: [] },
@@ -124,7 +128,11 @@ export async function getStationBoard(
           .in("order_id", ids)
           .order("created_at", { ascending: true })
       : { data: [] },
+    cajaHistory && ids.length
+      ? db.from("payments").select("order_id, amount, tip_amount, metadata").eq("status", "approved").in("order_id", ids)
+      : { data: [] },
   ]);
+  const approvedByOrder = groupBy(approvedPayments.data ?? [], (p: any) => p.order_id);
 
   const payerDeviceIds = [
     ...new Set((pendingPayments.data ?? []).map((p: any) => p.metadata?.device_id).filter(Boolean)),
@@ -138,8 +146,13 @@ export async function getStationBoard(
   // The step that closed each order: "ready" for preparation, delivered or picked up for delivery.
   const doneByOrder = new Map<string, { at: string; by: string | null }>();
   if (view === "done") {
-    const closing =
-      meta.key === "preparacion"
+    const closing = cajaHistory
+      ? rows.map((r) => ({
+          orderId: r.id,
+          at: r.paid_at as string,
+          by: [...(activity.data ?? [])].reverse().find((a: any) => a.order_id === r.id)?.actor_id ?? null,
+        }))
+      : meta.key === "preparacion"
         ? (activity.data ?? [])
             .filter((a: any) => a.payload?.to === "ready")
             .map((a: any) => ({ orderId: a.order_id, at: a.created_at, by: a.actor_id }))
@@ -184,6 +197,7 @@ export async function getStationBoard(
           method: p.metadata?.method ?? "efectivo",
           payerName: payerName.get(p.metadata?.device_id) ?? null,
         })),
+        ...(cajaHistory ? paymentTotals(approvedByOrder.get(row.id) ?? [], row) : {}),
         doneAt: doneByOrder.get(row.id)?.at ?? (view === "done" ? row.updated_at : null),
         doneBy: nameOf.get(doneByOrder.get(row.id)?.by ?? "") ?? null,
       },
@@ -211,8 +225,40 @@ export async function getStationBoard(
           ? buildHistoryColumns(meta.key, orders, todayStart)
           : buildColumns(meta.key, orders, todayStart),
       team: meta.key === "recepcion" ? await listAssignableTeam(db, input.tenantId) : [],
-      collectedToday: meta.key === "caja" ? await collectedSince(db, input.tenantId, todayStart) : null,
+      collectedToday: meta.key === "caja" && !cajaHistory ? await collectedSince(db, input.tenantId, todayStart) : null,
+      collectedSummary: cajaHistory ? summarizeCollected(orders) : null,
     },
+  };
+}
+
+/** What an order brought in: approved payments, or the order itself when paid another way. */
+function paymentTotals(payments: any[], row: BoardOrderRow) {
+  if (payments.length === 0) {
+    return { paidAmount: Number(row.paid_total ?? row.total), tip: 0, paymentMethod: row.payment_method ?? null };
+  }
+  return {
+    paidAmount: payments.reduce((sum, p) => sum + Number(p.amount ?? 0), 0),
+    tip: payments.reduce((sum, p) => sum + Number(p.tip_amount ?? 0), 0),
+    paymentMethod: payments[payments.length - 1]?.metadata?.method ?? row.payment_method ?? null,
+  };
+}
+
+function summarizeCollected(orders: BoardOrder[]): CollectedSummary {
+  const byMethod = new Map<string, number>();
+  let total = 0;
+  let tips = 0;
+  for (const o of orders) {
+    const amount = o.paidAmount ?? 0;
+    total += amount;
+    tips += o.tip;
+    const method = o.paymentMethod ?? "otro";
+    byMethod.set(method, (byMethod.get(method) ?? 0) + amount);
+  }
+  return {
+    total,
+    tips,
+    orders: orders.length,
+    byMethod: [...byMethod.entries()].map(([method, amount]) => ({ method, amount })).sort((a, b) => b.amount - a.amount),
   };
 }
 

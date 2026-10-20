@@ -7,6 +7,7 @@ import type { StationKey, StationMeta } from "@/features/operaciones/constants/s
 import type {
   BoardOrder,
   BoardOrderItem,
+  CollectedSummary,
   BoardPendingPayment,
   BoardTeamMember,
   BoardView,
@@ -76,6 +77,10 @@ export interface BoardRefreshButtonProps {
   updatedAt: number | null;
   intervalMs: number;
   onRefresh: () => void;
+}
+
+export interface CollectedSummaryCardProps {
+  summary: CollectedSummary;
 }
 
 export interface StationTabsProps {

@@ -9,6 +9,7 @@ import { BoardItemRow } from "@/features/operaciones/components/BoardItemRow";
 
 import { elapsedLabel, elapsedTone, minutesSince } from "@/features/operaciones/helpers/elapsed";
 import { formatCurrency } from "@/features/qr/helpers/format";
+import { methodLabel } from "@/features/operaciones/helpers/methodLabel";
 
 import type { BoardOrderCardProps } from "@/features/operaciones/interfaces/boardComponents";
 
@@ -55,6 +56,14 @@ export function BoardOrderCard({
           {order.assignedName && (
             <p className="mt-0.5 truncate text-xs text-muted-foreground">
               Atiende: <span className="font-semibold text-foreground">{order.assignedName}</span>
+            </p>
+          )}
+          {order.paidAmount !== null && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              <span className="text-base font-bold tabular-nums text-foreground">{formatCurrency(order.paidAmount)}</span>
+              {" · "}
+              {methodLabel(order.paymentMethod)}
+              {order.tip > 0 && <span className="text-emerald-700 dark:text-emerald-400"> · propina {formatCurrency(order.tip)}</span>}
             </p>
           )}
           {order.items.length > 0 && (itemsMoved || compact) && (

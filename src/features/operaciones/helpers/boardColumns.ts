@@ -28,6 +28,7 @@ export interface BoardOrderRow {
   paid_total: number | null;
   balance_due: number | null;
   paid_at: string | null;
+  payment_method?: string | null;
   assigned_to: string | null;
   created_by: string | null;
 }
@@ -40,6 +41,9 @@ export interface BoardOrderExtras {
   doneAt?: string | null;
   doneBy?: string | null;
   pendingPayments?: BoardPendingPayment[];
+  paidAmount?: number | null;
+  tip?: number;
+  paymentMethod?: string | null;
 }
 
 const ORIGIN_LABELS: Record<string, string> = {
@@ -100,6 +104,9 @@ export function toBoardOrder(row: BoardOrderRow, extras: BoardOrderExtras, stati
       row.status === "completed" ||
       (row.status === "paid" && requiresReadyBeforePayment(row.source, row.order_type)),
     pendingPayments: extras.pendingPayments ?? [],
+    paidAmount: extras.paidAmount ?? null,
+    tip: extras.tip ?? 0,
+    paymentMethod: extras.paymentMethod ?? row.payment_method ?? null,
     doneAt: extras.doneAt ?? null,
     doneBy: extras.doneBy ?? null,
   };
@@ -116,6 +123,10 @@ export function buildHistoryColumns(station: StationKey, orders: BoardOrder[], t
   if (station === "entregas") {
     const done = orders.filter((o) => o.deliveryStage === "done" && today(o)).sort(newestFirst);
     return [column("done", "Entregados hoy", "Aún no entregas pedidos hoy.", done)];
+  }
+  if (station === "caja") {
+    const done = orders.filter((o) => o.paid && today(o)).sort(newestFirst);
+    return [column("done", "Cobrado hoy", "Aún no se cobra nada hoy.", done)];
   }
   return [];
 }

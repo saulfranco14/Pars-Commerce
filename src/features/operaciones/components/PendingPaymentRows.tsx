@@ -19,12 +19,17 @@ export function PendingPaymentRows({ payments, busyPaymentId, onConfirm, onRejec
         const Icon = meta.icon;
         const busy = busyPaymentId === p.id;
         return (
-          <li key={p.id} className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/30">
-            <div className="flex items-start gap-2">
-              <Icon className="mt-0.5 h-4 w-4 shrink-0 text-amber-800 dark:text-amber-300" aria-hidden />
+          <li key={p.id} className="rounded-xl border border-border bg-surface p-3 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+                <Icon className="h-5 w-5" aria-hidden />
+              </span>
               <div className="min-w-0 flex-1">
-                <p className="text-base font-bold tabular-nums text-foreground">
-                  {formatCurrency(p.amount + p.tip)} · {meta.label}
+                <p className="flex flex-wrap items-center gap-2 text-lg font-bold tabular-nums text-foreground">
+                  {formatCurrency(p.amount + p.tip)}
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+                    {meta.label} · por confirmar
+                  </span>
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {p.tip > 0 ? `Cuenta ${formatCurrency(p.amount)} + propina ${formatCurrency(p.tip)}` : "Sin propina"}
@@ -32,7 +37,7 @@ export function PendingPaymentRows({ payments, busyPaymentId, onConfirm, onRejec
                 </p>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-2">
               <button type="button" disabled={busy} onClick={() => onConfirm(p.id)} className={btnWorkSuccess}>
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Check className="h-4 w-4" aria-hidden />}
                 Recibí el dinero

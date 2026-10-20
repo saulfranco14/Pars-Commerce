@@ -148,6 +148,17 @@ describe("buildColumns", () => {
     expect(buildColumns("preparacion", orders, TODAY)[0].orders.map((o) => o.id)).toEqual(["old", "new"]);
   });
 
+  it("caja: el historial lista lo pagado hoy, lo más reciente primero", () => {
+    const orders = [
+      card({ id: "morning", status: "paid", paid_total: 300 }, "caja", { doneAt: "2026-10-19T15:00:00.000Z", paidAmount: 300 }),
+      card({ id: "noon", status: "paid", paid_total: 300 }, "caja", { doneAt: "2026-10-19T18:00:00.000Z", paidAmount: 300, tip: 50 }),
+      card({ id: "unpaid" }, "caja", { doneAt: "2026-10-19T18:30:00.000Z" }),
+    ];
+    const [history] = buildHistoryColumns("caja", orders, TODAY);
+    expect(history.orders.map((o) => o.id)).toEqual(["noon", "morning"]);
+    expect(history.orders[0].tip).toBe(50);
+  });
+
   it("terminados hoy: lo último que se terminó va arriba y lo de ayer no aparece", () => {
     const orders = [
       card({ id: "early", fulfillment_status: "ready" }, "preparacion", { doneAt: "2026-10-19T15:00:00.000Z" }),

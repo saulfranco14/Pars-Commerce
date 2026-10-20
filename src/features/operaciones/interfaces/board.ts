@@ -46,6 +46,10 @@ export interface BoardOrder {
   finished: boolean;
   /** Only for Caja. */
   pendingPayments: BoardPendingPayment[];
+  /** Caja history: what came in for this order today. */
+  paidAmount: number | null;
+  tip: number;
+  paymentMethod: string | null;
   /** History view: when the step finished and who finished it. */
   doneAt: string | null;
   doneBy: string | null;
@@ -84,4 +88,13 @@ export interface StationBoard {
   team: BoardTeamMember[];
   /** Only for Caja: what was collected today. */
   collectedToday: number | null;
+  /** Only for Caja's history: today's total split by method, and tips apart. */
+  collectedSummary: CollectedSummary | null;
+}
+
+export interface CollectedSummary {
+  total: number;
+  tips: number;
+  orders: number;
+  byMethod: { method: string; amount: number }[];
 }

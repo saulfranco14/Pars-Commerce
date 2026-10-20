@@ -5,14 +5,21 @@ import { ChevronDown } from "lucide-react";
 
 import type { BoardAccordionProps } from "@/features/operaciones/interfaces/boardComponents";
 
-/** One column, each group folds: a long day's queue stays scannable on any screen. */
+// One column on phones; side by side on desktop so every group stays in sight.
+const DESKTOP_COLUMNS: Record<number, string> = {
+  2: "lg:grid-cols-2",
+  3: "lg:grid-cols-3",
+  4: "lg:grid-cols-2 2xl:grid-cols-4",
+};
+
+/** Foldable groups: one column on phones, one per group on desktop. */
 export function BoardAccordion({ columns, renderOrder }: BoardAccordionProps) {
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
   // Groups with work start open; an empty one starts closed.
   const isOpen = (key: string, count: number) => toggled[key] ?? count > 0;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-3">
+    <div className={`grid items-start gap-3 ${DESKTOP_COLUMNS[columns.length] ?? ""}`}>
       {columns.map((column) => {
         const open = isOpen(column.key, column.orders.length);
         return (

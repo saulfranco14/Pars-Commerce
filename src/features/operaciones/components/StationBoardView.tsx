@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
+  ChevronRight,
   History,
   Inbox,
   LayoutList,
@@ -21,9 +22,13 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { FilterTabs } from "@/components/ui/FilterTabs";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
-import { btnWorkPrimary, btnWorkSecondary } from "@/components/ui/buttonClasses";
+import {
+  btnWorkPrimary,
+  btnWorkSecondary,
+} from "@/components/ui/buttonClasses";
 import { DeliveryCompletionSheet } from "@/features/orders/components/order/DeliveryCompletionSheet";
 import { BoardAccordion } from "@/features/operaciones/components/BoardAccordion";
+import { CollectedSummaryCard } from "@/features/operaciones/components/CollectedSummaryCard";
 import { BoardRefreshButton } from "@/features/operaciones/components/BoardRefreshButton";
 import { BoardOrderCard } from "@/features/operaciones/components/BoardOrderCard";
 import { StationCardActions } from "@/features/operaciones/components/StationCardActions";
@@ -54,7 +59,9 @@ export function StationBoardView({
   const board = useStationBoard(tenantId, station.key, view);
   const density = useBoardDensity(
     station.key,
-    station.layout === "accordion" && station.key !== "preparacion" ? "compact" : "detailed",
+    station.layout === "accordion" && station.key !== "preparacion"
+      ? "compact"
+      : "detailed",
   );
   const now = useNow();
   const can = usePermission();
@@ -130,18 +137,23 @@ export function StationBoardView({
         }
         description={
           isHistory
-            ? "Lo que se terminó hoy, con la hora y quién lo hizo."
+            ? station.key === "caja"
+              ? "Cada cobro de hoy con su hora, método y quién lo confirmó."
+              : "Lo que se terminó hoy, con la hora y quién lo hizo."
             : station.purpose
         }
         action={
           <div className="flex flex-wrap items-center gap-2">
             {!isHistory && station.historyLabel && (
-              <Link href={`${stationHref}/terminados`} className={btnWorkSecondary}>
+              <Link
+                href={`${stationHref}/terminados`}
+                className={btnWorkSecondary}
+              >
                 <History className="h-4 w-4" aria-hidden />
                 {station.historyLabel}
               </Link>
             )}
-            {(
+            {
               <button
                 type="button"
                 onClick={density.toggle}
@@ -163,7 +175,7 @@ export function StationBoardView({
                   <Rows3 className="h-4 w-4" aria-hidden />
                 )}
               </button>
-            )}
+            }
             <BoardRefreshButton
               refreshing={board.refreshing}
               updatedAt={board.updatedAt}
@@ -189,15 +201,28 @@ export function StationBoardView({
 
       {board.board?.collectedToday !== null &&
         board.board?.collectedToday !== undefined && (
-          <div className="rounded-xl border border-border bg-surface-raised px-4 py-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Cobrado hoy
-            </p>
-            <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">
-              {formatCurrency(board.board.collectedToday)}
-            </p>
-          </div>
+          <Link
+            href={`${stationHref}/terminados`}
+            className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm transition-colors hover:bg-border-soft/40"
+          >
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Cobrado hoy
+              </p>
+              <p className="mt-1 text-4xl font-bold tracking-tight text-foreground tabular-nums">
+                {formatCurrency(board.board.collectedToday)}
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1 text-sm font-semibold text-accent">
+              Ver cobros
+              <ChevronRight className="h-4 w-4" aria-hidden />
+            </span>
+          </Link>
         )}
+
+      {board.board?.collectedSummary && (
+        <CollectedSummaryCard summary={board.board.collectedSummary} />
+      )}
 
       {board.loadError && (
         <Notification tone="error" message={board.loadError} />
@@ -213,6 +238,20 @@ export function StationBoardView({
           message="Cargando pedidos"
           skeletonRows={4}
         />
+      ) : isHistory ? (
+        (columns[0]?.orders.length ?? 0) === 0 ? (
+          <EmptyState
+            icon={Inbox}
+            title={columns[0]?.empty ?? "Nada todavía."}
+            tone="muted"
+          />
+        ) : (
+          <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {columns[0].orders.map((order) =>
+              renderOrder(order, density.compact),
+            )}
+          </div>
+        )
       ) : accordion ? (
         <BoardAccordion
           columns={columns}

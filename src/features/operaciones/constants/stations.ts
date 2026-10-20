@@ -59,6 +59,7 @@ export const STATIONS: readonly StationMeta[] = [
     purpose: "Pedidos con saldo pendiente y lo cobrado hoy.",
     icon: Wallet,
     permission: "payments.write",
+    historyLabel: "Cobrado hoy",
     layout: "accordion",
   },
 ];
