@@ -14,36 +14,30 @@ function Busy() {
   return <Loader2 className="h-4 w-4 animate-spin" aria-hidden />;
 }
 
+/** Whole-order shortcuts; single products move from their own row. */
 function PrepareButtons({ order, board }: { order: BoardOrder; board: StationBoardController }) {
-  const busy = board.busyOrderId === order.id;
-  if (order.fulfillmentStatus === "received") {
-    return (
-      <div className="flex gap-2">
-        <button type="button" disabled={busy} onClick={() => board.advance(order.id, "in_progress")} className={`${btnPrimary} flex-1`}>
+  const busy = board.isBusy(order.id);
+  const anyStarted = order.items.some((i) => i.status !== "received");
+  if (order.fulfillmentStatus === "ready") return null;
+  return (
+    <div className="flex gap-2">
+      {!anyStarted && (
+        <button type="button" disabled={busy} onClick={() => board.advance(order.id, "in_progress")} className={`${btnSecondary} flex-1`}>
           {busy ? <Busy /> : <Play className="h-4 w-4" aria-hidden />}
-          Empezar
+          Empezar todo
         </button>
-        <button type="button" disabled={busy} onClick={() => board.advance(order.id, "ready")} className={`${btnSecondary} flex-1`}>
-          <Check className="h-4 w-4" aria-hidden />
-          Ya está listo
-        </button>
-      </div>
-    );
-  }
-  if (order.fulfillmentStatus === "in_progress") {
-    return (
-      <button type="button" disabled={busy} onClick={() => board.advance(order.id, "ready")} className={`${btnPrimary} w-full`}>
+      )}
+      <button type="button" disabled={busy} onClick={() => board.advance(order.id, "ready")} className={`${btnPrimary} flex-1`}>
         {busy ? <Busy /> : <Check className="h-4 w-4" aria-hidden />}
-        Marcar listo
+        Todo listo
       </button>
-    );
-  }
-  return null;
+    </div>
+  );
 }
 
 function AssignPicker({ order, board, team }: { order: BoardOrder; board: StationBoardController; team: BoardTeamMember[] }) {
   const [selected, setSelected] = useState("");
-  const busy = board.busyOrderId === order.id;
+  const busy = board.isBusy(order.id);
   return (
     <div className="flex gap-2">
       <select
@@ -74,35 +68,19 @@ function AssignPicker({ order, board, team }: { order: BoardOrder; board: Statio
   );
 }
 
-export function StationCardActions({
-  station,
-  order,
-  board,
-  team,
-  canPrepare,
-  detailHref,
-  onDeliver,
-  onReject,
-}: StationCardActionsProps) {
-  const busy = board.busyOrderId === order.id;
+/** Only what this role can do on this order; the abilities come fresh from the server. */
+export function StationCardActions({ station, order, board, team, detailHref, onDeliver, onReject }: StationCardActionsProps) {
+  const can = board.board?.can;
+  const busy = board.isBusy(order.id);
+  if (!can || order.status === "completed") return null;
 
   switch (station) {
     case "preparacion":
-      return <PrepareButtons order={order} board={board} />;
-
     case "mis-pedidos":
-      return (
-        <>
-          {canPrepare && order.status !== "completed" && <PrepareButtons order={order} board={board} />}
-          {detailHref && (
-            <Link href={detailHref} className={`${btnSecondary} w-full`}>
-              Ver pedido
-            </Link>
-          )}
-        </>
-      );
+      return can.prepare ? <PrepareButtons order={order} board={board} /> : null;
 
     case "recepcion":
+      if (!can.assign) return null;
       if (order.status === "pending_acceptance") {
         return (
           <div className="flex gap-2">
@@ -119,7 +97,8 @@ export function StationCardActions({
       }
       return <AssignPicker order={order} board={board} team={team} />;
 
-    case "entregas": {
+    case "entregas":
+      if (!can.deliver) return null;
       if (!order.paid) {
         return <p className="text-sm font-medium text-amber-700 dark:text-amber-400">Falta cobrarlo antes de entregar.</p>;
       }
@@ -137,10 +116,9 @@ export function StationCardActions({
           Entregado
         </button>
       );
-    }
 
     case "caja":
-      return detailHref ? (
+      return can.collect && detailHref ? (
         <Link href={detailHref} className={`${btnPrimary} w-full`}>
           <Wallet className="h-4 w-4" aria-hidden />
           Cobrar

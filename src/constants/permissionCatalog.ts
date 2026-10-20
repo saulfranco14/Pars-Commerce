@@ -42,14 +42,14 @@ export const PERMISSION_CATALOG: PermissionDefinition[] = [
   { key: "orders.read", group: "orders", label: "Consultar pedidos" },
   { key: "orders.view_all", group: "orders", label: "Ver todos los pedidos", phrase: "ver todos los pedidos del negocio", requires: ["orders.read"] },
   { key: "orders.view_assigned", group: "orders", label: "Ver los pedidos asignados", phrase: "ver los pedidos que tenga asignados", requires: ["orders.read"] },
-  { key: "orders.write", group: "orders", label: "Editar pedidos", phrase: "editar pedidos", requires: ["orders.read"] },
+  { key: "orders.write", group: "orders", label: "Editar productos y datos del pedido", phrase: "editar pedidos", requires: ["orders.read"] },
   { key: "orders.assign", group: "orders", label: "Repartir el trabajo", phrase: "repartir pedidos entre el equipo", requires: ["orders.view_all"] },
   { key: "orders.close", group: "orders", label: "Cerrar o cancelar pedidos", phrase: "cerrar o cancelar pedidos", requires: ["orders.read"] },
   { key: "orders.addendum", group: "orders", label: "Agregar a pedidos pagados", phrase: "agregar productos a un pedido ya pagado", requires: ["orders.read"] },
   { key: "orders.schedule_config", group: "orders", label: "Abrir y cerrar pedidos agendados", phrase: "abrir y cerrar la recepción de pedidos" },
 
-  { key: "orders.prepare", group: "operations", label: "Preparar pedidos", phrase: "avanzar la preparación (recibido → listo)", requires: ["orders.read"] },
-  { key: "orders.deliver", group: "operations", label: "Entregar pedidos", phrase: "entregar pedidos y registrar la entrega", requires: ["orders.read"] },
+  { key: "orders.prepare", group: "operations", label: "Preparar: marcar en proceso y listo", phrase: "avanzar la preparación (recibido → listo)", requires: ["orders.read"] },
+  { key: "orders.deliver", group: "operations", label: "Entregar: en camino y entregado", phrase: "entregar pedidos y registrar la entrega", requires: ["orders.read"] },
   { key: "qr.fulfill", group: "operations", label: "Preparar (anterior)", legacy: true },
 
   { key: "payments.write", group: "money", label: "Cobrar", phrase: "cobrar" },

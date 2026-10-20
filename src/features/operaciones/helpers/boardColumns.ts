@@ -34,6 +34,8 @@ export interface BoardOrderExtras {
   deliveryDetails?: { address_text?: string | null; pickup_point_id?: string | null } | null;
   deliveryEventTypes: string[];
   assignedName: string | null;
+  doneAt?: string | null;
+  doneBy?: string | null;
 }
 
 const ORIGIN_LABELS: Record<string, string> = {
@@ -89,7 +91,24 @@ export function toBoardOrder(row: BoardOrderRow, extras: BoardOrderExtras, stati
     balanceDue: showMoney ? Math.max(0, Number(row.balance_due ?? Number(row.total) - Number(row.paid_total ?? 0))) : null,
     assignedTo: row.assigned_to,
     assignedName: extras.assignedName,
+    doneAt: extras.doneAt ?? null,
+    doneBy: extras.doneBy ?? null,
   };
+}
+
+/** "Finished today" page: newest first, so the last one done is on top. */
+export function buildHistoryColumns(station: StationKey, orders: BoardOrder[], todayStartIso: string): BoardColumn[] {
+  const today = (o: BoardOrder) => (o.doneAt ?? "") >= todayStartIso;
+  const newestFirst = (a: BoardOrder, b: BoardOrder) => (b.doneAt ?? "").localeCompare(a.doneAt ?? "");
+  if (station === "preparacion") {
+    const done = orders.filter((o) => o.fulfillmentStatus === "ready" && today(o)).sort(newestFirst);
+    return [column("done", "Preparados hoy", "Aún no terminas pedidos hoy.", done)];
+  }
+  if (station === "entregas") {
+    const done = orders.filter((o) => o.deliveryStage === "done" && today(o)).sort(newestFirst);
+    return [column("done", "Entregados hoy", "Aún no entregas pedidos hoy.", done)];
+  }
+  return [];
 }
 
 const isOpen = (o: BoardOrder) => o.status !== "completed";

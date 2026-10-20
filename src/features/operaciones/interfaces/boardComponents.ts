@@ -2,12 +2,15 @@ import type { ReactNode } from "react";
 
 import type { StationBoardController } from "@/features/operaciones/hooks/useStationBoard";
 import type { StationKey, StationMeta } from "@/features/operaciones/constants/stations";
-import type { BoardOrder, BoardTeamMember } from "@/features/operaciones/interfaces/board";
+import type { BoardOrder, BoardOrderItem, BoardTeamMember, BoardView } from "@/features/operaciones/interfaces/board";
+import type { FulfillmentStatus } from "@/features/qr/services/tableFulfillmentService";
 
 export interface StationBoardViewProps {
   station: StationMeta;
   tenantId: string;
   tenantSlug: string;
+  /** "done" is the station's "finished today" page. */
+  view?: BoardView;
 }
 
 export interface BoardOrderCardProps {
@@ -16,7 +19,19 @@ export interface BoardOrderCardProps {
   /** Only for roles that can open the order detail. */
   detailHref?: string;
   showTimer?: boolean;
+  /** Collapsed to one line until tapped: for long queues. */
+  compact?: boolean;
+  canAdvanceItems?: boolean;
+  busyItemId?: string | null;
+  onAdvanceItem?: (itemId: string, status: FulfillmentStatus) => void;
   children?: ReactNode;
+}
+
+export interface BoardItemRowProps {
+  item: BoardOrderItem;
+  canAdvance: boolean;
+  busy: boolean;
+  onAdvance: (status: FulfillmentStatus) => void;
 }
 
 export interface StationCardActionsProps {
@@ -24,7 +39,6 @@ export interface StationCardActionsProps {
   order: BoardOrder;
   board: StationBoardController;
   team: BoardTeamMember[];
-  canPrepare: boolean;
   detailHref?: string;
   onDeliver: (order: BoardOrder) => void;
   onReject: (order: BoardOrder) => void;

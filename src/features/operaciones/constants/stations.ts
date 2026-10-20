@@ -12,6 +12,8 @@ export interface StationMeta {
   icon: LucideIcon;
   /** Holding it opens the station (aliases resolved by `roleHasPermission`). */
   permission: string;
+  /** Title of its "finished today" page, when the station has one. */
+  historyLabel?: string;
 }
 
 // Order matters: it is the tab order and, for `landingSection`, who lands where.
@@ -33,9 +35,10 @@ export const STATIONS: readonly StationMeta[] = [
   {
     key: "preparacion",
     label: "Preparación",
-    purpose: "Lo que hay que preparar. Márcalo en proceso y luego listo.",
+    purpose: "Lo que hay que preparar. Avanza cada producto o el pedido completo.",
     icon: PackageCheck,
     permission: "orders.prepare",
+    historyLabel: "Preparados hoy",
   },
   {
     key: "entregas",
@@ -43,6 +46,7 @@ export const STATIONS: readonly StationMeta[] = [
     purpose: "Pedidos listos para entregar a domicilio o en el local.",
     icon: Bike,
     permission: "orders.deliver",
+    historyLabel: "Entregados hoy",
   },
   {
     key: "caja",

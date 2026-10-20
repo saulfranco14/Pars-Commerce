@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getStationBoard } from "@/features/operaciones/services/operationsBoardService";
 import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
 
-// GET /api/operations/board?tenant_id=&station= — the columns of one work station.
+// GET /api/operations/board?tenant_id=&station=&view=active|done — one work station's columns.
 export async function GET(request: Request) {
   const supabase = await createClient();
   const {
@@ -23,7 +23,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "tenant_id y station son requeridos" }, { status: 400 });
   }
 
-  const result = await getStationBoard(createAdminClient(), { userId: user.id, tenantId, station });
+  const result = await getStationBoard(createAdminClient(), {
+    userId: user.id,
+    tenantId,
+    station,
+    view: searchParams.get("view") ?? undefined,
+  });
   if (!result.ok) return serviceErrorToResponse(result.error);
   return NextResponse.json(result.data);
 }

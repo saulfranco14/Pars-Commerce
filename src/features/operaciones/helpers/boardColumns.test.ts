@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { buildColumns, originLabel, toBoardOrder } from "@/features/operaciones/helpers/boardColumns";
+import { buildColumns, buildHistoryColumns, originLabel, toBoardOrder } from "@/features/operaciones/helpers/boardColumns";
 
 import type { BoardOrderRow, BoardOrderExtras } from "@/features/operaciones/helpers/boardColumns";
 
@@ -31,7 +31,7 @@ function row(overrides: Partial<BoardOrderRow> = {}): BoardOrderRow {
 }
 
 const extras = (overrides: Partial<BoardOrderExtras> = {}): BoardOrderExtras => ({
-  items: [{ name: "Lavado", quantity: 1 }],
+  items: [{ id: "i1", name: "Lavado", quantity: 1, imageUrl: null, status: "received" }],
   deliveryEventTypes: [],
   assignedName: null,
   ...overrides,
@@ -125,5 +125,14 @@ describe("buildColumns", () => {
       card({ id: "old", created_at: "2026-10-19T14:00:00.000Z" }, "preparacion"),
     ];
     expect(buildColumns("preparacion", orders, TODAY)[0].orders.map((o) => o.id)).toEqual(["old", "new"]);
+  });
+
+  it("terminados hoy: lo último que se terminó va arriba y lo de ayer no aparece", () => {
+    const orders = [
+      card({ id: "early", fulfillment_status: "ready" }, "preparacion", { doneAt: "2026-10-19T15:00:00.000Z" }),
+      card({ id: "late", fulfillment_status: "ready" }, "preparacion", { doneAt: "2026-10-19T17:00:00.000Z" }),
+      card({ id: "yesterday", fulfillment_status: "ready" }, "preparacion", { doneAt: "2026-10-18T20:00:00.000Z" }),
+    ];
+    expect(buildHistoryColumns("preparacion", orders, TODAY)[0].orders.map((o) => o.id)).toEqual(["late", "early"]);
   });
 });
