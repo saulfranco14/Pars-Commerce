@@ -28,6 +28,7 @@ export function BoardOrderCard({
   compact = false,
   canAdvanceItems = false,
   busyItemId = null,
+  locked = false,
   onAdvanceItem,
   children,
 }: BoardOrderCardProps) {
@@ -97,6 +98,7 @@ export function BoardOrderCard({
                   item={item}
                   canAdvance={canAdvanceItems && Boolean(onAdvanceItem) && order.items.length > 1}
                   busy={busyItemId === item.id}
+                  locked={locked}
                   onAdvance={(status) => onAdvanceItem?.(item.id, status)}
                 />
               ))}
@@ -149,7 +151,7 @@ export function BoardOrderCard({
         </div>
       )}
 
-      {children && <div className="flex flex-col gap-2 px-4 pb-4">{children}</div>}
+      {children && <div className="flex flex-col gap-2 px-4 pb-4 empty:hidden">{children}</div>}
     </article>
   );
 }

@@ -2,15 +2,17 @@
 
 import { Check, Loader2, Package, Play } from "lucide-react";
 
+import { btnWorkStepDone, btnWorkStepStart } from "@/components/ui/buttonClasses";
+
 import type { BoardItemRowProps } from "@/features/operaciones/interfaces/boardComponents";
 
 const NEXT_STEP = {
-  received: { status: "in_progress", label: "Empezar", icon: Play },
-  in_progress: { status: "ready", label: "Listo", icon: Check },
+  received: { status: "in_progress", label: "Empezar", icon: Play, className: btnWorkStepStart },
+  in_progress: { status: "ready", label: "Listo", icon: Check, className: btnWorkStepDone },
 } as const;
 
 /** One product line: photo, quantity and its own step, like a table in Mesas. */
-export function BoardItemRow({ item, canAdvance, busy, onAdvance }: BoardItemRowProps) {
+export function BoardItemRow({ item, canAdvance, busy, locked, onAdvance }: BoardItemRowProps) {
   const done = item.status === "ready";
   const next = item.status === "ready" ? null : NEXT_STEP[item.status];
 
@@ -45,10 +47,10 @@ export function BoardItemRow({ item, canAdvance, busy, onAdvance }: BoardItemRow
       {next && canAdvance && (
         <button
           type="button"
-          disabled={busy}
+          disabled={busy || locked}
           onClick={() => onAdvance(next.status)}
           aria-label={`${next.label}: ${item.name}`}
-          className="inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft disabled:opacity-50"
+          className={next.className}
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <next.icon className="h-4 w-4" aria-hidden />}
           {next.label}

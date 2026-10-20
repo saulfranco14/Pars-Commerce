@@ -31,6 +31,8 @@ export interface BoardOrderCardProps {
   compact?: boolean;
   canAdvanceItems?: boolean;
   busyItemId?: string | null;
+  /** An action on this order is running: every button waits. */
+  locked?: boolean;
   onAdvanceItem?: (itemId: string, status: FulfillmentStatus) => void;
   children?: ReactNode;
 }
@@ -38,7 +40,10 @@ export interface BoardOrderCardProps {
 export interface BoardItemRowProps {
   item: BoardOrderItem;
   canAdvance: boolean;
+  /** This line is the one moving (shows the spinner). */
   busy: boolean;
+  /** Another action on the order is running. */
+  locked: boolean;
   onAdvance: (status: FulfillmentStatus) => void;
 }
 

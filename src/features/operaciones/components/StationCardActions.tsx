@@ -4,7 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { Bike, Check, CheckCheck, Loader2, Play, UserPlus, Wallet, X } from "lucide-react";
 
-import { btnPrimary, btnSecondary } from "@/components/ui/buttonClasses";
+import {
+  btnWorkDanger,
+  btnWorkPrimary,
+  btnWorkSecondary,
+  btnWorkSuccess,
+} from "@/components/ui/buttonClasses";
 import { PendingPaymentRows } from "@/features/operaciones/components/PendingPaymentRows";
 
 import type { StationBoardController } from "@/features/operaciones/hooks/useStationBoard";
@@ -21,14 +26,14 @@ function PrepareButtons({ order, board }: { order: BoardOrder; board: StationBoa
   const anyStarted = order.items.some((i) => i.status !== "received");
   if (order.fulfillmentStatus === "ready") return null;
   return (
-    <div className="flex gap-2">
+    <div className={`grid gap-2 ${anyStarted ? "grid-cols-1" : "grid-cols-2"}`}>
       {!anyStarted && (
-        <button type="button" disabled={busy} onClick={() => board.advance(order.id, "in_progress")} className={`${btnSecondary} flex-1`}>
+        <button type="button" disabled={busy} onClick={() => board.advance(order.id, "in_progress")} className={btnWorkSecondary}>
           {busy ? <Busy /> : <Play className="h-4 w-4" aria-hidden />}
-          Empezar todo
+          Empezar
         </button>
       )}
-      <button type="button" disabled={busy} onClick={() => board.advance(order.id, "ready")} className={`${btnPrimary} flex-1`}>
+      <button type="button" disabled={busy} onClick={() => board.advance(order.id, "ready")} className={btnWorkSuccess}>
         {busy ? <Busy /> : <Check className="h-4 w-4" aria-hidden />}
         Todo listo
       </button>
@@ -45,7 +50,7 @@ function AssignPicker({ order, board, team }: { order: BoardOrder; board: Statio
         value={selected}
         onChange={(e) => setSelected(e.target.value)}
         aria-label={`Asignar el pedido ${order.number}`}
-        className="select-custom min-h-11 min-w-0 flex-1 cursor-pointer rounded-lg border border-border bg-surface px-3 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+        className="select-custom min-h-12 min-w-0 flex-1 cursor-pointer rounded-xl border border-border bg-surface px-3 text-[15px] text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:min-h-11 sm:text-sm"
       >
         <option value="">{order.assignedTo ? "Pasar a…" : "Asignar a…"}</option>
         {team
@@ -63,7 +68,7 @@ function AssignPicker({ order, board, team }: { order: BoardOrder; board: Statio
           const member = team.find((m) => m.userId === selected);
           if (member && (await board.assign(order, member))) setSelected("");
         }}
-        className={btnPrimary}
+        className={btnWorkPrimary}
       >
         {busy ? <Busy /> : <UserPlus className="h-4 w-4" aria-hidden />}
         Asignar
@@ -96,12 +101,12 @@ export function StationCardActions({
       if (!can.assign) return null;
       if (order.status === "pending_acceptance") {
         return (
-          <div className="flex gap-2">
-            <button type="button" disabled={busy} onClick={() => board.respondRequest(order.id, "accept-request")} className={`${btnPrimary} flex-1`}>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" disabled={busy} onClick={() => board.respondRequest(order.id, "accept-request")} className={btnWorkPrimary}>
               {busy ? <Busy /> : <Check className="h-4 w-4" aria-hidden />}
               Aceptar
             </button>
-            <button type="button" disabled={busy} onClick={() => onReject(order)} className={`${btnSecondary} flex-1`}>
+            <button type="button" disabled={busy} onClick={() => onReject(order)} className={btnWorkDanger}>
               <X className="h-4 w-4" aria-hidden />
               Rechazar
             </button>
@@ -117,14 +122,14 @@ export function StationCardActions({
       }
       if (order.fulfillmentMethod === "delivery" && order.deliveryStage === "pending") {
         return (
-          <button type="button" disabled={busy} onClick={() => board.deliveryEvent(order.id, "out_for_delivery")} className={`${btnPrimary} w-full`}>
+          <button type="button" disabled={busy} onClick={() => board.deliveryEvent(order.id, "out_for_delivery")} className={`${btnWorkPrimary} w-full`}>
             {busy ? <Busy /> : <Bike className="h-4 w-4" aria-hidden />}
             Salió a entregar
           </button>
         );
       }
       return (
-        <button type="button" disabled={busy} onClick={() => onDeliver(order)} className={`${btnPrimary} w-full`}>
+        <button type="button" disabled={busy} onClick={() => onDeliver(order)} className={`${btnWorkSuccess} w-full`}>
           {busy ? <Busy /> : <CheckCheck className="h-4 w-4" aria-hidden />}
           Entregado
         </button>
@@ -142,7 +147,7 @@ export function StationCardActions({
         );
       }
       return can.collect && detailHref ? (
-        <Link href={detailHref} className={`${btnPrimary} w-full`}>
+        <Link href={detailHref} className={`${btnWorkPrimary} w-full`}>
           <Wallet className="h-4 w-4" aria-hidden />
           Cobrar
         </Link>

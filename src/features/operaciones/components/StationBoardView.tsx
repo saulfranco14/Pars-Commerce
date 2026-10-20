@@ -21,7 +21,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { FilterTabs } from "@/components/ui/FilterTabs";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
-import { btnPrimary, btnSecondary } from "@/components/ui/buttonClasses";
+import { btnWorkPrimary, btnWorkSecondary } from "@/components/ui/buttonClasses";
 import { DeliveryCompletionSheet } from "@/features/orders/components/order/DeliveryCompletionSheet";
 import { BoardAccordion } from "@/features/operaciones/components/BoardAccordion";
 import { BoardRefreshButton } from "@/features/operaciones/components/BoardRefreshButton";
@@ -43,7 +43,7 @@ const GRID_COLUMNS: Record<number, string> = {
 };
 
 const iconButton =
-  "inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:text-foreground";
+  "inline-flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full bg-surface text-muted-foreground shadow-sm ring-1 ring-border transition-all duration-150 hover:text-foreground active:scale-95 sm:h-11 sm:w-11";
 
 export function StationBoardView({
   station,
@@ -82,9 +82,6 @@ export function StationBoardView({
   const accordion = station.layout === "accordion";
 
   function renderOrder(order: BoardOrder, compact: boolean) {
-    const busyItem = board.busyKey?.startsWith(`${order.id}:`)
-      ? board.busyKey.slice(order.id.length + 1)
-      : null;
     return (
       <BoardOrderCard
         key={order.id}
@@ -93,7 +90,8 @@ export function StationBoardView({
         compact={compact}
         showTimer={station.key !== "caja" && !order.finished}
         canAdvanceItems={itemsMove}
-        busyItemId={busyItem}
+        busyItemId={board.busyItemOf(order.id)}
+        locked={board.isBusy(order.id)}
         onAdvanceItem={(itemId, status) =>
           board.advanceItem(order.id, itemId, status)
         }
@@ -138,7 +136,7 @@ export function StationBoardView({
         action={
           <div className="flex flex-wrap items-center gap-2">
             {!isHistory && station.historyLabel && (
-              <Link href={`${stationHref}/terminados`} className={btnSecondary}>
+              <Link href={`${stationHref}/terminados`} className={btnWorkSecondary}>
                 <History className="h-4 w-4" aria-hidden />
                 {station.historyLabel}
               </Link>
@@ -175,7 +173,7 @@ export function StationBoardView({
             {station.key === "mis-pedidos" && can("order.take") && (
               <Link
                 href={`/dashboard/${tenantSlug}/ordenes/nueva`}
-                className={btnPrimary}
+                className={btnWorkPrimary}
               >
                 <Plus className="h-4 w-4" aria-hidden />
                 Nueva orden

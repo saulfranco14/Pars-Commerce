@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import useSWR from "swr";
 
 import { swrFetcher } from "@/lib/swrFetcher";
@@ -39,13 +39,19 @@ export function useStationBoard(tenantId: string | null, station: StationKey, vi
       onSuccess: () => setUpdatedAt(Date.now()),
     },
   );
-  // The order id, "order:item" while one product line moves, or "pay:id" for a payment.
-  const [busyKey, setBusyKey] = useState<string | null>(null);
+  // Keys in flight: the order id, "order:item" while one product line moves, or "pay:id".
+  const [busyKeys, setBusyKeys] = useState<string[]>([]);
+  // Read synchronously so a second tap before React re-renders is still ignored.
+  const lockedRef = useRef(new Set<string>());
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  /** One action per order at a time; other orders stay usable meanwhile. */
   async function run(key: string, action: () => Promise<unknown>, success?: string): Promise<boolean> {
-    setBusyKey(key);
+    const lock = key.startsWith("pay:") ? key : key.split(":")[0];
+    if (lockedRef.current.has(lock)) return false;
+    lockedRef.current.add(lock);
+    setBusyKeys((keys) => [...keys, key]);
     setActionError(null);
     setNotice(null);
     try {
@@ -57,9 +63,15 @@ export function useStationBoard(tenantId: string | null, station: StationKey, vi
       setActionError(err instanceof Error ? err.message : "No se pudo actualizar el pedido.");
       return false;
     } finally {
-      setBusyKey(null);
+      lockedRef.current.delete(lock);
+      setBusyKeys((keys) => keys.filter((k) => k !== key));
     }
   }
+
+  const busyItemOf = (orderId: string) => {
+    const key = busyKeys.find((k) => k.startsWith(`${orderId}:`));
+    return key ? key.slice(orderId.length + 1) : null;
+  };
 
   return {
     board: data ?? null,
@@ -69,8 +81,9 @@ export function useStationBoard(tenantId: string | null, station: StationKey, vi
     loadError: error && !isAbortError(error) ? (error instanceof Error ? error.message : "No se pudo cargar.") : null,
     actionError,
     notice,
-    busyKey,
-    isBusy: (orderId: string) => busyKey === orderId || Boolean(busyKey?.startsWith(`${orderId}:`)),
+    /** Any action running on this order: every button of its card waits. */
+    isBusy: (orderId: string) => busyKeys.some((k) => k === orderId || k.startsWith(`${orderId}:`)),
+    busyItemOf,
     refresh: () => mutate(),
     advance: (orderId: string, status: FulfillmentStatus) =>
       run(orderId, () => advanceWholeOrderFulfillment(orderId, status)),
@@ -94,7 +107,7 @@ export function useStationBoard(tenantId: string | null, station: StationKey, vi
       run(orderId, () => createOrderDeliveryEvent(orderId, type, photo, note)),
     confirmPayment: (paymentId: string) => run(`pay:${paymentId}`, () => confirmManualPayment(paymentId)),
     rejectPayment: (paymentId: string) => run(`pay:${paymentId}`, () => rejectManualPayment(paymentId)),
-    busyPaymentId: busyKey?.startsWith("pay:") ? busyKey.slice(4) : null,
+    busyPaymentId: busyKeys.find((k) => k.startsWith("pay:"))?.slice(4) ?? null,
   };
 }
 

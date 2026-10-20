@@ -2,7 +2,7 @@
 
 import { Check, Loader2, X } from "lucide-react";
 
-import { adminActionButtonConfirm, adminActionButtonDanger } from "@/components/admin/actionButtonClasses";
+import { btnWorkDanger, btnWorkSuccess } from "@/components/ui/buttonClasses";
 
 import { PAYMENT_METHOD_META } from "@/features/qr/constants/paymentMethodMeta";
 import { formatCurrency } from "@/features/qr/helpers/format";
@@ -32,12 +32,12 @@ export function PendingPaymentRows({ payments, busyPaymentId, onConfirm, onRejec
                 </p>
               </div>
             </div>
-            <div className="mt-3 flex gap-2">
-              <button type="button" disabled={busy} onClick={() => onConfirm(p.id)} className={`${adminActionButtonConfirm} flex-1`}>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button type="button" disabled={busy} onClick={() => onConfirm(p.id)} className={btnWorkSuccess}>
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Check className="h-4 w-4" aria-hidden />}
                 Recibí el dinero
               </button>
-              <button type="button" disabled={busy} onClick={() => onReject(p.id)} className={`${adminActionButtonDanger} flex-1`}>
+              <button type="button" disabled={busy} onClick={() => onReject(p.id)} className={btnWorkDanger}>
                 <X className="h-4 w-4" aria-hidden />
                 No llegó
               </button>
