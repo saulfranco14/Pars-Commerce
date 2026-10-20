@@ -205,6 +205,10 @@ propinas, mesas, préstamos):
 | Detalle de mesa solo accesible navegando a `/mesas/[mesaId]` (round-trip completo para un check rápido) | Ahora `MesaDetailContent` se reusa en un `FormSheet` modal desde la lista Y en la página standalone (fallback para links directos) |
 | Opción "Cobré fuera del sistema" en `CloseTableDialog` solo cancelaba la orden sin marcarla pagada (`paid_total` nunca se actualizaba) | Ahora `closeTableOrder` liquida la orden como `paid` cuando el motivo es `paid_outside_system` — mismo shape de settlement que `payFullOrder` |
 | `useTablesList` con `refreshInterval` de polling continuo para el estado ocupada/libre | Ahora revalida forzado al entrar (bypassa el dedupe de SWR) + `refresh()` manual — el polling de 8s se quitó porque ocupada/libre solo cambia por acciones reales, no cada pocos segundos |
+| 9 layouts del sitio público (`ClassicLayout`, `DarkLayout`…) casi idénticos, cada uno con su footer copiado | Ahora un solo `StoreShell` + `STORE_THEMES` (tokens `--store-*` por `layout_variant`) |
+| `filterActivePromotions`, `buildWhatsAppUrl` y la consulta del tenant por `site_slug` repetidos en cada página de `/sitio` | Ahora `features/sitio/helpers/promotions.ts`, `helpers/storeLinks.ts` y `services/storefrontService.ts` (`getStoreTenant` con `cache()`) |
+| Texto del comerciante (`welcome_text`, `body`, `welcome_message`, `map_embed`) renderizado con `dangerouslySetInnerHTML` en el sitio público | Ahora se renderiza como texto (`whitespace-pre-line`); el mapa pasa por `extractMapEmbedSrc` (solo iframes de Google Maps) |
+| `<button>` "Agregar" anidado dentro del `<Link>` de `PromotionCard` | Ahora el título es un stretched link y el botón es hermano (`relative z-10`) |
 
 Al detectar cualquiera de estos patrones en código nuevo, refactoriza
 ANTES de entregar.

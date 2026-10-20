@@ -4,6 +4,11 @@ This is the design contract for all customer-facing flows (QR table, tips,
 payments, receipts). Follow this when building or modifying ANY screen in
 `/src/app/q/**` or any feature targeting end customers.
 
+> The public tenant storefront (`/src/app/sitio/**`) has its own contract:
+> `.claude/skills/storefront-ux/SKILL.md` (bold block-based commerce, no
+> horizontal scroll, theme tokens per template). Primitives like
+> `Notification` and `Skeleton` are shared.
+
 > If a screen looks bland, generic, or "form-shaped", it's wrong. Customers
 > only spend ~10 seconds deciding whether to engage. Every screen must feel
 > intentional, confident, and on-brand.

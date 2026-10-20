@@ -3,10 +3,12 @@
 import { useMemo, useState } from "react";
 
 import { CheckoutGuide } from "@/components/onboarding/CheckoutGuide";
+import { Notification } from "@/components/ui/Notification";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { useFingerprint } from "@/hooks/useFingerprint";
 import type { RecurringPurchasesConfig } from "@/types/subscriptions";
 
-import { useCartContext } from "../CartProvider";
+import { useCartContext } from "@/features/sitio/components/cart/CartProvider";
 
 import { CartEmptyState } from "@/features/checkout/components/cart/CartEmptyState";
 import { CartItemsList } from "@/features/checkout/components/cart/CartItemsList";
@@ -195,11 +197,23 @@ export default function CarritoContent({
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-16">
-        <div
-          className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-transparent"
-          style={{ borderTopColor: accentColor }}
-        />
+      <div
+        className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]"
+        aria-busy="true"
+        aria-label="Cargando carrito"
+      >
+        <div className="space-y-3">
+          {[0, 1, 2].map((row) => (
+            <div key={row} className="flex items-center gap-4 rounded-2xl bg-white p-4 ring-1 ring-black/5">
+              <Skeleton className="h-16 w-16 rounded-xl" />
+              <span className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-2/5" />
+                <Skeleton className="h-3.5 w-20" />
+              </span>
+            </div>
+          ))}
+        </div>
+        <Skeleton className="hidden h-72 rounded-2xl xl:block" />
       </div>
     );
   }
@@ -248,11 +262,7 @@ export default function CarritoContent({
 
   return (
     <div className="space-y-4 xl:pb-0">
-      {combinedError && (
-        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-          {combinedError}
-        </div>
-      )}
+      {combinedError && <Notification tone="error" message={combinedError} />}
 
       {/* El aviso lo pone el layout del sitio, que sale en todas las páginas. */}
       {acceptingOrders && hasRecurringOptions && (

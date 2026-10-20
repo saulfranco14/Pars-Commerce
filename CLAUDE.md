@@ -218,6 +218,16 @@ Reglas no negociables:
 ### 7. Storefront público
 
 Rutas `src/app/sitio/[slug]/**` para el sitio público de cada tenant.
+**Antes de tocarlas lee `.claude/skills/storefront-ux/SKILL.md`** (e-commerce
+de bloques con impacto, cero scroll horizontal; su referencia es la skill
+`ui-ux-pro-max`).
+Un solo `StoreShell` (`features/sitio/components/shell/`) sirve todas las
+plantillas: cada `layout_variant` es una entrada en
+`features/sitio/constants/storeThemes.ts` con tokens `--store-*`, nunca un
+layout nuevo. Los datos públicos salen de
+`features/sitio/services/storefrontService.ts` (con `cache()` por request);
+la búsqueda en vivo es `GET /api/public/sitio/[slug]/search`. El texto del
+comerciante se renderiza como texto, nunca con `dangerouslySetInnerHTML`.
 Comparten infraestructura con el checkout en `src/features/checkout/`:
 `singleCheckoutHandler`, `partialCheckoutHandler`,
 `subscriptionCheckoutHandler` reciben un `CheckoutContext` y devuelven
