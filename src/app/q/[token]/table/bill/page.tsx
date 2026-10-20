@@ -496,7 +496,8 @@ export default function TableBillPage() {
               orderId={data.order.id}
               orderNumber={null}
               amount={Number(data.order.paid_total || data.order.total)}
-              paidAt={data.order.created_at}
+              tipAmount={Number(data.order.tip_total ?? 0)}
+              paidAt={data.order.paid_at ?? data.order.created_at}
               paymentMethod={data.order.payment_method}
               items={data.items}
               logoUrl={data.tenant?.logo_url}
