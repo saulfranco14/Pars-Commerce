@@ -159,7 +159,7 @@ export default function DashboardLayout({
               Selecciona un negocio en el menú.
             </div>
           ) : activeTenant ? (
-            <SectionGate pathname={pathname} homeHref={tenantSlug ? `/dashboard/${tenantSlug}` : "/dashboard"}>
+            <SectionGate pathname={pathname} tenantSlug={tenantSlug ?? activeTenant.slug}>
               {children}
             </SectionGate>
           ) : (

@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import {
   DASHBOARD_SECTION_PERMISSIONS,
   dashboardSectionOf,
+  landingSection,
   sectionPermissions,
 } from "@/constants/dashboardAccess";
 import { roleHasAnyPermission } from "@/lib/auth/permissions";
@@ -28,9 +29,12 @@ describe("dashboardSectionOf", () => {
     expect(dashboardSectionOf("/dashboard/mi-negocio/configuracion/cuentas-bancarias")).toBe("configuracion");
   });
 
-  it("el inicio del negocio y las rutas de plataforma no son secciones", () => {
-    expect(dashboardSectionOf("/dashboard/mi-negocio")).toBeNull();
+  it("el inicio del negocio es la sección \"inicio\"; las rutas de cuenta no son secciones", () => {
+    expect(dashboardSectionOf("/dashboard/mi-negocio")).toBe("inicio");
+    expect(dashboardSectionOf("/dashboard")).toBe("inicio");
     expect(dashboardSectionOf("/dashboard/plataforma")).toBeNull();
+    expect(dashboardSectionOf("/dashboard/plataforma?view=users")).toBeNull();
+    expect(dashboardSectionOf("/dashboard/perfil")).toBeNull();
   });
 });
 
@@ -67,5 +71,21 @@ describe("qué ve cada rol de sistema en el menú", () => {
       expect(sections).not.toContain("equipo");
       expect(sections).not.toContain("configuracion");
     }
+  });
+});
+
+describe("a dónde aterriza cada rol al entrar", () => {
+  const landingFor = (role: string) =>
+    landingSection((s) => roleHasAnyPermission(role, SYSTEM_ROLES[role] ?? [], sectionPermissions(s)));
+
+  it("quien ve el resumen del negocio entra a Inicio", () => {
+    expect(landingFor("member")).toBe("inicio");
+  });
+
+  it("los roles que solo operan entran directo a Órdenes", () => {
+    expect(landingFor("waiter")).toBe("ordenes");
+    expect(landingFor("cashier")).toBe("ordenes");
+    expect(landingFor("preparer")).toBe("ordenes");
+    expect(landingFor("courier")).toBe("ordenes");
   });
 });

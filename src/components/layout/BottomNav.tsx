@@ -48,19 +48,21 @@ export function BottomNav({
       }}
       aria-label="Navegación principal"
     >
-      <Link
-        href="/dashboard"
-        className={navItemClass(pathname === "/dashboard")}
-        aria-current={pathname === "/dashboard" ? "page" : undefined}
-      >
-        <span className={iconWrapperClass}>
-          <Home
-            className={`h-6 w-6 ${iconClass(pathname === "/dashboard")}`}
-            aria-hidden
-          />
-        </span>
-        <span className="text-[11px] font-medium leading-tight">Inicio</span>
-      </Link>
+      {canOpen("inicio") && (
+        <Link
+          href="/dashboard"
+          className={navItemClass(pathname === "/dashboard")}
+          aria-current={pathname === "/dashboard" ? "page" : undefined}
+        >
+          <span className={iconWrapperClass}>
+            <Home
+              className={`h-6 w-6 ${iconClass(pathname === "/dashboard")}`}
+              aria-hidden
+            />
+          </span>
+          <span className="text-[11px] font-medium leading-tight">Inicio</span>
+        </Link>
+      )}
 
       {hasTenant && canOpen("productos") && (
         <Link
