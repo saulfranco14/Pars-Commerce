@@ -11,50 +11,24 @@ import {
   useCanOpenSection,
 } from "@/stores/useTenantStore";
 import { dashboardSectionOf } from "@/constants/dashboardAccess";
-import { STATIONS, stationSection } from "@/features/operaciones/constants/stations";
+import { menuPreferencesOf, resolveMenu } from "@/constants/dashboardMenu";
 import { staffUsernameOf } from "@/lib/auth/staffLogin";
 import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
 import {
   X,
   Download,
   Home,
-  Package,
-  Scissors,
-  CalendarClock,
-  ClipboardList,
-  FileText,
-  Banknote,
   Users,
-  Repeat,
-  BarChart3,
-  UsersRound,
-  Globe,
-  Settings,
-  QrCode,
-  Table2,
-  Landmark,
   ShieldCheck,
   Building2,
   ListChecks,
-  Wallet,
   Sparkles,
   Plus,
+  SlidersHorizontal,
 } from "lucide-react";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 import { FormSheet } from "@/components/ui/FormSheet";
 import type { BillingPlan } from "@/features/billing/entitlements";
-
-// Group headers only render when the role can open at least one link under them.
-const ADMIN_SECTIONS = [
-  "ventas",
-  "liquidaciones",
-  "equipo",
-  "sitio-web",
-  "configuracion",
-  "novedades",
-];
-const COLLECTION_SECTIONS = ["prestamos", "credito", "clientes"];
-const BUSINESS_SECTIONS = ["productos", "servicios", "ordenes", "cotizaciones", "agenda", "suscripciones", "qr", "mesas"];
 
 interface SidebarProps {
   tenantSlug: string | null;
@@ -158,13 +132,9 @@ function SidebarContent(props: SidebarContentProps) {
   const userRole = activeMembership?.role?.name || "member";
   // Account ownership (other businesses, billing) stays an owner check; menu visibility is by permission.
   const canOpen = useCanOpenSection();
-  const canAccessTeamAndSettings = ADMIN_SECTIONS.some(canOpen);
-  const canAccessCollections = COLLECTION_SECTIONS.some(canOpen);
-  const canAccessQr = canOpen("qr");
-  const canAccessTables = canOpen("mesas");
-  const canAccessBankAccounts = canOpen("configuracion");
-  const canAccessOperation = canOpen("operacion");
-  const canAccessBusiness = BUSINESS_SECTIONS.some(canOpen);
+  // The business arranges its menu; each role still only sees what it can open.
+  const activeTenant = useActiveTenant();
+  const menuGroups = resolveMenu(menuPreferencesOf(activeTenant?.settings), canOpen);
 
   function switchBusiness(
     selected: SidebarContentProps["memberships"][number],
@@ -403,241 +373,37 @@ function SidebarContent(props: SidebarContentProps) {
             </NavLink>
           </div>
         )}
-        {hasTenant && canAccessOperation && (
-          <>
-            <p className="mt-4 border-t border-border-soft px-3 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-              Operación
-            </p>
-            {STATIONS.map((station) => (
-              <NavLink
-                key={station.key}
-                href={`${base}/${stationSection(station.key)}`}
-                active={pathname === `${base}/${stationSection(station.key)}`}
-                icon={station.icon}
-                onNavigate={onNavigate}
-              >
-                {station.label}
-              </NavLink>
-            ))}
-          </>
-        )}
-        {hasTenant && (
-          <>
-            {canAccessBusiness && (
+        {hasTenant &&
+          menuGroups.map((group) => (
+            <div key={group.key}>
               <p className="mt-4 border-t border-border-soft px-3 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                Gestión del negocio
+                {group.label}
               </p>
-            )}
-            <NavLink
-              href={`${base}/productos`}
-              active={
-                pathname === `${base}/productos` ||
-                pathname.startsWith(`${base}/productos/`)
-              }
-              icon={Package}
-              onNavigate={onNavigate}
-            >
-              Productos
-            </NavLink>
-            <NavLink
-              href={`${base}/servicios`}
-              active={
-                pathname === `${base}/servicios` ||
-                pathname.startsWith(`${base}/servicios/`)
-              }
-              icon={Scissors}
-              onNavigate={onNavigate}
-            >
-              Servicios
-            </NavLink>
-            <NavLink
-              href={`${base}/ordenes`}
-              active={
-                pathname === `${base}/ordenes` ||
-                pathname.startsWith(`${base}/ordenes/`)
-              }
-              icon={ClipboardList}
-              onNavigate={onNavigate}
-            >
-              Órdenes / Tickets
-            </NavLink>
-            <NavLink
-              href={`${base}/cotizaciones`}
-              active={pathname === `${base}/cotizaciones`}
-              icon={FileText}
-              onNavigate={onNavigate}
-            >
-              Cotizaciones
-            </NavLink>
-            {/* Junto a Órdenes: es la misma mercancía, vista por hora de
-                recolección en vez de por fecha de creación. */}
-            <NavLink
-              href={`${base}/agenda`}
-              active={pathname === `${base}/agenda`}
-              icon={CalendarClock}
-              onNavigate={onNavigate}
-            >
-              Agenda
-            </NavLink>
-            <NavLink
-              href={`${base}/suscripciones`}
-              active={
-                pathname === `${base}/suscripciones` ||
-                pathname.startsWith(`${base}/suscripciones/`)
-              }
-              icon={Repeat}
-              onNavigate={onNavigate}
-            >
-              Suscripciones
-            </NavLink>
-            {canAccessQr && (
-              <NavLink
-                href={`${base}/qr`}
-                active={
-                  pathname === `${base}/qr` ||
-                  pathname.startsWith(`${base}/qr/`)
-                }
-                icon={QrCode}
-                onNavigate={onNavigate}
-              >
-                Códigos QR
-              </NavLink>
-            )}
-            {canAccessTables && (
-              <NavLink
-                href={`${base}/mesas`}
-                active={
-                  pathname === `${base}/mesas` ||
-                  pathname.startsWith(`${base}/mesas/`)
-                }
-                icon={Table2}
-                onNavigate={onNavigate}
-              >
-                Mesas
-              </NavLink>
-            )}
-
-            {canAccessCollections && (
-              <div className="mt-4 border-t border-border-soft pt-4">
-                <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                  Cobranza
-                </p>
-                <NavLink
-                  href={`${base}/prestamos`}
-                  active={
-                    pathname === `${base}/prestamos` ||
-                    pathname.startsWith(`${base}/prestamos/`)
-                  }
-                  icon={Banknote}
-                  onNavigate={onNavigate}
-                >
-                  Préstamos
-                </NavLink>
-                <NavLink
-                  href={`${base}/credito`}
-                  active={pathname === `${base}/credito`}
-                  icon={Wallet}
-                  onNavigate={onNavigate}
-                >
-                  Crédito de clientes
-                </NavLink>
-                <NavLink
-                  href={`${base}/clientes`}
-                  active={
-                    pathname === `${base}/clientes` ||
-                    pathname.startsWith(`${base}/clientes/`)
-                  }
-                  icon={Users}
-                  onNavigate={onNavigate}
-                >
-                  Clientes
-                </NavLink>
-              </div>
-            )}
-
-            {canAccessTeamAndSettings && (
-              <div className="mt-4 border-t border-border-soft pt-4">
-                <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                  Administración
-                </p>
-                <NavLink
-                  href={`${base}/ventas`}
-                  active={
-                    pathname === `${base}/ventas` ||
-                    pathname.startsWith(`${base}/ventas/`)
-                  }
-                  icon={BarChart3}
-                  onNavigate={onNavigate}
-                >
-                  Ventas y Comisiones
-                </NavLink>
-                <NavLink
-                  href={`${base}/liquidaciones`}
-                  active={
-                    pathname === `${base}/liquidaciones` ||
-                    pathname.startsWith(`${base}/liquidaciones/`)
-                  }
-                  icon={Wallet}
-                  onNavigate={onNavigate}
-                >
-                  Mi dinero
-                </NavLink>
-                <NavLink
-                  href={`${base}/equipo`}
-                  active={pathname === `${base}/equipo`}
-                  icon={UsersRound}
-                  onNavigate={onNavigate}
-                >
-                  Equipo
-                </NavLink>
-                <NavLink
-                  href={`${base}/equipo/roles`}
-                  active={pathname.startsWith(`${base}/equipo/roles`)}
-                  icon={ShieldCheck}
-                  onNavigate={onNavigate}
-                >
-                  Roles y permisos
-                </NavLink>
-                <NavLink
-                  href={`${base}/sitio-web`}
-                  active={pathname === `${base}/sitio-web`}
-                  icon={Globe}
-                  onNavigate={onNavigate}
-                >
-                  Sitio web
-                </NavLink>
-                <NavLink
-                  href={`${base}/configuracion`}
-                  active={pathname === `${base}/configuracion`}
-                  icon={Settings}
-                  onNavigate={onNavigate}
-                >
-                  Configuración
-                </NavLink>
-
-                {canAccessBankAccounts && (
+              {group.items.map((item) => {
+                const href = `${base}/${item.path}`;
+                return (
                   <NavLink
-                    href={`${base}/configuracion/cuentas-bancarias`}
-                    active={
-                      pathname === `${base}/configuracion/cuentas-bancarias`
-                    }
-                    icon={Landmark}
+                    key={item.path}
+                    href={href}
+                    active={pathname === href || (Boolean(item.matchChildren) && pathname.startsWith(`${href}/`))}
+                    icon={item.icon}
                     onNavigate={onNavigate}
                   >
-                    Cuentas bancarias
+                    {item.label}
                   </NavLink>
-                )}
-                <NavLink
-                  href={`${base}/novedades`}
-                  active={pathname === `${base}/novedades`}
-                  icon={Sparkles}
-                  onNavigate={onNavigate}
-                >
-                  Novedades
-                </NavLink>
-              </div>
-            )}
-          </>
+                );
+              })}
+            </div>
+          ))}
+        {hasTenant && canOpen("configuracion") && (
+          <Link
+            href={`${base}/configuracion/menu`}
+            onClick={onNavigate}
+            className="mt-3 flex min-h-11 items-center gap-2 rounded-xl px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-border-soft/60 hover:text-foreground"
+          >
+            <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden />
+            Personalizar menú
+          </Link>
         )}
       </nav>
       <div
