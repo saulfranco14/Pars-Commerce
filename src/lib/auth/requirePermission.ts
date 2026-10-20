@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { roleHasPermission } from "@/lib/auth/permissions";
 
 export interface TenantPermissionResult {
   membershipId: string;
@@ -33,7 +34,7 @@ export async function requirePermission(
   if (!role) return null;
 
   const permissions = (role.permissions as string[] | null) ?? [];
-  if (role.name === "owner" || permissions.includes(permission)) {
+  if (roleHasPermission(role.name, permissions, permission)) {
     return {
       membershipId: lifecycle.id,
       roleId: lifecycle.role_id,
