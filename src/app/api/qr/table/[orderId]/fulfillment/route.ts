@@ -3,10 +3,11 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requirePermission } from "@/lib/auth/requirePermission";
+import { roleHasPermission } from "@/lib/auth/permissions";
+import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import {
   advanceAllDevicesFulfillment,
   advanceDeviceFulfillment,
-  advanceFulfillment,
   advanceItemFulfillment,
   type FulfillmentStatus,
 } from "@/features/qr/services/tableFulfillmentService";
@@ -32,7 +33,7 @@ function isFulfillmentStatus(value: unknown): value is FulfillmentStatus {
 
 /**
  * Staff advances the preparation state of a table order
- * (received → in_progress → ready). Requires the `qr.fulfill` permission
+ * (received → in_progress → ready). Requires `orders.prepare` (`qr.fulfill` still counts)
  * (owner + waiter). This adapts HTTP; the rules live in
  * `tableFulfillmentService.advanceFulfillment`.
  */
@@ -77,16 +78,17 @@ export async function POST(request: Request, context: RouteContext) {
   const permission = await requirePermission(
     user.id,
     order.tenant_id,
-    "qr.fulfill",
+    ORDER_PERMISSIONS.prepare,
   );
   if (!permission) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // The first team member to advance real work becomes the attendant when no
-  // one has claimed it. This keeps the tip recipient accurate without ever
-  // replacing an existing assignment.
-  if (!order.assigned_to) {
+  // The first person who serves customers (order.take) to advance the work
+  // becomes the attendant, and with it the tip recipient. Preparing alone
+  // never claims a table: the waiter stays responsible for it.
+  const servesCustomers = roleHasPermission(permission.roleName, permission.permissions, ORDER_PERMISSIONS.take);
+  if (!order.assigned_to && servesCustomers) {
     await admin
       .from("orders")
       .update({ assigned_to: user.id, updated_at: new Date().toISOString() })
@@ -144,8 +146,9 @@ export async function POST(request: Request, context: RouteContext) {
     });
   }
 
-  // Legacy order-level advance (kept for backward compatibility).
-  const result = await advanceFulfillment(admin, {
+  // Order-level advance moves every product line too: changing only the
+  // summary left lines "received" on an order that read "ready".
+  const result = await advanceAllDevicesFulfillment(admin, {
     orderId,
     target: body.status,
     actorUserId: user.id,

@@ -16,6 +16,7 @@ import {
   requiresReadyBeforePayment,
 } from "@/features/qr/helpers/paymentReadiness";
 import { releaseTableQrIfPaid } from "@/features/qr/helpers/releaseTableQrIfPaid";
+import { deriveFulfillment } from "@/features/qr/helpers/deriveFulfillment";
 
 import type {
   ServiceError,
@@ -322,6 +323,22 @@ export async function advanceItemFulfillment(
         to: input.target,
       },
     });
+  }
+
+  // The DB cascade only derives the order from its people (order_devices), so
+  // counter/online orders and staff-added lines would never move the summary.
+  const { data: lines } = await admin
+    .from("order_items")
+    .select("fulfillment_status")
+    .eq("order_id", input.orderId);
+  const derived = deriveFulfillment((lines ?? []).map((l) => l.fulfillment_status as string));
+  if (derived) {
+    const summary = await advanceFulfillment(admin, {
+      orderId: input.orderId,
+      target: derived,
+      actorUserId: input.actorUserId,
+    });
+    if (!summary.ok) return summary;
   }
 
   // Read back the summaries the trigger cascade derived (device, then order).

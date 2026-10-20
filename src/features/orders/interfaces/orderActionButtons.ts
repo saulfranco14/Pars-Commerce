@@ -27,6 +27,8 @@ export type OrderActionListModel = {
   tenantId?: string | null;
   isOwner: boolean;
   isPublicStoreOrder: boolean;
+  /** Paid at the end through its account; never by "cobro directo". */
+  isTableOrder: boolean;
   paymentSettled: boolean;
   fulfillmentFinished: boolean;
   showTransferProofReview: boolean;

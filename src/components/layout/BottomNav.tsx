@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useActiveTenant } from "@/stores/useTenantStore";
+import { useActiveTenant, useCanOpenSection } from "@/stores/useTenantStore";
 import {
   Home,
   ClipboardList,
   Package,
   Banknote,
+  ListChecks,
   MoreHorizontal,
 } from "lucide-react";
 
@@ -26,6 +27,7 @@ export function BottomNav({
   const base = slug ? `/dashboard/${slug}` : "/dashboard";
 
   const hasTenant = !!slug;
+  const canOpen = useCanOpenSection();
 
   const navItemClass = (active: boolean) =>
     `flex flex-1 min-w-0 flex-col items-center justify-center gap-2 py-3 px-2 transition-colors ${
@@ -47,21 +49,35 @@ export function BottomNav({
       }}
       aria-label="Navegación principal"
     >
-      <Link
-        href="/dashboard"
-        className={navItemClass(pathname === "/dashboard")}
-        aria-current={pathname === "/dashboard" ? "page" : undefined}
-      >
-        <span className={iconWrapperClass}>
-          <Home
-            className={`h-6 w-6 ${iconClass(pathname === "/dashboard")}`}
-            aria-hidden
-          />
-        </span>
-        <span className="text-[11px] font-medium leading-tight">Inicio</span>
-      </Link>
+      {canOpen("inicio") && (
+        <Link
+          href="/dashboard"
+          className={navItemClass(pathname === "/dashboard")}
+          aria-current={pathname === "/dashboard" ? "page" : undefined}
+        >
+          <span className={iconWrapperClass}>
+            <Home
+              className={`h-6 w-6 ${iconClass(pathname === "/dashboard")}`}
+              aria-hidden
+            />
+          </span>
+          <span className="text-[11px] font-medium leading-tight">Inicio</span>
+        </Link>
+      )}
 
-      {hasTenant && (
+      {hasTenant && canOpen("operacion") && (
+        <Link
+          href={`${base}/operacion`}
+          className={navItemClass(pathname.startsWith(`${base}/operacion`))}
+          aria-current={pathname.startsWith(`${base}/operacion`) ? "page" : undefined}
+        >
+          <span className={iconWrapperClass}>
+            <ListChecks className={`h-6 w-6 ${iconClass(pathname.startsWith(`${base}/operacion`))}`} aria-hidden />
+          </span>
+          <span className="text-[11px] font-medium leading-tight">Mi trabajo</span>
+        </Link>
+      )}
+      {hasTenant && canOpen("productos") && (
         <Link
           href={`${base}/productos`}
           className={navItemClass(
@@ -90,7 +106,7 @@ export function BottomNav({
         </Link>
       )}
 
-      {hasTenant && (
+      {hasTenant && canOpen("ordenes") && (
         <Link
           href={`${base}/ordenes`}
           className={`${navItemClass(
@@ -127,7 +143,7 @@ export function BottomNav({
         </Link>
       )}
 
-      {hasTenant && (
+      {hasTenant && canOpen("prestamos") && !canOpen("operacion") && (
         <Link
           href={`${base}/prestamos`}
           className={navItemClass(

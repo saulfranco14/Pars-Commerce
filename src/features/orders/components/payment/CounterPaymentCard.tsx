@@ -10,6 +10,7 @@ import { useOrder } from "@/features/orders/hooks/useOrder";
 import { chargeOrderAtCounter } from "@/features/orders/services/counterPaymentClientService";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { usePermission } from "@/stores/useTenantStore";
+import { isTableServiceOrder } from "@/features/orders/helpers/isTableServiceOrder";
 
 import type { IntentMethod } from "@/features/qr/services/tablePaymentService";
 
@@ -36,8 +37,9 @@ export function CounterPaymentCard() {
   const [error, setError] = useState<string | null>(null);
 
   if (!order) return null;
-  const isKioskOrder = order.source === "kiosk";
-  if (!isKioskOrder && !COUNTER_SOURCES.has(order.source ?? "")) return null;
+  const isTableOrder = isTableServiceOrder(order);
+  const isKioskOrder = order.source === "kiosk" && !isTableOrder;
+  if (!isKioskOrder && !isTableOrder && !COUNTER_SOURCES.has(order.source ?? "")) return null;
   if (["paid", "completed", "cancelled"].includes(order.status)) return null;
 
   // Ya hay dinero esperando validación: eso se resuelve en la otra tarjeta.

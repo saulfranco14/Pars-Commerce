@@ -42,6 +42,8 @@ export interface OrderPayment {
   provider: string;
   status: string;
   amount: number;
+  /** Paid on top of `amount`; not part of the order total. */
+  tip_amount?: number | null;
   created_at?: string | null;
   metadata?: PaymentMetadata | null;
 }

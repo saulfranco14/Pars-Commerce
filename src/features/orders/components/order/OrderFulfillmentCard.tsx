@@ -8,6 +8,7 @@ import { FULFILLMENT_STEPS } from "@/features/qr/constants/fulfillmentStatusMeta
 import { useOrder } from "@/features/orders/hooks/useOrder";
 import { advanceOrderFulfillment } from "@/features/orders/services/fulfillmentClientService";
 import { usePermission } from "@/stores/useTenantStore";
+import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import { CommerceFulfillmentTracker } from "@/features/orders/components/tracking/CommerceFulfillmentTracker";
 
 import type { FulfillmentStatus } from "@/features/qr/services/tableFulfillmentService";
@@ -113,7 +114,7 @@ export function OrderFulfillmentCard() {
 
   const current = (order.fulfillment_status ?? "received") as FulfillmentStatus;
   const currentIndex = STEPS.findIndex((s) => s.status === current);
-  const canAdvance = can("qr.fulfill");
+  const canAdvance = can(ORDER_PERMISSIONS.prepare);
 
   async function advance(status: FulfillmentStatus) {
     setBusy(status);

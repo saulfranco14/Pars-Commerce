@@ -1,5 +1,6 @@
 import { resolveOrderActionAvailability } from "@/features/orders/helpers/resolveOrderActionAvailability";
 import { resolveOrderActionContext } from "@/features/orders/helpers/resolveOrderActionContext";
+import { isTableServiceOrder } from "@/features/orders/helpers/isTableServiceOrder";
 import type {
   OrderActionListModel,
   OrderActionsPresentation,
@@ -19,7 +20,8 @@ type ResolveOrderActionModelInput = {
   canClose: boolean;
   canAddendum: boolean;
   canReviewTransferProof: boolean;
-  canAdvanceFulfillment: boolean;
+  canPrepare: boolean;
+  canDeliver: boolean;
   actionLoading: boolean;
   requestLoading: boolean;
   fulfillmentLoading: boolean;
@@ -45,7 +47,8 @@ export function resolveOrderActionModel({
   canClose,
   canAddendum,
   canReviewTransferProof,
-  canAdvanceFulfillment,
+  canPrepare,
+  canDeliver,
   actionLoading,
   requestLoading,
   fulfillmentLoading,
@@ -53,14 +56,20 @@ export function resolveOrderActionModel({
   const canStartOrComplete = (order.items?.length ?? 0) > 0;
   const availability = resolveOrderActionAvailability({
     order,
-    canAdvanceFulfillment,
+    canPrepare,
+    canDeliver,
     canReviewTransferProof,
   });
   const isEditableStatus = ["draft", "assigned", "in_progress"].includes(
     order.status,
   );
+  const isTableOrder = isTableServiceOrder(order);
+  const hasPendingCustomerPayment = (order.payments ?? []).some(
+    (p) => p.provider === "manual" && p.status === "pending",
+  );
   const showExpress =
     !availability.isPublicStoreOrder &&
+    !isTableOrder &&
     expressEnabled &&
     isEditableStatus &&
     canStartOrComplete;
@@ -85,6 +94,8 @@ export function resolveOrderActionModel({
     fulfillmentAction: availability.fulfillmentAction,
     hasFinishedDelivery: availability.fulfillmentFinished,
     paymentSettled: availability.paymentSettled,
+    isTableOrder,
+    hasPendingCustomerPayment,
   });
 
   return {
@@ -94,6 +105,7 @@ export function resolveOrderActionModel({
       tenantId,
       isOwner,
       isPublicStoreOrder: availability.isPublicStoreOrder,
+      isTableOrder,
       paymentSettled: availability.paymentSettled,
       fulfillmentFinished: availability.fulfillmentFinished,
       showTransferProofReview: availability.showTransferProofReview,
