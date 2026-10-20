@@ -34,6 +34,7 @@ export const STATIONS: readonly StationMeta[] = [
     purpose: "Los pedidos que levantaste o te asignaron, y cómo van.",
     icon: ClipboardList,
     permission: "order.take",
+    layout: "accordion",
   },
   {
     key: "preparacion",
