@@ -106,43 +106,26 @@
    into dark cards (product detail, cart and checkout intentionally remain
    paper-like surfaces). */
 .site-template {
-  --site-canvas-heading: #0f172a;
-  --site-canvas-copy: #475569;
-  --site-canvas-muted: #64748b;
-  --site-canvas-border: rgb(203 213 225 / 0.82);
-  --site-filter-bg: rgb(248 250 252 / 0.96);
-  --site-filter-surface: #ffffff;
-  --site-filter-text: #475569;
-  --site-tint-text: #0f172a;
-  --site-tint-copy: #475569;
-}
-
-.site-template-dark {
-  --site-canvas-heading: #f8fafc;
-  --site-canvas-copy: #cbd5e1;
-  --site-canvas-muted: #94a3b8;
-  --site-canvas-border: rgb(71 85 105 / 0.72);
-  --site-filter-bg: rgb(15 23 42 / 0.94);
-  --site-filter-surface: #172033;
-  --site-filter-text: #dbe5f3;
-  --site-tint-text: #f8fafc;
-  --site-tint-copy: #d3dce9;
+  --site-canvas-heading: var(--store-ink);
+  --site-canvas-copy: var(--store-ink-2);
+  --site-canvas-muted: var(--store-ink-2);
 }
 
 .site-canvas-heading { color: var(--site-canvas-heading); }
 .site-canvas-copy { color: var(--site-canvas-copy); }
-.site-canvas-muted { color: var(--site-canvas-muted); }
-.site-canvas-tint-title { color: var(--site-tint-text); }
-.site-canvas-tint-copy { color: var(--site-tint-copy); }
 
-.site-catalog-filter {
-  border-color: var(--site-canvas-border);
-  background-color: var(--site-filter-bg);
+/* Storefront search, menu and cart toast drop from under the header. */
+@keyframes store-drop {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.site-catalog-chip {
-  background-color: var(--site-filter-surface);
-  color: var(--site-filter-text);
+.store-drop-in {
+  animation: store-drop 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .store-drop-in { animation: none; }
 }
 
 /* Safety net for site pages created before the semantic classes above. The

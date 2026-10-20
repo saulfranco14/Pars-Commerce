@@ -1,10 +1,20 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- site_slug was added by the commerce migration and generated types are pending refresh. */
-import { createAdminClient } from "@/lib/supabase/admin";
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { LayoutSwitcher } from "./layouts/LayoutSwitcher";
-import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
+
 import { OrdersClosedNotice } from "@/features/checkout/components/cart/OrdersClosedNotice";
+import { StoreShell } from "@/features/sitio/components/shell/StoreShell";
+
+import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
+import { buildStoreNavLinks, buildStoreQuickLinks } from "@/features/sitio/helpers/storeNav";
+import { resolveStoreTheme } from "@/features/sitio/helpers/storeTheme";
+import {
+  getActivePromotions,
+  getCatalogIndex,
+  getStoreLayoutVariant,
+  getStoreNavPages,
+  getStoreTenant,
+} from "@/features/sitio/services/storefrontService";
+
+import type { Metadata } from "next";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,113 +22,55 @@ interface LayoutProps {
 }
 
 export async function generateMetadata({ params }: Pick<LayoutProps, "params">): Promise<Metadata> {
-  await params;
-  return {};
+  const { slug } = await params;
+  const tenant = await getStoreTenant(slug);
+  if (!tenant) return {};
+  return {
+    title: { default: tenant.name, template: `%s · ${tenant.name}` },
+    description: tenant.description ?? `Compra en línea en ${tenant.name}.`,
+  };
 }
 
 export default async function SitioLayout({ children, params }: LayoutProps) {
   const { slug } = await params;
-  const supabase = createAdminClient();
-  const db = supabase as unknown as { from: (table: string) => any };
+  const tenant = await getStoreTenant(slug);
+  if (!tenant) notFound();
 
-  const { data: tenant, error: tenantError } = await db
-    .from("tenants")
-    .select(
-      "id, name, description, logo_url, theme_color, slug, site_slug, whatsapp_phone, social_links, site_template_id, accepting_orders, settings",
-    )
-    .eq("site_slug", slug)
-    .eq("public_store_enabled", true)
-    .single();
-
-  if (tenantError || !tenant) {
-    notFound();
-  }
-
-  let layoutVariant = "classic";
-  if (tenant.site_template_id) {
-    const { data: template } = await db
-      .from("site_templates")
-      .select("layout_variant")
-      .eq("id", tenant.site_template_id)
-      .single();
-    if (template?.layout_variant) {
-      layoutVariant = template.layout_variant;
-    }
-  }
-
-  const [pagesRes, catalogRes] = await Promise.all([
-    db
-      .from("tenant_site_pages")
-      .select("id, slug, title, position")
-      .eq("tenant_id", tenant.id)
-      .eq("is_enabled", true)
-      .order("position", { ascending: true }),
-    db
-      .from("products")
-      .select("type")
-      .eq("tenant_id", tenant.id)
-      .eq("is_public", true)
-      .is("deleted_at", null),
+  const [layoutVariant, pages, catalog, promotions] = await Promise.all([
+    getStoreLayoutVariant(tenant.site_template_id),
+    getStoreNavPages(tenant.id),
+    getCatalogIndex(tenant.id),
+    getActivePromotions(tenant.id),
   ]);
 
-  const catalogItems = (catalogRes.data ?? []) as Array<{ type: string }>;
-  const productsCount = catalogItems.filter((item) => item.type === "product").length;
-  const servicesCount = catalogItems.filter((item) => item.type === "service").length;
-  type SitePage = { id: string; slug: string; title: string; position: number; href?: string };
-  const navPages = ((pagesRes.data ?? []) as SitePage[]).flatMap((page) => {
-    if (page.slug !== "productos") return [page];
-
-    const catalogLinks = [];
-    if (productsCount > 0) {
-      catalogLinks.push({
-        ...page,
-        id: `${page.id}:products`,
-        title: `Productos (${productsCount})`,
-        href: `/sitio/${slug}/productos?type=product`,
-      });
-    }
-    if (servicesCount > 0) {
-      catalogLinks.push({
-        ...page,
-        id: `${page.id}:services`,
-        title: `Servicios (${servicesCount})`,
-        href: `/sitio/${slug}/productos?type=service`,
-      });
-    }
-    return catalogLinks;
-  });
-  const accentColor = tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT;
-  const settings = (tenant.settings as Record<string, unknown> | null) ?? {};
-  const onboarding = (settings.onboarding as Record<string, unknown> | null) ?? {};
-  const isPreparing = onboarding.status === "in_progress";
-
-  const layoutTenant = {
-    id: tenant.id,
-    name: tenant.name,
-    description: tenant.description,
-    logo_url: tenant.logo_url,
-    theme_color: tenant.theme_color,
-    slug: tenant.site_slug,
-    whatsapp_phone: tenant.whatsapp_phone,
-    social_links: (tenant.social_links as Record<string, string> | null) ?? {},
+  const onboarding = (tenant.settings?.onboarding as Record<string, unknown> | undefined) ?? {};
+  const chrome = {
+    slug,
+    tenantName: tenant.name,
+    tenantDescription: tenant.description,
+    logoUrl: tenant.logo_url,
+    navLinks: buildStoreNavLinks(slug, pages, catalog.counts, promotions.length > 0),
+    quickLinks: buildStoreQuickLinks(slug, catalog.counts, catalog.categories, promotions),
+    whatsappPhone: tenant.whatsapp_phone,
+    socialLinks: tenant.social_links ?? {},
   };
 
   return (
-    <LayoutSwitcher
-      layoutVariant={layoutVariant}
-      tenant={layoutTenant}
-      navPages={navPages}
-      accentColor={accentColor}
+    <StoreShell
+      chrome={chrome}
+      theme={resolveStoreTheme(layoutVariant)}
+      accent={tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT}
+      tenantId={tenant.id}
+      notice={
+        // Shown on every page so nobody builds a whole order before learning it can't be placed.
+        tenant.accepting_orders === false ? (
+          <div className="mb-4">
+            <OrdersClosedNotice businessName={tenant.name} preparing={onboarding.status === "in_progress"} />
+          </div>
+        ) : null
+      }
     >
-      {/* En todas las páginas y no solo en el carrito: si el aviso viviera
-          solo en el checkout, el cliente armaría su pedido entero antes de
-          enterarse de que no se puede. */}
-      {tenant.accepting_orders === false && (
-        <div className="mb-4">
-          <OrdersClosedNotice businessName={tenant.name} preparing={isPreparing} />
-        </div>
-      )}
       {children}
-    </LayoutSwitcher>
+    </StoreShell>
   );
 }
