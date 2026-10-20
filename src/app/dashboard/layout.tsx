@@ -12,6 +12,7 @@ import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { SectionGate } from "@/components/auth/SectionGate";
+import { ForcePasswordChangeScreen } from "@/features/auth/components/ForcePasswordChangeScreen";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Menu } from "lucide-react";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
@@ -31,6 +32,7 @@ export default function DashboardLayout({
   useAuthInitializer();
   useAuthProfileAndTenants();
   const profile = useSessionStore((s) => s.profile);
+  const mustChangePassword = useSessionStore((s) => s.mustChangePassword);
   const memberships = useTenantStore((s) => s.memberships);
   const tenantsLoaded = useTenantStore((s) => s.tenantsLoaded);
   const activeTenantId = useTenantStore((s) => s.activeTenantId);
@@ -87,6 +89,10 @@ export default function DashboardLayout({
         <LoadingBlock message="Cargando sesión…" />
       </div>
     );
+  }
+
+  if (mustChangePassword) {
+    return <ForcePasswordChangeScreen onSignOut={handleSignOut} />;
   }
 
   if (isPreparingBusiness) {

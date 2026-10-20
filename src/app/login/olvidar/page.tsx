@@ -132,7 +132,8 @@ export default function OlvidarPage() {
               ¿Olvidaste tu contraseña?
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Ingresa tu email y te enviaremos un enlace para restablecerla
+              Ingresa tu email y te enviaremos un enlace para restablecerla.
+              Si entras con un usuario, pídele al negocio una contraseña nueva.
             </p>
             <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
               {error ? (

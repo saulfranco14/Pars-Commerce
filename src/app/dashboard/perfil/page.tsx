@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useId } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, KeyRound } from "lucide-react";
+import { ChangePasswordForm } from "@/features/auth/components/ChangePasswordForm";
 import { FormSaveBar } from "@/components/layout/FormSaveBar";
 import { useSessionStore } from "@/stores/useSessionStore";
 import type { Profile } from "@/types/database";
 import { update as updateProfile } from "@/services/profileService";
 import { isValidMexicanPhone } from "@/lib/phone";
+import { staffUsernameOf } from "@/lib/auth/staffLogin";
 
 export default function PerfilPage() {
   const formId = useId();
@@ -50,6 +52,8 @@ export default function PerfilPage() {
       setLoading(false);
     }
   }
+
+  const username = staffUsernameOf(profile?.email);
 
   if (!profile) {
     return (
@@ -116,18 +120,20 @@ export default function PerfilPage() {
                   htmlFor="email"
                   className="block text-base font-medium text-muted-foreground"
                 >
-                  Email
+                  {username ? "Usuario" : "Email"}
                 </label>
                 <input
                   id="email"
-                  type="email"
-                  value={profile.email ?? ""}
+                  type={username ? "text" : "email"}
+                  value={username ?? profile.email ?? ""}
                   readOnly
                   className="input-form mt-2 block w-full min-h-13 rounded-xl border border-border px-4 py-3 text-lg text-muted bg-border-soft/80 focus:outline-none"
                   aria-readonly
                 />
                 <p className="mt-2 text-sm text-muted-foreground">
-                  El email no se puede cambiar desde aquí.
+                  {username
+                    ? "Con este usuario entras a Tlaco. Lo asignó el negocio."
+                    : "El email no se puede cambiar desde aquí."}
                 </p>
               </div>
               <div>
@@ -177,6 +183,19 @@ export default function PerfilPage() {
           </FormSaveBar>
         </form>
       </div>
+
+      <section className="mt-6 mb-24 shrink-0 rounded-xl md:mb-0 border border-border bg-surface-raised p-6 shadow-sm sm:p-8 md:p-10">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+          <KeyRound className="h-5 w-5 text-accent" aria-hidden />
+          Contraseña
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Cámbiala cuando quieras. Seguirás con la sesión abierta en este dispositivo.
+        </p>
+        <div className="mt-5 max-w-md">
+          <ChangePasswordForm />
+        </div>
+      </section>
     </div>
   );
 }
