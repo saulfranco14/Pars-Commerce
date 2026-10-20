@@ -138,19 +138,16 @@ export function BoardOrderCard({
             )}
           </div>
 
-          {(children || detailHref) && (
-            <div className="mt-4 flex flex-col gap-2">
-              {children}
-              {detailHref && (
-                <Link href={detailHref} className="inline-flex min-h-11 items-center justify-center gap-1.5 text-sm font-semibold text-accent">
-                  <ExternalLink className="h-4 w-4" aria-hidden />
-                  Ver pedido completo
-                </Link>
-              )}
-            </div>
+          {detailHref && (
+            <Link href={detailHref} className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-1.5 text-sm font-semibold text-accent">
+              <ExternalLink className="h-4 w-4" aria-hidden />
+              Ver pedido completo
+            </Link>
           )}
         </div>
       )}
+
+      {children && <div className="flex flex-col gap-2 px-4 pb-4">{children}</div>}
     </article>
   );
 }

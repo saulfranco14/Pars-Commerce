@@ -14,6 +14,8 @@ export interface StationMeta {
   permission: string;
   /** Title of its "finished today" page, when the station has one. */
   historyLabel?: string;
+  /** "accordion": one column of foldable groups with one-line cards. */
+  layout?: "columns" | "accordion";
 }
 
 // Order matters: it is the tab order and, for `landingSection`, who lands where.
@@ -24,6 +26,7 @@ export const STATIONS: readonly StationMeta[] = [
     purpose: "Acepta los pedidos que llegan y reparte el trabajo.",
     icon: Inbox,
     permission: "orders.assign",
+    layout: "accordion",
   },
   {
     key: "mis-pedidos",
@@ -54,6 +57,7 @@ export const STATIONS: readonly StationMeta[] = [
     purpose: "Pedidos con saldo pendiente y lo cobrado hoy.",
     icon: Wallet,
     permission: "payments.write",
+    layout: "accordion",
   },
 ];
 

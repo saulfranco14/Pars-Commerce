@@ -1,10 +1,12 @@
 import { resolveOrderFulfillmentMethod } from "@/features/orders/helpers/resolveOrderFulfillmentMethod";
+import { requiresReadyBeforePayment } from "@/features/qr/helpers/paymentReadiness";
 
 import type { StationKey } from "@/features/operaciones/constants/stations";
 import type {
   BoardColumn,
   BoardOrder,
   BoardOrderItem,
+  BoardPendingPayment,
   DeliveryStage,
 } from "@/features/operaciones/interfaces/board";
 
@@ -15,6 +17,7 @@ export interface BoardOrderRow {
   fulfillment_status: string | null;
   fulfillment_method: "delivery" | "pickup" | null;
   source: string;
+  order_type?: string | null;
   table_label: string | null;
   created_at: string;
   updated_at: string;
@@ -36,6 +39,7 @@ export interface BoardOrderExtras {
   assignedName: string | null;
   doneAt?: string | null;
   doneBy?: string | null;
+  pendingPayments?: BoardPendingPayment[];
 }
 
 const ORIGIN_LABELS: Record<string, string> = {
@@ -91,6 +95,11 @@ export function toBoardOrder(row: BoardOrderRow, extras: BoardOrderExtras, stati
     balanceDue: showMoney ? Math.max(0, Number(row.balance_due ?? Number(row.total) - Number(row.paid_total ?? 0))) : null,
     assignedTo: row.assigned_to,
     assignedName: extras.assignedName,
+    // A table is paid at the end, so once paid there is nothing left to do.
+    finished:
+      row.status === "completed" ||
+      (row.status === "paid" && requiresReadyBeforePayment(row.source, row.order_type)),
+    pendingPayments: extras.pendingPayments ?? [],
     doneAt: extras.doneAt ?? null,
     doneBy: extras.doneBy ?? null,
   };
@@ -111,7 +120,7 @@ export function buildHistoryColumns(station: StationKey, orders: BoardOrder[], t
   return [];
 }
 
-const isOpen = (o: BoardOrder) => o.status !== "completed";
+const isOpen = (o: BoardOrder) => !o.finished;
 
 function column(key: string, label: string, empty: string, orders: BoardOrder[]): BoardColumn {
   return { key, label, empty, orders };
@@ -151,8 +160,10 @@ export function buildColumns(station: StationKey, orders: BoardOrder[], todaySta
       ];
     }
     case "caja": {
-      const owing = working.filter((o) => !o.paid && (o.balanceDue ?? 0) > 0);
+      const toConfirm = working.filter((o) => o.pendingPayments.length > 0);
+      const owing = working.filter((o) => !o.paid && (o.balanceDue ?? 0) > 0 && o.pendingPayments.length === 0);
       return [
+        column("to_confirm", "Pagos por confirmar", "Nadie ha reportado un pago.", toConfirm),
         column("ready", "Listos por cobrar", "Nada listo por cobrar.", owing.filter((o) => o.fulfillmentStatus === "ready" || !isOpen(o))),
         column("working", "Aún en proceso", "Nada pendiente de cobro en proceso.", owing.filter((o) => isOpen(o) && o.fulfillmentStatus !== "ready")),
       ];

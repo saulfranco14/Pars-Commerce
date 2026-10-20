@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Bike, Check, CheckCheck, Loader2, Play, UserPlus, Wallet, X } from "lucide-react";
 
 import { btnPrimary, btnSecondary } from "@/components/ui/buttonClasses";
+import { PendingPaymentRows } from "@/features/operaciones/components/PendingPaymentRows";
 
 import type { StationBoardController } from "@/features/operaciones/hooks/useStationBoard";
 import type { BoardOrder, BoardTeamMember } from "@/features/operaciones/interfaces/board";
@@ -69,7 +70,16 @@ function AssignPicker({ order, board, team }: { order: BoardOrder; board: Statio
 }
 
 /** Only what this role can do on this order; the abilities come fresh from the server. */
-export function StationCardActions({ station, order, board, team, detailHref, onDeliver, onReject }: StationCardActionsProps) {
+export function StationCardActions({
+  station,
+  order,
+  board,
+  team,
+  detailHref,
+  onDeliver,
+  onReject,
+  onRejectPayment,
+}: StationCardActionsProps) {
   const can = board.board?.can;
   const busy = board.isBusy(order.id);
   if (!can || order.status === "completed") return null;
@@ -118,6 +128,16 @@ export function StationCardActions({ station, order, board, team, detailHref, on
       );
 
     case "caja":
+      if (can.collect && order.pendingPayments.length > 0) {
+        return (
+          <PendingPaymentRows
+            payments={order.pendingPayments}
+            busyPaymentId={board.busyPaymentId}
+            onConfirm={board.confirmPayment}
+            onReject={onRejectPayment}
+          />
+        );
+      }
       return can.collect && detailHref ? (
         <Link href={detailHref} className={`${btnPrimary} w-full`}>
           <Wallet className="h-4 w-4" aria-hidden />

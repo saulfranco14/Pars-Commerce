@@ -84,7 +84,7 @@ export async function getStationBoard(
   const { data, error } = await query;
   if (error) return { ok: false, error: { code: "internal", message: error.message } };
 
-  let rows = (data ?? []) as (BoardOrderRow & { order_type: string | null })[];
+  let rows = (data ?? []) as BoardOrderRow[];
   // A paid table order is finished; its preparation can no longer move.
   if (meta.key === "preparacion" && view === "active") {
     rows = rows.filter((r) => !(r.status === "paid" && requiresReadyBeforePayment(r.source, r.order_type)));
@@ -92,7 +92,7 @@ export async function getStationBoard(
 
   const ids = rows.map((r) => r.id);
   const userIds = [...new Set(rows.map((r) => r.assigned_to).filter((id): id is string => Boolean(id)))];
-  const [items, details, events, profiles, activity] = await Promise.all([
+  const [items, details, events, profiles, activity, pendingPayments] = await Promise.all([
     ids.length
       ? db
           .from("order_items")
@@ -115,7 +115,25 @@ export async function getStationBoard(
           .in("order_id", ids)
           .order("created_at", { ascending: true })
       : { data: [] },
+    meta.key === "caja" && ids.length
+      ? db
+          .from("payments")
+          .select("id, order_id, amount, tip_amount, metadata, created_at")
+          .eq("provider", "manual")
+          .eq("status", "pending")
+          .in("order_id", ids)
+          .order("created_at", { ascending: true })
+      : { data: [] },
   ]);
+
+  const payerDeviceIds = [
+    ...new Set((pendingPayments.data ?? []).map((p: any) => p.metadata?.device_id).filter(Boolean)),
+  ] as string[];
+  const payerDevices = payerDeviceIds.length
+    ? await db.from("order_devices").select("id, display_name").in("id", payerDeviceIds)
+    : { data: [] };
+  const payerName = new Map<string, string>((payerDevices.data ?? []).map((d: any) => [d.id, d.display_name]));
+  const paymentsByOrder = groupBy(pendingPayments.data ?? [], (p: any) => p.order_id);
 
   // The step that closed each order: "ready" for preparation, delivered or picked up for delivery.
   const doneByOrder = new Map<string, { at: string; by: string | null }>();
@@ -159,6 +177,13 @@ export async function getStationBoard(
         deliveryDetails: detailsByOrder.get(row.id) ?? null,
         deliveryEventTypes: (eventsByOrder.get(row.id) ?? []).map((e: any) => e.type),
         assignedName: row.assigned_to ? (nameOf.get(row.assigned_to) ?? null) : null,
+        pendingPayments: (paymentsByOrder.get(row.id) ?? []).map((p: any) => ({
+          id: p.id,
+          amount: Number(p.amount),
+          tip: Number(p.tip_amount ?? 0),
+          method: p.metadata?.method ?? "efectivo",
+          payerName: payerName.get(p.metadata?.device_id) ?? null,
+        })),
         doneAt: doneByOrder.get(row.id)?.at ?? (view === "done" ? row.updated_at : null),
         doneBy: nameOf.get(doneByOrder.get(row.id)?.by ?? "") ?? null,
       },

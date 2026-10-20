@@ -12,6 +12,15 @@ export interface BoardOrderItem {
   status: ItemStatus;
 }
 
+/** Money the customer says they paid, waiting for the business to confirm it. */
+export interface BoardPendingPayment {
+  id: string;
+  amount: number;
+  tip: number;
+  method: string;
+  payerName: string | null;
+}
+
 /** One card on a station board: only what that work needs. */
 export interface BoardOrder {
   id: string;
@@ -33,6 +42,10 @@ export interface BoardOrder {
   balanceDue: number | null;
   assignedTo: string | null;
   assignedName: string | null;
+  /** Nothing left to do: closed, or a table that is already paid. */
+  finished: boolean;
+  /** Only for Caja. */
+  pendingPayments: BoardPendingPayment[];
   /** History view: when the step finished and who finished it. */
   doneAt: string | null;
   doneBy: string | null;

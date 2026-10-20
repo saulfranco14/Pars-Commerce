@@ -114,9 +114,30 @@ describe("buildColumns", () => {
       card({ id: "paid", fulfillment_status: "ready", status: "paid", paid_total: 300, balance_due: 0 }, "caja"),
       card({ id: "working", fulfillment_status: "in_progress" }, "caja"),
     ];
-    const [ready, working] = buildColumns("caja", orders, TODAY);
+    const [, ready, working] = buildColumns("caja", orders, TODAY);
     expect(ready.orders.map((o) => o.id)).toEqual(["owes"]);
     expect(working.orders.map((o) => o.id)).toEqual(["working"]);
+  });
+
+  it("caja pone primero los pagos que el cliente ya reportó, con su propina", () => {
+    const payment = { id: "p1", amount: 250, tip: 50, method: "efectivo", payerName: "Gerardo" };
+    const orders = [
+      card({ id: "reported", source: "qr_table", table_label: "6", fulfillment_status: "ready" }, "caja", { pendingPayments: [payment] }),
+      card({ id: "owes", fulfillment_status: "ready" }, "caja"),
+    ];
+    const [toConfirm, ready] = buildColumns("caja", orders, TODAY);
+    expect(toConfirm.orders.map((o) => o.id)).toEqual(["reported"]);
+    expect(toConfirm.orders[0].pendingPayments[0].tip).toBe(50);
+    expect(ready.orders.map((o) => o.id)).toEqual(["owes"]);
+  });
+
+  it("una mesa pagada ya terminó: no sigue en recepción", () => {
+    const orders = [
+      card({ id: "paid-table", source: "qr_table", table_label: "6", status: "paid", assigned_to: "u-1" }, "recepcion"),
+      card({ id: "paid-counter", source: "staff", status: "paid", assigned_to: "u-1" }, "recepcion"),
+    ];
+    const [, , assigned] = buildColumns("recepcion", orders, TODAY);
+    expect(assigned.orders.map((o) => o.id)).toEqual(["paid-counter"]);
   });
 
   it("lo más viejo va primero: es lo siguiente por atender", () => {

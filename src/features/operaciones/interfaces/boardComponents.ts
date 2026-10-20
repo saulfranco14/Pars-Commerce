@@ -1,8 +1,16 @@
 import type { ReactNode } from "react";
 
+import type { BoardColumn } from "@/features/operaciones/interfaces/board";
+
 import type { StationBoardController } from "@/features/operaciones/hooks/useStationBoard";
 import type { StationKey, StationMeta } from "@/features/operaciones/constants/stations";
-import type { BoardOrder, BoardOrderItem, BoardTeamMember, BoardView } from "@/features/operaciones/interfaces/board";
+import type {
+  BoardOrder,
+  BoardOrderItem,
+  BoardPendingPayment,
+  BoardTeamMember,
+  BoardView,
+} from "@/features/operaciones/interfaces/board";
 import type { FulfillmentStatus } from "@/features/qr/services/tableFulfillmentService";
 
 export interface StationBoardViewProps {
@@ -42,6 +50,19 @@ export interface StationCardActionsProps {
   detailHref?: string;
   onDeliver: (order: BoardOrder) => void;
   onReject: (order: BoardOrder) => void;
+  onRejectPayment: (paymentId: string) => void;
+}
+
+export interface PendingPaymentRowsProps {
+  payments: BoardPendingPayment[];
+  busyPaymentId: string | null;
+  onConfirm: (paymentId: string) => void;
+  onReject: (paymentId: string) => void;
+}
+
+export interface BoardAccordionProps {
+  columns: BoardColumn[];
+  renderOrder: (order: BoardOrder) => ReactNode;
 }
 
 export interface StationTabsProps {

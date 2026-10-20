@@ -14,6 +14,10 @@ import {
   createOrderDeliveryEvent,
   updatePublicOrderRequest,
 } from "@/features/orders/services/orderActionService";
+import {
+  confirmManualPayment,
+  rejectManualPayment,
+} from "@/features/orders/services/manualPaymentService";
 import { BOARD_REFRESH_MS } from "@/features/operaciones/constants/stations";
 import { stationBoardKey } from "@/features/operaciones/helpers/boardKey";
 
@@ -29,7 +33,7 @@ export function useStationBoard(tenantId: string | null, station: StationKey, vi
     swrFetcher,
     { refreshInterval: BOARD_REFRESH_MS, revalidateOnFocus: true, keepPreviousData: true },
   );
-  // The order id, or "order:item" while a single product line moves.
+  // The order id, "order:item" while one product line moves, or "pay:id" for a payment.
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -63,6 +67,9 @@ export function useStationBoard(tenantId: string | null, station: StationKey, vi
       run(orderId, () => updatePublicOrderRequest(orderId, action)),
     deliveryEvent: (orderId: string, type: OrderDeliveryEventType, photo?: File, note?: string) =>
       run(orderId, () => createOrderDeliveryEvent(orderId, type, photo, note)),
+    confirmPayment: (paymentId: string) => run(`pay:${paymentId}`, () => confirmManualPayment(paymentId)),
+    rejectPayment: (paymentId: string) => run(`pay:${paymentId}`, () => rejectManualPayment(paymentId)),
+    busyPaymentId: busyKey?.startsWith("pay:") ? busyKey.slice(4) : null,
   };
 }
 
