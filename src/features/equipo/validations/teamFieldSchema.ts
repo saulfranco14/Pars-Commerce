@@ -25,15 +25,16 @@ export function buildTeamFields({ tenantId }: BuildTeamFieldsOptions): FieldSche
       type: "text",
       icon: User,
       placeholder: "Nombre de la persona",
-      required: false,
+      required: true,
     },
     {
       name: "email",
-      label: "Email del usuario",
+      label: "Email (opcional)",
       type: "email",
       icon: Mail,
       placeholder: "usuario@ejemplo.com",
-      required: true,
+      required: false,
+      hint: "Sin email le creamos un usuario para entrar, como juan.4821.",
     },
     {
       name: "role_id",
@@ -56,7 +57,7 @@ export function buildTeamFields({ tenantId }: BuildTeamFieldsOptions): FieldSche
 }
 
 export interface TeamFieldValues {
-  display_name?: string;
-  email: string;
+  display_name: string;
+  email?: string;
   role_id: string;
 }

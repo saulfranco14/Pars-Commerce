@@ -1,18 +1,13 @@
 import { addMember } from "@/services/teamService";
 
 import type { TeamFieldValues } from "@/features/equipo/validations/teamFieldSchema";
+import type { StaffCredentials } from "@/types/team";
 
+/** `credentials` is null when the person already had an account and was only added to the team. */
 export interface AddMemberResult {
-  invitedByEmail: boolean;
-  tempPassword: string | null;
+  credentials: StaffCredentials | null;
 }
 
-/**
- * Maps the schema-driven form values into the /api/team payload. The result
- * tells the caller which of the two post-creation states to render (email
- * invite sent vs. a temp password to hand off manually) — that branching UI
- * lives in the form component, this only owns the API call/mapping.
- */
 export async function addTeamMemberFromForm(
   tenantId: string,
   values: TeamFieldValues,
@@ -20,12 +15,13 @@ export async function addTeamMemberFromForm(
   const data = (await addMember({
     tenant_id: tenantId,
     role_id: values.role_id,
-    email: values.email.trim(),
-    display_name: values.display_name?.trim() || undefined,
-  })) as { invitedByEmail?: boolean; tempPassword?: string };
+    email: values.email?.trim() || undefined,
+    display_name: values.display_name.trim(),
+  })) as { tempPassword?: string | null; username?: string | null };
 
   return {
-    invitedByEmail: Boolean(data.invitedByEmail),
-    tempPassword: data.tempPassword ?? null,
+    credentials: data.tempPassword
+      ? { tempPassword: data.tempPassword, username: data.username ?? null }
+      : null,
   };
 }

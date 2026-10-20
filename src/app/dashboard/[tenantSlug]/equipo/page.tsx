@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
-import { PauseCircle, PlayCircle, Plus, Users } from "lucide-react";
+import { KeyRound, PauseCircle, PlayCircle, Plus, Trash2, Users } from "lucide-react";
+import { useMemberPasswordReset } from "@/features/equipo/hooks/useMemberPasswordReset";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import type { TeamMember } from "@/types/team";
 import type { TenantRoleOption } from "@/services/tenantRolesService";
@@ -26,6 +27,10 @@ import { btnDanger } from "@/components/ui/buttonClasses";
 import { teamKey, tenantRolesKey } from "@/features/equipo/helpers/swrKeys";
 import { TeamMemberFormSheet } from "@/features/equipo/components/TeamMemberFormSheet";
 import { MemberRoleSelect } from "@/features/equipo/components/MemberRoleSelect";
+import { MemberPasswordResetDialogs } from "@/features/equipo/components/MemberPasswordResetDialogs";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Notification } from "@/components/ui/Notification";
+import { staffUsernameOf } from "@/lib/auth/staffLogin";
 
 export default function EquipoPage() {
   const params = useParams();
@@ -36,6 +41,8 @@ export default function EquipoPage() {
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [removing, setRemoving] = useState<TeamMember | null>(null);
+  const passwordReset = useMemberPasswordReset();
 
   useEffect(() => {
     if (searchParams.get("nuevo") === "1") setCreateOpen(true);
@@ -84,19 +91,23 @@ export default function EquipoPage() {
     }
   }
 
-  async function handleRemove(membershipId: string) {
-    if (!confirm("¿Quitar a este miembro del equipo?")) return;
-    setUpdatingId(membershipId);
+  async function handleRemove() {
+    if (!removing) return;
+    setUpdatingId(removing.id);
     setError(null);
     try {
-      await removeMember(membershipId);
+      await removeMember(removing.id);
       await mutateTeam();
+      setRemoving(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
+      setRemoving(null);
     } finally {
       setUpdatingId(null);
     }
   }
+
+  const loginOf = (m: TeamMember) => staffUsernameOf(m.email) ?? m.email ?? "—";
 
   async function handleStatus(member: TeamMember) {
     const action = member.status === "suspended" ? "reactivate" : "suspend";
@@ -146,11 +157,7 @@ export default function EquipoPage() {
         <Plus className="h-6 w-6 shrink-0" aria-hidden />
       </FAB>
 
-      {displayError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
-          {displayError}
-        </div>
-      )}
+      {displayError && <Notification tone="error" message={displayError} />}
 
       {loading ? (
         <LoadingBlock
@@ -176,7 +183,7 @@ export default function EquipoPage() {
                   {m.display_name || "—"}
                 </p>
                 <p className="mt-0.5 break-all text-sm text-muted">
-                  {m.email || "—"}
+                  {loginOf(m)}
                 </p>
                 <span className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone(m.status)}`}>{statusLabel(m.status)}</span>
                 <div className="mt-4 flex flex-wrap items-start gap-3 border-t border-border-soft pt-4">
@@ -192,8 +199,13 @@ export default function EquipoPage() {
                     <button type="button" onClick={() => handleStatus(m)} disabled={updatingId === m.id || m.status === "invited"} className="inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg border border-border px-3 text-sm font-semibold disabled:opacity-50">
                       {m.status === "suspended" ? <PlayCircle className="h-4 w-4" /> : <PauseCircle className="h-4 w-4" />}{m.status === "suspended" ? "Reactivar" : "Suspender"}
                     </button>
-                    <button type="button" onClick={() => handleRemove(m.id)} disabled={updatingId === m.id} className={btnDanger}>Quitar</button>
+                    <button type="button" onClick={() => setRemoving(m)} disabled={updatingId === m.id} className={btnDanger}><Trash2 className="h-4 w-4" aria-hidden />Quitar</button>
                   </div>}
+                  {m.role_name !== "owner" && (
+                    <button type="button" onClick={() => passwordReset.ask(m)} disabled={updatingId === m.id} className="inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-lg border border-border px-3 text-sm font-semibold disabled:opacity-50">
+                      <KeyRound className="h-4 w-4" aria-hidden />Nueva contraseña
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -204,7 +216,7 @@ export default function EquipoPage() {
                 <thead>
                   <tr className={tableHeaderRowClass}>
                     <th className={tableHeaderCellClass}>Nombre</th>
-                    <th className={tableHeaderCellClass}>Email</th>
+                    <th className={tableHeaderCellClass}>Email o usuario</th>
                     <th className={tableHeaderCellClass}>Rol</th>
                     <th className={tableHeaderCellClass}>Estado</th>
                     <th className={tableHeaderCellRightClass}>Acciones</th>
@@ -217,7 +229,7 @@ export default function EquipoPage() {
                         {m.display_name || "—"}
                       </td>
                       <td className={tableBodyCellMutedClass}>
-                        {m.email || "—"}
+                        {loginOf(m)}
                       </td>
                       <td className={tableBodyCellClass}>
                         <MemberRoleSelect
@@ -235,7 +247,8 @@ export default function EquipoPage() {
                       <td className="px-4 py-3 text-right">
                         {m.role_name !== "owner" && <div className="flex justify-end gap-2">
                           <button type="button" onClick={() => handleStatus(m)} disabled={updatingId === m.id || m.status === "invited"} className="min-h-11 rounded-lg border border-border px-3 text-sm font-semibold disabled:opacity-50">{m.status === "suspended" ? "Reactivar" : "Suspender"}</button>
-                          <button type="button" onClick={() => handleRemove(m.id)} disabled={updatingId === m.id} className={btnDanger}>{updatingId === m.id ? "..." : "Quitar"}</button>
+                          <button type="button" onClick={() => passwordReset.ask(m)} disabled={updatingId === m.id} aria-label={`Nueva contraseña para ${m.display_name || loginOf(m)}`} title="Nueva contraseña" className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-3 text-sm font-semibold disabled:opacity-50"><KeyRound className="h-4 w-4" aria-hidden /></button>
+                          <button type="button" onClick={() => setRemoving(m)} disabled={updatingId === m.id} className={btnDanger}>{updatingId === m.id ? "..." : "Quitar"}</button>
                         </div>}
                       </td>
                     </tr>
@@ -252,10 +265,18 @@ export default function EquipoPage() {
         isOpen={createOpen}
         tenantId={activeTenant.id}
         onClose={closeCreate}
-        onAdded={async () => {
-          await mutateTeam();
-          closeCreate();
-        }}
+        onAdded={() => void mutateTeam()}
+      />
+      <MemberPasswordResetDialogs reset={passwordReset} />
+      <ConfirmDialog
+        isOpen={Boolean(removing)}
+        onClose={() => setRemoving(null)}
+        onConfirm={handleRemove}
+        loading={Boolean(removing) && updatingId === removing?.id}
+        variant="danger"
+        title={`¿Quitar a ${removing?.display_name || "esta persona"} del equipo?`}
+        description="Dejará de ver este negocio. Su cuenta no se borra."
+        confirmLabel="Quitar"
       />
     </div>
   );

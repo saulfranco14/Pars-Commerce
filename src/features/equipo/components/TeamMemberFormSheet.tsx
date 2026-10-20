@@ -2,10 +2,12 @@
 
 import { useId, useState } from "react";
 
-import { AlertTriangle, CheckCircle2, Mail, UserPlus } from "lucide-react";
+import { CheckCircle2, UserPlus, X } from "lucide-react";
 
 import { FormSheet } from "@/components/ui/FormSheet";
+import { Notification } from "@/components/ui/Notification";
 import { btnPrimaryFlex, btnSecondary } from "@/components/ui/buttonClasses";
+import { StaffCredentialsCard } from "@/features/equipo/components/StaffCredentialsCard";
 import { useSchemaForm } from "@/lib/forms/useSchemaForm";
 import { SchemaFormFields } from "@/lib/forms/SchemaFormFields";
 import { buildTeamFields } from "@/features/equipo/validations/teamFieldSchema";
@@ -22,11 +24,8 @@ interface TeamMemberFormSheetProps {
 }
 
 /**
- * "Agregar miembro" — homologated onto the schema-driven engine and the
- * FormSheet modal pattern (was previously a full CreateEditPageLayout page).
- * The two post-creation outcomes (email invite sent vs. temp password to
- * hand off manually) render as a success state inside the same sheet instead
- * of replacing the whole page.
+ * "Agregar miembro". New people get an account right away (no invite email):
+ * the sheet then shows the login and one-time password to hand over.
  */
 export function TeamMemberFormSheet({
   isOpen,
@@ -36,14 +35,13 @@ export function TeamMemberFormSheet({
 }: TeamMemberFormSheetProps) {
   const formId = useId();
   const [result, setResult] = useState<AddMemberResult | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [submittedEmail, setSubmittedEmail] = useState("");
+  const [submitted, setSubmitted] = useState({ name: "", email: "" });
 
   const fields = buildTeamFields({ tenantId });
 
   const form = useSchemaForm<TeamFieldValues>(fields, async (values) => {
     const addResult = await addTeamMemberFromForm(tenantId, values);
-    setSubmittedEmail(values.email.trim());
+    setSubmitted({ name: values.display_name.trim(), email: values.email?.trim() ?? "" });
     setResult(addResult);
     onAdded();
   });
@@ -51,15 +49,7 @@ export function TeamMemberFormSheet({
   function handleClose() {
     form.resetForm();
     setResult(null);
-    setCopied(false);
     onClose();
-  }
-
-  function handleCopyPassword() {
-    if (!result?.tempPassword) return;
-    navigator.clipboard.writeText(result.tempPassword);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   }
 
   if (result) {
@@ -67,79 +57,27 @@ export function TeamMemberFormSheet({
       <FormSheet
         isOpen={isOpen}
         onClose={handleClose}
-        icon={result.invitedByEmail ? Mail : CheckCircle2}
-        title={
-          result.invitedByEmail ? "Invitación enviada" : "Usuario creado"
-        }
+        icon={CheckCircle2}
+        title={result.credentials ? "Cuenta lista" : "Agregado al equipo"}
         maxWidth="max-w-md"
         footer={
-          <button
-            type="button"
-            onClick={handleClose}
-            className={btnPrimaryFlex}
-          >
+          <button type="button" onClick={handleClose} className={btnPrimaryFlex}>
+            <X className="h-4 w-4" aria-hidden />
             Cerrar
           </button>
         }
       >
-        {result.invitedByEmail ? (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Supabase ha enviado un correo de invitación a{" "}
-              <strong className="text-foreground">{submittedEmail}</strong>.
-              La persona debe abrir el enlace del correo y establecer su
-              contraseña. Ya está agregada al equipo.
-            </p>
-            <div className="rounded-lg border border-border-soft bg-surface-raised p-3">
-              <p className="text-xs text-muted-foreground">
-                Si no llega el correo en unos minutos, revisar carpeta de spam
-                o reenviar desde Supabase Dashboard → Authentication → Users.
-              </p>
-            </div>
-          </div>
+        {result.credentials ? (
+          <StaffCredentialsCard
+            credentials={result.credentials}
+            name={submitted.name}
+            email={submitted.email}
+          />
         ) : (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Se ha enviado un correo de confirmación a{" "}
-              <strong className="text-foreground">{submittedEmail}</strong>.
-              La persona debe confirmar su email antes de poder acceder.
-            </p>
-            <div className="rounded-lg border border-border-soft bg-surface-raised p-4">
-              <p className="mb-2 text-sm font-medium text-foreground">
-                Contraseña temporal:
-              </p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 rounded border border-border bg-background px-3 py-2 font-mono text-sm text-foreground">
-                  {result.tempPassword}
-                </code>
-                <button
-                  type="button"
-                  onClick={handleCopyPassword}
-                  className="min-h-11 cursor-pointer rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
-                >
-                  {copied ? "✓ Copiado" : "Copiar"}
-                </button>
-              </div>
-            </div>
-            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
-              <p className="flex items-center gap-2 text-xs font-medium text-yellow-800">
-                <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-                Importante:
-              </p>
-              <ul className="mt-2 space-y-1 text-xs text-yellow-700">
-                <li>
-                  • Envía esta contraseña a {submittedEmail.split("@")[0]} por
-                  WhatsApp o email
-                </li>
-                <li>
-                  • La persona debe confirmar su email (revisar bandeja de
-                  entrada/spam)
-                </li>
-                <li>• Luego puede entrar con el email y esta contraseña temporal</li>
-                <li>• Puede cambiar su contraseña desde su perfil</li>
-              </ul>
-            </div>
-          </div>
+          <Notification
+            tone="success"
+            message={`${submitted.name || submitted.email} ya tenía cuenta en Tlaco. Entra con su email y su contraseña de siempre.`}
+          />
         )}
       </FormSheet>
     );
@@ -151,7 +89,7 @@ export function TeamMemberFormSheet({
       onClose={handleClose}
       icon={UserPlus}
       title="Agregar miembro"
-      description="Si el usuario no existe, se le enviará una invitación por correo para que establezca su contraseña."
+      description="Puede entrar en cuanto la agregues. Te damos una contraseña temporal para enviársela."
       footer={
         <div className="flex flex-col gap-2">
           <button
@@ -160,6 +98,7 @@ export function TeamMemberFormSheet({
             disabled={form.submitting || !form.isValid}
             className={btnPrimaryFlex}
           >
+            <UserPlus className="h-4 w-4" aria-hidden />
             {form.submitting ? "Agregando..." : "Agregar"}
           </button>
           <button type="button" onClick={handleClose} className={btnSecondary}>
@@ -181,14 +120,7 @@ export function TeamMemberFormSheet({
           watch={form.watch}
         />
 
-        {form.submitError && (
-          <div
-            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-            role="alert"
-          >
-            {form.submitError}
-          </div>
-        )}
+        {form.submitError && <Notification tone="error" message={form.submitError} />}
       </form>
     </FormSheet>
   );
