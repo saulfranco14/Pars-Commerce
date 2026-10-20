@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requirePermission } from "@/lib/auth/requirePermission";
+import { roleHasPermission } from "@/lib/auth/permissions";
 import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import {
   advanceAllDevicesFulfillment,
@@ -83,10 +84,11 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // The first team member to advance real work becomes the attendant when no
-  // one has claimed it. This keeps the tip recipient accurate without ever
-  // replacing an existing assignment.
-  if (!order.assigned_to) {
+  // The first person who serves customers (order.take) to advance the work
+  // becomes the attendant, and with it the tip recipient. Preparing alone
+  // never claims a table: the waiter stays responsible for it.
+  const servesCustomers = roleHasPermission(permission.roleName, permission.permissions, ORDER_PERMISSIONS.take);
+  if (!order.assigned_to && servesCustomers) {
     await admin
       .from("orders")
       .update({ assigned_to: user.id, updated_at: new Date().toISOString() })
