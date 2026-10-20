@@ -51,6 +51,11 @@ export function BoardOrderCard({
             #{order.number}
             <span className="truncate font-sans text-sm font-semibold">· {order.originLabel}</span>
           </p>
+          {order.assignedName && (
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              Atiende: <span className="font-semibold text-foreground">{order.assignedName}</span>
+            </p>
+          )}
           {order.items.length > 0 && (itemsMoved || compact) && (
             <div className="mt-1.5 flex items-center gap-2">
               <span className="h-1.5 w-20 overflow-hidden rounded-full bg-border-soft">
@@ -130,9 +135,6 @@ export function BoardOrderCard({
             {order.fulfillmentMethod === "delivery" && <StatusBadge tone="info" label="A domicilio" dot={false} />}
             {order.fulfillmentMethod === "pickup" && <StatusBadge tone="info" label="Recoge en local" dot={false} />}
             <StatusBadge tone={order.paid ? "success" : "warning"} label={order.paid ? "Pagado" : "Sin pagar"} />
-            {order.assignedName && order.assignedName !== order.doneBy && (
-              <StatusBadge tone="neutral" label={order.assignedName} dot={false} />
-            )}
             {order.balanceDue !== null && order.balanceDue > 0 && (
               <span className="ml-auto text-base font-bold tabular-nums text-foreground">{formatCurrency(order.balanceDue)}</span>
             )}

@@ -59,7 +59,10 @@ function AssignPicker({ order, board, team }: { order: BoardOrder; board: Statio
       <button
         type="button"
         disabled={busy || !selected}
-        onClick={() => board.assign(order.id, selected).then(() => setSelected(""))}
+        onClick={async () => {
+          const member = team.find((m) => m.userId === selected);
+          if (member && (await board.assign(order, member))) setSelected("");
+        }}
         className={btnPrimary}
       >
         {busy ? <Busy /> : <UserPlus className="h-4 w-4" aria-hidden />}

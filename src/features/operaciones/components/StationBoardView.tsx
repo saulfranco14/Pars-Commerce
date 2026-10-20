@@ -51,7 +51,10 @@ export function StationBoardView({
   view = "active",
 }: StationBoardViewProps) {
   const board = useStationBoard(tenantId, station.key, view);
-  const density = useBoardDensity();
+  const density = useBoardDensity(
+    station.key,
+    station.layout === "accordion" && station.key !== "preparacion" ? "compact" : "detailed",
+  );
   const now = useNow();
   const can = usePermission();
   const [delivering, setDelivering] = useState<BoardOrder | null>(null);
@@ -139,7 +142,7 @@ export function StationBoardView({
                 {station.historyLabel}
               </Link>
             )}
-            {!accordion && (
+            {(
               <button
                 type="button"
                 onClick={density.toggle}
@@ -206,6 +209,7 @@ export function StationBoardView({
       {board.actionError && (
         <Notification tone="error" message={board.actionError} />
       )}
+      {board.notice && <Notification tone="success" message={board.notice} />}
 
       {board.loading ? (
         <LoadingBlock
@@ -216,7 +220,7 @@ export function StationBoardView({
       ) : accordion ? (
         <BoardAccordion
           columns={columns}
-          renderOrder={(order) => renderOrder(order, true)}
+          renderOrder={(order) => renderOrder(order, density.compact)}
         />
       ) : (
         <>

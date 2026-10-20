@@ -2,27 +2,29 @@
 
 import { useEffect, useState } from "react";
 
-const STORAGE_KEY = "tlaco_board_density";
+import type { StationKey } from "@/features/operaciones/constants/stations";
 
 export type BoardDensity = "detailed" | "compact";
 
-/** Per-device preference: a long queue reads better as one line per order. */
-export function useBoardDensity() {
-  const [density, setDensity] = useState<BoardDensity>("detailed");
+/** Per-device, per-station preference: a long queue reads better as one line per order. */
+export function useBoardDensity(station: StationKey, fallback: BoardDensity) {
+  const storageKey = `tlaco_board_density_${station}`;
+  const [density, setDensity] = useState<BoardDensity>(fallback);
 
   useEffect(() => {
     try {
-      if (localStorage.getItem(STORAGE_KEY) === "compact") setDensity("compact");
+      const stored = localStorage.getItem(storageKey);
+      setDensity(stored === "compact" || stored === "detailed" ? stored : fallback);
     } catch {
-      /* storage blocked: keep the default */
+      setDensity(fallback);
     }
-  }, []);
+  }, [storageKey, fallback]);
 
   function toggle() {
     const next: BoardDensity = density === "compact" ? "detailed" : "compact";
     setDensity(next);
     try {
-      localStorage.setItem(STORAGE_KEY, next);
+      localStorage.setItem(storageKey, next);
     } catch {
       /* storage blocked: the choice lasts this visit */
     }

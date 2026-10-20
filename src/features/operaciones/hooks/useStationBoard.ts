@@ -36,15 +36,20 @@ export function useStationBoard(tenantId: string | null, station: StationKey, vi
   // The order id, "order:item" while one product line moves, or "pay:id" for a payment.
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  async function run(key: string, action: () => Promise<unknown>) {
+  async function run(key: string, action: () => Promise<unknown>, success?: string): Promise<boolean> {
     setBusyKey(key);
     setActionError(null);
+    setNotice(null);
     try {
       await action();
       await mutate();
+      if (success) setNotice(success);
+      return true;
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "No se pudo actualizar el pedido.");
+      return false;
     } finally {
       setBusyKey(null);
     }
@@ -55,6 +60,7 @@ export function useStationBoard(tenantId: string | null, station: StationKey, vi
     loading: isLoading && !data,
     loadError: error && !isAbortError(error) ? (error instanceof Error ? error.message : "No se pudo cargar.") : null,
     actionError,
+    notice,
     busyKey,
     isBusy: (orderId: string) => busyKey === orderId || Boolean(busyKey?.startsWith(`${orderId}:`)),
     refresh: () => mutate(),
@@ -62,7 +68,12 @@ export function useStationBoard(tenantId: string | null, station: StationKey, vi
       run(orderId, () => advanceWholeOrderFulfillment(orderId, status)),
     advanceItem: (orderId: string, itemId: string, status: FulfillmentStatus) =>
       run(`${orderId}:${itemId}`, () => advanceOrderItemFulfillment(orderId, itemId, status)),
-    assign: (orderId: string, userId: string) => run(orderId, () => updateOrder(orderId, { assigned_to: userId })),
+    assign: (order: { id: string; number: string; originLabel: string }, member: { userId: string; name: string }) =>
+      run(
+        order.id,
+        () => updateOrder(order.id, { assigned_to: member.userId }),
+        `${order.originLabel} (#${order.number}) ahora la atiende ${member.name}.`,
+      ),
     respondRequest: (orderId: string, action: "accept-request" | "reject-request") =>
       run(orderId, () => updatePublicOrderRequest(orderId, action)),
     deliveryEvent: (orderId: string, type: OrderDeliveryEventType, photo?: File, note?: string) =>

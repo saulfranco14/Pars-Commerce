@@ -42,6 +42,7 @@ export const STATIONS: readonly StationMeta[] = [
     icon: PackageCheck,
     permission: "orders.prepare",
     historyLabel: "Preparados hoy",
+    layout: "accordion",
   },
   {
     key: "entregas",
