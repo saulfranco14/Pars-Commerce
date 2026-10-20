@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { MapPin, Phone, Mail, Clock, MessageCircle } from "lucide-react";
 import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
+import { StorePageHeader } from "@/features/sitio/components/StorePageHeader";
+import { extractMapEmbedSrc } from "@/features/sitio/helpers/mapEmbed";
 import {
   describeWeek,
   readBusinessHours,
@@ -36,6 +38,7 @@ export default async function ContactoPage({ params }: PageProps) {
 
   const content = (page?.content as Record<string, string> | null) ?? {};
   const accentColor = tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT;
+  const mapSrc = extractMapEmbedSrc(content.map_embed);
 
   // Los horarios dados de alta mandan sobre el texto libre de esta página: son
   // los que aplica el selector de recolección, y dos fuentes distintas
@@ -74,32 +77,12 @@ export default async function ContactoPage({ params }: PageProps) {
 
   return (
     <div className="space-y-8">
-      {/* Page header */}
-      <div className="flex items-center gap-3">
-        <div
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-white"
-          style={{ backgroundColor: accentColor }}
-        >
-          <MessageCircle className="h-5 w-5" />
-        </div>
-        <div>
-          <h1 className="site-canvas-heading text-2xl font-bold">
-            {content.title || "Contacto"}
-          </h1>
-          <p className="site-canvas-copy text-sm">
-            Estamos para ayudarte
-          </p>
-        </div>
-      </div>
+      <StorePageHeader title={content.title || "Contacto"} description="Estamos para ayudarte." />
 
-      {/* Welcome message */}
       {content.welcome_message && (
-        <div className="rounded-2xl bg-white p-8 shadow-sm">
-          <div
-            className="prose prose-sm max-w-none text-gray-700"
-            dangerouslySetInnerHTML={{ __html: content.welcome_message }}
-          />
-        </div>
+        <p className="max-w-3xl whitespace-pre-line text-[17px] leading-relaxed text-(--store-ink-2)">
+          {content.welcome_message}
+        </p>
       )}
 
       {/* Los horarios cuentan como dato de contacto: un negocio puede no tener
@@ -171,12 +154,15 @@ export default async function ContactoPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* Map embed */}
-      {content.map_embed && (
-        <div className="overflow-hidden rounded-2xl shadow-sm">
-          <div dangerouslySetInnerHTML={{ __html: content.map_embed }} />
-        </div>
-      )}
+      {mapSrc ? (
+        <iframe
+          src={mapSrc}
+          title={`Ubicación de ${tenant.name}`}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          className="aspect-video w-full overflow-hidden rounded-(--store-radius) border-0 bg-(--store-well)"
+        />
+      ) : null}
     </div>
   );
 }
