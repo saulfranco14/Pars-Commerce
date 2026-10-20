@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import * as yup from "yup";
+import { setPasswordSchema } from "@/features/auth/validations/setPasswordForm";
 import {
   ArrowRight,
   Lock,
@@ -17,6 +18,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { MobileAuthHeader } from "@/features/auth/components/MobileAuthHeader";
 import { createClient } from "@/lib/supabase/client";
 import { safeNextPath } from "@/lib/auth/safeNextPath";
+import { isValidLoginIdentifier, loginIdentifierToEmail } from "@/lib/auth/staffLogin";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 
 function parseHashParams() {
@@ -28,23 +30,14 @@ function parseHashParams() {
 const loginSchema = yup.object({
   email: yup
     .string()
-    .required("El email es obligatorio")
-    .email("Ingresa un email válido"),
+    .required("Escribe tu email o usuario")
+    .test("identifier", "Ingresa un email o usuario válido", (value) =>
+      isValidLoginIdentifier(value ?? ""),
+    ),
   password: yup
     .string()
     .required("La contraseña es obligatoria")
     .min(6, "Mínimo 6 caracteres"),
-});
-
-const setPasswordSchema = yup.object({
-  newPassword: yup
-    .string()
-    .required("La contraseña es obligatoria")
-    .min(6, "Mínimo 6 caracteres"),
-  confirmPassword: yup
-    .string()
-    .required("Confirma tu contraseña")
-    .oneOf([yup.ref("newPassword")], "Las contraseñas no coinciden"),
 });
 
 type FieldErrors = Record<string, string>;
@@ -190,7 +183,7 @@ function LoginForm() {
     setLoading(true);
     const supabase = createClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
+      email: loginIdentifierToEmail(email),
       password,
     });
     setLoading(false);
@@ -512,7 +505,7 @@ function LoginForm() {
               Iniciar sesión
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Ingresa con tu email y contraseña
+              Ingresa con tu email o el usuario que te dio el negocio
             </p>
             <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
               {error && errorBanner(error)}
@@ -521,11 +514,15 @@ function LoginForm() {
                   htmlFor="email"
                   className="block text-sm font-medium text-muted-foreground"
                 >
-                  Email
+                  Email o usuario
                 </label>
                 <input
                   id="email"
-                  type="email"
+                  type="text"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
@@ -538,8 +535,8 @@ function LoginForm() {
                       ? inputError
                       : inputNormal
                   }
-                  autoComplete="email"
-                  placeholder="tu@email.com"
+                  autoComplete="username"
+                  placeholder="tu@email.com o usuario"
                   aria-invalid={!!(touched.email && fieldErrors.email)}
                 />
                 <FieldError

@@ -39,6 +39,7 @@ export function OrderActionList({ model, commands }: OrderActionListProps) {
     tenantId,
     isOwner,
     isPublicStoreOrder,
+    isTableOrder,
     paymentSettled,
     fulfillmentFinished,
     showTransferProofReview,
@@ -145,6 +146,7 @@ export function OrderActionList({ model, commands }: OrderActionListProps) {
       ) : null}
 
       {!isPublicStoreOrder &&
+      !isTableOrder &&
       !showExpress &&
       order.status === "in_progress" ? (
         <OrderActionButton
@@ -163,6 +165,7 @@ export function OrderActionList({ model, commands }: OrderActionListProps) {
       ) : null}
 
       {order.status === "completed" &&
+      !isTableOrder &&
       !fulfillmentFinished &&
       !paymentSettled ? (
         <>
@@ -198,6 +201,7 @@ export function OrderActionList({ model, commands }: OrderActionListProps) {
       ) : null}
 
       {!paymentSettled &&
+      !isTableOrder &&
       !showTransferProofReview &&
       !waitsForTransferProof &&
       ["pending_payment", "pending_pickup"].includes(order.status) ? (

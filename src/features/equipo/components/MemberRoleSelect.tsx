@@ -1,14 +1,9 @@
 "use client";
 
-import {
-  describeRole,
-  roleLabel,
-} from "@/features/equipo/constants/roleDescriptions";
+import { roleLabel } from "@/features/equipo/constants/roleDescriptions";
 
 import type { MemberRoleSelectProps } from "@/features/equipo/interfaces/memberRoleSelect";
 
-// Changing someone's role changes their permissions, so the consequence is
-// shown before saving.
 export function MemberRoleSelect({
   roles,
   value,
@@ -17,8 +12,6 @@ export function MemberRoleSelect({
   ariaLabel,
   className = "",
 }: MemberRoleSelectProps) {
-  const selected = roles.find((r) => r.id === value);
-
   return (
     <div className={`min-w-0 ${className}`}>
       <select
@@ -34,11 +27,6 @@ export function MemberRoleSelect({
           </option>
         ))}
       </select>
-      {selected && (
-        <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
-          {describeRole(selected.name, selected.permissions ?? [])}
-        </p>
-      )}
     </div>
   );
 }

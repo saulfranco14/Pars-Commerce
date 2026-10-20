@@ -3,7 +3,8 @@
 import { useState, useEffect, useId } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Check, ChevronDown, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, SlidersHorizontal, Sparkles } from "lucide-react";
+import { btnSecondary } from "@/components/ui/buttonClasses";
 import {
   useTenantStore,
   useActiveTenant,
@@ -268,13 +269,19 @@ export default function ConfiguracionPage() {
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
           Volver al inicio
         </Link>
-        <div>
-        <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
-          Configuración
-        </h1>
-          <p className="mt-0.5 text-sm text-muted">
-            Ajusta tu negocio y cómo se muestran tus ventas.
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
+              Configuración
+            </h1>
+            <p className="mt-0.5 text-sm text-muted">
+              Ajusta tu negocio y cómo se muestran tus ventas.
+            </p>
+          </div>
+          <Link href={`/dashboard/${params.tenantSlug as string}/configuracion/menu`} className={btnSecondary}>
+            <SlidersHorizontal className="h-4 w-4" aria-hidden />
+            Personalizar menú
+          </Link>
         </div>
         <div className="sticky top-14 z-10 -mx-4 border-y border-border-soft bg-background px-4 py-2 shadow-sm md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:shadow-none">
           <FilterTabs

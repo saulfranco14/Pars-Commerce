@@ -80,10 +80,13 @@ export function PendingCashCard() {
             <div className="min-w-0">
               <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
                 <Banknote className="h-4 w-4 shrink-0" aria-hidden />
-                {formatCurrency(Number(p.amount))}{" "}
+                {formatCurrency(Number(p.amount) + Number(p.tip_amount ?? 0))}{" "}
                 {METHOD_LABEL[p.metadata?.method ?? ""] ?? ""}
               </p>
               <p className="text-xs text-muted-foreground">
+                {Number(p.tip_amount ?? 0) > 0
+                  ? `Cuenta ${formatCurrency(Number(p.amount))} + propina ${formatCurrency(Number(p.tip_amount))}. `
+                  : ""}
                 Confirma solo cuando tengas el dinero en la mano.
               </p>
             </div>

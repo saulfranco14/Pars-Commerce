@@ -17,6 +17,10 @@ export interface TenantEntitlements {
   portfolio_dashboard_limit: number;
   scheduled_report_frequency: "weekly" | "daily_or_weekly" | null;
   credit_policy_editor: boolean;
+  /** Operation stations (Recepción, Preparación, Entregas, Caja). */
+  operations_board: boolean;
+  /** Create and edit roles beyond the system presets. */
+  custom_roles: boolean;
 }
 
 export interface BillingPlan {
@@ -56,6 +60,10 @@ export const DEFAULT_FREE_ENTITLEMENTS: TenantEntitlements = {
   portfolio_dashboard_limit: 0,
   scheduled_report_frequency: null,
   credit_policy_editor: false,
+  // Free at launch. `billing_plans.entitlements` overrides these, so making
+  // them paid later is a DB update on the `free` plan, not a deploy.
+  operations_board: true,
+  custom_roles: true,
 };
 
 export function hasBillingCapability(

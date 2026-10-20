@@ -332,6 +332,23 @@ body {
   animation: loading-pulse 1.5s ease-in-out infinite;
 }
 
+/* Operation boards: the refresh ring fills one full turn until the next automatic refresh. */
+@keyframes board-countdown {
+  from {
+    stroke-dashoffset: var(--ring-length);
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-countdown-ring {
+    animation: none !important;
+  }
+}
+
 .shadow-card {
   box-shadow: var(--shadow-card);
 }

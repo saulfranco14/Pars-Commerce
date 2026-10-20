@@ -16,6 +16,8 @@ interface OrderReceiptCardProps {
   orderId: string;
   orderNumber: string | null;
   amount: number;
+  /** Tip paid on top of the bill; shown apart so the bill total stays exact. */
+  tipAmount?: number;
   paidAt: string;
   paymentMethod: string | null;
   items: Array<{
@@ -45,6 +47,7 @@ export function OrderReceiptCard({
   orderId,
   orderNumber,
   amount,
+  tipAmount = 0,
   paidAt,
   paymentMethod,
   items,
@@ -148,8 +151,13 @@ export function OrderReceiptCard({
             Total pagado
           </dt>
           <dd className="mt-1 text-lg font-bold tracking-tight text-foreground">
-            {formatCurrency(amount)}
+            {formatCurrency(amount + tipAmount)}
           </dd>
+          {tipAmount > 0 && (
+            <dd className="mt-0.5 text-xs text-muted-foreground">
+              Cuenta {formatCurrency(amount)} + propina {formatCurrency(tipAmount)}
+            </dd>
+          )}
         </div>
         <div className="px-4 py-3">
           <dt className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">

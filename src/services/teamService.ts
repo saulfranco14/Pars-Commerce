@@ -14,6 +14,7 @@ export async function addMember(payload: {
   user_id?: string;
   email?: string;
   display_name?: string;
+  password?: string;
 }): Promise<unknown> {
   const data = await apiFetch("/api/team", {
     method: "POST",
@@ -48,4 +49,12 @@ export async function remove(membershipId: string): Promise<void> {
     `/api/team?membership_id=${encodeURIComponent(membershipId)}`,
     { method: "DELETE" }
   );
+}
+
+/** Sets the password of a staff account the business created. */
+export async function setMemberPassword(membershipId: string, password: string): Promise<void> {
+  await apiFetch("/api/team/password", {
+    method: "POST",
+    body: JSON.stringify({ membership_id: membershipId, password }),
+  });
 }

@@ -1,5 +1,7 @@
 import { useCallback } from "react";
 import { create } from "zustand";
+import { roleHasPermission } from "@/lib/auth/permissions";
+import { sectionPermissions } from "@/constants/dashboardAccess";
 import type { Tenant, TenantRole } from "@/types/database";
 
 export interface MembershipItem {
@@ -62,11 +64,26 @@ export function useActiveTenant(): Tenant | null {
  *   const can = usePermission();
  *   if (can(ORDER_PERMISSIONS.assign)) { ... }
  */
+/**
+ * Whether the active role can open a dashboard section (`dashboardAccess`).
+ * Used by the menus and the page guard so both answer the same.
+ */
+export function useCanOpenSection(): (section: string | null) => boolean {
+  const can = usePermission();
+  return useCallback(
+    (section: string | null) => {
+      const required = sectionPermissions(section);
+      return required.length === 0 || required.some(can);
+    },
+    [can],
+  );
+}
+
 export function usePermission(): (permission: string) => boolean {
   const role = useTenantStore((s) => s.activeRole());
   return useCallback(
     (permission: string) =>
-      role?.name === "owner" || (role?.permissions ?? []).includes(permission),
+      roleHasPermission(role?.name, role?.permissions as string[] | undefined, permission),
     [role],
   );
 }

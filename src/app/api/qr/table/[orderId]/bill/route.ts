@@ -16,7 +16,7 @@ export async function GET(request: Request, context: RouteContext) {
   const { data: order } = await admin
     .from("orders")
     .select(
-      "id, order_number, tenant_id, status, fulfillment_status, total, paid_total, balance_due, created_at, qr_code_id, payment_method, merge_group_id, assigned_to",
+      "id, order_number, tenant_id, status, fulfillment_status, total, paid_total, balance_due, created_at, paid_at, qr_code_id, payment_method, merge_group_id, assigned_to",
     )
     .eq("id", orderId)
     .single();
@@ -226,6 +226,18 @@ export async function GET(request: Request, context: RouteContext) {
         : order.status
     : order.status;
 
+  // Tips ride on the confirmed payments, not on the order total.
+  // `tip_amount` is newer than the generated types.
+  const { data: approvedPayments } = await admin
+    .from("payments")
+    .select("*")
+    .in("order_id", groupOrderIds)
+    .eq("status", "approved");
+  const tipTotal = ((approvedPayments ?? []) as { tip_amount?: number | null }[]).reduce(
+    (sum, p) => sum + Number(p.tip_amount ?? 0),
+    0,
+  );
+
   const response = NextResponse.json({
     order: {
       id: order.id,
@@ -236,6 +248,8 @@ export async function GET(request: Request, context: RouteContext) {
       paid_total: groupPaid,
       balance_due: groupBalance,
       created_at: order.created_at,
+      paid_at: order.paid_at ?? null,
+      tip_total: tipTotal,
       payment_method: order.payment_method ?? null,
       // Do not expose the staff id. The client only needs to know whether a
       // tip has a real recipient before offering the payment journey.

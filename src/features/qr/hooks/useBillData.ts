@@ -40,6 +40,8 @@ export interface BillResponse {
     paid_total: number;
     balance_due: number;
     created_at: string;
+    paid_at?: string | null;
+    tip_total?: number;
     payment_method: string | null;
     tip_available?: boolean;
   };
