@@ -11,3 +11,9 @@ export interface TeamMember {
   suspended_at?: string | null;
   suspension_reason?: string | null;
 }
+
+/** What the owner hands over so a staff member can log in. `username` is null for real emails. */
+export interface StaffCredentials {
+  tempPassword: string;
+  username: string | null;
+}

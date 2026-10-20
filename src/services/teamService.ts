@@ -1,4 +1,4 @@
-import type { TeamMember } from "@/types/team";
+import type { StaffCredentials, TeamMember } from "@/types/team";
 import { apiFetch } from "@/services/apiFetch";
 
 export async function list(tenantId: string): Promise<TeamMember[]> {
@@ -48,4 +48,12 @@ export async function remove(membershipId: string): Promise<void> {
     `/api/team?membership_id=${encodeURIComponent(membershipId)}`,
     { method: "DELETE" }
   );
+}
+
+/** New one-time password for a staff account the business created. */
+export async function resetMemberPassword(membershipId: string): Promise<StaffCredentials> {
+  return (await apiFetch("/api/team/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ membership_id: membershipId }),
+  })) as StaffCredentials;
 }

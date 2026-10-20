@@ -2,6 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/auth/requirePermission";
+import {
+  assertAssignableRole,
+  createStaffAccount,
+} from "@/features/equipo/services/teamAccountService";
+import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
 
 type MembershipLifecycle = {
   id: string;
@@ -180,11 +185,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let targetUserId = user_id;
-  const tempPassword: string | null = null;
-  let invitedByEmail = false;
+  const assignable = await assertAssignableRole(createAdminClient(), tenant_id, role_id);
+  if (!assignable.ok) return serviceErrorToResponse(assignable.error);
 
-  if (!targetUserId && email) {
+  let targetUserId = user_id;
+  let tempPassword: string | null = null;
+  let username: string | null = null;
+
+  if (!targetUserId && !email?.trim()) {
+    if (!display_name?.trim()) {
+      return NextResponse.json({ error: "Escribe el nombre de la persona." }, { status: 400 });
+    }
+    const created = await createStaffAccount(createAdminClient(), {
+      displayName: display_name.trim(),
+      tenantId: tenant_id,
+    });
+    if (!created.ok) return serviceErrorToResponse(created.error);
+    targetUserId = created.data.userId;
+    tempPassword = created.data.tempPassword;
+    username = created.data.username;
+  } else if (!targetUserId && email) {
     const cleanEmail = email.trim().toLowerCase();
     const adminForSearch = createAdminClient();
     const { data: profile } = await adminForSearch
@@ -236,45 +256,17 @@ export async function POST(request: Request) {
 
         targetUserId = authUser.id;
       } else {
-        const redirectTo =
-          process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-        // inviteUserByEmail sends the invite email; createUser(email_confirm: false) does not
-        const inviteDisplayName =
-          display_name?.trim() || cleanEmail.split("@")[0];
-        const { data: invitedUser, error: inviteError } =
-          await admin.auth.admin.inviteUserByEmail(cleanEmail, {
-            data: { display_name: inviteDisplayName },
-            redirectTo: `${redirectTo}/login`,
-          });
+        // No invite email: the business hands over a one-time password and
+        // the person picks their own on first login (no dependency on SMTP).
+        const created = await createStaffAccount(admin, {
+          email: cleanEmail,
+          displayName: display_name?.trim() || cleanEmail.split("@")[0],
+          tenantId: tenant_id,
+        });
+        if (!created.ok) return serviceErrorToResponse(created.error);
 
-        if (inviteError) {
-          return NextResponse.json(
-            { error: `Error al enviar invitación: ${inviteError.message}` },
-            { status: 500 }
-          );
-        }
-
-        targetUserId = invitedUser.user.id;
-
-        const { error: profileError } = await admin.from("profiles").upsert(
-          {
-            id: invitedUser.user.id,
-            email: cleanEmail,
-            display_name: inviteDisplayName,
-          },
-          { onConflict: "id" }
-        );
-
-        if (profileError) {
-          return NextResponse.json(
-            {
-              error: `Usuario invitado pero falló el perfil: ${profileError.message}`,
-            },
-            { status: 500 }
-          );
-        }
-
-        invitedByEmail = true;
+        targetUserId = created.data.userId;
+        tempPassword = created.data.tempPassword;
       }
     }
   }
@@ -301,18 +293,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const invitedAt = invitedByEmail ? new Date() : null;
-  const expiresAt = invitedByEmail ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null;
   const { data: membership, error } = await admin
     .from("tenant_memberships")
     .insert({
       tenant_id,
       user_id: targetUserId,
       role_id,
-      invited_at: invitedAt?.toISOString() ?? null,
-      invitation_expires_at: expiresAt?.toISOString() ?? null,
-      accepted_at: invitedByEmail ? null : new Date().toISOString(),
-      status: invitedByEmail ? "invited" : "active",
+      accepted_at: new Date().toISOString(),
+      status: "active",
     })
     .select("id, user_id, role_id")
     .single();
@@ -321,16 +309,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  await audit(tenant_id, user.id, invitedByEmail ? "team.invited" : "team.added", membership.id, {
+  await audit(tenant_id, user.id, "team.added", membership.id, {
     target_user_id: targetUserId,
     role_id,
-    invited_by_email: invitedByEmail,
+    created_account: tempPassword !== null,
   });
 
   return NextResponse.json({
     ...membership,
     tempPassword,
-    invitedByEmail,
+    username,
   });
 }
 
@@ -391,6 +379,13 @@ export async function PATCH(request: Request) {
     .maybeSingle();
   if (targetRole?.name === "owner" && action) {
     return NextResponse.json({ error: "No se puede suspender al owner" }, { status: 409 });
+  }
+  if (role_id) {
+    if (targetRole?.name === "owner") {
+      return NextResponse.json({ error: "El rol del propietario no se cambia desde Equipo." }, { status: 409 });
+    }
+    const assignable = await assertAssignableRole(admin, membership.tenant_id, role_id);
+    if (!assignable.ok) return serviceErrorToResponse(assignable.error);
   }
   if (action === "suspend" && !reason?.trim()) {
     return NextResponse.json({ error: "Indica el motivo de la suspensión" }, { status: 400 });
