@@ -22,9 +22,10 @@ interface PendingPaymentsCardProps {
 }
 
 function resolveMethodMeta(method: string) {
-  const key = (method as CustomerPayMethod) in PAYMENT_METHOD_META
-    ? (method as CustomerPayMethod)
-    : "efectivo";
+  const key =
+    (method as CustomerPayMethod) in PAYMENT_METHOD_META
+      ? (method as CustomerPayMethod)
+      : "efectivo";
   return PAYMENT_METHOD_META[key];
 }
 
@@ -40,7 +41,7 @@ export function PendingPaymentsCard({
   const actionsLocked = busyPaymentId !== null;
 
   return (
-    <section className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm sm:p-5">
+    <section className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm sm:p-5 mt-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
@@ -51,7 +52,8 @@ export function PendingPaymentsCard({
               Pagos por validar ({payments.length})
             </h2>
             <p className="mt-0.5 text-xs leading-5 text-amber-900/80">
-              Confirma sólo el dinero recibido o rechaza para que el cliente pueda intentarlo de nuevo.
+              Confirma sólo el dinero recibido o rechaza para que el cliente
+              pueda intentarlo de nuevo.
             </p>
           </div>
         </div>
@@ -62,7 +64,9 @@ export function PendingPaymentsCard({
             disabled={refreshing || actionsLocked}
             className="inline-flex min-h-(--touch-target,44px) shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-amber-300 bg-surface px-4 py-2.5 text-sm font-medium text-amber-950 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+            />
             Actualizar
           </button>
         )}
@@ -92,7 +96,8 @@ export function PendingPaymentsCard({
                   </p>
                   {p.tip_amount > 0 && (
                     <p className="mt-1 text-xs font-medium text-muted-foreground">
-                      Cuenta {formatCurrency(p.amount)} + propina {formatCurrency(p.tip_amount)}
+                      Cuenta {formatCurrency(p.amount)} + propina{" "}
+                      {formatCurrency(p.tip_amount)}
                     </p>
                   )}
                 </div>

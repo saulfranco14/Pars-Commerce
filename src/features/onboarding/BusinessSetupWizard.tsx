@@ -32,6 +32,7 @@ import { formatMexicanPhoneInput, normalizeMexicanPhone } from "@/lib/phone";
 import { uploadProductImage } from "@/lib/supabase/storage";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { useTenantStore } from "@/stores/useTenantStore";
+import { PRODUCTION_APP_URL } from "@/lib/env/appUrl";
 import {
   PLAN_PRESENTATION,
   planCapabilities,
@@ -903,7 +904,7 @@ export function BusinessSetupWizard() {
               Copiar enlace
             </button>
             <a
-              href={`https://wa.me/?text=${encodeURIComponent(`Conoce ${tenant.name}: ${typeof window !== "undefined" ? window.location.origin : "https://tlaco.app"}${publicUrl}`)}`}
+              href={`https://wa.me/?text=${encodeURIComponent(`Conoce ${tenant.name}: ${typeof window !== "undefined" ? window.location.origin : PRODUCTION_APP_URL}${publicUrl}`)}`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-white px-5 text-sm font-bold text-foreground"

@@ -624,7 +624,7 @@ function SitioMockup() {
             style={{ background: "white", height: 14 }}
           >
             <span className="text-[7px]" style={{ color: "#64748b" }}>
-              🌐 tlaco.mx/mi-negocio
+              🌐 tlaco.app/sitio/mi-negocio
             </span>
           </div>
         </div>

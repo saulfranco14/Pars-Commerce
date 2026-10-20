@@ -39,7 +39,6 @@
 
 /* Los recorridos de alta comparten una envolvente estable: el contenido puede
    cambiar, pero el título y las acciones no saltan entre pasos. */
-.solution-onboarding-flow [id="solution-onboarding-title"],
 .solution-registration-flow h1 {
   font-size: clamp(1.75rem, 4vw, 2.25rem) !important;
   line-height: 1.1 !important;
@@ -49,30 +48,6 @@
 .business-setup-flow h1 {
   font-size: clamp(1.65rem, 4vw, 2.1rem) !important;
   line-height: 1.12 !important;
-}
-
-.solution-onboarding-flow > div > div:nth-child(2) > div {
-  min-height: 31.5rem;
-}
-
-.solution-onboarding-flow > div > div:last-child {
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-  background: rgba(255, 255, 255, 0.97);
-  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
-}
-
-.solution-experience #capacidades h2 {
-  font-size: clamp(1.9rem, 4vw, 2.65rem);
-  line-height: 1.08;
-  max-width: 24ch;
-}
-
-@media (max-width: 639px) {
-  .solution-onboarding-flow > div > div:nth-child(2) > div {
-    min-height: 33rem;
-  }
 }
 
 @media (min-width: 769px) {
@@ -475,11 +450,28 @@ body {
   animation: hero-tap 0.7s ease-out both;
 }
 
+/* Laser sweeping the QR on the scan screen — invites the first tap. */
+@keyframes hero-scan-line {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(5.25rem);
+  }
+}
+
+.animate-hero-scan-line {
+  animation: hero-scan-line 2.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-hero-sync-flash,
   .animate-hero-row-in,
   .animate-hero-live-pulse,
-  .animate-hero-tap {
+  .animate-hero-tap,
+  .animate-hero-scan-line {
     animation: none;
   }
 
