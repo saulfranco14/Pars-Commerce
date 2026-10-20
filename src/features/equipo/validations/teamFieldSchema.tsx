@@ -1,12 +1,13 @@
+import { Controller } from "react-hook-form";
 import { Mail, User } from "lucide-react";
 
-import { list as listTenantRoles } from "@/services/tenantRolesService";
-import {
-  describeRole,
-  roleLabel,
-} from "@/features/equipo/constants/roleDescriptions";
+import { StaffPasswordInput } from "@/features/equipo/components/StaffPasswordInput";
 
-import type { FieldSchema } from "@/lib/forms/fieldSchema";
+import { list as listTenantRoles } from "@/services/tenantRolesService";
+import { roleLabel } from "@/features/equipo/constants/roleDescriptions";
+import { staffPasswordError } from "@/lib/auth/staffPassword";
+
+import type { CrossFieldRule, FieldSchema } from "@/lib/forms/fieldSchema";
 
 interface BuildTeamFieldsOptions {
   tenantId: string;
@@ -29,12 +30,31 @@ export function buildTeamFields({ tenantId }: BuildTeamFieldsOptions): FieldSche
     },
     {
       name: "email",
-      label: "Email (opcional)",
+      label: "Email",
       type: "email",
       icon: Mail,
       placeholder: "usuario@ejemplo.com",
       required: false,
       hint: "Sin email le creamos un usuario para entrar, como juan.4821.",
+    },
+    {
+      name: "password",
+      label: "Contraseña",
+      type: "custom",
+      render: ({ control }) => (
+        <Controller
+          name="password"
+          control={control}
+          render={({ field, fieldState }) => (
+            <StaffPasswordInput
+              id="team-member-password"
+              value={(field.value as string) ?? ""}
+              onChange={field.onChange}
+              error={fieldState.isTouched || fieldState.isDirty ? fieldState.error?.message : null}
+            />
+          )}
+        />
+      ),
     },
     {
       name: "role_id",
@@ -46,18 +66,24 @@ export function buildTeamFields({ tenantId }: BuildTeamFieldsOptions): FieldSche
         const roles = await listTenantRoles(tenantId);
         return roles
           .filter((r) => r.name !== "owner")
-          .map((r) => ({
-            value: r.id,
-            label: roleLabel(r.name),
-            hint: describeRole(r.name, r.permissions ?? []),
-          }));
+          .map((r) => ({ value: r.id, label: roleLabel(r.name) }));
       },
     },
   ];
 }
 
+export const TEAM_CROSS_FIELD_RULES: CrossFieldRule[] = [
+  {
+    name: "staff-password",
+    path: "password",
+    message: "Usa al menos 8 caracteres.",
+    test: (values) => staffPasswordError(values.password as string | undefined) === null,
+  },
+];
+
 export interface TeamFieldValues {
   display_name: string;
   email?: string;
+  password: string;
   role_id: string;
 }

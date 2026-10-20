@@ -6,8 +6,10 @@ import {
   loginIdentifierToEmail,
   staffUsernameOf,
 } from "@/lib/auth/staffLogin";
-import { generateTempPassword } from "@/lib/auth/tempPassword";
+import { staffPasswordError } from "@/lib/auth/staffPassword";
 import { isPlatformAdmin } from "@/lib/auth/isPlatformAdmin";
+import { requirePermission } from "@/lib/auth/requirePermission";
+import { permissionsBeyondActor } from "@/features/equipo/helpers/rolePermissions";
 
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
@@ -15,22 +17,25 @@ import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 type Admin = ReturnType<typeof createAdminClient>;
 
 /**
- * Staff accounts a business creates get a temporary password instead of an
- * email invite: the person can log in right away and must pick their own
- * password on first entry. `app_metadata.created_by_tenant_id` (writable only
- * with the service role) marks which business may later reset it; an account
- * the person created on their own is never resettable by a business.
+ * Staff accounts are created by the business with a password it chooses, no
+ * invite email. `app_metadata.created_by_tenant_id` (writable only with the
+ * service role) marks which business may later change that password; an
+ * account the person created on their own is never touched by a business.
  */
 
-/** A role can only be assigned inside its own tenant, and ownership is never handed out from Equipo. */
+/**
+ * A role can only be assigned inside its own tenant, ownership is never handed
+ * out from Equipo, and a non-owner can't hand out more than their own role holds.
+ */
 export async function assertAssignableRole(
   admin: Admin,
   tenantId: string,
   roleId: string,
+  actorUserId: string,
 ): Promise<ServiceResult<{ roleName: string }>> {
   const { data: role } = await admin
     .from("tenant_roles")
-    .select("id, name, tenant_id")
+    .select("id, name, tenant_id, permissions")
     .eq("id", roleId)
     .maybeSingle();
 
@@ -41,6 +46,14 @@ export async function assertAssignableRole(
     return {
       ok: false,
       error: { code: "conflict", message: "La propiedad del negocio no se asigna desde Equipo." },
+    };
+  }
+  const actor = await requirePermission(actorUserId, tenantId, "team.write");
+  if (!actor) return { ok: false, error: { code: "forbidden", message: "Tu rol no puede administrar el equipo." } };
+  if (permissionsBeyondActor(actor, (role.permissions as string[] | null) ?? []).length > 0) {
+    return {
+      ok: false,
+      error: { code: "forbidden", message: "Ese rol tiene permisos que el tuyo no tiene; solo el propietario puede darlo." },
     };
   }
   return { ok: true, data: { roleName: role.name } };
@@ -54,12 +67,13 @@ const USERNAME_ATTEMPTS = 5;
  */
 export async function createStaffAccount(
   admin: Admin,
-  input: { email?: string; displayName: string; tenantId: string },
-): Promise<ServiceResult<{ userId: string; tempPassword: string; username: string | null }>> {
+  input: { email?: string; displayName: string; tenantId: string; password: string },
+): Promise<ServiceResult<{ userId: string; username: string | null }>> {
   if (isStaffLoginEmail(input.email)) {
     return { ok: false, error: { code: "validation", message: "Ese correo no es válido. Déjalo vacío para crear un usuario." } };
   }
-  const tempPassword = generateTempPassword();
+  const passwordError = staffPasswordError(input.password);
+  if (passwordError) return { ok: false, error: { code: "validation", message: passwordError } };
   const attempts = input.email ? 1 : USERNAME_ATTEMPTS;
 
   for (let attempt = 0; attempt < attempts; attempt++) {
@@ -70,9 +84,9 @@ export async function createStaffAccount(
 
     const { data, error } = await admin.auth.admin.createUser({
       email,
-      password: tempPassword,
+      password: input.password,
       email_confirm: true,
-      user_metadata: { display_name: input.displayName, must_change_password: true },
+      user_metadata: { display_name: input.displayName },
       app_metadata: { created_by_tenant_id: input.tenantId },
     });
     if (error?.code === "email_exists" && username) continue;
@@ -85,7 +99,7 @@ export async function createStaffAccount(
 
     const profile = await upsertStaffProfile(admin, data.user.id, email, input.displayName);
     if (!profile.ok) return profile;
-    return { ok: true, data: { userId: data.user.id, tempPassword, username } };
+    return { ok: true, data: { userId: data.user.id, username } };
   }
 
   return {
@@ -112,10 +126,27 @@ async function upsertStaffProfile(
   return { ok: true, data: null };
 }
 
-export async function resetStaffPassword(
+/** Whether this business may set the password of an account (it created it and the account lives only here). */
+export async function canManageStaffPassword(admin: Admin, tenantId: string, userId: string): Promise<boolean> {
+  const { data: target } = await admin.auth.admin.getUserById(userId);
+  if (target.user?.app_metadata?.created_by_tenant_id !== tenantId) return false;
+  // Once the account is also in another business (even as its owner), this
+  // one must not be able to take it over by changing the password.
+  const { count: otherBusinesses } = await admin
+    .from("tenant_memberships")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .neq("tenant_id", tenantId);
+  return (otherBusinesses ?? 0) === 0 && !(await isPlatformAdmin(userId));
+}
+
+export async function setStaffPassword(
   admin: Admin,
-  input: { tenantId: string; membershipId: string },
-): Promise<ServiceResult<{ userId: string; tempPassword: string; username: string | null }>> {
+  input: { tenantId: string; membershipId: string; password: string },
+): Promise<ServiceResult<{ userId: string; username: string | null }>> {
+  const passwordError = staffPasswordError(input.password);
+  if (passwordError) return { ok: false, error: { code: "validation", message: passwordError } };
+
   const { data: membership } = await admin
     .from("tenant_memberships")
     .select("id, tenant_id, user_id, role_id")
@@ -131,47 +162,24 @@ export async function resetStaffPassword(
     return { ok: false, error: { code: "conflict", message: "La contraseña del propietario no se cambia desde Equipo." } };
   }
 
-  const { data: target } = await admin.auth.admin.getUserById(membership.user_id);
-  if (!target.user) {
-    return { ok: false, error: { code: "not_found", message: "No encontramos la cuenta de esa persona." } };
-  }
-  if (target.user.app_metadata?.created_by_tenant_id !== input.tenantId) {
+  if (!(await canManageStaffPassword(admin, input.tenantId, membership.user_id))) {
     return {
       ok: false,
       error: {
         code: "conflict",
-        message: "Esta persona creó su propia cuenta. Puede cambiar su contraseña con «¿Olvidaste tu contraseña?» al iniciar sesión.",
+        message: "Esta persona usa su propia cuenta. Solo ella puede cambiar su contraseña desde su perfil.",
       },
     };
   }
 
-  // Once the account is also in another business (even as its owner), this
-  // one must not be able to take it over by resetting the password.
-  const { count: otherBusinesses } = await admin
-    .from("tenant_memberships")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", membership.user_id)
-    .neq("tenant_id", input.tenantId);
-  if ((otherBusinesses ?? 0) > 0 || (await isPlatformAdmin(membership.user_id))) {
-    return {
-      ok: false,
-      error: {
-        code: "conflict",
-        message: "Esta persona también usa su cuenta en otro negocio, así que solo ella puede cambiar su contraseña desde su perfil.",
-      },
-    };
-  }
-
-  const tempPassword = generateTempPassword();
-  const { error } = await admin.auth.admin.updateUserById(membership.user_id, {
-    password: tempPassword,
-    user_metadata: { ...target.user.user_metadata, must_change_password: true },
+  const { data: target, error } = await admin.auth.admin.updateUserById(membership.user_id, {
+    password: input.password,
   });
   if (error) {
-    return { ok: false, error: { code: "internal", message: `No se pudo restablecer: ${error.message}` } };
+    return { ok: false, error: { code: "internal", message: `No se pudo cambiar la contraseña: ${error.message}` } };
   }
   return {
     ok: true,
-    data: { userId: membership.user_id, tempPassword, username: staffUsernameOf(target.user.email) },
+    data: { userId: membership.user_id, username: staffUsernameOf(target.user?.email) },
   };
 }

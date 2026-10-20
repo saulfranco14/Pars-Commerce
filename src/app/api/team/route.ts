@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/auth/requirePermission";
 import {
   assertAssignableRole,
+  canManageStaffPassword,
   createStaffAccount,
 } from "@/features/equipo/services/teamAccountService";
 import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
@@ -125,9 +126,23 @@ export async function GET(request: Request) {
     }
   }
 
+  const canWrite = Boolean(await requirePermission(user.id, tenantId, "team.write"));
+  const managed = new Set(
+    canWrite
+      ? (
+          await Promise.all(
+            rows
+              .filter((m) => roleMap.get(m.role_id) !== "owner" && m.user_id !== user.id)
+              .map(async (m) => ((await canManageStaffPassword(admin, tenantId, m.user_id)) ? m.user_id : null)),
+          )
+        ).filter(Boolean)
+      : [],
+  );
+
   const list = rows.map((m) => {
     const profile = profileMap.get(m.user_id) ?? null;
     return {
+      can_set_password: managed.has(m.user_id),
       id: m.id,
       user_id: m.user_id,
       role_id: m.role_id,
@@ -165,12 +180,13 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { tenant_id, role_id, user_id, email, display_name } = body as {
+  const { tenant_id, role_id, user_id, email, display_name, password } = body as {
     tenant_id: string;
     role_id: string;
     user_id?: string;
     email?: string;
     display_name?: string;
+    password?: string;
   };
 
   if (!tenant_id || !role_id) {
@@ -185,11 +201,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const assignable = await assertAssignableRole(createAdminClient(), tenant_id, role_id);
+  const assignable = await assertAssignableRole(createAdminClient(), tenant_id, role_id, user.id);
   if (!assignable.ok) return serviceErrorToResponse(assignable.error);
 
   let targetUserId = user_id;
-  let tempPassword: string | null = null;
+  let createdAccount = false;
   let username: string | null = null;
 
   if (!targetUserId && !email?.trim()) {
@@ -199,10 +215,11 @@ export async function POST(request: Request) {
     const created = await createStaffAccount(createAdminClient(), {
       displayName: display_name.trim(),
       tenantId: tenant_id,
+      password: password ?? "",
     });
     if (!created.ok) return serviceErrorToResponse(created.error);
     targetUserId = created.data.userId;
-    tempPassword = created.data.tempPassword;
+    createdAccount = true;
     username = created.data.username;
   } else if (!targetUserId && email) {
     const cleanEmail = email.trim().toLowerCase();
@@ -256,17 +273,17 @@ export async function POST(request: Request) {
 
         targetUserId = authUser.id;
       } else {
-        // No invite email: the business hands over a one-time password and
-        // the person picks their own on first login (no dependency on SMTP).
+        // No invite email: the business sets the password and hands it over.
         const created = await createStaffAccount(admin, {
           email: cleanEmail,
           displayName: display_name?.trim() || cleanEmail.split("@")[0],
           tenantId: tenant_id,
+          password: password ?? "",
         });
         if (!created.ok) return serviceErrorToResponse(created.error);
 
         targetUserId = created.data.userId;
-        tempPassword = created.data.tempPassword;
+        createdAccount = true;
       }
     }
   }
@@ -312,12 +329,12 @@ export async function POST(request: Request) {
   await audit(tenant_id, user.id, "team.added", membership.id, {
     target_user_id: targetUserId,
     role_id,
-    created_account: tempPassword !== null,
+    created_account: createdAccount,
   });
 
   return NextResponse.json({
     ...membership,
-    tempPassword,
+    created_account: createdAccount,
     username,
   });
 }
@@ -384,7 +401,10 @@ export async function PATCH(request: Request) {
     if (targetRole?.name === "owner") {
       return NextResponse.json({ error: "El rol del propietario no se cambia desde Equipo." }, { status: 409 });
     }
-    const assignable = await assertAssignableRole(admin, membership.tenant_id, role_id);
+    if (membership.user_id === user.id) {
+      return NextResponse.json({ error: "Tu propio rol lo cambia el propietario." }, { status: 403 });
+    }
+    const assignable = await assertAssignableRole(admin, membership.tenant_id, role_id, user.id);
     if (!assignable.ok) return serviceErrorToResponse(assignable.error);
   }
   if (action === "suspend" && !reason?.trim()) {

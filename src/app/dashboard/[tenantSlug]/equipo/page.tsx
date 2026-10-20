@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
-import { KeyRound, PauseCircle, PlayCircle, Plus, Trash2, Users } from "lucide-react";
-import { useMemberPasswordReset } from "@/features/equipo/hooks/useMemberPasswordReset";
+import Link from "next/link";
+import { KeyRound, PauseCircle, PlayCircle, Plus, ShieldCheck, Trash2, Users } from "lucide-react";
+import { useMemberPasswordChange } from "@/features/equipo/hooks/useMemberPasswordChange";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import type { TeamMember } from "@/types/team";
 import type { TenantRoleOption } from "@/services/tenantRolesService";
@@ -23,11 +24,11 @@ import {
 import { setMemberStatus, updateRole, remove as removeMember } from "@/services/teamService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { isAbortError } from "@/services/apiFetch";
-import { btnDanger } from "@/components/ui/buttonClasses";
+import { btnDanger, btnSecondary } from "@/components/ui/buttonClasses";
 import { teamKey, tenantRolesKey } from "@/features/equipo/helpers/swrKeys";
 import { TeamMemberFormSheet } from "@/features/equipo/components/TeamMemberFormSheet";
 import { MemberRoleSelect } from "@/features/equipo/components/MemberRoleSelect";
-import { MemberPasswordResetDialogs } from "@/features/equipo/components/MemberPasswordResetDialogs";
+import { MemberPasswordSheet } from "@/features/equipo/components/MemberPasswordSheet";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Notification } from "@/components/ui/Notification";
 import { staffUsernameOf } from "@/lib/auth/staffLogin";
@@ -42,7 +43,7 @@ export default function EquipoPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [removing, setRemoving] = useState<TeamMember | null>(null);
-  const passwordReset = useMemberPasswordReset();
+  const passwordSheet = useMemberPasswordChange();
 
   useEffect(() => {
     if (searchParams.get("nuevo") === "1") setCreateOpen(true);
@@ -141,6 +142,12 @@ export default function EquipoPage() {
       <PageHeader
         title="Equipo"
         description={`${members.length} ${members.length === 1 ? "persona tiene" : "personas tienen"} acceso. Puedes agregar a todas las que tu negocio necesite.`}
+        action={
+          <Link href={`/dashboard/${tenantSlug}/equipo/roles`} className={btnSecondary}>
+            <ShieldCheck className="h-4 w-4" aria-hidden />
+            Roles y permisos
+          </Link>
+        }
       />
 
       <div className="flex items-center gap-2 rounded-xl border border-border bg-surface-raised px-3 py-2 text-sm text-muted-foreground">
@@ -201,9 +208,9 @@ export default function EquipoPage() {
                     </button>
                     <button type="button" onClick={() => setRemoving(m)} disabled={updatingId === m.id} className={btnDanger}><Trash2 className="h-4 w-4" aria-hidden />Quitar</button>
                   </div>}
-                  {m.role_name !== "owner" && (
-                    <button type="button" onClick={() => passwordReset.ask(m)} disabled={updatingId === m.id} className="inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-lg border border-border px-3 text-sm font-semibold disabled:opacity-50">
-                      <KeyRound className="h-4 w-4" aria-hidden />Nueva contraseña
+                  {m.can_set_password && (
+                    <button type="button" onClick={() => passwordSheet.open(m)} disabled={updatingId === m.id} className="inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-lg border border-border px-3 text-sm font-semibold disabled:opacity-50">
+                      <KeyRound className="h-4 w-4" aria-hidden />Cambiar contraseña
                     </button>
                   )}
                 </div>
@@ -247,7 +254,7 @@ export default function EquipoPage() {
                       <td className="px-4 py-3 text-right">
                         {m.role_name !== "owner" && <div className="flex justify-end gap-2">
                           <button type="button" onClick={() => handleStatus(m)} disabled={updatingId === m.id || m.status === "invited"} className="min-h-11 rounded-lg border border-border px-3 text-sm font-semibold disabled:opacity-50">{m.status === "suspended" ? "Reactivar" : "Suspender"}</button>
-                          <button type="button" onClick={() => passwordReset.ask(m)} disabled={updatingId === m.id} aria-label={`Nueva contraseña para ${m.display_name || loginOf(m)}`} title="Nueva contraseña" className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-3 text-sm font-semibold disabled:opacity-50"><KeyRound className="h-4 w-4" aria-hidden /></button>
+                          {m.can_set_password && <button type="button" onClick={() => passwordSheet.open(m)} disabled={updatingId === m.id} aria-label={`Cambiar contraseña de ${m.display_name || loginOf(m)}`} title="Cambiar contraseña" className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-3 text-sm font-semibold disabled:opacity-50"><KeyRound className="h-4 w-4" aria-hidden /></button>}
                           <button type="button" onClick={() => setRemoving(m)} disabled={updatingId === m.id} className={btnDanger}>{updatingId === m.id ? "..." : "Quitar"}</button>
                         </div>}
                       </td>
@@ -267,7 +274,7 @@ export default function EquipoPage() {
         onClose={closeCreate}
         onAdded={() => void mutateTeam()}
       />
-      <MemberPasswordResetDialogs reset={passwordReset} />
+      <MemberPasswordSheet sheet={passwordSheet} />
       <ConfirmDialog
         isOpen={Boolean(removing)}
         onClose={() => setRemoving(null)}

@@ -10,10 +10,13 @@ export interface TeamMember {
   invitation_expires_at?: string | null;
   suspended_at?: string | null;
   suspension_reason?: string | null;
+  /** The business created this account and may set its password. */
+  can_set_password?: boolean;
 }
 
-/** What the owner hands over so a staff member can log in. `username` is null for real emails. */
+/** What the owner hands over so a staff member can log in. */
 export interface StaffCredentials {
-  tempPassword: string;
-  username: string | null;
+  /** Username or email, whichever the person types to log in. */
+  login: string;
+  password: string;
 }

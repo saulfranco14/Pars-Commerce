@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 
 import { CheckCircle2, UserPlus, X } from "lucide-react";
 
@@ -10,7 +10,7 @@ import { btnPrimaryFlex, btnSecondary } from "@/components/ui/buttonClasses";
 import { StaffCredentialsCard } from "@/features/equipo/components/StaffCredentialsCard";
 import { useSchemaForm } from "@/lib/forms/useSchemaForm";
 import { SchemaFormFields } from "@/lib/forms/SchemaFormFields";
-import { buildTeamFields } from "@/features/equipo/validations/teamFieldSchema";
+import { buildTeamFields, TEAM_CROSS_FIELD_RULES } from "@/features/equipo/validations/teamFieldSchema";
 import { addTeamMemberFromForm } from "@/features/equipo/services/teamAdapter";
 
 import type { TeamFieldValues } from "@/features/equipo/validations/teamFieldSchema";
@@ -24,8 +24,8 @@ interface TeamMemberFormSheetProps {
 }
 
 /**
- * "Agregar miembro". New people get an account right away (no invite email):
- * the sheet then shows the login and one-time password to hand over.
+ * "Agregar miembro". The owner sets the password and the account works right
+ * away (no invite email); the sheet then shows what to hand over.
  */
 export function TeamMemberFormSheet({
   isOpen,
@@ -35,16 +35,20 @@ export function TeamMemberFormSheet({
 }: TeamMemberFormSheetProps) {
   const formId = useId();
   const [result, setResult] = useState<AddMemberResult | null>(null);
-  const [submitted, setSubmitted] = useState({ name: "", email: "" });
+  const [submittedName, setSubmittedName] = useState("");
 
-  const fields = buildTeamFields({ tenantId });
+  const fields = useMemo(() => buildTeamFields({ tenantId }), [tenantId]);
 
-  const form = useSchemaForm<TeamFieldValues>(fields, async (values) => {
-    const addResult = await addTeamMemberFromForm(tenantId, values);
-    setSubmitted({ name: values.display_name.trim(), email: values.email?.trim() ?? "" });
-    setResult(addResult);
-    onAdded();
-  });
+  const form = useSchemaForm<TeamFieldValues>(
+    fields,
+    async (values) => {
+      const addResult = await addTeamMemberFromForm(tenantId, values);
+      setSubmittedName(values.display_name.trim());
+      setResult(addResult);
+      onAdded();
+    },
+    TEAM_CROSS_FIELD_RULES,
+  );
 
   function handleClose() {
     form.resetForm();
@@ -68,15 +72,11 @@ export function TeamMemberFormSheet({
         }
       >
         {result.credentials ? (
-          <StaffCredentialsCard
-            credentials={result.credentials}
-            name={submitted.name}
-            email={submitted.email}
-          />
+          <StaffCredentialsCard credentials={result.credentials} name={submittedName} />
         ) : (
           <Notification
             tone="success"
-            message={`${submitted.name || submitted.email} ya tenía cuenta en Tlaco. Entra con su email y su contraseña de siempre.`}
+            message={`${submittedName} ya tenía cuenta en Tlaco. Entra con su email y su contraseña de siempre.`}
           />
         )}
       </FormSheet>
@@ -89,7 +89,7 @@ export function TeamMemberFormSheet({
       onClose={handleClose}
       icon={UserPlus}
       title="Agregar miembro"
-      description="Puede entrar en cuanto la agregues. Te damos una contraseña temporal para enviársela."
+      description="Tú le pones la contraseña y entra en cuanto la agregues."
       footer={
         <div className="flex flex-col gap-2">
           <button
@@ -118,6 +118,8 @@ export function TeamMemberFormSheet({
           register={form.register}
           errors={form.errors}
           watch={form.watch}
+          setValue={form.setValue}
+          control={form.control}
         />
 
         {form.submitError && <Notification tone="error" message={form.submitError} />}

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Check, Copy, MessageCircle } from "lucide-react";
 
-import { Notification } from "@/components/ui/Notification";
 import { btnPrimary } from "@/components/ui/buttonClasses";
 
 import { staffCredentialsMessage } from "@/features/equipo/helpers/staffCredentialsMessage";
@@ -44,31 +43,15 @@ function CopyRow({ label, value }: { label: string; value: string }) {
 }
 
 /** Login data the owner hands over, with a ready-made WhatsApp message. */
-export function StaffCredentialsCard({
-  credentials,
-  name,
-  email,
-}: {
-  credentials: StaffCredentials;
-  name: string;
-  email: string;
-}) {
-  const message = staffCredentialsMessage(credentials, {
-    name,
-    email,
-    loginUrl: `${window.location.origin}/login`,
-  });
+export function StaffCredentialsCard({ credentials, name }: { credentials: StaffCredentials; name: string }) {
+  const message = staffCredentialsMessage(credentials, name, `${window.location.origin}/login`);
 
   return (
     <div className="space-y-4">
       <div className="space-y-3 rounded-xl border border-border-soft bg-surface-raised p-4">
-        <CopyRow label={credentials.username ? "Usuario" : "Email"} value={credentials.username ?? email} />
-        <CopyRow label="Contraseña temporal" value={credentials.tempPassword} />
+        <CopyRow label={credentials.login.includes("@") ? "Email" : "Usuario"} value={credentials.login} />
+        <CopyRow label="Contraseña" value={credentials.password} />
       </div>
-      <Notification
-        tone="info"
-        message="Ya puede entrar. La primera vez que inicie sesión elegirá su propia contraseña y esta dejará de servir."
-      />
       <a
         href={`https://wa.me/?text=${encodeURIComponent(message)}`}
         target="_blank"

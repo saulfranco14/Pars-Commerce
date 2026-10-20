@@ -10,7 +10,6 @@ import { useTenantStore } from "@/stores/useTenantStore";
 export function useAuthInitializer() {
   const router = useRouter();
   const setAuthUserId = useSessionStore((s) => s.setAuthUserId);
-  const setMustChangePassword = useSessionStore((s) => s.setMustChangePassword);
   const clearProfile = useSessionStore((s) => s.clear);
   const clearTenant = useTenantStore((s) => s.clear);
   const setTenantsLoaded = useTenantStore((s) => s.setTenantsLoaded);
@@ -38,7 +37,6 @@ export function useAuthInitializer() {
         return;
       }
 
-      setMustChangePassword(user.user_metadata?.must_change_password === true);
       if (lastUserIdRef.current === user.id) return;
       lastUserIdRef.current = user.id;
       setAuthUserId(user.id);
@@ -57,12 +55,11 @@ export function useAuthInitializer() {
         setTenantsLoaded(false);
         return;
       }
-      setMustChangePassword(session.user?.user_metadata?.must_change_password === true);
       if (lastUserIdRef.current === session.user?.id) return;
       lastUserIdRef.current = session.user?.id ?? null;
       setAuthUserId(session.user?.id ?? null);
     });
 
     return () => subscription.unsubscribe();
-  }, [router, setAuthUserId, setMustChangePassword, clearProfile, clearTenant, setTenantsLoaded]);
+  }, [router, setAuthUserId, clearProfile, clearTenant, setTenantsLoaded]);
 }

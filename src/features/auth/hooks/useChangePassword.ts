@@ -5,14 +5,12 @@ import { ValidationError } from "yup";
 
 import { createClient } from "@/lib/supabase/client";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
-import { useSessionStore } from "@/stores/useSessionStore";
 import { setPasswordSchema } from "@/features/auth/validations/setPasswordForm";
 
 import type { SetPasswordValues } from "@/features/auth/validations/setPasswordForm";
 
-/** Sets a new password for the logged-in user and clears the one-time-password flag. */
+/** Sets a new password for the logged-in user. */
 export function useChangePassword(onDone?: () => void) {
-  const setMustChangePassword = useSessionStore((s) => s.setMustChangePassword);
   const [values, setValues] = useState<SetPasswordValues>({ newPassword: "", confirmPassword: "" });
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof SetPasswordValues, string>>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -39,10 +37,7 @@ export function useChangePassword(onDone?: () => void) {
     }
 
     setSubmitting(true);
-    const { error: updateError } = await createClient().auth.updateUser({
-      password: values.newPassword,
-      data: { must_change_password: false },
-    });
+    const { error: updateError } = await createClient().auth.updateUser({ password: values.newPassword });
     setSubmitting(false);
     if (updateError) {
       setError(resolveUserError(updateError, "supabase"));
@@ -50,7 +45,6 @@ export function useChangePassword(onDone?: () => void) {
     }
     setValues({ newPassword: "", confirmPassword: "" });
     setSaved(true);
-    setMustChangePassword(false);
     onDone?.();
   }
 
