@@ -5,8 +5,14 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { useSessionStore } from "@/stores/useSessionStore";
-import { useTenantStore, useActiveTenant, useCanOpenSection } from "@/stores/useTenantStore";
+import {
+  useTenantStore,
+  useActiveTenant,
+  useCanOpenSection,
+} from "@/stores/useTenantStore";
 import { dashboardSectionOf } from "@/constants/dashboardAccess";
+import { STATIONS, stationSection } from "@/features/operaciones/constants/stations";
+import { staffUsernameOf } from "@/lib/auth/staffLogin";
 import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
 import {
   X,
@@ -39,8 +45,16 @@ import { FormSheet } from "@/components/ui/FormSheet";
 import type { BillingPlan } from "@/features/billing/entitlements";
 
 // Group headers only render when the role can open at least one link under them.
-const ADMIN_SECTIONS = ["ventas", "liquidaciones", "equipo", "sitio-web", "configuracion", "novedades"];
+const ADMIN_SECTIONS = [
+  "ventas",
+  "liquidaciones",
+  "equipo",
+  "sitio-web",
+  "configuracion",
+  "novedades",
+];
 const COLLECTION_SECTIONS = ["prestamos", "credito", "clientes"];
+const BUSINESS_SECTIONS = ["productos", "servicios", "ordenes", "cotizaciones", "agenda", "suscripciones", "qr", "mesas"];
 
 interface SidebarProps {
   tenantSlug: string | null;
@@ -93,7 +107,13 @@ interface SidebarContentProps {
   memberships: {
     id: string;
     tenant_id: string;
-    tenant: { name: string; slug: string; business_type?: string | null; is_demo?: boolean | null; theme_color?: string | null };
+    tenant: {
+      name: string;
+      slug: string;
+      business_type?: string | null;
+      is_demo?: boolean | null;
+      theme_color?: string | null;
+    };
     role?: { name: string };
   }[];
   activeTenantId: string | null;
@@ -143,8 +163,12 @@ function SidebarContent(props: SidebarContentProps) {
   const canAccessQr = canOpen("qr");
   const canAccessTables = canOpen("mesas");
   const canAccessBankAccounts = canOpen("configuracion");
+  const canAccessOperation = canOpen("operacion");
+  const canAccessBusiness = BUSINESS_SECTIONS.some(canOpen);
 
-  function switchBusiness(selected: SidebarContentProps["memberships"][number]) {
+  function switchBusiness(
+    selected: SidebarContentProps["memberships"][number],
+  ) {
     setActiveTenantId(selected.tenant_id);
     if (typeof window !== "undefined") {
       try {
@@ -154,12 +178,16 @@ function SidebarContent(props: SidebarContentProps) {
       }
     }
     const pathParts = pathname.split("/").filter(Boolean);
-    const section = pathParts[0] === "dashboard" && pathParts[1] && !["crear-negocio", "perfil", "plataforma"].includes(pathParts[1])
-      ? pathParts.slice(2)
-      : [];
-    const destination = section.length > 0
-      ? `/dashboard/${selected.tenant.slug}/${section.join("/")}`
-      : `/dashboard/${selected.tenant.slug}`;
+    const section =
+      pathParts[0] === "dashboard" &&
+      pathParts[1] &&
+      !["crear-negocio", "perfil", "plataforma"].includes(pathParts[1])
+        ? pathParts.slice(2)
+        : [];
+    const destination =
+      section.length > 0
+        ? `/dashboard/${selected.tenant.slug}/${section.join("/")}`
+        : `/dashboard/${selected.tenant.slug}`;
     onNavigate?.();
     router.push(destination);
   }
@@ -168,14 +196,17 @@ function SidebarContent(props: SidebarContentProps) {
     setExpansionError(null);
     if (userRole !== "owner") {
       setExpansionOpen(true);
-      setExpansionError("Solo la persona propietaria puede crear otro negocio.");
+      setExpansionError(
+        "Solo la persona propietaria puede crear otro negocio.",
+      );
       return;
     }
     setCheckingExpansion(true);
     try {
       const response = await fetch("/api/billing/business-expansion");
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? "No pudimos validar tu plan");
+      if (!response.ok)
+        throw new Error(result.error ?? "No pudimos validar tu plan");
       if (result.can_create) {
         onNavigate?.();
         router.push("/dashboard/crear-negocio");
@@ -184,7 +215,10 @@ function SidebarContent(props: SidebarContentProps) {
       const plansResponse = await fetch("/api/public/billing-plans");
       const plansPayload = await plansResponse.json();
       if (plansResponse.ok && Array.isArray(plansPayload)) {
-        setOperationPlan(plansPayload.find((plan: BillingPlan) => plan.code === "operation") ?? null);
+        setOperationPlan(
+          plansPayload.find((plan: BillingPlan) => plan.code === "operation") ??
+            null,
+        );
       }
       setExpansionOpen(true);
     } catch (error) {
@@ -205,10 +239,14 @@ function SidebarContent(props: SidebarContentProps) {
       const response = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenant_id: activeTenantId, plan_code: "operation" }),
+        body: JSON.stringify({
+          tenant_id: activeTenantId,
+          plan_code: "operation",
+        }),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? "No pudimos abrir el cobro");
+      if (!response.ok)
+        throw new Error(result.error ?? "No pudimos abrir el cobro");
       window.location.assign(result.checkout_url);
     } catch (error) {
       setExpansionError(
@@ -224,7 +262,11 @@ function SidebarContent(props: SidebarContentProps) {
         {/* Sin `animated`: es una herramienta de uso diario y una caída de 1.5s
             en cada carga del panel es ruido. `TlacoLogo` ya trae su propio
             `sr-only` con el nombre, así que no lleva alt ni aria-label. */}
-        <Link href="/dashboard" onClick={onNavigate} className="flex items-center">
+        <Link
+          href="/dashboard"
+          onClick={onNavigate}
+          className="flex items-center"
+        >
           <TlacoLogo size="md" />
         </Link>
         {showCloseButton && onClose && (
@@ -239,33 +281,64 @@ function SidebarContent(props: SidebarContentProps) {
         )}
       </div>
       {!tenantsLoaded ? (
-        <div className="shrink-0 border-b border-border-soft px-4 py-4" aria-busy="true" aria-label="Cargando negocios">
-          <div className="animate-pulse space-y-2.5"><div className="h-3 w-24 rounded bg-border-soft" /><div className="h-12 w-full rounded-xl bg-border-soft" /><div className="h-11 w-full rounded-xl bg-border-soft" /></div>
+        <div
+          className="shrink-0 border-b border-border-soft px-4 py-4"
+          aria-busy="true"
+          aria-label="Cargando negocios"
+        >
+          <div className="animate-pulse space-y-2.5">
+            <div className="h-3 w-24 rounded bg-border-soft" />
+            <div className="h-12 w-full rounded-xl bg-border-soft" />
+            <div className="h-11 w-full rounded-xl bg-border-soft" />
+          </div>
         </div>
-      ) : memberships.length > 0 && (
-        <div className="shrink-0 border-b border-border-soft px-4 py-4">
-          {memberships.length > 1 && <><label htmlFor="business-switcher" className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Negocio activo</label><select
-            id="business-switcher"
-            value={activeTenantId ?? memberships[0]?.tenant_id ?? ""}
-            onChange={(event) => {
-              const selected = memberships.find((membership) => membership.tenant_id === event.target.value);
-              if (selected) switchBusiness(selected);
-            }}
-            className="select-custom min-h-12 w-full cursor-pointer rounded-xl border border-border bg-surface px-3 py-2.5 text-sm font-semibold text-foreground transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-            aria-label="Cambiar negocio activo"
-          >
-            <optgroup label="Mis negocios">{memberships.map((membership) => <option key={membership.id} value={membership.tenant_id}>{membership.tenant.name}</option>)}</optgroup>
-          </select></>}
-          {userRole === "owner" && (<button
-            type="button"
-            onClick={() => void createAnotherBusiness()}
-            disabled={checkingExpansion}
-            className={`${memberships.length > 1 ? "mt-2" : ""} inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2`}
-          >
-            <Plus className="h-4 w-4 shrink-0 text-accent" aria-hidden />
-            {checkingExpansion ? "Validando plan…" : "Crear otro negocio"}
-          </button>)}
-        </div>
+      ) : (
+        memberships.length > 0 && (
+          <>
+            {memberships.length > 1 && (
+              <div className="shrink-0 border-b border-border-soft px-4 py-4 mb-1">
+                <label
+                  htmlFor="business-switcher"
+                  className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  Negocio activo
+                </label>
+                <select
+                  id="business-switcher"
+                  value={activeTenantId ?? memberships[0]?.tenant_id ?? ""}
+                  onChange={(event) => {
+                    const selected = memberships.find(
+                      (membership) =>
+                        membership.tenant_id === event.target.value,
+                    );
+                    if (selected) switchBusiness(selected);
+                  }}
+                  className="select-custom min-h-12 w-full cursor-pointer rounded-xl border border-border bg-surface px-3 py-2.5 text-sm font-semibold text-foreground transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                  aria-label="Cambiar negocio activo"
+                >
+                  <optgroup label="Mis negocios">
+                    {memberships.map((membership) => (
+                      <option key={membership.id} value={membership.tenant_id}>
+                        {membership.tenant.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+            )}
+            {userRole === "owner" && (
+              <button
+                type="button"
+                onClick={() => void createAnotherBusiness()}
+                disabled={checkingExpansion}
+                className={`${memberships.length > 1 ? "mt-2" : ""} inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2`}
+              >
+                <Plus className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+                {checkingExpansion ? "Validando plan…" : "Crear otro negocio"}
+              </button>
+            )}
+          </>
+        )
       )}
       <nav className="flex min-h-0 flex-1 flex-col space-y-1 overflow-auto p-4">
         <NavLink
@@ -288,7 +361,10 @@ function SidebarContent(props: SidebarContentProps) {
             </div>
             <NavLink
               href="/dashboard/plataforma"
-              active={pathname === "/dashboard/plataforma" && platformView === "operation"}
+              active={
+                pathname === "/dashboard/plataforma" &&
+                platformView === "operation"
+              }
               icon={ShieldCheck}
               onNavigate={onNavigate}
             >
@@ -296,7 +372,9 @@ function SidebarContent(props: SidebarContentProps) {
             </NavLink>
             <NavLink
               href="/dashboard/plataforma?view=users"
-              active={pathname === "/dashboard/plataforma" && platformView === "users"}
+              active={
+                pathname === "/dashboard/plataforma" && platformView === "users"
+              }
               icon={Users}
               onNavigate={onNavigate}
             >
@@ -304,7 +382,10 @@ function SidebarContent(props: SidebarContentProps) {
             </NavLink>
             <NavLink
               href="/dashboard/plataforma?view=businesses"
-              active={pathname === "/dashboard/plataforma" && platformView === "businesses"}
+              active={
+                pathname === "/dashboard/plataforma" &&
+                platformView === "businesses"
+              }
               icon={Building2}
               onNavigate={onNavigate}
             >
@@ -312,7 +393,9 @@ function SidebarContent(props: SidebarContentProps) {
             </NavLink>
             <NavLink
               href="/dashboard/plataforma?view=audit"
-              active={pathname === "/dashboard/plataforma" && platformView === "audit"}
+              active={
+                pathname === "/dashboard/plataforma" && platformView === "audit"
+              }
               icon={ListChecks}
               onNavigate={onNavigate}
             >
@@ -320,11 +403,31 @@ function SidebarContent(props: SidebarContentProps) {
             </NavLink>
           </div>
         )}
-        {hasTenant && (
+        {hasTenant && canAccessOperation && (
           <>
             <p className="mt-4 border-t border-border-soft px-3 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-              Gestión del negocio
+              Operación
             </p>
+            {STATIONS.map((station) => (
+              <NavLink
+                key={station.key}
+                href={`${base}/${stationSection(station.key)}`}
+                active={pathname === `${base}/${stationSection(station.key)}`}
+                icon={station.icon}
+                onNavigate={onNavigate}
+              >
+                {station.label}
+              </NavLink>
+            ))}
+          </>
+        )}
+        {hasTenant && (
+          <>
+            {canAccessBusiness && (
+              <p className="mt-4 border-t border-border-soft px-3 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                Gestión del negocio
+              </p>
+            )}
             <NavLink
               href={`${base}/productos`}
               active={
@@ -414,41 +517,43 @@ function SidebarContent(props: SidebarContentProps) {
               </NavLink>
             )}
 
-            {canAccessCollections && (<div className="mt-4 border-t border-border-soft pt-4">
-              <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                Cobranza
-              </p>
-              <NavLink
-                href={`${base}/prestamos`}
-                active={
-                  pathname === `${base}/prestamos` ||
-                  pathname.startsWith(`${base}/prestamos/`)
-                }
-                icon={Banknote}
-                onNavigate={onNavigate}
-              >
-                Préstamos
-              </NavLink>
-              <NavLink
-                href={`${base}/credito`}
-                active={pathname === `${base}/credito`}
-                icon={Wallet}
-                onNavigate={onNavigate}
-              >
-                Crédito de clientes
-              </NavLink>
-              <NavLink
-                href={`${base}/clientes`}
-                active={
-                  pathname === `${base}/clientes` ||
-                  pathname.startsWith(`${base}/clientes/`)
-                }
-                icon={Users}
-                onNavigate={onNavigate}
-              >
-                Clientes
-              </NavLink>
-            </div>)}
+            {canAccessCollections && (
+              <div className="mt-4 border-t border-border-soft pt-4">
+                <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  Cobranza
+                </p>
+                <NavLink
+                  href={`${base}/prestamos`}
+                  active={
+                    pathname === `${base}/prestamos` ||
+                    pathname.startsWith(`${base}/prestamos/`)
+                  }
+                  icon={Banknote}
+                  onNavigate={onNavigate}
+                >
+                  Préstamos
+                </NavLink>
+                <NavLink
+                  href={`${base}/credito`}
+                  active={pathname === `${base}/credito`}
+                  icon={Wallet}
+                  onNavigate={onNavigate}
+                >
+                  Crédito de clientes
+                </NavLink>
+                <NavLink
+                  href={`${base}/clientes`}
+                  active={
+                    pathname === `${base}/clientes` ||
+                    pathname.startsWith(`${base}/clientes/`)
+                  }
+                  icon={Users}
+                  onNavigate={onNavigate}
+                >
+                  Clientes
+                </NavLink>
+              </div>
+            )}
 
             {canAccessTeamAndSettings && (
               <div className="mt-4 border-t border-border-soft pt-4">
@@ -479,14 +584,19 @@ function SidebarContent(props: SidebarContentProps) {
                 </NavLink>
                 <NavLink
                   href={`${base}/equipo`}
-                  active={
-                    pathname === `${base}/equipo` ||
-                    pathname.startsWith(`${base}/equipo/`)
-                  }
+                  active={pathname === `${base}/equipo`}
                   icon={UsersRound}
                   onNavigate={onNavigate}
                 >
                   Equipo
+                </NavLink>
+                <NavLink
+                  href={`${base}/equipo/roles`}
+                  active={pathname.startsWith(`${base}/equipo/roles`)}
+                  icon={ShieldCheck}
+                  onNavigate={onNavigate}
+                >
+                  Roles y permisos
                 </NavLink>
                 <NavLink
                   href={`${base}/sitio-web`}
@@ -560,7 +670,7 @@ function SidebarContent(props: SidebarContentProps) {
         >
           <p className="font-medium">{profile?.display_name || "Usuario"}</p>
           {profile?.email && (
-            <p className="truncate text-xs text-muted">{profile.email}</p>
+            <p className="truncate text-xs text-muted">{staffUsernameOf(profile.email) ?? profile.email}</p>
           )}
         </Link>
       </div>
@@ -601,16 +711,29 @@ function SidebarContent(props: SidebarContentProps) {
         }
       >
         {expansionError ? (
-          <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{expansionError}</p>
+          <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+            {expansionError}
+          </p>
         ) : (
           <div className="rounded-xl bg-accent/5 p-4">
-            <p className="text-sm font-bold text-foreground">Operación incluye</p>
+            <p className="text-sm font-bold text-foreground">
+              Operación incluye
+            </p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               <li>• Crea y administra otro negocio.</li>
-              <li>• Hasta {operationPlan?.entitlements.active_table_limit ?? "—"} mesas activas.</li>
-              <li>• {operationPlan?.entitlements.active_kiosk_limit ?? "—"} kiosco para tomar pedidos.</li>
+              <li>
+                • Hasta {operationPlan?.entitlements.active_table_limit ?? "—"}{" "}
+                mesas activas.
+              </li>
+              <li>
+                • {operationPlan?.entitlements.active_kiosk_limit ?? "—"} kiosco
+                para tomar pedidos.
+              </li>
             </ul>
-            <p className="mt-3 text-xs text-muted-foreground">No se cobra aquí: primero revisarás y autorizarás el pago en Mercado Pago.</p>
+            <p className="mt-3 text-xs text-muted-foreground">
+              No se cobra aquí: primero revisarás y autorizarás el pago en
+              Mercado Pago.
+            </p>
           </div>
         )}
       </FormSheet>

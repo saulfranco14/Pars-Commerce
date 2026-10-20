@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Package,
   Banknote,
+  ListChecks,
   MoreHorizontal,
 } from "lucide-react";
 
@@ -64,6 +65,18 @@ export function BottomNav({
         </Link>
       )}
 
+      {hasTenant && canOpen("operacion") && (
+        <Link
+          href={`${base}/operacion`}
+          className={navItemClass(pathname.startsWith(`${base}/operacion`))}
+          aria-current={pathname.startsWith(`${base}/operacion`) ? "page" : undefined}
+        >
+          <span className={iconWrapperClass}>
+            <ListChecks className={`h-6 w-6 ${iconClass(pathname.startsWith(`${base}/operacion`))}`} aria-hidden />
+          </span>
+          <span className="text-[11px] font-medium leading-tight">Mi trabajo</span>
+        </Link>
+      )}
       {hasTenant && canOpen("productos") && (
         <Link
           href={`${base}/productos`}
@@ -130,7 +143,7 @@ export function BottomNav({
         </Link>
       )}
 
-      {hasTenant && canOpen("prestamos") && (
+      {hasTenant && canOpen("prestamos") && !canOpen("operacion") && (
         <Link
           href={`${base}/prestamos`}
           className={navItemClass(

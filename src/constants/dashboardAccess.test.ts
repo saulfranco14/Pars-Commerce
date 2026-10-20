@@ -8,14 +8,7 @@ import {
 } from "@/constants/dashboardAccess";
 import { roleHasAnyPermission } from "@/lib/auth/permissions";
 
-// Same lists `handle_new_tenant()` seeds (20261019230000), owner aside.
-const SYSTEM_ROLES: Record<string, string[]> = {
-  member: ["sales.read", "sales.write", "sales.view_all", "sales.view_assigned", "sales.assign", "sales.update_assigned", "products.read", "products.write", "inventory.read", "inventory.write", "promotions.read", "promotions.write", "reports.read", "team.read", "orders.read", "orders.write", "orders.view_assigned", "order.take"],
-  cashier: ["sales.read", "sales.write", "sales.view_all", "sales.view_assigned", "orders.read", "orders.write", "orders.view_all", "orders.view_assigned", "orders.assign", "orders.close", "payments.write", "qr.read", "order.take"],
-  waiter: ["orders.read", "orders.write", "orders.view_assigned", "orders.prepare", "orders.deliver", "qr.read", "qr.fulfill", "order.take"],
-  preparer: ["orders.read", "orders.view_assigned", "orders.prepare"],
-  courier: ["orders.read", "orders.view_assigned", "orders.deliver"],
-};
+import { SYSTEM_ROLE_PERMISSIONS as SYSTEM_ROLES } from "@/constants/systemRoles";
 
 function visibleSections(role: string): string[] {
   return Object.keys(DASHBOARD_SECTION_PERMISSIONS)
@@ -26,7 +19,13 @@ function visibleSections(role: string): string[] {
 describe("dashboardSectionOf", () => {
   it("toma el primer segmento después del negocio", () => {
     expect(dashboardSectionOf("/dashboard/mi-negocio/ordenes/123")).toBe("ordenes");
+    expect(dashboardSectionOf("/dashboard/mi-negocio/equipo/roles")).toBe("equipo");
     expect(dashboardSectionOf("/dashboard/mi-negocio/configuracion/cuentas-bancarias")).toBe("configuracion");
+  });
+
+  it("cada estación de operación es su propia sección", () => {
+    expect(dashboardSectionOf("/dashboard/mi-negocio/operacion/preparacion")).toBe("operacion/preparacion");
+    expect(dashboardSectionOf("/dashboard/mi-negocio/operacion")).toBe("operacion");
   });
 
   it("el inicio del negocio es la sección \"inicio\"; las rutas de cuenta no son secciones", () => {
@@ -46,7 +45,17 @@ describe("qué ve cada rol de sistema en el menú", () => {
 
   it("el mesero solo ve su operación: ni catálogo, ni dinero, ni datos de crédito", () => {
     expect(visibleSections("waiter")).toEqual(
-      ["agenda", "cotizaciones", "mesas", "ordenes", "pedidos"].sort(),
+      [
+        "agenda",
+        "cotizaciones",
+        "mesas",
+        "operacion",
+        "operacion/entregas",
+        "operacion/mis-pedidos",
+        "operacion/preparacion",
+        "ordenes",
+        "pedidos",
+      ].sort(),
     );
   });
 
@@ -58,9 +67,16 @@ describe("qué ve cada rol de sistema en el menú", () => {
     expect(sections).not.toContain("configuracion");
   });
 
-  it("preparación y entregas solo ven pedidos", () => {
-    expect(visibleSections("preparer")).toEqual(["agenda", "ordenes"]);
-    expect(visibleSections("courier")).toEqual(["agenda", "ordenes"]);
+  it("preparación y entregas solo ven su estación", () => {
+    expect(visibleSections("preparer")).toEqual(["operacion", "operacion/preparacion"]);
+    expect(visibleSections("courier")).toEqual(["operacion", "operacion/entregas"]);
+  });
+
+  it("el encargado de pedidos reparte y cobra, pero no prepara ni entrega", () => {
+    const sections = visibleSections("cashier");
+    expect(sections).toEqual(expect.arrayContaining(["operacion/recepcion", "operacion/caja", "operacion/mis-pedidos"]));
+    expect(sections).not.toContain("operacion/preparacion");
+    expect(sections).not.toContain("operacion/entregas");
   });
 
   it("ningún rol de sistema que no sea owner ve dinero, equipo o configuración", () => {
@@ -82,10 +98,10 @@ describe("a dónde aterriza cada rol al entrar", () => {
     expect(landingFor("member")).toBe("inicio");
   });
 
-  it("los roles que solo operan entran directo a Órdenes", () => {
-    expect(landingFor("waiter")).toBe("ordenes");
-    expect(landingFor("cashier")).toBe("ordenes");
-    expect(landingFor("preparer")).toBe("ordenes");
-    expect(landingFor("courier")).toBe("ordenes");
+  it("los roles que operan entran directo a su estación", () => {
+    expect(landingFor("waiter")).toBe("operacion/mis-pedidos");
+    expect(landingFor("cashier")).toBe("operacion/recepcion");
+    expect(landingFor("preparer")).toBe("operacion/preparacion");
+    expect(landingFor("courier")).toBe("operacion/entregas");
   });
 });
