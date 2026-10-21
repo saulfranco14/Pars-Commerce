@@ -215,8 +215,9 @@ BEGIN
       p_plan->>'interval_unit',
       COALESCE((p_plan->>'interval_count')::integer, 1),
       NULLIF(p_plan->>'max_periods', '')::integer,
-      COALESCE(ARRAY(SELECT jsonb_array_elements_text(p_plan->'billing_methods')), ARRAY['manual']),
-      COALESCE(ARRAY(SELECT jsonb_array_elements_text(p_plan->'fulfillment_methods')), ARRAY['pickup']),
+      -- ARRAY(SELECT …) of a missing key is '{}', not NULL, so COALESCE would not default.
+      CASE WHEN p_plan ? 'billing_methods' THEN ARRAY(SELECT jsonb_array_elements_text(p_plan->'billing_methods')) ELSE ARRAY['manual'] END,
+      CASE WHEN p_plan ? 'fulfillment_methods' THEN ARRAY(SELECT jsonb_array_elements_text(p_plan->'fulfillment_methods')) ELSE ARRAY['pickup'] END,
       NULLIF(p_plan->>'preferred_weekday', '')::smallint,
       COALESCE((p_plan->>'renewal_lead_days')::integer, 3),
       COALESCE((p_plan->>'grace_days')::integer, 5),
