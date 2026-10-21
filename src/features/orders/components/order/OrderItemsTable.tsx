@@ -13,6 +13,7 @@ import { btnIconDanger, btnPrimary } from "@/components/ui/buttonClasses";
 import { resolveOrderFulfillmentMethod } from "@/features/orders/helpers/resolveOrderFulfillmentMethod";
 import { promotionUnitSavings } from "@/features/orders/helpers/orderItemPricing";
 import { OrderItemBadges } from "@/features/orders/components/order/OrderItemBadges";
+import { OrderPlanCharges } from "@/features/orders/components/order/OrderPlanCharges";
 
 function ItemThumbnail({ item }: { item: OrderItem }) {
   const product = item.product;
@@ -99,6 +100,7 @@ export function OrderItemsTable() {
       </div>
 
       <div className="flex min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-contain md:max-h-75">
+        <OrderPlanCharges charges={order.plan_charges ?? []} />
         {items.length === 0 ? (
           <div className="flex min-h-52 flex-col items-center justify-center p-6 text-center">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-border-soft text-muted">

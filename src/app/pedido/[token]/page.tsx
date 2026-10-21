@@ -1,7 +1,8 @@
 /* eslint-disable @next/next/no-img-element -- tenant storage uses signed URLs. */
 /* eslint-disable @typescript-eslint/no-explicit-any -- Commerce schema types are regenerated after the migration rollout. */
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Camera, CheckCircle2, Clock3, Landmark, LockKeyhole, PackageCheck, ReceiptText, Star, Store, Truck, XCircle } from "lucide-react";
+import { Camera, CheckCircle2, Clock3, Landmark, LockKeyhole, PackageCheck, ReceiptText, Repeat, Star, Store, Truck, XCircle } from "lucide-react";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ReviewOrderItem } from "./ReviewOrderItem";
@@ -25,13 +26,14 @@ const labels: Record<string, { title: string; text: string; icon: typeof Clock3;
 export default async function PublicOrderRequestPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const admin = createAdminClient() as unknown as CommerceAdmin;
-  const { data: order } = await admin.from("orders").select("id, status, fulfillment_status, total, paid_total, paid_at, customer_name, rejection_reason, created_at, scheduled_for, payment_verification_status, fulfillment_method, delivery_fee, transfer_payment_method_id, tenant:tenants(name, logo_url, settings), items:order_items(id, quantity, unit_price, subtotal, variant_snapshot, product:products(id, name, image_url, type), reviews:product_reviews(id, rating, comment, status, published_at))").eq("public_tracking_token", token).maybeSingle();
+  const { data: order } = await admin.from("orders").select("id, status, fulfillment_status, total, paid_total, paid_at, customer_name, rejection_reason, created_at, scheduled_for, payment_verification_status, fulfillment_method, delivery_fee, transfer_payment_method_id, tenant:tenants(name, logo_url, settings), items:order_items(id, quantity, unit_price, subtotal, variant_snapshot, line_kind, product:products(id, name, image_url, type), reviews:product_reviews(id, rating, comment, status, published_at))").eq("public_tracking_token", token).maybeSingle();
   if (!order) notFound();
-  const [{ data: delivery }, { data: events }, { data: proofs }, { data: transfer }] = await Promise.all([
+  const [{ data: delivery }, { data: events }, { data: proofs }, { data: transfer }, { data: planCharges }] = await Promise.all([
     admin.from("order_delivery_details").select("address_text, reference, recipient_name, pickup_point_id, pickup_point:tenant_pickup_points(name, address_text, reference, instructions, business_hours)").eq("order_id", order.id).maybeSingle(),
     admin.from("order_delivery_events").select("id, type, note, photo_path, created_at").eq("order_id", order.id).order("created_at"),
     admin.from("order_transfer_proofs").select("id, status, rejection_reason, created_at").eq("order_id", order.id).order("created_at", { ascending: false }),
     admin.from("tenant_payment_methods").select("label, bank_name, account_holder, clabe, account_number").eq("id", order.transfer_payment_method_id ?? "00000000-0000-0000-0000-000000000000").maybeSingle(),
+    admin.from("order_plan_charges").select("id, name_snapshot, amount, period_number, subscription:subscriptions(public_token)").eq("order_id", order.id),
   ]);
   const baseState = labels[order.status] ?? labels.pending_acceptance;
   const tenant = Array.isArray(order.tenant) ? order.tenant[0] : order.tenant;
@@ -185,6 +187,24 @@ export default async function PublicOrderRequestPage({ params }: { params: Promi
           <div className="min-w-0 space-y-4">
           <section className="rounded-2xl border border-border bg-surface shadow-sm">
             <div className="flex items-center justify-between gap-3 px-4 pb-3 pt-4"><div className="flex items-center gap-2"><ReceiptText className="h-4 w-4 text-blue-700" aria-hidden /><h2 className="font-bold text-foreground">Tu pedido</h2></div><span className="text-xs font-medium text-muted-foreground">{items.length} {items.length === 1 ? "artículo" : "artículos"}</span></div>
+            {(planCharges ?? []).length > 0 ? (
+              <div className="divide-y divide-border border-t border-border">
+                {(planCharges as any[]).map((charge) => {
+                  const subscription = Array.isArray(charge.subscription) ? charge.subscription[0] : charge.subscription;
+                  return (
+                    <div key={charge.id} className="flex items-center gap-3 p-4">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10"><Repeat className="h-5 w-5 text-accent" aria-hidden /></span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-foreground">{charge.name_snapshot}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">Suscripción · periodo {charge.period_number}</p>
+                        {subscription?.public_token ? <Link href={`/plan/${subscription.public_token}`} className="mt-1 inline-flex text-xs font-semibold text-blue-700 hover:underline">Ver mi suscripción</Link> : null}
+                      </div>
+                      <p className="text-sm font-bold tabular-nums text-foreground">${Number(charge.amount).toFixed(2)}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
             <div className="divide-y divide-border border-y border-border">{visibleItems.map((item: any) => <OrderItem key={item.id} item={item} />)}</div>
             {hiddenItems.length > 0 ? <details className="group"><summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 text-sm font-semibold text-blue-700">Ver {hiddenItems.length} {hiddenItems.length === 1 ? "artículo más" : "artículos más"}<span className="transition-transform group-open:rotate-180" aria-hidden>⌄</span></summary><div className="divide-y divide-border border-t border-border">{hiddenItems.map((item: any) => <OrderItem key={item.id} item={item} />)}</div></details> : null}
             <div className="flex items-center justify-between px-4 py-4"><span className="text-sm font-semibold text-muted-foreground">Total</span><span className="text-lg font-bold tabular-nums text-foreground">${total.toFixed(2)}</span></div>
@@ -252,5 +272,5 @@ export default async function PublicOrderRequestPage({ params }: { params: Promi
 }
 
 function OrderItem({ item }: { item: any }) {
-  return <div className="p-4"><div className="flex items-center gap-3"><span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-border-soft">{item.product?.image_url ? <img src={item.product.image_url} alt="" className="h-full w-full object-cover" /> : <PackageCheck className="h-4 w-4 text-muted-foreground" />}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-foreground">{item.product?.name ?? "Artículo"}</p>{item.variant_snapshot?.selection_key ? <p className="truncate text-xs text-muted-foreground">{item.variant_snapshot.selection_key}</p> : null}<p className="mt-0.5 text-xs text-muted-foreground">{item.quantity} × ${Number(item.unit_price).toFixed(2)}</p></div><p className="text-sm font-bold tabular-nums text-foreground">${Number(item.subtotal).toFixed(2)}</p></div></div>;
+  return <div className="p-4"><div className="flex items-center gap-3"><span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-border-soft">{item.product?.image_url ? <img src={item.product.image_url} alt="" className="h-full w-full object-cover" /> : <PackageCheck className="h-4 w-4 text-muted-foreground" />}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-foreground">{item.product?.name ?? "Artículo"}</p>{item.variant_snapshot?.selection_key ? <p className="truncate text-xs text-muted-foreground">{item.variant_snapshot.selection_key}</p> : null}{item.line_kind === "plan_component" ? <p className="mt-0.5 text-xs text-muted-foreground">{item.quantity} · incluido en tu suscripción</p> : <p className="mt-0.5 text-xs text-muted-foreground">{item.quantity} × ${Number(item.unit_price).toFixed(2)}</p>}</div>{item.line_kind === "plan_component" ? null : <p className="text-sm font-bold tabular-nums text-foreground">${Number(item.subtotal).toFixed(2)}</p>}</div></div>;
 }

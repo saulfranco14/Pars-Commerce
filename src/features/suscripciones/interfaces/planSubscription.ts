@@ -57,3 +57,9 @@ export interface PlanSubscriptionDetail extends PlanSubscriptionRow {
 export interface PublicPlanView extends PlanSubscriptionDetail {
   tenant: { name: string; logo_url: string | null; whatsapp_phone: string | null; site_slug: string | null };
 }
+
+export interface PlanRenewalControlProps {
+  token: string;
+  cancelAtPeriodEnd: boolean;
+  periodEndLabel: string | null;
+}

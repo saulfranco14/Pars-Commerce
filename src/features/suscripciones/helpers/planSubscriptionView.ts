@@ -70,3 +70,11 @@ export function planReminderMessage(params: {
     `Puedes pagarlo aquí: ${params.payUrl}`,
   ].join("\n");
 }
+
+export const PLAN_PERIOD_LABELS: Record<PlanPeriod["status"], string> = {
+  pending: "Por pagar",
+  paid: "Pagado",
+  overdue: "Vencido",
+  waived: "Sin cobro",
+  cancelled: "Cancelado",
+};
