@@ -8,8 +8,7 @@ import { useOrder } from "@/features/orders/hooks/useOrder";
 import type { OrderActionDialog } from "@/features/orders/interfaces/orderActionButtons";
 import type { OrderTransferProof } from "@/features/orders/interfaces/orderDetail";
 import type { FulfillmentStatus } from "@/features/qr/services/tableFulfillmentService";
-import { AssignBeforePaidModal } from "@/features/orders/components/payment/AssignBeforePaidModal";
-import { ConfirmPaymentModal } from "@/features/orders/components/payment/ConfirmPaymentModal";
+import { ChargeSheet } from "@/features/orders/components/payment/ChargeSheet";
 import { AddendumSheet } from "./AddendumSheet";
 import { DeliveryCompletionSheet } from "./DeliveryCompletionSheet";
 import { GenerateLinkModal } from "./GenerateLinkModal";
@@ -54,8 +53,6 @@ export function OrderActionDialogs({
     tenantSlug,
     actionLoading,
     handleStatusChange,
-    handleAssignAndMarkPaid,
-    handleMarkAsPaidWithMethod,
     handleGeneratePaymentLink,
     fetchOrder,
     setError,
@@ -138,41 +135,23 @@ export function OrderActionDialogs({
         loading={requestLoading}
       />
 
-      <AssignBeforePaidModal
-        isOpen={activeDialog === "assign-payment"}
-        onClose={onClose}
-        onConfirm={async (assignToId, paymentMethod) => {
-          await handleAssignAndMarkPaid(
-            assignToId,
-            isPublicStoreOrder && order.payment_method
-              ? order.payment_method
-              : paymentMethod,
-          );
-          onClose();
-        }}
-        team={team}
-        lockedPaymentMethod={
-          isPublicStoreOrder ? order.payment_method : null
+      <ChargeSheet
+        target={
+          activeDialog === "charge"
+            ? {
+                id: order.id,
+                number: order.order_number ?? order.id.slice(0, 8).toUpperCase(),
+                due: Number(order.balance_due ?? order.total),
+                customerName: order.customer_name,
+                // Only a store customer's own checkout choice is fixed; staff orders choose here.
+                paymentMethod: isPublicStoreOrder ? order.payment_method : null,
+                assignedTo: order.assigned_to,
+              }
+            : null
         }
-        loading={actionLoading}
-      />
-
-      <ConfirmPaymentModal
-        isOpen={activeDialog === "confirm-payment"}
+        team={team.map((member) => ({ userId: member.user_id, name: member.display_name || member.email }))}
         onClose={onClose}
-        onConfirm={async (paymentMethod) => {
-          await handleMarkAsPaidWithMethod(
-            isPublicStoreOrder && order.payment_method
-              ? order.payment_method
-              : paymentMethod,
-          );
-          onClose();
-        }}
-        total={Number(order.total)}
-        lockedPaymentMethod={
-          isPublicStoreOrder ? order.payment_method : null
-        }
-        loading={actionLoading}
+        onCharged={() => void fetchOrder()}
       />
 
       <GenerateLinkModal

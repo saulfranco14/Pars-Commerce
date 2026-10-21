@@ -22,6 +22,7 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { SubscriptionsOnboardingOverlay } from "@/components/onboarding/SubscriptionsOnboardingOverlay";
+import { PlanSubscriptionsPanel } from "@/features/suscripciones/components/PlanSubscriptionsPanel";
 import {
   TableWrapper,
   tableHeaderRowClass,
@@ -44,6 +45,11 @@ import {
 } from "@/features/suscripciones/helpers/subscriptionLabels";
 
 import type { SubscriptionStatus, SubscriptionType } from "@/types/subscriptions";
+
+const VIEW_TABS = [
+  { value: "planes", label: "Planes" },
+  { value: "legacy", label: "Cuotas y recurrentes" },
+];
 
 interface SubscriptionRow {
   id: string;
@@ -71,6 +77,7 @@ export default function SuscripcionesPage() {
   const activeTenant = useActiveTenant();
   const setMemberships = useTenantStore((s) => s.setMemberships);
 
+  const [view, setView] = useState<"planes" | "legacy">("planes");
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -148,8 +155,21 @@ export default function SuscripcionesPage() {
     <div className="space-y-4">
       <PageHeader
         title="Suscripciones"
-        description="Los planes de cuotas y cobros recurrentes se crean desde el checkout del cliente. Aquí das seguimiento a los activos."
+        description="Quién está suscrito, qué periodo toca cobrar y a quién recordarle. Las cuotas y compras recurrentes del checkout siguen en su pestaña."
       />
+
+      <FilterTabs
+        tabs={VIEW_TABS}
+        activeValue={view}
+        onTabChange={(value) => setView(value as "planes" | "legacy")}
+        ariaLabel="Tipo de suscripción"
+        density="touch"
+      />
+
+      {view === "planes" && activeTenant ? (
+        <PlanSubscriptionsPanel tenantId={activeTenant.id} plansHref={`/dashboard/${tenantSlug}/promociones?vista=suscripciones`} />
+      ) : (
+      <>
 
       {/* Activation banner */}
       {!isRecurringActive && (
@@ -409,6 +429,9 @@ export default function SuscripcionesPage() {
             ))}
           </div>
         </>
+      )}
+
+      </>
       )}
 
       <SubscriptionsOnboardingOverlay />

@@ -72,6 +72,7 @@ export async function handleSingleCheckout(
 
   const mpItems = [
     ...baseItems,
+    ...(ctx.planItems ?? []),
     ...(deliveryFee > 0
       ? [{ id: "delivery-fee", title: "Entrega a domicilio", quantity: 1, unit_price: deliveryFee, currency_id: "MXN" as const }]
       : []),

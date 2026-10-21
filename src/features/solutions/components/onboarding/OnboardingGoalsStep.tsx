@@ -1,7 +1,8 @@
-import { OnboardingStepHeading } from "@/features/solutions/components/onboarding/OnboardingStepHeading";
+import { WizardStepHeading } from "@/components/wizard/WizardStepHeading";
 
 import { ONBOARDING_GOALS } from "@/features/solutions/constants/solutionOnboarding";
-import { OPTION_CARD } from "@/features/solutions/constants/solutionStyles";
+import { OPTION_CARD } from "@/components/wizard/wizardStyles";
+import { ONBOARDING_TITLE_ID } from "@/features/solutions/constants/solutionOnboarding";
 
 export function OnboardingGoalsStep({
   goals,
@@ -12,7 +13,8 @@ export function OnboardingGoalsStep({
 }) {
   return (
     <div>
-      <OnboardingStepHeading
+      <WizardStepHeading
+        titleId={ONBOARDING_TITLE_ID}
         eyebrow="Elige hasta dos"
         title="¿Qué quieres resolver primero?"
         subtitle="Tu inicio mostrará primero las acciones que sí necesitas."

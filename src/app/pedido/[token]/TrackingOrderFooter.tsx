@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, RefreshCw, Sparkles, Upload, X } from "lucide-react";
+import { CheckCircle2, RefreshCw, Sparkles, Upload, Wallet, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { TransferProofUpload } from "./TransferProofUpload";
 import { MobileActionBar } from "@/components/layout/MobileActionBar";
+import { TrackedOrderPaySheet } from "@/features/orders/components/tracking/TrackedOrderPaySheet";
+
+import type { TrackedOrderBankAccount } from "@/features/orders/interfaces/trackedOrderPayment";
 
 type TrackingOrderFooterProps = {
   total: number;
@@ -14,6 +17,10 @@ type TrackingOrderFooterProps = {
   paymentSettled?: boolean;
   canReview?: boolean;
   reviewTargetId?: string | null;
+  /** Ready and unpaid: the customer can say how they pay, like at a table. */
+  canPay?: boolean;
+  paymentDeclared?: boolean;
+  bankAccount?: TrackedOrderBankAccount | null;
 };
 
 export function TrackingOrderFooter({
@@ -24,7 +31,11 @@ export function TrackingOrderFooter({
   paymentSettled = false,
   canReview = false,
   reviewTargetId = null,
+  canPay = false,
+  paymentDeclared = false,
+  bankAccount = null,
 }: TrackingOrderFooterProps) {
+  const [payOpen, setPayOpen] = useState(false);
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [updated, setUpdated] = useState(false);
@@ -102,6 +113,15 @@ export function TrackingOrderFooter({
         ? "Reemplazar comprobante"
         : "Subir comprobante"}
     </button>
+  ) : canPay ? (
+    <button
+      type="button"
+      onClick={() => setPayOpen(true)}
+      className="mt-3 flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 text-base font-bold text-white transition-colors hover:bg-blue-700 active:bg-blue-800"
+    >
+      <Wallet className="h-5 w-5" aria-hidden />
+      Pagar ${total.toFixed(2)}
+    </button>
   ) : (
     <button
       type="button"
@@ -114,6 +134,8 @@ export function TrackingOrderFooter({
         ? "Actualizando el pedido…"
         : proofIsUnderReview
           ? "Revisar validación del comprobante"
+          : paymentDeclared
+          ? "Revisar si ya confirmaron mi pago"
           : "Actualizar estado del pedido"}
     </button>
   );
@@ -130,6 +152,17 @@ export function TrackingOrderFooter({
         </div>
         {button}
     </MobileActionBar>
+    <TrackedOrderPaySheet
+      open={payOpen}
+      token={token}
+      total={total}
+      bankAccount={bankAccount}
+      onClose={() => setPayOpen(false)}
+      onDeclared={() => {
+        setPayOpen(false);
+        router.refresh();
+      }}
+    />
     {proofOpen ? (
       <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="proof-sheet-title">
         <button type="button" className="absolute inset-0 cursor-default" onClick={() => setProofOpen(false)} aria-label="Cerrar" />

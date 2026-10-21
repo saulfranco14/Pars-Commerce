@@ -60,6 +60,7 @@ export async function handleMerchantSingleCheckout(
           const product = mapCartItemProduct(item);
           return { id: product.id, title: product.name, quantity: item.quantity, unit_price: Number(item.price_snapshot), currency_id: "MXN" as const };
         }),
+        ...(ctx.planItems ?? []),
         ...(deliveryFee > 0 ? [{ id: "delivery-fee", title: "Entrega a domicilio", quantity: 1, unit_price: deliveryFee, currency_id: "MXN" as const }] : []),
       ],
       backUrls: backUrls ?? {

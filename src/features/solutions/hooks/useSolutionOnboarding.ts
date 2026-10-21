@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useWizardSteps } from "@/hooks/useWizardSteps";
+
 import {
   MAX_ONBOARDING_GOALS,
   ONBOARDING_STEP_COUNT,
@@ -27,27 +29,12 @@ export function useSolutionOnboarding({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  const { step, isLastStep, goForward, goBack } = useWizardSteps({ total: ONBOARDING_STEP_COUNT, onClose });
   const [goals, setGoals] = useState<string[]>(["sell"]);
   const [catalogMode, setCatalogMode] = useState<CatalogStartMode>("starter");
   const nameInputRef = useRef<HTMLInputElement | null>(null);
 
-  const isLastStep = step === ONBOARDING_STEP_COUNT - 1;
   const canContinue = step !== 0 || name.trim().length > 0;
-
-  // Lock the page behind the full-screen wizard and let Escape close it.
-  useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = previous;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [onClose]);
 
   // Auto-focus only with a mouse: on phones it would pop the keyboard over the preview.
   useEffect(() => {
@@ -64,14 +51,14 @@ export function useSolutionOnboarding({
 
   function back() {
     if (step === 0) onClose();
-    else setStep((current) => current - 1);
+    else goBack();
   }
 
   function next() {
     if (!canContinue) return;
     if (!isLastStep) {
       trackSolutionEvent("solution_onboarding_step", { solution: solution.path, step: step + 1 });
-      setStep((current) => current + 1);
+      goForward();
       return;
     }
     const intent: RegistrationIntent = {

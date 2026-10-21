@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- order_plan_charges is not in the generated Supabase types yet. */
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -93,6 +94,14 @@ export default async function ConfirmacionPage({
     .single();
 
   const formattedAddress = formatAddress(address ?? {});
+  const { data: planCharges } = await (supabase as unknown as { from: (table: string) => any })
+    .from("order_plan_charges")
+    .select("id, name_snapshot, subscription:subscriptions(public_token)")
+    .eq("order_id", order.id);
+  const planLinks = ((planCharges ?? []) as any[]).flatMap((charge) => {
+    const subscription = Array.isArray(charge.subscription) ? charge.subscription[0] : charge.subscription;
+    return subscription?.public_token ? [{ id: charge.id as string, name: charge.name_snapshot as string, href: `/plan/${subscription.public_token}` }] : [];
+  });
   const { data: lastAttempt } = await supabase
     .from("order_payment_attempts")
     .select("status")
@@ -268,6 +277,7 @@ export default async function ConfirmacionPage({
           formattedAddress={formattedAddress}
           phone={address?.phone}
           scheduledFor={order.scheduled_for}
+          planLinks={planLinks}
         />
       </>
     );

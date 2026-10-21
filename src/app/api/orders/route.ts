@@ -62,7 +62,8 @@ export async function GET(request: Request) {
         payment_method, payment_link, mp_preference_id,
         assigned_user:profiles!orders_assigned_to_fkey(id, display_name, email),
         pickup_completed_user:profiles!orders_pickup_completed_by_fkey(id, display_name, email),
-        items:order_items(id, quantity, unit_price, subtotal, is_wholesale, wholesale_savings, product:products(id, name, type, image_url)),
+        items:order_items(id, quantity, unit_price, subtotal, is_wholesale, wholesale_savings, list_unit_price, offer_group_id, line_kind, product:products(id, name, type, image_url), promotion:promotions(id, name, type)),
+        plan_charges:order_plan_charges(id, name_snapshot, amount, period_number),
         payments(id, provider, status, amount, tip_amount, metadata, created_at),
         payment_schedules:order_payment_schedules(id, installment_number, due_date, amount_due, amount_paid, status, paid_at),
         loan:loans!loans_order_id_fkey(id, status, amount, amount_pending, concept)

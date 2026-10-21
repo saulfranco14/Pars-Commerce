@@ -6,6 +6,7 @@ import { sha256 } from "@/features/payment-providers/merchantTokenCipher";
 import { asPaymentProviderAdmin, getConnectedMercadoPagoConnectionByMerchantAccount } from "@/features/payment-providers/connectionService";
 import { getMercadoPagoPayment } from "@/features/payment-providers/mercadoPagoProvider";
 import { verifyWebhookSignature } from "@/lib/mercadopagoWebhookVerify";
+import { clearCartPlans } from "@/features/checkout/services/planCheckoutService";
 
 export const runtime = "nodejs";
 
@@ -151,7 +152,10 @@ export async function POST(request: Request) {
         updated_at: now,
       }).eq("id", order.id).in("status", ["pending_payment", "completed"]);
       const publicCartId = (order.work_metadata as Record<string, unknown> | null)?.public_cart_id;
-      if (typeof publicCartId === "string") await admin.from("public_cart_items").delete().eq("cart_id", publicCartId);
+      if (typeof publicCartId === "string") {
+        await admin.from("public_cart_items").delete().eq("cart_id", publicCartId);
+        await clearCartPlans(admin, publicCartId);
+      }
 
       const invoiceFee = Number((payment.metadata as Record<string, unknown> | null)?.invoice_fee_amount ?? 0);
       if (invoiceFee > 0) {

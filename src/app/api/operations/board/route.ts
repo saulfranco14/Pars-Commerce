@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStationBoard } from "@/features/operaciones/services/operationsBoardService";
 import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
+import { ensureDuePeriods } from "@/features/suscripciones/services/planSubscriptionService";
 
 // GET /api/operations/board?tenant_id=&station=&view=active|done — one work station's columns.
 export async function GET(request: Request) {
@@ -23,12 +24,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "tenant_id y station son requeridos" }, { status: 400 });
   }
 
-  const result = await getStationBoard(createAdminClient(), {
-    userId: user.id,
-    tenantId,
-    station,
-    view: searchParams.get("view") ?? undefined,
-  });
+  const admin = createAdminClient();
+  const params = { userId: user.id, tenantId, station, view: searchParams.get("view") ?? undefined };
+  let result = await getStationBoard(admin, params);
   if (!result.ok) return serviceErrorToResponse(result.error);
+
+  // No cron yet: opening the board is one of the moments renewals get issued.
+  const issued = await ensureDuePeriods(admin, { tenantId });
+  if (issued.ok && issued.data > 0) {
+    result = await getStationBoard(admin, params);
+    if (!result.ok) return serviceErrorToResponse(result.error);
+  }
   return NextResponse.json(result.data);
 }

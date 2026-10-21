@@ -19,6 +19,7 @@ export function useCartAdd({
 }) {
   const fingerprint = useFingerprint();
   const [status, setStatus] = useState<CartAddStatus>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const resetTimer = useRef<number | null>(null);
 
   useEffect(() => () => {
@@ -28,15 +29,17 @@ export function useCartAdd({
   const trigger = async () => {
     if (!fingerprint || status === "adding") return;
     setStatus("adding");
+    setErrorMessage(null);
     try {
       await add(fingerprint);
       dispatchCartUpdated({ label: successLabel });
       setStatus("added");
-    } catch {
+    } catch (cause) {
+      setErrorMessage(cause instanceof Error ? cause.message : null);
       setStatus("error");
     }
     resetTimer.current = window.setTimeout(() => setStatus("idle"), ADDED_FEEDBACK_MS);
   };
 
-  return { status, trigger, ready: Boolean(fingerprint) };
+  return { status, trigger, ready: Boolean(fingerprint), errorMessage };
 }

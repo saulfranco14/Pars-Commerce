@@ -12,6 +12,7 @@ import { StorePurchaseSteps } from "@/features/sitio/components/home/StorePurcha
 import { StoreValueCards } from "@/features/sitio/components/home/StoreValueCards";
 import { ProductGrid } from "@/features/sitio/components/catalog/ProductGrid";
 import { PromotionCard } from "@/features/sitio/components/promotions/PromotionCard";
+import { PlanCard } from "@/features/sitio/components/plans/PlanCard";
 import { StoreSectionHeader } from "@/features/sitio/components/StoreSectionHeader";
 
 import { HOME_PRODUCTS_LIMIT, HOME_SERVICES_LIMIT } from "@/features/sitio/constants/catalog";
@@ -20,6 +21,7 @@ import { storeButtonSecondary, storeDisplayFont } from "@/features/sitio/constan
 import { buildStoreHighlights, pickShowcase, resolveHeroCopy } from "@/features/sitio/helpers/storeHome";
 import { catalogHref, whatsappHref } from "@/features/sitio/helpers/storeLinks";
 import {
+  getActivePlans,
   getActivePromotions,
   getCatalogIndex,
   getCheckoutOptions,
@@ -37,10 +39,11 @@ export default async function InicioPage({ params }: PageProps) {
   const tenant = await getStoreTenant(slug);
   if (!tenant) notFound();
 
-  const [content, catalog, promotions, products, services, checkoutOptions] = await Promise.all([
+  const [content, catalog, promotions, plans, products, services, checkoutOptions] = await Promise.all([
     getStorePageContent(tenant.id, "inicio"),
     getCatalogIndex(tenant.id),
     getActivePromotions(tenant.id),
+    getActivePlans(tenant.id),
     listCatalogItems({ tenantId: tenant.id, type: "product", sort: "newest", limit: HOME_PRODUCTS_LIMIT }),
     listCatalogItems({ tenantId: tenant.id, type: "service", sort: "featured", limit: HOME_SERVICES_LIMIT }),
     getCheckoutOptions(tenant),
@@ -104,6 +107,24 @@ export default async function InicioPage({ params }: PageProps) {
             {promotions.slice(0, 3).map((promotion) => (
               <li key={promotion.id}>
                 <PromotionCard promotion={promotion} tenantId={tenant.id} slug={slug} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {plans.length > 0 ? (
+        <section aria-labelledby="home-plans-title">
+          <StoreSectionHeader
+            id="home-plans-title"
+            title="Suscripciones"
+            subtitle="Lo de siempre, apartado para ti cada periodo."
+            action={plans.length > 3 ? { href: `/sitio/${slug}/planes`, label: "Ver todas" } : undefined}
+          />
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {plans.slice(0, 3).map((plan) => (
+              <li key={plan.id}>
+                <PlanCard plan={plan} tenantId={tenant.id} slug={slug} />
               </li>
             ))}
           </ul>

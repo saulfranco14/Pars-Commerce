@@ -11,6 +11,9 @@ import { OrderActionButtons } from "@/features/orders/components/order/OrderActi
 import { DiscountModal } from "@/features/orders/components/payment/DiscountModal";
 import { btnIconDanger, btnPrimary } from "@/components/ui/buttonClasses";
 import { resolveOrderFulfillmentMethod } from "@/features/orders/helpers/resolveOrderFulfillmentMethod";
+import { promotionUnitSavings } from "@/features/orders/helpers/orderItemPricing";
+import { OrderItemBadges } from "@/features/orders/components/order/OrderItemBadges";
+import { OrderPlanCharges } from "@/features/orders/components/order/OrderPlanCharges";
 
 function ItemThumbnail({ item }: { item: OrderItem }) {
   const product = item.product;
@@ -97,6 +100,7 @@ export function OrderItemsTable() {
       </div>
 
       <div className="flex min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-contain md:max-h-75">
+        <OrderPlanCharges charges={order.plan_charges ?? []} />
         {items.length === 0 ? (
           <div className="flex min-h-52 flex-col items-center justify-center p-6 text-center">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-border-soft text-muted">
@@ -124,11 +128,7 @@ export function OrderItemsTable() {
                         <p className="truncate text-sm font-medium text-foreground">
                         {item.product?.name ?? "—"}
                         </p>
-                        {item.is_wholesale && (
-                          <span className="inline-block rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
-                            Mayoreo
-                          </span>
-                        )}
+                        <OrderItemBadges item={item} />
                       </div>
                       {canAddRemoveItems && (
                         <button
@@ -146,6 +146,9 @@ export function OrderItemsTable() {
                     <div className="mt-1 flex items-center justify-between gap-2 text-sm">
                       <span className="text-muted-foreground">
                         {item.quantity} × ${Number(item.unit_price).toFixed(2)}
+                        {promotionUnitSavings(item) > 0 && (
+                          <span className="ml-1.5 text-xs line-through">${Number(item.list_unit_price).toFixed(2)}</span>
+                        )}
                         {Number(item.wholesale_savings ?? 0) > 0 && (
                           <span className="ml-1.5 font-medium text-emerald-700">
                             Ahorro ${Number(item.wholesale_savings).toFixed(2)}
@@ -191,11 +194,9 @@ export function OrderItemsTable() {
                         <ItemThumbnail item={item} />
                         <span className="min-w-0">
                           <span className="block truncate">{item.product?.name ?? "—"}</span>
-                          {item.is_wholesale && (
-                            <span className="mt-1 inline-block rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
-                              Mayoreo
-                            </span>
-                          )}
+                          <span className="mt-1 flex flex-wrap gap-1">
+                            <OrderItemBadges item={item} />
+                          </span>
                         </span>
                       </span>
                     </td>
@@ -218,6 +219,9 @@ export function OrderItemsTable() {
                     <td className="px-4 py-3 text-right text-muted-foreground">
                       <span>
                         ${Number(item.unit_price).toFixed(2)}
+                        {promotionUnitSavings(item) > 0 && (
+                          <span className="block text-[10px] line-through">antes ${Number(item.list_unit_price).toFixed(2)}</span>
+                        )}
                         {Number(item.wholesale_savings ?? 0) > 0 && (
                           <span className="block text-[10px] font-medium text-emerald-700">
                             ahorro ${Number(item.wholesale_savings).toFixed(2)}

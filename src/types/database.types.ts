@@ -682,6 +682,8 @@ export type Database = {
           subtotal: number
           unit_price: number
           wholesale_savings: number
+          list_unit_price: number | null
+          offer_group_id: string | null
         }
         Insert: {
           added_by_device_id?: string | null
@@ -699,6 +701,8 @@ export type Database = {
           subtotal: number
           unit_price: number
           wholesale_savings?: number
+          list_unit_price?: number | null
+          offer_group_id?: string | null
         }
         Update: {
           added_by_device_id?: string | null
@@ -716,6 +720,8 @@ export type Database = {
           subtotal?: number
           unit_price?: number
           wholesale_savings?: number
+          list_unit_price?: number | null
+          offer_group_id?: string | null
         }
         Relationships: [
           {
@@ -1688,6 +1694,12 @@ export type Database = {
           valid_from: string | null
           valid_until: string | null
           value: number
+          applies_to: string
+          archived_at: string | null
+          buy_quantity: number | null
+          pay_quantity: number | null
+          status: string
+          template_key: string | null
         }
         Insert: {
           badge_label?: string | null
@@ -1708,6 +1720,12 @@ export type Database = {
           valid_from?: string | null
           valid_until?: string | null
           value: number
+          applies_to?: string
+          archived_at?: string | null
+          buy_quantity?: number | null
+          pay_quantity?: number | null
+          status?: string
+          template_key?: string | null
         }
         Update: {
           badge_label?: string | null
@@ -1728,6 +1746,12 @@ export type Database = {
           valid_from?: string | null
           valid_until?: string | null
           value?: number
+          applies_to?: string
+          archived_at?: string | null
+          buy_quantity?: number | null
+          pay_quantity?: number | null
+          status?: string
+          template_key?: string | null
         }
         Relationships: [
           {
@@ -1790,6 +1814,10 @@ export type Database = {
           product_id: string
           promotion_id: string | null
           quantity: number
+          group_id: string | null
+          group_unit_quantity: number | null
+          list_unit_price: number | null
+          product_variant_id: string | null
         }
         Insert: {
           added_at?: string
@@ -1799,6 +1827,10 @@ export type Database = {
           product_id: string
           promotion_id?: string | null
           quantity: number
+          group_id?: string | null
+          group_unit_quantity?: number | null
+          list_unit_price?: number | null
+          product_variant_id?: string | null
         }
         Update: {
           added_at?: string
@@ -1808,6 +1840,10 @@ export type Database = {
           product_id?: string
           promotion_id?: string | null
           quantity?: number
+          group_id?: string | null
+          group_unit_quantity?: number | null
+          list_unit_price?: number | null
+          product_variant_id?: string | null
         }
         Relationships: [
           {

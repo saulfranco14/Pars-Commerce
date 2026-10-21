@@ -10,6 +10,7 @@ export async function createOrderItems(
   orderId: string,
   cartItems: CartItemRow[],
 ) {
+  if (cartItems.length === 0) return;
   const variantIds = cartItems.flatMap((item) => item.product_variant_id ? [item.product_variant_id] : []);
   const variantSnapshots = new Map<string, { id: string; sku: string | null; price: number; stock: number; selection_key: string }>();
   if (variantIds.length > 0) {
@@ -27,6 +28,8 @@ export async function createOrderItems(
       unit_price: unitPrice,
       subtotal,
       promotion_id: item.promotion_id ?? null,
+      list_unit_price: item.list_unit_price === null || item.list_unit_price === undefined ? null : Number(item.list_unit_price),
+      offer_group_id: item.group_id ?? null,
       product_variant_id: item.product_variant_id ?? null,
       variant_snapshot: item.product_variant_id ? variantSnapshots.get(item.product_variant_id) ?? null : null,
     };

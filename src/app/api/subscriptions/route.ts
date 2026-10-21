@@ -91,6 +91,8 @@ export async function GET(request: Request) {
       `
     )
     .eq("tenant_id", tenantId)
+    // Plan subscriptions have their own view (/api/plan-subscriptions).
+    .is("offer_plan_id", null)
     .order("created_at", { ascending: false });
 
   if (status?.trim()) {

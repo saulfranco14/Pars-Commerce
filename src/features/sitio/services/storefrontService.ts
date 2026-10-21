@@ -5,6 +5,8 @@ import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enrichProducts, type ProductBase } from "@/lib/enrichProducts";
 import { readBusinessHours } from "@/features/configuracion/helpers/businessHours";
+import { listPublicPlans } from "@/features/planes/services/planQueryService";
+import { COLLAGE_MAX_IMAGES, collageImages } from "@/features/promociones/helpers/promotionVisual";
 
 import {
   isPromotionActive,
@@ -123,19 +125,60 @@ export const getCatalogIndex = cache(async (tenantId: string): Promise<{
   return { counts, categories };
 });
 
+export const getActivePlans = cache(async (tenantId: string) => listPublicPlans(createAdminClient(), tenantId));
+
+export const getActivePlan = cache(async (tenantId: string, planSlug: string) => {
+  const [plan] = await listPublicPlans(createAdminClient(), tenantId, planSlug);
+  return plan ?? null;
+});
+
 export const getActivePromotions = cache(async (tenantId: string): Promise<ActivePromotion[]> => {
   const { data } = await db()
     .from("promotions")
     .select(
-      "id, name, slug, type, value, quantity, min_amount, product_ids, bundle_product_ids, badge_label, valid_from, valid_until, image_url",
+      "id, name, slug, type, value, quantity, min_amount, product_ids, bundle_product_ids, subcatalog_ids, applies_to, buy_quantity, pay_quantity, status, badge_label, valid_from, valid_until, image_url",
     )
     .eq("tenant_id", tenantId)
+    .eq("status", "active")
     .order("created_at", { ascending: false });
   const now = new Date();
-  return ((data ?? []) as ActivePromotion[])
+  const live = ((data ?? []) as ActivePromotion[])
     .filter((promotion) => isPromotionActive(promotion, now))
     .map((promotion) => ({ ...promotion, value: Number(promotion.value) }));
+  return attachPreviewImages(tenantId, live);
 });
+
+type PhotoRow = { id: string; image_url: string | null; subcatalog_id: string | null };
+
+/** Photos for promotions without their own image: their products, else their categories', else the store's. */
+async function attachPreviewImages(tenantId: string, promotions: ActivePromotion[]): Promise<ActivePromotion[]> {
+  const needing = promotions.filter((promotion) => !promotion.image_url);
+  if (needing.length === 0) return promotions;
+  const { data } = await db()
+    .from("products")
+    .select("id, image_url, subcatalog_id")
+    .eq("tenant_id", tenantId)
+    .eq("is_public", true)
+    .is("deleted_at", null)
+    .not("image_url", "is", null)
+    .order("sort_order", { ascending: true })
+    .limit(200);
+  const photos = (data ?? []) as PhotoRow[];
+  const imageById = new Map(photos.map((row) => [row.id, row.image_url]));
+  return promotions.map((promotion) => {
+    if (promotion.image_url) return promotion;
+    const own = [...(promotion.bundle_product_ids ?? []), ...(promotion.product_ids ?? [])];
+    let images = collageImages(own, (id) => imageById.get(id));
+    if (images.length === 0 && promotion.subcatalog_ids?.length) {
+      const inCategories = photos.filter((row) => row.subcatalog_id && promotion.subcatalog_ids?.includes(row.subcatalog_id));
+      images = collageImages(inCategories.map((row) => row.id), (id) => imageById.get(id));
+    }
+    if (images.length === 0 && promotion.applies_to === "all") {
+      images = collageImages(photos.slice(0, COLLAGE_MAX_IMAGES * 2).map((row) => row.id), (id) => imageById.get(id));
+    }
+    return { ...promotion, preview_images: images };
+  });
+}
 
 async function enrichCatalogRows(tenantId: string, rows: ProductBase[]): Promise<CatalogItem[]> {
   if (rows.length === 0) return [];
