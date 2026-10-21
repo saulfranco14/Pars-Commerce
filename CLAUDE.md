@@ -12,9 +12,15 @@ npm run build    # Build de producción
 npm run start    # Servir build de producción
 npm run lint     # ESLint sobre todo el repo
 npx tsc --noEmit # Type-check del proyecto (sin emitir JS)
+npm test                 # Vitest unit (*.test.ts, src/test/fakeSupabase.ts, sin red)
+npm run test:integration # Vitest integration (*.itest.ts) contra Supabase local
 ```
 
-No hay tests automatizados configurados todavía.
+Integración: Docker abierto, `npx supabase start` y, si la base local ya
+existía, `npx supabase migration up --local` (start no re-aplica migraciones
+sobre un volumen existente). Toda migración nueva que toque carrito, pedidos
+o promociones lleva su `*.itest.ts` y su script de reversa en
+`supabase/snippets/`.
 
 **Migraciones Supabase** (en `supabase/migrations/`, orden alfabético = cronológico):
 
@@ -234,6 +240,20 @@ Comparten infraestructura con el checkout en `src/features/checkout/`:
 una preferencia MP. El `back_urls` por defecto apunta a
 `/sitio/{slug}/confirmacion`; flujos como pagos QR sobrescriben con
 `ctx.backUrls` para apuntar a su propia página branded.
+
+**Carrito y promociones (reglas duras):**
+- Toda escritura a `public_cart_items` pasa por
+  `features/checkout/services/cartLineService.ts`. Un pack o un 2x1 es un
+  grupo (`group_id`): crece, baja y se quita completo; nunca se edita una
+  línea suelta de un pack.
+- Precios de promoción sólo desde `src/lib/offers/pricing.ts`
+  (`bestUnitPromotion`, `allocatePackPrice`, `nxmUnitPrice`). Packs y NxM
+  jamás cambian el precio de un producto comprado solo.
+- El checkout re-precia el carrito (`cartPricingService.repriceCart`) y
+  responde 409 si algo cambió; nunca confía en `price_snapshot`.
+- Etiqueta de una promoción: `formatOfferLabel` (`src/lib/offers/`).
+- Promociones se archivan (`status`), no se borran; lectores públicos con
+  cliente admin filtran `status = 'active'`.
 
 ### 8. Estado global
 
