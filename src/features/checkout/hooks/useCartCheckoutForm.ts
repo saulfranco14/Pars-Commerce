@@ -30,6 +30,7 @@ interface CartCheckoutFormParams {
   paymentMethod?: CheckoutPaymentMethod;
   pickupPointId?: string;
   delivery?: CheckoutDeliveryAddress;
+  onCheckoutFailed?: () => void;
 }
 
 interface CheckoutFormState {
@@ -59,6 +60,7 @@ export function useCartCheckoutForm({
   paymentMethod = "mercadopago",
   pickupPointId,
   delivery,
+  onCheckoutFailed,
 }: CartCheckoutFormParams) {
   const [form, setForm] = useState<CheckoutFormState>(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -121,6 +123,10 @@ export function useCartCheckoutForm({
           frequency_type: freqValues.frequency_type,
           msi_option: paymentMode === "installments" ? msiOption : undefined,
           scheduled_for: form.scheduled_for || null,
+          fulfillment_method: fulfillmentMethod,
+          payment_method: paymentMethod,
+          pickup_point_id: pickupPointId,
+          delivery,
         },
         fingerprint,
       );
@@ -136,6 +142,8 @@ export function useCartCheckoutForm({
         setError(
           err instanceof Error ? err.message : "Error al finalizar pedido",
         );
+        // The server may have corrected prices or removed items; show them.
+        onCheckoutFailed?.();
       }
     } finally {
       finishSubmitting();

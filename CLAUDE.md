@@ -12,9 +12,16 @@ npm run build    # Build de producción
 npm run start    # Servir build de producción
 npm run lint     # ESLint sobre todo el repo
 npx tsc --noEmit # Type-check del proyecto (sin emitir JS)
+npm test                 # Vitest unit (*.test.ts, src/test/fakeSupabase.ts, sin red)
+npm run test:integration # Vitest integration (*.itest.ts) contra Supabase local
 ```
 
-No hay tests automatizados configurados todavía.
+Integración: Docker abierto, `npx supabase start` y, si la base local ya
+existía, `npx supabase migration up --local` (start no re-aplica migraciones
+sobre un volumen existente). Toda migración nueva que toque carrito, pedidos
+o promociones lleva su `*.itest.ts` y su script de reversa en
+`supabase/snippets/`. `test:integration` corre los archivos en serie: los
+scripts de reversa toman locks de DDL que chocan con inserts en paralelo.
 
 **Migraciones Supabase** (en `supabase/migrations/`, orden alfabético = cronológico):
 
@@ -109,7 +116,7 @@ components/   hooks/   helpers/   constants/   interfaces/   services/   validat
 ```
 
 Features actuales: `auth`, `checkout`, `configuracion`, `equipo`,
-`landing`, `onboarding`, `orders`, `prestamos`, `productos`,
+`landing`, `onboarding`, `orders`, `planes`, `prestamos`, `productos`,
 `promociones`, `qr`, `servicios`, `sitio`, `sitio-web`, `suscripciones`,
 `ventas`.
 
@@ -234,6 +241,41 @@ Comparten infraestructura con el checkout en `src/features/checkout/`:
 una preferencia MP. El `back_urls` por defecto apunta a
 `/sitio/{slug}/confirmacion`; flujos como pagos QR sobrescriben con
 `ctx.backUrls` para apuntar a su propia página branded.
+
+**Carrito y promociones (reglas duras):**
+- Toda escritura a `public_cart_items` pasa por
+  `features/checkout/services/cartLineService.ts`. Un pack o un 2x1 es un
+  grupo (`group_id`): crece, baja y se quita completo; nunca se edita una
+  línea suelta de un pack.
+- Precios de promoción sólo desde `src/lib/offers/pricing.ts`
+  (`bestUnitPromotion`, `allocatePackPrice`, `nxmUnitPrice`). Packs y NxM
+  jamás cambian el precio de un producto comprado solo.
+- El checkout re-precia el carrito (`cartPricingService.repriceCart`) y
+  responde 409 si algo cambió; nunca confía en `price_snapshot`.
+- Etiqueta de una promoción: `formatOfferLabel` (`src/lib/offers/`).
+- Promociones se archivan (`status`), no se borran; lectores públicos con
+  cliente admin filtran `status = 'active'`.
+
+**Planes / suscripciones (Fase 2a, cobro manual, sin cron):**
+- Un plan (`offer_plans` + `offer_plan_items`, feature `planes`) NO es una
+  promoción ni toca `public_cart_items`: en el carrito vive en
+  `public_cart_plans` (`cartPlanService`). Todo lugar que vacía el carrito
+  también llama `clearCartPlans`.
+- Checkout con planes = un solo pago hoy (productos + primer periodo). El
+  precio del plan va en `order_plan_charges`; lo que entrega va como
+  `order_items` de $0 con `line_kind = 'plan_component'` (así el trigger de
+  inventario descuenta stock sin cambios).
+- La instancia es una fila de `subscriptions` con `offer_plan_id`; cada
+  periodo es una fila de `subscription_periods` (UNIQUE por número = ancla de
+  idempotencia). Nunca crees pedidos de renovación a mano: usa
+  `ensure_due_periods` / `create_plan_period_order`.
+- Pagar un pedido de periodo por CUALQUIER vía activa/avanza el plan vía el
+  trigger `order_plan_period_trigger` (mismo predicado de pagado que el de
+  inventario). Cancelar el pedido de un periodo sin pagar cancela el plan.
+- Sin cron: `ensureDuePeriods` corre al abrir Suscripciones, Operaciones y
+  `/plan/{token}`. Un cron futuro sólo debe llamarlo por tenant.
+- `/plan/{token}` es la credencial del cliente (token de 64 hex); nunca la
+  expongas fuera del cliente y del negocio.
 
 ### 8. Estado global
 

@@ -28,4 +28,6 @@ export const CATALOG_MODES: CatalogModeOption[] = [
 
 export const ONBOARDING_STEP_COUNT = 3;
 
+export const ONBOARDING_TITLE_ID = "solution-onboarding-title";
+
 export const MAX_ONBOARDING_GOALS = 2;

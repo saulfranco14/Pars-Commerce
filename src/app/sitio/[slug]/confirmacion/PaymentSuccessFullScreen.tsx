@@ -8,6 +8,7 @@ import {
   CheckCircle,
   MapPin,
   Phone,
+  Repeat,
   ShoppingBag,
 } from "lucide-react";
 
@@ -63,6 +64,8 @@ interface Props {
   phone?: string | null;
   /** ISO de la hora de recolección, si el cliente agendó. */
   scheduledFor?: string | null;
+  /** Private /plan links for the subscriptions bought in this order. */
+  planLinks?: Array<{ id: string; name: string; href: string }>;
 }
 
 // ─── Component ─────────────────────────────────────────────────
@@ -74,6 +77,7 @@ export function PaymentSuccessFullScreen({
   formattedAddress,
   phone,
   scheduledFor,
+  planLinks = [],
 }: Props) {
   const confettiRef = useRef<ConfettiPiece[]>(generateConfetti());
 
@@ -189,6 +193,23 @@ export function PaymentSuccessFullScreen({
               </div>
             )}
           </div>
+
+          {planLinks.length > 0 ? (
+            <div className="space-y-2 px-5 pb-5" style={{ animation: "float-up 0.4s 0.54s both" }}>
+              <p className="text-sm text-muted-foreground">Guarda el enlace de tu suscripción: ahí pagas cada periodo y puedes cancelarla.</p>
+              {planLinks.map((link) => (
+                <a
+                  key={link.id}
+                  href={link.href}
+                  className="flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-white"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  <Repeat className="h-4 w-4" aria-hidden />
+                  Ver mi suscripción: {link.name}
+                </a>
+              ))}
+            </div>
+          ) : null}
 
           {/* Divider */}
           <div className="border-t border-border" />

@@ -4,6 +4,7 @@ import { calcCartSubtotal, type CartItemRow } from "@/features/checkout/helpers/
 import { createOrderItems } from "@/features/checkout/helpers/orderItems";
 import { getFingerprint } from "@/features/checkout/helpers/checkoutRequest";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { cartHasPlans } from "@/features/checkout/services/planCheckoutService";
 
 type RequestBody = {
   tenant_id?: string;
@@ -97,6 +98,9 @@ export async function POST(request: Request) {
     .eq("fingerprint_id", fingerprint)
     .maybeSingle();
   if (!cart) return NextResponse.json({ error: "Carrito no encontrado." }, { status: 404 });
+  if (await cartHasPlans(admin, cart.id)) {
+    return NextResponse.json({ error: "Para suscribirte paga en línea desde tu carrito." }, { status: 409 });
+  }
   const { data: cartItems } = await admin
     .from("public_cart_items")
     .select("product_id, quantity, price_snapshot, promotion_id, product:products(id, name, image_url)")

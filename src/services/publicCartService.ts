@@ -93,6 +93,26 @@ export async function addPromotion(
   return data as { success: boolean; cart_id: string };
 }
 
+async function readError(res: Response): Promise<string> {
+  const data = await res.json().catch(() => ({}));
+  return typeof (data as { error?: string }).error === "string" ? (data as { error: string }).error : res.statusText;
+}
+
+export async function addPlan(tenantId: string, planId: string, fingerprintId: string): Promise<void> {
+  const res = await fetch("/api/public-cart", {
+    method: "POST",
+    headers: getHeaders(fingerprintId),
+    body: JSON.stringify({ tenant_id: tenantId, plan_id: planId }),
+  });
+  if (!res.ok) throw new Error(await readError(res));
+}
+
+export async function removePlan(cartId: string, planLineId: string, fingerprintId: string): Promise<void> {
+  const url = `/api/public-cart?cart_id=${encodeURIComponent(cartId)}&plan_line_id=${encodeURIComponent(planLineId)}`;
+  const res = await fetch(url, { method: "DELETE", headers: getHeaders(fingerprintId) });
+  if (!res.ok) throw new Error(await readError(res));
+}
+
 export async function updateItemQuantity(
   cartId: string,
   itemId: string,
@@ -229,6 +249,10 @@ export async function checkoutSubscription(
       frequency_type: payload.frequency_type,
       msi_option: mode === "partial" ? (payload.msi_option ?? 1) : undefined,
       scheduled_for: payload.scheduled_for ?? null,
+      fulfillment_method: payload.fulfillment_method,
+      payment_method: payload.payment_method,
+      pickup_point_id: payload.pickup_point_id,
+      delivery: payload.delivery,
     }),
   });
   const data = await res.json().catch(() => ({}));

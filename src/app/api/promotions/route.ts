@@ -1,411 +1,134 @@
+import { NextResponse } from "next/server";
+
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { NextResponse } from "next/server";
-import type { Database } from "@/types/database.types";
+import { requirePermission } from "@/lib/auth/requirePermission";
+import { isPromotionLive } from "@/lib/offers/pricing";
 
-type PromotionUpdate = Database["public"]["Tables"]["promotions"]["Update"];
+import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
+import {
+  archivePromotion,
+  getPromotionTenant,
+  savePromotion,
+} from "@/features/promociones/services/promotionAdminService";
 
-export async function GET(request: Request) {
+import type { PromotionWriteInput } from "@/features/promociones/interfaces/promotionAdmin";
+
+const LIST_COLUMNS =
+  "id, name, slug, type, value, min_amount, product_ids, valid_from, valid_until, image_url, description, badge_label, subcatalog_ids, quantity, bundle_product_ids, status, applies_to, buy_quantity, pay_quantity, template_key, created_at";
+
+async function currentUser() {
   const supabase = await createClient();
   const {
     data: { user },
-    error: authError,
+    error,
   } = await supabase.auth.getUser();
+  return { supabase, user: error ? null : user };
+}
 
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+async function readJson<T>(request: Request): Promise<T | null> {
+  try {
+    return (await request.json()) as T;
+  } catch {
+    return null;
   }
+}
+
+export async function GET(request: Request) {
+  const { supabase, user } = await currentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
   const tenantId = searchParams.get("tenant_id");
   const promotionId = searchParams.get("promotion_id");
   const activeOnly = searchParams.get("active_only") === "true";
+  const includeArchived = searchParams.get("include_archived") === "true";
 
   if (!tenantId && !promotionId) {
-    return NextResponse.json(
-      { error: "tenant_id or promotion_id is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "tenant_id or promotion_id is required" }, { status: 400 });
   }
 
   if (promotionId) {
     const { data: promotion, error } = await supabase
       .from("promotions")
-      .select("*")
+      .select("*, promotion_items(product_id, quantity, position)")
       .eq("id", promotionId)
       .single();
-
     if (error || !promotion) {
-      return NextResponse.json(
-        { error: error?.message ?? "Promotion not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: error?.message ?? "Promotion not found" }, { status: 404 });
     }
     return NextResponse.json(promotion);
   }
 
-  const query = supabase
+  let query = supabase
     .from("promotions")
-    .select(
-      "id, name, slug, type, value, min_amount, product_ids, valid_from, valid_until, image_url, description, badge_label, subcatalog_ids, quantity, bundle_product_ids, created_at",
-    )
+    .select(LIST_COLUMNS)
     .eq("tenant_id", tenantId as string)
     .order("created_at", { ascending: false });
+  if (!includeArchived) query = query.neq("status", "archived");
 
-  const { data: rawPromotions, error } = await query;
-  let promotions = rawPromotions;
+  const { data, error } = await query;
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  if (activeOnly && promotions) {
-    const now = new Date();
-    promotions = promotions.filter((p) => {
-      const from = p.valid_from ? new Date(p.valid_from) : null;
-      const until = p.valid_until ? new Date(p.valid_until) : null;
-      if (from && from > now) return false;
-      if (until && until < now) return false;
-      return true;
-    });
-  }
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(promotions ?? []);
+  const promotions = activeOnly ? (data ?? []).filter((promotion) => isPromotionLive(promotion)) : (data ?? []);
+  return NextResponse.json(promotions);
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user } = await currentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const body = await readJson<PromotionWriteInput & { tenant_id?: string }>(request);
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  if (!body.tenant_id) return NextResponse.json({ error: "tenant_id is required" }, { status: 400 });
 
-  let body: {
-    tenant_id?: string;
-    name?: string;
-    slug?: string;
-    type?: string;
-    value?: number;
-    min_amount?: number;
-    product_ids?: string[];
-    valid_from?: string;
-    valid_until?: string;
-    image_url?: string;
-    description?: string;
-    badge_label?: string;
-    subcatalog_ids?: string[];
-    quantity?: number;
-    bundle_product_ids?: string[];
-    items?: Array<{ product_id?: string; quantity?: number }>;
-  };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-
-  const {
-    tenant_id,
-    name,
-    slug,
-    type,
-    value,
-    min_amount,
-    product_ids,
-    valid_from,
-    valid_until,
-    image_url,
-    description,
-    badge_label,
-    subcatalog_ids,
-    quantity,
-    bundle_product_ids,
-    items,
-  } = body;
-
-  if (!tenant_id || !name || !type || value == null || value < 0) {
-    return NextResponse.json(
-      { error: "tenant_id, name, type and value (>= 0) are required" },
-      { status: 400 },
-    );
-  }
-
-  const validTypes = ["percentage", "fixed_amount", "bundle_price", "fixed_price", "event_badge"];
-  if (!validTypes.includes(type)) {
-    return NextResponse.json(
-      { error: "type must be one of: percentage, fixed_amount, bundle_price, fixed_price, event_badge" },
-      { status: 400 },
-    );
-  }
-
-  const derivedSlug = (slug?.trim() || name.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")) || null;
-  const packItems = new Map<string, number>();
-  for (const item of items ?? []) {
-    const productId = typeof item.product_id === "string" ? item.product_id : "";
-    const itemQuantity = Math.floor(Number(item.quantity));
-    if (!productId || !Number.isFinite(itemQuantity) || itemQuantity < 1 || itemQuantity > 999) {
-      return NextResponse.json({ error: "Los artículos del pack no son válidos." }, { status: 400 });
-    }
-    packItems.set(productId, (packItems.get(productId) ?? 0) + itemQuantity);
-  }
-  if (type === "bundle_price" && packItems.size === 0 && !(bundle_product_ids?.length)) {
-    return NextResponse.json({ error: "Un pack necesita al menos un producto o servicio." }, { status: 400 });
-  }
-
-  const admin = createAdminClient();
-  const { data: membership } = await admin
-    .from("tenant_memberships")
-    .select("role:tenant_roles(name, permissions)")
-    .eq("user_id", user.id)
-    .eq("tenant_id", tenant_id)
-    .single();
-
-  const rawRole = membership?.role as
-    | { name: string; permissions: string[] }
-    | { name: string; permissions: string[] }[]
-    | null
-    | undefined;
-  const role = Array.isArray(rawRole) ? rawRole[0] : rawRole;
-  const canWrite =
-    role &&
-    (role.name === "owner" ||
-      (Array.isArray(role.permissions) &&
-        role.permissions.includes("promotions.write")));
-
-  if (!canWrite) {
+  if (!(await requirePermission(user.id, body.tenant_id, "promotions.write"))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { data: promotion, error } = await admin
-    .from("promotions")
-    .insert({
-      tenant_id,
-      name: name.trim(),
-      slug: derivedSlug || undefined,
-      type,
-      value,
-      min_amount: min_amount ?? null,
-      product_ids: product_ids?.length ? product_ids : null,
-      valid_from: valid_from || null,
-      valid_until: valid_until || null,
-      image_url: image_url?.trim() || null,
-      description: description?.trim() || null,
-      badge_label: badge_label?.trim() || null,
-      subcatalog_ids: subcatalog_ids?.length ? subcatalog_ids : null,
-      quantity: quantity ?? null,
-      bundle_product_ids: packItems.size ? [...packItems.keys()] : (bundle_product_ids?.length ? bundle_product_ids : null),
-    })
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  if (packItems.size) {
-    const { error: packError } = await admin.from("promotion_items").insert(
-      [...packItems].map(([product_id, itemQuantity], position) => ({
-        promotion_id: promotion.id,
-        product_id,
-        quantity: itemQuantity,
-        position,
-      })),
-    );
-    if (packError) {
-      await admin.from("promotions").delete().eq("id", promotion.id);
-      return NextResponse.json({ error: packError.message }, { status: 500 });
-    }
-  }
-
-  return NextResponse.json(promotion);
+  const { tenant_id: tenantId, ...input } = body;
+  const result = await savePromotion(createAdminClient(), { tenantId, input });
+  if (!result.ok) return serviceErrorToResponse(result.error);
+  return NextResponse.json(result.data);
 }
 
 export async function PATCH(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user } = await currentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  let body: {
-    promotion_id?: string;
-    name?: string;
-    slug?: string | null;
-    type?: string;
-    value?: number;
-    min_amount?: number;
-    product_ids?: string[] | null;
-    valid_from?: string | null;
-    valid_until?: string | null;
-    image_url?: string | null;
-    description?: string | null;
-    badge_label?: string | null;
-    subcatalog_ids?: string[] | null;
-    quantity?: number | null;
-    bundle_product_ids?: string[] | null;
-  };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-
-  const { promotion_id, ...updates } = body;
-
-  if (!promotion_id) {
-    return NextResponse.json(
-      { error: "promotion_id is required" },
-      { status: 400 },
-    );
-  }
+  const body = await readJson<PromotionWriteInput & { promotion_id?: string }>(request);
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  if (!body.promotion_id) return NextResponse.json({ error: "promotion_id is required" }, { status: 400 });
 
   const admin = createAdminClient();
-  const { data: promotion } = await admin
-    .from("promotions")
-    .select("tenant_id")
-    .eq("id", promotion_id)
-    .single();
-
-  if (!promotion) {
-    return NextResponse.json({ error: "Promotion not found" }, { status: 404 });
-  }
-
-  const { data: membership } = await admin
-    .from("tenant_memberships")
-    .select("role:tenant_roles(name, permissions)")
-    .eq("user_id", user.id)
-    .eq("tenant_id", promotion.tenant_id)
-    .single();
-
-  const rawRole = membership?.role as
-    | { name: string; permissions: string[] }
-    | { name: string; permissions: string[] }[]
-    | null
-    | undefined;
-  const role = Array.isArray(rawRole) ? rawRole[0] : rawRole;
-  const canWrite =
-    role &&
-    (role.name === "owner" ||
-      (Array.isArray(role.permissions) &&
-        role.permissions.includes("promotions.write")));
-
-  if (!canWrite) {
+  const tenantId = await getPromotionTenant(admin, body.promotion_id);
+  if (!tenantId) return NextResponse.json({ error: "Promotion not found" }, { status: 404 });
+  if (!(await requirePermission(user.id, tenantId, "promotions.write"))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const updateData: PromotionUpdate = {
-    updated_at: new Date().toISOString(),
-  };
-  if (updates.name !== undefined) updateData.name = updates.name.trim();
-  if (updates.slug !== undefined) updateData.slug = updates.slug?.trim() || null;
-  if (updates.type !== undefined) updateData.type = updates.type;
-  if (updates.value !== undefined) updateData.value = updates.value;
-  if (updates.min_amount !== undefined)
-    updateData.min_amount = updates.min_amount;
-  if (updates.product_ids !== undefined)
-    updateData.product_ids = updates.product_ids;
-  if (updates.valid_from !== undefined)
-    updateData.valid_from = updates.valid_from;
-  if (updates.valid_until !== undefined)
-    updateData.valid_until = updates.valid_until;
-  if (updates.image_url !== undefined)
-    updateData.image_url = updates.image_url?.trim() || null;
-  if (updates.description !== undefined)
-    updateData.description = updates.description?.trim() || null;
-  if (updates.badge_label !== undefined)
-    updateData.badge_label = updates.badge_label?.trim() || null;
-  if (updates.subcatalog_ids !== undefined)
-    updateData.subcatalog_ids = updates.subcatalog_ids;
-  if (updates.quantity !== undefined)
-    updateData.quantity = updates.quantity;
-  if (updates.bundle_product_ids !== undefined)
-    updateData.bundle_product_ids = updates.bundle_product_ids;
-
-  const { data: updated, error } = await admin
-    .from("promotions")
-    .update(updateData)
-    .eq("id", promotion_id)
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(updated);
+  const { promotion_id: promotionId, ...input } = body;
+  const result = await savePromotion(admin, { tenantId, promotionId, input });
+  if (!result.ok) return serviceErrorToResponse(result.error);
+  return NextResponse.json(result.data);
 }
 
+/** Archives instead of deleting so past orders keep pointing at the promotion. */
 export async function DELETE(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user } = await currentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { searchParams } = new URL(request.url);
-  const promotionId = searchParams.get("promotion_id");
-
-  if (!promotionId) {
-    return NextResponse.json(
-      { error: "promotion_id is required" },
-      { status: 400 },
-    );
-  }
+  const promotionId = new URL(request.url).searchParams.get("promotion_id");
+  if (!promotionId) return NextResponse.json({ error: "promotion_id is required" }, { status: 400 });
 
   const admin = createAdminClient();
-  const { data: promotion } = await admin
-    .from("promotions")
-    .select("tenant_id")
-    .eq("id", promotionId)
-    .single();
-
-  if (!promotion) {
-    return NextResponse.json({ error: "Promotion not found" }, { status: 404 });
-  }
-
-  const { data: membership } = await admin
-    .from("tenant_memberships")
-    .select("role:tenant_roles(name, permissions)")
-    .eq("user_id", user.id)
-    .eq("tenant_id", promotion.tenant_id)
-    .single();
-
-  const rawRole = membership?.role as
-    | { name: string; permissions: string[] }
-    | { name: string; permissions: string[] }[]
-    | null
-    | undefined;
-  const role = Array.isArray(rawRole) ? rawRole[0] : rawRole;
-  const canWrite =
-    role &&
-    (role.name === "owner" ||
-      (Array.isArray(role.permissions) &&
-        role.permissions.includes("promotions.write")));
-
-  if (!canWrite) {
+  const tenantId = await getPromotionTenant(admin, promotionId);
+  if (!tenantId) return NextResponse.json({ error: "Promotion not found" }, { status: 404 });
+  if (!(await requirePermission(user.id, tenantId, "promotions.write"))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { error } = await admin
-    .from("promotions")
-    .delete()
-    .eq("id", promotionId);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
+  const result = await archivePromotion(admin, { tenantId, promotionId });
+  if (!result.ok) return serviceErrorToResponse(result.error);
   return NextResponse.json({ success: true });
 }

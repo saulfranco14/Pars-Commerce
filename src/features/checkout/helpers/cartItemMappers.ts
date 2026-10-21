@@ -4,6 +4,8 @@ export type CartItemRow = {
   price_snapshot: number;
   promotion_id?: string | null;
   product_variant_id?: string | null;
+  list_unit_price?: number | string | null;
+  group_id?: string | null;
   product:
     | {
         id: string;

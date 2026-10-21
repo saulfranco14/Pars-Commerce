@@ -7,6 +7,12 @@ export interface OrderItem {
   subtotal: number;
   is_wholesale?: boolean;
   wholesale_savings?: number;
+  list_unit_price?: number | null;
+  /** Lines sharing it were sold together as one pack or NxM. */
+  offer_group_id?: string | null;
+  promotion?: { id: string; name: string; type: string } | null;
+  /** `plan_component` = delivered by a subscription, priced in OrderPlanCharge. */
+  line_kind?: string | null;
   product: {
     id: string;
     name: string;
@@ -94,6 +100,13 @@ export interface OrderTransferProof {
   signed_url?: string | null;
 }
 
+export interface OrderPlanCharge {
+  id: string;
+  name_snapshot: string;
+  amount: number;
+  period_number: number;
+}
+
 export interface OrderDetail {
   id: string;
   /** Los 8 del id en mayúsculas. Es el número que el cliente canta al pagar. */
@@ -151,6 +164,7 @@ export interface OrderDetail {
   payment_link?: string | null;
   mp_preference_id?: string | null;
   items: OrderItem[];
+  plan_charges?: OrderPlanCharge[];
   payments?: OrderPayment[];
   payment_schedules?: OrderPaymentSchedule[];
   loan?: OrderLoanSummary | null;

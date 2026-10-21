@@ -2,12 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Check, Clock, Loader2, Plus, RotateCcw, Tag } from "lucide-react";
+import { Check, Clock, Loader2, Plus, RotateCcw } from "lucide-react";
 
 import { useCartAdd } from "@/features/sitio/hooks/useCartAdd";
+import { PromotionCollage } from "@/features/promociones/components/PromotionCollage";
 
 import { addPromotion } from "@/services/publicCartService";
 import { storeFocusRing } from "@/features/sitio/constants/storeClasses";
+import { promotionCollageLabel } from "@/features/promociones/helpers/promotionVisual";
 import {
   formatPromotionDeadline,
   formatPromotionValue,
@@ -41,9 +43,7 @@ export function PromotionCard({ promotion, tenantId, slug }: PromotionCardProps)
             className="object-cover motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-[1.03]"
           />
         ) : (
-          <span className="flex h-full items-center justify-center">
-            <Tag className="h-10 w-10 text-(--store-ink-2) opacity-40" aria-hidden />
-          </span>
+          <PromotionCollage {...promotionCollageLabel(promotion)} images={promotion.preview_images ?? []} />
         )}
       </div>
       <div className="flex flex-1 flex-col p-4 sm:p-5">

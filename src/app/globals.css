@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* The theme is the app's choice (html.dark from useThemeStore), not the OS's:
+   without this, dark: utilities followed prefers-color-scheme and mixed dark
+   pieces into the light theme on devices set to dark mode. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --safe-area-inset-top: env(safe-area-inset-top, 0);
   --safe-area-inset-right: env(safe-area-inset-right, 0);

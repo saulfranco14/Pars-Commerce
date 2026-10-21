@@ -10,6 +10,8 @@ export interface CheckoutContext {
   tenantSlug: string;
   recurringConfig: RecurringPurchasesConfig;
   cartItems: CartItemRow[];
+  /** First period of each plan in the cart, charged as its own line. */
+  planItems?: Array<{ id: string; title: string; quantity: number; unit_price: number; currency_id: "MXN" }>;
   /** Fixed delivery charge validated against the tenant configuration. */
   deliveryFee: number;
   subtotal: number;

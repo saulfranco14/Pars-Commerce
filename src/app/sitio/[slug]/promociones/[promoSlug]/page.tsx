@@ -2,28 +2,20 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MessageCircle, Tag, Package, FolderOpen } from "lucide-react";
+import { ArrowLeft, MessageCircle, Package, FolderOpen } from "lucide-react";
 import PromotionDetailActions from "./PromotionDetailActions";
 import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
+import { formatOfferLabel } from "@/lib/offers/formatOfferLabel";
+import { whatsappHref } from "@/features/sitio/helpers/storeLinks";
+import { PromotionCollage } from "@/features/promociones/components/PromotionCollage";
+import { collageImages, promotionCollageLabel } from "@/features/promociones/helpers/promotionVisual";
 
 interface PageProps {
   params: Promise<{ slug: string; promoSlug: string }>;
 }
 
 function buildWhatsAppUrl(phone: string, promoName: string, baseUrl: string): string {
-  const text = encodeURIComponent(`Hola, me interesa la promoción: ${promoName}\n${baseUrl}`);
-  const cleanPhone = phone.replace(/\D/g, "");
-  return `https://wa.me/${cleanPhone}?text=${text}`;
-}
-
-function formatPromoValue(type: string, value: number, quantity?: number | null, badgeLabel?: string | null): string {
-  const val = Number(value);
-  if (type === "percentage") return `${val}% de descuento`;
-  if (type === "fixed_amount") return `$${val.toFixed(2)} de descuento`;
-  if (type === "bundle_price") return quantity ? `${quantity} por $${val.toFixed(2)}` : `$${val.toFixed(2)}`;
-  if (type === "fixed_price") return `Precio especial $${val.toFixed(2)}`;
-  if (type === "event_badge") return badgeLabel || "Promoción";
-  return `$${val.toFixed(2)}`;
+  return whatsappHref(phone, `Hola, me interesa la promoción: ${promoName}\n${baseUrl}`);
 }
 
 export default async function PromocionDetallePage({ params }: PageProps) {
@@ -43,8 +35,9 @@ export default async function PromocionDetallePage({ params }: PageProps) {
 
   const { data: bySlug } = await supabase
     .from("promotions")
-    .select("id, name, slug, type, value, quantity, min_amount, valid_from, valid_until, image_url, description, badge_label, product_ids, subcatalog_ids, bundle_product_ids")
+    .select("id, name, slug, type, value, quantity, min_amount, valid_from, valid_until, image_url, description, badge_label, product_ids, subcatalog_ids, bundle_product_ids, buy_quantity, pay_quantity")
     .eq("tenant_id", tenant.id)
+    .eq("status", "active")
     .eq("slug", promoSlug)
     .maybeSingle();
 
@@ -52,8 +45,9 @@ export default async function PromocionDetallePage({ params }: PageProps) {
   if (!promotion) {
     const { data: byId } = await supabase
       .from("promotions")
-      .select("id, name, slug, type, value, quantity, min_amount, valid_from, valid_until, image_url, description, badge_label, product_ids, subcatalog_ids, bundle_product_ids")
+      .select("id, name, slug, type, value, quantity, min_amount, valid_from, valid_until, image_url, description, badge_label, product_ids, subcatalog_ids, bundle_product_ids, buy_quantity, pay_quantity")
       .eq("tenant_id", tenant.id)
+      .eq("status", "active")
       .eq("id", promoSlug)
       .maybeSingle();
     promotion = byId ?? null;
@@ -144,9 +138,10 @@ export default async function PromocionDetallePage({ params }: PageProps) {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <Tag className="h-24 w-24 text-gray-300" />
-                </div>
+                <PromotionCollage
+                  {...promotionCollageLabel(promotion)}
+                  images={collageImages(uniqueProductIds, (id) => productsMap[id]?.image_url)}
+                />
               )}
               {promotion.badge_label && (
                 <div
@@ -156,12 +151,14 @@ export default async function PromocionDetallePage({ params }: PageProps) {
                   {promotion.badge_label}
                 </div>
               )}
-              <div
-                className="absolute right-4 top-4 rounded-lg px-4 py-2 text-lg font-bold text-white shadow-md"
-                style={{ backgroundColor: accentColor }}
-              >
-                {formatPromoValue(promotion.type, Number(promotion.value), promotion.quantity, promotion.badge_label)}
-              </div>
+              {mainImage ? (
+                <div
+                  className="absolute right-4 top-4 rounded-lg px-4 py-2 text-lg font-bold text-white shadow-md"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  {formatOfferLabel(promotion)}
+                </div>
+              ) : null}
             </div>
 
             {galleryImages.length > 0 && (

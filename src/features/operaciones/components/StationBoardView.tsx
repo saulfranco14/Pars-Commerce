@@ -32,6 +32,7 @@ import { CollectedSummaryCard } from "@/features/operaciones/components/Collecte
 import { BoardRefreshButton } from "@/features/operaciones/components/BoardRefreshButton";
 import { BoardOrderCard } from "@/features/operaciones/components/BoardOrderCard";
 import { StationCardActions } from "@/features/operaciones/components/StationCardActions";
+import { ChargeSheet } from "@/features/orders/components/payment/ChargeSheet";
 import { StationTabs } from "@/features/operaciones/components/StationTabs";
 
 import { formatCurrency } from "@/features/qr/helpers/format";
@@ -68,6 +69,7 @@ export function StationBoardView({
   const [delivering, setDelivering] = useState<BoardOrder | null>(null);
   const [rejecting, setRejecting] = useState<BoardOrder | null>(null);
   const [rejectingPayment, setRejectingPayment] = useState<string | null>(null);
+  const [charging, setCharging] = useState<BoardOrder | null>(null);
   const [mobileColumn, setMobileColumn] = useState<string | null>(null);
 
   const isHistory = view === "done";
@@ -78,9 +80,10 @@ export function StationBoardView({
     columns.find((c) => c.orders.length > 0)?.key ??
     columns[0]?.key;
   const stationHref = `/dashboard/${tenantSlug}/operacion/${station.key}`;
+  // ?volver= brings "Volver" in the order page back to this station, not to the orders list.
   const detailHref = (order: BoardOrder) =>
     abilities?.openDetail
-      ? `/dashboard/${tenantSlug}/ordenes/${order.id}`
+      ? `/dashboard/${tenantSlug}/ordenes/${order.id}?volver=${encodeURIComponent(stationHref)}`
       : undefined;
   const itemsMove =
     (station.key === "preparacion" || station.key === "mis-pedidos") &&
@@ -102,7 +105,7 @@ export function StationBoardView({
         onAdvanceItem={(itemId, status) =>
           board.advanceItem(order.id, itemId, status)
         }
-        detailHref={station.key === "caja" ? undefined : detailHref(order)}
+        detailHref={detailHref(order)}
       >
         {!isHistory && (
           <StationCardActions
@@ -110,8 +113,8 @@ export function StationBoardView({
             order={order}
             board={board}
             team={board.board?.team ?? []}
-            detailHref={detailHref(order)}
             onDeliver={setDelivering}
+            onCharge={setCharging}
             onReject={setRejecting}
             onRejectPayment={setRejectingPayment}
           />
@@ -304,6 +307,24 @@ export function StationBoardView({
         </>
       )}
 
+      <ChargeSheet
+        target={
+          charging
+            ? {
+                id: charging.id,
+                number: charging.number,
+                due: Number(charging.balanceDue ?? charging.total ?? 0),
+                originLabel: charging.originLabel,
+                customerName: charging.customerName,
+                paymentMethod: charging.paymentMethod,
+                assignedTo: charging.assignedTo,
+              }
+            : null
+        }
+        team={board.board?.team ?? []}
+        onClose={() => setCharging(null)}
+        onCharged={() => void board.refresh()}
+      />
       <DeliveryCompletionSheet
         open={Boolean(delivering)}
         busy={Boolean(delivering) && board.isBusy(delivering?.id ?? "")}

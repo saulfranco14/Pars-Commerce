@@ -209,6 +209,11 @@ propinas, mesas, préstamos):
 | `filterActivePromotions`, `buildWhatsAppUrl` y la consulta del tenant por `site_slug` repetidos en cada página de `/sitio` | Ahora `features/sitio/helpers/promotions.ts`, `helpers/storeLinks.ts` y `services/storefrontService.ts` (`getStoreTenant` con `cache()`) |
 | Texto del comerciante (`welcome_text`, `body`, `welcome_message`, `map_embed`) renderizado con `dangerouslySetInnerHTML` en el sitio público | Ahora se renderiza como texto (`whitespace-pre-line`); el mapa pasa por `extractMapEmbedSrc` (solo iframes de Google Maps) |
 | `<button>` "Agregar" anidado dentro del `<Link>` de `PromotionCard` | Ahora el título es un stretched link y el botón es hermano (`relative z-10`) |
+| Precio de pack (`bundle_price`) aplicado a un producto comprado solo; dos fórmulas distintas para repartir el pack | Ahora `bestUnitPromotion` ignora packs/NxM y `allocatePackPrice` es la única fórmula (`src/lib/offers/pricing.ts`) |
+| Pack agregado como líneas sueltas que el cliente podía editar o borrar una por una conservando el precio de pack | Ahora el pack es un grupo (`public_cart_items.group_id`) manejado sólo por `cartLineService` |
+| Checkout cobrando `price_snapshot` aunque la promo ya venció o se pausó | Ahora `repriceCart` corre antes de crear la orden y responde 409 si cambió algo |
+| `/api/promotions` autorizando con `role.name === "owner"` y borrando en duro | Ahora `requirePermission("promotions.write")`, `save_promotion` transaccional y archivado |
+| Webhook de suscripción creando la orden antes del registro idempotente y ya "pagada" (duplicados, sin stock, periodo 1 doble) | Ahora reclama el cobro primero, liquida la orden original en el cobro 1 y crea renovaciones pendientes→pagadas |
 
 Al detectar cualquiera de estos patrones en código nuevo, refactoriza
 ANTES de entregar.

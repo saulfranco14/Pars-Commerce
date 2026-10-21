@@ -1,8 +1,10 @@
 import { useState } from "react";
 
 import { dispatchCartUpdated } from "@/lib/cartEvents";
+import { applyLineQuantity, cartTotals, removeCartLine } from "@/features/checkout/helpers/cartLineGroups";
 import {
   removeItem,
+  removePlan,
   updateItemQuantity,
   type PublicCartItem,
 } from "@/services/publicCartService";
@@ -25,7 +27,6 @@ type MutateFn = (
 interface UseCartActionsParams {
   cart: CartLike | null;
   items: PublicCartItem[];
-  subtotal: number;
   fingerprint: string | null;
   mutate: MutateFn;
 }
@@ -33,33 +34,26 @@ interface UseCartActionsParams {
 export function useCartActions({
   cart,
   items,
-  subtotal,
   fingerprint,
   mutate,
 }: UseCartActionsParams) {
   const [error, setError] = useState<string | null>(null);
 
+  function showOptimistic(next: PublicCartItem[]) {
+    if (!cart) return;
+    const totals = cartTotals(next);
+    mutate({ cart, items: next, subtotal: totals.subtotal, items_count: totals.itemsCount }, { revalidate: false });
+  }
+
+  // A pack line moves its whole group; the server applies the same rule.
   const handleQuantityChange = async (itemId: string, quantity: number) => {
     if (!cart || !fingerprint || quantity < 1) return;
-    const updatedItems = items.map((it) =>
-      it.id === itemId ? { ...it, quantity } : it,
-    );
-    const item = updatedItems.find((it) => it.id === itemId);
-    const price = item ? Number(item.price_snapshot) : 0;
-    const oldQty = items.find((i) => i.id === itemId)?.quantity ?? 0;
-    const newSubtotal = subtotal + (quantity - oldQty) * price;
-    mutate(
-      {
-        cart,
-        items: updatedItems,
-        subtotal: newSubtotal,
-        items_count: updatedItems.reduce((s, i) => s + i.quantity, 0),
-      },
-      { revalidate: false },
-    );
+    const grouped = Boolean(items.find((it) => it.id === itemId)?.group_id);
+    showOptimistic(applyLineQuantity(items, itemId, quantity));
     setError(null);
     try {
       await updateItemQuantity(cart.id, itemId, quantity, fingerprint);
+      if (grouped) mutate();
       dispatchCartUpdated();
     } catch (e) {
       mutate();
@@ -69,20 +63,7 @@ export function useCartActions({
 
   const handleRemove = async (itemId: string) => {
     if (!cart || !fingerprint) return;
-    const filtered = items.filter((it) => it.id !== itemId);
-    const removed = items.find((it) => it.id === itemId);
-    const newSubtotal = removed
-      ? subtotal - Number(removed.price_snapshot) * removed.quantity
-      : subtotal;
-    mutate(
-      {
-        cart,
-        items: filtered,
-        subtotal: newSubtotal,
-        items_count: filtered.reduce((s, i) => s + i.quantity, 0),
-      },
-      { revalidate: false },
-    );
+    showOptimistic(removeCartLine(items, itemId));
     setError(null);
     try {
       await removeItem(cart.id, itemId, fingerprint);
@@ -93,5 +74,17 @@ export function useCartActions({
     }
   };
 
-  return { error, setError, handleQuantityChange, handleRemove };
+  // Plans are few and priced server-side, so this waits for the server instead of guessing.
+  const handleRemovePlan = async (planLineId: string) => {
+    if (!cart || !fingerprint) return;
+    setError(null);
+    try {
+      await removePlan(cart.id, planLineId, fingerprint);
+      mutate();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al quitar la suscripción");
+    }
+  };
+
+  return { error, setError, handleQuantityChange, handleRemove, handleRemovePlan };
 }

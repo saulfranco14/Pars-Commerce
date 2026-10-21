@@ -12,7 +12,7 @@
     "verify": "npm run lint && npm run typecheck && npm run build:next",
     "test": "vitest run --project unit",
     "test:watch": "vitest --project unit",
-    "test:integration": "vitest run --project integration",
+    "test:integration": "vitest run --project integration --no-file-parallelism",
     "test:all": "vitest run"
   },
   "dependencies": {

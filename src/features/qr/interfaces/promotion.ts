@@ -1,6 +1,6 @@
 /**
  * Minimal promotion shape surfaced to the customer QR flow. A trimmed view of
- * the full `Promotion` (src/services/promotionsService.ts) — only what the
+ * the full admin promotion row — only what the
  * PromoBanner renders, so the public payload stays lean.
  */
 export interface QrPromotion {

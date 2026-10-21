@@ -57,6 +57,7 @@ export interface StationCardActionsProps {
   onDeliver: (order: BoardOrder) => void;
   onReject: (order: BoardOrder) => void;
   onRejectPayment: (paymentId: string) => void;
+  onCharge: (order: BoardOrder) => void;
 }
 
 export interface PendingPaymentRowsProps {

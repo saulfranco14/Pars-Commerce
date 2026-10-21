@@ -12,6 +12,7 @@ import { useCartContext } from "@/features/sitio/components/cart/CartProvider";
 
 import { CartEmptyState } from "@/features/checkout/components/cart/CartEmptyState";
 import { CartItemsList } from "@/features/checkout/components/cart/CartItemsList";
+import { CartPlansSection } from "@/features/checkout/components/cart/CartPlansSection";
 import { CartSummaryHeader } from "@/features/checkout/components/cart/CartSummaryHeader";
 import { CartTrustBadges } from "@/features/checkout/components/cart/CartTrustBadges";
 import { CheckoutBody } from "@/features/checkout/components/cart/CheckoutBody";
@@ -21,6 +22,7 @@ import { DesktopCheckoutAside } from "@/features/checkout/components/cart/Deskto
 import { MobileCheckoutBar } from "@/features/checkout/components/cart/MobileCheckoutBar";
 import { MobileCheckoutSheet } from "@/features/checkout/components/cart/MobileCheckoutSheet";
 import { getSubmitLabels } from "@/features/checkout/helpers/checkoutSubmitLabels";
+import { fitSelectionToOptions, restrictCheckoutForPlans } from "@/features/checkout/helpers/planCheckout";
 import { useCartActions } from "@/features/checkout/hooks/useCartActions";
 import { useCartCheckoutForm } from "@/features/checkout/hooks/useCartCheckoutForm";
 import { useCheckoutSheet } from "@/features/checkout/hooks/useCheckoutSheet";
@@ -55,23 +57,29 @@ export default function CarritoContent({
   businessHours,
   acceptingOrders,
   whatsappOrdersEnabled,
-  checkoutOptions,
+  checkoutOptions: storeCheckoutOptions,
 }: CarritoContentProps) {
   const fingerprint = useFingerprint();
-  const { cart, items, subtotal, isLoading, mutate } = useCartContext();
+  const { cart, items, subtotal: itemsSubtotal, plans, plansTotal, isLoading, mutate } = useCartContext();
+  const hasPlans = plans.length > 0;
+  // Today's charge: products plus each plan's first period.
+  const subtotal = itemsSubtotal + plansTotal;
+  const checkoutOptions = useMemo(() => restrictCheckoutForPlans(storeCheckoutOptions, plans), [storeCheckoutOptions, plans]);
 
+  // A cart with a plan pays once; installments and the legacy recurring mode don't apply.
   const hasRecurringOptions =
-    recurringConfig.installments_enabled || recurringConfig.recurring_enabled;
+    !hasPlans && (recurringConfig.installments_enabled || recurringConfig.recurring_enabled);
   const productsHref = `/sitio/${sitioSlug}/productos`;
 
   const totalUnits = useMemo(
-    () => items.reduce((sum, item) => sum + item.quantity, 0),
-    [items],
+    () => items.reduce((sum, item) => sum + item.quantity, 0) + plans.length,
+    [items, plans.length],
   );
-  const [checkoutDraft, setCheckoutDraft] =
+  const [rawCheckoutDraft, setCheckoutDraft] =
     useState<CheckoutFulfillmentSelection>(() =>
-      createInitialCheckoutSelection(checkoutOptions),
+      createInitialCheckoutSelection(storeCheckoutOptions),
     );
+  const checkoutDraft = fitSelectionToOptions(rawCheckoutDraft, checkoutOptions);
   const [checkoutSelection, setCheckoutSelection] =
     useState<CheckoutFulfillmentSelection | null>(null);
   const activeFulfillment =
@@ -114,7 +122,6 @@ export default function CarritoContent({
   const cartActions = useCartActions({
     cart,
     items,
-    subtotal,
     fingerprint,
     mutate,
   });
@@ -131,6 +138,7 @@ export default function CarritoContent({
     paymentMethod: checkoutSelection?.payment,
     pickupPointId: checkoutSelection?.pickupPointId,
     delivery: checkoutSelection?.delivery,
+    onCheckoutFailed: () => void mutate(),
   });
 
   const combinedError = checkoutForm.error ?? cartActions.error;
@@ -218,7 +226,7 @@ export default function CarritoContent({
     );
   }
 
-  if (!cart || items.length === 0) {
+  if (!cart || (items.length === 0 && !hasPlans)) {
     return (
       <CartEmptyState productsHref={productsHref} accentColor={accentColor} />
     );
@@ -233,7 +241,7 @@ export default function CarritoContent({
     fulfillmentMethod: checkoutSelection?.fulfillment ?? checkoutDraft.fulfillment,
     checkoutPaymentMethod: checkoutSelection?.payment ?? checkoutDraft.payment,
     onCheckoutSelectionChange: () => setCheckoutSelection(null),
-    whatsappOrdersEnabled,
+    whatsappOrdersEnabled: whatsappOrdersEnabled && !hasPlans,
     submitting: checkoutForm.submitting,
     submitLabel: checkoutPrimaryLabel,
     submitDisclaimer: checkoutPrimaryDisclaimer,
@@ -276,18 +284,21 @@ export default function CarritoContent({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)] xl:items-start">
         <div className="space-y-4">
           <CartSummaryHeader
-            itemsCount={items.length}
+            itemsCount={items.length + plans.length}
             totalUnits={totalUnits}
             subtotal={subtotal}
             productsHref={productsHref}
             accentColor={accentColor}
           />
-          <CartItemsList
-            items={items}
-            accentColor={accentColor}
-            onQuantityChange={cartActions.handleQuantityChange}
-            onRemove={cartActions.handleRemove}
-          />
+          <CartPlansSection plans={plans} accentColor={accentColor} onRemove={(id) => void cartActions.handleRemovePlan(id)} />
+          {items.length > 0 ? (
+            <CartItemsList
+              items={items}
+              accentColor={accentColor}
+              onQuantityChange={cartActions.handleQuantityChange}
+              onRemove={cartActions.handleRemove}
+            />
+          ) : null}
           <CartTrustBadges />
         </div>
 

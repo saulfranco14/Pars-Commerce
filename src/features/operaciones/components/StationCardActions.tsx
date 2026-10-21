@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Bike, Check, CheckCheck, Loader2, Play, UserPlus, Wallet, X } from "lucide-react";
 
 import {
@@ -83,10 +82,10 @@ export function StationCardActions({
   order,
   board,
   team,
-  detailHref,
   onDeliver,
   onReject,
   onRejectPayment,
+  onCharge,
 }: StationCardActionsProps) {
   const can = board.board?.can;
   const busy = board.isBusy(order.id);
@@ -146,11 +145,11 @@ export function StationCardActions({
           />
         );
       }
-      return can.collect && detailHref ? (
-        <Link href={detailHref} className={`${btnWorkPrimary} w-full`}>
-          <Wallet className="h-4 w-4" aria-hidden />
+      return can.collect && !order.paid ? (
+        <button type="button" disabled={busy} onClick={() => onCharge(order)} className={`${btnWorkPrimary} w-full`}>
+          {busy ? <Busy /> : <Wallet className="h-4 w-4" aria-hidden />}
           Cobrar
-        </Link>
+        </button>
       ) : null;
   }
 }

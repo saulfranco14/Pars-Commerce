@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { Minus, Package, Plus, Trash2 } from "lucide-react";
+import { Package } from "lucide-react";
+
+import { CartQuantityControls } from "@/features/checkout/components/cart/CartQuantityControls";
 
 import type { PublicCartItem } from "@/services/publicCartService";
 
@@ -22,6 +24,7 @@ export function CartItemRow({
   const name = product?.name ?? "Producto";
   const imageUrl = item.variant?.image_url ?? product?.image_url ?? null;
   const price = Number(item.price_snapshot);
+  const listPrice = item.list_unit_price == null ? null : Number(item.list_unit_price);
   const qty = item.quantity;
   const itemSubtotal = price * qty;
 
@@ -46,46 +49,23 @@ export function CartItemRow({
         <h3 className="font-semibold text-gray-900 line-clamp-2">{name}</h3>
         {item.variant?.selection_key ? <p className="mt-0.5 text-xs font-medium text-gray-500">{item.variant.selection_key.replaceAll(":", " ")}</p> : null}
         {item.promotion_id && (
-          <span className="mt-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-            Promoción
+          <span className="mt-1 inline-block max-w-full truncate rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+            {item.promotion?.name ?? "Promoción"}
           </span>
         )}
-        <p
-          className="mt-2 text-base font-bold tabular-nums"
-          style={{ color: accentColor }}
-        >
+        <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-base font-bold tabular-nums" style={{ color: accentColor }}>
           ${price.toFixed(2)} × {qty} = ${itemSubtotal.toFixed(2)}
+          {listPrice != null && listPrice > price ? (
+            <span className="text-xs font-medium text-gray-400 line-through">${listPrice.toFixed(2)}</span>
+          ) : null}
         </p>
-        <div className="mt-3 flex min-h-11 items-center gap-1">
-          <button
-            type="button"
-            onClick={() =>
-              onQuantityChange(item.id, Math.max(1, qty - 1))
-            }
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300/30"
-            aria-label="Reducir cantidad"
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-          <span className="min-w-8 px-2 text-center text-sm font-medium tabular-nums">
-            {qty}
-          </span>
-          <button
-            type="button"
-            onClick={() => onQuantityChange(item.id, qty + 1)}
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300/30"
-            aria-label="Aumentar cantidad"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onRemove(item.id)}
-            className="ml-auto flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/20"
-            aria-label="Eliminar"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+        <div className="mt-3">
+          <CartQuantityControls
+            value={qty}
+            onDecrement={() => onQuantityChange(item.id, Math.max(1, qty - 1))}
+            onIncrement={() => onQuantityChange(item.id, qty + 1)}
+            onRemove={() => onRemove(item.id)}
+          />
         </div>
       </div>
     </div>

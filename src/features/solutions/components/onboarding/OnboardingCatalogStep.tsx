@@ -1,9 +1,10 @@
 import { Check } from "lucide-react";
 
-import { OnboardingStepHeading } from "@/features/solutions/components/onboarding/OnboardingStepHeading";
+import { WizardStepHeading } from "@/components/wizard/WizardStepHeading";
 
 import { CATALOG_MODES } from "@/features/solutions/constants/solutionOnboarding";
-import { OPTION_CARD } from "@/features/solutions/constants/solutionStyles";
+import { OPTION_CARD } from "@/components/wizard/wizardStyles";
+import { ONBOARDING_TITLE_ID } from "@/features/solutions/constants/solutionOnboarding";
 
 import type { CatalogStartMode } from "@/features/auth/registrationIntent";
 
@@ -16,7 +17,8 @@ export function OnboardingCatalogStep({
 }) {
   return (
     <div>
-      <OnboardingStepHeading
+      <WizardStepHeading
+        titleId={ONBOARDING_TITLE_ID}
         eyebrow="Tu catálogo"
         title="¿Cómo quieres comenzar?"
         subtitle="Podrás cambiarlo todo después; esto sólo evita empezar desde cero."
