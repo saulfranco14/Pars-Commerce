@@ -13,7 +13,6 @@ import type {
   PlanPeriod,
   PlanSnapshot,
   PlanSubscriptionDetail,
-  PlanSubscriptionRow,
   PublicPlanView,
 } from "@/features/suscripciones/interfaces/planSubscription";
 
@@ -92,7 +91,7 @@ async function hydrate(db: Loose, rows: any[]): Promise<PlanSubscriptionDetail[]
 export async function listPlanSubscriptions(
   admin: SupabaseClient,
   tenantId: string,
-): Promise<ServiceResult<PlanSubscriptionRow[]>> {
+): Promise<ServiceResult<PlanSubscriptionDetail[]>> {
   const ensured = await ensureDuePeriods(admin, { tenantId });
   if (!ensured.ok) return ensured;
   const db = admin as unknown as Loose;
@@ -103,8 +102,7 @@ export async function listPlanSubscriptions(
     .not("offer_plan_id", "is", null)
     .order("created_at", { ascending: false });
   if (error) return fail("internal", error.message);
-  const details = await hydrate(db, data ?? []);
-  return { ok: true, data: details.map(({ periods: _periods, ...row }) => row) };
+  return { ok: true, data: await hydrate(db, data ?? []) };
 }
 
 export async function getPlanSubscription(
