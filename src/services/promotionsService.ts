@@ -59,18 +59,18 @@ export async function getById(promotionId: string): Promise<Promotion> {
   return data as Promotion;
 }
 
-export async function create(payload: CreatePromotionPayload): Promise<Promotion> {
+export async function create(payload: CreatePromotionPayload): Promise<{ id: string }> {
   const data = await apiFetch("/api/promotions", {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return data as Promotion;
+  return data as { id: string };
 }
 
 export async function update(
   promotionId: string,
   updates: Partial<CreatePromotionPayload>
-): Promise<Promotion> {
+): Promise<{ id: string }> {
   const data = await apiFetch("/api/promotions", {
     method: "PATCH",
     body: JSON.stringify({
@@ -78,7 +78,7 @@ export async function update(
       ...updates,
     }),
   });
-  return data as Promotion;
+  return data as { id: string };
 }
 
 export async function remove(promotionId: string): Promise<void> {

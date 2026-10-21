@@ -70,6 +70,8 @@ class FakeQuery implements PromiseLike<{ data: unknown; error: unknown }> {
   private filters: Filter[] = [];
   private pendingWrite: RecordedWrite | null = null;
   private limitN: number | null = null;
+  /** Rows created by this builder's insert, returned by `.select().single()`. */
+  private insertedRows: Row[] | null = null;
 
   constructor(
     private table: string,
@@ -132,14 +134,18 @@ class FakeQuery implements PromiseLike<{ data: unknown; error: unknown }> {
     };
     this.writes.push(this.pendingWrite);
     const arr = this.rows().slice();
+    const inserted: Row[] = [];
     for (const v of Array.isArray(values) ? values : [values]) {
       const stored = { ...v };
       if (stored.id === undefined) {
         stored.id = `${this.table}-${arr.length + 1}`;
       }
       arr.push(stored);
+      inserted.push(stored);
     }
-    this.store.set(this.table, arr);
+    this.insertedRows = inserted;
+    // A seeded table error means the write failed: keep the store untouched.
+    if (!this.seededError()) this.store.set(this.table, arr);
     return this;
   }
   update(values: Row) {
@@ -200,6 +206,7 @@ class FakeQuery implements PromiseLike<{ data: unknown; error: unknown }> {
     // Postgrest returns { data: null, error } on a failed query — mirror that
     // so tests can exercise the error path (e.g. permission denied).
     if (seeded) return { data: null, error: seeded };
+    if (this.insertedRows) return { data: this.insertedRows, error: null };
     let data = this.rows().filter((r) => matches(r, this.filters));
     if (this.limitN != null) data = data.slice(0, this.limitN);
     return { data, error: null };
