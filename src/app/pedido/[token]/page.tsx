@@ -9,6 +9,7 @@ import { ReviewOrderItem } from "./ReviewOrderItem";
 import { TrackingOrderFooter } from "./TrackingOrderFooter";
 import { describeWeek, readBusinessHours } from "@/features/configuracion/helpers/businessHours";
 import { CommerceFulfillmentTracker } from "@/features/orders/components/tracking/CommerceFulfillmentTracker";
+import { TrackingAutoRefresh } from "@/features/orders/components/tracking/TrackingAutoRefresh";
 import { resolveOrderFulfillmentMethod } from "@/features/orders/helpers/resolveOrderFulfillmentMethod";
 
 export const metadata = { robots: { index: false, follow: false } };
@@ -20,20 +21,24 @@ const labels: Record<string, { title: string; text: string; icon: typeof Clock3;
   assigned: { title: "Pedido aceptado", text: "El negocio ya aceptó tu pedido y lo preparará.", icon: CheckCircle2, className: "bg-emerald-50 text-emerald-800" },
   in_progress: { title: "En preparación", text: "Tu pedido está siendo preparado.", icon: PackageCheck, className: "bg-blue-50 text-blue-800" },
   completed: { title: "Pedido entregado", text: "Tu pedido fue marcado como entregado.", icon: CheckCircle2, className: "bg-emerald-50 text-emerald-800" },
+  payment_due: { title: "Falta tu pago", text: "Tu pedido sigue en marcha. Paga desde aquí o directo en el negocio.", icon: Clock3, className: "bg-amber-50 text-amber-800" },
+  payment_declared: { title: "Pago por confirmar", text: "Avisaste tu pago; en cuanto el negocio lo confirme lo verás aquí.", icon: Clock3, className: "bg-blue-50 text-blue-800" },
   cancelled: { title: "Pedido no disponible", text: "El negocio no puede atender este pedido por ahora.", icon: XCircle, className: "bg-red-50 text-red-800" },
 };
 
 export default async function PublicOrderRequestPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const admin = createAdminClient() as unknown as CommerceAdmin;
-  const { data: order } = await admin.from("orders").select("id, status, fulfillment_status, total, paid_total, paid_at, customer_name, rejection_reason, created_at, scheduled_for, payment_verification_status, fulfillment_method, delivery_fee, transfer_payment_method_id, tenant:tenants(name, logo_url, settings), items:order_items(id, quantity, unit_price, subtotal, variant_snapshot, line_kind, product:products(id, name, image_url, type), reviews:product_reviews(id, rating, comment, status, published_at))").eq("public_tracking_token", token).maybeSingle();
+  const { data: order } = await admin.from("orders").select("id, tenant_id, payment_method, status, fulfillment_status, total, paid_total, paid_at, customer_name, rejection_reason, created_at, scheduled_for, payment_verification_status, fulfillment_method, delivery_fee, transfer_payment_method_id, tenant:tenants(name, logo_url, settings), items:order_items(id, quantity, unit_price, subtotal, variant_snapshot, line_kind, fulfillment_status, product:products(id, name, image_url, type), reviews:product_reviews(id, rating, comment, status, published_at))").eq("public_tracking_token", token).maybeSingle();
   if (!order) notFound();
-  const [{ data: delivery }, { data: events }, { data: proofs }, { data: transfer }, { data: planCharges }] = await Promise.all([
+  const [{ data: delivery }, { data: events }, { data: proofs }, { data: transfer }, { data: planCharges }, { data: declaredPayments }, { data: bankAccount }] = await Promise.all([
     admin.from("order_delivery_details").select("address_text, reference, recipient_name, pickup_point_id, pickup_point:tenant_pickup_points(name, address_text, reference, instructions, business_hours)").eq("order_id", order.id).maybeSingle(),
     admin.from("order_delivery_events").select("id, type, note, photo_path, created_at").eq("order_id", order.id).order("created_at"),
     admin.from("order_transfer_proofs").select("id, status, rejection_reason, created_at").eq("order_id", order.id).order("created_at", { ascending: false }),
     admin.from("tenant_payment_methods").select("label, bank_name, account_holder, clabe, account_number").eq("id", order.transfer_payment_method_id ?? "00000000-0000-0000-0000-000000000000").maybeSingle(),
     admin.from("order_plan_charges").select("id, name_snapshot, amount, period_number, subscription:subscriptions(public_token)").eq("order_id", order.id),
+    admin.from("payments").select("id, metadata").eq("order_id", order.id).eq("provider", "manual").eq("status", "pending").limit(1),
+    admin.from("tenant_payment_methods").select("bank_name, account_holder, clabe, account_number").eq("tenant_id", order.tenant_id).eq("kind", "bank_transfer").eq("is_active", true).limit(1).maybeSingle(),
   ]);
   const baseState = labels[order.status] ?? labels.pending_acceptance;
   const tenant = Array.isArray(order.tenant) ? order.tenant[0] : order.tenant;
@@ -61,6 +66,11 @@ export default async function PublicOrderRequestPage({ params }: { params: Promi
     Boolean(order.paid_at) ||
     Number(order.paid_total ?? 0) >= Number(order.total) ||
     order.payment_verification_status === "approved";
+  // Accepted orders show their progress too: cash-on-pickup orders are worked before they are paid.
+  const isBeingWorked = ["assigned", "in_progress", "completed", "paid"].includes(order.status) || (order.fulfillment_status ?? "received") !== "received";
+  const showProgress = order.status !== "cancelled" && (paymentSettled || isBeingWorked);
+  const declaredPayment = (declaredPayments ?? [])[0] as { metadata?: { method?: string } } | undefined;
+  const canPay = !paymentSettled && !declaredPayment && order.status !== "cancelled" && isBeingWorked && order.payment_method !== "bank_transfer" && order.payment_method !== "mercadopago";
   const hasOutForDelivery = relevantDeliveryEvents.some((event) => event.type === "out_for_delivery");
   const hasFinishedFulfillment = relevantDeliveryEvents.some((event) =>
     fulfillmentMethod === "delivery"
@@ -76,9 +86,11 @@ export default async function PublicOrderRequestPage({ params }: { params: Promi
             ? "El negocio confirmó la entrega de tu pedido."
             : "El negocio confirmó que te entregó el pedido en el punto de recolección.",
       }
-    : order.status === "completed" && paymentSettled
+    : (order.status === "completed" || isBeingWorked) && paymentSettled
       ? labels.paid
-      : baseState;
+      : isBeingWorked && !paymentSettled && order.payment_method !== "bank_transfer" && order.payment_method !== "mercadopago"
+        ? declaredPayment ? labels.payment_declared : labels.payment_due
+        : baseState;
   const Icon = state.icon;
   const liveFulfillmentLabel = hasFinishedFulfillment
     ? "Entregado"
@@ -135,7 +147,7 @@ export default async function PublicOrderRequestPage({ params }: { params: Promi
             </div>
           </section>
 
-          {paymentSettled && order.status !== "cancelled" ? (
+          {showProgress ? (
             <CommerceFulfillmentTracker
               fulfillmentMethod={fulfillmentMethod}
               fulfillmentStatus={order.fulfillment_status}
@@ -180,6 +192,7 @@ export default async function PublicOrderRequestPage({ params }: { params: Promi
             </section>
           ) : null}
 
+          {declaredPayment && !paymentSettled ? <section className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-blue-950"><p className="font-bold">Avisaste tu pago{declaredPayment.metadata?.method ? ` en ${declaredPayment.metadata.method}` : ""}</p><p className="mt-1 text-sm leading-5 text-blue-900">El negocio lo confirmará y aquí verás tu pedido pagado.</p></section> : null}
           {order.payment_verification_status === "proof_submitted" && !paymentSettled ? <section className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-blue-950"><p className="font-bold">Comprobante enviado</p><p className="mt-1 text-sm leading-5 text-blue-900">El negocio lo validará antes de preparar tu pedido. Te avisaremos aquí cuando cambie.</p></section> : null}
           {order.payment_verification_status === "rejected" && !paymentSettled ? <section className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-900"><p className="font-bold">Necesitamos otro comprobante</p><p className="mt-1 text-sm leading-5">{latestProof?.rejection_reason ?? "El comprobante no pudo validarse. Puedes enviar uno nuevo desde la acción inferior."}</p></section> : null}
           </div>
@@ -205,8 +218,8 @@ export default async function PublicOrderRequestPage({ params }: { params: Promi
                 })}
               </div>
             ) : null}
-            <div className="divide-y divide-border border-y border-border">{visibleItems.map((item: any) => <OrderItem key={item.id} item={item} />)}</div>
-            {hiddenItems.length > 0 ? <details className="group"><summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 text-sm font-semibold text-blue-700">Ver {hiddenItems.length} {hiddenItems.length === 1 ? "artículo más" : "artículos más"}<span className="transition-transform group-open:rotate-180" aria-hidden>⌄</span></summary><div className="divide-y divide-border border-t border-border">{hiddenItems.map((item: any) => <OrderItem key={item.id} item={item} />)}</div></details> : null}
+            <div className="divide-y divide-border border-y border-border">{visibleItems.map((item: any) => <OrderItem key={item.id} item={item} showProgress={showProgress} />)}</div>
+            {hiddenItems.length > 0 ? <details className="group"><summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 text-sm font-semibold text-blue-700">Ver {hiddenItems.length} {hiddenItems.length === 1 ? "artículo más" : "artículos más"}<span className="transition-transform group-open:rotate-180" aria-hidden>⌄</span></summary><div className="divide-y divide-border border-t border-border">{hiddenItems.map((item: any) => <OrderItem key={item.id} item={item} showProgress={showProgress} />)}</div></details> : null}
             <div className="flex items-center justify-between px-4 py-4"><span className="text-sm font-semibold text-muted-foreground">Total</span><span className="text-lg font-bold tabular-nums text-foreground">${total.toFixed(2)}</span></div>
           </section>
 
@@ -266,11 +279,22 @@ export default async function PublicOrderRequestPage({ params }: { params: Promi
         paymentSettled={paymentSettled}
         canReview={hasFinishedFulfillment}
         reviewTargetId={firstUnreviewedItem?.id ?? null}
+        canPay={canPay}
+        paymentDeclared={Boolean(declaredPayment) && !paymentSettled}
+        bankAccount={bankAccount ?? null}
       />
+      <TrackingAutoRefresh active={order.status !== "cancelled" && (!hasFinishedFulfillment || !paymentSettled)} />
     </main>
   );
 }
 
-function OrderItem({ item }: { item: any }) {
-  return <div className="p-4"><div className="flex items-center gap-3"><span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-border-soft">{item.product?.image_url ? <img src={item.product.image_url} alt="" className="h-full w-full object-cover" /> : <PackageCheck className="h-4 w-4 text-muted-foreground" />}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-foreground">{item.product?.name ?? "Artículo"}</p>{item.variant_snapshot?.selection_key ? <p className="truncate text-xs text-muted-foreground">{item.variant_snapshot.selection_key}</p> : null}{item.line_kind === "plan_component" ? <p className="mt-0.5 text-xs text-muted-foreground">{item.quantity} · incluido en tu suscripción</p> : <p className="mt-0.5 text-xs text-muted-foreground">{item.quantity} × ${Number(item.unit_price).toFixed(2)}</p>}</div>{item.line_kind === "plan_component" ? null : <p className="text-sm font-bold tabular-nums text-foreground">${Number(item.subtotal).toFixed(2)}</p>}</div></div>;
+const ITEM_PROGRESS: Record<string, { label: string; className: string }> = {
+  received: { label: "Recibido", className: "bg-border-soft text-muted-foreground" },
+  in_progress: { label: "En proceso", className: "bg-amber-100 text-amber-800" },
+  ready: { label: "Listo", className: "bg-emerald-100 text-emerald-800" },
+};
+
+function OrderItem({ item, showProgress }: { item: any; showProgress: boolean }) {
+  const progress = showProgress ? ITEM_PROGRESS[item.fulfillment_status ?? "received"] : null;
+  return <div className="p-4"><div className="flex items-center gap-3"><span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-border-soft">{item.product?.image_url ? <img src={item.product.image_url} alt="" className="h-full w-full object-cover" /> : <PackageCheck className="h-4 w-4 text-muted-foreground" />}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-foreground">{item.product?.name ?? "Artículo"}</p>{item.variant_snapshot?.selection_key ? <p className="truncate text-xs text-muted-foreground">{item.variant_snapshot.selection_key}</p> : null}{item.line_kind === "plan_component" ? <p className="mt-0.5 text-xs text-muted-foreground">{item.quantity} · incluido en tu suscripción</p> : <p className="mt-0.5 text-xs text-muted-foreground">{item.quantity} × ${Number(item.unit_price).toFixed(2)}</p>}{progress ? <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${progress.className}`}>{progress.label}</span> : null}</div>{item.line_kind === "plan_component" ? null : <p className="text-sm font-bold tabular-nums text-foreground">${Number(item.subtotal).toFixed(2)}</p>}</div></div>;
 }

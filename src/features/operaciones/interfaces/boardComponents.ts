@@ -13,6 +13,7 @@ import type {
   BoardView,
 } from "@/features/operaciones/interfaces/board";
 import type { FulfillmentStatus } from "@/features/qr/services/tableFulfillmentService";
+import type { IntentMethod } from "@/features/qr/services/tablePaymentService";
 
 export interface StationBoardViewProps {
   station: StationMeta;
@@ -57,6 +58,15 @@ export interface StationCardActionsProps {
   onDeliver: (order: BoardOrder) => void;
   onReject: (order: BoardOrder) => void;
   onRejectPayment: (paymentId: string) => void;
+  onCharge: (order: BoardOrder) => void;
+}
+
+export interface CounterChargeSheetProps {
+  /** The order being charged; null closes the sheet. */
+  order: BoardOrder | null;
+  busy: boolean;
+  onClose: () => void;
+  onCharge: (method: IntentMethod) => void;
 }
 
 export interface PendingPaymentRowsProps {

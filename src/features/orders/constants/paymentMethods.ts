@@ -28,3 +28,13 @@ export const PAYMENT_METHODS = [
 ] as const;
 
 export type PaymentMethodId = (typeof PAYMENT_METHODS)[number]["id"];
+
+/** What the counter can receive in hand; Mercado Pago is paid by the customer on their phone. */
+export const COUNTER_PAYMENT_METHODS = PAYMENT_METHODS.filter((method) => method.id !== "mercadopago") as ReadonlyArray<
+  (typeof PAYMENT_METHODS)[number] & { id: "efectivo" | "transferencia" | "tarjeta" }
+>;
+
+/** "EFECTIVO" → "Efectivo". */
+export function paymentMethodLabel(label: string): string {
+  return label.charAt(0) + label.slice(1).toLowerCase();
+}

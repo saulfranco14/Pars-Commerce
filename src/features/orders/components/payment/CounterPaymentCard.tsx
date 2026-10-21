@@ -5,7 +5,7 @@ import { Loader2, QrCode, Store } from "lucide-react";
 
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Notification } from "@/components/ui/Notification";
-import { PAYMENT_METHODS } from "@/features/orders/constants/paymentMethods";
+import { COUNTER_PAYMENT_METHODS, paymentMethodLabel } from "@/features/orders/constants/paymentMethods";
 import { useOrder } from "@/features/orders/hooks/useOrder";
 import { chargeOrderAtCounter } from "@/features/orders/services/counterPaymentClientService";
 import { formatCurrency } from "@/features/qr/helpers/format";
@@ -13,13 +13,6 @@ import { usePermission } from "@/stores/useTenantStore";
 import { isTableServiceOrder } from "@/features/orders/helpers/isTableServiceOrder";
 
 import type { IntentMethod } from "@/features/qr/services/tablePaymentService";
-
-/** Mercado Pago no va: ese cobro lo hace el cliente desde su teléfono. */
-const COUNTER_METHODS = PAYMENT_METHODS.filter(
-  (m) => m.id !== "mercadopago",
-) as ReadonlyArray<
-  (typeof PAYMENT_METHODS)[number] & { id: IntentMethod }
->;
 
 /** Orígenes donde el negocio registra un cobro directo en mostrador. */
 const COUNTER_SOURCES = new Set(["staff"]);
@@ -111,7 +104,7 @@ export function CounterPaymentCard() {
     }
   }
 
-  const chosen = COUNTER_METHODS.find((m) => m.id === method);
+  const chosen = COUNTER_PAYMENT_METHODS.find((m) => m.id === method);
 
   return (
     <div className="min-w-0 rounded-xl border border-emerald-300 bg-emerald-50/60 p-4">
@@ -136,7 +129,7 @@ export function CounterPaymentCard() {
       )}
 
       <div className="flex flex-wrap gap-2">
-        {COUNTER_METHODS.map(({ id, label, icon: Icon }) => (
+        {COUNTER_PAYMENT_METHODS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             type="button"
@@ -149,7 +142,7 @@ export function CounterPaymentCard() {
             ) : (
               <Icon className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden />
             )}
-            {label.charAt(0) + label.slice(1).toLowerCase()}
+            {paymentMethodLabel(label)}
           </button>
         ))}
       </div>

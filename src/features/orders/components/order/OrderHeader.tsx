@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Store, Truck } from "lucide-react";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { PickupBadge } from "@/features/orders/components/order/PickupBadge";
@@ -10,9 +11,11 @@ import { getSourceConfig } from "@/lib/formatSource";
 import { useOrder } from "@/features/orders/hooks/useOrder";
 import { formatAgendaDateTime } from "@/features/orders/helpers/agendaBuckets";
 import { resolveOrderFulfillmentMethod } from "@/features/orders/helpers/resolveOrderFulfillmentMethod";
+import { orderBackLink } from "@/features/orders/helpers/orderBackLink";
 
 export function OrderHeader() {
   const { order, tenantSlug } = useOrder();
+  const back = orderBackLink(tenantSlug, useSearchParams().get("volver"));
 
   if (!order) return null;
 
@@ -34,11 +37,11 @@ export function OrderHeader() {
   return (
     <div className="shrink-0 pb-4">
       <Link
-        href={`/dashboard/${tenantSlug}/ordenes`}
+        href={back.href}
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
       >
         <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
-        Volver a órdenes
+        {back.label}
       </Link>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {/* En mayúsculas y monoespaciada, igual que en el ticket: el mostrador
