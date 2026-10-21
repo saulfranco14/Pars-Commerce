@@ -19,6 +19,16 @@ interface Seed {
   chipsId: string;
 }
 
+/** Cart lines and pack items point at products without cascading, so they go first. */
+async function cleanup(): Promise<void> {
+  const tenants = sql`select id from tenants where slug = ${SLUG}`;
+  await sql`delete from public_cart_items where cart_id in (select id from public_carts where tenant_id in (${tenants}))`;
+  await sql`delete from public_carts where tenant_id in (${tenants})`;
+  await sql`delete from promotion_items where promotion_id in (select id from promotions where tenant_id in (${tenants}))`;
+  await sql`delete from promotions where tenant_id in (${tenants})`;
+  await sql`delete from tenants where slug = ${SLUG}`;
+}
+
 async function seed(): Promise<Seed> {
   const [tenant] = await sql`
     insert into tenants (name, slug, public_store_enabled)
@@ -40,11 +50,12 @@ describe("offers foundation migration", () => {
   let data: Seed;
 
   beforeEach(async () => {
+    await cleanup();
     data = await seed();
   });
 
   afterEach(async () => {
-    await sql`delete from tenants where slug = ${SLUG}`;
+    await cleanup();
   });
 
   it("gives promotions written the old way the defaults that keep today's behavior", async () => {
