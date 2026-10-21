@@ -382,9 +382,10 @@ export async function GET(request: Request) {
       admin
         .from("promotions")
         .select(
-          "id, name, type, value, badge_label, image_url, description, valid_from, valid_until",
+          "id, name, type, value, badge_label, image_url, description, valid_from, valid_until, buy_quantity, pay_quantity",
         )
         .eq("tenant_id", tenant.id)
+        .eq("status", "active")
         .order("created_at", { ascending: false }),
     ]);
 

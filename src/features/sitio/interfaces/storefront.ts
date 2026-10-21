@@ -67,6 +67,11 @@ export interface ActivePromotion {
   valid_from: string | null;
   valid_until: string | null;
   image_url: string | null;
+  status?: string | null;
+  applies_to?: string | null;
+  subcatalog_ids?: string[] | null;
+  buy_quantity?: number | null;
+  pay_quantity?: number | null;
 }
 
 export interface CatalogQuery {

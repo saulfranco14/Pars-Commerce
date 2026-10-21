@@ -229,6 +229,10 @@ export async function checkoutSubscription(
       frequency_type: payload.frequency_type,
       msi_option: mode === "partial" ? (payload.msi_option ?? 1) : undefined,
       scheduled_for: payload.scheduled_for ?? null,
+      fulfillment_method: payload.fulfillment_method,
+      payment_method: payload.payment_method,
+      pickup_point_id: payload.pickup_point_id,
+      delivery: payload.delivery,
     }),
   });
   const data = await res.json().catch(() => ({}));

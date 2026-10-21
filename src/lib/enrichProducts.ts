@@ -48,7 +48,8 @@ export function enrichProducts(
   const productPrices = new Map(
     products.map((p) => [p.id, Number(p.price)])
   );
-  const promoMap = buildProductPromoMap(promotions, productIds, productPrices);
+  const productSubcatalogs = new Map(products.map((p) => [p.id, p.subcatalog_id ?? null]));
+  const promoMap = buildProductPromoMap(promotions, productIds, productPrices, productSubcatalogs);
 
   return products.map((p) => {
     const urls =

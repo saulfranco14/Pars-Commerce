@@ -34,6 +34,8 @@ import { handleSingleCheckout } from "@/features/checkout/services/singleCheckou
 import { handleMerchantSingleCheckout } from "@/features/checkout/services/merchantSingleCheckoutHandler";
 import { asPaymentProviderAdmin } from "@/features/payment-providers/connectionService";
 import { handleSubscriptionCheckout } from "@/features/checkout/services/subscriptionCheckoutHandler";
+import { repriceCart } from "@/features/checkout/services/cartPricingService";
+import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
 
 import type { RecurringPurchasesConfig } from "@/types/subscriptions";
 
@@ -182,10 +184,19 @@ export async function executePublicCheckout({
     return NextResponse.json({ error: "Cart not found" }, { status: 404 });
   }
 
-  const { data: cartItems } = await admin
+  const repriced = await repriceCart(admin, { tenantId: payload.tenant_id, cartId: payload.cart_id });
+  if (!repriced.ok) return serviceErrorToResponse(repriced.error);
+  if (repriced.data.changed) {
+    return NextResponse.json(
+      { error: "Algunos precios o promociones cambiaron. Revisa tu carrito antes de pagar.", code: "cart_repriced" },
+      { status: 409 },
+    );
+  }
+
+  const { data: cartItems } = await commerceAdmin
     .from("public_cart_items")
     .select(
-      "product_id, product_variant_id, quantity, price_snapshot, promotion_id, product:products(id, name, image_url)",
+      "product_id, product_variant_id, quantity, price_snapshot, list_unit_price, group_id, promotion_id, product:products(id, name, image_url)",
     )
     .eq("cart_id", payload.cart_id);
 

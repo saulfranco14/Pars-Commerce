@@ -1,4 +1,9 @@
 import { MsiOption } from "@/constants/commissionConfig";
+import type {
+  CheckoutDeliveryAddress,
+  CheckoutFulfillmentMethod,
+  CheckoutPaymentMethod,
+} from "@/features/checkout/interfaces/publicCheckout";
 
 export interface PublicCartItem {
   id: string;
@@ -6,7 +11,12 @@ export interface PublicCartItem {
   product_variant_id?: string | null;
   quantity: number;
   price_snapshot: number;
+  list_unit_price?: number | null;
   promotion_id?: string | null;
+  /** Lines that share it belong to one pack or NxM and change together. */
+  group_id?: string | null;
+  group_unit_quantity?: number | null;
+  promotion?: { id: string; name: string; type: string } | null;
   product?: {
     id: string;
     name: string;
@@ -57,6 +67,10 @@ export interface CheckoutSubscriptionPayload {
   msi_option?: MsiOption;
   /** ISO de la hora de recolección. `null` = pasa cuando esté listo. */
   scheduled_for?: string | null;
+  fulfillment_method?: CheckoutFulfillmentMethod;
+  payment_method?: CheckoutPaymentMethod;
+  pickup_point_id?: string;
+  delivery?: CheckoutDeliveryAddress;
 }
 
 export interface CheckoutSubscriptionResponse {

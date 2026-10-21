@@ -27,6 +27,8 @@ export async function createOrderItems(
       unit_price: unitPrice,
       subtotal,
       promotion_id: item.promotion_id ?? null,
+      list_unit_price: item.list_unit_price === null || item.list_unit_price === undefined ? null : Number(item.list_unit_price),
+      offer_group_id: item.group_id ?? null,
       product_variant_id: item.product_variant_id ?? null,
       variant_snapshot: item.product_variant_id ? variantSnapshots.get(item.product_variant_id) ?? null : null,
     };

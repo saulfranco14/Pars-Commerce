@@ -36,7 +36,7 @@ export interface RecordedWrite {
 }
 
 type Filter = {
-  op: "eq" | "neq" | "in" | "is";
+  op: "eq" | "neq" | "in" | "is" | "not_is";
   column: string;
   value: unknown;
 };
@@ -53,6 +53,8 @@ function matches(row: Row, filters: Filter[]): boolean {
         return Array.isArray(f.value) && f.value.includes(v);
       case "is":
         return v === f.value; // .is(col, null) → v === null
+      case "not_is":
+        return v !== f.value; // .not(col, "is", null) → v !== null
       default:
         return true;
     }
@@ -99,6 +101,11 @@ class FakeQuery implements PromiseLike<{ data: unknown; error: unknown }> {
   }
   is(column: string, value: unknown) {
     this.filters.push({ op: "is", column, value });
+    return this;
+  }
+  not(column: string, operator: "is", value: unknown) {
+    if (operator !== "is") throw new Error(`fakeSupabase: .not(${operator}) is not implemented`);
+    this.filters.push({ op: "not_is", column, value });
     return this;
   }
   order(..._args: unknown[]) {

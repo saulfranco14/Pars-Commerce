@@ -131,6 +131,7 @@ export default function CarritoContent({
     paymentMethod: checkoutSelection?.payment,
     pickupPointId: checkoutSelection?.pickupPointId,
     delivery: checkoutSelection?.delivery,
+    onCheckoutFailed: () => void mutate(),
   });
 
   const combinedError = checkoutForm.error ?? cartActions.error;
