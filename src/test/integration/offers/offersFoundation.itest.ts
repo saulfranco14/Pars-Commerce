@@ -4,6 +4,7 @@ import { createTestAnonClient, createTestServiceClient, sql } from "@/test/integ
 
 import { addProductLine, addPromotionGroup, removeLine } from "@/features/checkout/services/cartLineService";
 import { repriceCart } from "@/features/checkout/services/cartPricingService";
+import { savePromotion } from "@/features/promociones/services/promotionAdminService";
 
 /**
  * 20261021000001_offers_foundation against real Postgres: defaults keep the
@@ -133,6 +134,30 @@ describe("offers foundation migration", () => {
     expect(badItem).not.toBeNull();
     const [{ count }] = await sql`select count(*)::int as count from promotions where tenant_id = ${data.tenantId} and slug = 'roto'`;
     expect(count).toBe(0);
+  });
+
+  it("saves what the wizard sends: a pack and a store-wide discount with empty product lists", async () => {
+    const admin = createTestServiceClient();
+    const pack = await savePromotion(admin, {
+      tenantId: data.tenantId,
+      input: {
+        name: "Combo", type: "bundle_price", value: 199, status: "active", template_key: "lavado_combo",
+        applies_to: "products", product_ids: [], subcatalog_ids: [],
+        items: [{ product_id: data.beerId, quantity: 1 }, { product_id: data.chipsId, quantity: 2 }],
+        buy_quantity: null, pay_quantity: null, badge_label: null, image_url: null,
+      },
+    });
+    expect(pack).toMatchObject({ ok: true });
+    const storeWide = await savePromotion(admin, {
+      tenantId: data.tenantId,
+      input: { name: "15% en todo", type: "percentage", value: 15, product_ids: [], subcatalog_ids: [] },
+    });
+    expect(storeWide).toMatchObject({ ok: true });
+    if (!pack.ok || !storeWide.ok) return;
+    const [saved] = await sql`select product_ids, subcatalog_ids, bundle_product_ids from promotions where id = ${pack.data.id}`;
+    expect(saved).toEqual({ product_ids: null, subcatalog_ids: null, bundle_product_ids: [data.beerId, data.chipsId] });
+    const [all] = await sql`select applies_to, product_ids from promotions where id = ${storeWide.data.id}`;
+    expect(all).toEqual({ applies_to: "all", product_ids: null });
   });
 
   it("does not let visitors call save_promotion", async () => {
