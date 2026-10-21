@@ -1,6 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { createTestAnonClient, createTestServiceClient, sql } from "@/test/integration/setup";
+import {
+  checkoutOrder,
+  cleanupPlans,
+  DAY,
+  ensureAt as ensure,
+  seedPlan,
+  stockOf,
+  subscriptionFor,
+  type PlanSeed,
+} from "@/test/integration/offers/planFixtures";
 
 /**
  * 20261022000001_offer_plans against real Postgres: a plan bought in the
@@ -9,99 +19,17 @@ import { createTestAnonClient, createTestServiceClient, sql } from "@/test/integ
  * and never touches legacy subscriptions.
  */
 const SLUG = "itest-offer-plans";
-const DAY = 24 * 60 * 60 * 1000;
-
-interface Seed {
-  tenantId: string;
-  cartId: string;
-  riceId: string;
-  planId: string;
-}
-
-async function cleanup(): Promise<void> {
-  const tenants = sql`select id from tenants where slug = ${SLUG}`;
-  await sql`delete from order_items where order_id in (select id from orders where tenant_id in (${tenants}))`;
-  await sql`delete from subscription_payments where tenant_id in (${tenants})`;
-  await sql`delete from inventory_movements where product_id in (select id from products where tenant_id in (${tenants}))`;
-  await sql`delete from orders where tenant_id in (${tenants})`;
-  await sql`delete from subscriptions where tenant_id in (${tenants})`;
-  await sql`delete from public_carts where tenant_id in (${tenants})`;
-  await sql`delete from offer_plans where tenant_id in (${tenants})`;
-  await sql`delete from product_inventory where product_id in (select id from products where tenant_id in (${tenants}))`;
-  await sql`delete from products where tenant_id in (${tenants})`;
-  await sql`delete from tenants where slug = ${SLUG}`;
-}
-
-async function seed(): Promise<Seed> {
-  const admin = createTestServiceClient();
-  const [tenant] = await sql`
-    insert into tenants (name, slug, public_store_enabled) values ('ITest Plans', ${SLUG}, true) returning id`;
-  const [rice] = await sql`
-    insert into products (tenant_id, name, slug, price, is_public, track_stock, type)
-    values (${tenant.id}, 'Arroz', 'arroz', 30, true, true, 'product') returning id`;
-  await sql`delete from product_inventory where product_id = ${rice.id}`;
-  await sql`insert into product_inventory (product_id, quantity) values (${rice.id}, 10)`;
-  const { data: planId, error } = await admin.rpc("save_offer_plan", {
-    p_plan: {
-      tenant_id: tenant.id, kind: "subscription", status: "active", name: "Despensa Básica", slug: "despensa-basica",
-      price: 559, interval_unit: "month", interval_count: 1, billing_methods: ["manual"], fulfillment_methods: ["pickup"],
-    },
-    p_items: [{ product_id: rice.id, quantity: 2 }],
-  });
-  if (error) throw error;
-  const [cart] = await sql`
-    insert into public_carts (tenant_id, fingerprint_id) values (${tenant.id}, 'itest-plans') returning id`;
-  await sql`
-    insert into public_cart_plans (cart_id, tenant_id, offer_plan_id, price_snapshot)
-    values (${cart.id}, ${tenant.id}, ${planId as string}, 559)`;
-  return { tenantId: tenant.id, cartId: cart.id, riceId: rice.id, planId: planId as string };
-}
-
-async function checkoutOrder(data: Seed): Promise<string> {
-  const [order] = await sql`
-    insert into orders (tenant_id, status, subtotal, discount, total, source, customer_name, customer_email,
-      payment_mode, payment_method, fulfillment_method, payment_verification_status, paid_total, balance_due, order_type)
-    values (${data.tenantId}, 'pending_payment', 559, 0, 559, 'public_store', 'Juan', 'juan@example.com',
-      'single', 'bank_transfer', 'pickup', 'proof_required', 0, 559, 'takeaway')
-    returning id`;
-  const { data: count, error } = await createTestServiceClient().rpc("create_checkout_plan_instances", {
-    p_order_id: order.id,
-    p_cart_id: data.cartId,
-  });
-  if (error) throw error;
-  expect(count).toBe(1);
-  return order.id;
-}
-
-async function stockOf(productId: string): Promise<number> {
-  const [row] = await sql`select quantity from product_inventory where product_id = ${productId}`;
-  return Number(row.quantity);
-}
-
-async function subscriptionFor(orderId: string) {
-  const [row] = await sql`select * from subscriptions where original_order_id = ${orderId}`;
-  return row;
-}
-
-async function ensure(tenantId: string, at: Date): Promise<number> {
-  const { data, error } = await createTestServiceClient().rpc("ensure_due_periods", {
-    p_tenant_id: tenantId,
-    p_now: at.toISOString(),
-  });
-  if (error) throw error;
-  return data as number;
-}
 
 describe("offer plans migration", () => {
-  let data: Seed;
+  let data: PlanSeed;
 
   beforeEach(async () => {
-    await cleanup();
-    data = await seed();
+    await cleanupPlans(SLUG);
+    data = await seedPlan(SLUG);
   });
 
   afterEach(async () => {
-    await cleanup();
+    await cleanupPlans(SLUG);
   });
 
   it("turns the cart's plan into a pending instance billed by the checkout order", async () => {
@@ -116,6 +44,11 @@ describe("offer plans migration", () => {
     expect(charge).toMatchObject({ amount: "559.00", name_snapshot: "Despensa Básica" });
     const items = await sql`select quantity, unit_price, line_kind from order_items where order_id = ${orderId}`;
     expect(items).toEqual([{ quantity: 2, unit_price: "0.00", line_kind: "plan_component" }]);
+  });
+
+  it("refuses to attach a plan that was paused after it reached the cart", async () => {
+    await sql`update offer_plans set status = 'paused' where id = ${data.planId}`;
+    await expect(checkoutOrder(data)).rejects.toMatchObject({ message: "PLAN_NOT_ACTIVE" });
   });
 
   it("activates on an approved transfer and decrements the plan's stock once", async () => {
@@ -176,7 +109,7 @@ describe("offer plans migration", () => {
     expect(recovered).toMatchObject({ status: "active", current_period_number: 2, past_due_since: null });
   });
 
-  it("cancels the subscription when the first order or an unpaid renewal is cancelled", async () => {
+  it("cancels the subscription when the first order is cancelled", async () => {
     const orderId = await checkoutOrder(data);
     await sql`update orders set status = 'cancelled' where id = ${orderId}`;
     expect((await subscriptionFor(orderId)).status).toBe("cancelled");
@@ -225,5 +158,15 @@ describe("offer plans migration", () => {
     expect(plans ?? []).toEqual([]);
     const { error } = await anon.rpc("ensure_due_periods", { p_tenant_id: data.tenantId });
     expect(error).not.toBeNull();
+  });
+
+  it("saves a plan with the default billing and delivery methods when they are omitted", async () => {
+    const { data: id, error } = await createTestServiceClient().rpc("save_offer_plan", {
+      p_plan: { tenant_id: data.tenantId, kind: "subscription", name: "Pan semanal", slug: "pan", price: 120, interval_unit: "week" },
+      p_items: [{ product_id: data.riceId, quantity: 1 }],
+    });
+    expect(error).toBeNull();
+    const [plan] = await sql`select status, billing_methods, fulfillment_methods from offer_plans where id = ${id as string}`;
+    expect(plan).toEqual({ status: "draft", billing_methods: ["manual"], fulfillment_methods: ["pickup"] });
   });
 });
