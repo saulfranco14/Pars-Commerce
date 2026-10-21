@@ -114,7 +114,6 @@ export default function CarritoContent({
   const cartActions = useCartActions({
     cart,
     items,
-    subtotal,
     fingerprint,
     mutate,
   });
