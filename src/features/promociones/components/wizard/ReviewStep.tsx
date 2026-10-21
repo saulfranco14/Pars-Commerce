@@ -6,10 +6,12 @@ import { CalendarRange, FileText, Layers, Tag } from "lucide-react";
 import { Notification } from "@/components/ui/Notification";
 import { WizardStepHeading } from "@/components/wizard/WizardStepHeading";
 import { PromotionPreviewStrip } from "@/features/promociones/components/wizard/PromotionPreviewStrip";
+import { PromotionCollage } from "@/features/promociones/components/PromotionCollage";
 
 import { formatOfferLabel } from "@/lib/offers/formatOfferLabel";
 import { PROMOTION_MECHANICS } from "@/features/promociones/constants/promotionMechanics";
 import { OFFER_WIZARD_TITLE_ID } from "@/features/promociones/constants/offerWizard";
+import { collageImages, promotionCollageLabel } from "@/features/promociones/helpers/promotionVisual";
 
 import type { OfferWizardValues, PickerItem, PickerSubcatalog } from "@/features/promociones/interfaces/offerWizard";
 
@@ -78,15 +80,21 @@ export function ReviewStep({
       <div className="overflow-hidden rounded-3xl border border-border bg-surface shadow-sm">
         <div className="relative aspect-16/7 bg-accent/10">
           {values.imageUrl ? (
-            <Image src={values.imageUrl} alt="" fill sizes="(max-width: 768px) 100vw, 720px" className="object-cover" />
+            <>
+              <Image src={values.imageUrl} alt="" fill sizes="(max-width: 768px) 100vw, 720px" className="object-cover" />
+              <span className="absolute left-4 top-4 rounded-full bg-accent px-3 py-1 text-sm font-bold text-accent-foreground shadow-sm">
+                {label}
+              </span>
+            </>
           ) : (
-            <span className="flex h-full items-center justify-center">
-              <Tag className="h-10 w-10 text-accent/60" aria-hidden />
-            </span>
+            <PromotionCollage
+              {...promotionCollageLabel({ type: values.mechanic, value: Number(values.value) || 0, buy_quantity: values.buyQuantity, pay_quantity: values.payQuantity, badge_label: values.badgeLabel })}
+              images={collageImages(
+                values.mechanic === "bundle_price" ? values.packItems.map((item) => item.product_id) : values.productIds,
+                (id) => itemsById.get(id)?.image_url,
+              )}
+            />
           )}
-          <span className="absolute left-4 top-4 rounded-full bg-accent px-3 py-1 text-sm font-bold text-accent-foreground shadow-sm">
-            {label}
-          </span>
         </div>
         <div className="p-5">
           <p className="text-xl font-bold text-foreground">{values.name || "Sin nombre"}</p>

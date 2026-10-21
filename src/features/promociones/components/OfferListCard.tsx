@@ -29,6 +29,8 @@ function scopeLabel(entry: OfferListEntry): string {
 
 interface OfferListCardProps {
   entry: OfferListEntry;
+  /** First product photo, shown when the promotion has no image of its own. */
+  previewImage: string | null;
   storeUrl: string | null;
   busy: boolean;
   onEdit: () => void;
@@ -38,7 +40,7 @@ interface OfferListCardProps {
   onArchive: () => void;
 }
 
-export function OfferListCard({ entry, storeUrl, busy, onEdit, onPause, onActivate, onDuplicate, onArchive }: OfferListCardProps) {
+export function OfferListCard({ entry, previewImage, storeUrl, busy, onEdit, onPause, onActivate, onDuplicate, onArchive }: OfferListCardProps) {
   const { promotion, status } = entry;
   const meta = OFFER_STATUS_META[status];
   const deadline = formatOfferDeadline(promotion.valid_until);
@@ -59,8 +61,8 @@ export function OfferListCard({ entry, storeUrl, busy, onEdit, onPause, onActiva
       title={promotion.name}
       thumbnail={
         <span className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-accent/10">
-          {promotion.image_url ? (
-            <Image src={promotion.image_url} alt="" fill sizes="56px" className="object-cover" />
+          {promotion.image_url || previewImage ? (
+            <Image src={(promotion.image_url || previewImage) as string} alt="" fill sizes="56px" className="object-cover" />
           ) : (
             <Tag className="h-6 w-6 text-accent" aria-hidden />
           )}

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Archive, BadgePercent, CalendarClock, CirclePause, Sparkles } from "lucide-react";
 
 import { useOffersList } from "@/features/promociones/hooks/useOffersList";
+import { usePromotionCatalog } from "@/features/promociones/hooks/usePromotionCatalog";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { MetricsStrip } from "@/components/admin/MetricsStrip";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -16,6 +17,7 @@ import { Toast } from "@/components/ui/Toast";
 import { OfferListCard } from "@/features/promociones/components/OfferListCard";
 
 import { templatesFor } from "@/features/promociones/helpers/templateSuggestions";
+import { collageImages } from "@/features/promociones/helpers/promotionVisual";
 
 import type { PromotionListItem } from "@/features/promociones/services/promotionsClientService";
 import type { Tenant } from "@/types/database";
@@ -23,6 +25,7 @@ import type { Tenant } from "@/types/database";
 export function PromotionsPanel({ tenant, base, canWrite }: { tenant: Tenant; base: string; canWrite: boolean }) {
   const router = useRouter();
   const list = useOffersList(tenant.id);
+  const catalog = usePromotionCatalog(tenant.id);
   const [toArchive, setToArchive] = useState<PromotionListItem | null>(null);
 
   const storeBase = tenant.public_store_enabled && tenant.site_slug ? `/sitio/${tenant.site_slug}/promociones` : null;
@@ -82,6 +85,12 @@ export function PromotionsPanel({ tenant, base, canWrite }: { tenant: Tenant; ba
             <li key={entry.promotion.id}>
               <OfferListCard
                 entry={entry}
+                previewImage={
+                  collageImages(
+                    [...(entry.promotion.bundle_product_ids ?? []), ...(entry.promotion.product_ids ?? [])],
+                    (id) => catalog.itemsById.get(id)?.image_url,
+                  )[0] ?? null
+                }
                 storeUrl={storeBase ? `${storeBase}/${entry.promotion.slug ?? entry.promotion.id}` : null}
                 busy={list.busyId === entry.promotion.id}
                 onEdit={() => router.push(`${base}/${entry.promotion.id}/editar`)}

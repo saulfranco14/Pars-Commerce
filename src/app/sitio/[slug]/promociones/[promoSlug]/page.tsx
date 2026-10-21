@@ -2,11 +2,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MessageCircle, Tag, Package, FolderOpen } from "lucide-react";
+import { ArrowLeft, MessageCircle, Package, FolderOpen } from "lucide-react";
 import PromotionDetailActions from "./PromotionDetailActions";
 import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
 import { formatOfferLabel } from "@/lib/offers/formatOfferLabel";
 import { whatsappHref } from "@/features/sitio/helpers/storeLinks";
+import { PromotionCollage } from "@/features/promociones/components/PromotionCollage";
+import { collageImages, promotionCollageLabel } from "@/features/promociones/helpers/promotionVisual";
 
 interface PageProps {
   params: Promise<{ slug: string; promoSlug: string }>;
@@ -136,9 +138,10 @@ export default async function PromocionDetallePage({ params }: PageProps) {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <Tag className="h-24 w-24 text-gray-300" />
-                </div>
+                <PromotionCollage
+                  {...promotionCollageLabel(promotion)}
+                  images={collageImages(uniqueProductIds, (id) => productsMap[id]?.image_url)}
+                />
               )}
               {promotion.badge_label && (
                 <div
@@ -148,12 +151,14 @@ export default async function PromocionDetallePage({ params }: PageProps) {
                   {promotion.badge_label}
                 </div>
               )}
-              <div
-                className="absolute right-4 top-4 rounded-lg px-4 py-2 text-lg font-bold text-white shadow-md"
-                style={{ backgroundColor: accentColor }}
-              >
-                {formatOfferLabel(promotion)}
-              </div>
+              {mainImage ? (
+                <div
+                  className="absolute right-4 top-4 rounded-lg px-4 py-2 text-lg font-bold text-white shadow-md"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  {formatOfferLabel(promotion)}
+                </div>
+              ) : null}
             </div>
 
             {galleryImages.length > 0 && (
