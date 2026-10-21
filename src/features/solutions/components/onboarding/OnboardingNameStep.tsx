@@ -1,7 +1,8 @@
-import { OnboardingStepHeading } from "@/features/solutions/components/onboarding/OnboardingStepHeading";
+import { WizardStepHeading } from "@/components/wizard/WizardStepHeading";
 import { StorePreview } from "@/features/solutions/components/onboarding/StorePreview";
 
-import { OPTION_CARD } from "@/features/solutions/constants/solutionStyles";
+import { OPTION_CARD } from "@/components/wizard/wizardStyles";
+import { ONBOARDING_TITLE_ID } from "@/features/solutions/constants/solutionOnboarding";
 import { THEME_CHOICES } from "@/features/solutions/constants/solutionOnboarding";
 
 export function OnboardingNameStep({
@@ -31,7 +32,8 @@ export function OnboardingNameStep({
           onSubmit();
         }}
       >
-        <OnboardingStepHeading
+        <WizardStepHeading
+          titleId={ONBOARDING_TITLE_ID}
           eyebrow="Hagámoslo tuyo"
           title="¿Cómo se llama tu negocio?"
           subtitle="Lo verás aplicado en la tienda, los pedidos y el ticket."

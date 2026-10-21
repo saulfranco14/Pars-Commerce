@@ -1,8 +1,10 @@
-export function OnboardingStepHeading({
+export function WizardStepHeading({
+  titleId,
   eyebrow,
   title,
   subtitle,
 }: {
+  titleId: string;
   eyebrow: string;
   title: string;
   subtitle: string;
@@ -11,7 +13,7 @@ export function OnboardingStepHeading({
     <div>
       <p className="text-sm font-semibold text-muted-foreground">{eyebrow}</p>
       <h1
-        id="solution-onboarding-title"
+        id={titleId}
         className="mt-2 max-w-[22ch] text-balance text-[1.75rem] font-bold leading-[1.1] tracking-tight text-foreground sm:text-4xl"
       >
         {title}
