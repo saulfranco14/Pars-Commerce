@@ -35,6 +35,9 @@ import { handleMerchantSingleCheckout } from "@/features/checkout/services/merch
 import { asPaymentProviderAdmin } from "@/features/payment-providers/connectionService";
 import { handleSubscriptionCheckout } from "@/features/checkout/services/subscriptionCheckoutHandler";
 import { repriceCart } from "@/features/checkout/services/cartPricingService";
+import { repriceCartPlans } from "@/features/checkout/services/cartPlanService";
+import { attachPlansToOrder, clearCartPlans, loadCheckoutPlans } from "@/features/checkout/services/planCheckoutService";
+import { planChargeItems, planCheckoutProblem, plansTotal } from "@/features/checkout/helpers/planCheckout";
 import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
 
 import type { RecurringPurchasesConfig } from "@/types/subscriptions";
@@ -186,7 +189,9 @@ export async function executePublicCheckout({
 
   const repriced = await repriceCart(admin, { tenantId: payload.tenant_id, cartId: payload.cart_id });
   if (!repriced.ok) return serviceErrorToResponse(repriced.error);
-  if (repriced.data.changed) {
+  const repricedPlans = await repriceCartPlans(admin, payload.cart_id);
+  if (!repricedPlans.ok) return serviceErrorToResponse(repricedPlans.error);
+  if (repriced.data.changed || repricedPlans.data.changed) {
     return NextResponse.json(
       { error: "Algunos precios o promociones cambiaron. Revisa tu carrito antes de pagar.", code: "cart_repriced" },
       { status: 409 },
@@ -200,12 +205,15 @@ export async function executePublicCheckout({
     )
     .eq("cart_id", payload.cart_id);
 
-  if (!cartItems || cartItems.length === 0) {
+  const plans = await loadCheckoutPlans(admin, payload.cart_id);
+  if ((!cartItems || cartItems.length === 0) && plans.lines.length === 0) {
     return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
   }
+  const planProblem = planCheckoutProblem(plans.lines, { mode, fulfillmentMethod });
+  if (planProblem) return NextResponse.json({ error: planProblem }, { status: 409 });
 
-  const normalizedItems = cartItems as unknown as CartItemRow[];
-  const cartSubtotal = calcCartSubtotal(normalizedItems);
+  const normalizedItems = (cartItems ?? []) as unknown as CartItemRow[];
+  const cartSubtotal = calcCartSubtotal(normalizedItems) + plansTotal(plans.lines);
   const deliveryFee = fulfillmentMethod === "delivery" ? Number(config?.delivery_fee ?? 0) : 0;
   const subtotal = cartSubtotal + deliveryFee;
 
@@ -237,7 +245,7 @@ export async function executePublicCheckout({
   const stockValidation = await validateOrderStock(
     admin,
     payload.tenant_id,
-    normalizedItems,
+    [...normalizedItems, ...plans.components],
   );
   if (!stockValidation.ok) {
     return NextResponse.json({ error: stockValidation.message }, { status: 409 });
@@ -312,6 +320,15 @@ export async function executePublicCheckout({
     if (pickupError) return NextResponse.json({ error: pickupError.message }, { status: 500 });
   }
 
+  if (plans.lines.length > 0) {
+    // After the delivery details exist: renewals copy them from this order.
+    const attached = await attachPlansToOrder(admin, { orderId: order.id, cartId: payload.cart_id });
+    if (!attached.ok) {
+      await commerceAdmin.from("orders").update({ status: "cancelled" }).eq("id", order.id);
+      return serviceErrorToResponse(attached.error);
+    }
+  }
+
   if (paymentMethod === "bank_transfer" || paymentMethod === "cash") {
     // La orden ya nació y tiene su enlace privado de seguimiento. Vaciar el
     // carrito aquí evita que una transferencia o un pago al recoger vuelva a
@@ -322,6 +339,7 @@ export async function executePublicCheckout({
       .from("public_cart_items")
       .delete()
       .eq("cart_id", payload.cart_id);
+    await clearCartPlans(admin, payload.cart_id);
     return NextResponse.json({
       success: true,
       checkout_mode: mode,
@@ -342,6 +360,7 @@ export async function executePublicCheckout({
     tenantSlug: tenant.slug ?? "",
     recurringConfig,
     cartItems: normalizedItems,
+    planItems: planChargeItems(plans.lines),
     deliveryFee,
     subtotal,
     customerId,

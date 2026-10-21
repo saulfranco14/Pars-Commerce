@@ -10,6 +10,7 @@ export async function createOrderItems(
   orderId: string,
   cartItems: CartItemRow[],
 ) {
+  if (cartItems.length === 0) return;
   const variantIds = cartItems.flatMap((item) => item.product_variant_id ? [item.product_variant_id] : []);
   const variantSnapshots = new Map<string, { id: string; sku: string | null; price: number; stock: number; selection_key: string }>();
   if (variantIds.length > 0) {

@@ -11,6 +11,7 @@ import {
   removeLine,
   setLineQuantity,
 } from "@/features/checkout/services/cartLineService";
+import { addPlanToCart, listCartPlans, removePlanFromCart } from "@/features/checkout/services/cartPlanService";
 
 const FINGERPRINT_HEADER = "x-fingerprint-id";
 type CommerceAdmin = { from: (table: string) => any };
@@ -68,7 +69,7 @@ export async function GET(request: Request) {
   }
 
   if (!cart) {
-    return NextResponse.json({ cart: null, items: [] });
+    return NextResponse.json({ cart: null, items: [], plans: [], plans_total: 0 });
   }
 
   const { data: items, error: itemsError } = await supabase
@@ -110,13 +111,17 @@ export async function GET(request: Request) {
     (sum, i) => sum + Number(i.price_snapshot) * i.quantity,
     0
   );
-  const itemsCount = hydratedItems.reduce((sum, i) => sum + i.quantity, 0);
+  const plans = await listCartPlans(createAdminClient(), cart.id);
+  const plansTotal = plans.reduce((sum, plan) => sum + plan.price_snapshot, 0);
+  const itemsCount = hydratedItems.reduce((sum, i) => sum + i.quantity, 0) + plans.length;
 
   return NextResponse.json({
     cart: { id: cart.id, tenant_id: cart.tenant_id },
     items: hydratedItems,
     subtotal,
     items_count: itemsCount,
+    plans,
+    plans_total: plansTotal,
   });
 }
 
@@ -136,6 +141,7 @@ export async function POST(request: Request) {
     product_id?: string;
     product_variant_id?: string;
     promotion_id?: string;
+    plan_id?: string;
     quantity?: number;
   };
   try {
@@ -144,7 +150,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { tenant_id, product_id, product_variant_id, promotion_id, quantity = 1 } = body;
+  const { tenant_id, product_id, product_variant_id, promotion_id, plan_id, quantity = 1 } = body;
 
   if (!tenant_id) {
     return NextResponse.json(
@@ -195,7 +201,9 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const result = promotion_id
+  const result = plan_id
+    ? await addPlanToCart(admin, { cartId, tenantId: tenant_id, planId: plan_id })
+    : promotion_id
     ? await addPromotionGroup(admin, { cartId, tenantId: tenant_id, promotionId: promotion_id, productId: product_id ?? null })
     : product_id
       ? await addProductLine(admin, {
@@ -261,10 +269,11 @@ export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
   const cartId = searchParams.get("cart_id");
   const itemId = searchParams.get("item_id");
+  const planLineId = searchParams.get("plan_line_id");
 
-  if (!fingerprint || !cartId || !itemId) {
+  if (!fingerprint || !cartId || (!itemId && !planLineId)) {
     return NextResponse.json(
-      { error: "x-fingerprint-id header, cart_id and item_id are required" },
+      { error: "x-fingerprint-id header, cart_id and item_id or plan_line_id are required" },
       { status: 400 }
     );
   }
@@ -273,7 +282,9 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Cart not found" }, { status: 404 });
   }
 
-  const result = await removeLine(createAdminClient(), { cartId, itemId });
+  const result = planLineId
+    ? await removePlanFromCart(createAdminClient(), { cartId, planLineId })
+    : await removeLine(createAdminClient(), { cartId, itemId: itemId as string });
   if (!result.ok) return serviceErrorToResponse(result.error);
 
   return NextResponse.json({ success: true });

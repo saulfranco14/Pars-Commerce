@@ -10,6 +10,7 @@ import {
   handlePreapprovalLoanPayment,
 } from "@/features/prestamos/services/loanWebhookHandlers";
 import { handleStoreSubscriptionPayment } from "@/features/sitio/services/subscriptionWebhookHandlers";
+import { clearCartPlans } from "@/features/checkout/services/planCheckoutService";
 import {
   handleQrTableMpPayment,
   isQrTableReference,
@@ -360,6 +361,7 @@ export async function POST(request: Request) {
           .from("public_cart_items")
           .delete()
           .eq("cart_id", publicCartId);
+        await clearCartPlans(supabase, publicCartId);
       }
 
       console.log(

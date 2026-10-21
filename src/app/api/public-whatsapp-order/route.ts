@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { cartHasPlans } from "@/features/checkout/services/planCheckoutService";
 import { calcCartSubtotal, type CartItemRow } from "@/features/checkout/helpers/cartItemMappers";
 import { ensureCustomer } from "@/features/checkout/helpers/ensureCustomer";
 import { createOrderItems } from "@/features/checkout/helpers/orderItems";
@@ -87,6 +88,9 @@ export async function POST(request: Request) {
     .eq("fingerprint_id", fingerprint)
     .maybeSingle();
   if (!cart) return NextResponse.json({ error: "Carrito no encontrado." }, { status: 404 });
+  if (await cartHasPlans(admin, body.cart_id)) {
+    return NextResponse.json({ error: "Para suscribirte paga en línea desde tu carrito." }, { status: 409 });
+  }
 
   const { data: cartItems } = await admin
     .from("public_cart_items")
