@@ -1,4 +1,6 @@
 import { formatInterval } from "@/lib/offers/planPeriods";
+import { normalizeMexicanPhone } from "@/lib/phone";
+import { whatsappHref } from "@/features/sitio/helpers/storeLinks";
 
 import type { StatusTone } from "@/components/admin/StatusBadge";
 import type {
@@ -69,6 +71,20 @@ export function planReminderMessage(params: {
     `Total: ${amount}, vence el ${formatPlanDate(params.period.due_at)}.`,
     `Puedes pagarlo aquí: ${params.payUrl}`,
   ].join("\n");
+}
+
+/** wa.me link reminding the customer of the period to pay, or null without phone or pay link. */
+export function planReminderHref(
+  row: Pick<PlanSubscriptionRow, "customer_name" | "customer_phone" | "plan" | "due_period">,
+  origin: string,
+): string | null {
+  const phone = row.customer_phone ? normalizeMexicanPhone(row.customer_phone) : null;
+  const token = row.due_period?.order_tracking_token;
+  if (!phone || !row.due_period || !token) return null;
+  return whatsappHref(
+    phone,
+    planReminderMessage({ customerName: row.customer_name, planName: row.plan.name, period: row.due_period, payUrl: `${origin}/pedido/${token}` }),
+  );
 }
 
 export const PLAN_PERIOD_LABELS: Record<PlanPeriod["status"], string> = {

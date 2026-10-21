@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   duePeriod,
   planPriceLabel,
+  planReminderHref,
   planReminderMessage,
   planSubscriptionTab,
 } from "@/features/suscripciones/helpers/planSubscriptionView";
@@ -38,6 +39,26 @@ describe("planSubscriptionTab", () => {
     expect(planSubscriptionTab({ status: "past_due", due_period: period(2, "overdue") })).toBe("vencidas");
     expect(planSubscriptionTab({ status: "pending_setup", due_period: period(1, "pending") })).toBe("pendientes");
     expect(planSubscriptionTab({ status: "completed", due_period: null })).toBe("terminadas");
+  });
+});
+
+describe("planReminderHref", () => {
+  const row = {
+    customer_name: "Juan",
+    customer_phone: "55 1234 5678",
+    plan: { name: "Despensa" } as never,
+    due_period: { ...period(2, "pending"), order_tracking_token: "tok" },
+  };
+
+  it("links to WhatsApp with the Mexican prefix and the pay page", () => {
+    const href = planReminderHref(row, "https://tlaco.app");
+    expect(href?.startsWith("https://wa.me/525512345678?text=")).toBe(true);
+    expect(decodeURIComponent(href ?? "")).toContain("https://tlaco.app/pedido/tok");
+  });
+
+  it("has nothing to send without a phone or a period to pay", () => {
+    expect(planReminderHref({ ...row, customer_phone: null }, "x")).toBeNull();
+    expect(planReminderHref({ ...row, due_period: null }, "x")).toBeNull();
   });
 });
 

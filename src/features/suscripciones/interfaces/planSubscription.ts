@@ -63,3 +63,14 @@ export interface PlanRenewalControlProps {
   cancelAtPeriodEnd: boolean;
   periodEndLabel: string | null;
 }
+
+export interface PlanSubscriptionCardProps {
+  row: PlanSubscriptionRow;
+  /** Site origin for the customer's links. */
+  origin: string;
+  busy: boolean;
+  onCopyLink: (url: string) => void;
+  onCancelNow: () => void;
+  onCancelAtEnd: () => void;
+  onResume: () => void;
+}
