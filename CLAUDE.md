@@ -20,7 +20,8 @@ Integración: Docker abierto, `npx supabase start` y, si la base local ya
 existía, `npx supabase migration up --local` (start no re-aplica migraciones
 sobre un volumen existente). Toda migración nueva que toque carrito, pedidos
 o promociones lleva su `*.itest.ts` y su script de reversa en
-`supabase/snippets/`.
+`supabase/snippets/`. `test:integration` corre los archivos en serie: los
+scripts de reversa toman locks de DDL que chocan con inserts en paralelo.
 
 **Migraciones Supabase** (en `supabase/migrations/`, orden alfabético = cronológico):
 
@@ -115,7 +116,7 @@ components/   hooks/   helpers/   constants/   interfaces/   services/   validat
 ```
 
 Features actuales: `auth`, `checkout`, `configuracion`, `equipo`,
-`landing`, `onboarding`, `orders`, `prestamos`, `productos`,
+`landing`, `onboarding`, `orders`, `planes`, `prestamos`, `productos`,
 `promociones`, `qr`, `servicios`, `sitio`, `sitio-web`, `suscripciones`,
 `ventas`.
 
@@ -254,6 +255,27 @@ una preferencia MP. El `back_urls` por defecto apunta a
 - Etiqueta de una promoción: `formatOfferLabel` (`src/lib/offers/`).
 - Promociones se archivan (`status`), no se borran; lectores públicos con
   cliente admin filtran `status = 'active'`.
+
+**Planes / suscripciones (Fase 2a, cobro manual, sin cron):**
+- Un plan (`offer_plans` + `offer_plan_items`, feature `planes`) NO es una
+  promoción ni toca `public_cart_items`: en el carrito vive en
+  `public_cart_plans` (`cartPlanService`). Todo lugar que vacía el carrito
+  también llama `clearCartPlans`.
+- Checkout con planes = un solo pago hoy (productos + primer periodo). El
+  precio del plan va en `order_plan_charges`; lo que entrega va como
+  `order_items` de $0 con `line_kind = 'plan_component'` (así el trigger de
+  inventario descuenta stock sin cambios).
+- La instancia es una fila de `subscriptions` con `offer_plan_id`; cada
+  periodo es una fila de `subscription_periods` (UNIQUE por número = ancla de
+  idempotencia). Nunca crees pedidos de renovación a mano: usa
+  `ensure_due_periods` / `create_plan_period_order`.
+- Pagar un pedido de periodo por CUALQUIER vía activa/avanza el plan vía el
+  trigger `order_plan_period_trigger` (mismo predicado de pagado que el de
+  inventario). Cancelar el pedido de un periodo sin pagar cancela el plan.
+- Sin cron: `ensureDuePeriods` corre al abrir Suscripciones, Operaciones y
+  `/plan/{token}`. Un cron futuro sólo debe llamarlo por tenant.
+- `/plan/{token}` es la credencial del cliente (token de 64 hex); nunca la
+  expongas fuera del cliente y del negocio.
 
 ### 8. Estado global
 
