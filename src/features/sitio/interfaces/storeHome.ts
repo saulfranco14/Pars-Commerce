@@ -52,6 +52,8 @@ export interface StoreValueCardsProps {
 
 export interface StorePurchaseStepsProps {
   steps: SitePagePurchaseStep[];
+  title?: string;
+  subtitle?: string;
 }
 
 export interface StoreFaqProps {

@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import type { ProductPromotionResult } from "@/lib/promotionPrice";
+import type { PublicOfferPlan } from "@/features/planes/interfaces/offerPlan";
 
 import type {
   ActivePromotion,
@@ -50,6 +51,21 @@ export interface ProductCollectionProps {
   items: CatalogItem[];
   tenantId: string;
   slug: string;
+}
+
+export interface PlanCardProps {
+  plan: PublicOfferPlan;
+  tenantId: string;
+  slug: string;
+}
+
+export interface PlanSubscribeButtonProps {
+  planId: string;
+  planName: string;
+  tenantId: string;
+  slug: string;
+  /** "mes", "2 semanas". */
+  every: string;
 }
 
 export interface PromotionCardProps {

@@ -93,6 +93,26 @@ export async function addPromotion(
   return data as { success: boolean; cart_id: string };
 }
 
+async function readError(res: Response): Promise<string> {
+  const data = await res.json().catch(() => ({}));
+  return typeof (data as { error?: string }).error === "string" ? (data as { error: string }).error : res.statusText;
+}
+
+export async function addPlan(tenantId: string, planId: string, fingerprintId: string): Promise<void> {
+  const res = await fetch("/api/public-cart", {
+    method: "POST",
+    headers: getHeaders(fingerprintId),
+    body: JSON.stringify({ tenant_id: tenantId, plan_id: planId }),
+  });
+  if (!res.ok) throw new Error(await readError(res));
+}
+
+export async function removePlan(cartId: string, planLineId: string, fingerprintId: string): Promise<void> {
+  const url = `/api/public-cart?cart_id=${encodeURIComponent(cartId)}&plan_line_id=${encodeURIComponent(planLineId)}`;
+  const res = await fetch(url, { method: "DELETE", headers: getHeaders(fingerprintId) });
+  if (!res.ok) throw new Error(await readError(res));
+}
+
 export async function updateItemQuantity(
   cartId: string,
   itemId: string,

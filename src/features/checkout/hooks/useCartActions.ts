@@ -4,6 +4,7 @@ import { dispatchCartUpdated } from "@/lib/cartEvents";
 import { applyLineQuantity, cartTotals, removeCartLine } from "@/features/checkout/helpers/cartLineGroups";
 import {
   removeItem,
+  removePlan,
   updateItemQuantity,
   type PublicCartItem,
 } from "@/services/publicCartService";
@@ -73,5 +74,17 @@ export function useCartActions({
     }
   };
 
-  return { error, setError, handleQuantityChange, handleRemove };
+  // Plans are few and priced server-side, so this waits for the server instead of guessing.
+  const handleRemovePlan = async (planLineId: string) => {
+    if (!cart || !fingerprint) return;
+    setError(null);
+    try {
+      await removePlan(cart.id, planLineId, fingerprint);
+      mutate();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al quitar la suscripción");
+    }
+  };
+
+  return { error, setError, handleQuantityChange, handleRemove, handleRemovePlan };
 }

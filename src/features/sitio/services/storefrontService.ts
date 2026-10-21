@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enrichProducts, type ProductBase } from "@/lib/enrichProducts";
 import { readBusinessHours } from "@/features/configuracion/helpers/businessHours";
+import { listPublicPlans } from "@/features/planes/services/planQueryService";
 
 import {
   isPromotionActive,
@@ -121,6 +122,13 @@ export const getCatalogIndex = cache(async (tenantId: string): Promise<{
     })
     .filter((category): category is StoreCategory => category !== null);
   return { counts, categories };
+});
+
+export const getActivePlans = cache(async (tenantId: string) => listPublicPlans(createAdminClient(), tenantId));
+
+export const getActivePlan = cache(async (tenantId: string, planSlug: string) => {
+  const [plan] = await listPublicPlans(createAdminClient(), tenantId, planSlug);
+  return plan ?? null;
 });
 
 export const getActivePromotions = cache(async (tenantId: string): Promise<ActivePromotion[]> => {

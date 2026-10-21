@@ -2,10 +2,10 @@ import { StoreSectionHeader } from "@/features/sitio/components/StoreSectionHead
 
 import type { StorePurchaseStepsProps } from "@/features/sitio/interfaces/storeHome";
 
-export function StorePurchaseSteps({ steps }: StorePurchaseStepsProps) {
+export function StorePurchaseSteps({ steps, title = "Cómo comprar", subtitle = "Tres pasos y listo." }: StorePurchaseStepsProps) {
   return (
     <section aria-labelledby="store-steps-title">
-      <StoreSectionHeader id="store-steps-title" title="Cómo comprar" subtitle="Tres pasos y listo." />
+      <StoreSectionHeader id="store-steps-title" title={title} subtitle={subtitle} />
       <ol className="grid gap-3 sm:grid-cols-3 sm:gap-4">
         {steps.map((step, index) => (
           <li

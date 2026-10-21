@@ -45,6 +45,8 @@ export function CartProvider({ tenantId, children }: { tenantId: string; childre
     items: data?.items ?? [],
     subtotal: data?.subtotal ?? 0,
     itemsCount: data?.items_count ?? 0,
+    plans: data?.plans ?? [],
+    plansTotal: data?.plans_total ?? 0,
     isLoading,
     error: error ?? null,
     lastAdded,
@@ -54,7 +56,7 @@ export function CartProvider({ tenantId, children }: { tenantId: string; childre
   return (
     <CartContext.Provider value={value}>
       {children}
-      <CartDock itemsCount={value.itemsCount} subtotal={value.subtotal} lastAdded={lastAdded} />
+      <CartDock itemsCount={value.itemsCount} subtotal={value.subtotal + value.plansTotal} lastAdded={lastAdded} />
     </CartContext.Provider>
   );
 }

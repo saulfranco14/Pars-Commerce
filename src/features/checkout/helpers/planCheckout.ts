@@ -33,3 +33,23 @@ export function planChargeItems(plans: CartPlanLine[]) {
     currency_id: "MXN" as const,
   }));
 }
+
+/** A plan that is only picked up (or only delivered) narrows the checkout's options. */
+export function restrictCheckoutForPlans<T extends { deliveryEnabled: boolean; pickupEnabled: boolean }>(options: T, plans: CartPlanLine[]): T {
+  if (plans.length === 0) return options;
+  return {
+    ...options,
+    deliveryEnabled: options.deliveryEnabled && plans.every((line) => line.plan.fulfillment_methods.includes("delivery")),
+    pickupEnabled: options.pickupEnabled && plans.every((line) => line.plan.fulfillment_methods.includes("pickup")),
+  };
+}
+
+/** Moves a selection off a fulfillment method the options no longer allow. */
+export function fitSelectionToOptions<S extends { fulfillment: CheckoutFulfillmentMethod }>(
+  selection: S,
+  options: { deliveryEnabled: boolean; pickupEnabled: boolean },
+): S {
+  if (selection.fulfillment === "delivery" && !options.deliveryEnabled && options.pickupEnabled) return { ...selection, fulfillment: "pickup" };
+  if (selection.fulfillment === "pickup" && !options.pickupEnabled && options.deliveryEnabled) return { ...selection, fulfillment: "delivery" };
+  return selection;
+}

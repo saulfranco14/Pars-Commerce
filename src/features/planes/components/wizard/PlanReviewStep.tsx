@@ -8,7 +8,8 @@ import { WizardStepHeading } from "@/components/wizard/WizardStepHeading";
 
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { formatInterval } from "@/lib/offers/planPeriods";
-import { DURATION_PRESETS, FULFILLMENT_LABELS, WEEKDAY_LABELS } from "@/features/planes/constants/planOptions";
+import { DURATION_PRESETS, FULFILLMENT_LABELS } from "@/features/planes/constants/planOptions";
+import { weekdayPlural } from "@/features/planes/helpers/planDisplay";
 import { PLAN_WIZARD_TITLE_ID } from "@/features/planes/constants/planWizard";
 
 import type { PickerItem } from "@/features/promociones/interfaces/offerWizard";
@@ -46,7 +47,7 @@ export function PlanReviewStep({
       term: "Entrega",
       detail: [
         values.fulfillmentMethods.map((method) => FULFILLMENT_LABELS[method]).join(" o "),
-        values.preferredWeekday !== null ? `los ${WEEKDAY_LABELS[values.preferredWeekday].toLowerCase()}` : null,
+        values.preferredWeekday !== null ? weekdayPlural(values.preferredWeekday) : null,
       ]
         .filter(Boolean)
         .join(", "),
