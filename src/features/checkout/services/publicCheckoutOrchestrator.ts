@@ -275,7 +275,8 @@ export async function executePublicCheckout({
       balance_due: subtotal,
       expires_at: expiresAt,
       scheduled_for: scheduledFor?.toISOString() ?? null,
-      order_type: fulfillmentMethod === "delivery" ? "delivery" : "takeaway",
+      // orders_order_type_check only allows dine_in/takeaway/qr_payment; delivery lives in fulfillment_method.
+      order_type: "takeaway",
       work_metadata: {
         checkout_mode: mode,
         public_cart_id: payload.cart_id,

@@ -37,7 +37,7 @@ const originalOrder = {
   tenant_id: "tenant-1",
   status: "pending_subscription",
   fulfillment_method: "delivery",
-  order_type: "delivery",
+  order_type: "takeaway",
   delivery_fee: 30,
   scheduled_for: null,
 };

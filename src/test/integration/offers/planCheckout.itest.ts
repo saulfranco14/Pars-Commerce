@@ -129,6 +129,22 @@ describe("checkout with a plan in the cart", () => {
     expect(await sql`select id from public_cart_plans where cart_id = ${data.cartId}`).toHaveLength(0);
   });
 
+  it("accepts a home-delivery checkout (order_type only allows dine_in, takeaway, qr_payment)", async () => {
+    await sql`delete from public_cart_plans where cart_id = ${data.cartId}`;
+    await sql`update tenant_fulfillment_settings set delivery_enabled = true, delivery_fee = 30, delivery_area_label = 'Centro' where tenant_id = ${data.tenantId}`;
+    const response = await executePublicCheckout({
+      request: checkoutRequest(data, {
+        fulfillment_method: "delivery",
+        pickup_point_id: undefined,
+        delivery: { recipient_name: "Juan", phone: "5512345678", address_text: "Calle 1, Centro" },
+      }),
+    });
+    const body = (await response.json()) as { order_id?: string; error?: string };
+    expect(response.status, body.error).toBe(200);
+    const [order] = await sql`select fulfillment_method, order_type, total from orders where id = ${body.order_id as string}`;
+    expect(order).toEqual({ fulfillment_method: "delivery", order_type: "takeaway", total: "75.00" });
+  });
+
   it("rejects plans in installments and asks to review a plan whose price changed", async () => {
     const partial = await executePublicCheckout({ request: checkoutRequest(data, { mode: "partial", payment_method: "mercadopago" }) });
     expect(partial.status).toBe(409);
