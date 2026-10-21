@@ -41,6 +41,8 @@ export interface Tenant {
   id: string;
   name: string;
   slug: string;
+  /** Public storefront path segment (`/sitio/{site_slug}`); may differ from `slug`. */
+  site_slug?: string | null;
   business_type: string | null;
   logo_url: string | null;
   banner_url: string | null;
