@@ -9,7 +9,7 @@ import { OFFER_KIND_LABELS } from "@/features/promociones/constants/offerTemplat
 import { OFFER_WIZARD_TITLE_ID } from "@/features/promociones/constants/offerWizard";
 import { templatesFor } from "@/features/promociones/helpers/templateSuggestions";
 
-import type { OfferTemplate } from "@/features/promociones/interfaces/offerTemplate";
+import type { OfferKind, OfferTemplate } from "@/features/promociones/interfaces/offerTemplate";
 
 function TemplateCard({ template, onPick }: { template: OfferTemplate; onPick: (key: string) => void }) {
   const Icon = template.icon;
@@ -28,7 +28,8 @@ function TemplateCard({ template, onPick }: { template: OfferTemplate; onPick: (
           <span className="text-base font-semibold text-foreground">{template.title}</span>
           {template.kind !== "promotion" ? (
             <span className="rounded-full bg-border-soft px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-              {OFFER_KIND_LABELS[template.kind]} · Pronto
+              {OFFER_KIND_LABELS[template.kind]}
+              {template.available ? "" : " · Pronto"}
             </span>
           ) : null}
         </span>
@@ -43,18 +44,28 @@ export function TemplateStep({
   businessType,
   businessLabel,
   onPick,
+  kinds,
+  titleId = OFFER_WIZARD_TITLE_ID,
+  eyebrow = "Nueva promoción",
 }: {
   businessType: string | null;
   businessLabel: string | null;
   onPick: (key: string | null) => void;
+  /** Only these kinds; every kind when omitted. */
+  kinds?: readonly OfferKind[];
+  titleId?: string;
+  eyebrow?: string;
 }) {
-  const { forYou, universal } = templatesFor(businessType);
+  const all = templatesFor(businessType);
+  const keep = (template: OfferTemplate) => !kinds || kinds.includes(template.kind);
+  const forYou = all.forYou.filter(keep);
+  const universal = all.universal.filter(keep);
 
   return (
     <div className="space-y-8">
       <WizardStepHeading
-        titleId={OFFER_WIZARD_TITLE_ID}
-        eyebrow="Nueva promoción"
+        titleId={titleId}
+        eyebrow={eyebrow}
         title="¿Qué quieres ofrecer?"
         subtitle="Elige un punto de partida; podrás ajustar todo en los siguientes pasos."
       />

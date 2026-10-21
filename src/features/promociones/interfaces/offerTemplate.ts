@@ -1,5 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 
+import type { PlanInterval } from "@/lib/offers/planPeriods";
+
 export type OfferKind = "promotion" | "subscription" | "membership";
 
 export type PromotionMechanic =
@@ -21,6 +23,10 @@ export interface OfferTemplateDefaults {
   validity?: ValidityPreset;
   /** Suggested pack price as a share of the pack's list value (0.9 = 10% off). */
   packPriceRatio?: number;
+  planInterval?: PlanInterval;
+  planFulfillment?: ReadonlyArray<"pickup" | "delivery">;
+  /** Index of Date#getDay(). */
+  planWeekday?: number;
 }
 
 export interface OfferTemplate {
@@ -36,7 +42,7 @@ export interface OfferTemplate {
   defaults?: OfferTemplateDefaults;
   /** Words that float matching catalog items to the top of the picker. */
   keywords?: readonly string[];
-  /** Subscriptions and memberships arrive in later phases. */
+  /** Memberships arrive in a later phase. */
   available: boolean;
 }
 

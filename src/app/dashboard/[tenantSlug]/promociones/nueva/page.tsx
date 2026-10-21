@@ -21,6 +21,7 @@ function NewOffer() {
       templateKey={searchParams.get("template")}
       onClose={() => router.push(listUrl)}
       onSaved={() => router.push(listUrl)}
+      onStartPlan={(key) => router.push(`${listUrl}/planes/nueva?template=${encodeURIComponent(key)}`)}
     />
   );
 }

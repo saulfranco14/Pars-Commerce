@@ -51,7 +51,7 @@ export const MENU_ITEMS: readonly MenuItemDef[] = [
   ...STATIONS.map((s) => ({ path: stationSection(s.key), label: s.label, icon: s.icon, group: "operacion" as const })),
   { path: "productos", label: "Productos", icon: Package, group: "gestion", matchChildren: true },
   { path: "servicios", label: "Servicios", icon: Scissors, group: "gestion", matchChildren: true },
-  { path: "promociones", label: "Promociones", icon: BadgePercent, group: "gestion", matchChildren: true },
+  { path: "promociones", label: "Promociones y planes", icon: BadgePercent, group: "gestion", matchChildren: true },
   { path: "ordenes", label: "Órdenes / Tickets", icon: ClipboardList, group: "gestion", matchChildren: true },
   { path: "cotizaciones", label: "Cotizaciones", icon: FileText, group: "gestion" },
   { path: "agenda", label: "Agenda", icon: CalendarClock, group: "gestion" },

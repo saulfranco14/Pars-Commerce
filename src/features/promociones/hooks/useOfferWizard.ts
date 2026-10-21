@@ -34,9 +34,11 @@ interface UseOfferWizardParams {
   templateKey?: string | null;
   onClose: () => void;
   onSaved: (id: string) => void;
+  /** Subscription templates continue in the plan wizard. */
+  onStartPlan?: (templateKey: string) => void;
 }
 
-export function useOfferWizard({ tenantId, promotionId, templateKey, onClose, onSaved }: UseOfferWizardParams) {
+export function useOfferWizard({ tenantId, promotionId, templateKey, onClose, onSaved, onStartPlan }: UseOfferWizardParams) {
   const isEdit = Boolean(promotionId);
   const steps = isEdit ? EDIT_STEPS : CREATE_STEPS;
   const wizard = useWizardSteps({ total: steps.length, onClose });
@@ -70,6 +72,10 @@ export function useOfferWizard({ tenantId, promotionId, templateKey, onClose, on
   const nameOf = useMemo(() => (id: string) => catalog.itemsById.get(id)?.name, [catalog.itemsById]);
 
   function chooseTemplate(key: string | null) {
+    if (key && findTemplate(key)?.kind === "subscription" && onStartPlan) {
+      onStartPlan(key);
+      return;
+    }
     form.reset(key ? valuesFromTemplate(key) : { ...EMPTY_WIZARD_VALUES });
     wizard.goForward();
   }

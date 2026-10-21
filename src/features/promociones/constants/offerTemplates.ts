@@ -175,7 +175,18 @@ export const OFFER_TEMPLATES: readonly OfferTemplate[] = [
     available: true,
   },
 
-  // ── Subscriptions and memberships (next phases) ─────────────────────────
+  // ── Subscriptions ───────────────────────────────────────────────────────
+  {
+    key: "compra_recurrente",
+    kind: "subscription",
+    verticals: "all",
+    title: "Compra recurrente",
+    description: "Tus productos de siempre, apartados y cobrados cada periodo.",
+    example: "Paquete del mes $499/mes",
+    icon: Repeat,
+    defaults: { packPriceRatio: 0.9, planInterval: { unit: "month", count: 1 }, planFulfillment: ["pickup"] },
+    available: true,
+  },
   {
     key: "despensa_mensual",
     kind: "subscription",
@@ -184,7 +195,9 @@ export const OFFER_TEMPLATES: readonly OfferTemplate[] = [
     description: "Una despensa que se cobra y se entrega cada mes.",
     example: "Despensa básica $559/mes",
     icon: ShoppingBasket,
-    available: false,
+    defaults: { packPriceRatio: 0.9, planInterval: { unit: "month", count: 1 }, planFulfillment: ["pickup", "delivery"], planWeekday: 6 },
+    keywords: ["arroz", "frijol", "aceite", "leche", "huevo", "azucar", "cafe", "papel", "jabon"],
+    available: true,
   },
   {
     key: "pan_semanal",
@@ -194,7 +207,9 @@ export const OFFER_TEMPLATES: readonly OfferTemplate[] = [
     description: "El pan de cada semana, apartado y listo para recoger.",
     example: "Bolsa de pan $120/semana",
     icon: Repeat,
-    available: false,
+    defaults: { packPriceRatio: 0.9, planInterval: { unit: "week", count: 1 }, planFulfillment: ["pickup"], planWeekday: 6 },
+    keywords: ["pan", "bolillo", "concha", "baguette", "integral"],
+    available: true,
   },
   {
     key: "alimento_mascota",
@@ -204,8 +219,12 @@ export const OFFER_TEMPLATES: readonly OfferTemplate[] = [
     description: "Croquetas a domicilio sin que se acaben.",
     example: "Bulto de 20 kg cada mes",
     icon: PawPrint,
-    available: false,
+    defaults: { packPriceRatio: 0.95, planInterval: { unit: "month", count: 1 }, planFulfillment: ["delivery", "pickup"] },
+    keywords: ["croqueta", "alimento", "arena", "kg"],
+    available: true,
   },
+
+  // ── Memberships (next phase) ────────────────────────────────────────────
   {
     key: "club_lavado",
     kind: "membership",

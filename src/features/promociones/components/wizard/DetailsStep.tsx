@@ -6,6 +6,7 @@ import { CurrencyInput } from "@/components/ui/CurrencyInput";
 import { FormInput } from "@/components/ui/FormInput";
 import { ImageUpload } from "@/components/ImageUpload";
 import { WizardStepHeading } from "@/components/wizard/WizardStepHeading";
+import { CHOICE_CHIP, FIELD_LABEL } from "@/components/wizard/wizardStyles";
 import { PromotionPreviewStrip } from "@/features/promociones/components/wizard/PromotionPreviewStrip";
 
 import { NXM_PRESETS, PERCENTAGE_PRESETS } from "@/features/promociones/constants/promotionMechanics";
@@ -16,10 +17,10 @@ import type { ValidityPreset } from "@/features/promociones/interfaces/offerTemp
 import type { OfferWizardValues, PickerItem } from "@/features/promociones/interfaces/offerWizard";
 import type { Path, PathValue, UseFormReturn } from "react-hook-form";
 
-const CHIP = "min-h-11 cursor-pointer rounded-full border px-4 text-sm font-semibold transition-colors";
-const CHIP_ON = "border-accent bg-accent text-accent-foreground";
-const CHIP_OFF = "border-border bg-surface text-foreground hover:border-accent/40";
-const LABEL = "mb-2 block text-sm font-semibold text-foreground";
+const CHIP = CHOICE_CHIP.base;
+const CHIP_ON = CHOICE_CHIP.on;
+const CHIP_OFF = CHOICE_CHIP.off;
+const LABEL = FIELD_LABEL;
 
 export function DetailsStep({
   form,

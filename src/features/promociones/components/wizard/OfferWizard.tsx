@@ -21,10 +21,11 @@ interface OfferWizardProps {
   templateKey?: string | null;
   onClose: () => void;
   onSaved: (id: string) => void;
+  onStartPlan?: (templateKey: string) => void;
 }
 
-export function OfferWizard({ tenantId, businessType, promotionId, templateKey, onClose, onSaved }: OfferWizardProps) {
-  const wizard = useOfferWizard({ tenantId, promotionId, templateKey, onClose, onSaved });
+export function OfferWizard({ tenantId, businessType, promotionId, templateKey, onClose, onSaved, onStartPlan }: OfferWizardProps) {
+  const wizard = useOfferWizard({ tenantId, promotionId, templateKey, onClose, onSaved, onStartPlan });
   const businessLabel = BUSINESS_TYPES.find((type) => type.value === businessType)?.label.toLowerCase() ?? null;
   const isLast = wizard.stepKey === "revisar";
 
