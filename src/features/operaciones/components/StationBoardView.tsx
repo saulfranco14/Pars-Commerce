@@ -32,7 +32,7 @@ import { CollectedSummaryCard } from "@/features/operaciones/components/Collecte
 import { BoardRefreshButton } from "@/features/operaciones/components/BoardRefreshButton";
 import { BoardOrderCard } from "@/features/operaciones/components/BoardOrderCard";
 import { StationCardActions } from "@/features/operaciones/components/StationCardActions";
-import { CounterChargeSheet } from "@/features/operaciones/components/CounterChargeSheet";
+import { ChargeSheet } from "@/features/orders/components/payment/ChargeSheet";
 import { StationTabs } from "@/features/operaciones/components/StationTabs";
 
 import { formatCurrency } from "@/features/qr/helpers/format";
@@ -307,14 +307,23 @@ export function StationBoardView({
         </>
       )}
 
-      <CounterChargeSheet
-        order={charging}
-        busy={Boolean(charging) && board.isBusy(charging?.id ?? "")}
+      <ChargeSheet
+        target={
+          charging
+            ? {
+                id: charging.id,
+                number: charging.number,
+                due: Number(charging.balanceDue ?? charging.total ?? 0),
+                originLabel: charging.originLabel,
+                customerName: charging.customerName,
+                paymentMethod: charging.paymentMethod,
+                assignedTo: charging.assignedTo,
+              }
+            : null
+        }
+        team={board.board?.team ?? []}
         onClose={() => setCharging(null)}
-        onCharge={async (method) => {
-          if (!charging) return;
-          if (await board.charge(charging, method)) setCharging(null);
-        }}
+        onCharged={() => void board.refresh()}
       />
       <DeliveryCompletionSheet
         open={Boolean(delivering)}

@@ -1,18 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, QrCode, Store } from "lucide-react";
+import { QrCode, Store, Wallet } from "lucide-react";
 
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { Notification } from "@/components/ui/Notification";
-import { COUNTER_PAYMENT_METHODS, paymentMethodLabel } from "@/features/orders/constants/paymentMethods";
 import { useOrder } from "@/features/orders/hooks/useOrder";
-import { chargeOrderAtCounter } from "@/features/orders/services/counterPaymentClientService";
+import { ChargeSheet } from "@/features/orders/components/payment/ChargeSheet";
+import { btnWorkSuccess } from "@/components/ui/buttonClasses";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { usePermission } from "@/stores/useTenantStore";
 import { isTableServiceOrder } from "@/features/orders/helpers/isTableServiceOrder";
-
-import type { IntentMethod } from "@/features/qr/services/tablePaymentService";
 
 /** Orígenes donde el negocio registra un cobro directo en mostrador. */
 const COUNTER_SOURCES = new Set(["staff"]);
@@ -23,11 +19,9 @@ const COUNTER_SOURCES = new Set(["staff"]);
  * validación aparece en PendingCashCard.
  */
 export function CounterPaymentCard() {
-  const { order, fetchOrder } = useOrder();
+  const { order, team, fetchOrder } = useOrder();
   const can = usePermission();
-  const [method, setMethod] = useState<IntentMethod | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [charging, setCharging] = useState(false);
 
   if (!order) return null;
   const isTableOrder = isTableServiceOrder(order);
@@ -86,75 +80,31 @@ export function CounterPaymentCard() {
   }
 
   const due = Number(order.balance_due ?? order.total);
-
-  async function charge() {
-    if (!method) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await chargeOrderAtCounter(order!.id, method);
-      await fetchOrder();
-      setMethod(null);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "No se pudo registrar el cobro",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const chosen = COUNTER_PAYMENT_METHODS.find((m) => m.id === method);
+  const number = order.order_number ?? order.id.slice(0, 8).toUpperCase();
 
   return (
-    <div className="min-w-0 rounded-xl border border-emerald-300 bg-emerald-50/60 p-4">
+    <div className="min-w-0 rounded-xl border border-emerald-300 bg-emerald-50/60 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
       <div className="mb-1 flex items-center gap-2">
-        <Store className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden />
-        <h3 className="text-sm font-bold text-emerald-900">
-          Cobrar en el mostrador
-        </h3>
+        <Store className="h-5 w-5 shrink-0 text-emerald-700 dark:text-emerald-400" aria-hidden />
+        <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-200">Cobrar en el mostrador</h3>
       </div>
-      <p className="mb-3 text-xs text-emerald-900/80">
-        El cliente trae su número{" "}
-        <span className="font-mono font-bold">
-          {order.order_number ?? order.id.slice(0, 8).toUpperCase()}
-        </span>{" "}
-        y paga aquí. Cobra {formatCurrency(due)} y elige cómo lo recibiste.
+      <p className="mb-3 text-xs text-emerald-900/80 dark:text-emerald-200/80">
+        El cliente trae su número <span className="font-mono font-bold">{number}</span> y paga aquí.
       </p>
+      <button type="button" onClick={() => setCharging(true)} className={`${btnWorkSuccess} w-full`}>
+        <Wallet className="h-4 w-4" aria-hidden />
+        Cobrar {formatCurrency(due)}
+      </button>
 
-      {error && (
-        <div className="mb-3">
-          <Notification tone="error" message={error} />
-        </div>
-      )}
-
-      <div className="flex flex-wrap gap-2">
-        {COUNTER_PAYMENT_METHODS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setMethod(id)}
-            disabled={busy}
-            className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-emerald-300 bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:border-emerald-500 hover:bg-emerald-50 disabled:opacity-60"
-          >
-            {busy && method === id ? (
-              <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
-            ) : (
-              <Icon className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden />
-            )}
-            {paymentMethodLabel(label)}
-          </button>
-        ))}
-      </div>
-
-      <ConfirmDialog
-        isOpen={method !== null}
-        onClose={() => setMethod(null)}
-        onConfirm={charge}
-        title={`¿Recibiste ${formatCurrency(due)}?`}
-        description={`Se registra el cobro en ${chosen ? chosen.label.toLowerCase() : ""} y el pedido queda pagado. Confirma solo con el dinero en la mano.`}
-        confirmLabel="Sí, ya lo recibí"
-        loading={busy}
+      <ChargeSheet
+        target={
+          charging
+            ? { id: order.id, number, due, customerName: order.customer_name, assignedTo: order.assigned_to }
+            : null
+        }
+        team={team.map((member) => ({ userId: member.user_id, name: member.display_name || member.email }))}
+        onClose={() => setCharging(false)}
+        onCharged={() => void fetchOrder()}
       />
     </div>
   );

@@ -7,8 +7,7 @@ export type OrderActionsPresentation = "inline" | "fixed";
 export type OrderActionDialog =
   | "cancel"
   | "addendum"
-  | "assign-payment"
-  | "confirm-payment"
+  | "charge"
   | "payment-link"
   | "credit"
   | "accept-request"

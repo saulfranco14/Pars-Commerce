@@ -20,12 +20,10 @@ import {
 } from "@/features/orders/services/manualPaymentService";
 import { BOARD_REFRESH_MS } from "@/features/operaciones/constants/stations";
 import { stationBoardKey } from "@/features/operaciones/helpers/boardKey";
-import { chargeOrderAtCounter } from "@/features/orders/services/counterPaymentClientService";
 
 import type { StationKey } from "@/features/operaciones/constants/stations";
 import type { BoardView, StationBoard } from "@/features/operaciones/interfaces/board";
 import type { FulfillmentStatus } from "@/features/qr/services/tableFulfillmentService";
-import type { IntentMethod } from "@/features/qr/services/tablePaymentService";
 import type { OrderDeliveryEventType } from "@/features/orders/services/orderActionService";
 
 /** One station's columns plus the actions its cards can run; every action refreshes the board. */
@@ -107,9 +105,6 @@ export function useStationBoard(tenantId: string | null, station: StationKey, vi
       run(orderId, () => updatePublicOrderRequest(orderId, action)),
     deliveryEvent: (orderId: string, type: OrderDeliveryEventType, photo?: File, note?: string) =>
       run(orderId, () => createOrderDeliveryEvent(orderId, type, photo, note)),
-    /** The counter received the money: confirms what the customer declared, or registers a new payment. */
-    charge: (order: { id: string; number: string }, method: IntentMethod) =>
-      run(order.id, () => chargeOrderAtCounter(order.id, method), `Cobro de #${order.number} registrado. El pedido quedó pagado.`),
     confirmPayment: (paymentId: string) => run(`pay:${paymentId}`, () => confirmManualPayment(paymentId)),
     rejectPayment: (paymentId: string) => run(`pay:${paymentId}`, () => rejectManualPayment(paymentId)),
     busyPaymentId: busyKeys.find((k) => k.startsWith("pay:"))?.slice(4) ?? null,

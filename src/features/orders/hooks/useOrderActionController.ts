@@ -61,19 +61,14 @@ export function useOrderActionController() {
 
   async function runExpressCheckout() {
     if (!order) return;
-    const wasUnassigned = !order.assigned_to;
     const ok = await handleExpressToPayment();
     if (!ok) return;
-    openDialog(wasUnassigned ? "assign-payment" : "confirm-payment");
+    openDialog("charge");
   }
 
   function runPayment() {
     if (!order) return;
-    const needsAssignment =
-      order.status === "completed" ||
-      order.status === "pending_payment" ||
-      order.status === "pending_pickup";
-    openDialog(needsAssignment ? "assign-payment" : "confirm-payment");
+    openDialog("charge");
   }
 
   async function resolvePublicRequest(action: PublicOrderRequestAction) {

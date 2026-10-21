@@ -137,47 +137,6 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const handleAssignAndMarkPaid = async (assignToId: string, paymentMethod?: string) => {
-    if (!order) return false;
-    setActionLoading(true);
-    setError(null);
-    setAssignmentSuccess(false);
-    try {
-      await updateOrder(order.id, {
-        assigned_to: assignToId,
-        status: "paid",
-        payment_method: paymentMethod?.trim() || null,
-      });
-      await fetchOrder();
-      setAssignmentSuccess(true);
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al asignar y cobrar");
-      return false;
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleMarkAsPaidWithMethod = async (paymentMethod: string) => {
-    if (!order) return false;
-    setActionLoading(true);
-    setError(null);
-    try {
-      await updateOrder(order.id, {
-        status: "paid",
-        payment_method: paymentMethod.trim() || null,
-      });
-      await fetchOrder();
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al confirmar cobro");
-      return false;
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   const handleExpressToPayment = async (): Promise<boolean> => {
     if (!order) return false;
     setActionLoading(true);
@@ -294,8 +253,6 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
         replaceOrder,
         handleStatusChange,
         handleAssign,
-        handleAssignAndMarkPaid,
-        handleMarkAsPaidWithMethod,
         handleExpressToPayment,
         handleSaveCustomer,
         handleRemoveItem,
