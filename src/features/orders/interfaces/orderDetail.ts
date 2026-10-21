@@ -7,6 +7,10 @@ export interface OrderItem {
   subtotal: number;
   is_wholesale?: boolean;
   wholesale_savings?: number;
+  list_unit_price?: number | null;
+  /** Lines sharing it were sold together as one pack or NxM. */
+  offer_group_id?: string | null;
+  promotion?: { id: string; name: string; type: string } | null;
   product: {
     id: string;
     name: string;
