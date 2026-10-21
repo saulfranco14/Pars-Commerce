@@ -64,13 +64,9 @@ ALTER TABLE public.public_cart_items
   ADD CONSTRAINT public_cart_items_group_unit_quantity_check
   CHECK (group_unit_quantity IS NULL OR group_unit_quantity >= 1);
 
--- Same rule as before when group_id is NULL (every existing row); a product
--- may now also sit inside a pack without overwriting its standalone line.
-ALTER TABLE public.public_cart_items
-  DROP CONSTRAINT IF EXISTS public_cart_items_cart_product_variant_key;
-ALTER TABLE public.public_cart_items
-  ADD CONSTRAINT public_cart_items_cart_product_variant_key
-  UNIQUE NULLS NOT DISTINCT (cart_id, product_id, product_variant_id, group_id);
+-- The unique key keeps its three columns here so the cart code already in
+-- production (upsert ON CONFLICT cart_id,product_id,product_variant_id) keeps
+-- working. 20261023000001_cart_group_key widens it after the new code ships.
 
 CREATE INDEX IF NOT EXISTS public_cart_items_group_idx
   ON public.public_cart_items (cart_id, group_id)
