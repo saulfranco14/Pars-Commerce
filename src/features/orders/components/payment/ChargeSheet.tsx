@@ -34,9 +34,15 @@ export function ChargeSheet({ target, team, onClose, onCharged }: ChargeSheetPro
         Listo
       </button>
     ) : (
-      <button type="button" disabled={!flow.method || flow.busy} onClick={() => void flow.charge()} className={`${btnWorkPrimary} w-full`}>
+      <button type="button" disabled={!flow.method || flow.busy || due <= 0} onClick={() => void flow.charge()} className={`${btnWorkPrimary} w-full`}>
         {flow.busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Wallet className="h-4 w-4" aria-hidden />}
-        {flow.busy ? "Registrando cobro…" : flow.method ? `Recibí ${formatCurrency(due)} en ${methodLabel(flow.method)}` : "Elige cómo te pagó"}
+        {due <= 0
+          ? "Sin saldo por cobrar"
+          : flow.busy
+            ? "Registrando cobro…"
+            : flow.method
+              ? `Recibí ${formatCurrency(due)} en ${methodLabel(flow.method)}`
+              : "Elige cómo te pagó"}
       </button>
     );
 
@@ -68,6 +74,7 @@ export function ChargeSheet({ target, team, onClose, onCharged }: ChargeSheetPro
           </div>
 
           {flow.error ? <Notification tone="error" message={flow.error} /> : null}
+          {due <= 0 ? <Notification tone="info" message="Este pedido no tiene saldo por cobrar." /> : null}
 
           <fieldset>
             <legend className="mb-2 text-sm font-semibold text-foreground">

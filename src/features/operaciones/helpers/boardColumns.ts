@@ -1,5 +1,6 @@
 import { resolveOrderFulfillmentMethod } from "@/features/orders/helpers/resolveOrderFulfillmentMethod";
 import { requiresReadyBeforePayment } from "@/features/qr/helpers/paymentReadiness";
+import { orderAmountDue } from "@/features/orders/helpers/orderAmountDue";
 
 import { STATIONS } from "@/features/operaciones/constants/stations";
 
@@ -105,7 +106,7 @@ export function toBoardOrder(row: BoardOrderRow, extras: BoardOrderExtras, stati
     items: extras.items,
     paid: isPaid(row),
     total: showMoney ? Number(row.total) : null,
-    balanceDue: showMoney ? Math.max(0, Number(row.balance_due ?? Number(row.total) - Number(row.paid_total ?? 0))) : null,
+    balanceDue: showMoney ? orderAmountDue(row) : null,
     assignedTo: row.assigned_to,
     assignedName: extras.assignedName,
     // A table is paid at the end, so once paid there is nothing left to do.
