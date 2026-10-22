@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 const SHEET_TRANSITION_MS = 250;
 
@@ -18,16 +19,14 @@ export function useCheckoutSheet() {
     });
   }, []);
 
+  useBodyScrollLock(mounted);
   useEffect(() => {
     if (!mounted) return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
     };
     document.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = prevOverflow;
       document.removeEventListener("keydown", onKey);
     };
   }, [mounted, close]);

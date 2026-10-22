@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { createPortal } from "react-dom";
 import {
   CheckCircle2,
@@ -47,17 +48,15 @@ export function TransferProofReviewSheet({
     }
   }, [open]);
 
+  useBodyScrollLock(open);
   useEffect(() => {
     if (!open) return;
-    const previousOverflow = document.body.style.overflow;
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !busy) onClose();
     };
 
-    document.body.style.overflow = "hidden";
     document.addEventListener("keydown", handleEscape);
     return () => {
-      document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleEscape);
     };
   }, [busy, onClose, open]);

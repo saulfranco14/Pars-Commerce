@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { createPortal } from "react-dom";
 import { ArrowLeft, Heart, ShieldCheck } from "lucide-react";
 
@@ -81,16 +82,14 @@ export function CustomerPayModal({
       setTipPercent(0);
     }
   }, [isOpen]);
+  useBodyScrollLock(isOpen);
   useEffect(() => {
     if (!isOpen) return;
-    const original = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape" && !loading) onClose();
     }
     document.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = original;
       document.removeEventListener("keydown", onKey);
     };
   }, [isOpen, onClose, loading]);

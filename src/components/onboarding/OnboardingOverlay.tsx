@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { ArrowRight, X } from "lucide-react";
 import {
   STORAGE_KEY,
@@ -839,14 +840,7 @@ export function OnboardingOverlay() {
   }, []);
 
   // Lock body scroll while overlay is open
-  useEffect(() => {
-    if (!visible) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [visible]);
+  useBodyScrollLock(visible);
 
   const dismiss = useCallback(() => {
     try {
