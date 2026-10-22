@@ -8,10 +8,10 @@ export interface TenantPermissionResult {
   permissions: string[];
 }
 
-export async function requirePermission(
+/** The person's active role in the tenant, or null when they are not an active member. */
+export async function getTenantRole(
   userId: string,
   tenantId: string,
-  permission: string,
 ): Promise<TenantPermissionResult | null> {
   const admin = createAdminClient();
   const { data: membership } = await admin
@@ -32,16 +32,20 @@ export async function requirePermission(
     .single();
 
   if (!role) return null;
+  return {
+    membershipId: lifecycle.id,
+    roleId: lifecycle.role_id,
+    roleName: role.name,
+    permissions: (role.permissions as string[] | null) ?? [],
+  };
+}
 
-  const permissions = (role.permissions as string[] | null) ?? [];
-  if (roleHasPermission(role.name, permissions, permission)) {
-    return {
-      membershipId: lifecycle.id,
-      roleId: lifecycle.role_id,
-      roleName: role.name,
-      permissions,
-    };
-  }
-
-  return null;
+export async function requirePermission(
+  userId: string,
+  tenantId: string,
+  permission: string,
+): Promise<TenantPermissionResult | null> {
+  const role = await getTenantRole(userId, tenantId);
+  if (!role) return null;
+  return roleHasPermission(role.roleName, role.permissions, permission) ? role : null;
 }

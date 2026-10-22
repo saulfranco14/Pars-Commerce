@@ -182,12 +182,16 @@ class FakeQuery implements PromiseLike<{ data: unknown; error: unknown }> {
     if (this.pendingWrite.op === "update") {
       this.pendingWrite.filters = this.filters.slice();
       this.writes.push(this.pendingWrite);
-      const updated = this.rows().map((r) =>
-        matches(r, this.filters)
-          ? { ...r, ...(this.pendingWrite!.values as Row) }
-          : r,
-      );
+      const changed: Row[] = [];
+      const updated = this.rows().map((r) => {
+        if (!matches(r, this.filters)) return r;
+        const next = { ...r, ...(this.pendingWrite!.values as Row) };
+        changed.push(next);
+        return next;
+      });
       this.store.set(this.table, updated);
+      // Like Postgrest's `update().select()`: the rows that changed, not a re-read with the old filters.
+      this.insertedRows = changed;
     } else if (this.pendingWrite.op === "delete") {
       this.pendingWrite.filters = this.filters.slice();
       this.writes.push(this.pendingWrite);

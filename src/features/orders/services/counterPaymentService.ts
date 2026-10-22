@@ -103,6 +103,7 @@ export async function chargeAtCounter(
     method: input.method,
     fingerprint: null,
     customerPhone: null,
+    chargedByStaff: true,
   });
   if (!intent.ok) return intent;
   if (!intent.data.paymentId) {

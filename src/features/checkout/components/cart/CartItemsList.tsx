@@ -25,7 +25,7 @@ export function CartItemsList({
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
       <p className="mb-3 text-sm font-semibold text-gray-900">Tus artículos</p>
-      <div className="max-h-105 space-y-3 overflow-y-auto overscroll-contain pr-1 sm:max-h-130">
+      <div className="space-y-3 xl:max-h-130 xl:overflow-y-auto xl:overscroll-contain xl:pr-1">
         {groupCartLines(items).map((entry) =>
           entry.kind === "pack" ? (
             <CartPackGroup

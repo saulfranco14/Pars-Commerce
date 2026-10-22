@@ -1,6 +1,14 @@
 import { describe, it, expect } from "vitest";
 
-import { buildColumns, buildHistoryColumns, originLabel, toBoardOrder } from "@/features/operaciones/helpers/boardColumns";
+import {
+  buildColumns,
+  buildHistoryColumns,
+  countStations,
+  locateOrder,
+  originLabel,
+  rowInStation,
+  toBoardOrder,
+} from "@/features/operaciones/helpers/boardColumns";
 
 import type { BoardOrderRow, BoardOrderExtras } from "@/features/operaciones/helpers/boardColumns";
 
@@ -96,6 +104,17 @@ describe("buildColumns", () => {
     expect(onTheWay.orders.map((o) => o.id)).toEqual(["road"]);
   });
 
+  it("entregas nunca cobra: lo que falta pagar espera aparte hasta que Caja lo cobre", () => {
+    const orders = [
+      card({ id: "paid", fulfillment_status: "ready", fulfillment_method: "pickup", status: "paid" }, "entregas"),
+      card({ id: "owes", fulfillment_status: "ready", fulfillment_method: "pickup" }, "entregas"),
+    ];
+    const [ready, , awaiting] = buildColumns("entregas", orders, TODAY);
+    expect(ready.orders.map((o) => o.id)).toEqual(["paid"]);
+    expect(awaiting.key).toBe("awaiting_payment");
+    expect(awaiting.orders.map((o) => o.id)).toEqual(["owes"]);
+  });
+
   it("recepción separa solicitudes, sin asignar y asignados", () => {
     const orders = [
       card({ id: "req", status: "pending_acceptance" }, "recepcion"),
@@ -129,6 +148,28 @@ describe("buildColumns", () => {
     expect(toConfirm.orders.map((o) => o.id)).toEqual(["reported"]);
     expect(toConfirm.orders[0].pendingPayments[0].tip).toBe(50);
     expect(ready.orders.map((o) => o.id)).toEqual(["owes"]);
+  });
+
+  it("caja pone el comprobante de transferencia en pagos por confirmar", () => {
+    const proof = { id: "pr1", amountClaimed: 349, fileType: "image/jpeg", createdAt: TODAY, url: "https://x/y.jpg" };
+    const orders = [
+      card(
+        { id: "proof", source: "public_store", status: "pending_payment", payment_verification_status: "proof_submitted" },
+        "caja",
+        { transferProof: proof },
+      ),
+    ];
+    const [toConfirm, ready, working] = buildColumns("caja", orders, TODAY);
+    expect(toConfirm.orders.map((o) => o.id)).toEqual(["proof"]);
+    expect(toConfirm.orders[0].transferProof?.amountClaimed).toBe(349);
+    expect([...ready.orders, ...working.orders]).toEqual([]);
+  });
+
+  it("el comprobante solo llega con su detalle a caja; las demás estaciones saben que espera revisión", () => {
+    const proof = { id: "pr1", amountClaimed: 349, fileType: "image/jpeg", createdAt: TODAY, url: null };
+    const prep = card({ payment_verification_status: "proof_submitted" }, "preparacion", { transferProof: proof });
+    expect(prep.transferProof).toBeNull();
+    expect(prep.paymentReview).toBe("proof");
   });
 
   it("una mesa pagada ya terminó: no sigue en recepción", () => {
@@ -166,5 +207,44 @@ describe("buildColumns", () => {
       card({ id: "yesterday", fulfillment_status: "ready" }, "preparacion", { doneAt: "2026-10-18T20:00:00.000Z" }),
     ];
     expect(buildHistoryColumns("preparacion", orders, TODAY)[0].orders.map((o) => o.id)).toEqual(["late", "early"]);
+  });
+});
+
+describe("rowInStation", () => {
+  it("mis pedidos son los que levanté o me asignaron", () => {
+    expect(rowInStation("mis-pedidos", row({ created_by: "u-1" }), "u-1")).toBe(true);
+    expect(rowInStation("mis-pedidos", row({ assigned_to: "u-1", created_by: "u-2" }), "u-1")).toBe(true);
+    expect(rowInStation("mis-pedidos", row({ created_by: "u-2" }), "u-1")).toBe(false);
+  });
+
+  it("preparación excluye lo listo y las mesas pagadas; entregas solo lo listo sin cerrar", () => {
+    expect(rowInStation("preparacion", row({ fulfillment_status: "ready" }), "u")).toBe(false);
+    expect(rowInStation("preparacion", row({ source: "qr_table", status: "paid" }), "u")).toBe(false);
+    expect(rowInStation("entregas", row({ fulfillment_status: "ready" }), "u")).toBe(true);
+    expect(rowInStation("entregas", row({ fulfillment_status: "ready", status: "completed" }), "u")).toBe(false);
+  });
+});
+
+describe("countStations", () => {
+  it("cuenta lo que espera a alguien en cada estación", () => {
+    const entries = [
+      row({ id: "req", status: "pending_acceptance", source: "public_store" }),
+      row({ id: "free", created_by: "u-1" }),
+      row({ id: "ready-owes", fulfillment_status: "ready", fulfillment_method: "pickup", assigned_to: "u-1" }),
+      row({ id: "ready-paid", fulfillment_status: "ready", fulfillment_method: "pickup", status: "paid", assigned_to: "u-2" }),
+    ].map((r) => ({ row: r, order: toBoardOrder(r, extras(), "caja") }));
+    const counts = countStations(["recepcion", "mis-pedidos", "preparacion", "entregas", "caja"], entries, "u-1", TODAY);
+    expect(counts).toEqual({ recepcion: 2, "mis-pedidos": 2, preparacion: 1, entregas: 1, caja: 1 });
+  });
+});
+
+describe("locateOrder", () => {
+  it("dice en qué estación y grupo está un pedido", () => {
+    const r = row({ fulfillment_status: "ready", fulfillment_method: "pickup" });
+    const order = toBoardOrder(r, extras(), "caja");
+    expect(locateOrder(["preparacion", "entregas", "caja"], r, order, "u", TODAY)).toEqual([
+      { station: "entregas", stationLabel: "Entregas", columnLabel: "Esperando cobro" },
+      { station: "caja", stationLabel: "Caja", columnLabel: "Listos por cobrar" },
+    ]);
   });
 });

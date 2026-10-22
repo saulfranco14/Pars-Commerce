@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import useSWR from "swr";
+import useSWR, { mutate as revalidate } from "swr";
 
 import { swrFetcher } from "@/lib/swrFetcher";
 import { isAbortError } from "@/services/apiFetch";
@@ -18,8 +18,9 @@ import {
   confirmManualPayment,
   rejectManualPayment,
 } from "@/features/orders/services/manualPaymentService";
-import { BOARD_REFRESH_MS } from "@/features/operaciones/constants/stations";
-import { stationBoardKey } from "@/features/operaciones/helpers/boardKey";
+import { reviewTransferProof } from "@/features/orders/services/transferProofClientService";
+import { stationRefreshMs } from "@/features/operaciones/constants/stations";
+import { stationBoardKey, stationCountsKey } from "@/features/operaciones/helpers/boardKey";
 
 import type { StationKey } from "@/features/operaciones/constants/stations";
 import type { BoardView, StationBoard } from "@/features/operaciones/interfaces/board";
@@ -33,7 +34,7 @@ export function useStationBoard(tenantId: string | null, station: StationKey, vi
     tenantId ? stationBoardKey(tenantId, station, view) : null,
     swrFetcher,
     {
-      refreshInterval: BOARD_REFRESH_MS,
+      refreshInterval: stationRefreshMs(station),
       revalidateOnFocus: true,
       keepPreviousData: true,
       onSuccess: () => setUpdatedAt(Date.now()),
@@ -57,6 +58,7 @@ export function useStationBoard(tenantId: string | null, station: StationKey, vi
     try {
       await action();
       await mutate();
+      if (tenantId) void revalidate(stationCountsKey(tenantId));
       if (success) setNotice(success);
       return true;
     } catch (err) {
@@ -107,6 +109,13 @@ export function useStationBoard(tenantId: string | null, station: StationKey, vi
       run(orderId, () => createOrderDeliveryEvent(orderId, type, photo, note)),
     confirmPayment: (paymentId: string) => run(`pay:${paymentId}`, () => confirmManualPayment(paymentId)),
     rejectPayment: (paymentId: string) => run(`pay:${paymentId}`, () => rejectManualPayment(paymentId)),
+    /** The receipt's money arrived (approve) or not (reject, with what the customer will read). */
+    reviewProof: (order: { id: string; number: string }, proofId: string, decision: "approve" | "reject", reason?: string) =>
+      run(
+        `pay:${proofId}`,
+        () => reviewTransferProof(order.id, proofId, decision, reason),
+        decision === "approve" ? `Pago de #${order.number} confirmado.` : `Le pedimos otro comprobante a #${order.number}.`,
+      ),
     busyPaymentId: busyKeys.find((k) => k.startsWith("pay:"))?.slice(4) ?? null,
   };
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { createPortal } from "react-dom";
 
 import type { LucideIcon } from "lucide-react";
@@ -67,16 +68,14 @@ export function FormSheet({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  useBodyScrollLock(isOpen);
   useEffect(() => {
     if (!isOpen) return;
-    const original = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape" && dismissible) onClose();
     }
     document.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = original;
       document.removeEventListener("keydown", onKey);
     };
   }, [isOpen, onClose, dismissible]);

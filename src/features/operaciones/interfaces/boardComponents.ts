@@ -7,10 +7,13 @@ import type { StationKey, StationMeta } from "@/features/operaciones/constants/s
 import type {
   BoardOrder,
   BoardOrderItem,
+  BoardTransferProof,
   CollectedSummary,
   BoardPendingPayment,
   BoardTeamMember,
   BoardView,
+  JourneyStep,
+  StationCounts,
 } from "@/features/operaciones/interfaces/board";
 import type { FulfillmentStatus } from "@/features/qr/services/tableFulfillmentService";
 
@@ -57,7 +60,27 @@ export interface StationCardActionsProps {
   onDeliver: (order: BoardOrder) => void;
   onReject: (order: BoardOrder) => void;
   onRejectPayment: (paymentId: string) => void;
+  onRejectProof: (order: BoardOrder) => void;
   onCharge: (order: BoardOrder) => void;
+}
+
+export interface OrderJourneyProps {
+  steps: JourneyStep[];
+}
+
+export interface TransferProofRowProps {
+  proof: BoardTransferProof;
+  /** What the order still owes, when the customer didn't type an amount. */
+  fallbackAmount: number | null;
+  busy: boolean;
+  onApprove: () => void;
+  onReject: () => void;
+}
+
+export interface OrderSearchProps {
+  tenantId: string;
+  /** Link to the order page, only for roles that can open it. */
+  detailHref: (orderId: string) => string | undefined;
 }
 
 export interface PendingPaymentRowsProps {
@@ -87,4 +110,6 @@ export interface CollectedSummaryCardProps {
 export interface StationTabsProps {
   tenantSlug: string;
   active: StationKey;
+  /** Pending work per station, shown as a badge on its tab. */
+  counts?: StationCounts;
 }

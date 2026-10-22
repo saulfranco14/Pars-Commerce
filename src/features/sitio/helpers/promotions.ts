@@ -44,11 +44,13 @@ export function promotionProductIds(promotion: ActivePromotion): string[] {
 }
 
 /** A promotion can go straight to the cart only when it names concrete items. */
+/** Kinds the cart can add as a promotion (event badges only decorate products). */
+export function isAddablePromotionType(type: string): boolean {
+  return ADDABLE_PROMOTION_TYPES.has(type);
+}
+
 export function isPromotionAddable(promotion: ActivePromotion): boolean {
-  return (
-    promotionProductIds(promotion).length > 0 &&
-    ADDABLE_PROMOTION_TYPES.has(promotion.type)
-  );
+  return promotionProductIds(promotion).length > 0 && isAddablePromotionType(promotion.type);
 }
 
 export function formatPromotionValue(promotion: ActivePromotion): string {

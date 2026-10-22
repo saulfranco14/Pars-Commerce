@@ -10,6 +10,7 @@ import {
   btnWorkSuccess,
 } from "@/components/ui/buttonClasses";
 import { PendingPaymentRows } from "@/features/operaciones/components/PendingPaymentRows";
+import { TransferProofRow } from "@/features/operaciones/components/TransferProofRow";
 
 import type { StationBoardController } from "@/features/operaciones/hooks/useStationBoard";
 import type { BoardOrder, BoardTeamMember } from "@/features/operaciones/interfaces/board";
@@ -85,6 +86,7 @@ export function StationCardActions({
   onDeliver,
   onReject,
   onRejectPayment,
+  onRejectProof,
   onCharge,
 }: StationCardActionsProps) {
   const can = board.board?.can;
@@ -116,8 +118,12 @@ export function StationCardActions({
 
     case "entregas":
       if (!can.deliver) return null;
-      if (!order.paid) {
-        return <p className="text-sm font-medium text-amber-700 dark:text-amber-400">Falta cobrarlo antes de entregar.</p>;
+      if (!order.paid && order.deliveryStage === "pending") {
+        return (
+          <p className="text-sm text-muted-foreground">
+            Lo cobra Caja. Si el cliente llega, pídele que pase a Caja; aparecerá en Listos para entregar en cuanto pague.
+          </p>
+        );
       }
       if (order.fulfillmentMethod === "delivery" && order.deliveryStage === "pending") {
         return (
@@ -135,6 +141,18 @@ export function StationCardActions({
       );
 
     case "caja":
+      if (can.collect && order.transferProof) {
+        const proof = order.transferProof;
+        return (
+          <TransferProofRow
+            proof={proof}
+            fallbackAmount={order.balanceDue}
+            busy={board.busyPaymentId === proof.id}
+            onApprove={() => void board.reviewProof(order, proof.id, "approve")}
+            onReject={() => onRejectProof(order)}
+          />
+        );
+      }
       if (can.collect && order.pendingPayments.length > 0) {
         return (
           <PendingPaymentRows

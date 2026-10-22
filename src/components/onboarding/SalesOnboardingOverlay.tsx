@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import {
   ArrowRight,
   X,
@@ -316,12 +317,7 @@ export function SalesOnboardingOverlay() {
     } catch { /* storage blocked */ }
   }, []);
 
-  useEffect(() => {
-    if (!visible) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
-  }, [visible]);
+  useBodyScrollLock(visible);
 
   const dismiss = useCallback(() => {
     try { localStorage.setItem(SALES_ONBOARDING_KEY, "1"); } catch { /* ignore */ }

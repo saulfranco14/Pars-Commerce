@@ -17,7 +17,7 @@ function redirectUri(request: Request) {
 
 function redirectToDashboard(request: Request, slug: string | null, outcome: "connected" | "error") {
   const url = new URL(slug ? `/dashboard/${slug}/configuracion` : "/dashboard", request.url);
-  if (slug) url.searchParams.set("tab", "finanzas");
+  if (slug) url.searchParams.set("tab", "cobros");
   url.searchParams.set("payment_provider", outcome);
   return NextResponse.redirect(url);
 }

@@ -1,5 +1,8 @@
 import { resolveOrderFulfillmentMethod } from "@/features/orders/helpers/resolveOrderFulfillmentMethod";
 import { requiresReadyBeforePayment } from "@/features/qr/helpers/paymentReadiness";
+import { orderAmountDue } from "@/features/orders/helpers/orderAmountDue";
+
+import { STATIONS } from "@/features/operaciones/constants/stations";
 
 import type { StationKey } from "@/features/operaciones/constants/stations";
 import type {
@@ -7,7 +10,10 @@ import type {
   BoardOrder,
   BoardOrderItem,
   BoardPendingPayment,
+  BoardTransferProof,
   DeliveryStage,
+  OrderLocation,
+  StationCounts,
 } from "@/features/operaciones/interfaces/board";
 
 export interface BoardOrderRow {
@@ -31,6 +37,7 @@ export interface BoardOrderRow {
   payment_method?: string | null;
   assigned_to: string | null;
   created_by: string | null;
+  payment_verification_status?: string | null;
 }
 
 export interface BoardOrderExtras {
@@ -40,7 +47,9 @@ export interface BoardOrderExtras {
   assignedName: string | null;
   doneAt?: string | null;
   doneBy?: string | null;
+  /** Payments the customer declared; their details only reach Caja. */
   pendingPayments?: BoardPendingPayment[];
+  transferProof?: BoardTransferProof | null;
   paidAmount?: number | null;
   tip?: number;
   paymentMethod?: string | null;
@@ -84,6 +93,7 @@ export function toBoardOrder(row: BoardOrderRow, extras: BoardOrderExtras, stati
     id: row.id,
     number: row.order_number ?? row.id.slice(0, 8).toUpperCase(),
     status: row.status,
+    source: row.source,
     fulfillmentStatus: fulfillment === "in_progress" || fulfillment === "ready" ? fulfillment : "received",
     originLabel: originLabel(row),
     fulfillmentMethod: method,
@@ -96,14 +106,22 @@ export function toBoardOrder(row: BoardOrderRow, extras: BoardOrderExtras, stati
     items: extras.items,
     paid: isPaid(row),
     total: showMoney ? Number(row.total) : null,
-    balanceDue: showMoney ? Math.max(0, Number(row.balance_due ?? Number(row.total) - Number(row.paid_total ?? 0))) : null,
+    balanceDue: showMoney ? orderAmountDue(row) : null,
     assignedTo: row.assigned_to,
     assignedName: extras.assignedName,
     // A table is paid at the end, so once paid there is nothing left to do.
     finished:
       row.status === "completed" ||
       (row.status === "paid" && requiresReadyBeforePayment(row.source, row.order_type)),
-    pendingPayments: extras.pendingPayments ?? [],
+    paysAfterReady: requiresReadyBeforePayment(row.source, row.order_type),
+    paymentReview:
+      row.payment_verification_status === "proof_submitted"
+        ? "proof"
+        : (extras.pendingPayments?.length ?? 0) > 0
+          ? "declared"
+          : null,
+    transferProof: station === "caja" ? (extras.transferProof ?? null) : null,
+    pendingPayments: station === "caja" ? (extras.pendingPayments ?? []) : [],
     paidAmount: extras.paidAmount ?? null,
     tip: extras.tip ?? 0,
     paymentMethod: extras.paymentMethod ?? row.payment_method ?? null,
@@ -132,6 +150,73 @@ export function buildHistoryColumns(station: StationKey, orders: BoardOrder[], t
 }
 
 const isOpen = (o: BoardOrder) => !o.finished;
+
+/** Whether an active order belongs on a station at all; the board query narrows the same way in SQL. */
+export function rowInStation(station: StationKey, row: BoardOrderRow, userId: string): boolean {
+  switch (station) {
+    case "mis-pedidos":
+      return row.assigned_to === userId || row.created_by === userId;
+    case "preparacion":
+      return (
+        (row.fulfillment_status === "received" || row.fulfillment_status === "in_progress" || !row.fulfillment_status) &&
+        row.status !== "completed" &&
+        // A paid table order is finished; its preparation can no longer move.
+        !(row.status === "paid" && requiresReadyBeforePayment(row.source, row.order_type))
+      );
+    case "entregas":
+      return row.fulfillment_status === "ready" && row.status !== "completed";
+    default:
+      return true;
+  }
+}
+
+// The groups that mean "someone here has to act"; the station's counter adds them up.
+const ATTENTION_COLUMNS: Record<StationKey, readonly string[]> = {
+  recepcion: ["requests", "unassigned"],
+  "mis-pedidos": ["received", "in_progress", "ready"],
+  preparacion: ["received", "in_progress"],
+  entregas: ["ready"],
+  caja: ["to_confirm", "ready"],
+};
+
+export function attentionCount(station: StationKey, columns: BoardColumn[]): number {
+  return columns
+    .filter((c) => ATTENTION_COLUMNS[station].includes(c.key))
+    .reduce((sum, c) => sum + c.orders.length, 0);
+}
+
+/** Pending work per station, from one shared list of active orders. */
+export function countStations(
+  stations: StationKey[],
+  entries: { row: BoardOrderRow; order: BoardOrder }[],
+  userId: string,
+  todayStartIso: string,
+): StationCounts {
+  const counts: StationCounts = {};
+  for (const station of stations) {
+    const orders = entries.filter((e) => rowInStation(station, e.row, userId)).map((e) => e.order);
+    counts[station] = attentionCount(station, buildColumns(station, orders, todayStartIso));
+  }
+  return counts;
+}
+
+/** Every station and group an order sits in right now, for the search results. */
+export function locateOrder(
+  stations: StationKey[],
+  row: BoardOrderRow,
+  order: BoardOrder,
+  userId: string,
+  todayStartIso: string,
+): OrderLocation[] {
+  const locations: OrderLocation[] = [];
+  for (const station of stations) {
+    if (!rowInStation(station, row, userId)) continue;
+    const column = buildColumns(station, [order], todayStartIso).find((c) => c.key !== "done" && c.orders.length > 0);
+    const meta = STATIONS.find((s) => s.key === station);
+    if (column && meta) locations.push({ station, stationLabel: meta.label, columnLabel: column.label });
+  }
+  return locations;
+}
 
 function column(key: string, label: string, empty: string, orders: BoardOrder[]): BoardColumn {
   return { key, label, empty, orders };
@@ -165,14 +250,18 @@ export function buildColumns(station: StationKey, orders: BoardOrder[], todaySta
       const deliverable = working.filter(
         (o) => isOpen(o) && o.fulfillmentStatus === "ready" && o.fulfillmentMethod !== null && o.deliveryStage !== "done",
       );
+      const waiting = deliverable.filter((o) => o.deliveryStage === "pending");
+      // Delivering never includes charging: an unpaid order waits apart until Caja collects it.
       return [
-        column("ready", "Listos para entregar", "No hay pedidos listos para entregar.", deliverable.filter((o) => o.deliveryStage === "pending")),
+        column("ready", "Listos para entregar", "No hay pedidos listos para entregar.", waiting.filter((o) => o.paid)),
         column("on_the_way", "En camino", "Nadie va en camino.", deliverable.filter((o) => o.deliveryStage === "on_the_way")),
+        column("awaiting_payment", "Esperando cobro", "Nada espera a Caja.", waiting.filter((o) => !o.paid)),
       ];
     }
     case "caja": {
-      const toConfirm = working.filter((o) => o.pendingPayments.length > 0);
-      const owing = working.filter((o) => !o.paid && (o.balanceDue ?? 0) > 0 && o.pendingPayments.length === 0);
+      const awaitsReview = (o: BoardOrder) => o.pendingPayments.length > 0 || o.transferProof !== null;
+      const toConfirm = working.filter(awaitsReview);
+      const owing = working.filter((o) => !o.paid && (o.balanceDue ?? 0) > 0 && !awaitsReview(o));
       return [
         column("to_confirm", "Pagos por confirmar", "Nadie ha reportado un pago.", toConfirm),
         column("ready", "Listos por cobrar", "Nada listo por cobrar.", owing.filter((o) => o.fulfillmentStatus === "ready" || !isOpen(o))),

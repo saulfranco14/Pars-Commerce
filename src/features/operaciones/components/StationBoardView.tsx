@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { useStationBoard } from "@/features/operaciones/hooks/useStationBoard";
+import { useStationCounts } from "@/features/operaciones/hooks/useStationCounts";
 import { useBoardDensity } from "@/features/operaciones/hooks/useBoardDensity";
 import { useNow } from "@/features/operaciones/hooks/useNow";
 import { usePermission } from "@/stores/useTenantStore";
@@ -34,9 +35,10 @@ import { BoardOrderCard } from "@/features/operaciones/components/BoardOrderCard
 import { StationCardActions } from "@/features/operaciones/components/StationCardActions";
 import { ChargeSheet } from "@/features/orders/components/payment/ChargeSheet";
 import { StationTabs } from "@/features/operaciones/components/StationTabs";
+import { OrderSearch } from "@/features/operaciones/components/OrderSearch";
 
 import { formatCurrency } from "@/features/qr/helpers/format";
-import { BOARD_REFRESH_MS } from "@/features/operaciones/constants/stations";
+import { stationRefreshMs } from "@/features/operaciones/constants/stations";
 
 import type { BoardOrder } from "@/features/operaciones/interfaces/board";
 import type { StationBoardViewProps } from "@/features/operaciones/interfaces/boardComponents";
@@ -48,6 +50,10 @@ const GRID_COLUMNS: Record<number, string> = {
   4: "lg:grid-cols-2 xl:grid-cols-4",
 };
 
+// What the customer reads on their order page when Caja says the transfer didn't arrive.
+const PROOF_REJECTION_REASON =
+  "No encontramos la transferencia en nuestra cuenta. Revisa los datos o envía otro comprobante.";
+
 const iconButton =
   "inline-flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full bg-surface text-muted-foreground shadow-sm ring-1 ring-border transition-all duration-150 hover:text-foreground active:scale-95 sm:h-11 sm:w-11";
 
@@ -58,6 +64,7 @@ export function StationBoardView({
   view = "active",
 }: StationBoardViewProps) {
   const board = useStationBoard(tenantId, station.key, view);
+  const counts = useStationCounts(view === "active" ? tenantId : null);
   const density = useBoardDensity(
     station.key,
     station.layout === "accordion" && station.key !== "preparacion"
@@ -69,6 +76,7 @@ export function StationBoardView({
   const [delivering, setDelivering] = useState<BoardOrder | null>(null);
   const [rejecting, setRejecting] = useState<BoardOrder | null>(null);
   const [rejectingPayment, setRejectingPayment] = useState<string | null>(null);
+  const [rejectingProof, setRejectingProof] = useState<BoardOrder | null>(null);
   const [charging, setCharging] = useState<BoardOrder | null>(null);
   const [mobileColumn, setMobileColumn] = useState<string | null>(null);
 
@@ -81,10 +89,11 @@ export function StationBoardView({
     columns[0]?.key;
   const stationHref = `/dashboard/${tenantSlug}/operacion/${station.key}`;
   // ?volver= brings "Volver" in the order page back to this station, not to the orders list.
-  const detailHref = (order: BoardOrder) =>
+  const detailHrefOf = (orderId: string) =>
     abilities?.openDetail
-      ? `/dashboard/${tenantSlug}/ordenes/${order.id}?volver=${encodeURIComponent(stationHref)}`
+      ? `/dashboard/${tenantSlug}/ordenes/${orderId}?volver=${encodeURIComponent(stationHref)}`
       : undefined;
+  const detailHref = (order: BoardOrder) => detailHrefOf(order.id);
   const itemsMove =
     (station.key === "preparacion" || station.key === "mis-pedidos") &&
     Boolean(abilities?.prepare) &&
@@ -117,6 +126,7 @@ export function StationBoardView({
             onCharge={setCharging}
             onReject={setRejecting}
             onRejectPayment={setRejectingPayment}
+            onRejectProof={setRejectingProof}
           />
         )}
       </BoardOrderCard>
@@ -134,6 +144,8 @@ export function StationBoardView({
           Volver a {station.label}
         </Link>
       )}
+      {!isHistory && <StationTabs tenantSlug={tenantSlug} active={station.key} counts={counts} />}
+      {!isHistory && <OrderSearch tenantId={tenantId} detailHref={detailHrefOf} />}
       <PageHeader
         title={
           isHistory ? (station.historyLabel ?? station.label) : station.label
@@ -182,7 +194,7 @@ export function StationBoardView({
             <BoardRefreshButton
               refreshing={board.refreshing}
               updatedAt={board.updatedAt}
-              intervalMs={BOARD_REFRESH_MS}
+              intervalMs={stationRefreshMs(station.key)}
               onRefresh={() => void board.refresh()}
             />
             {station.key === "mis-pedidos" && can("order.take") && (
@@ -197,10 +209,6 @@ export function StationBoardView({
           </div>
         }
       />
-
-      {!isHistory && (
-        <StationTabs tenantSlug={tenantSlug} active={station.key} />
-      )}
 
       {board.board?.collectedToday !== null &&
         board.board?.collectedToday !== undefined && (
@@ -329,8 +337,12 @@ export function StationBoardView({
         open={Boolean(delivering)}
         busy={Boolean(delivering) && board.isBusy(delivering?.id ?? "")}
         onClose={() => setDelivering(null)}
-        onSubmit={async (photo, note) => {
+        team={board.board?.team ?? []}
+        assignedTo={delivering?.assignedTo ?? null}
+        onSubmit={async (photo, note, assignee) => {
           if (!delivering) return;
+          const member = board.board?.team.find((m) => m.userId === assignee);
+          if (member && !(await board.assign(delivering, member))) return;
           const type =
             delivering.fulfillmentMethod === "pickup"
               ? "pickup_completed"
@@ -367,6 +379,21 @@ export function StationBoardView({
         variant="danger"
         title="¿El dinero no llegó?"
         description="El cliente verá que su pago fue rechazado y podrá intentarlo de nuevo."
+        confirmLabel="No llegó"
+      />
+      <ConfirmDialog
+        isOpen={Boolean(rejectingProof)}
+        onClose={() => setRejectingProof(null)}
+        onConfirm={async () => {
+          const proof = rejectingProof?.transferProof;
+          if (!rejectingProof || !proof) return;
+          await board.reviewProof(rejectingProof, proof.id, "reject", PROOF_REJECTION_REASON);
+          setRejectingProof(null);
+        }}
+        loading={Boolean(rejectingProof?.transferProof) && board.busyPaymentId === rejectingProof?.transferProof?.id}
+        variant="danger"
+        title={`¿No llegó la transferencia de #${rejectingProof?.number ?? ""}?`}
+        description="El cliente verá «Necesitamos otro comprobante» y podrá enviar uno nuevo desde su pedido."
         confirmLabel="No llegó"
       />
     </div>

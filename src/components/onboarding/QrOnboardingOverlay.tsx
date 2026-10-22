@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { ArrowRight, X, QrCode, CreditCard, Store, Share2 } from "lucide-react";
 import { MiniCard } from "@/features/onboarding/components/MiniCard";
 import { QR_ONBOARDING_KEY } from "@/features/onboarding/constants";
@@ -177,14 +178,7 @@ export function QrOnboardingOverlay() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!visible) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [visible]);
+  useBodyScrollLock(visible);
 
   const dismiss = useCallback(() => {
     try {

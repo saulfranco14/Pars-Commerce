@@ -20,6 +20,7 @@ import {
   requiresReadyBeforePayment,
 } from "@/features/qr/helpers/paymentReadiness";
 import { computeSplitByDevice } from "@/features/qr/helpers/computeSplitByDevice";
+import { orderAmountDue } from "@/features/orders/helpers/orderAmountDue";
 
 export type IntentMethod = "efectivo" | "transferencia" | "tarjeta";
 export type CheckoutMethod = IntentMethod | "mercadopago";
@@ -145,6 +146,8 @@ export interface CreatePaymentIntentInput {
   customerPhone?: string | null;
   /** Optional tip paid in the same checkout, separate from the order debt. */
   tipAmount?: number;
+  /** Someone from the team charging with the money in hand: the "wait until ready" rule is for customers. */
+  chargedByStaff?: boolean;
 }
 
 export interface CreatePaymentIntentResult {
@@ -250,7 +253,7 @@ export async function createPaymentIntent(
   const { data: order } = await admin
     .from("orders")
     .select(
-      "id, tenant_id, status, fulfillment_status, source, order_type, total, balance_due, assigned_to",
+      "id, tenant_id, status, fulfillment_status, source, order_type, total, paid_total, balance_due, assigned_to",
     )
     .eq("id", input.orderId)
     .single();
@@ -270,7 +273,7 @@ export async function createPaymentIntent(
     );
   }
 
-  const gateOnReady = requiresReadyBeforePayment(order.source, order.order_type);
+  const gateOnReady = !input.chargedByStaff && requiresReadyBeforePayment(order.source, order.order_type);
 
   // Locate device id so the activity log records who paid AND so we can gate
   // payment on THAT person's readiness (per-person), not the whole table.
@@ -331,7 +334,8 @@ export async function createPaymentIntent(
       );
     }
 
-    const amount = Number(order.balance_due ?? order.total);
+    const amount = orderAmountDue(order);
+    if (amount <= 0) return err("conflict", "Este pedido no tiene saldo por cobrar.");
     const { data: createdGroup, error: createErr } = await admin
       .from("order_split_groups")
       .insert({

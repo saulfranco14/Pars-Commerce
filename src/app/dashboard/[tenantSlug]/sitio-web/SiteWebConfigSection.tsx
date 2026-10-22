@@ -17,7 +17,7 @@ import type { SiteTemplate } from "@/services/siteTemplatesService";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { SiteWebGeneralTab } from "./SiteWebGeneralTab";
 import { SiteWebRedesTab } from "./SiteWebRedesTab";
-import { FulfillmentSettingsPanel } from "@/features/sitio-web/components/FulfillmentSettingsPanel";
+import { PaymentsSettingsLink } from "@/features/sitio-web/components/PaymentsSettingsLink";
 
 import { SITIO_TABS, type SitioTab } from "@/features/sitio-web/constants/tabs";
 import type { SiteWebConfigSectionProps } from "@/features/sitio-web/interfaces/siteWebConfig";
@@ -250,7 +250,7 @@ export function SiteWebConfigSection({
           />
         )}
 
-        {activeTab === "cobros" && <FulfillmentSettingsPanel tenantId={activeTenant.id} tenantSlug={tenantSlug} />}
+        {activeTab === "cobros" && <PaymentsSettingsLink tenantSlug={tenantSlug} />}
 
         {activeTab === "contenido" && publicStoreEnabled && (
           <SiteContentForm

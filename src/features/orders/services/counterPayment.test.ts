@@ -199,4 +199,29 @@ describe("chargeAtCounter", () => {
     );
     expect(inserted).toHaveLength(0);
   });
+
+  it("un pedido de Nueva orden sin terminar y con el saldo guardado en 0 se cobra completo", async () => {
+    // #D0A41396: total 1500, nada pagado, balance_due 0 y preparación sin empezar.
+    const fake = createFakeSupabase({
+      orders: [{ ...ORDER, source: "dashboard", status: "completed", total: 1500, balance_due: 0, paid_total: 0 }],
+      order_split_groups: [],
+      payments: [],
+      order_activity_log: [],
+      qr_codes: [],
+    });
+    const result = await chargeAtCounter(asClient(fake), { orderId: "o1", method: "transferencia", actorUserId: "u1" });
+    expect(result).toMatchObject({ ok: true, data: { amount: 1500 } });
+  });
+
+  it("sin saldo por cobrar no registra un cobro de $0", async () => {
+    const fake = createFakeSupabase({
+      orders: [{ ...ORDER, total: 300, balance_due: 0, paid_total: 300 }],
+      order_split_groups: [],
+      payments: [],
+      order_activity_log: [],
+      qr_codes: [],
+    });
+    const result = await chargeAtCounter(asClient(fake), { orderId: "o1", method: "efectivo", actorUserId: "u1" });
+    expect(result).toMatchObject({ ok: false, error: { message: "Este pedido no tiene saldo por cobrar." } });
+  });
 });

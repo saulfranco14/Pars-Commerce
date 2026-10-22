@@ -4,29 +4,30 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Camera, Loader2, Truck, X } from "lucide-react";
 
-interface DeliveryCompletionSheetProps {
-  open: boolean;
-  busy?: boolean;
-  onClose: () => void;
-  onSubmit: (photo: File, note: string) => Promise<void>;
-}
+import { OptionalAssigneeField } from "@/features/orders/components/payment/OptionalAssigneeField";
+
+import type { DeliveryCompletionSheetProps } from "@/features/orders/interfaces/deliveryCompletion";
 
 export function DeliveryCompletionSheet({
   open,
   busy = false,
   onClose,
   onSubmit,
+  team = [],
+  assignedTo = null,
 }: DeliveryCompletionSheetProps) {
   const [mounted, setMounted] = useState(false);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const [assignee, setAssignee] = useState<string | null>(null);
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
     if (!open) {
       setPhoto(null);
       setNote("");
+      setAssignee(null);
     }
   }, [open]);
   useEffect(() => {
@@ -131,6 +132,12 @@ export function DeliveryCompletionSheet({
               className="mt-2 w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </label>
+
+          {!assignedTo && team.length > 0 ? (
+            <div className="mt-5">
+              <OptionalAssigneeField team={team} value={assignee} onChange={setAssignee} disabled={busy} />
+            </div>
+          ) : null}
         </div>
 
         <footer
@@ -140,7 +147,7 @@ export function DeliveryCompletionSheet({
           <button
             type="button"
             disabled={!photo || busy}
-            onClick={() => photo && void onSubmit(photo, note.trim())}
+            onClick={() => photo && void onSubmit(photo, note.trim(), assignee)}
             className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? (
