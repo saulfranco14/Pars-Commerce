@@ -7,6 +7,7 @@ import PromotionDetailActions from "./PromotionDetailActions";
 import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
 import { formatOfferLabel } from "@/lib/offers/formatOfferLabel";
 import { whatsappHref } from "@/features/sitio/helpers/storeLinks";
+import { isAddablePromotionType } from "@/features/sitio/helpers/promotions";
 import { PromotionCollage } from "@/features/promociones/components/PromotionCollage";
 import { collageImages, promotionCollageLabel } from "@/features/promociones/helpers/promotionVisual";
 
@@ -115,7 +116,7 @@ export default async function PromocionDetallePage({ params }: PageProps) {
 
   const products = uniqueProductIds.map((id) => productsMap[id]).filter(Boolean);
   const subcatalogs = subcatalogIds.map((id) => subcatalogsMap[id]).filter(Boolean);
-  const hasAddableProducts = products.length > 0 && ["percentage", "fixed_amount", "bundle_price", "fixed_price"].includes(promotion.type);
+  const hasAddableProducts = products.length > 0 && isAddablePromotionType(promotion.type);
 
   return (
     <div className="space-y-6">

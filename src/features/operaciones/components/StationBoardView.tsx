@@ -134,6 +134,7 @@ export function StationBoardView({
           Volver a {station.label}
         </Link>
       )}
+      {!isHistory && <StationTabs tenantSlug={tenantSlug} active={station.key} />}
       <PageHeader
         title={
           isHistory ? (station.historyLabel ?? station.label) : station.label
@@ -197,10 +198,6 @@ export function StationBoardView({
           </div>
         }
       />
-
-      {!isHistory && (
-        <StationTabs tenantSlug={tenantSlug} active={station.key} />
-      )}
 
       {board.board?.collectedToday !== null &&
         board.board?.collectedToday !== undefined && (
