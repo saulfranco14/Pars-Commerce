@@ -16,6 +16,8 @@ export interface StationMeta {
   historyLabel?: string;
   /** "accordion": one column of foldable groups with one-line cards. */
   layout?: "columns" | "accordion";
+  /** Faster refresh where someone waits on Caja to hand an order over. */
+  refreshMs?: number;
 }
 
 // Order matters: it is the tab order and, for `landingSection`, who lands where.
@@ -52,6 +54,7 @@ export const STATIONS: readonly StationMeta[] = [
     icon: Bike,
     permission: "orders.deliver",
     historyLabel: "Entregados hoy",
+    refreshMs: 20_000,
   },
   {
     key: "caja",
@@ -75,3 +78,7 @@ export function stationSection(key: StationKey): string {
 
 /** Board refresh while the tab is visible; actions refresh right away. */
 export const BOARD_REFRESH_MS = 60_000;
+
+export function stationRefreshMs(key: StationKey): number {
+  return stationMeta(key)?.refreshMs ?? BOARD_REFRESH_MS;
+}

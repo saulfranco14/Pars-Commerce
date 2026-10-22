@@ -1,47 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { LocateFixed, MapPin, Search } from "lucide-react";
 
-type Place = { id: string; label: string; latitude: number | null; longitude: number | null };
+import { usePlaceSearch } from "@/hooks/usePlaceSearch";
+
+import type { PlaceOption } from "@/types/places";
+
 export type DeliveryAddress = { recipient_name: string; phone: string; address_text: string; reference: string; mapbox_feature_id?: string; latitude?: number | null; longitude?: number | null };
 
 export function AddressCapture({ value, onChange }: { value: DeliveryAddress; onChange: (value: DeliveryAddress) => void }) {
-  const [search, setSearch] = useState(value.address_text);
-  const [places, setPlaces] = useState<Place[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [unavailable, setUnavailable] = useState(false);
-  const skipNextSearch = useRef(false);
-
-  useEffect(() => {
-    if (skipNextSearch.current) {
-      skipNextSearch.current = false;
-      setPlaces([]);
-      setSearching(false);
-      return;
-    }
-    if (search.trim().length < 3) { setPlaces([]); return; }
-    const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
-      setSearching(true);
-      try {
-        const response = await fetch(`/api/public/places?q=${encodeURIComponent(search)}`, { signal: controller.signal });
-        const body = await response.json() as { features?: Place[]; unavailable?: boolean };
-        setPlaces(body.features ?? []);
-        setUnavailable(Boolean(body.unavailable));
-      } catch (error) {
-        if (!(error instanceof DOMException && error.name === "AbortError")) setPlaces([]);
-      } finally { setSearching(false); }
-    }, 320);
-    return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [search]);
+  const { query: search, setQuery: setSearch, places, searching, unavailable, pick } = usePlaceSearch(value.address_text);
 
   const set = <Key extends keyof DeliveryAddress>(key: Key, next: DeliveryAddress[Key]) => onChange({ ...value, [key]: next });
-  const selectPlace = (place: Place) => {
-    skipNextSearch.current = true;
-    setSearch(place.label);
-    onChange({ ...value, address_text: place.label, mapbox_feature_id: place.id, latitude: place.latitude, longitude: place.longitude });
-    setPlaces([]);
+  const selectPlace = async (picked: PlaceOption) => {
+    onChange({ ...value, address_text: picked.label, mapbox_feature_id: picked.id, latitude: picked.latitude, longitude: picked.longitude });
+    const place = await pick(picked);
+    onChange({ ...value, address_text: picked.label, mapbox_feature_id: place.id, latitude: place.latitude, longitude: place.longitude });
   };
 
   return <section className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
@@ -53,12 +27,12 @@ export function AddressCapture({ value, onChange }: { value: DeliveryAddress; on
       type="button"
       onPointerDown={(event) => {
         event.preventDefault();
-        selectPlace(place);
+        void selectPlace(place);
       }}
       onClick={(event) => {
         // Un click con detail=0 viene de teclado. Mouse/touch ya se resolvió
         // en pointerdown para que el primer toque no lo consuma el teclado.
-        if (event.detail === 0) selectPlace(place);
+        if (event.detail === 0) void selectPlace(place);
       }}
       className="flex min-h-11 w-full items-start gap-2 border-b border-gray-100 px-3 py-2.5 text-left text-sm last:border-0 hover:bg-gray-50"
     ><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />{place.label}</button>)}</div> : null}

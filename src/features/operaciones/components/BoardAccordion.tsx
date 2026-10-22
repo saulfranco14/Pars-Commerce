@@ -19,11 +19,11 @@ export function BoardAccordion({ columns, renderOrder }: BoardAccordionProps) {
   const isOpen = (key: string, count: number) => toggled[key] ?? count > 0;
 
   return (
-    <div className={`grid items-start gap-3 ${DESKTOP_COLUMNS[columns.length] ?? ""}`}>
+    <div className={`grid grid-cols-1 items-start gap-3 ${DESKTOP_COLUMNS[columns.length] ?? ""}`}>
       {columns.map((column) => {
         const open = isOpen(column.key, column.orders.length);
         return (
-          <section key={column.key} className="rounded-2xl border border-border bg-surface-raised">
+          <section key={column.key} className="min-w-0 rounded-2xl border border-border bg-surface-raised">
             <button
               type="button"
               onClick={() => setToggled((t) => ({ ...t, [column.key]: !open }))}

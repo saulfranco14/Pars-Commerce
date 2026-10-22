@@ -9,12 +9,12 @@ import { chargeOrderAtCounter } from "@/features/orders/services/counterPaymentC
 import type { ChargeResult, ChargeTarget } from "@/features/orders/interfaces/chargeSheet";
 import type { IntentMethod } from "@/features/qr/services/tablePaymentService";
 
-export type ChargeStep = "attendant" | "method" | "done";
+export type ChargeStep = "method" | "done";
 
-/** Who attended (only if nobody is assigned) → how it was paid → charged. One flow for every "Cobrar". */
+/** How it was paid (and, optionally, who attended if nobody has it) → charged. One flow for every "Cobrar". */
 export function useCounterCharge(target: ChargeTarget | null, hasTeam: boolean, onCharged: (result: ChargeResult) => void) {
   const lockedMethod = counterMethodFor(target?.paymentMethod);
-  const needsAttendant = Boolean(target) && !target?.assignedTo && hasTeam;
+  const canPickAttendant = Boolean(target) && !target?.assignedTo && hasTeam;
   const [step, setStep] = useState<ChargeStep>("method");
   const [attendant, setAttendant] = useState<string | null>(null);
   const [method, setMethod] = useState<IntentMethod | null>(null);
@@ -23,7 +23,7 @@ export function useCounterCharge(target: ChargeTarget | null, hasTeam: boolean, 
   const [result, setResult] = useState<ChargeResult | null>(null);
 
   useEffect(() => {
-    setStep(needsAttendant ? "attendant" : "method");
+    setStep("method");
     setAttendant(null);
     setMethod(lockedMethod);
     setError(null);
@@ -55,12 +55,9 @@ export function useCounterCharge(target: ChargeTarget | null, hasTeam: boolean, 
   return {
     step,
     lockedMethod,
+    canPickAttendant,
     attendant,
-    chooseAttendant: (userId: string) => {
-      setAttendant(userId);
-      setStep("method");
-    },
-    backToAttendant: needsAttendant ? () => setStep("attendant") : null,
+    chooseAttendant: setAttendant,
     method,
     chooseMethod: (next: IntentMethod) => {
       if (!lockedMethod) setMethod(next);

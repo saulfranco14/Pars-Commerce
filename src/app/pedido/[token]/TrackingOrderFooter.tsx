@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { CheckCircle2, RefreshCw, Sparkles, Upload, Wallet, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { TransferProofUpload } from "./TransferProofUpload";
@@ -49,16 +50,15 @@ export function TrackingOrderFooter({
   const proofIsUnderReview =
     !paymentSettled && paymentVerificationStatus === "proof_submitted";
 
+  useBodyScrollLock(proofOpen);
   useEffect(() => {
     if (!proofOpen) return;
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setProofOpen(false);
     };
     document.addEventListener("keydown", handleEscape);
-    document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", handleEscape);
-      document.body.style.overflow = "";
     };
   }, [proofOpen]);
 

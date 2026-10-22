@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { CheckCircle2, ChevronDown, Clock3, MapPin, Search } from "lucide-react";
+
+import { usePlaceSearch } from "@/hooks/usePlaceSearch";
+import { SettingField as Field } from "@/features/configuracion/components/cobros/SettingField";
 
 import {
   describeDay,
@@ -13,28 +16,18 @@ import {
   WEEKDAY_DISPLAY_ORDER,
   WEEKDAY_LABELS,
   type BusinessHours,
-  type Weekday,
 } from "@/features/configuracion/interfaces/businessHours";
 
-export type PickupPointDraft = {
-  id?: string;
-  name?: string | null;
-  address_text?: string | null;
-  reference?: string | null;
-  instructions?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  mapbox_feature_id?: string | null;
-  /** `null` means the point inherits the business schedule. */
-  business_hours?: BusinessHours | null;
-};
-
-type Place = {
-  id: string;
-  label: string;
-  latitude: number | null;
-  longitude: number | null;
-};
+import type { PlaceOption } from "@/types/places";
+import type {
+  PickupAddressSearchProps,
+  PickupDayEditorProps,
+  PickupHoursEditorProps,
+  PickupPointDraft,
+  PickupPointFormProps,
+  PickupTabButtonProps,
+  TimeFieldProps,
+} from "@/features/configuracion/interfaces/paymentsAndDelivery";
 
 export function PickupPointForm({
   value,
@@ -42,17 +35,9 @@ export function PickupPointForm({
   tab,
   onTabChange,
   onChange,
-}: {
-  value: PickupPointDraft;
-  globalHours: BusinessHours | null;
-  tab: "location" | "hours";
-  onTabChange: (tab: "location" | "hours") => void;
-  onChange: (value: PickupPointDraft) => void;
-}) {
-  const set = <Key extends keyof PickupPointDraft>(
-    key: Key,
-    next: PickupPointDraft[Key],
-  ) => onChange({ ...value, [key]: next });
+}: PickupPointFormProps) {
+  const set = <Key extends keyof PickupPointDraft>(key: Key, next: PickupPointDraft[Key]) =>
+    onChange({ ...value, [key]: next });
 
   return (
     <div className="space-y-4">
@@ -111,11 +96,7 @@ function TabButton({
   active,
   onClick,
   children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
+}: PickupTabButtonProps) {
   return (
     <button
       type="button"
@@ -134,62 +115,16 @@ function TabButton({
 function PickupAddressSearch({
   value,
   onChange,
-}: {
-  value: PickupPointDraft;
-  onChange: (value: PickupPointDraft) => void;
-}) {
-  const [query, setQuery] = useState(value.address_text ?? "");
-  const [places, setPlaces] = useState<Place[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [unavailable, setUnavailable] = useState(false);
-  const skipNextSearch = useRef(false);
+}: PickupAddressSearchProps) {
+  const { query, setQuery, places, searching, unavailable, pick } = usePlaceSearch(value.address_text ?? "");
+  // Editing another point swaps the draft under the same form.
+  useEffect(() => setQuery(value.address_text ?? ""), [value.address_text, setQuery]);
 
-  useEffect(() => setQuery(value.address_text ?? ""), [value.address_text]);
-  useEffect(() => {
-    if (skipNextSearch.current) {
-      skipNextSearch.current = false;
-      setPlaces([]);
-      return;
-    }
-    if (query.trim().length < 3) {
-      setPlaces([]);
-      return;
-    }
-    const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
-      setSearching(true);
-      try {
-        const response = await fetch(
-          `/api/public/places?q=${encodeURIComponent(query)}`,
-          { signal: controller.signal },
-        );
-        const body = (await response.json()) as {
-          features?: Place[];
-          unavailable?: boolean;
-        };
-        setPlaces(body.features ?? []);
-        setUnavailable(Boolean(body.unavailable));
-      } catch (error) {
-        if (!(error instanceof DOMException && error.name === "AbortError")) {
-          setPlaces([]);
-        }
-      } finally {
-        setSearching(false);
-      }
-    }, 320);
-    return () => {
-      window.clearTimeout(timer);
-      controller.abort();
-    };
-  }, [query]);
-
-  const selectPlace = (place: Place) => {
-    skipNextSearch.current = true;
-    setQuery(place.label);
-    setPlaces([]);
+  const selectPlace = async (picked: PlaceOption) => {
+    const place = await pick(picked);
     onChange({
       ...value,
-      address_text: place.label,
+      address_text: picked.label,
       mapbox_feature_id: place.id,
       latitude: place.latitude,
       longitude: place.longitude,
@@ -220,7 +155,7 @@ function PickupAddressSearch({
           />
         </span>
       </label>
-      {searching ? <p className="text-xs text-muted-foreground">Buscando en Mapbox…</p> : null}
+      {searching ? <p className="text-xs text-muted-foreground">Buscando direcciones…</p> : null}
       {places.length > 0 ? (
         <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
           {places.map((place) => (
@@ -229,10 +164,10 @@ function PickupAddressSearch({
               type="button"
               onPointerDown={(event) => {
                 event.preventDefault();
-                selectPlace(place);
+                void selectPlace(place);
               }}
               onClick={(event) => {
-                if (event.detail === 0) selectPlace(place);
+                if (event.detail === 0) void selectPlace(place);
               }}
               className="flex min-h-11 w-full items-start gap-2 border-b border-border-soft px-3 py-2.5 text-left text-sm last:border-0 hover:bg-muted"
             >
@@ -244,7 +179,7 @@ function PickupAddressSearch({
       ) : null}
       {value.mapbox_feature_id ? (
         <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
-          <CheckCircle2 className="h-4 w-4" /> Ubicación confirmada con Mapbox
+          <CheckCircle2 className="h-4 w-4" /> Ubicación confirmada en el mapa
         </p>
       ) : (
         <p className="text-xs leading-5 text-muted-foreground">
@@ -252,7 +187,7 @@ function PickupAddressSearch({
         </p>
       )}
       {unavailable ? (
-        <p className="text-xs text-amber-700">Mapbox no respondió; conserva la dirección manual y podrás editarla después.</p>
+        <p className="text-xs text-amber-700">La búsqueda de direcciones no respondió; conserva la dirección manual y podrás editarla después.</p>
       ) : null}
     </div>
   );
@@ -262,11 +197,7 @@ function PickupHoursEditor({
   value,
   globalHours,
   onChange,
-}: {
-  value: BusinessHours | null;
-  globalHours: BusinessHours | null;
-  onChange: (value: BusinessHours | null) => void;
-}) {
+}: PickupHoursEditorProps) {
   const custom = value !== null;
   const cloneSuggested = () =>
     JSON.parse(JSON.stringify(SUGGESTED_BUSINESS_HOURS)) as BusinessHours;
@@ -325,11 +256,7 @@ function DayEditor({
   weekday,
   hours,
   onChange,
-}: {
-  weekday: Weekday;
-  hours: BusinessHours;
-  onChange: (hours: BusinessHours) => void;
-}) {
+}: PickupDayEditorProps) {
   const day = hours.days[weekday];
   const updateDay = (next: typeof day) => {
     const days = [...hours.days];
@@ -367,10 +294,6 @@ function DayEditor({
   );
 }
 
-function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string }) {
-  return <label className="block text-sm font-semibold text-foreground">{label}<input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="mt-1.5 min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-normal outline-none focus:border-accent focus:ring-2 focus:ring-accent/15" /></label>;
-}
-
-function TimeField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function TimeField({ label, value, onChange }: TimeFieldProps) {
   return <label className="text-xs font-semibold text-muted-foreground">{label}<input type="time" value={value} onChange={(event) => onChange(event.target.value)} className="mt-1.5 min-h-11 w-full rounded-lg border border-border bg-background px-2 text-sm text-foreground" /></label>;
 }

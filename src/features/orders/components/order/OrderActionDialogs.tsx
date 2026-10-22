@@ -9,6 +9,7 @@ import type { OrderActionDialog } from "@/features/orders/interfaces/orderAction
 import type { OrderTransferProof } from "@/features/orders/interfaces/orderDetail";
 import type { FulfillmentStatus } from "@/features/qr/services/tableFulfillmentService";
 import { ChargeSheet } from "@/features/orders/components/payment/ChargeSheet";
+import { orderAmountDue } from "@/features/orders/helpers/orderAmountDue";
 import { AddendumSheet } from "./AddendumSheet";
 import { DeliveryCompletionSheet } from "./DeliveryCompletionSheet";
 import { GenerateLinkModal } from "./GenerateLinkModal";
@@ -141,7 +142,7 @@ export function OrderActionDialogs({
             ? {
                 id: order.id,
                 number: order.order_number ?? order.id.slice(0, 8).toUpperCase(),
-                due: Number(order.balance_due ?? order.total),
+                due: orderAmountDue(order),
                 customerName: order.customer_name,
                 // Only a store customer's own checkout choice is fixed; staff orders choose here.
                 paymentMethod: isPublicStoreOrder ? order.payment_method : null,

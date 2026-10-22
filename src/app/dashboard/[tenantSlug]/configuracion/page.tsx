@@ -24,6 +24,7 @@ import { FormSaveBar } from "@/components/layout/FormSaveBar";
 import { ConfigNegocioSection } from "@/features/configuracion/components/config-sections/ConfigNegocioSection";
 import { ConfigTicketSection } from "@/features/configuracion/components/config-sections/ConfigTicketSection";
 import { ConfigFinanzasSection } from "@/features/configuracion/components/config-sections/ConfigFinanzasSection";
+import { PaymentsAndDeliveryPanel } from "@/features/configuracion/components/cobros/PaymentsAndDeliveryPanel";
 import { ConfigDireccionSection } from "@/features/configuracion/components/config-sections/ConfigDireccionSection";
 import { ConfigRecurrentesSection } from "@/features/configuracion/components/config-sections/ConfigRecurrentesSection";
 import { ConfigAgendaSection } from "@/features/configuracion/components/config-sections/ConfigAgendaSection";
@@ -52,13 +53,13 @@ export default function ConfiguracionPage() {
   const setMemberships = useTenantStore((s) => s.setMemberships);
   // `?tab=horarios` deja que otras pantallas enlacen a una sección concreta.
   const searchParams = useSearchParams();
+  const paymentProviderResult = searchParams.get("payment_provider");
   const [activeTab, setActiveTab] = useState<ConfigTab>(() => {
     const requested = searchParams.get("tab");
-    return CONFIG_TABS.some((t) => t.value === requested)
-      ? (requested as ConfigTab)
-      : "negocio";
+    if (CONFIG_TABS.some((t) => t.value === requested)) return requested as ConfigTab;
+    // Coming back from Mercado Pago lands on the tab that shows the connection.
+    return paymentProviderResult ? "cobros" : "negocio";
   });
-  const paymentProviderResult = searchParams.get("payment_provider");
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -352,20 +353,21 @@ export default function ConfiguracionPage() {
                 onFooterMessageChange={setTicketFooterMessage}
               />
             )}
+            {activeTab === "cobros" && (
+              <PaymentsAndDeliveryPanel
+                tenantId={activeTenant.id}
+                tenantSlug={tenantSlug}
+                canManagePayments={activeRole?.name === "owner"}
+                providerResult={paymentProviderResult}
+              />
+            )}
             {activeTab === "finanzas" && (
-              <>
-                {paymentProviderResult === "connected" && <p role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">Cuenta Mercado Pago conectada. Las ventas digitales de este negocio se acreditarán directamente en esa cuenta.</p>}
-                {paymentProviderResult === "error" && <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">No se pudo completar la conexión con Mercado Pago. Revisa la cuenta e inténtalo de nuevo.</p>}
-                <ConfigFinanzasSection
-                  tenantId={activeTenant.id}
-                  tenantSlug={tenantSlug}
-                  canManagePayments={activeRole?.name === "owner"}
-                  monthlyRent={monthlyRent}
-                  onMonthlyRentChange={setMonthlyRent}
-                  monthlySalesObjective={monthlySalesObjective}
-                  onMonthlySalesObjectiveChange={setMonthlySalesObjective}
-                />
-              </>
+              <ConfigFinanzasSection
+                monthlyRent={monthlyRent}
+                onMonthlyRentChange={setMonthlyRent}
+                monthlySalesObjective={monthlySalesObjective}
+                onMonthlySalesObjectiveChange={setMonthlySalesObjective}
+              />
             )}
             {activeTab === "recurrentes" && (
               <ConfigRecurrentesSection
@@ -460,7 +462,7 @@ export default function ConfiguracionPage() {
           </div>
           {/* Las pantallas se aprueban al instante; un "Guardar" ahí solo
               haría dudar de si el cambio se aplicó. */}
-          {activeTab !== "dispositivos" && (
+          {activeTab !== "dispositivos" && activeTab !== "cobros" && (
             <FormSaveBar align="end">
             <button
               type="submit"

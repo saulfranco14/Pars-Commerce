@@ -10,7 +10,7 @@ export interface ChargeTarget {
   customerName?: string | null;
   /** Checkout method (cash, bank_transfer…); a counter method here is preselected and fixed. */
   paymentMethod?: string | null;
-  /** Nobody assigned yet: the sheet asks who attended before charging. */
+  /** Nobody assigned yet: the sheet lets them pick who attended, never required. */
   assignedTo?: string | null;
 }
 
@@ -31,4 +31,12 @@ export interface ChargeSheetProps {
   onClose: () => void;
   /** The money is registered; refresh whatever shows the order. */
   onCharged: (result: ChargeResult) => void;
+}
+
+export interface OptionalAssigneeFieldProps {
+  team: ChargeTeamMember[];
+  /** The chosen member; null keeps the order unassigned. */
+  value: string | null;
+  onChange: (userId: string | null) => void;
+  disabled?: boolean;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -27,15 +28,14 @@ export function StoreHeader({ chrome }: StoreHeaderProps) {
 
   useEffect(() => setPanel(null), [pathname]);
 
+  useBodyScrollLock(Boolean(panel));
   useEffect(() => {
     if (!panel) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setPanel(null);
     };
-    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = "";
       window.removeEventListener("keydown", onKey);
     };
   }, [panel]);

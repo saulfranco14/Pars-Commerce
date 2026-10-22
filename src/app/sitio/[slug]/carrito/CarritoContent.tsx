@@ -269,7 +269,8 @@ export default function CarritoContent({
   };
 
   return (
-    <div className="space-y-4 xl:pb-0">
+    // Room for the fixed "Finalizar pedido" bar so the last items can scroll above it.
+    <div className="space-y-4 pb-[calc(11rem+env(safe-area-inset-bottom))] xl:pb-0">
       {combinedError && <Notification tone="error" message={combinedError} />}
 
       {/* El aviso lo pone el layout del sitio, que sale en todas las páginas. */}

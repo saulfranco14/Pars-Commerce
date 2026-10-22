@@ -9,6 +9,7 @@ import { btnWorkSuccess } from "@/components/ui/buttonClasses";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { usePermission } from "@/stores/useTenantStore";
 import { isTableServiceOrder } from "@/features/orders/helpers/isTableServiceOrder";
+import { orderAmountDue } from "@/features/orders/helpers/orderAmountDue";
 
 /** Orígenes donde el negocio registra un cobro directo en mostrador. */
 const COUNTER_SOURCES = new Set(["staff"]);
@@ -79,7 +80,7 @@ export function CounterPaymentCard() {
     );
   }
 
-  const due = Number(order.balance_due ?? order.total);
+  const due = orderAmountDue(order);
   const number = order.order_number ?? order.id.slice(0, 8).toUpperCase();
 
   return (

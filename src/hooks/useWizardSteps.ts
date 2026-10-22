@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 /**
  * Step index plus the full-screen overlay behavior every wizard needs: the
@@ -9,15 +10,13 @@ import { useEffect, useState } from "react";
 export function useWizardSteps({ total, onClose }: { total: number; onClose: () => void }) {
   const [step, setStep] = useState(0);
 
+  useBodyScrollLock(true);
   useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = previous;
       window.removeEventListener("keydown", onKey);
     };
   }, [onClose]);

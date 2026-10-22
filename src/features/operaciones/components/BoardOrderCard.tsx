@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarClock, CheckCircle2, ChevronDown, Clock, ExternalLink, MapPin, Phone, User } from "lucide-react";
+import { CalendarClock, CheckCircle2, ChevronDown, Clock, ExternalLink, MapPin, Phone, User, UserX } from "lucide-react";
 
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { BoardItemRow } from "@/features/operaciones/components/BoardItemRow";
+import { OrderJourney } from "@/features/operaciones/components/OrderJourney";
 
 import { elapsedLabel, elapsedTone, minutesSince } from "@/features/operaciones/helpers/elapsed";
+import { orderJourney } from "@/features/operaciones/helpers/orderJourney";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { methodLabel } from "@/features/operaciones/helpers/methodLabel";
 
@@ -53,10 +55,18 @@ export function BoardOrderCard({
             #{order.number}
             <span className="truncate font-sans text-sm font-semibold">· {order.originLabel}</span>
           </p>
-          {order.assignedName && (
+          {order.assignedName ? (
             <p className="mt-0.5 truncate text-xs text-muted-foreground">
               Atiende: <span className="font-semibold text-foreground">{order.assignedName}</span>
             </p>
+          ) : (
+            !order.assignedTo &&
+            !order.finished && (
+              <p className="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+                <UserX className="h-3.5 w-3.5" aria-hidden />
+                Sin asignar
+              </p>
+            )
           )}
           {order.paidAmount !== null && (
             <p className="mt-1 text-sm text-muted-foreground">
@@ -96,6 +106,12 @@ export function BoardOrderCard({
           )}
         </span>
       </button>
+
+      {!order.doneAt && (
+        <div className="px-3 pb-3">
+          <OrderJourney steps={orderJourney(order)} />
+        </div>
+      )}
 
       {open && (
         <div className="px-4 pb-4">

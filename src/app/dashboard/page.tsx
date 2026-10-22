@@ -262,7 +262,7 @@ function FirstSaleGuide({
         </button>
 
         <Link
-          href={`/dashboard/${tenantSlug}/configuracion?tab=finanzas`}
+          href={`/dashboard/${tenantSlug}/configuracion?tab=cobros`}
           className={`group flex min-h-25 items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 ${stepClass(paymentsConnected, currentStep === 3)}`}
         >
           <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClass(paymentsConnected, currentStep === 3)}`}>
@@ -328,7 +328,7 @@ function AssistedSetupGuide({ tenantSlug, paymentsConnected }: { tenantSlug: str
       <div className="mt-4 grid gap-3 md:grid-cols-3">
         <Link href={`/dashboard/${tenantSlug}/configuracion`} className="min-h-24 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent/40"><p className="text-xs font-semibold text-accent">1. Datos del negocio</p><p className="mt-1 text-sm font-semibold text-foreground">Revisa contacto y horarios</p></Link>
         <Link href={`/dashboard/${tenantSlug}/productos`} className="min-h-24 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent/40"><p className="text-xs font-semibold text-accent">2. Catálogo</p><p className="mt-1 text-sm font-semibold text-foreground">Confirma precios e inventario</p></Link>
-        <Link href={`/dashboard/${tenantSlug}/configuracion?tab=finanzas`} className={`min-h-24 rounded-xl border p-3 transition-colors ${paymentsConnected ? "border-emerald-200 bg-emerald-50 hover:border-emerald-300" : "border-border bg-surface hover:border-accent/40"}`}><p className={`text-xs font-semibold ${paymentsConnected ? "text-emerald-700" : "text-accent"}`}>3. Cobros del negocio</p><p className="mt-1 text-sm font-semibold text-foreground">{paymentsConnected ? "Mercado Pago ya está conectado" : "Conecta tu cuenta de Mercado Pago"}</p><p className="mt-1 text-xs text-muted-foreground">{paymentsConnected ? "Las ventas digitales se acreditarán directamente en tu cuenta." : "El dinero de tus ventas llega a tu cuenta, no a Tlaco."}</p></Link>
+        <Link href={`/dashboard/${tenantSlug}/configuracion?tab=cobros`} className={`min-h-24 rounded-xl border p-3 transition-colors ${paymentsConnected ? "border-emerald-200 bg-emerald-50 hover:border-emerald-300" : "border-border bg-surface hover:border-accent/40"}`}><p className={`text-xs font-semibold ${paymentsConnected ? "text-emerald-700" : "text-accent"}`}>3. Cobros del negocio</p><p className="mt-1 text-sm font-semibold text-foreground">{paymentsConnected ? "Mercado Pago ya está conectado" : "Conecta tu cuenta de Mercado Pago"}</p><p className="mt-1 text-xs text-muted-foreground">{paymentsConnected ? "Las ventas digitales se acreditarán directamente en tu cuenta." : "El dinero de tus ventas llega a tu cuenta, no a Tlaco."}</p></Link>
       </div>
     </section>
   );

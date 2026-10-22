@@ -2,20 +2,30 @@
 import { requirePermission } from "@/lib/auth/requirePermission";
 import { roleHasPermission } from "@/lib/auth/permissions";
 import { getMexicoDateBounds, toMexicoDateStr } from "@/lib/dateBounds";
-import { requiresReadyBeforePayment } from "@/features/qr/helpers/paymentReadiness";
 import { stationMeta } from "@/features/operaciones/constants/stations";
 import {
   buildColumns,
   buildHistoryColumns,
+  rowInStation,
   toBoardOrder,
 } from "@/features/operaciones/helpers/boardColumns";
+import {
+  ACTIVE_WINDOW_MS,
+  HIDDEN_STATUSES,
+  ORDER_COLUMNS,
+  asDb,
+  groupBy,
+  loadItems,
+  loadRouting,
+  loadTransferProofs,
+} from "@/features/operaciones/services/operationsOrderLoader";
 import { sectionPermissions } from "@/constants/dashboardAccess";
 import {
   asBillingAdmin,
   getBillingAccount,
 } from "@/features/billing/billingService";
 
-import type { createAdminClient } from "@/lib/supabase/admin";
+import type { Admin } from "@/features/operaciones/services/operationsOrderLoader";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 import type { BoardOrderRow } from "@/features/operaciones/helpers/boardColumns";
 import type {
@@ -27,15 +37,10 @@ import type {
   StationBoard,
 } from "@/features/operaciones/interfaces/board";
 
-type Admin = ReturnType<typeof createAdminClient>;
-
-// Active work only: an order nobody touched in this long is history, not a task.
-const ACTIVE_WINDOW_MS = 36 * 60 * 60 * 1000;
 const MAX_ORDERS = 200;
-const HIDDEN_STATUSES = "(cancelled,draft,pending_subscription)";
 
-const ORDER_COLUMNS =
-  "id, order_number, status, fulfillment_status, fulfillment_method, source, order_type, table_label, created_at, updated_at, scheduled_for, customer_name, customer_phone, total, paid_total, balance_due, paid_at, payment_method, assigned_to, created_by";
+// Stations where someone who can hand out work may also assign while charging or delivering.
+const TEAM_STATIONS = new Set(["recepcion", "caja", "entregas"]);
 
 export async function getStationBoard(
   admin: Admin,
@@ -59,7 +64,7 @@ export async function getStationBoard(
 
   const { startUTC: todayStart } = getMexicoDateBounds(toMexicoDateStr(new Date().toISOString()));
   const since = view === "done" ? todayStart : new Date(Date.now() - ACTIVE_WINDOW_MS).toISOString();
-  const db = admin as unknown as { from: (table: string) => any };
+  const db = asDb(admin);
   let query = db
     .from("orders")
     .select(ORDER_COLUMNS)
@@ -89,42 +94,25 @@ export async function getStationBoard(
   if (error) return { ok: false, error: { code: "internal", message: error.message } };
 
   let rows = (data ?? []) as BoardOrderRow[];
-  // A paid table order is finished; its preparation can no longer move.
-  if (meta.key === "preparacion" && view === "active") {
-    rows = rows.filter((r) => !(r.status === "paid" && requiresReadyBeforePayment(r.source, r.order_type)));
-  }
+  // The query narrows in SQL; this is the one rule every station view shares.
+  if (view === "active") rows = rows.filter((r) => rowInStation(meta.key, r, input.userId));
 
   const ids = rows.map((r) => r.id);
   const userIds = [...new Set(rows.map((r) => r.assigned_to).filter((id): id is string => Boolean(id)))];
-  const [items, details, events, profiles, activity, pendingPayments, approvedPayments] = await Promise.all([
-    ids.length
-      ? db
-          .from("order_items")
-          .select("id, order_id, quantity, fulfillment_status, created_at, product:products(name, image_url)")
-          .in("order_id", ids)
-          .order("created_at", { ascending: true })
-      : { data: [] },
-    ids.length
-      ? db.from("order_delivery_details").select("order_id, address_text, pickup_point_id").in("order_id", ids)
-      : { data: [] },
-    ids.length
-      ? db.from("order_delivery_events").select("order_id, type, created_at, created_by").in("order_id", ids)
-      : { data: [] },
+  const proofOrderIds =
+    meta.key === "caja" && view === "active"
+      ? rows.filter((r) => r.payment_verification_status === "proof_submitted").map((r) => r.id)
+      : [];
+  const [itemsByOrder, routing, proofs, profiles, activity, approvedPayments] = await Promise.all([
+    loadItems(db, ids),
+    loadRouting(db, ids),
+    loadTransferProofs(admin, proofOrderIds),
     userIds.length ? db.from("profiles").select("id, display_name, email").in("id", userIds) : { data: [] },
     view === "done" && (meta.key === "preparacion" || cajaHistory) && ids.length
       ? db
           .from("order_activity_log")
           .select("order_id, actor_id, created_at, payload")
           .eq("action", cajaHistory ? "payment.confirmed" : "fulfillment.changed")
-          .in("order_id", ids)
-          .order("created_at", { ascending: true })
-      : { data: [] },
-    meta.key === "caja" && ids.length
-      ? db
-          .from("payments")
-          .select("id, order_id, amount, tip_amount, metadata, created_at")
-          .eq("provider", "manual")
-          .eq("status", "pending")
           .in("order_id", ids)
           .order("created_at", { ascending: true })
       : { data: [] },
@@ -135,13 +123,12 @@ export async function getStationBoard(
   const approvedByOrder = groupBy(approvedPayments.data ?? [], (p: any) => p.order_id);
 
   const payerDeviceIds = [
-    ...new Set((pendingPayments.data ?? []).map((p: any) => p.metadata?.device_id).filter(Boolean)),
+    ...new Set(routing.pendingPayments.map((p: any) => p.metadata?.device_id).filter(Boolean)),
   ] as string[];
   const payerDevices = payerDeviceIds.length
     ? await db.from("order_devices").select("id, display_name").in("id", payerDeviceIds)
     : { data: [] };
   const payerName = new Map<string, string>((payerDevices.data ?? []).map((d: any) => [d.id, d.display_name]));
-  const paymentsByOrder = groupBy(pendingPayments.data ?? [], (p: any) => p.order_id);
 
   // The step that closed each order: "ready" for preparation, delivered or picked up for delivery.
   const doneByOrder = new Map<string, { at: string; by: string | null }>();
@@ -156,7 +143,7 @@ export async function getStationBoard(
         ? (activity.data ?? [])
             .filter((a: any) => a.payload?.to === "ready")
             .map((a: any) => ({ orderId: a.order_id, at: a.created_at, by: a.actor_id }))
-        : (events.data ?? [])
+        : routing.events
             .filter((e: any) => e.type === "delivered" || e.type === "pickup_completed")
             .map((e: any) => ({ orderId: e.order_id, at: e.created_at, by: e.created_by }));
     for (const c of closing) doneByOrder.set(c.orderId, { at: c.at, by: c.by });
@@ -172,25 +159,16 @@ export async function getStationBoard(
       p.display_name || p.email?.split("@")[0] || "Alguien",
     ]),
   );
-  const itemsByOrder = groupBy(items.data ?? [], (i: any) => i.order_id);
-  const eventsByOrder = groupBy(events.data ?? [], (e: any) => e.order_id);
-  const detailsByOrder = new Map((details.data ?? []).map((d: any) => [d.order_id, d]));
-
   const orders = rows.map((row) =>
     toBoardOrder(
       row,
       {
-        items: (itemsByOrder.get(row.id) ?? []).map((i: any) => ({
-          id: i.id,
-          name: i.product?.name ?? "Producto",
-          quantity: Number(i.quantity),
-          imageUrl: i.product?.image_url ?? null,
-          status: i.fulfillment_status === "in_progress" || i.fulfillment_status === "ready" ? i.fulfillment_status : "received",
-        })),
-        deliveryDetails: detailsByOrder.get(row.id) ?? null,
-        deliveryEventTypes: (eventsByOrder.get(row.id) ?? []).map((e: any) => e.type),
+        items: itemsByOrder.get(row.id) ?? [],
+        deliveryDetails: routing.detailsByOrder.get(row.id) ?? null,
+        deliveryEventTypes: (routing.eventsByOrder.get(row.id) ?? []).map((e: any) => e.type),
         assignedName: row.assigned_to ? (nameOf.get(row.assigned_to) ?? null) : null,
-        pendingPayments: (paymentsByOrder.get(row.id) ?? []).map((p: any) => ({
+        transferProof: proofs.get(row.id) ?? null,
+        pendingPayments: (routing.paymentsByOrder.get(row.id) ?? []).map((p: any) => ({
           id: p.id,
           amount: Number(p.amount),
           tip: Number(p.tip_amount ?? 0),
@@ -224,7 +202,7 @@ export async function getStationBoard(
         view === "done"
           ? buildHistoryColumns(meta.key, orders, todayStart)
           : buildColumns(meta.key, orders, todayStart),
-      team: meta.key === "recepcion" ? await listAssignableTeam(db, input.tenantId) : [],
+      team: can.assign && TEAM_STATIONS.has(meta.key) ? await listAssignableTeam(db, input.tenantId) : [],
       collectedToday: meta.key === "caja" && !cajaHistory ? await collectedSince(db, input.tenantId, todayStart) : null,
       collectedSummary: cajaHistory ? summarizeCollected(orders) : null,
     },
@@ -260,15 +238,6 @@ function summarizeCollected(orders: BoardOrder[]): CollectedSummary {
     orders: orders.length,
     byMethod: [...byMethod.entries()].map(([method, amount]) => ({ method, amount })).sort((a, b) => b.amount - a.amount),
   };
-}
-
-function groupBy<T>(rows: T[], key: (row: T) => string): Map<string, T[]> {
-  const map = new Map<string, T[]>();
-  for (const row of rows) {
-    const k = key(row);
-    map.set(k, [...(map.get(k) ?? []), row]);
-  }
-  return map;
 }
 
 async function listAssignableTeam(db: { from: (t: string) => any }, tenantId: string): Promise<BoardTeamMember[]> {

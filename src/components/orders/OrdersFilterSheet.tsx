@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { createPortal } from "react-dom";
 import { Calendar, RotateCcw, X } from "lucide-react";
 
@@ -46,16 +47,14 @@ export function OrdersFilterSheet({
       : "all";
 
   useEffect(() => setMounted(true), []);
+  useBodyScrollLock(isOpen);
   useEffect(() => {
     if (!isOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     const onEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onEscape);
     return () => {
-      document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onEscape);
     };
   }, [isOpen, onClose]);
