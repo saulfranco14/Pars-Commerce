@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 
 import { btnDanger, btnPrimary, btnSecondary } from "@/components/ui/buttonClasses";
+
+import { reviewTransferProof } from "@/features/orders/services/transferProofClientService";
+
 import type { OrderTransferProof } from "@/features/orders/interfaces/orderDetail";
 
 type TransferProofReviewSheetProps = {
@@ -71,21 +74,7 @@ export function TransferProofReviewSheet({
     setBusy(true);
     onError("");
     try {
-      const response = await fetch(
-        `/api/orders/${orderId}/transferencias/${proof.id}/review`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            decision: nextDecision,
-            rejection_reason: nextDecision === "reject" ? reason.trim() : undefined,
-          }),
-        },
-      );
-      const result = (await response.json().catch(() => ({}))) as { error?: string };
-      if (!response.ok) {
-        throw new Error(result.error ?? "No pudimos revisar el comprobante.");
-      }
+      await reviewTransferProof(orderId, proof.id, nextDecision, reason.trim());
       await onReviewed();
       onClose();
     } catch (error) {
@@ -149,6 +138,7 @@ export function TransferProofReviewSheet({
 
           <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-background">
             {proof.signed_url && isImage ? (
+              // eslint-disable-next-line @next/next/no-img-element -- short-lived signed link, not an optimizable asset
               <img
                 src={proof.signed_url}
                 alt="Comprobante de transferencia enviado por el cliente"

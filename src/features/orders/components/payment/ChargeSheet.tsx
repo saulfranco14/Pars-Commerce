@@ -1,12 +1,13 @@
 "use client";
 
-import { ArrowLeft, CheckCircle2, Loader2, Lock, UserRound, Wallet } from "lucide-react";
+import { CheckCircle2, Loader2, Lock, Wallet } from "lucide-react";
 
 import { useCounterCharge } from "@/features/orders/hooks/useCounterCharge";
 import { FormSheet } from "@/components/ui/FormSheet";
 import { Notification } from "@/components/ui/Notification";
-import { btnWorkPrimary, btnWorkSecondary } from "@/components/ui/buttonClasses";
+import { btnWorkPrimary } from "@/components/ui/buttonClasses";
 import { OPTION_CARD } from "@/components/wizard/wizardStyles";
+import { OptionalAssigneeField } from "@/features/orders/components/payment/OptionalAssigneeField";
 
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { COUNTER_PAYMENT_METHODS, paymentMethodLabel } from "@/features/orders/constants/paymentMethods";
@@ -19,8 +20,8 @@ const methodLabel = (id: string | null) => {
 };
 
 /**
- * The one way to charge at the counter (Caja and the order page): who
- * attended if nobody is assigned, how the money came in, and a clear "Cobrado".
+ * The one way to charge at the counter (Caja and the order page): how the
+ * money came in, optionally who attended if nobody has it, and a clear "Cobrado".
  */
 export function ChargeSheet({ target, team, onClose, onCharged }: ChargeSheetProps) {
   const flow = useCounterCharge(target, team.length > 0, onCharged);
@@ -32,19 +33,12 @@ export function ChargeSheet({ target, team, onClose, onCharged }: ChargeSheetPro
       <button type="button" onClick={onClose} className={`${btnWorkPrimary} w-full`}>
         Listo
       </button>
-    ) : flow.step === "method" ? (
-      <div className="flex gap-2">
-        {flow.backToAttendant ? (
-          <button type="button" onClick={flow.backToAttendant} disabled={flow.busy} className={btnWorkSecondary} aria-label="Cambiar quién atendió">
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-          </button>
-        ) : null}
-        <button type="button" disabled={!flow.method || flow.busy} onClick={() => void flow.charge()} className={`${btnWorkPrimary} flex-1`}>
-          {flow.busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Wallet className="h-4 w-4" aria-hidden />}
-          {flow.busy ? "Registrando cobro…" : flow.method ? `Recibí ${formatCurrency(due)} en ${methodLabel(flow.method)}` : "Elige cómo te pagó"}
-        </button>
-      </div>
-    ) : null;
+    ) : (
+      <button type="button" disabled={!flow.method || flow.busy} onClick={() => void flow.charge()} className={`${btnWorkPrimary} w-full`}>
+        {flow.busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Wallet className="h-4 w-4" aria-hidden />}
+        {flow.busy ? "Registrando cobro…" : flow.method ? `Recibí ${formatCurrency(due)} en ${methodLabel(flow.method)}` : "Elige cómo te pagó"}
+      </button>
+    );
 
   return (
     <FormSheet
@@ -75,56 +69,40 @@ export function ChargeSheet({ target, team, onClose, onCharged }: ChargeSheetPro
 
           {flow.error ? <Notification tone="error" message={flow.error} /> : null}
 
-          {flow.step === "attendant" ? (
-            <fieldset>
-              <legend className="mb-2 text-sm font-semibold text-foreground">¿Quién lo atendió?</legend>
-              <div className="space-y-2">
-                {team.map((member) => (
+          <fieldset>
+            <legend className="mb-2 text-sm font-semibold text-foreground">
+              {flow.lockedMethod ? "El cliente eligió pagar en" : "¿Cómo te pagó?"}
+            </legend>
+            <div className={`grid gap-2 ${methods.length === 1 ? "grid-cols-1" : "grid-cols-3"}`} role="radiogroup" aria-label="Cómo te pagó">
+              {methods.map(({ id, label, icon: Icon }) => {
+                const active = flow.method === id;
+                return (
                   <button
-                    key={member.userId}
+                    key={id}
                     type="button"
-                    onClick={() => flow.chooseAttendant(member.userId)}
-                    className={`${OPTION_CARD.base} ${OPTION_CARD.idle} flex min-h-14 w-full items-center gap-3 bg-surface px-4`}
+                    role="radio"
+                    aria-checked={active}
+                    disabled={flow.busy}
+                    onClick={() => flow.chooseMethod(id)}
+                    className={`${OPTION_CARD.base} ${active ? OPTION_CARD.selected : OPTION_CARD.idle} flex min-h-24 flex-col items-center justify-center gap-2 bg-surface p-3 disabled:opacity-60`}
                   >
-                    <UserRound className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
-                    <span className="font-semibold text-foreground">{member.name}</span>
+                    <Icon className={`h-6 w-6 ${active ? "text-accent" : "text-muted-foreground"}`} aria-hidden />
+                    <span className="flex items-center gap-1 text-sm font-semibold text-foreground">
+                      {paymentMethodLabel(label)}
+                      {flow.lockedMethod ? <Lock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden /> : null}
+                    </span>
                   </button>
-                ))}
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">Así su venta y su propina quedan a su nombre.</p>
-            </fieldset>
-          ) : (
-            <fieldset>
-              <legend className="mb-2 text-sm font-semibold text-foreground">
-                {flow.lockedMethod ? "El cliente eligió pagar en" : "¿Cómo te pagó?"}
-              </legend>
-              <div className={`grid gap-2 ${methods.length === 1 ? "grid-cols-1" : "grid-cols-3"}`} role="radiogroup" aria-label="Cómo te pagó">
-                {methods.map(({ id, label, icon: Icon }) => {
-                  const active = flow.method === id;
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      role="radio"
-                      aria-checked={active}
-                      disabled={flow.busy}
-                      onClick={() => flow.chooseMethod(id)}
-                      className={`${OPTION_CARD.base} ${active ? OPTION_CARD.selected : OPTION_CARD.idle} flex min-h-24 flex-col items-center justify-center gap-2 bg-surface p-3 disabled:opacity-60`}
-                    >
-                      <Icon className={`h-6 w-6 ${active ? "text-accent" : "text-muted-foreground"}`} aria-hidden />
-                      <span className="flex items-center gap-1 text-sm font-semibold text-foreground">
-                        {paymentMethodLabel(label)}
-                        {flow.lockedMethod ? <Lock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden /> : null}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="mt-3 text-center text-xs text-muted-foreground">
-                {flow.lockedMethod ? "Es el método que eligió al comprar; no se cambia aquí." : "Confirma solo con el dinero en la mano."}
-              </p>
-            </fieldset>
-          )}
+                );
+              })}
+            </div>
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              {flow.lockedMethod ? "Es el método que eligió al comprar; no se cambia aquí." : "Confirma solo con el dinero en la mano."}
+            </p>
+          </fieldset>
+
+          {flow.canPickAttendant ? (
+            <OptionalAssigneeField team={team} value={flow.attendant} onChange={flow.chooseAttendant} disabled={flow.busy} />
+          ) : null}
         </div>
       )}
     </FormSheet>
