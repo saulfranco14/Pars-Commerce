@@ -55,14 +55,17 @@ export function usePlaceSearch(initialQuery: string) {
     };
   }, [query]);
 
-  /** Shows the picked label right away and resolves its coordinates when the provider needs it. */
-  async function pick(place: PlaceOption): Promise<PlaceOption> {
+  /**
+   * Shows the picked label right away and resolves its coordinates when the provider needs it.
+   * `withCoordinates: false` keeps only the label (an area name) and skips the billed details lookup.
+   */
+  async function pick(place: PlaceOption, { withCoordinates = true }: { withCoordinates?: boolean } = {}): Promise<PlaceOption> {
     skipNextSearch.current = true;
     setQuery(place.label);
     setPlaces([]);
     const token = session.current;
     session.current = newSessionToken();
-    if (place.latitude !== null && place.longitude !== null) return place;
+    if (!withCoordinates || (place.latitude !== null && place.longitude !== null)) return place;
     try {
       const params = new URLSearchParams({ id: place.id, session: token });
       const response = await fetch(`/api/public/places/details?${params}`);

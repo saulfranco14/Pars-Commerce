@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { CheckCircle2, ChevronDown, Clock3, MapPin, Search } from "lucide-react";
 
 import { usePlaceSearch } from "@/hooks/usePlaceSearch";
+import { SettingField as Field } from "@/features/configuracion/components/cobros/SettingField";
 
 import {
   describeDay,
@@ -15,23 +16,18 @@ import {
   WEEKDAY_DISPLAY_ORDER,
   WEEKDAY_LABELS,
   type BusinessHours,
-  type Weekday,
 } from "@/features/configuracion/interfaces/businessHours";
 
 import type { PlaceOption } from "@/types/places";
-
-export type PickupPointDraft = {
-  id?: string;
-  name?: string | null;
-  address_text?: string | null;
-  reference?: string | null;
-  instructions?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  mapbox_feature_id?: string | null;
-  /** `null` means the point inherits the business schedule. */
-  business_hours?: BusinessHours | null;
-};
+import type {
+  PickupAddressSearchProps,
+  PickupDayEditorProps,
+  PickupHoursEditorProps,
+  PickupPointDraft,
+  PickupPointFormProps,
+  PickupTabButtonProps,
+  TimeFieldProps,
+} from "@/features/configuracion/interfaces/paymentsAndDelivery";
 
 export function PickupPointForm({
   value,
@@ -39,17 +35,9 @@ export function PickupPointForm({
   tab,
   onTabChange,
   onChange,
-}: {
-  value: PickupPointDraft;
-  globalHours: BusinessHours | null;
-  tab: "location" | "hours";
-  onTabChange: (tab: "location" | "hours") => void;
-  onChange: (value: PickupPointDraft) => void;
-}) {
-  const set = <Key extends keyof PickupPointDraft>(
-    key: Key,
-    next: PickupPointDraft[Key],
-  ) => onChange({ ...value, [key]: next });
+}: PickupPointFormProps) {
+  const set = <Key extends keyof PickupPointDraft>(key: Key, next: PickupPointDraft[Key]) =>
+    onChange({ ...value, [key]: next });
 
   return (
     <div className="space-y-4">
@@ -108,11 +96,7 @@ function TabButton({
   active,
   onClick,
   children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
+}: PickupTabButtonProps) {
   return (
     <button
       type="button"
@@ -131,10 +115,7 @@ function TabButton({
 function PickupAddressSearch({
   value,
   onChange,
-}: {
-  value: PickupPointDraft;
-  onChange: (value: PickupPointDraft) => void;
-}) {
+}: PickupAddressSearchProps) {
   const { query, setQuery, places, searching, unavailable, pick } = usePlaceSearch(value.address_text ?? "");
   // Editing another point swaps the draft under the same form.
   useEffect(() => setQuery(value.address_text ?? ""), [value.address_text, setQuery]);
@@ -216,11 +197,7 @@ function PickupHoursEditor({
   value,
   globalHours,
   onChange,
-}: {
-  value: BusinessHours | null;
-  globalHours: BusinessHours | null;
-  onChange: (value: BusinessHours | null) => void;
-}) {
+}: PickupHoursEditorProps) {
   const custom = value !== null;
   const cloneSuggested = () =>
     JSON.parse(JSON.stringify(SUGGESTED_BUSINESS_HOURS)) as BusinessHours;
@@ -279,11 +256,7 @@ function DayEditor({
   weekday,
   hours,
   onChange,
-}: {
-  weekday: Weekday;
-  hours: BusinessHours;
-  onChange: (hours: BusinessHours) => void;
-}) {
+}: PickupDayEditorProps) {
   const day = hours.days[weekday];
   const updateDay = (next: typeof day) => {
     const days = [...hours.days];
@@ -321,10 +294,6 @@ function DayEditor({
   );
 }
 
-function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string }) {
-  return <label className="block text-sm font-semibold text-foreground">{label}<input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="mt-1.5 min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-normal outline-none focus:border-accent focus:ring-2 focus:ring-accent/15" /></label>;
-}
-
-function TimeField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function TimeField({ label, value, onChange }: TimeFieldProps) {
   return <label className="text-xs font-semibold text-muted-foreground">{label}<input type="time" value={value} onChange={(event) => onChange(event.target.value)} className="mt-1.5 min-h-11 w-full rounded-lg border border-border bg-background px-2 text-sm text-foreground" /></label>;
 }
