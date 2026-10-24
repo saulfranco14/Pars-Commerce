@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { PanelTopClose, Search, Tag, X } from "lucide-react";
+import { ChevronRight, PanelTopClose, Search, Tag, X } from "lucide-react";
 
 import { BrandImage } from "@/features/qr/components/BrandImage";
 import { MenuPeekRow } from "@/features/qr/components/menu-product/MenuPeekRow";
@@ -95,6 +95,10 @@ export function TableMenuSections({
   const [expanded, setExpanded] = useState(!startCollapsed);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const showPills = sections.length > 1 && !searching && expanded;
+  const activeSection = useMemo(
+    () => sections.find((section) => section.id === activeId) ?? sections[0] ?? null,
+    [activeId, sections],
+  );
   // Search is available whenever the menu is open and there's more than a
   // handful of products (a search box over 3 items is noise).
   const showSearch = totalCount >= 5 && expanded;
@@ -117,7 +121,7 @@ export function TableMenuSections({
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
         if (visible[0]) setActiveId(visible[0].target.id.replace("sec-", ""));
       },
-      { rootMargin: "-96px 0px -70% 0px", threshold: 0 },
+      { rootMargin: "-116px 0px -70% 0px", threshold: 0 },
     );
     for (const s of sections) {
       const node = sectionRefs.current[s.id];
@@ -129,7 +133,7 @@ export function TableMenuSections({
   function scrollTo(id: string) {
     const node = sectionRefs.current[id];
     if (!node) return;
-    const top = node.getBoundingClientRect().top + window.scrollY - 76;
+    const top = node.getBoundingClientRect().top + window.scrollY - 112;
     window.scrollTo({ top, behavior: "smooth" });
   }
 
@@ -238,7 +242,7 @@ export function TableMenuSections({
             </div>
           </div>
           <div
-            className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 pr-1 touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 pr-5 touch-pan-x"
             aria-label="Carrusel de promociones"
           >
             {activePromotions.map((promotion) => (
@@ -257,34 +261,51 @@ export function TableMenuSections({
       {/* Sticky category nav — thumbnail + name. A row of bare text pills reads
           as chrome; the photo is what makes someone tap it. */}
       {showPills && (
-        <div className="sticky top-0 z-20 -mx-5 mb-3 border-b border-border bg-background/95 px-5 py-2 backdrop-blur-sm">
-          <div className="flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {sections.map((s) => {
-              const active = activeId === s.id;
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => scrollTo(s.id)}
-                  className={`flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-full border py-1 pl-1 pr-3.5 text-xs font-bold transition-all active:scale-[0.97] ${
-                    active
-                      ? "border-accent bg-accent text-accent-foreground"
-                      : "border-border bg-surface text-muted-foreground hover:border-accent/40"
-                  }`}
-                >
-                  <BrandImage
-                    src={sectionThumbnail(s.products)}
-                    logoUrl={tenantLogoUrl}
-                    name={tenantName}
-                    alt={s.name || "Menú"}
-                    className="h-8 w-8 shrink-0"
-                    rounded="rounded-full"
-                    sizes="32px"
-                  />
-                  {s.name || "Menú"}
-                </button>
-              );
-            })}
+        <div className="sticky top-0 z-20 -mx-5 mb-3 border-b border-border bg-background px-5 py-2.5 shadow-sm">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Explorando</p>
+              <p className="truncate text-sm font-bold text-foreground">{activeSection?.name || "Menú"}</p>
+            </div>
+            <span className="shrink-0 rounded-full bg-accent/10 px-2.5 py-1 text-[10px] font-bold text-accent">
+              {activeSection?.products.length ?? 0} {(activeSection?.products.length ?? 0) === 1 ? "opción" : "opciones"}
+            </span>
+          </div>
+          <div className="relative">
+            <div className="no-scrollbar flex gap-2 overflow-x-auto pr-8">
+              {sections.map((s) => {
+                const active = (activeId ?? sections[0]?.id) === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => scrollTo(s.id)}
+                    className={`flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-full border py-1 pl-1 pr-3.5 text-xs font-bold transition-all active:scale-[0.97] ${
+                      active
+                        ? "border-accent bg-accent text-accent-foreground"
+                        : "border-border bg-surface text-muted-foreground hover:border-accent/40"
+                    }`}
+                  >
+                    <BrandImage
+                      src={sectionThumbnail(s.products)}
+                      logoUrl={tenantLogoUrl}
+                      name={tenantName}
+                      alt={s.name || "Menú"}
+                      className="h-8 w-8 shrink-0"
+                      rounded="rounded-full"
+                      sizes="32px"
+                    />
+                    {s.name || "Menú"}
+                  </button>
+                );
+              })}
+            </div>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-end bg-gradient-to-l from-background via-background/90 to-transparent"
+            >
+              <ChevronRight className="h-4 w-4 text-accent" />
+            </span>
           </div>
         </div>
       )}
@@ -323,7 +344,7 @@ export function TableMenuSections({
               ref={(el) => {
                 sectionRefs.current[s.id] = el;
               }}
-              className="scroll-mt-20"
+              className="scroll-mt-28"
             >
               {s.name && (
                 <h3 className="mb-2.5 text-sm font-bold uppercase tracking-wide text-foreground">
