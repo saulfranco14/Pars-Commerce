@@ -31,14 +31,14 @@ export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, clas
       className={`overflow-hidden rounded-2xl border border-accent/25 bg-surface shadow-sm ${className}`}
       aria-label={`Promoción: ${label}`}
     >
-      <div className="relative aspect-[16/8] overflow-hidden bg-accent">
+      <div className="relative aspect-[16/7] overflow-hidden bg-accent">
         {promotion.image_url ? (
           <Image
             src={promotion.image_url}
             alt=""
             fill
             loading="lazy"
-            sizes="(max-width: 480px) calc(100vw - 40px), 360px"
+            sizes="(max-width: 480px) 50vw, 168px"
             className="object-cover"
           />
         ) : (
@@ -49,38 +49,33 @@ export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, clas
         )}
       </div>
 
-      <div className="p-3.5">
-        <p className="text-xs font-bold text-accent">{label}</p>
-        <p className="mt-0.5 text-sm font-bold leading-snug text-foreground">{promotion.name}</p>
-        {promotion.description && (
-          <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
-            {promotion.description}
-          </p>
-        )}
-        <div className="mt-3 flex min-h-11 items-center justify-between gap-3">
+      <div className="p-2.5">
+        <p className="text-[10px] font-bold text-accent">{label}</p>
+        <p className="mt-0.5 line-clamp-2 min-h-8 text-xs font-bold leading-4 text-foreground">{promotion.name}</p>
+        <div className="mt-2 flex min-h-11 items-center justify-between gap-1.5">
           {remaining > 0 ? (
-            <p className="text-xs font-semibold leading-4 text-amber-700">
-              Agrega ${remaining.toFixed(2)} para activarla
+            <p className="line-clamp-2 text-[10px] font-semibold leading-3.5 text-amber-700">
+              Faltan ${remaining.toFixed(2)}
             </p>
           ) : promotion.valid_until ? (
-            <p className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="h-3.5 w-3.5" aria-hidden />
-              Vigente por tiempo limitado
+            <p className="flex items-center gap-1 text-[10px] leading-3.5 text-muted-foreground">
+              <Clock className="h-3 w-3 shrink-0" aria-hidden />
+              Vigente
             </p>
           ) : (
-            <p className="text-xs font-semibold text-emerald-700">Disponible ahora</p>
+            <p className="text-[10px] font-semibold text-emerald-700">Disponible</p>
           )}
           {remaining === 0 && grouped ? (
           <button
             type="button"
             onClick={() => onAddPromotion?.(promotion)}
-            className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-accent px-4 text-xs font-bold text-accent-foreground shadow-sm transition active:scale-[0.98]"
+            className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full bg-accent px-2.5 text-[10px] font-bold text-accent-foreground shadow-sm transition active:scale-[0.98]"
           >
-            <Plus className="h-3.5 w-3.5" aria-hidden />
-            {promotion.type === "nxm" ? `Agregar ${promotion.buy_quantity ?? "promoción"}×${promotion.pay_quantity ?? ""}` : "Agregar paquete"}
+            <Plus className="h-3 w-3" aria-hidden />
+            {promotion.type === "nxm" ? `${promotion.buy_quantity ?? ""}×${promotion.pay_quantity ?? ""}` : "Paquete"}
           </button>
           ) : grouped ? null : (
-            <p className="shrink-0 text-xs font-semibold text-emerald-700">Se aplica automáticamente</p>
+            <p className="line-clamp-2 text-right text-[10px] font-semibold leading-3.5 text-emerald-700">Automática</p>
           )}
         </div>
       </div>
