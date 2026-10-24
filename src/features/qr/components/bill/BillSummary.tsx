@@ -129,6 +129,21 @@ export function BillSummary({
                           <p className="text-sm font-semibold text-foreground">
                             {item.quantity}× {item.product_name}
                           </p>
+                          {item.promotion_name && (
+                            <p className="mt-0.5 text-xs font-semibold text-amber-700">
+                              {item.promotion_name} · Ahorras {formatCurrency(
+                                Math.max(
+                                  0,
+                                  (Number(item.list_unit_price ?? item.unit_price) - item.unit_price) * item.quantity,
+                                ),
+                              )}
+                            </p>
+                          )}
+                          {item.batch_note && (
+                            <p className="mt-1 rounded-lg bg-border-soft/50 px-2 py-1 text-xs text-muted-foreground">
+                              Indicaciones: {item.batch_note}
+                            </p>
+                          )}
                           <div className="mt-1 flex flex-wrap items-center gap-1.5">
                             {isMerged && item.origin_table_label && (
                               <span className="inline-block rounded-full bg-border-soft/70 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
@@ -142,8 +157,15 @@ export function BillSummary({
                             />
                           </div>
                         </div>
-                        <span className="shrink-0 text-sm font-bold text-foreground">
-                          {formatCurrency(item.subtotal)}
+                        <span className="shrink-0 text-right">
+                          {Number(item.list_unit_price ?? item.unit_price) > item.unit_price && (
+                            <span className="block text-xs text-muted-foreground line-through">
+                              {formatCurrency(Number(item.list_unit_price) * item.quantity)}
+                            </span>
+                          )}
+                          <span className="block text-sm font-bold text-foreground">
+                            {formatCurrency(item.subtotal)}
+                          </span>
                         </span>
                       </li>
                     );

@@ -15,7 +15,7 @@ import {
 import type { PromotionWriteInput } from "@/features/promociones/interfaces/promotionAdmin";
 
 const LIST_COLUMNS =
-  "id, name, slug, type, value, min_amount, product_ids, valid_from, valid_until, image_url, description, badge_label, subcatalog_ids, quantity, bundle_product_ids, status, applies_to, buy_quantity, pay_quantity, template_key, created_at";
+  "id, name, slug, type, value, min_amount, product_ids, valid_from, valid_until, image_url, description, badge_label, subcatalog_ids, quantity, bundle_product_ids, status, applies_to, buy_quantity, pay_quantity, template_key, sales_channels, created_at";
 
 async function currentUser() {
   const supabase = await createClient();

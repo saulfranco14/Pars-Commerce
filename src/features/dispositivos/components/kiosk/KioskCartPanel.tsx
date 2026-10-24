@@ -16,6 +16,8 @@ import type { KioskCartPanelProps } from "@/features/dispositivos/interfaces/kio
 export function KioskCartPanel({
   lines,
   total,
+  listTotal,
+  savings,
   itemCount,
   onAdd,
   onDecrement,
@@ -108,9 +110,17 @@ export function KioskCartPanel({
                   </button>
                 </div>
                 <span className="text-xl font-bold tabular-nums text-foreground">
-                  {formatCurrency(Number(line.product.price) * line.quantity)}
+                  {formatCurrency(line.unitPrice * line.quantity)}
                 </span>
               </div>
+              {line.promotionName && (
+                <div className="mt-2 flex items-center justify-between text-sm">
+                  <span className="font-semibold text-amber-700">{line.promotionName}</span>
+                  <span className="text-muted-foreground line-through">
+                    {formatCurrency(line.listUnitPrice * line.quantity)}
+                  </span>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -131,6 +141,13 @@ export function KioskCartPanel({
 
           {error && <Notification tone="error" message={error} />}
 
+          {savings > 0 && (
+            <div className="flex items-center justify-between rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+              <span>Precio normal {formatCurrency(listTotal)}</span>
+              <span>Ahorras {formatCurrency(savings)}</span>
+            </div>
+          )}
+
           <div className="flex items-end justify-between gap-3">
             <div>
               <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
@@ -149,7 +166,7 @@ export function KioskCartPanel({
             type="button"
             onClick={onConfirm}
             disabled={submitting}
-            className="flex min-h-20 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-accent px-6 text-2xl font-bold text-accent-foreground shadow-lg shadow-accent/25 transition-all hover:bg-accent/90 active:scale-[0.99] disabled:opacity-60"
+            className="flex min-h-20 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-accent px-6 text-2xl font-bold text-accent-foreground shadow-lg shadow-accent/25 transition-[background-color,transform,box-shadow] hover:bg-accent/90 active:scale-[0.99] disabled:opacity-60"
           >
             {submitting ? (
               <>

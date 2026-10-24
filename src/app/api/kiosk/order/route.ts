@@ -24,6 +24,7 @@ export async function POST(request: Request) {
     items?: RequestedItem[];
     customer_name?: string;
     scheduled_for?: string | null;
+    expected_total?: number;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
     items: body.items,
     customerName: body.customer_name ?? null,
     scheduledFor: body.scheduled_for ?? null,
+    expectedTotal: body.expected_total,
   });
 
   if (!result.ok) return serviceErrorToResponse(result.error);

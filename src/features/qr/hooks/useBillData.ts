@@ -13,7 +13,13 @@ export interface BillItem {
   product_name: string;
   quantity: number;
   unit_price: number;
+  list_unit_price: number;
   subtotal: number;
+  promotion_id: string | null;
+  promotion_name: string | null;
+  offer_group_id: string | null;
+  batch_id: string | null;
+  batch_note: string | null;
   added_by_device_id: string | null;
   is_shared: boolean;
   origin_table_label: string | null;

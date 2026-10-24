@@ -5,6 +5,7 @@ import { requireDevice } from "@/lib/auth/requireDevice";
 import { readPickupScheduling } from "@/features/checkout/helpers/pickupSchedule";
 import { readBusinessHours } from "@/features/configuracion/helpers/businessHours";
 import { DEFAULT_IDLE_RESET_SECONDS } from "@/features/dispositivos/constants/kiosk";
+import { filterActivePromotions } from "@/features/qr/helpers/filterActivePromotions";
 
 /**
  * Todo lo que la pantalla necesita, en una sola llamada. Se autentica con el
@@ -22,7 +23,7 @@ export async function GET() {
   const admin = createAdminClient();
   const { data: tenant } = await admin
     .from("tenants")
-    .select("id, name, logo_url, settings, accepting_orders")
+    .select("id, name, logo_url, settings, accepting_orders, onsite_promotions_enabled")
     .eq("id", device.tenantId)
     .single();
 
@@ -91,6 +92,13 @@ export async function GET() {
   }
 
   const settings = (tenant.settings as Record<string, unknown> | null) ?? {};
+  const { data: promotionRows } = tenant.onsite_promotions_enabled === false
+    ? { data: [] }
+    : await admin.from("promotions")
+        .select("id, name, type, value, status, applies_to, product_ids, subcatalog_ids, bundle_product_ids, quantity, badge_label, image_url, description, valid_from, valid_until, buy_quantity, pay_quantity, min_amount, sales_channels, promotion_items(product_id, quantity, position)")
+        .eq("tenant_id", tenant.id)
+        .eq("status", "active")
+        .contains("sales_channels", ["onsite"]);
 
   return NextResponse.json({
     tenantName: tenant.name,
@@ -98,6 +106,13 @@ export async function GET() {
     deviceName: device.name,
     acceptingOrders: tenant.accepting_orders !== false,
     products,
+    promotions: filterActivePromotions(promotionRows ?? [], Date.now()).map((promotion) => ({
+      ...promotion,
+      value: Number(promotion.value),
+      min_amount: promotion.min_amount == null ? null : Number(promotion.min_amount),
+      sales_channels: promotion.sales_channels ?? ["public_store", "onsite"],
+      promotion_items: promotion.promotion_items ?? [],
+    })),
     categories,
     pickupScheduling: readPickupScheduling(settings),
     businessHours: readBusinessHours(settings),

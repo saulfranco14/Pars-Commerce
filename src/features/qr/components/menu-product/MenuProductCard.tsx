@@ -20,6 +20,8 @@ interface MenuProductCardProps {
   tenantName?: string | null;
   /** `touch` grows the controls to 44px, for order-taking on a tablet. */
   density?: "default" | "touch";
+  promotionalPrice?: number | null;
+  promotionName?: string | null;
 }
 
 const DENSITY = {
@@ -68,6 +70,8 @@ export function MenuProductCard({
   tenantLogoUrl,
   tenantName,
   density = "default",
+  promotionalPrice,
+  promotionName,
 }: MenuProductCardProps) {
   const inCart = quantity > 0;
   const description = product.description?.trim();
@@ -113,9 +117,19 @@ export function MenuProductCard({
             {description}
           </p>
         )}
-        <p className={`mt-auto pt-1 ${d.price} font-bold tracking-tight text-accent`}>
-          {formatCurrency(Number(product.price))}
-        </p>
+        <div className="mt-auto pt-1">
+          {promotionalPrice != null && promotionalPrice < Number(product.price) && (
+            <p className="text-xs text-muted-foreground line-through">{formatCurrency(Number(product.price))}</p>
+          )}
+          <p className={`${d.price} font-bold tracking-tight text-accent`}>
+            {formatCurrency(promotionalPrice ?? Number(product.price))}
+          </p>
+          {promotionName && (
+            <p className="text-[11px] font-semibold text-amber-700 line-clamp-1">
+              {promotionName} · se aplica automáticamente
+            </p>
+          )}
+        </div>
       </button>
 
       {/* Add control pinned bottom-right */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { PanelTopClose, Search, X } from "lucide-react";
+import { PanelTopClose, Search, Tag, X } from "lucide-react";
 
 import { BrandImage } from "@/features/qr/components/BrandImage";
 import { MenuPeekRow } from "@/features/qr/components/menu-product/MenuPeekRow";
@@ -9,9 +9,9 @@ import { MenuProductCard } from "@/features/qr/components/menu-product/MenuProdu
 import { PromoBanner } from "@/features/qr/components/PromoBanner";
 import { ReorderRow } from "@/features/qr/components/menu-product/ReorderRow";
 import { ProductDetailSheet } from "@/features/qr/components/menu-product/ProductDetailSheet";
-import { interleavePromos } from "@/features/qr/helpers/interleavePromos";
 import { sectionThumbnail } from "@/features/qr/helpers/sectionThumbnail";
 import { useMenuSections } from "@/features/qr/hooks/useMenuSections";
+import { bestUnitPromotion } from "@/lib/offers/pricing";
 
 import type { MenuItem } from "@/features/qr/interfaces/tableCart";
 import type { QrPromotion } from "@/features/qr/interfaces/promotion";
@@ -42,8 +42,10 @@ interface TableMenuSectionsProps {
    * only products NOT ordered yet, so the two rails never repeat items.
    */
   reorderProducts?: QrSessionMenuItem[];
-  /** Active promotions to interleave as banners between menu products. */
+  /** Active promotions surfaced in one compact, scrollable offers rail. */
   promotions?: QrPromotion[];
+  onAddPromotion?: (promotion: QrPromotion) => void;
+  cartListTotal?: number;
 }
 
 /**
@@ -67,9 +69,12 @@ export function TableMenuSections({
   startCollapsed = false,
   reorderProducts,
   promotions,
+  onAddPromotion,
+  cartListTotal = 0,
 }: TableMenuSectionsProps) {
   const { query, setQuery, searching, filtered, sections, totalCount } =
     useMenuSections({ products, categories });
+  const activePromotions = promotions ?? [];
 
   // Peek rail = discovery: products NOT already ordered (the reorder rail owns
   // those). Falls back to the full menu if the table ordered everything.
@@ -93,6 +98,14 @@ export function TableMenuSections({
   // Search is available whenever the menu is open and there's more than a
   // handful of products (a search box over 3 items is noise).
   const showSearch = totalCount >= 5 && expanded;
+  const promotionalPrice = (product: QrSessionMenuItem) => {
+    const best = bestUnitPromotion(promotions ?? [], {
+      id: product.id,
+      price: Number(product.price),
+      subcatalog_id: product.subcatalog_id ?? null,
+    }, new Date(), { channel: "onsite", onsitePromotionsEnabled: true, cartListSubtotal: cartListTotal });
+    return best ? { price: best.finalPrice, name: promotions?.find((promotion) => promotion.id === best.promotionId)?.name ?? null } : null;
+  };
 
   // Highlight the pill for the section currently at the top of the viewport.
   useEffect(() => {
@@ -199,6 +212,48 @@ export function TableMenuSections({
         </div>
       )}
 
+      {/* Promotions get one intentional discovery area. Interleaving wide cards
+          inside product categories becomes noisy as soon as a business has
+          more than one offer; a horizontal rail keeps the menu's scan rhythm
+          intact while making the next promotion visibly available. */}
+      {!searching && activePromotions.length > 0 && (
+        <section className="mb-5 mt-4" aria-labelledby="table-offers-heading">
+          <div className="mb-2 flex items-end justify-between gap-3">
+            <div>
+              <p id="table-offers-heading" className="flex items-center gap-1 text-xs font-bold text-foreground">
+                <Tag className="h-3.5 w-3.5 text-accent" aria-hidden />
+                Ofertas para ti
+              </p>
+              <p className="mt-0.5 text-[10px] leading-3 text-muted-foreground">
+                Aplicamos el mejor descuento disponible.
+              </p>
+            </div>
+            <div className="shrink-0 text-right">
+              <span className="rounded-full bg-accent/10 px-2 py-1 text-[10px] font-bold text-accent">
+                {activePromotions.length} {activePromotions.length === 1 ? "oferta" : "ofertas"}
+              </span>
+              {activePromotions.length > 1 && (
+                <p className="mt-1 text-[10px] font-semibold text-accent">Desliza para verlas</p>
+              )}
+            </div>
+          </div>
+          <div
+            className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 pr-1 touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            aria-label="Carrusel de promociones"
+          >
+            {activePromotions.map((promotion) => (
+              <PromoBanner
+                key={promotion.id}
+                promotion={promotion}
+                cartListTotal={cartListTotal}
+                onAddPromotion={onAddPromotion}
+                className={`${activePromotions.length > 1 ? "basis-[calc(100%-1.25rem)]" : "basis-full"} shrink-0 snap-start`}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Sticky category nav — thumbnail + name. A row of bare text pills reads
           as chrome; the photo is what makes someone tap it. */}
       {showPills && (
@@ -252,6 +307,8 @@ export function TableMenuSections({
                 onOpenDetail={setDetail}
                 tenantLogoUrl={tenantLogoUrl}
                 tenantName={tenantName}
+                promotionalPrice={promotionalPrice(item)?.price}
+                promotionName={promotionalPrice(item)?.name}
               />
             ))}
           </div>
@@ -259,7 +316,7 @@ export function TableMenuSections({
       ) : (
         /* Grouped sections */
         <div className="space-y-6">
-          {sections.map((s, si) => (
+          {sections.map((s) => (
             <section
               key={s.id}
               id={`sec-${s.id}`}
@@ -274,30 +331,20 @@ export function TableMenuSections({
                 </h3>
               )}
               <div className="space-y-2.5">
-                {/* Promos ride in the FIRST section only, so a banner set never
-                    repeats across sections. Interleaving is a pure helper. */}
-                {interleavePromos(
-                  s.products,
-                  si === 0 ? (promotions ?? []) : [],
-                ).map((entry) =>
-                  entry.kind === "promo" ? (
-                    <PromoBanner
-                      key={`promo-${entry.item.id}`}
-                      promotion={entry.item}
-                    />
-                  ) : (
-                    <MenuProductCard
-                      key={entry.item.id}
-                      product={entry.item}
-                      quantity={quantities[entry.item.id] ?? 0}
-                      onAdd={onAdd}
-                      onDecrement={onDecrement}
-                      onOpenDetail={setDetail}
-                      tenantLogoUrl={tenantLogoUrl}
-                      tenantName={tenantName}
-                    />
-                  ),
-                )}
+                {s.products.map((item) => (
+                  <MenuProductCard
+                    key={item.id}
+                    product={item}
+                    quantity={quantities[item.id] ?? 0}
+                    onAdd={onAdd}
+                    onDecrement={onDecrement}
+                    onOpenDetail={setDetail}
+                    tenantLogoUrl={tenantLogoUrl}
+                    tenantName={tenantName}
+                    promotionalPrice={promotionalPrice(item)?.price}
+                    promotionName={promotionalPrice(item)?.name}
+                  />
+                ))}
               </div>
             </section>
           ))}

@@ -328,7 +328,9 @@ export default function NuevoPedidoStaffPage() {
       <div className="shrink-0">
         <StaffOrderCartPanel
           lines={builder.lines}
-          total={builder.total}
+        total={builder.total}
+        listTotal={builder.listTotal}
+        savings={builder.savings}
           itemCount={builder.itemCount}
           onAdd={addById}
           onDecrement={builder.decrement}

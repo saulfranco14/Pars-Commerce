@@ -26,6 +26,7 @@ export const EMPTY_WIZARD_VALUES: OfferWizardValues = {
   name: "",
   description: "",
   imageUrl: "",
+  salesChannels: ["public_store", "onsite"],
 };
 
 /** Values a template pre-fills; the merchant still picks the items. */
@@ -76,6 +77,9 @@ export function valuesFromPromotion(promotion: EditablePromotion): OfferWizardVa
     name: promotion.name,
     description: promotion.description ?? "",
     imageUrl: promotion.image_url ?? "",
+    salesChannels: promotion.sales_channels?.length
+      ? promotion.sales_channels
+      : ["public_store", "onsite"],
   };
 }
 
@@ -107,6 +111,7 @@ export function toPromotionPayload(values: OfferWizardValues, status: "active" |
     badge_label: mechanic === "event_badge" ? values.badgeLabel.trim() : null,
     description: values.description.trim() || null,
     image_url: values.imageUrl.trim() || null,
+    sales_channels: values.salesChannels,
     ...dates,
   };
 }

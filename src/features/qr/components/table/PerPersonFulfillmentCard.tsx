@@ -70,6 +70,16 @@ function FulfillmentItemRow({
       <p className="min-w-0 basis-full truncate text-xs font-medium text-foreground sm:basis-auto sm:flex-1">
         {item.quantity}× {item.product_name}
       </p>
+      {item.promotion_name && (
+        <span className="basis-full text-[11px] font-semibold text-amber-700">
+          {item.promotion_name}
+        </span>
+      )}
+      {item.batch_note && (
+        <p className="basis-full rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-900">
+          Indicaciones: {item.batch_note}
+        </p>
+      )}
       {itemTypeLabel(item) && (
         <span className="rounded-full bg-border-soft/70 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
           {itemTypeLabel(item)}

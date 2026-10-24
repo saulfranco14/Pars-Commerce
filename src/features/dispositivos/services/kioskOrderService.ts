@@ -14,6 +14,7 @@ import {
   validateScheduledFor,
 } from "@/features/checkout/helpers/pickupSchedule";
 import { readBusinessHours } from "@/features/configuracion/helpers/businessHours";
+import { loadOnsitePriceSnapshots } from "@/lib/offers/onsitePricingService";
 
 import type {
   CreateKioskOrderInput,
@@ -75,6 +76,7 @@ export async function createKioskOrder(
   // Prices from the table, never from the screen.
   const priceByProduct = new Map<string, number>();
   for (const p of products ?? []) priceByProduct.set(p.id, Number(p.price));
+  const priceSnapshots = await loadOnsitePriceSnapshots(admin, input.tenantId, valid);
 
   const stockValidation = await validateOrderStock(
     admin,
@@ -82,6 +84,14 @@ export async function createKioskOrder(
     valid,
   );
   if (!stockValidation.ok) return err("conflict", stockValidation.message);
+
+  const previewTotal = valid.reduce((sum, item) => {
+    const snapshot = priceSnapshots.get(item.product_id);
+    return sum + Number(snapshot?.unitPrice ?? priceByProduct.get(item.product_id) ?? 0) * Number(item.quantity);
+  }, 0);
+  if (input.expectedTotal !== undefined && Math.abs(Number(input.expectedTotal) - previewTotal) >= 0.005) {
+    return err("conflict", "El precio del pedido cambió. Revisa el nuevo total antes de continuar.");
+  }
 
   const { data: order, error: orderErr } = await admin
     .from("orders")
@@ -110,6 +120,7 @@ export async function createKioskOrder(
     orderId: order.id,
     items: valid,
     priceByProduct,
+    priceSnapshotsByProduct: priceSnapshots,
   });
 
   if (rows.length === 0) {

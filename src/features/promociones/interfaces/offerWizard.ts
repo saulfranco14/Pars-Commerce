@@ -24,6 +24,7 @@ export interface OfferWizardValues {
   name: string;
   description: string;
   imageUrl: string;
+  salesChannels: Array<"public_store" | "onsite">;
 }
 
 /** Catalog item as the picker needs it (from GET /api/products). */
@@ -61,5 +62,6 @@ export interface EditablePromotion {
   valid_until: string | null;
   description: string | null;
   image_url: string | null;
+  sales_channels?: Array<"public_store" | "onsite"> | null;
   promotion_items?: Array<{ product_id: string; quantity: number; position: number | null }> | null;
 }

@@ -14,6 +14,8 @@ import type { StaffOrderCartPanelProps } from "@/features/qr/interfaces/staffOrd
 export function StaffOrderCartPanel({
   lines,
   total,
+  listTotal,
+  savings,
   itemCount,
   onAdd,
   onDecrement,
@@ -48,8 +50,9 @@ export function StaffOrderCartPanel({
                     {line.product.name}
                   </p>
                   <p className="text-xs text-muted-foreground tabular-nums">
-                    {formatCurrency(Number(line.product.price))} c/u
+                    {formatCurrency(line.unitPrice)} c/u
                   </p>
+                  {line.promotionName && <p className="text-xs font-semibold text-amber-700">{line.promotionName}</p>}
                 </div>
                 <div className="flex shrink-0 items-center gap-1 rounded-full border border-border bg-surface p-0.5">
                   <button
@@ -73,7 +76,7 @@ export function StaffOrderCartPanel({
                   </button>
                 </div>
                 <span className="w-16 shrink-0 text-right text-sm font-bold tabular-nums text-foreground">
-                  {formatCurrency(Number(line.product.price) * line.quantity)}
+                  {formatCurrency(line.unitPrice * line.quantity)}
                 </span>
               </li>
             ))}
@@ -107,11 +110,17 @@ export function StaffOrderCartPanel({
         />
       </button>
 
+      {savings > 0 && (
+        <p className="px-3 pb-2 text-right text-xs font-semibold text-amber-700">
+          Precio normal {formatCurrency(listTotal)} · Ahorras {formatCurrency(savings)}
+        </p>
+      )}
+
       <button
         type="button"
         onClick={onSubmit}
         disabled={submitting}
-        className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-all hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-[background-color,transform,box-shadow] hover:bg-accent/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? (
           <>
