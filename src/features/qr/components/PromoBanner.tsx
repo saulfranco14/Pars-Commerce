@@ -31,10 +31,10 @@ export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, clas
 
   return (
     <section
-      className={`flex min-h-32 overflow-hidden rounded-2xl border border-accent/20 bg-surface shadow-sm ${className}`}
+      className={`flex min-h-36 overflow-hidden rounded-2xl border border-accent/20 bg-surface shadow-sm ${className}`}
       aria-label={`Promoción: ${label}`}
     >
-      <div className="flex w-24 shrink-0 flex-col items-center bg-accent p-2 text-center text-accent-foreground">
+      <div className="flex w-28 shrink-0 flex-col items-center bg-accent p-2.5 text-center text-accent-foreground">
         <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-white/90 bg-white/15 shadow-sm">
           {thumbnail ? (
             <Image
@@ -49,10 +49,13 @@ export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, clas
             <Tag className="absolute inset-0 m-auto h-5 w-5 text-white" aria-hidden />
           )}
         </div>
-        <p className="mt-auto line-clamp-2 text-[10px] font-extrabold leading-3">{label}</p>
+        <div className="mt-auto w-full rounded-xl bg-white px-1.5 py-1.5 text-neutral-950 shadow-sm">
+          <p className="text-[8px] font-bold uppercase tracking-wide text-neutral-500">Promoción</p>
+          <p className="line-clamp-1 text-sm font-extrabold leading-4">{label}</p>
+        </div>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col py-3 pr-3">
+      <div className="flex min-w-0 flex-1 flex-col py-3 pl-3 pr-3">
         <p className="flex items-center gap-1 truncate text-[10px] font-bold leading-3 text-accent">
           <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
           {availability}
@@ -66,7 +69,7 @@ export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, clas
           <button
             type="button"
             onClick={() => onAddPromotion?.(promotion)}
-            className="mt-auto inline-flex min-h-11 w-fit items-center justify-center gap-1.5 rounded-xl bg-accent px-4 text-xs font-bold text-accent-foreground shadow-sm transition active:scale-[0.98]"
+            className="mt-auto inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl bg-accent px-4 text-xs font-bold text-accent-foreground shadow-md shadow-accent/25 transition active:scale-[0.98]"
           >
             <Plus className="h-3.5 w-3.5" aria-hidden />
             {actionLabel}
