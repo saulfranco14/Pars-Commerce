@@ -228,12 +228,17 @@ export function TableMenuSections({
                 Aplicamos el mejor descuento disponible.
               </p>
             </div>
-            <span className="shrink-0 rounded-full bg-accent/10 px-2 py-1 text-[10px] font-bold text-accent">
-              {activePromotions.length} {activePromotions.length === 1 ? "oferta" : "ofertas"}
-            </span>
+            <div className="shrink-0 text-right">
+              <span className="rounded-full bg-accent/10 px-2 py-1 text-[10px] font-bold text-accent">
+                {activePromotions.length} {activePromotions.length === 1 ? "oferta" : "ofertas"}
+              </span>
+              {activePromotions.length > 1 && (
+                <p className="mt-1 text-[10px] font-semibold text-accent">Desliza para verlas</p>
+              )}
+            </div>
           </div>
           <div
-            className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto pb-1 touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 pr-1 touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             aria-label="Carrusel de promociones"
           >
             {activePromotions.map((promotion) => (
@@ -242,7 +247,7 @@ export function TableMenuSections({
                 promotion={promotion}
                 cartListTotal={cartListTotal}
                 onAddPromotion={onAddPromotion}
-                className="basis-[calc((100%-0.625rem)/2)] max-w-[10.5rem] shrink-0 snap-start"
+                className={`${activePromotions.length > 1 ? "basis-[calc(100%-1.25rem)]" : "basis-full"} shrink-0 snap-start`}
               />
             ))}
           </div>

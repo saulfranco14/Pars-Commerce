@@ -25,52 +25,55 @@ export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, clas
   const remaining = Math.max(0, Number(promotion.min_amount ?? 0) - cartListTotal);
   const thumbnail = promotion.image_url ?? promotion.preview_images[0];
   const availability = remaining > 0 ? "Activa" : promotion.valid_until ? "Vigente" : "Disponible";
+  const actionLabel = promotion.type === "nxm"
+    ? `Agregar ${promotion.buy_quantity ?? ""}×${promotion.pay_quantity ?? ""}`
+    : "Agregar paquete";
 
   return (
     <section
-      className={`flex min-h-28 overflow-hidden rounded-xl border border-accent/20 bg-surface shadow-sm ${className}`}
+      className={`flex min-h-32 overflow-hidden rounded-2xl border border-accent/20 bg-surface shadow-sm ${className}`}
       aria-label={`Promoción: ${label}`}
     >
-      <div className="flex w-14 shrink-0 flex-col items-center bg-accent p-1.5 text-center text-accent-foreground">
-        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md border-2 border-white/90 bg-white/15 shadow-sm">
+      <div className="flex w-24 shrink-0 flex-col items-center bg-accent p-2 text-center text-accent-foreground">
+        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-white/90 bg-white/15 shadow-sm">
           {thumbnail ? (
             <Image
               src={thumbnail}
               alt=""
               fill
               loading="lazy"
-              sizes="44px"
+              sizes="64px"
               className="object-cover"
             />
           ) : (
             <Tag className="absolute inset-0 m-auto h-5 w-5 text-white" aria-hidden />
           )}
         </div>
-        <p className="mt-auto line-clamp-2 text-[9px] font-extrabold leading-3">{label}</p>
+        <p className="mt-auto line-clamp-2 text-[10px] font-extrabold leading-3">{label}</p>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col py-2 pr-2">
-        <p className="flex items-center gap-1 truncate text-[9px] font-bold leading-3 text-accent">
-          <Clock className="h-3 w-3 shrink-0" aria-hidden />
+      <div className="flex min-w-0 flex-1 flex-col py-3 pr-3">
+        <p className="flex items-center gap-1 truncate text-[10px] font-bold leading-3 text-accent">
+          <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
           {availability}
         </p>
-        <p className="mt-0.5 line-clamp-2 text-[11px] font-bold leading-3.5 text-foreground">{promotion.name}</p>
+        <p className="mt-1 line-clamp-2 text-sm font-bold leading-4 text-foreground">{promotion.name}</p>
         {remaining > 0 ? (
-          <p className="mt-auto line-clamp-2 rounded-lg bg-amber-50 px-2 py-1.5 text-[9px] font-semibold leading-3 text-amber-800">
+          <p className="mt-auto line-clamp-2 rounded-lg bg-amber-50 px-2.5 py-2 text-[10px] font-semibold leading-3.5 text-amber-800">
             Agrega ${remaining.toFixed(2)} más para activarla
           </p>
         ) : grouped ? (
           <button
             type="button"
             onClick={() => onAddPromotion?.(promotion)}
-            className="mt-auto inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-lg bg-accent px-2 text-[10px] font-bold text-accent-foreground shadow-sm transition active:scale-[0.98]"
+            className="mt-auto inline-flex min-h-11 w-fit items-center justify-center gap-1.5 rounded-xl bg-accent px-4 text-xs font-bold text-accent-foreground shadow-sm transition active:scale-[0.98]"
           >
             <Plus className="h-3.5 w-3.5" aria-hidden />
-            Agregar oferta
+            {actionLabel}
           </button>
         ) : (
-          <p className="mt-auto rounded-lg bg-accent/8 px-2 py-1.5 text-[9px] font-semibold leading-3 text-accent">
-            Se descuenta al agregar productos
+          <p className="mt-auto rounded-lg bg-accent/8 px-2.5 py-2 text-[10px] font-semibold leading-3.5 text-accent">
+            Se descuenta automáticamente al agregar productos
           </p>
         )}
       </div>
