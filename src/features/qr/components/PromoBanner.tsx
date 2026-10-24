@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Clock, Plus, Tag } from "lucide-react";
+import { Clock, Package, Plus, Tag } from "lucide-react";
 
 import { formatPromoLabel } from "@/features/qr/helpers/formatPromoLabel";
 
@@ -14,6 +14,18 @@ interface PromoBannerProps {
   className?: string;
 }
 
+/** A stable alternative to randomness: promo artwork must not differ on SSR and hydration. */
+function stableIndex(value: string, total: number) {
+  if (total <= 1) return 0;
+
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) | 0;
+  }
+
+  return Math.abs(hash) % total;
+}
+
 /**
  * Compact storefront-style promotion card for the narrow table menu. It keeps
  * the visual proof (photo/collage + deal label) while preserving room for a
@@ -23,7 +35,10 @@ export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, clas
   const label = formatPromoLabel(promotion);
   const grouped = promotion.type === "bundle_price" || promotion.type === "nxm";
   const remaining = Math.max(0, Number(promotion.min_amount ?? 0) - cartListTotal);
-  const thumbnail = promotion.image_url ?? promotion.preview_images[0];
+  const artworkVariant = stableIndex(promotion.id, 3);
+  const previewIndex = stableIndex(`${promotion.id}:preview`, promotion.preview_images.length);
+  const thumbnail = promotion.image_url ?? promotion.preview_images[previewIndex];
+  const usesPackageArtwork = promotion.type === "bundle_price" && !promotion.image_url;
   const availability = remaining > 0 ? "Activa" : promotion.valid_until ? "Vigente" : "Disponible";
   const actionLabel = promotion.type === "nxm"
     ? `Agregar ${promotion.buy_quantity ?? ""}×${promotion.pay_quantity ?? ""}`
@@ -40,9 +55,25 @@ export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, clas
       className={`flex min-h-36 overflow-hidden rounded-2xl border border-accent/20 bg-surface shadow-sm ${className}`}
       aria-label={`Promoción: ${label}`}
     >
-      <div className="flex w-28 shrink-0 flex-col items-center bg-accent p-2.5 text-center text-accent-foreground">
-        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-white/90 bg-white/15 shadow-sm">
-          {thumbnail ? (
+      <div className="relative flex w-28 shrink-0 flex-col overflow-hidden bg-accent p-2.5 text-center text-accent-foreground">
+        <span
+          aria-hidden
+          className={`absolute h-24 w-24 rounded-full bg-white/10 ${
+            artworkVariant === 0 ? "-right-9 -top-8" : artworkVariant === 1 ? "-left-10 top-2" : "-right-5 top-7"
+          }`}
+        />
+        {usesPackageArtwork ? (
+          <div className="relative z-10 flex h-16 w-16 shrink-0 self-center items-center justify-center rounded-2xl border border-white/25 bg-white/15 shadow-sm">
+            <Package className="h-8 w-8 text-white" aria-hidden />
+            <span aria-hidden className="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-accent bg-white/90" />
+          </div>
+        ) : (
+          <div
+            className={`relative z-10 h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-white/90 bg-white/15 shadow-sm ${
+              artworkVariant === 0 ? "self-end rotate-6" : artworkVariant === 1 ? "self-start -rotate-6" : "self-center rotate-3"
+            }`}
+          >
+            {thumbnail ? (
             <Image
               src={thumbnail}
               alt=""
@@ -51,13 +82,14 @@ export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, clas
               sizes="64px"
               className="object-cover"
             />
-          ) : (
-            <Tag className="absolute inset-0 m-auto h-5 w-5 text-white" aria-hidden />
-          )}
-        </div>
-        <div className="mt-auto w-full rounded-xl bg-white px-1.5 py-1.5 text-neutral-950 shadow-sm">
-          <p className="text-[8px] font-bold uppercase tracking-wide text-neutral-500">Promoción</p>
-          <p className="line-clamp-1 text-sm font-extrabold leading-4">{label}</p>
+            ) : (
+              <Tag className="absolute inset-0 m-auto h-5 w-5 text-white" aria-hidden />
+            )}
+          </div>
+        )}
+        <div className="relative z-10 mt-auto text-left">
+          <p className="text-[8px] font-bold uppercase tracking-[0.14em] text-white/75">Oferta</p>
+          <p className="line-clamp-2 text-base font-extrabold leading-4 text-white">{label}</p>
         </div>
       </div>
 
