@@ -440,6 +440,11 @@ export async function GET(request: Request) {
       value: p.value,
       badge_label: p.badge_label,
       image_url: p.image_url,
+      preview_images: [...new Set([
+        ...(p.promotion_items ?? []).map((item) => item.product_id),
+        ...(p.product_ids ?? []),
+        ...(p.bundle_product_ids ?? []),
+      ])].flatMap((productId) => imagesByProduct.get(productId)?.slice(0, 1) ?? []).slice(0, 3),
       description: p.description,
       valid_until: p.valid_until,
       valid_from: p.valid_from,

@@ -10,6 +10,8 @@ export interface QrPromotion {
   value: number;
   badge_label: string | null;
   image_url: string | null;
+  /** Product photos used for the same fallback collage shown in the storefront. */
+  preview_images: string[];
   description: string | null;
   valid_until: string | null;
   valid_from: string | null;

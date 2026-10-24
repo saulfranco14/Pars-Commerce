@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { Tag } from "lucide-react";
+import { Clock, Plus } from "lucide-react";
 
 import { formatPromoLabel } from "@/features/qr/helpers/formatPromoLabel";
+import { PromotionCollage } from "@/features/promociones/components/PromotionCollage";
+import { promotionCollageLabel } from "@/features/promociones/helpers/promotionVisual";
 
 import type { QrPromotion } from "@/features/qr/interfaces/promotion";
 
@@ -14,12 +16,9 @@ interface PromoBannerProps {
 }
 
 /**
- * Rappi-style promo banner shown inside the QR menu: a small image (or a Tag
- * icon fallback) on the left, a short value label + name on the right. Purely
- * informational — it never navigates the customer OUT of the ordering flow.
- *
- * Uses the QR design tokens (accent-tinted surface, rounded-2xl) so it sits
- * naturally among the product cards. Neutral/multi-business.
+ * Compact storefront-style promotion card for the narrow table menu. It keeps
+ * the visual proof (photo/collage + deal label) while preserving room for a
+ * clear, touch-sized action inside a mobile ordering flow.
  */
 export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion }: PromoBannerProps) {
   const label = formatPromoLabel(promotion);
@@ -28,49 +27,61 @@ export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion }: Pr
 
   return (
     <section
-      className="flex items-center gap-3 rounded-2xl border border-accent/30 bg-accent/5 p-3"
+      className="overflow-hidden rounded-2xl border border-accent/25 bg-surface shadow-sm"
       aria-label={`Promoción: ${label}`}
     >
-      <span className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-accent/10 text-accent">
+      <div className="relative aspect-[16/8] overflow-hidden bg-accent">
         {promotion.image_url ? (
           <Image
             src={promotion.image_url}
-            alt={promotion.name}
+            alt=""
             fill
             loading="lazy"
-            sizes="56px"
-            className="rounded-xl object-cover"
+            sizes="(max-width: 480px) calc(100vw - 40px), 360px"
+            className="object-cover"
           />
         ) : (
-          <Tag className="h-6 w-6" strokeWidth={2.25} />
+          <PromotionCollage
+            {...promotionCollageLabel(promotion)}
+            images={promotion.preview_images}
+          />
         )}
-      </span>
+      </div>
 
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold leading-snug text-accent">{label}</p>
-        <p className="truncate text-xs font-medium text-foreground">
-          {promotion.name}
-        </p>
+      <div className="p-3.5">
+        <p className="text-xs font-bold text-accent">{label}</p>
+        <p className="mt-0.5 text-sm font-bold leading-snug text-foreground">{promotion.name}</p>
         {promotion.description && (
-          <p className="truncate text-xs text-muted-foreground">
+          <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
             {promotion.description}
           </p>
         )}
-        {remaining > 0 ? (
-          <p className="mt-1 text-xs font-semibold text-amber-700">
-            Agrega ${remaining.toFixed(2)} para activarla
-          </p>
-        ) : grouped ? (
+        <div className="mt-3 flex min-h-11 items-center justify-between gap-3">
+          {remaining > 0 ? (
+            <p className="text-xs font-semibold leading-4 text-amber-700">
+              Agrega ${remaining.toFixed(2)} para activarla
+            </p>
+          ) : promotion.valid_until ? (
+            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" aria-hidden />
+              Vigente por tiempo limitado
+            </p>
+          ) : (
+            <p className="text-xs font-semibold text-emerald-700">Disponible ahora</p>
+          )}
+          {remaining === 0 && grouped ? (
           <button
             type="button"
             onClick={() => onAddPromotion?.(promotion)}
-            className="mt-2 min-h-11 rounded-xl bg-accent px-4 text-xs font-bold text-accent-foreground shadow-sm transition active:scale-[0.98]"
+            className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-accent px-4 text-xs font-bold text-accent-foreground shadow-sm transition active:scale-[0.98]"
           >
+            <Plus className="h-3.5 w-3.5" aria-hidden />
             {promotion.type === "nxm" ? `Agregar ${promotion.buy_quantity ?? "promoción"}×${promotion.pay_quantity ?? ""}` : "Agregar paquete"}
           </button>
-        ) : (
-          <p className="mt-1 text-xs font-semibold text-amber-700">Se aplica automáticamente</p>
-        )}
+          ) : grouped ? null : (
+            <p className="shrink-0 text-xs font-semibold text-emerald-700">Se aplica automáticamente</p>
+          )}
+        </div>
       </div>
     </section>
   );

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { planPromotionGroup } from "@/lib/offers/groupPricing";
+import { findBestNxmPromotionForProduct, planPromotionGroup } from "@/lib/offers/groupPricing";
 import { priceOrder } from "@/lib/offers/orderPricing";
 import { sendItems } from "@/features/qr/services/tableClientService";
 
@@ -118,9 +118,46 @@ export function useTableCart({
     if (!menu.some((product) => product.id === productId) || quantity <= 0) return;
     setIntents((current) => {
       const standalone = current.find((line) => line.productId === productId && !line.offerGroupId);
-      return standalone
-        ? current.map((line) => line.id === standalone.id ? { ...line, quantity: line.quantity + quantity } : line)
-        : [...current, { id: crypto.randomUUID(), productId, quantity, promotionId: null, offerGroupId: null }];
+      const nextQuantity = (standalone?.quantity ?? 0) + quantity;
+      const listPrices = new Map(menu.map((product) => [product.id, Number(product.price)]));
+      const cartListSubtotal = current.reduce(
+        (sum, line) => sum + (listPrices.get(line.productId) ?? 0) * line.quantity,
+        0,
+      ) + (listPrices.get(productId) ?? 0) * quantity;
+      const nxm = findBestNxmPromotionForProduct(promotions, productId, listPrices, {
+        channel: "onsite",
+        onsitePromotionsEnabled: true,
+        cartListSubtotal,
+      });
+
+      if (!nxm) {
+        return standalone
+          ? current.map((line) => line.id === standalone.id ? { ...line, quantity: nextQuantity } : line)
+          : [...current, { id: crypto.randomUUID(), productId, quantity, promotionId: null, offerGroupId: null }];
+      }
+
+      const groupQuantity = nxm.plan.find((line) => line.productId === productId)?.unitQuantity ?? 0;
+      const groupCount = groupQuantity > 0 ? Math.floor(nextQuantity / groupQuantity) : 0;
+      if (groupCount === 0) {
+        return standalone
+          ? current.map((line) => line.id === standalone.id ? { ...line, quantity: nextQuantity } : line)
+          : [...current, { id: crypto.randomUUID(), productId, quantity, promotionId: null, offerGroupId: null }];
+      }
+
+      const remainder = nextQuantity % groupQuantity;
+      return [
+        ...current.filter((line) => line.id !== standalone?.id),
+        ...Array.from({ length: groupCount }, () => ({
+          id: crypto.randomUUID(),
+          productId,
+          quantity: groupQuantity,
+          promotionId: nxm.promotion.id,
+          offerGroupId: crypto.randomUUID(),
+        })),
+        ...(remainder > 0
+          ? [{ id: crypto.randomUUID(), productId, quantity: remainder, promotionId: null, offerGroupId: null }]
+          : []),
+      ];
     });
   }
 
@@ -166,6 +203,21 @@ export function useTableCart({
           : current.filter((line) => line.id !== standalone.id);
       }
       const grouped = current.find((line) => line.productId === productId && line.offerGroupId);
+      const promotion = promotions.find((item) => item.id === grouped?.promotionId);
+      if (grouped && promotion?.type === "nxm") {
+        return [
+          ...current.filter((line) => line.offerGroupId !== grouped.offerGroupId),
+          ...(grouped.quantity > 1
+            ? [{
+                id: crypto.randomUUID(),
+                productId,
+                quantity: grouped.quantity - 1,
+                promotionId: null,
+                offerGroupId: null,
+              }]
+            : []),
+        ];
+      }
       return grouped ? current.filter((line) => line.offerGroupId !== grouped.offerGroupId) : current;
     });
   }
