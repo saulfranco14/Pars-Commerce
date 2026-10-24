@@ -217,23 +217,23 @@ export function TableMenuSections({
           more than one offer; a horizontal rail keeps the menu's scan rhythm
           intact while making the next promotion visibly available. */}
       {!searching && activePromotions.length > 0 && (
-        <section className="mb-6 mt-5" aria-labelledby="table-offers-heading">
-          <div className="mb-3 flex items-end justify-between gap-3">
+        <section className="mb-5 mt-4" aria-labelledby="table-offers-heading">
+          <div className="mb-2 flex items-end justify-between gap-3">
             <div>
-              <p id="table-offers-heading" className="flex items-center gap-1.5 text-sm font-bold text-foreground">
-                <Tag className="h-4 w-4 text-accent" aria-hidden />
+              <p id="table-offers-heading" className="flex items-center gap-1 text-xs font-bold text-foreground">
+                <Tag className="h-3.5 w-3.5 text-accent" aria-hidden />
                 Ofertas para ti
               </p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
+              <p className="mt-0.5 text-[10px] leading-3 text-muted-foreground">
                 Aplicamos el mejor descuento disponible.
               </p>
             </div>
-            <span className="shrink-0 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-bold text-accent">
+            <span className="shrink-0 rounded-full bg-accent/10 px-2 py-1 text-[10px] font-bold text-accent">
               {activePromotions.length} {activePromotions.length === 1 ? "oferta" : "ofertas"}
             </span>
           </div>
           <div
-            className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto pb-1 touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             aria-label="Carrusel de promociones"
           >
             {activePromotions.map((promotion) => (
@@ -242,7 +242,7 @@ export function TableMenuSections({
                 promotion={promotion}
                 cartListTotal={cartListTotal}
                 onAddPromotion={onAddPromotion}
-                className="basis-[calc((100%-0.75rem)/2)] max-w-[10.5rem] shrink-0 snap-start"
+                className="basis-[calc((100%-0.625rem)/2)] max-w-[10.5rem] shrink-0 snap-start"
               />
             ))}
           </div>

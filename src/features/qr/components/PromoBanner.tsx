@@ -1,11 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { Clock, Plus } from "lucide-react";
+import { Clock, Plus, Tag } from "lucide-react";
 
 import { formatPromoLabel } from "@/features/qr/helpers/formatPromoLabel";
-import { PromotionCollage } from "@/features/promociones/components/PromotionCollage";
-import { promotionCollageLabel } from "@/features/promociones/helpers/promotionVisual";
 
 import type { QrPromotion } from "@/features/qr/interfaces/promotion";
 
@@ -25,57 +23,55 @@ export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, clas
   const label = formatPromoLabel(promotion);
   const grouped = promotion.type === "bundle_price" || promotion.type === "nxm";
   const remaining = Math.max(0, Number(promotion.min_amount ?? 0) - cartListTotal);
+  const thumbnail = promotion.image_url ?? promotion.preview_images[0];
 
   return (
     <section
-      className={`overflow-hidden rounded-2xl border border-accent/25 bg-surface shadow-sm ${className}`}
+      className={`flex min-h-[6.5rem] overflow-hidden rounded-xl border border-accent/20 bg-surface shadow-sm ${className}`}
       aria-label={`Promoción: ${label}`}
     >
-      <div className="relative aspect-[16/7] overflow-hidden bg-accent">
-        {promotion.image_url ? (
+      <div className="relative m-1.5 h-12 w-12 shrink-0 self-start overflow-hidden rounded-lg bg-accent/10">
+        {thumbnail ? (
           <Image
-            src={promotion.image_url}
+            src={thumbnail}
             alt=""
             fill
             loading="lazy"
-            sizes="(max-width: 480px) 50vw, 168px"
+            sizes="48px"
             className="object-cover"
           />
         ) : (
-          <PromotionCollage
-            {...promotionCollageLabel(promotion)}
-            images={promotion.preview_images}
-          />
+          <Tag className="absolute inset-0 m-auto h-5 w-5 text-accent" aria-hidden />
         )}
       </div>
 
-      <div className="p-2.5">
-        <p className="text-[10px] font-bold text-accent">{label}</p>
-        <p className="mt-0.5 line-clamp-2 min-h-8 text-xs font-bold leading-4 text-foreground">{promotion.name}</p>
-        <div className="mt-2 flex min-h-11 items-center justify-between gap-1.5">
+      <div className="flex min-w-0 flex-1 flex-col py-2 pr-2">
+        <p className="truncate text-[9px] font-bold leading-3 text-accent">{label}</p>
+        <p className="mt-0.5 line-clamp-2 text-[11px] font-bold leading-3.5 text-foreground">{promotion.name}</p>
+        <div className="mt-auto flex min-h-11 items-center justify-between gap-1">
           {remaining > 0 ? (
-            <p className="line-clamp-2 text-[10px] font-semibold leading-3.5 text-amber-700">
+            <p className="line-clamp-2 text-[9px] font-semibold leading-3 text-amber-700">
               Faltan ${remaining.toFixed(2)}
             </p>
           ) : promotion.valid_until ? (
-            <p className="flex items-center gap-1 text-[10px] leading-3.5 text-muted-foreground">
+            <p className="flex min-w-0 items-center gap-1 truncate text-[9px] leading-3 text-muted-foreground">
               <Clock className="h-3 w-3 shrink-0" aria-hidden />
               Vigente
             </p>
           ) : (
-            <p className="text-[10px] font-semibold text-emerald-700">Disponible</p>
+            <p className="text-[9px] font-semibold text-emerald-700">Disponible</p>
           )}
           {remaining === 0 && grouped ? (
           <button
             type="button"
             onClick={() => onAddPromotion?.(promotion)}
-            className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full bg-accent px-2.5 text-[10px] font-bold text-accent-foreground shadow-sm transition active:scale-[0.98]"
+            className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full bg-accent px-2.5 text-[9px] font-bold text-accent-foreground shadow-sm transition active:scale-[0.98]"
           >
             <Plus className="h-3 w-3" aria-hidden />
             {promotion.type === "nxm" ? `${promotion.buy_quantity ?? ""}×${promotion.pay_quantity ?? ""}` : "Paquete"}
           </button>
           ) : grouped ? null : (
-            <p className="line-clamp-2 text-right text-[10px] font-semibold leading-3.5 text-emerald-700">Automática</p>
+            <p className="truncate text-right text-[9px] font-semibold leading-3 text-emerald-700">Automática</p>
           )}
         </div>
       </div>
