@@ -14,7 +14,7 @@ export interface CartLineRecord {
 export interface CartPromotionRecord {
   id: string;
   type: string;
-  value: number | string;
+  value: number;
   status: string | null;
   applies_to: string | null;
   quantity: number | null;
@@ -25,6 +25,9 @@ export interface CartPromotionRecord {
   bundle_product_ids: string[] | null;
   valid_from: string | null;
   valid_until: string | null;
+  min_amount: number | null;
+  sales_channels: string[] | null;
+  name?: string | null;
   promotion_items?: Array<{ product_id: string; quantity: number; position: number | null }> | null;
 }
 

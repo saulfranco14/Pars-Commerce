@@ -49,7 +49,7 @@ export async function GET() {
       tenant_id,
       role_id,
       accepted_at,
-      tenant:tenants(id, name, slug, site_slug, business_type, logo_url, theme_color, description, public_store_enabled, accepting_orders, settings, whatsapp_phone, social_links, site_template_id, is_demo, whatsapp_orders_enabled, catalog_template_id, catalog_template_version, catalog_review_status, catalog_approved_at),
+      tenant:tenants(id, name, slug, site_slug, business_type, logo_url, theme_color, description, public_store_enabled, onsite_promotions_enabled, accepting_orders, settings, whatsapp_phone, social_links, site_template_id, is_demo, whatsapp_orders_enabled, catalog_template_id, catalog_template_version, catalog_review_status, catalog_approved_at),
       role:tenant_roles(id, name, permissions)
     `
     )
@@ -311,6 +311,7 @@ export async function PATCH(request: Request) {
     logo_url,
     theme_color,
     public_store_enabled,
+    onsite_promotions_enabled,
     site_template_id,
     address,
     settings: settingsPayload,
@@ -326,6 +327,7 @@ export async function PATCH(request: Request) {
     logo_url?: string | null;
     theme_color?: string;
     public_store_enabled?: boolean;
+    onsite_promotions_enabled?: boolean;
     site_template_id?: string | null;
     address?: {
       street?: string;
@@ -390,6 +392,8 @@ export async function PATCH(request: Request) {
     updates.theme_color = theme_color?.trim() || null;
   if (public_store_enabled !== undefined)
     updates.public_store_enabled = public_store_enabled;
+  if (onsite_promotions_enabled !== undefined)
+    (updates as TenantUpdate & { onsite_promotions_enabled?: boolean }).onsite_promotions_enabled = onsite_promotions_enabled;
   if (site_template_id !== undefined)
     updates.site_template_id = site_template_id || null;
   const normalizedWhatsApp =
@@ -438,7 +442,7 @@ export async function PATCH(request: Request) {
     .from("tenants")
     .update(updates)
     .eq("id", tenant_id)
-    .select("id, name, slug, description, logo_url, theme_color, public_store_enabled, settings, whatsapp_phone, whatsapp_orders_enabled, social_links, site_template_id")
+    .select("id, name, slug, description, logo_url, theme_color, public_store_enabled, onsite_promotions_enabled, settings, whatsapp_phone, whatsapp_orders_enabled, social_links, site_template_id")
     .single();
 
   if (error) {

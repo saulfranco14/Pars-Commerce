@@ -26,6 +26,7 @@ export interface PromotionWriteInput {
   badge_label?: string | null;
   status?: string;
   template_key?: string | null;
+  sales_channels?: Array<"public_store" | "onsite">;
   items?: PromotionPackItemInput[] | null;
 }
 

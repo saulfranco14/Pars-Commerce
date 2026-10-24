@@ -11,7 +11,7 @@ const SLOTS: Record<number, string[]> = {
 };
 
 /** A promotion's visual built from its own products when the merchant didn't upload one. */
-export function PromotionCollage({ images, kicker, label }: PromotionCollageProps) {
+export function PromotionCollage({ images, kicker, label, showLabel = true }: PromotionCollageProps & { showLabel?: boolean }) {
   const photos = images.slice(0, 3);
   const slots = SLOTS[photos.length] ?? [];
 
@@ -38,10 +38,12 @@ export function PromotionCollage({ images, kicker, label }: PromotionCollageProp
         ))
       )}
 
-      <div className="absolute bottom-3 left-3 z-10 max-w-[70%] rounded-2xl bg-white px-4 py-3 text-neutral-950 shadow-lg shadow-black/15 sm:bottom-4 sm:left-4">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">{kicker}</p>
-        <p className="text-xl font-extrabold leading-tight tracking-tight sm:text-2xl">{label}</p>
-      </div>
+      {showLabel && (
+        <div className="absolute bottom-3 left-3 z-10 max-w-[70%] rounded-2xl bg-white px-4 py-3 text-neutral-950 shadow-lg shadow-black/15 sm:bottom-4 sm:left-4">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">{kicker}</p>
+          <p className="text-xl font-extrabold leading-tight tracking-tight sm:text-2xl">{label}</p>
+        </div>
+      )}
     </div>
   );
 }

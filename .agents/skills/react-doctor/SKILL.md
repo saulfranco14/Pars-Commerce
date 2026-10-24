@@ -17,3 +17,10 @@ npx -y react-doctor@latest . --verbose --diff
 ## Workflow
 
 Run after making changes to catch issues early. Fix errors first, then re-run to verify the score improved.
+
+## Tlaco QA policy
+
+For this workspace, do **not** run React Doctor, `typecheck`, lint, unit tests,
+or other automated validation commands during implementation or design
+iterations. Run them only when the user explicitly says that the work is going
+to QA. This project policy takes precedence over the default workflow above.

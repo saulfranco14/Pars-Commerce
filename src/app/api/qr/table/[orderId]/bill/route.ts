@@ -55,7 +55,7 @@ export async function GET(request: Request, context: RouteContext) {
       admin
         .from("order_items")
         .select(
-          "id, product_id, quantity, unit_price, subtotal, added_by_device_id, is_shared, origin_table_label, created_at, fulfillment_status",
+          "id, product_id, quantity, unit_price, list_unit_price, subtotal, promotion_id, offer_group_id, batch_id, added_by_device_id, is_shared, origin_table_label, created_at, fulfillment_status",
         )
         .in("order_id", groupOrderIds)
         .order("created_at", { ascending: true }),
@@ -106,6 +106,27 @@ export async function GET(request: Request, context: RouteContext) {
     );
   }
 
+  const promotionIds = Array.from(
+    new Set((items ?? []).map((item) => item.promotion_id).filter((id): id is string => !!id)),
+  );
+  const batchIds = Array.from(
+    new Set((items ?? []).map((item) => item.batch_id).filter((id): id is string => !!id)),
+  );
+  const [{ data: promotionRows }, { data: batchRows }] = await Promise.all([
+    promotionIds.length > 0
+      ? admin.from("promotions").select("id, name").in("id", promotionIds)
+      : Promise.resolve({ data: [] }),
+    batchIds.length > 0
+      ? admin.from("order_batches").select("id, customer_note").in("id", batchIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+  const promotionNameMap = new Map(
+    (promotionRows ?? []).map((row) => [row.id as string, row.name as string]),
+  );
+  const batchNoteMap = new Map(
+    (batchRows ?? []).map((row) => [row.id as string, row.customer_note as string | null]),
+  );
+
   const { data: groupItemMappings } =
     splitGroups && splitGroups.length > 0
       ? await admin
@@ -129,7 +150,15 @@ export async function GET(request: Request, context: RouteContext) {
     product_name: productNameMap.get(item.product_id) ?? "Producto",
     quantity: Number(item.quantity),
     unit_price: Number(item.unit_price),
+    list_unit_price: Number(item.list_unit_price ?? item.unit_price),
     subtotal: Number(item.subtotal),
+    promotion_id: item.promotion_id ?? null,
+    promotion_name: item.promotion_id
+      ? promotionNameMap.get(item.promotion_id) ?? "Promoción"
+      : null,
+    offer_group_id: item.offer_group_id ?? null,
+    batch_id: item.batch_id ?? null,
+    batch_note: item.batch_id ? batchNoteMap.get(item.batch_id) ?? null : null,
     added_by_device_id: item.added_by_device_id,
     is_shared: item.is_shared === true,
     origin_table_label: item.origin_table_label ?? null,

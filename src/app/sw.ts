@@ -30,6 +30,16 @@ const appRuntimeCaching: RuntimeCaching[] = [
     handler: new NetworkOnly(),
   },
   {
+    // A document and its React bundle must always come from the same deploy.
+    // Serving an old cached marketing document after a deploy can pair it with
+    // new RSC data (or the inverse) and cause a hydration mismatch.
+    matcher: ({ request, sameOrigin, url }) =>
+      sameOrigin &&
+      request.destination === "document" &&
+      !url.pathname.startsWith("/q/"),
+    handler: new NetworkOnly(),
+  },
+  {
     matcher: ({ request, sameOrigin, url }) =>
       sameOrigin &&
       request.destination === "document" &&

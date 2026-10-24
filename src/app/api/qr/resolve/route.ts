@@ -53,7 +53,7 @@ export async function GET(request: Request) {
 
   const { data: tenant } = await admin
     .from("tenants")
-    .select("id, name, slug, logo_url, public_store_enabled")
+    .select("id, name, slug, logo_url, public_store_enabled, onsite_promotions_enabled")
     .eq("id", qrCode.tenant_id)
     .single();
 
@@ -382,10 +382,11 @@ export async function GET(request: Request) {
       admin
         .from("promotions")
         .select(
-          "id, name, type, value, badge_label, image_url, description, valid_from, valid_until, buy_quantity, pay_quantity",
+          "id, name, type, value, status, applies_to, product_ids, subcatalog_ids, bundle_product_ids, quantity, badge_label, image_url, description, valid_from, valid_until, buy_quantity, pay_quantity, min_amount, sales_channels, promotion_items(product_id, quantity, position)",
         )
         .eq("tenant_id", tenant.id)
         .eq("status", "active")
+        .contains("sales_channels", ["onsite"])
         .order("created_at", { ascending: false }),
     ]);
 
@@ -430,9 +431,8 @@ export async function GET(request: Request) {
     }));
     response.categories = categories ?? [];
 
-    response.promotions = filterActivePromotions(
-      promoRows ?? [],
-      Date.now(),
+    response.promotions = tenant.onsite_promotions_enabled === false ? [] : filterActivePromotions(
+      promoRows ?? [], Date.now(),
     ).map((p) => ({
       id: p.id,
       name: p.name,
@@ -440,8 +440,25 @@ export async function GET(request: Request) {
       value: p.value,
       badge_label: p.badge_label,
       image_url: p.image_url,
+      preview_images: [...new Set([
+        ...(p.promotion_items ?? []).map((item) => item.product_id),
+        ...(p.product_ids ?? []),
+        ...(p.bundle_product_ids ?? []),
+      ])].flatMap((productId) => imagesByProduct.get(productId)?.slice(0, 1) ?? []).slice(0, 3),
       description: p.description,
       valid_until: p.valid_until,
+      valid_from: p.valid_from,
+      status: p.status,
+      applies_to: p.applies_to,
+      product_ids: p.product_ids,
+      subcatalog_ids: p.subcatalog_ids,
+      bundle_product_ids: p.bundle_product_ids,
+      quantity: p.quantity,
+      buy_quantity: p.buy_quantity,
+      pay_quantity: p.pay_quantity,
+      min_amount: p.min_amount === null ? null : Number(p.min_amount),
+      sales_channels: p.sales_channels ?? ["public_store", "onsite"],
+      promotion_items: p.promotion_items ?? [],
     }));
   }
 

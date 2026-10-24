@@ -35,9 +35,10 @@ export async function GET(request: Request) {
 
   const { data: rawPromotions, error } = await supabase
     .from("promotions")
-    .select("id, name, slug, type, value, min_amount, product_ids, valid_from, valid_until, image_url, description, badge_label, subcatalog_ids, quantity, bundle_product_ids, buy_quantity, pay_quantity")
+    .select("id, name, slug, type, value, min_amount, product_ids, valid_from, valid_until, image_url, description, badge_label, subcatalog_ids, quantity, bundle_product_ids, buy_quantity, pay_quantity, sales_channels")
     .eq("tenant_id", tenantId)
     .eq("status", "active")
+    .contains("sales_channels", ["public_store"])
     .order("created_at", { ascending: false });
 
   if (error) {

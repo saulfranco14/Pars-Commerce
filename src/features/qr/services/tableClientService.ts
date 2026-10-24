@@ -93,6 +93,8 @@ function fingerprintHeader(fingerprint: string): HeadersInit {
 export interface SendItemsItem {
   product_id: string;
   quantity: number;
+  promotion_id?: string | null;
+  offer_group_id?: string | null;
 }
 
 export async function sendItems(payload: {
@@ -100,6 +102,8 @@ export async function sendItems(payload: {
   fingerprint: string;
   displayName: string;
   customerPhone?: string | null;
+  customerNote?: string;
+  expectedTotal: number;
   items: SendItemsItem[];
 }) {
   return apiFetch("/api/qr/table/items", {
@@ -109,6 +113,8 @@ export async function sendItems(payload: {
       qr_token: payload.qrToken,
       display_name: payload.displayName,
       customer_phone: payload.customerPhone?.trim() || undefined,
+      customer_note: payload.customerNote?.trim() || undefined,
+      expected_total: payload.expectedTotal,
       items: payload.items,
     }),
   });

@@ -57,9 +57,15 @@ export function KioskProductTile({
               {description}
             </p>
           )}
-          <p className="mt-auto pt-3 text-3xl font-bold tracking-tight text-accent xl:text-4xl">
-            {formatCurrency(Number(product.price))}
-          </p>
+          <div className="mt-auto pt-3">
+            {product.list_price != null && product.list_price > Number(product.price) && (
+              <p className="text-base text-muted-foreground line-through">{formatCurrency(product.list_price)}</p>
+            )}
+            <p className="text-3xl font-bold tracking-tight text-accent xl:text-4xl">
+              {formatCurrency(Number(product.price))}
+            </p>
+            {product.promotion_name && <p className="text-sm font-semibold text-amber-700">Se aplica automáticamente</p>}
+          </div>
         </div>
       </button>
 

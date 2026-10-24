@@ -324,6 +324,12 @@ export function OrderTrackerCard({
                       <p className="text-sm font-medium text-foreground">
                         {item.quantity}× {item.product_name}
                       </p>
+                      {item.promotion_name && (
+                        <p className="text-xs font-semibold text-amber-700">{item.promotion_name}</p>
+                      )}
+                      {item.batch_note && (
+                        <p className="mt-1 text-xs text-muted-foreground">Indicaciones: {item.batch_note}</p>
+                      )}
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                         {device && (
                           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">

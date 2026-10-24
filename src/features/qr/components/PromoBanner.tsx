@@ -1,56 +1,100 @@
 "use client";
 
 import Image from "next/image";
-import { Tag } from "lucide-react";
+import { Clock, Plus } from "lucide-react";
 
+import { formatOfferDeadline } from "@/lib/offers/formatOfferLabel";
 import { formatPromoLabel } from "@/features/qr/helpers/formatPromoLabel";
+import { PromotionCollage } from "@/features/promociones/components/PromotionCollage";
+import { promotionCollageLabel } from "@/features/promociones/helpers/promotionVisual";
 
 import type { QrPromotion } from "@/features/qr/interfaces/promotion";
 
 interface PromoBannerProps {
   promotion: QrPromotion;
+  cartListTotal?: number;
+  onAddPromotion?: (promotion: QrPromotion) => void;
+  className?: string;
 }
 
 /**
- * Rappi-style promo banner shown inside the QR menu: a small image (or a Tag
- * icon fallback) on the left, a short value label + name on the right. Purely
- * informational — it never navigates the customer OUT of the ordering flow.
- *
- * Uses the QR design tokens (accent-tinted surface, rounded-2xl) so it sits
- * naturally among the product cards. Neutral/multi-business.
+ * A QR-only horizontal promotion card. The promotional artwork and the order
+ * decision stay together without turning the table menu into the storefront.
  */
-export function PromoBanner({ promotion }: PromoBannerProps) {
+export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, className = "" }: PromoBannerProps) {
   const label = formatPromoLabel(promotion);
+  const grouped = promotion.type === "bundle_price" || promotion.type === "nxm";
+  const remaining = Math.max(0, Number(promotion.min_amount ?? 0) - cartListTotal);
+  const deadline = formatOfferDeadline(promotion.valid_until);
+  const fallbackDetail = promotion.type === "nxm"
+    ? `Lleva ${promotion.buy_quantity ?? ""} y paga ${promotion.pay_quantity ?? ""}`
+    : grouped
+      ? "Incluye los productos del paquete"
+      : "Descuento disponible en este producto";
+  const detail = promotion.description?.trim() || fallbackDetail;
 
   return (
     <section
-      className="flex items-center gap-3 rounded-2xl border border-accent/30 bg-accent/5 p-3"
+      className={`flex min-h-40 overflow-hidden rounded-2xl border border-accent/20 bg-surface shadow-sm ${className}`}
       aria-label={`Promoción: ${label}`}
     >
-      <span className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-accent/10 text-accent">
+      <div className="relative flex w-32 shrink-0 overflow-hidden bg-accent">
         {promotion.image_url ? (
           <Image
             src={promotion.image_url}
-            alt={promotion.name}
+            alt=""
             fill
             loading="lazy"
-            sizes="56px"
-            className="rounded-xl object-cover"
+            sizes="128px"
+            className="object-cover"
           />
         ) : (
-          <Tag className="h-6 w-6" strokeWidth={2.25} />
+          <div className="absolute inset-0">
+            <PromotionCollage
+              {...promotionCollageLabel(promotion)}
+              images={promotion.preview_images}
+              showLabel={false}
+            />
+          </div>
         )}
-      </span>
+        <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+        <div className="absolute inset-x-3 bottom-3 z-10">
+          <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/80">Oferta</p>
+          <p className="line-clamp-2 text-xl font-extrabold leading-5 tracking-tight text-white">{label}</p>
+        </div>
+      </div>
 
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold leading-snug text-accent">{label}</p>
-        <p className="truncate text-xs font-medium text-foreground">
-          {promotion.name}
+      <div className="flex min-w-0 flex-1 flex-col p-3">
+        <p className="flex items-center gap-1 text-[10px] font-bold text-accent">
+          <Clock className="h-3.5 w-3.5" aria-hidden />
+          {deadline ? `Hasta el ${deadline}` : "Vigente por tiempo limitado"}
         </p>
-        {promotion.description && (
-          <p className="truncate text-xs text-muted-foreground">
-            {promotion.description}
-          </p>
+        <p className="mt-1 line-clamp-2 min-h-10 text-sm font-bold leading-5 text-foreground">{promotion.name}</p>
+        <p className="mt-1 line-clamp-2 text-[10px] leading-3.5 text-muted-foreground">{detail}</p>
+        {remaining > 0 ? (
+          <div className="mt-auto flex min-h-11 items-center border-t border-border/80 pt-2">
+            <p className="line-clamp-2 text-[10px] font-semibold leading-3.5 text-amber-800">
+              Agrega ${remaining.toFixed(2)} más para activarla
+            </p>
+          </div>
+        ) : grouped ? (
+          <div className="mt-auto flex min-h-11 items-center justify-between gap-3 border-t border-border/80 pt-2">
+            <p className="text-[10px] font-semibold leading-3.5 text-muted-foreground">Toca + para agregar</p>
+            <button
+              type="button"
+              onClick={() => onAddPromotion?.(promotion)}
+              aria-label="Agregar promoción"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md shadow-accent/25 transition active:scale-[0.94]"
+            >
+              <Plus className="h-5 w-5" aria-hidden />
+            </button>
+          </div>
+        ) : (
+          <div className="mt-auto flex min-h-11 items-center border-t border-border/80 pt-2">
+            <p className="text-[10px] font-semibold leading-3.5 text-accent">
+              Se descuenta automáticamente al agregar productos
+            </p>
+          </div>
         )}
       </div>
     </section>

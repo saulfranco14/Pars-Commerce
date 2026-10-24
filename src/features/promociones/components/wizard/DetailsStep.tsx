@@ -1,6 +1,6 @@
 "use client";
 
-import { RefreshCcw, Tag, Type } from "lucide-react";
+import { Globe2, RefreshCcw, Store, Tag, Type } from "lucide-react";
 
 import { CurrencyInput } from "@/components/ui/CurrencyInput";
 import { FormInput } from "@/components/ui/FormInput";
@@ -149,6 +149,46 @@ export function DetailsStep({
       ) : null}
 
       <PromotionPreviewStrip values={values} itemsById={itemsById} />
+
+      <fieldset>
+        <legend className={LABEL}>Dónde estará disponible</legend>
+        <p className="mb-3 text-sm text-muted-foreground">
+          Puedes usar la misma promoción en tu sitio, en las ventas del local o en ambos.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {[
+            { value: "public_store" as const, label: "Sitio web", description: "Catálogo y carrito público", icon: Globe2 },
+            { value: "onsite" as const, label: "Ventas en el local", description: "Mesas QR, personal y kiosco", icon: Store },
+          ].map(({ value, label, description, icon: Icon }) => {
+            const selected = values.salesChannels.includes(value);
+            return (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => set(
+                  "salesChannels",
+                  selected
+                    ? values.salesChannels.filter((channel) => channel !== value)
+                    : [...values.salesChannels, value],
+                )}
+                className={`flex min-h-14 items-center gap-3 rounded-xl border px-3 py-2 text-left transition ${
+                  selected ? "border-accent bg-accent/5" : "border-border bg-surface"
+                }`}
+              >
+                <Icon className={`h-5 w-5 shrink-0 ${selected ? "text-accent" : "text-muted-foreground"}`} />
+                <span>
+                  <span className="block text-sm font-semibold text-foreground">{label}</span>
+                  <span className="block text-xs text-muted-foreground">{description}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {errors.salesChannels?.message ? (
+          <p className="mt-2 text-sm font-medium text-red-600">{errors.salesChannels.message}</p>
+        ) : null}
+      </fieldset>
 
       <fieldset>
         <legend className={LABEL}>Vigencia</legend>

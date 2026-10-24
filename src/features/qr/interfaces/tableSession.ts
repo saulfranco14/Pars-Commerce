@@ -48,6 +48,8 @@ export interface QrSessionMenuItem {
   image_urls?: string[] | null;
   subcatalog_id?: string | null;
   description?: string | null;
+  list_price?: number | null;
+  promotion_name?: string | null;
 }
 
 /** A product category (subcatalog) used to group the menu. */
