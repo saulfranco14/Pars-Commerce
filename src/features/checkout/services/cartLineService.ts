@@ -7,14 +7,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
-  allocatePackPrice,
   bestUnitPromotion,
   isPromotionLive,
-  nxmUnitPrice,
   roundMoney,
   UNIT_PROMOTION_TYPES,
   type PricingPromotion,
+  type PromotionChannel,
 } from "@/lib/offers/pricing";
+import { planPromotionGroup } from "@/lib/offers/groupPricing";
 
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 import type {
@@ -33,7 +33,7 @@ export const CART_LINE_COLUMNS =
   "id, cart_id, product_id, product_variant_id, quantity, price_snapshot, list_unit_price, promotion_id, group_id, group_unit_quantity";
 
 export const CART_PROMOTION_COLUMNS =
-  "id, type, value, status, applies_to, quantity, buy_quantity, pay_quantity, product_ids, subcatalog_ids, bundle_product_ids, valid_from, valid_until";
+  "id, name, type, value, status, applies_to, quantity, buy_quantity, pay_quantity, product_ids, subcatalog_ids, bundle_product_ids, valid_from, valid_until, min_amount, sales_channels";
 
 function loose(admin: Admin): Loose {
   return admin as unknown as Loose;
@@ -43,14 +43,19 @@ function fail(code: "not_found" | "validation" | "conflict" | "internal", messag
   return { ok: false, error: { code, message } };
 }
 
-export async function loadLivePromotions(admin: Admin, tenantId: string, now: Date = new Date()): Promise<PricingPromotion[]> {
+export async function loadLivePromotions(
+  admin: Admin,
+  tenantId: string,
+  now: Date = new Date(),
+  channel: PromotionChannel = "public_store",
+): Promise<PricingPromotion[]> {
   const { data } = await loose(admin)
     .from("promotions")
     .select(CART_PROMOTION_COLUMNS)
     .eq("tenant_id", tenantId)
     .eq("status", "active");
   return ((data ?? []) as CartPromotionRecord[])
-    .filter((promotion) => isPromotionLive(promotion, now))
+    .filter((promotion) => isPromotionLive(promotion, now) && (promotion.sales_channels?.length ? promotion.sales_channels.includes(channel) : true))
     .map((promotion) => ({ ...promotion, value: Number(promotion.value) }));
 }
 
@@ -103,7 +108,23 @@ export async function addProductLine(admin: Admin, input: AddProductLineInput): 
   }
 
   const promotions = await loadLivePromotions(admin, input.tenantId);
-  const best = bestUnitPromotion(promotions, { id: product.id, price: listPrice, subcatalog_id: product.subcatalog_id });
+  const { data: currentCartRows } = await db
+    .from("public_cart_items")
+    .select("quantity, list_unit_price, price_snapshot")
+    .eq("cart_id", input.cartId);
+  const cartListSubtotal = roundMoney(
+    (currentCartRows ?? []).reduce(
+      (sum: number, row: { quantity: number; list_unit_price: number | string | null; price_snapshot: number | string }) =>
+        sum + Number(row.list_unit_price ?? row.price_snapshot) * Number(row.quantity),
+      listPrice * input.quantity,
+    ),
+  );
+  const best = bestUnitPromotion(
+    promotions,
+    { id: product.id, price: listPrice, subcatalog_id: product.subcatalog_id },
+    new Date(),
+    { channel: "public_store", cartListSubtotal },
+  );
   const priceSnapshot = best?.finalPrice ?? listPrice;
 
   const existing = await findStandaloneLine(admin, input.cartId, input.productId, variantId);
@@ -132,62 +153,6 @@ export async function addProductLine(admin: Admin, input: AddProductLineInput): 
   return { ok: true, data: { cartId: input.cartId } };
 }
 
-interface GroupPlanLine {
-  productId: string;
-  unitQuantity: number;
-  listUnitPrice: number;
-  unitPrice: number;
-}
-
-/** Lines one pack of the promotion adds, priced so the pack totals its promoted price. */
-export function planPromotionGroup(
-  promotion: CartPromotionRecord,
-  listPrices: Map<string, number>,
-  chosenProductId?: string | null,
-): ServiceResult<GroupPlanLine[]> {
-  if (promotion.type === "nxm") {
-    const eligible = [...new Set(promotion.product_ids ?? [])];
-    const productId = chosenProductId && eligible.includes(chosenProductId)
-      ? chosenProductId
-      : eligible.length === 1 ? eligible[0] : null;
-    if (!productId) return fail("validation", "Elige el producto de la promoción desde su página.");
-    const buy = Number(promotion.buy_quantity ?? 0);
-    const pay = Number(promotion.pay_quantity ?? 0);
-    const listUnitPrice = listPrices.get(productId);
-    if (listUnitPrice === undefined) return fail("not_found", "El producto de esta promoción ya no está disponible.");
-    return {
-      ok: true,
-      data: [{ productId, unitQuantity: buy, listUnitPrice, unitPrice: nxmUnitPrice(listUnitPrice, buy, pay) }],
-    };
-  }
-
-  const saved = promotion.promotion_items ?? [];
-  const legacy = [...new Set([...(promotion.product_ids ?? []), ...(promotion.bundle_product_ids ?? [])])];
-  const packLines = saved.length > 0
-    ? saved.map((item) => ({ productId: item.product_id, unitQuantity: Number(item.quantity) }))
-    : legacy.map((productId) => ({
-        productId,
-        unitQuantity: legacy.length === 1 ? Math.max(1, Number(promotion.quantity ?? 1)) : 1,
-      }));
-  if (packLines.length === 0) return fail("validation", "Esta promoción no tiene productos.");
-  if (packLines.some((line) => !listPrices.has(line.productId))) {
-    return fail("not_found", "Un producto de este paquete ya no está disponible.");
-  }
-  const prices = allocatePackPrice(
-    packLines.map((line) => ({ key: line.productId, listUnitPrice: listPrices.get(line.productId) ?? 0, quantity: line.unitQuantity })),
-    Number(promotion.value),
-  );
-  return {
-    ok: true,
-    data: packLines.map((line) => ({
-      productId: line.productId,
-      unitQuantity: line.unitQuantity,
-      listUnitPrice: listPrices.get(line.productId) ?? 0,
-      unitPrice: prices.get(line.productId) ?? 0,
-    })),
-  };
-}
-
 export async function addPromotionGroup(admin: Admin, input: AddPromotionGroupInput): Promise<ServiceResult<{ cartId: string }>> {
   const db = loose(admin);
   const { data } = await db
@@ -197,7 +162,11 @@ export async function addPromotionGroup(admin: Admin, input: AddPromotionGroupIn
     .eq("tenant_id", input.tenantId)
     .maybeSingle();
   const promotion = data as CartPromotionRecord | null;
-  if (!promotion || !isPromotionLive(promotion)) return fail("conflict", "Esta promoción ya no está vigente.");
+  if (
+    !promotion ||
+    !isPromotionLive(promotion) ||
+    (promotion.sales_channels?.length && !promotion.sales_channels.includes("public_store"))
+  ) return fail("conflict", "Esta promoción ya no está vigente en el sitio web.");
 
   if (UNIT_PROMOTION_TYPES.has(promotion.type)) {
     for (const productId of [...new Set(promotion.product_ids ?? [])]) {
@@ -230,6 +199,18 @@ export async function addPromotionGroup(admin: Admin, input: AddPromotionGroupIn
   }
   const plan = planPromotionGroup(promotion, new Map(rows.map((row) => [row.id, Number(row.price)])), input.productId);
   if (!plan.ok) return plan;
+  const { data: currentCartRows } = await db.from("public_cart_items")
+    .select("quantity, list_unit_price, price_snapshot")
+    .eq("cart_id", input.cartId);
+  const currentListTotal = (currentCartRows ?? []).reduce(
+    (sum: number, row: { quantity: number; list_unit_price: number | string | null; price_snapshot: number | string }) =>
+      sum + Number(row.list_unit_price ?? row.price_snapshot) * Number(row.quantity),
+    0,
+  );
+  const groupListTotal = plan.data.reduce((sum, line) => sum + line.listUnitPrice * line.unitQuantity, 0);
+  if (Number(promotion.min_amount ?? 0) > currentListTotal + groupListTotal) {
+    return fail("conflict", `Agrega al menos $${Number(promotion.min_amount).toFixed(2)} para usar esta promoción.`);
+  }
 
   const { data: existingLines } = await db
     .from("public_cart_items")

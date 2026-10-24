@@ -8,12 +8,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { bestUnitPromotion, roundMoney } from "@/lib/offers/pricing";
+import { planPromotionGroup } from "@/lib/offers/groupPricing";
 
 import {
   CART_LINE_COLUMNS,
   CART_PROMOTION_COLUMNS,
   loadLivePromotions,
-  planPromotionGroup,
 } from "@/features/checkout/services/cartLineService";
 
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
@@ -65,6 +65,11 @@ export async function repriceCart(
     ((variantsRes.data ?? []) as Array<{ id: string; price: number | string; is_active: boolean; archived_at: string | null }>).map((row) => [row.id, row]),
   );
   const livePromotionIds = new Set(promotions.map((promotion) => promotion.id));
+  const cartListSubtotal = roundMoney(lines.reduce((sum, line) => {
+    const product = products.get(line.product_id);
+    const variant = line.product_variant_id ? variants.get(line.product_variant_id) : null;
+    return sum + Number(variant?.price ?? product?.price ?? line.list_unit_price ?? line.price_snapshot) * line.quantity;
+  }, 0));
 
   const removals: string[] = [];
   const updates: LineUpdate[] = [];
@@ -87,7 +92,12 @@ export async function repriceCart(
       return;
     }
     const product = products.get(line.product_id);
-    const best = bestUnitPromotion(promotions, { id: line.product_id, price: listPrice, subcatalog_id: product?.subcatalog_id ?? null });
+    const best = bestUnitPromotion(
+      promotions,
+      { id: line.product_id, price: listPrice, subcatalog_id: product?.subcatalog_id ?? null },
+      new Date(),
+      { channel: "public_store", cartListSubtotal },
+    );
     const price = roundMoney(best?.finalPrice ?? listPrice);
     const promotionId = best?.promotionId ?? null;
     if (!samePrice(line.price_snapshot, price) || line.promotion_id !== promotionId || Object.keys(extra).length > 0) {
@@ -114,6 +124,9 @@ export async function repriceCart(
         .eq("id", promotionId)
         .maybeSingle();
       promotion = (data as CartPromotionRecord | null) ?? null;
+      if (promotion && Number(promotion.min_amount ?? 0) > cartListSubtotal) {
+        promotion = null;
+      }
     }
     const listPrices = new Map<string, number>();
     for (const line of groupLines) {

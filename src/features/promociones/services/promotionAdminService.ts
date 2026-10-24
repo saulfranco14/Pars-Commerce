@@ -15,7 +15,7 @@ import type { PromotionWriteInput } from "@/features/promociones/interfaces/prom
 type Admin = SupabaseClient;
 type Loose = { from: (table: string) => any; rpc: (fn: string, args: Record<string, unknown>) => any };
 
-const EXISTING_COLUMNS = "id, tenant_id, slug, type, value, buy_quantity, pay_quantity, valid_from, valid_until";
+const EXISTING_COLUMNS = "id, tenant_id, slug, type, value, buy_quantity, pay_quantity, valid_from, valid_until, sales_channels";
 
 async function freeSlug(db: Loose, tenantId: string, desired: string, exceptId?: string): Promise<string> {
   const base = slugifyPromotionName(desired);
@@ -68,7 +68,7 @@ export async function savePromotion(
     fields.slug = await freeSlug(db, params.tenantId, params.input.slug || String(fields.name));
   }
 
-  const { data, error } = await db.rpc("save_promotion", {
+  const { data, error } = await db.rpc("save_promotion_v2", {
     p_promotion: fields,
     p_items: normalized.data.items,
   });

@@ -84,6 +84,10 @@ export const offerWizardSchema: yup.ObjectSchema<OfferWizardValues> = yup.object
   name: yup.string().trim().min(2, "Ponle un nombre.").max(80, "Máximo 80 caracteres.").required("Ponle un nombre."),
   description: yup.string().max(300, "Máximo 300 caracteres.").defined(),
   imageUrl: yup.string().defined(),
+  salesChannels: yup
+    .array(yup.mixed<"public_store" | "onsite">().oneOf(["public_store", "onsite"]).required())
+    .min(1, "Elige al menos un lugar donde estará disponible.")
+    .defined(),
 });
 
 /** Fields validated before leaving each step. */
@@ -91,6 +95,6 @@ export const STEP_FIELDS: Record<OfferWizardStep, (keyof OfferWizardValues)[]> =
   plantilla: [],
   mecanica: ["mechanic"],
   productos: ["productIds", "subcatalogIds", "packItems", "appliesToAll"],
-  detalles: ["value", "buyQuantity", "payQuantity", "badgeLabel", "validity", "validFrom", "validUntil", "name", "description"],
+  detalles: ["value", "buyQuantity", "payQuantity", "badgeLabel", "validity", "validFrom", "validUntil", "name", "description", "salesChannels"],
   revisar: [],
 };

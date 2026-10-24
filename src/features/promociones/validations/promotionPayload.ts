@@ -131,5 +131,15 @@ export function normalizePromotionInput(
   if (input.badge_label !== undefined) fields.badge_label = trimOrNull(input.badge_label);
   if (input.template_key !== undefined) fields.template_key = trimOrNull(input.template_key);
 
+  if (input.sales_channels !== undefined) {
+    const channels = [...new Set(input.sales_channels)];
+    if (channels.length === 0 || channels.some((channel) => channel !== "public_store" && channel !== "onsite")) {
+      return invalid("Elige Sitio web, Ventas en el local o ambos.");
+    }
+    fields.sales_channels = channels;
+  } else if (mode === "create") {
+    fields.sales_channels = ["public_store", "onsite"];
+  }
+
   return { ok: true, data: { fields, items } };
 }
