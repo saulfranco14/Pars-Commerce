@@ -831,6 +831,12 @@ export function BusinessSetupWizard() {
     }
     setBusy(true);
     try {
+      const legalResponse = await fetch(`/api/legal/status?tenant_id=${encodeURIComponent(tenant.id)}`, { cache: "no-store" });
+      const legal = await legalResponse.json() as { pending?: { tenant_id?: string } | null };
+      if (legalResponse.ok && legal.pending?.tenant_id === tenant.id) {
+        router.push(`/dashboard/legal?tenant=${encodeURIComponent(tenant.id)}&return=${encodeURIComponent(`/dashboard/preparar-negocio?tenant=${tenant.id}`)}`);
+        return;
+      }
       await requestJson("/api/tenants", {
         method: "PATCH",
         body: JSON.stringify({
