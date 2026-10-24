@@ -2,6 +2,7 @@ import { createHash } from "crypto";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 import { legalProfileSchema, type LegalProfileForm } from "@/features/legal/legalProfileSchema";
+import { normalizeMexicanPhone } from "@/lib/phone";
 
 type Admin = {
   from: (table: string) => any;
@@ -22,6 +23,9 @@ export type LegalPartyInput = Omit<
   LegalProfileForm,
   | "tax_id"
   | "address_line2"
+  | "address_place_id"
+  | "address_latitude"
+  | "address_longitude"
   | "city"
   | "state"
   | "postal_code"
@@ -33,6 +37,9 @@ export type LegalPartyInput = Omit<
 > & {
   tax_id?: string | null;
   address_line2?: string;
+  address_place_id?: string | null;
+  address_latitude?: number | null;
+  address_longitude?: number | null;
   city?: string | null;
   state?: string | null;
   postal_code?: string | null;
@@ -66,13 +73,16 @@ export function cleanLegalProfile(input: unknown): LegalPartyInput | null {
     ...parsed.data,
     tax_id: parsed.data.tax_id || null,
     address_line2: parsed.data.address_line2 || undefined,
+    address_place_id: parsed.data.address_place_id || null,
+    address_latitude: parsed.data.address_latitude,
+    address_longitude: parsed.data.address_longitude,
     city: parsed.data.city || null,
     state: parsed.data.state || null,
     postal_code: parsed.data.postal_code || null,
     representative_name: parsed.data.representative_name || undefined,
     representative_role: parsed.data.representative_role || undefined,
     contractual_email: parsed.data.contractual_email.toLowerCase() || null,
-    contractual_phone: parsed.data.contractual_phone.replace(/[\s()-]/g, ""),
+    contractual_phone: normalizeMexicanPhone(parsed.data.contractual_phone) as string,
     public_seller_name: parsed.data.public_seller_name || null,
     public_privacy_contact: parsed.data.public_privacy_contact.trim() || null,
   };

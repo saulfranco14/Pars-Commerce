@@ -2,13 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, FileText, Landmark, Loader2, LockKeyhole, MapPin, Phone, ShieldCheck } from "lucide-react";
+import { CheckCircle2, FileText, Landmark, LockKeyhole, MapPin, Phone, Search, ShieldCheck } from "lucide-react";
 
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { FormInput } from "@/components/ui/FormInput";
 import { Notification } from "@/components/ui/Notification";
 import { WizardShell } from "@/components/wizard/WizardShell";
 import { WizardStepHeading } from "@/components/wizard/WizardStepHeading";
+import { usePlaceSearch } from "@/hooks/usePlaceSearch";
+import { formatMexicanPhoneInput } from "@/lib/phone";
 import {
   getLegalProfileFieldErrors,
   legalProfileSchema,
@@ -16,13 +18,15 @@ import {
   type LegalProfileForm,
 } from "@/features/legal/legalProfileSchema";
 
+import type { PlaceOption } from "@/types/places";
+
 type LegalDocument = { id: string; title: string; version: string; content: string };
 type Stage = "why" | "details" | "agreement" | "done";
 
 const TITLE_ID = "legal-opening-title";
 const REPRESENTATION_DECLARATION = "Acepto el acuerdo de Tlaco y declaro que puedo representar este negocio.";
 const EMPTY_PROFILE: LegalProfileForm = {
-  party_type: "individual", legal_name: "", tax_id: "", address_line1: "", address_line2: "",
+  party_type: "individual", legal_name: "", tax_id: "", address_line1: "", address_line2: "", address_place_id: "", address_latitude: null, address_longitude: null,
   city: "", state: "", postal_code: "", country: "México", contractual_email: "",
   contractual_phone: "", representative_name: "", representative_role: "", public_seller_name: "", public_privacy_contact: "",
 };
@@ -49,6 +53,80 @@ function LegalProfilePreview({ profile, stage }: { profile: LegalProfileForm; st
   );
 }
 
+function LegalAddressField({
+  value,
+  error,
+  inputRef,
+  onChange,
+  onBlur,
+}: {
+  value: LegalProfileForm;
+  error?: string;
+  inputRef: (element: HTMLInputElement | null) => void;
+  onChange: (patch: Pick<LegalProfileForm, "address_line1" | "address_place_id" | "address_latitude" | "address_longitude">) => void;
+  onBlur: () => void;
+}) {
+  const { query, setQuery, places, searching, unavailable, pick } = usePlaceSearch(value.address_line1);
+
+  useEffect(() => { setQuery(value.address_line1); }, [value.address_line1, setQuery]);
+
+  const updateManualAddress = (next: string) => {
+    setQuery(next);
+    onChange({ address_line1: next, address_place_id: "", address_latitude: null, address_longitude: null });
+  };
+  const selectPlace = async (place: PlaceOption) => {
+    const resolved = await pick(place);
+    onChange({
+      address_line1: resolved.label,
+      address_place_id: resolved.id,
+      address_latitude: resolved.latitude,
+      address_longitude: resolved.longitude,
+    });
+  };
+
+  return (
+    <div>
+      <label className="block">
+        <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Domicilio</span>
+        <span className="relative block">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(event) => updateManualAddress(event.target.value)}
+            onBlur={onBlur}
+            placeholder="Busca calle, número y colonia"
+            autoComplete="street-address"
+            aria-invalid={Boolean(error)}
+            aria-describedby="legal-address-help"
+            className={`block w-full rounded-2xl border-2 bg-background py-3 pl-10 pr-3 text-sm font-medium text-foreground placeholder:text-muted-foreground/50 outline-none transition-colors ${error ? "border-red-500 focus:border-red-500" : "border-border focus:border-accent"}`}
+          />
+        </span>
+      </label>
+      {searching ? <p className="mt-2 text-xs text-muted-foreground">Buscando en el mapa…</p> : null}
+      {places.length > 0 ? (
+        <div className="mt-2 overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+          {places.map((place) => (
+            <button
+              key={place.id}
+              type="button"
+              onPointerDown={(event) => { event.preventDefault(); void selectPlace(place); }}
+              onClick={(event) => { if (event.detail === 0) void selectPlace(place); }}
+              className="flex min-h-11 w-full items-start gap-2 border-b border-border-soft px-3 py-2.5 text-left text-sm last:border-0 hover:bg-muted"
+            >
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
+              {place.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {error ? <p className="mt-1 text-xs font-medium text-red-600">{error}</p> : null}
+      {!error ? <p id="legal-address-help" className={`mt-1 text-[11px] ${value.address_place_id ? "font-semibold text-emerald-700" : "text-muted-foreground"}`}>{value.address_place_id ? "Ubicación confirmada en el mapa. Queda privada." : "Incluye el número exterior. Puedes elegir una sugerencia o escribirla manualmente."}</p> : null}
+      {unavailable ? <p className="mt-1 text-xs text-amber-700">El mapa no respondió; puedes continuar con tu domicilio completo.</p> : null}
+    </div>
+  );
+}
+
 export function LegalOpeningCard() {
   const router = useRouter();
   const params = useSearchParams();
@@ -57,6 +135,7 @@ export function LegalOpeningCard() {
   const [profile, setProfile] = useState<LegalProfileForm>(EMPTY_PROFILE);
   const [documents, setDocuments] = useState<LegalDocument[]>([]);
   const [stage, setStage] = useState<Stage>("why");
+  const [showTaxId, setShowTaxId] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,14 +150,15 @@ export function LegalOpeningCard() {
     ]).then(([profileData, offerData]) => {
       if (profileData.profile) {
         const stored = profileData.profile as Partial<LegalProfileForm>;
-        setProfile((current) => ({ ...current, ...stored, tax_id: stored.tax_id ?? "", address_line2: stored.address_line2 ?? "", city: stored.city ?? "", state: stored.state ?? "", postal_code: stored.postal_code ?? "", contractual_email: stored.contractual_email ?? "", representative_name: stored.representative_name ?? "", representative_role: stored.representative_role ?? "", public_seller_name: stored.public_seller_name ?? "", public_privacy_contact: stored.public_privacy_contact ?? "" }));
+        setProfile((current) => ({ ...current, ...stored, tax_id: stored.tax_id ?? "", address_line2: stored.address_line2 ?? "", address_place_id: stored.address_place_id ?? "", address_latitude: stored.address_latitude ?? null, address_longitude: stored.address_longitude ?? null, city: stored.city ?? "", state: stored.state ?? "", postal_code: stored.postal_code ?? "", contractual_email: stored.contractual_email ?? "", contractual_phone: stored.contractual_phone ? formatMexicanPhoneInput(stored.contractual_phone) : "", representative_name: stored.representative_name ?? "", representative_role: stored.representative_role ?? "", public_seller_name: stored.public_seller_name ?? "", public_privacy_contact: stored.public_privacy_contact ?? "" }));
+        setShowTaxId(Boolean(stored.tax_id));
       }
       if (Array.isArray(offerData.documents)) setDocuments(offerData.documents);
     }).catch(() => setError("No pudimos cargar esta ficha. Intenta de nuevo."));
   }, [tenantId]);
 
   const set = <K extends LegalProfileField,>(field: K, value: LegalProfileForm[K]) => {
-    const normalized = field === "tax_id" ? String(value).replace(/\s/g, "").toUpperCase() : field === "contractual_phone" ? String(value).replace(/[\s()-]/g, "") : value;
+    const normalized = field === "tax_id" ? String(value).replace(/\s/g, "").toUpperCase() : field === "contractual_phone" ? formatMexicanPhoneInput(String(value)) : value;
     setProfile((current) => ({ ...current, [field]: normalized as LegalProfileForm[K] }));
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
   };
@@ -143,12 +223,52 @@ export function LegalOpeningCard() {
     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-center lg:gap-12">
       <div>
         {error ? <Notification className="mb-5" tone="error" message={error} /> : null}
-        {stage === "why" ? <><WizardStepHeading titleId={TITLE_ID} eyebrow="Antes de activar pedidos" title="Dejemos claro que este negocio es tuyo." subtitle="Nos toma menos de dos minutos y te ayuda a tener todo en orden desde el inicio." /><div className="mt-7 space-y-4 rounded-2xl border border-border bg-surface p-5 text-sm leading-6 text-muted-foreground"><p className="font-semibold text-foreground">¿Para qué te pedimos esto?</p><p>Para saber a quién contactar si algo pasa con la tienda, tus pedidos o tus datos. Nada raro: es como ponerle nombre y dirección a tu local.</p><p>Tu nombre, domicilio y teléfono quedan privados. Lo demás lo puedes completar después, cuando lo tengas a la mano.</p></div></> : null}
-        {stage === "details" ? <form noValidate onSubmit={(event) => { event.preventDefault(); void saveDetails(); }}><WizardStepHeading titleId={TITLE_ID} eyebrow="Lo esencial primero" title="¿A nombre de quién abrimos tu tienda?" subtitle="Sólo te pedimos tres datos ahora. El resto lo completas después, sin frenar tu avance." /><div className="mt-8 space-y-5"><FormInput ref={registerInput("legal_name")} label="Nombre legal" placeholder="Ana López García" autoComplete="name" icon={Landmark} value={profile.legal_name} error={fieldErrors.legal_name} onBlur={() => validateField("legal_name")} onChange={(event) => set("legal_name", event.target.value)} /><FormInput ref={registerInput("address_line1")} label="Domicilio" placeholder="Av. Reforma 123, Col. Juárez" autoComplete="street-address" icon={MapPin} value={profile.address_line1} error={fieldErrors.address_line1} onBlur={() => validateField("address_line1")} onChange={(event) => set("address_line1", event.target.value)} /><FormInput ref={registerInput("contractual_phone")} label="Teléfono" placeholder="55 1234 5678" type="tel" inputMode="tel" autoComplete="tel" icon={Phone} value={profile.contractual_phone} error={fieldErrors.contractual_phone} onBlur={() => validateField("contractual_phone")} onChange={(event) => set("contractual_phone", event.target.value)} /><div className="rounded-2xl border border-border bg-surface p-4"><FormInput ref={registerInput("tax_id")} label="RFC" optional placeholder="LOGA900101ABC" autoCapitalize="characters" maxLength={13} icon={FileText} value={profile.tax_id} error={fieldErrors.tax_id} hint="¿No lo tienes a la mano? Sigue sin problema; te lo pediremos cuando haga falta." onBlur={() => validateField("tax_id")} onChange={(event) => set("tax_id", event.target.value)} /></div></div></form> : null}
+        {stage === "why" ? <><WizardStepHeading titleId={TITLE_ID} eyebrow="Antes de activar pedidos" title="Dejemos claro que este negocio es tuyo." subtitle="Nos toma menos de dos minutos y te ayuda a tener todo en orden desde el inicio." /><div className="mt-6 space-y-3 rounded-2xl border border-border bg-surface p-4 text-sm leading-6 text-muted-foreground"><p className="font-semibold text-foreground">¿Para qué te pedimos esto?</p><p>Es como ponerle nombre y dirección a tu local: nos dice a quién contactar si algo pasa con la tienda, pedidos o datos.</p><p>Tu nombre, domicilio y teléfono quedan privados. Los <a className="font-semibold text-accent underline" href="/terminos" target="_blank" rel="noreferrer">términos</a> y el <a className="font-semibold text-accent underline" href="/privacidad" target="_blank" rel="noreferrer">aviso de privacidad</a> siempre están a la vista.</p></div></> : null}
+        {stage === "details" ? (
+          <form noValidate onSubmit={(event) => { event.preventDefault(); void saveDetails(); }}>
+            <WizardStepHeading titleId={TITLE_ID} eyebrow="Lo esencial primero" title="¿A nombre de quién abrimos tu tienda?" subtitle="Sólo te pedimos tres datos ahora. El resto lo completas después, sin frenar tu avance." />
+            <div className="mt-8 space-y-5">
+              <FormInput ref={registerInput("legal_name")} label="Nombre legal" placeholder="Ana López García" autoComplete="name" icon={Landmark} value={profile.legal_name} error={fieldErrors.legal_name} onBlur={() => validateField("legal_name")} onChange={(event) => set("legal_name", event.target.value)} />
+              <LegalAddressField
+                value={profile}
+                error={fieldErrors.address_line1}
+                inputRef={registerInput("address_line1")}
+                onBlur={() => validateField("address_line1")}
+                onChange={(patch) => {
+                  setProfile((current) => ({ ...current, ...patch }));
+                  setFieldErrors((current) => ({ ...current, address_line1: undefined }));
+                }}
+              />
+              <FormInput
+                ref={registerInput("contractual_phone")}
+                label="Teléfono"
+                placeholder="55 1234 5678"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                maxLength={12}
+                icon={Phone}
+                value={profile.contractual_phone}
+                error={fieldErrors.contractual_phone}
+                hint="Usaremos un número mexicano de 10 dígitos para contactarte si hace falta."
+                onBlur={() => validateField("contractual_phone")}
+                onChange={(event) => set("contractual_phone", event.target.value)}
+              />
+              {showTaxId ? (
+                <div className="rounded-2xl border border-border bg-surface p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm font-bold text-foreground">RFC <span className="font-medium text-muted-foreground">(opcional)</span></p><button type="button" onClick={() => { setShowTaxId(false); set("tax_id", ""); }} className="min-h-10 text-xs font-bold text-muted-foreground underline hover:text-foreground">Lo agrego después</button></div>
+                  <FormInput ref={registerInput("tax_id")} label="RFC" optional placeholder="LOGA900101ABC" autoCapitalize="characters" maxLength={13} icon={FileText} value={profile.tax_id} error={fieldErrors.tax_id} onBlur={() => validateField("tax_id")} onChange={(event) => set("tax_id", event.target.value)} />
+                </div>
+              ) : (
+                <button type="button" onClick={() => setShowTaxId(true)} className="flex min-h-12 w-full items-center justify-between rounded-2xl border border-dashed border-border bg-surface px-4 text-left text-sm font-semibold text-foreground transition-colors hover:border-accent hover:bg-accent/5"><span>¿Tienes tu RFC a la mano?</span><span className="text-xs text-muted-foreground">Opcional · agregar</span></button>
+              )}
+            </div>
+          </form>
+        ) : null}
         {stage === "agreement" ? <section><WizardStepHeading titleId={TITLE_ID} eyebrow="Último paso" title="Lee el acuerdo a tu ritmo." subtitle="Explica cómo usamos tus datos y cómo puedes salir cuando quieras." /><div className="mt-7 space-y-3">{documents.map((document) => <details key={document.id} className="rounded-2xl border border-border bg-surface p-4"><summary className="cursor-pointer list-none text-sm font-bold text-foreground">{document.title}<span className="ml-2 text-xs font-medium text-muted-foreground">v{document.version}</span></summary><p className="mt-3 whitespace-pre-line text-sm leading-6 text-muted-foreground">{document.content}</p><a className="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-accent underline" href={`/api/legal/documents/${document.id}?tenant_id=${encodeURIComponent(tenantId)}`} target="_blank" rel="noreferrer">Abrir PDF membretado</a></details>)}</div><label className="mt-5 flex cursor-pointer gap-3 rounded-2xl border border-accent/30 bg-accent/5 p-4 text-sm leading-6 text-foreground"><input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} className="mt-1 h-4 w-4 accent-[var(--accent)]" />{REPRESENTATION_DECLARATION}</label></section> : null}
         {stage === "done" ? <section><WizardStepHeading titleId={TITLE_ID} eyebrow="Todo listo" title="Ya puedes abrir pedidos." subtitle="Tu comprobante quedó guardado en Datos legales y contratos." /><div className="mt-7 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-800"><CheckCircle2 className="h-6 w-6 shrink-0" aria-hidden /><p className="text-sm font-semibold">Tu ficha de apertura y el acuerdo ya están listos.</p></div></section> : null}
       </div>
-      <div className="mt-8 lg:mt-0"><p className="mb-2 text-xs font-semibold text-muted-foreground">Tu ficha de apertura</p><LegalProfilePreview profile={profile} stage={stage} /></div>
+      <div className="hidden lg:block lg:mt-0"><p className="mb-2 text-xs font-semibold text-muted-foreground">Tu ficha de apertura</p><LegalProfilePreview profile={profile} stage={stage} /></div>
     </div>
   </WizardShell>;
 }

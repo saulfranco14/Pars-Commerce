@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { isValidMexicanPhone } from "@/lib/phone";
+
 const RFC_PATTERN = /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/;
 const MEXICAN_PHONE_PATTERN = /^(?:\+52)?\d{10}$/;
 
@@ -12,8 +14,15 @@ export const legalProfileSchema = z
       .trim()
       .toUpperCase()
       .refine((value) => !value || RFC_PATTERN.test(value), "Revisa el RFC; usa 12 o 13 caracteres sin espacios."),
-    address_line1: z.string().trim().min(5, "Escribe calle, número y colonia."),
+    address_line1: z
+      .string()
+      .trim()
+      .min(5, "Escribe calle, número y colonia.")
+      .refine((value) => /\d/.test(value), "Incluye el número exterior de tu domicilio."),
     address_line2: z.string().trim(),
+    address_place_id: z.string().trim(),
+    address_latitude: z.number().finite().nullable(),
+    address_longitude: z.number().finite().nullable(),
     city: z.string().trim(),
     state: z.string().trim(),
     postal_code: z.string().trim().refine((value) => !value || /^\d{5}$/.test(value), "El código postal debe tener 5 dígitos."),
@@ -22,7 +31,7 @@ export const legalProfileSchema = z
     contractual_phone: z
       .string()
       .trim()
-      .regex(MEXICAN_PHONE_PATTERN, "Escribe un teléfono mexicano de 10 dígitos."),
+      .refine(isValidMexicanPhone, "Escribe un teléfono mexicano de 10 dígitos."),
     representative_name: z.string().trim(),
     representative_role: z.string().trim(),
     public_seller_name: z.string().trim(),
