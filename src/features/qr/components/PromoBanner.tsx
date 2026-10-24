@@ -13,6 +13,7 @@ interface PromoBannerProps {
   promotion: QrPromotion;
   cartListTotal?: number;
   onAddPromotion?: (promotion: QrPromotion) => void;
+  className?: string;
 }
 
 /**
@@ -20,14 +21,14 @@ interface PromoBannerProps {
  * the visual proof (photo/collage + deal label) while preserving room for a
  * clear, touch-sized action inside a mobile ordering flow.
  */
-export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion }: PromoBannerProps) {
+export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, className = "" }: PromoBannerProps) {
   const label = formatPromoLabel(promotion);
   const grouped = promotion.type === "bundle_price" || promotion.type === "nxm";
   const remaining = Math.max(0, Number(promotion.min_amount ?? 0) - cartListTotal);
 
   return (
     <section
-      className="overflow-hidden rounded-2xl border border-accent/25 bg-surface shadow-sm"
+      className={`overflow-hidden rounded-2xl border border-accent/25 bg-surface shadow-sm ${className}`}
       aria-label={`Promoción: ${label}`}
     >
       <div className="relative aspect-[16/8] overflow-hidden bg-accent">

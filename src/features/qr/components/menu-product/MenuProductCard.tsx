@@ -124,7 +124,11 @@ export function MenuProductCard({
           <p className={`${d.price} font-bold tracking-tight text-accent`}>
             {formatCurrency(promotionalPrice ?? Number(product.price))}
           </p>
-          {promotionName && <p className="text-[11px] font-semibold text-amber-700">Se aplica automáticamente</p>}
+          {promotionName && (
+            <p className="text-[11px] font-semibold text-amber-700 line-clamp-1">
+              {promotionName} · se aplica automáticamente
+            </p>
+          )}
         </div>
       </button>
 

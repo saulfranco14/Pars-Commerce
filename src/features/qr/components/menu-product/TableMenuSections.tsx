@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { PanelTopClose, Search, X } from "lucide-react";
+import { PanelTopClose, Search, Tag, X } from "lucide-react";
 
 import { BrandImage } from "@/features/qr/components/BrandImage";
 import { MenuPeekRow } from "@/features/qr/components/menu-product/MenuPeekRow";
@@ -9,7 +9,6 @@ import { MenuProductCard } from "@/features/qr/components/menu-product/MenuProdu
 import { PromoBanner } from "@/features/qr/components/PromoBanner";
 import { ReorderRow } from "@/features/qr/components/menu-product/ReorderRow";
 import { ProductDetailSheet } from "@/features/qr/components/menu-product/ProductDetailSheet";
-import { interleavePromos } from "@/features/qr/helpers/interleavePromos";
 import { sectionThumbnail } from "@/features/qr/helpers/sectionThumbnail";
 import { useMenuSections } from "@/features/qr/hooks/useMenuSections";
 import { bestUnitPromotion } from "@/lib/offers/pricing";
@@ -43,7 +42,7 @@ interface TableMenuSectionsProps {
    * only products NOT ordered yet, so the two rails never repeat items.
    */
   reorderProducts?: QrSessionMenuItem[];
-  /** Active promotions to interleave as banners between menu products. */
+  /** Active promotions surfaced in one compact, scrollable offers rail. */
   promotions?: QrPromotion[];
   onAddPromotion?: (promotion: QrPromotion) => void;
   cartListTotal?: number;
@@ -75,6 +74,7 @@ export function TableMenuSections({
 }: TableMenuSectionsProps) {
   const { query, setQuery, searching, filtered, sections, totalCount } =
     useMenuSections({ products, categories });
+  const activePromotions = promotions ?? [];
 
   // Peek rail = discovery: products NOT already ordered (the reorder rail owns
   // those). Falls back to the full menu if the table ordered everything.
@@ -212,6 +212,40 @@ export function TableMenuSections({
         </div>
       )}
 
+      {/* Promotions get one intentional discovery area. Interleaving wide cards
+          inside product categories becomes noisy as soon as a business has
+          more than one offer; a horizontal rail keeps the menu's scan rhythm
+          intact while making the next promotion visibly available. */}
+      {!searching && activePromotions.length > 0 && (
+        <section className="mb-5" aria-labelledby="table-offers-heading">
+          <div className="mb-2 flex items-end justify-between gap-3">
+            <div>
+              <p id="table-offers-heading" className="flex items-center gap-1.5 text-sm font-bold text-foreground">
+                <Tag className="h-4 w-4 text-accent" aria-hidden />
+                Ofertas para ti
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Aplicamos el mejor descuento disponible.
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-bold text-accent">
+              {activePromotions.length}
+            </span>
+          </div>
+          <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {activePromotions.map((promotion) => (
+              <PromoBanner
+                key={promotion.id}
+                promotion={promotion}
+                cartListTotal={cartListTotal}
+                onAddPromotion={onAddPromotion}
+                className="w-[min(84vw,17.5rem)] shrink-0 snap-start"
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Sticky category nav — thumbnail + name. A row of bare text pills reads
           as chrome; the photo is what makes someone tap it. */}
       {showPills && (
@@ -274,7 +308,7 @@ export function TableMenuSections({
       ) : (
         /* Grouped sections */
         <div className="space-y-6">
-          {sections.map((s, si) => (
+          {sections.map((s) => (
             <section
               key={s.id}
               id={`sec-${s.id}`}
@@ -289,34 +323,20 @@ export function TableMenuSections({
                 </h3>
               )}
               <div className="space-y-2.5">
-                {/* Promos ride in the FIRST section only, so a banner set never
-                    repeats across sections. Interleaving is a pure helper. */}
-                {interleavePromos(
-                  s.products,
-                  si === 0 ? (promotions ?? []) : [],
-                ).map((entry) =>
-                  entry.kind === "promo" ? (
-                    <PromoBanner
-                      key={`promo-${entry.item.id}`}
-                      promotion={entry.item}
-                      cartListTotal={cartListTotal}
-                      onAddPromotion={onAddPromotion}
-                    />
-                  ) : (
-                    <MenuProductCard
-                      key={entry.item.id}
-                      product={entry.item}
-                      quantity={quantities[entry.item.id] ?? 0}
-                      onAdd={onAdd}
-                      onDecrement={onDecrement}
-                      onOpenDetail={setDetail}
-                      tenantLogoUrl={tenantLogoUrl}
-                      tenantName={tenantName}
-                      promotionalPrice={promotionalPrice(entry.item)?.price}
-                      promotionName={promotionalPrice(entry.item)?.name}
-                    />
-                  ),
-                )}
+                {s.products.map((item) => (
+                  <MenuProductCard
+                    key={item.id}
+                    product={item}
+                    quantity={quantities[item.id] ?? 0}
+                    onAdd={onAdd}
+                    onDecrement={onDecrement}
+                    onOpenDetail={setDetail}
+                    tenantLogoUrl={tenantLogoUrl}
+                    tenantName={tenantName}
+                    promotionalPrice={promotionalPrice(item)?.price}
+                    promotionName={promotionalPrice(item)?.name}
+                  />
+                ))}
               </div>
             </section>
           ))}
