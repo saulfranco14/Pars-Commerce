@@ -665,10 +665,63 @@ export type Database = {
           },
         ]
       }
+      order_batches: {
+        Row: {
+          created_at: string
+          customer_note: string | null
+          device_id: string | null
+          id: string
+          order_id: string
+          source: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_note?: string | null
+          device_id?: string | null
+          id?: string
+          order_id: string
+          source?: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_note?: string | null
+          device_id?: string | null
+          id?: string
+          order_id?: string
+          source?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_batches_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "order_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_batches_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_batches_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           added_by_device_id: string | null
           added_by_member_id: string | null
+          batch_id: string | null
           created_at: string
           fulfillment_status: string
           id: string
@@ -688,6 +741,7 @@ export type Database = {
         Insert: {
           added_by_device_id?: string | null
           added_by_member_id?: string | null
+          batch_id?: string | null
           created_at?: string
           fulfillment_status?: string
           id?: string
@@ -707,6 +761,7 @@ export type Database = {
         Update: {
           added_by_device_id?: string | null
           added_by_member_id?: string | null
+          batch_id?: string | null
           created_at?: string
           fulfillment_status?: string
           id?: string
@@ -724,6 +779,13 @@ export type Database = {
           offer_group_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "order_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "order_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "order_items_added_by_device_fkey"
             columns: ["added_by_device_id"]
@@ -1685,6 +1747,7 @@ export type Database = {
           min_amount: number | null
           name: string
           product_ids: string[] | null
+          sales_channels: string[]
           quantity: number | null
           slug: string | null
           subcatalog_ids: string[] | null
@@ -1711,6 +1774,7 @@ export type Database = {
           min_amount?: number | null
           name: string
           product_ids?: string[] | null
+          sales_channels?: string[]
           quantity?: number | null
           slug?: string | null
           subcatalog_ids?: string[] | null
@@ -1737,6 +1801,7 @@ export type Database = {
           min_amount?: number | null
           name?: string
           product_ids?: string[] | null
+          sales_channels?: string[]
           quantity?: number | null
           slug?: string | null
           subcatalog_ids?: string[] | null
@@ -2889,6 +2954,7 @@ export type Database = {
           kiosk_enroll_key: string | null
           logo_url: string | null
           name: string
+          onsite_promotions_enabled: boolean
           public_store_enabled: boolean
           settings: Json | null
           site_template_id: string | null
@@ -2916,6 +2982,7 @@ export type Database = {
           kiosk_enroll_key?: string | null
           logo_url?: string | null
           name: string
+          onsite_promotions_enabled?: boolean
           public_store_enabled?: boolean
           settings?: Json | null
           site_template_id?: string | null
@@ -2943,6 +3010,7 @@ export type Database = {
           kiosk_enroll_key?: string | null
           logo_url?: string | null
           name?: string
+          onsite_promotions_enabled?: boolean
           public_store_enabled?: boolean
           settings?: Json | null
           site_template_id?: string | null

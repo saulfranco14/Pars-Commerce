@@ -1,11 +1,15 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import useSWR from "swr";
 
 import { createStaffOrder } from "@/features/qr/services/staffOrderClientService";
 
 import type { CreateStaffOrderResponse } from "@/features/qr/services/staffOrderClientService";
 import type { ProductListItem } from "@/types/products";
+import type { PricingPromotion } from "@/lib/offers/pricing";
+import { priceOrder } from "@/lib/offers/orderPricing";
+import { swrFetcher } from "@/lib/swrFetcher";
 
 interface UseStaffOrderBuilderParams {
   tenantId: string;
@@ -16,6 +20,9 @@ interface UseStaffOrderBuilderParams {
 export interface StaffCartLine {
   product: ProductListItem;
   quantity: number;
+  unitPrice: number;
+  listUnitPrice: number;
+  promotionName: string | null;
 }
 
 /**
@@ -39,6 +46,16 @@ export function useStaffOrderBuilder({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CreateStaffOrderResponse | null>(null);
+  const { data: promotionRows } = useSWR<PricingPromotion[]>(
+    tenantId ? `/api/promotions?tenant_id=${encodeURIComponent(tenantId)}&active_only=true` : null,
+    swrFetcher,
+  );
+  const onsitePromotions = useMemo(
+    () => (promotionRows ?? []).filter((promotion) =>
+      !promotion.sales_channels?.length || promotion.sales_channels.includes("onsite"),
+    ),
+    [promotionRows],
+  );
 
   const add = useCallback((product: ProductListItem) => {
     setProductById((m) => ({ ...m, [product.id]: product }));
@@ -55,20 +72,24 @@ export function useStaffOrderBuilder({
     });
   }, []);
 
-  const lines = useMemo<StaffCartLine[]>(
-    () =>
-      Object.entries(qtyByProduct)
-        .map(([id, quantity]) => {
-          const product = productById[id];
-          return product ? { product, quantity } : null;
-        })
-        .filter((l): l is StaffCartLine => l !== null),
-    [qtyByProduct, productById],
-  );
+  const pricing = useMemo(() => priceOrder({
+    products: Object.values(productById).map((product) => ({ id: product.id, price: Number(product.price), subcatalog_id: product.subcatalog_id ?? null })),
+    promotions: onsitePromotions,
+    intents: Object.entries(qtyByProduct).map(([productId, quantity]) => ({ productId, quantity })),
+    channel: "onsite",
+    onsitePromotionsEnabled: true,
+  }), [onsitePromotions, productById, qtyByProduct]);
+  const lines = useMemo<StaffCartLine[]>(() => pricing.ok ? pricing.lines.map((line) => ({
+    product: productById[line.productId],
+    quantity: line.quantity,
+    unitPrice: line.unitPrice,
+    listUnitPrice: line.listUnitPrice,
+    promotionName: line.promotionName,
+  })).filter((line) => Boolean(line.product)) : [], [pricing, productById]);
 
   const total = useMemo(
-    () => lines.reduce((a, l) => a + Number(l.product.price) * l.quantity, 0),
-    [lines],
+    () => pricing.ok ? pricing.total : 0,
+    [pricing],
   );
   const itemCount = useMemo(
     () => lines.reduce((a, l) => a + l.quantity, 0),
@@ -89,6 +110,7 @@ export function useStaffOrderBuilder({
         customerName: customerName.trim() || undefined,
         tableOrderId,
         deviceId: assignedDeviceId,
+        expectedTotal: total,
       });
       setResult(res);
     } catch (e) {
@@ -96,7 +118,7 @@ export function useStaffOrderBuilder({
     } finally {
       setSubmitting(false);
     }
-  }, [lines, tenantId, customerName, tableOrderId, assignedDeviceId]);
+  }, [lines, tenantId, customerName, tableOrderId, assignedDeviceId, total]);
 
   const reset = useCallback(() => {
     setQtyByProduct({});
@@ -111,6 +133,8 @@ export function useStaffOrderBuilder({
     lines,
     qtyByProduct,
     total,
+    listTotal: pricing.ok ? pricing.listTotal : total,
+    savings: pricing.ok ? pricing.savings : 0,
     itemCount,
     customerName,
     setCustomerName,

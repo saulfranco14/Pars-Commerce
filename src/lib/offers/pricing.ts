@@ -16,6 +16,10 @@ export type PromotionStatus = "draft" | "active" | "paused" | "archived";
 
 export type PromotionAppliesTo = "products" | "subcatalogs" | "all";
 
+export type PromotionChannel = "public_store" | "onsite";
+
+export const DEFAULT_PROMOTION_CHANNELS: PromotionChannel[] = ["public_store", "onsite"];
+
 /** Types that change the unit price of an item bought on its own. */
 export const UNIT_PROMOTION_TYPES: ReadonlySet<string> = new Set(["percentage", "fixed_amount", "fixed_price"]);
 
@@ -26,6 +30,7 @@ export const MAX_PERCENTAGE_DISCOUNT = 90;
 
 export interface PricingPromotion {
   id: string;
+  name?: string | null;
   type: string;
   value: number;
   status?: string | null;
@@ -35,6 +40,13 @@ export interface PricingPromotion {
   valid_from?: string | null;
   valid_until?: string | null;
   badge_label?: string | null;
+  min_amount?: number | null;
+  sales_channels?: string[] | null;
+  quantity?: number | null;
+  buy_quantity?: number | null;
+  pay_quantity?: number | null;
+  bundle_product_ids?: string[] | null;
+  promotion_items?: Array<{ product_id: string; quantity: number; position?: number | null }> | null;
 }
 
 export interface PricingProduct {
@@ -63,6 +75,26 @@ export function isPromotionLive(
   if ((promotion.status ?? "active") !== "active") return false;
   if (promotion.valid_from && new Date(promotion.valid_from) > now) return false;
   if (promotion.valid_until && new Date(promotion.valid_until) < now) return false;
+  return true;
+}
+
+export function isPromotionAvailable(
+  promotion: PricingPromotion,
+  options: {
+    channel: PromotionChannel;
+    onsitePromotionsEnabled?: boolean;
+    cartListSubtotal?: number;
+    now?: Date;
+  },
+): boolean {
+  if (!isPromotionLive(promotion, options.now)) return false;
+  const channels = promotion.sales_channels?.length
+    ? promotion.sales_channels
+    : DEFAULT_PROMOTION_CHANNELS;
+  if (!channels.includes(options.channel)) return false;
+  if (options.channel === "onsite" && options.onsitePromotionsEnabled === false) return false;
+  const minimum = Number(promotion.min_amount ?? 0);
+  if (minimum > 0 && Number(options.cartListSubtotal ?? 0) < minimum) return false;
   return true;
 }
 
@@ -102,11 +134,18 @@ export function bestUnitPromotion(
   promotions: PricingPromotion[],
   product: PricingProduct,
   now: Date = new Date(),
+  options?: {
+    channel?: PromotionChannel;
+    onsitePromotionsEnabled?: boolean;
+    cartListSubtotal?: number;
+  },
 ): UnitPromotionResult | null {
   let best: UnitPromotionResult | null = null;
   for (const promotion of promotions) {
     if (!UNIT_PROMOTION_TYPES.has(promotion.type)) continue;
-    if (!isPromotionLive(promotion, now)) continue;
+    if (options?.channel) {
+      if (!isPromotionAvailable(promotion, { ...options, channel: options.channel, now })) continue;
+    } else if (!isPromotionLive(promotion, now)) continue;
     if (!promotionAppliesToProduct(promotion, product)) continue;
     const { finalPrice, discountPercent } = applyUnitPromotion(product.price, promotion);
     if (finalPrice >= product.price) continue;

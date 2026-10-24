@@ -29,10 +29,14 @@ interface TableCtaBarProps {
   orderId: string | null;
   entries: CartEntry[];
   total: number;
+  listTotal: number;
+  savings: number;
   itemCount: number;
   saving: boolean;
   onSend: () => void;
-  onDecrement: (productId: string) => void;
+  onRemove: (entryId: string) => void;
+  customerNote: string;
+  onCustomerNoteChange: (note: string) => void;
   /** Running total of items already sent to the business. */
   orderTotal: number;
   /** True once at least one batch has been sent to the business. */
@@ -61,10 +65,14 @@ export function TableCtaBar({
   orderId,
   entries,
   total,
+  listTotal,
+  savings,
   itemCount,
   saving,
   onSend,
-  onDecrement,
+  onRemove,
+  customerNote,
+  onCustomerNoteChange,
   orderTotal,
   hasSentItems,
   sentItems,
@@ -75,6 +83,24 @@ export function TableCtaBar({
   const [detailOpen, setDetailOpen] = useState(false);
   const hasItems = entries.length > 0;
   const reviewTotal = orderTotal + total;
+  const stagedRows = Array.from(
+    entries.reduce((groups, entry) => {
+      const key = entry.offer_group_id ?? entry.id;
+      const current = groups.get(key) ?? [];
+      current.push(entry);
+      groups.set(key, current);
+      return groups;
+    }, new Map<string, CartEntry[]>()),
+  ).map(([key, group]) => ({
+    key,
+    entries: group,
+    label: group.length > 1
+      ? group.map((entry) => `${entry.quantity}× ${entry.product_name}`).join(" + ")
+      : `${group[0].quantity}× ${group[0].product_name}`,
+    total: group.reduce((sum, entry) => sum + entry.quantity * entry.unit_price, 0),
+    listTotal: group.reduce((sum, entry) => sum + entry.quantity * entry.list_unit_price, 0),
+    promotionName: group.find((entry) => entry.promotion_name)?.promotion_name ?? null,
+  }));
 
   function goToBill() {
     if (!orderId || navigating) return;
@@ -146,7 +172,7 @@ export function TableCtaBar({
                     Pedido actual
                   </span>
                   <span className="block text-xs font-medium text-muted-foreground">
-                    {itemCount} {itemCount === 1 ? "artículo" : "artículos"} por enviar
+                  {itemCount} {itemCount === 1 ? "artículo" : "artículos"} por enviar
                   </span>
                 </span>
               </span>
@@ -155,6 +181,12 @@ export function TableCtaBar({
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </span>
             </button>
+            {savings > 0 && (
+              <div className="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+                <span>Precio normal {formatCurrency(listTotal)}</span>
+                <span>Ahorras {formatCurrency(savings)}</span>
+              </div>
+            )}
             <button
               type="button"
               onClick={onSend}
@@ -199,29 +231,39 @@ export function TableCtaBar({
               </span>
             </li>
           ))}
-          {entries.map((entry) => (
+          {stagedRows.map((row) => (
             <li
-              key={`staged-${entry.product_id}`}
+              key={`staged-${row.key}`}
               className="flex items-start justify-between gap-3 border-b border-border-soft/50 pb-2.5 last:border-0 last:pb-0"
             >
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-foreground">
-                  {entry.quantity}× {entry.product_name}
+                  {row.label}
                 </p>
                 <p className="mt-0.5 text-xs font-medium text-accent">
                   Por enviar
                 </p>
+                {row.promotionName && (
+                  <p className="mt-0.5 text-xs font-semibold text-amber-700">
+                    {row.promotionName}
+                  </p>
+                )}
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1.5">
                 <span className="text-sm font-bold text-foreground">
-                  {formatCurrency(entry.quantity * entry.unit_price)}
+                  {formatCurrency(row.total)}
                 </span>
+                {row.listTotal > row.total && (
+                  <span className="text-xs text-muted-foreground line-through">
+                    {formatCurrency(row.listTotal)}
+                  </span>
+                )}
                 <button
                   type="button"
-                  onClick={() => onDecrement(entry.product_id)}
+                  onClick={() => onRemove(row.entries[0].id)}
                   className={btnIconDanger}
-                  aria-label={`Quitar una unidad de ${entry.product_name}`}
-                  title={`Quitar una unidad de ${entry.product_name}`}
+                  aria-label={`Quitar ${row.promotionName ? "promoción" : row.label}`}
+                  title={`Quitar ${row.promotionName ? "promoción" : row.label}`}
                 >
                   <Trash2 className="h-4 w-4" aria-hidden />
                 </button>
@@ -229,6 +271,22 @@ export function TableCtaBar({
             </li>
           ))}
         </ul>
+        <label className="mt-4 block">
+          <span className="mb-1.5 block text-sm font-semibold text-foreground">
+            Indicaciones para esta tanda <span className="font-normal text-muted-foreground">(opcional)</span>
+          </span>
+          <textarea
+            value={customerNote}
+            onChange={(event) => onCustomerNoteChange(event.target.value)}
+            maxLength={500}
+            rows={3}
+            placeholder="Ej. Sin cebolla, por favor"
+            className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+          />
+          <span className="mt-1 block text-right text-xs text-muted-foreground">
+            {customerNote.length}/500
+          </span>
+        </label>
         <div className="mt-3 flex items-center justify-between px-1 text-sm">
           <span className="font-semibold text-muted-foreground">Total</span>
           <span className="font-bold text-foreground">

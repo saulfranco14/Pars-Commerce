@@ -39,6 +39,7 @@ export default async function PromocionDetallePage({ params }: PageProps) {
     .select("id, name, slug, type, value, quantity, min_amount, valid_from, valid_until, image_url, description, badge_label, product_ids, subcatalog_ids, bundle_product_ids, buy_quantity, pay_quantity")
     .eq("tenant_id", tenant.id)
     .eq("status", "active")
+    .contains("sales_channels", ["public_store"])
     .eq("slug", promoSlug)
     .maybeSingle();
 
@@ -49,6 +50,7 @@ export default async function PromocionDetallePage({ params }: PageProps) {
       .select("id, name, slug, type, value, quantity, min_amount, valid_from, valid_until, image_url, description, badge_label, product_ids, subcatalog_ids, bundle_product_ids, buy_quantity, pay_quantity")
       .eq("tenant_id", tenant.id)
       .eq("status", "active")
+      .contains("sales_channels", ["public_store"])
       .eq("id", promoSlug)
       .maybeSingle();
     promotion = byId ?? null;

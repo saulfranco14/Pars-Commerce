@@ -44,7 +44,12 @@ export interface AdminViewItem {
   product_type: string | null;
   quantity: number;
   unit_price: number;
+  list_unit_price: number;
   subtotal: number;
+  promotion_name: string | null;
+  offer_group_id: string | null;
+  batch_id: string | null;
+  batch_note: string | null;
   added_by_device_id: string | null;
   is_shared: boolean;
   created_at: string;
@@ -148,7 +153,7 @@ export async function getTableAdminView(
     admin
       .from("order_items")
       .select(
-        "id, product_id, quantity, unit_price, subtotal, added_by_device_id, is_shared, created_at, fulfillment_status",
+        "id, product_id, quantity, unit_price, list_unit_price, subtotal, promotion_id, offer_group_id, batch_id, added_by_device_id, is_shared, created_at, fulfillment_status",
       )
       .eq("order_id", orderId)
       .order("created_at", { ascending: true }),
@@ -201,6 +206,27 @@ export async function getTableAdminView(
     );
   }
 
+  const promotionIds = Array.from(
+    new Set((rawItems ?? []).map((item) => item.promotion_id).filter((id): id is string => !!id)),
+  );
+  const batchIds = Array.from(
+    new Set((rawItems ?? []).map((item) => item.batch_id).filter((id): id is string => !!id)),
+  );
+  const [{ data: promotionRows }, { data: batchRows }] = await Promise.all([
+    promotionIds.length > 0
+      ? admin.from("promotions").select("id, name").in("id", promotionIds)
+      : Promise.resolve({ data: [] }),
+    batchIds.length > 0
+      ? admin.from("order_batches").select("id, customer_note").in("id", batchIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+  const promotionNames = new Map(
+    (promotionRows ?? []).map((row) => [row.id as string, row.name as string]),
+  );
+  const batchNotes = new Map(
+    (batchRows ?? []).map((row) => [row.id as string, row.customer_note as string | null]),
+  );
+
   const items: AdminViewItem[] = (rawItems ?? []).map((item) => ({
     id: item.id,
     product_id: item.product_id,
@@ -208,7 +234,14 @@ export async function getTableAdminView(
     product_type: productMetaById.get(item.product_id)?.type ?? null,
     quantity: Number(item.quantity),
     unit_price: Number(item.unit_price),
+    list_unit_price: Number(item.list_unit_price ?? item.unit_price),
     subtotal: Number(item.subtotal),
+    promotion_name: item.promotion_id
+      ? promotionNames.get(item.promotion_id) ?? "Promoción"
+      : null,
+    offer_group_id: item.offer_group_id ?? null,
+    batch_id: item.batch_id ?? null,
+    batch_note: item.batch_id ? batchNotes.get(item.batch_id) ?? null : null,
     added_by_device_id: item.added_by_device_id,
     is_shared: item.is_shared === true,
     created_at: item.created_at,

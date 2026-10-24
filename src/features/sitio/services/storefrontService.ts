@@ -136,10 +136,11 @@ export const getActivePromotions = cache(async (tenantId: string): Promise<Activ
   const { data } = await db()
     .from("promotions")
     .select(
-      "id, name, slug, type, value, quantity, min_amount, product_ids, bundle_product_ids, subcatalog_ids, applies_to, buy_quantity, pay_quantity, status, badge_label, valid_from, valid_until, image_url",
+      "id, name, slug, type, value, quantity, min_amount, product_ids, bundle_product_ids, subcatalog_ids, applies_to, buy_quantity, pay_quantity, status, badge_label, valid_from, valid_until, image_url, sales_channels",
     )
     .eq("tenant_id", tenantId)
     .eq("status", "active")
+    .contains("sales_channels", ["public_store"])
     .order("created_at", { ascending: false });
   const now = new Date();
   const live = ((data ?? []) as ActivePromotion[])

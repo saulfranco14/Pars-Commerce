@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { CalendarRange, FileText, Layers, Tag } from "lucide-react";
+import { CalendarRange, FileText, Globe2, Layers, Tag } from "lucide-react";
 
 import { Notification } from "@/components/ui/Notification";
 import { WizardStepHeading } from "@/components/wizard/WizardStepHeading";
@@ -65,6 +65,15 @@ export function ReviewStep({
     { icon: Tag, term: "Tipo", detail: `${mechanic?.title ?? ""} · ${label}` },
     { icon: Layers, term: values.mechanic === "bundle_price" ? "Incluye" : "Aplica a", detail: describeScope(values, itemsById, subcatalogs) },
     { icon: CalendarRange, term: "Vigencia", detail: describeValidity(values) },
+    {
+      icon: Globe2,
+      term: "Disponible en",
+      detail: values.salesChannels.length === 2
+        ? "Sitio web y ventas en el local"
+        : values.salesChannels[0] === "onsite"
+          ? "Ventas en el local"
+          : "Sitio web",
+    },
     ...(values.description.trim() ? [{ icon: FileText, term: "Descripción", detail: values.description.trim() }] : []),
   ];
 
@@ -74,7 +83,7 @@ export function ReviewStep({
         titleId={OFFER_WIZARD_TITLE_ID}
         eyebrow="Revisar"
         title={isEdit ? "¿Guardamos los cambios?" : "Todo listo para publicar"}
-        subtitle="Así la verán tus clientes en la tienda y en el carrito."
+        subtitle="Así la verán tus clientes en los canales que elegiste."
       />
 
       <div className="overflow-hidden rounded-3xl border border-border bg-surface shadow-sm">

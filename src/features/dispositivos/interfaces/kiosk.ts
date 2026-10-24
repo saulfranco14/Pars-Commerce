@@ -2,6 +2,7 @@ import type { RequestedItem } from "@/features/qr/helpers/buildOrderItemRows";
 import type { BusinessHours } from "@/features/configuracion/interfaces/businessHours";
 import type { PickupSchedulingConfig } from "@/features/checkout/interfaces/pickupSchedule";
 import type { MenuItem } from "@/features/qr/interfaces/tableCart";
+import type { QrPromotion } from "@/features/qr/interfaces/promotion";
 
 /**
  * Una categoría del catálogo con una foto representativa: la rejilla de
@@ -20,6 +21,7 @@ export interface KioskCatalog {
   deviceName: string | null;
   acceptingOrders: boolean;
   products: MenuItem[];
+  promotions: QrPromotion[];
   categories: KioskCategory[];
   pickupScheduling: PickupSchedulingConfig;
   businessHours: BusinessHours | null;
@@ -34,6 +36,7 @@ export interface CreateKioskOrderInput {
   customerName?: string | null;
   /** ISO de la hora de recolección, o `null` para "cuando esté listo". */
   scheduledFor?: string | null;
+  expectedTotal?: number;
 }
 
 export interface CreateKioskOrderResult {

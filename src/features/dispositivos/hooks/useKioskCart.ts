@@ -2,71 +2,55 @@
 
 import { useCallback, useMemo, useState } from "react";
 
+import { priceOrder } from "@/lib/offers/orderPricing";
 import type { MenuItem } from "@/features/qr/interfaces/tableCart";
+import type { QrPromotion } from "@/features/qr/interfaces/promotion";
 
 export interface KioskCartLine {
   product: MenuItem;
   quantity: number;
+  unitPrice: number;
+  listUnitPrice: number;
+  promotionName: string | null;
 }
 
-/**
- * Carrito de la pantalla de autoservicio: cantidades por producto y los totales
- * derivados. Vive en un hook porque tres componentes lo leen (rejilla, panel y
- * barra) y ninguno debe recalcular el total por su cuenta.
- */
-export function useKioskCart(products: MenuItem[]) {
+export function useKioskCart(products: MenuItem[], promotions: QrPromotion[] = []) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-
-  const add = useCallback((productId: string, qty = 1) => {
-    setQuantities((m) => ({ ...m, [productId]: (m[productId] ?? 0) + qty }));
-  }, []);
-
-  const decrement = useCallback((productId: string) => {
-    setQuantities((m) => {
-      const next = { ...m };
-      const left = (next[productId] ?? 0) - 1;
-      if (left <= 0) delete next[productId];
-      else next[productId] = left;
-      return next;
-    });
-  }, []);
-
-  const removeLine = useCallback((productId: string) => {
-    setQuantities((m) => {
-      const next = { ...m };
-      delete next[productId];
-      return next;
-    });
-  }, []);
-
+  const add = useCallback((productId: string, qty = 1) => setQuantities((map) => ({ ...map, [productId]: (map[productId] ?? 0) + qty })), []);
+  const decrement = useCallback((productId: string) => setQuantities((map) => {
+    const next = { ...map };
+    const left = (next[productId] ?? 0) - 1;
+    if (left <= 0) delete next[productId]; else next[productId] = left;
+    return next;
+  }), []);
+  const removeLine = useCallback((productId: string) => setQuantities((map) => {
+    const next = { ...map }; delete next[productId]; return next;
+  }), []);
   const clear = useCallback(() => setQuantities({}), []);
 
-  const lines = useMemo(() => {
-    const byId = new Map(products.map((p) => [p.id, p]));
-    return Object.entries(quantities).flatMap(([id, quantity]) => {
-      const product = byId.get(id);
-      return product ? [{ product, quantity }] : [];
-    });
-  }, [quantities, products]);
-
-  const total = useMemo(
-    () =>
-      lines.reduce((sum, l) => sum + Number(l.product.price) * l.quantity, 0),
-    [lines],
-  );
-  const itemCount = useMemo(
-    () => lines.reduce((sum, l) => sum + l.quantity, 0),
-    [lines],
-  );
+  const pricing = useMemo(() => priceOrder({
+    products: products.map((product) => ({ id: product.id, price: Number(product.price), subcatalog_id: product.subcatalog_id ?? null })),
+    promotions,
+    intents: Object.entries(quantities).map(([productId, quantity]) => ({ productId, quantity })),
+    channel: "onsite",
+    onsitePromotionsEnabled: true,
+  }), [products, promotions, quantities]);
+  const byId = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
+  const lines = useMemo<KioskCartLine[]>(() => pricing.ok ? pricing.lines.map((line) => ({
+    product: byId.get(line.productId)!,
+    quantity: line.quantity,
+    unitPrice: line.unitPrice,
+    listUnitPrice: line.listUnitPrice,
+    promotionName: line.promotionName,
+  })).filter((line) => Boolean(line.product)) : [], [byId, pricing]);
 
   return {
     quantities,
     lines,
-    total,
-    itemCount,
-    add,
-    decrement,
-    removeLine,
-    clear,
+    total: pricing.ok ? pricing.total : 0,
+    listTotal: pricing.ok ? pricing.listTotal : 0,
+    savings: pricing.ok ? pricing.savings : 0,
+    itemCount: lines.reduce((sum, line) => sum + line.quantity, 0),
+    add, decrement, removeLine, clear,
   };
 }

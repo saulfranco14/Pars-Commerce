@@ -29,6 +29,7 @@ import { ConfigDireccionSection } from "@/features/configuracion/components/conf
 import { ConfigRecurrentesSection } from "@/features/configuracion/components/config-sections/ConfigRecurrentesSection";
 import { ConfigAgendaSection } from "@/features/configuracion/components/config-sections/ConfigAgendaSection";
 import { ConfigHorariosSection } from "@/features/configuracion/components/config-sections/ConfigHorariosSection";
+import { ConfigPromotionsSection } from "@/features/configuracion/components/config-sections/ConfigPromotionsSection";
 import { ConfigDispositivosSection } from "@/features/dispositivos/components/ConfigDispositivosSection";
 import { DEVICE_PERMISSIONS } from "@/features/dispositivos/constants/devicePermissions";
 import { readBusinessHours } from "@/features/configuracion/helpers/businessHours";
@@ -97,6 +98,7 @@ export default function ConfiguracionPage() {
   const [pickupMinLead, setPickupMinLead] = useState("30");
   const [pickupMaxDays, setPickupMaxDays] = useState("7");
   const [acceptingOrders, setAcceptingOrders] = useState(true);
+  const [onsitePromotionsEnabled, setOnsitePromotionsEnabled] = useState(true);
   const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -173,8 +175,9 @@ export default function ConfiguracionPage() {
     setPickupMinLead(String(ps.minLeadMinutes));
     setPickupMaxDays(String(ps.maxDaysAhead));
     setAcceptingOrders(activeTenant.accepting_orders !== false);
+    setOnsitePromotionsEnabled(activeTenant.onsite_promotions_enabled !== false);
     setBusinessHours(readBusinessHours(st));
-  }, [activeTenant?.id]);
+  }, [activeTenant]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -241,6 +244,7 @@ export default function ConfiguracionPage() {
             ? n
             : undefined;
         })(),
+        onsite_promotions_enabled: onsitePromotionsEnabled,
       });
       setSuccess(true);
       const list = (await listTenants()) as MembershipItem[];
@@ -367,6 +371,13 @@ export default function ConfiguracionPage() {
                 onMonthlyRentChange={setMonthlyRent}
                 monthlySalesObjective={monthlySalesObjective}
                 onMonthlySalesObjectiveChange={setMonthlySalesObjective}
+              />
+            )}
+            {activeTab === "promociones" && (
+              <ConfigPromotionsSection
+                enabled={onsitePromotionsEnabled}
+                onEnabledChange={setOnsitePromotionsEnabled}
+                tenantSlug={tenantSlug}
               />
             )}
             {activeTab === "recurrentes" && (
