@@ -91,7 +91,7 @@ export default function DashboardLayout({
     );
   }
 
-  if (isPreparingBusiness) {
+  if (isPreparingBusiness || pathname === "/dashboard/legal") {
     return <div className="min-h-screen bg-white">{children}</div>;
   }
 

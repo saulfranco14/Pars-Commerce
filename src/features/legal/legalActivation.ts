@@ -20,11 +20,27 @@ export const LEGAL_REPRESENTATION_DECLARATION =
 
 export type LegalPartyInput = Omit<
   LegalProfileForm,
-  "address_line2" | "representative_name" | "representative_role"
+  | "tax_id"
+  | "address_line2"
+  | "city"
+  | "state"
+  | "postal_code"
+  | "contractual_email"
+  | "representative_name"
+  | "representative_role"
+  | "public_seller_name"
+  | "public_privacy_contact"
 > & {
+  tax_id?: string | null;
   address_line2?: string;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
+  contractual_email?: string | null;
   representative_name?: string;
   representative_role?: string;
+  public_seller_name?: string | null;
+  public_privacy_contact?: string | null;
 };
 
 export function asLegalAdmin(client: unknown): Admin {
@@ -48,12 +64,17 @@ export function cleanLegalProfile(input: unknown): LegalPartyInput | null {
   if (!parsed.success) return null;
   return {
     ...parsed.data,
+    tax_id: parsed.data.tax_id || null,
     address_line2: parsed.data.address_line2 || undefined,
+    city: parsed.data.city || null,
+    state: parsed.data.state || null,
+    postal_code: parsed.data.postal_code || null,
     representative_name: parsed.data.representative_name || undefined,
     representative_role: parsed.data.representative_role || undefined,
-    contractual_email: parsed.data.contractual_email.toLowerCase(),
+    contractual_email: parsed.data.contractual_email.toLowerCase() || null,
     contractual_phone: parsed.data.contractual_phone.replace(/[\s()-]/g, ""),
-    public_privacy_contact: parsed.data.public_privacy_contact.trim(),
+    public_seller_name: parsed.data.public_seller_name || null,
+    public_privacy_contact: parsed.data.public_privacy_contact.trim() || null,
   };
 }
 
@@ -196,8 +217,8 @@ export async function createAcceptancePdf(input: {
   y -= 10;
   write(`Negocio: ${input.tenantName}`, 11, true);
   write(`Contratante: ${input.profile.legal_name}`, 10);
-  write(`RFC: ${input.profile.tax_id}`, 10);
-  write(`Contacto contractual: ${input.profile.contractual_email}`, 10);
+  write(`RFC: ${input.profile.tax_id ?? "Pendiente"}`, 10);
+  write(`Contacto contractual: ${input.profile.contractual_email ?? "Pendiente"}`, 10);
   if (input.profile.representative_name) write(`Representante: ${input.profile.representative_name} · ${input.profile.representative_role ?? ""}`, 10);
   y -= 10;
   write("Documentos aceptados", 11, true);
