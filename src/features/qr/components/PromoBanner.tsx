@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Clock, Plus } from "lucide-react";
 
+import { formatOfferDeadline } from "@/lib/offers/formatOfferLabel";
 import { formatPromoLabel } from "@/features/qr/helpers/formatPromoLabel";
 import { PromotionCollage } from "@/features/promociones/components/PromotionCollage";
 import { promotionCollageLabel } from "@/features/promociones/helpers/promotionVisual";
@@ -24,6 +25,7 @@ export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, clas
   const label = formatPromoLabel(promotion);
   const grouped = promotion.type === "bundle_price" || promotion.type === "nxm";
   const remaining = Math.max(0, Number(promotion.min_amount ?? 0) - cartListTotal);
+  const deadline = formatOfferDeadline(promotion.valid_until);
   const fallbackDetail = promotion.type === "nxm"
     ? `Lleva ${promotion.buy_quantity ?? ""} y paga ${promotion.pay_quantity ?? ""}`
     : grouped
@@ -65,7 +67,7 @@ export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, clas
       <div className="flex min-w-0 flex-1 flex-col p-3">
         <p className="flex items-center gap-1 text-[10px] font-bold text-accent">
           <Clock className="h-3.5 w-3.5" aria-hidden />
-          {promotion.valid_until ? "Vigente por tiempo limitado" : "Disponible ahora"}
+          {deadline ? `Hasta el ${deadline}` : "Vigente por tiempo limitado"}
         </p>
         <p className="mt-1 line-clamp-2 min-h-10 text-sm font-bold leading-5 text-foreground">{promotion.name}</p>
         <p className="mt-1 line-clamp-2 text-[10px] leading-3.5 text-muted-foreground">{detail}</p>
