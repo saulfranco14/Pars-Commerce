@@ -73,6 +73,7 @@ export function TableQRClient({
   });
   const cart = useTableCart({
     menu,
+    promotions,
     qrToken: token,
     fingerprint,
     displayName: naming.deviceName,
@@ -86,6 +87,11 @@ export function TableQRClient({
     if (sent) {
       await onSessionRefresh();
       if (!isOwner) setResponsibilityOpen(true);
+    } else {
+      // A 409 price conflict keeps the cart/note intact. Refreshing the session
+      // brings in the new promotion rules so the shared engine redraws the
+      // breakdown before the customer tries again.
+      await onSessionRefresh();
     }
   }
 
@@ -283,10 +289,14 @@ export function TableQRClient({
           orderId={order?.id ?? null}
           entries={cart.entries}
           total={cart.total}
+          listTotal={cart.listTotal}
+          savings={cart.savings}
           itemCount={cart.itemCount}
           saving={cart.saving}
           onSend={sendCart}
-          onDecrement={cart.decrement}
+          onRemove={cart.remove}
+          customerNote={cart.customerNote}
+          onCustomerNoteChange={cart.setCustomerNote}
           orderTotal={tracker.total}
           hasSentItems={!!tracker.items && tracker.items.length > 0}
           sentItems={tracker.items}
@@ -399,6 +409,8 @@ export function TableQRClient({
         onAdd={cart.add}
         onAddMany={cart.addMany}
         onDecrement={cart.decrement}
+        onAddPromotion={cart.addPromotion}
+        cartListTotal={cart.listTotal}
         quantities={cart.quantitiesByProduct}
         tenantLogoUrl={tenant.logo_url}
         tenantName={tenant.name}

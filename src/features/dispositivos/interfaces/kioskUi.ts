@@ -51,6 +51,8 @@ export interface KioskProductDialogProps {
 export interface KioskCartPanelProps {
   lines: KioskCartLine[];
   total: number;
+  listTotal: number;
+  savings: number;
   itemCount: number;
   onAdd: (productId: string) => void;
   onDecrement: (productId: string) => void;

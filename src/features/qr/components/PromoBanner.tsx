@@ -9,6 +9,8 @@ import type { QrPromotion } from "@/features/qr/interfaces/promotion";
 
 interface PromoBannerProps {
   promotion: QrPromotion;
+  cartListTotal?: number;
+  onAddPromotion?: (promotion: QrPromotion) => void;
 }
 
 /**
@@ -19,8 +21,10 @@ interface PromoBannerProps {
  * Uses the QR design tokens (accent-tinted surface, rounded-2xl) so it sits
  * naturally among the product cards. Neutral/multi-business.
  */
-export function PromoBanner({ promotion }: PromoBannerProps) {
+export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion }: PromoBannerProps) {
   const label = formatPromoLabel(promotion);
+  const grouped = promotion.type === "bundle_price" || promotion.type === "nxm";
+  const remaining = Math.max(0, Number(promotion.min_amount ?? 0) - cartListTotal);
 
   return (
     <section
@@ -51,6 +55,21 @@ export function PromoBanner({ promotion }: PromoBannerProps) {
           <p className="truncate text-xs text-muted-foreground">
             {promotion.description}
           </p>
+        )}
+        {remaining > 0 ? (
+          <p className="mt-1 text-xs font-semibold text-amber-700">
+            Agrega ${remaining.toFixed(2)} para activarla
+          </p>
+        ) : grouped ? (
+          <button
+            type="button"
+            onClick={() => onAddPromotion?.(promotion)}
+            className="mt-2 min-h-11 rounded-xl bg-accent px-4 text-xs font-bold text-accent-foreground shadow-sm transition active:scale-[0.98]"
+          >
+            {promotion.type === "nxm" ? `Agregar ${promotion.buy_quantity ?? "promoción"}×${promotion.pay_quantity ?? ""}` : "Agregar paquete"}
+          </button>
+        ) : (
+          <p className="mt-1 text-xs font-semibold text-amber-700">Se aplica automáticamente</p>
         )}
       </div>
     </section>

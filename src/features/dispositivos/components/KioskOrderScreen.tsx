@@ -20,6 +20,7 @@ import { useKioskCart } from "@/features/dispositivos/hooks/useKioskCart";
 import { createKioskOrder } from "@/features/dispositivos/services/kioskClientService";
 import { DEFAULT_IDLE_RESET_SECONDS } from "@/features/dispositivos/constants/kiosk";
 import { swrFetcher } from "@/lib/swrFetcher";
+import { bestUnitPromotion } from "@/lib/offers/pricing";
 
 import type { KioskCatalog } from "@/features/dispositivos/interfaces/kiosk";
 import type { MenuItem } from "@/features/qr/interfaces/tableCart";
@@ -49,7 +50,21 @@ export function KioskOrderScreen() {
   // Memoizado: el `[]` del caso vacío sería un array nuevo en cada render.
   const products = useMemo(() => data?.products ?? [], [data]);
   const categories = useMemo(() => data?.categories ?? [], [data]);
-  const cart = useKioskCart(products);
+  const cart = useKioskCart(products, data?.promotions ?? []);
+  const displayProducts = useMemo(() => products.map((product) => {
+    const best = bestUnitPromotion(
+      data?.promotions ?? [],
+      { id: product.id, price: Number(product.price), subcatalog_id: product.subcatalog_id ?? null },
+      new Date(),
+      { channel: "onsite", onsitePromotionsEnabled: true, cartListSubtotal: cart.listTotal },
+    );
+    return best ? {
+      ...product,
+      list_price: Number(product.price),
+      price: best.finalPrice,
+      promotion_name: data?.promotions.find((promotion) => promotion.id === best.promotionId)?.name ?? "Promoción",
+    } : product;
+  }), [cart.listTotal, data?.promotions, products]);
 
   const reset = useCallback(() => {
     cart.clear();
@@ -83,9 +98,9 @@ export function KioskOrderScreen() {
   const shown = useMemo(
     () =>
       category === "all"
-        ? products
-        : products.filter((p) => p.subcatalog_id === category),
-    [products, category],
+        ? displayProducts
+        : displayProducts.filter((p) => p.subcatalog_id === category),
+    [displayProducts, category],
   );
 
   async function confirm() {
@@ -98,6 +113,7 @@ export function KioskOrderScreen() {
           quantity: l.quantity,
         })),
         scheduledFor || null,
+        cart.total,
       );
       setTicket({
         orderNumber: res.order_number,
@@ -157,6 +173,8 @@ export function KioskOrderScreen() {
     <KioskCartPanel
       lines={cart.lines}
       total={cart.total}
+      listTotal={cart.listTotal}
+      savings={cart.savings}
       itemCount={cart.itemCount}
       onAdd={cart.add}
       onDecrement={cart.decrement}

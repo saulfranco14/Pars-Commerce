@@ -12,6 +12,7 @@ import { ProductDetailSheet } from "@/features/qr/components/menu-product/Produc
 import { interleavePromos } from "@/features/qr/helpers/interleavePromos";
 import { sectionThumbnail } from "@/features/qr/helpers/sectionThumbnail";
 import { useMenuSections } from "@/features/qr/hooks/useMenuSections";
+import { bestUnitPromotion } from "@/lib/offers/pricing";
 
 import type { MenuItem } from "@/features/qr/interfaces/tableCart";
 import type { QrPromotion } from "@/features/qr/interfaces/promotion";
@@ -44,6 +45,8 @@ interface TableMenuSectionsProps {
   reorderProducts?: QrSessionMenuItem[];
   /** Active promotions to interleave as banners between menu products. */
   promotions?: QrPromotion[];
+  onAddPromotion?: (promotion: QrPromotion) => void;
+  cartListTotal?: number;
 }
 
 /**
@@ -67,6 +70,8 @@ export function TableMenuSections({
   startCollapsed = false,
   reorderProducts,
   promotions,
+  onAddPromotion,
+  cartListTotal = 0,
 }: TableMenuSectionsProps) {
   const { query, setQuery, searching, filtered, sections, totalCount } =
     useMenuSections({ products, categories });
@@ -93,6 +98,14 @@ export function TableMenuSections({
   // Search is available whenever the menu is open and there's more than a
   // handful of products (a search box over 3 items is noise).
   const showSearch = totalCount >= 5 && expanded;
+  const promotionalPrice = (product: QrSessionMenuItem) => {
+    const best = bestUnitPromotion(promotions ?? [], {
+      id: product.id,
+      price: Number(product.price),
+      subcatalog_id: product.subcatalog_id ?? null,
+    }, new Date(), { channel: "onsite", onsitePromotionsEnabled: true, cartListSubtotal: cartListTotal });
+    return best ? { price: best.finalPrice, name: promotions?.find((promotion) => promotion.id === best.promotionId)?.name ?? null } : null;
+  };
 
   // Highlight the pill for the section currently at the top of the viewport.
   useEffect(() => {
@@ -252,6 +265,8 @@ export function TableMenuSections({
                 onOpenDetail={setDetail}
                 tenantLogoUrl={tenantLogoUrl}
                 tenantName={tenantName}
+                promotionalPrice={promotionalPrice(item)?.price}
+                promotionName={promotionalPrice(item)?.name}
               />
             ))}
           </div>
@@ -284,6 +299,8 @@ export function TableMenuSections({
                     <PromoBanner
                       key={`promo-${entry.item.id}`}
                       promotion={entry.item}
+                      cartListTotal={cartListTotal}
+                      onAddPromotion={onAddPromotion}
                     />
                   ) : (
                     <MenuProductCard
@@ -295,6 +312,8 @@ export function TableMenuSections({
                       onOpenDetail={setDetail}
                       tenantLogoUrl={tenantLogoUrl}
                       tenantName={tenantName}
+                      promotionalPrice={promotionalPrice(entry.item)?.price}
+                      promotionName={promotionalPrice(entry.item)?.name}
                     />
                   ),
                 )}

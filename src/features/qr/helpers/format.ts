@@ -31,10 +31,23 @@ export interface ItemBatch<T> {
   items: T[];
 }
 
-export function groupIntoBatches<T extends { created_at: string | null }>(
+export function groupIntoBatches<T extends { created_at: string | null; batch_id?: string | null }>(
   items: T[],
   windowMs = 2 * 60 * 1000,
 ): ItemBatch<T>[] {
+  const hasStoredBatches = items.some((item) => item.batch_id);
+  if (hasStoredBatches) {
+    const byBatch = new Map<string, ItemBatch<T>>();
+    for (const item of items) {
+      const key = item.batch_id ?? `legacy-${item.created_at ?? "unknown"}`;
+      const current = byBatch.get(key) ?? { at: item.created_at, items: [] };
+      current.items.push(item);
+      byBatch.set(key, current);
+    }
+    return [...byBatch.values()].sort((left, right) =>
+      new Date(left.at ?? 0).getTime() - new Date(right.at ?? 0).getTime(),
+    );
+  }
   const withTime = items.filter((i) => i.created_at);
   const withoutTime = items.filter((i) => !i.created_at);
 

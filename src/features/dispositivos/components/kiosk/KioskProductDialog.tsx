@@ -56,7 +56,7 @@ export function KioskProductDialog({
           <button
             type="button"
             onClick={handleAdd}
-            className="inline-flex min-h-16 flex-1 cursor-pointer items-center justify-center gap-3 rounded-2xl bg-accent px-8 text-xl font-bold text-accent-foreground shadow-lg shadow-accent/25 transition-all hover:bg-accent/90 active:scale-[0.99]"
+            className="inline-flex min-h-16 flex-1 cursor-pointer items-center justify-center gap-3 rounded-2xl bg-accent px-8 text-xl font-bold text-accent-foreground shadow-lg shadow-accent/25 transition-[background-color,transform,box-shadow] hover:bg-accent/90 active:scale-[0.99]"
           >
             <ShoppingBag className="h-6 w-6 shrink-0" aria-hidden />
             Agregar · {formatCurrency(lineTotal)}
@@ -88,6 +88,12 @@ export function KioskProductDialog({
             <p className="mt-2 text-4xl font-bold tracking-tight text-accent">
               {formatCurrency(Number(product.price))}
             </p>
+            {product.list_price != null && product.list_price > Number(product.price) && (
+              <>
+                <p className="text-lg text-muted-foreground line-through">{formatCurrency(product.list_price)}</p>
+                <p className="text-base font-semibold text-amber-700">{product.promotion_name}</p>
+              </>
+            )}
           </div>
 
           {product.description && (

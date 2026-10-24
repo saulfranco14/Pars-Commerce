@@ -17,6 +17,7 @@ interface RequestBody {
   table_order_id?: string;
   /** Person already connected to the table who owns these new lines. */
   device_id?: string;
+  expected_total?: number;
 }
 
 /**
@@ -68,6 +69,7 @@ export async function POST(request: Request) {
     customerPhone: body.customer_phone ?? null,
     tableOrderId: body.table_order_id ?? null,
     deviceId: body.device_id ?? null,
+    expectedTotal: body.expected_total,
   });
 
   if (!result.ok) return serviceErrorToResponse(result.error);

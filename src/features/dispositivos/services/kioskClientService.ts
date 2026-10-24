@@ -13,9 +13,10 @@ export interface KioskOrderResponse {
 export async function createKioskOrder(
   items: RequestedItem[],
   scheduledFor: string | null,
+  expectedTotal: number,
 ): Promise<KioskOrderResponse> {
   return (await apiFetch("/api/kiosk/order", {
     method: "POST",
-    body: JSON.stringify({ items, scheduled_for: scheduledFor }),
+    body: JSON.stringify({ items, scheduled_for: scheduledFor, expected_total: expectedTotal }),
   })) as KioskOrderResponse;
 }

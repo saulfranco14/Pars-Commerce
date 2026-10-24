@@ -20,6 +20,7 @@ import {
   type RequestedItem,
 } from "@/features/qr/helpers/buildOrderItemRows";
 import { validateOrderStock } from "@/features/inventory/services/orderStockValidationService";
+import { loadOnsitePriceSnapshots } from "@/lib/offers/onsitePricingService";
 
 import type {
   ServiceError,
@@ -46,6 +47,7 @@ export interface CreateStaffOrderInput {
   tableOrderId?: string | null;
   /** Connected table user who owns the lines added by staff. */
   deviceId?: string | null;
+  expectedTotal?: number;
 }
 
 export interface CreateStaffOrderResult {
@@ -77,6 +79,14 @@ export async function createStaffOrder(
 
   const priceByProduct = new Map<string, number>();
   for (const p of products ?? []) priceByProduct.set(p.id, Number(p.price));
+  const priceSnapshots = await loadOnsitePriceSnapshots(admin, input.tenantId, valid);
+  const previewTotal = valid.reduce((sum, item) => {
+    const snapshot = priceSnapshots.get(item.product_id);
+    return sum + Number(snapshot?.unitPrice ?? priceByProduct.get(item.product_id) ?? 0) * Number(item.quantity);
+  }, 0);
+  if (input.expectedTotal !== undefined && Math.abs(Number(input.expectedTotal) - previewTotal) >= 0.005) {
+    return err("conflict", "El precio del pedido cambió. Revisa el nuevo total antes de continuar.");
+  }
 
   const stockValidation = await validateOrderStock(
     admin,
@@ -86,9 +96,9 @@ export async function createStaffOrder(
   if (!stockValidation.ok) return err("conflict", stockValidation.message);
 
   if (input.tableOrderId) {
-    return appendToTableOrder(admin, input, valid, priceByProduct);
+    return appendToTableOrder(admin, input, valid, priceByProduct, priceSnapshots);
   }
-  return createCounterOrder(admin, input, valid, priceByProduct);
+  return createCounterOrder(admin, input, valid, priceByProduct, priceSnapshots);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -100,6 +110,7 @@ async function createCounterOrder(
   input: CreateStaffOrderInput,
   items: RequestedItem[],
   priceByProduct: Map<string, number>,
+  priceSnapshotsByProduct: Awaited<ReturnType<typeof loadOnsitePriceSnapshots>>,
 ): Promise<ServiceResult<CreateStaffOrderResult>> {
   const now = new Date().toISOString();
 
@@ -132,6 +143,7 @@ async function createCounterOrder(
     orderId: order.id,
     items,
     priceByProduct,
+    priceSnapshotsByProduct,
     addedByMemberId: input.actorMembershipId,
   });
   if (rows.length === 0) {
@@ -217,6 +229,7 @@ async function appendToTableOrder(
   input: CreateStaffOrderInput,
   items: RequestedItem[],
   priceByProduct: Map<string, number>,
+  priceSnapshotsByProduct: Awaited<ReturnType<typeof loadOnsitePriceSnapshots>>,
 ): Promise<ServiceResult<CreateStaffOrderResult>> {
   const { data: order } = await admin
     .from("orders")
@@ -246,6 +259,7 @@ async function appendToTableOrder(
     orderId: order.id,
     items,
     priceByProduct,
+    priceSnapshotsByProduct,
     addedByMemberId: input.actorMembershipId,
     addedByDeviceId: input.deviceId ?? null,
     originTableLabel: order.table_label ?? null,
