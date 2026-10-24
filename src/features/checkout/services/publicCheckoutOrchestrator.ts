@@ -39,6 +39,7 @@ import { repriceCartPlans } from "@/features/checkout/services/cartPlanService";
 import { attachPlansToOrder, clearCartPlans, loadCheckoutPlans } from "@/features/checkout/services/planCheckoutService";
 import { planChargeItems, planCheckoutProblem, plansTotal } from "@/features/checkout/helpers/planCheckout";
 import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
+import { asLegalAdmin, documentHash, getTenantPurchaseDocuments, hasTenantLegalAcceptance, shouldEnforceExistingLegalActivation } from "@/features/legal/legalActivation";
 
 import type { RecurringPurchasesConfig } from "@/types/subscriptions";
 
@@ -111,6 +112,21 @@ export async function executePublicCheckout({
       },
       { status: 409 },
     );
+  }
+  if (shouldEnforceExistingLegalActivation() && !(await hasTenantLegalAcceptance(asLegalAdmin(admin), payload.tenant_id))) {
+    return NextResponse.json({ error: "Este negocio necesita que su propietario complete la apertura legal antes de recibir pedidos." }, { status: 409 });
+  }
+  if (!payload.accept_terms) {
+    return NextResponse.json({ error: "Acepta las condiciones de compra para continuar." }, { status: 400 });
+  }
+  if (mode === "subscription" && !payload.accept_recurring_mandate) {
+    return NextResponse.json({ error: "Autoriza el cargo recurrente para continuar." }, { status: 400 });
+  }
+  let purchaseDocuments: Awaited<ReturnType<typeof getTenantPurchaseDocuments>>;
+  try {
+    purchaseDocuments = await getTenantPurchaseDocuments(asLegalAdmin(admin), payload.tenant_id);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "No pudimos preparar las condiciones de compra." }, { status: 500 });
   }
 
   const tenantSettings =
@@ -290,6 +306,16 @@ export async function executePublicCheckout({
       { error: orderError?.message ?? "Error creating order" },
       { status: 500 },
     );
+  }
+
+  const { error: legalAcceptanceError } = await commerceAdmin.from("tenant_checkout_legal_acceptances").insert([
+    { tenant_id: payload.tenant_id, order_id: order.id, cart_id: payload.cart_id, document_snapshot: purchaseDocuments, acceptance_kind: "order_terms", accepted: true, fingerprint_hash: documentHash(fingerprint) },
+    ...(mode === "subscription" ? [{ tenant_id: payload.tenant_id, order_id: order.id, cart_id: payload.cart_id, document_snapshot: { frequency: payload.frequency, frequency_type: payload.frequency_type, documents: purchaseDocuments }, acceptance_kind: "recurring_mandate", accepted: true, fingerprint_hash: documentHash(fingerprint) }] : []),
+    { tenant_id: payload.tenant_id, order_id: order.id, cart_id: payload.cart_id, document_snapshot: purchaseDocuments, acceptance_kind: "marketing", accepted: payload.marketing_opt_in === true, fingerprint_hash: documentHash(fingerprint) },
+  ]);
+  if (legalAcceptanceError) {
+    await commerceAdmin.from("orders").update({ status: "cancelled" }).eq("id", order.id);
+    return NextResponse.json({ error: "No pudimos guardar la aceptación de compra. Intenta de nuevo." }, { status: 500 });
   }
 
   try {

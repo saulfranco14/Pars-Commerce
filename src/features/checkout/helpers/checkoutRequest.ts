@@ -75,5 +75,8 @@ export function parseBody(raw: unknown): PublicCheckoutPayload | null {
       body.payment_method === "mercadopago" || body.payment_method === "bank_transfer" || body.payment_method === "cash"
         ? body.payment_method
         : undefined,
+    accept_terms: body.accept_terms === true,
+    accept_recurring_mandate: body.accept_recurring_mandate === true,
+    marketing_opt_in: body.marketing_opt_in === true,
   };
 }

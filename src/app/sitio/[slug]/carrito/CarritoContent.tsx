@@ -82,6 +82,9 @@ export default function CarritoContent({
   const checkoutDraft = fitSelectionToOptions(rawCheckoutDraft, checkoutOptions);
   const [checkoutSelection, setCheckoutSelection] =
     useState<CheckoutFulfillmentSelection | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [recurringMandateAccepted, setRecurringMandateAccepted] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const activeFulfillment =
     checkoutSelection?.fulfillment ?? checkoutDraft.fulfillment;
   const activePayment = checkoutSelection?.payment ?? checkoutDraft.payment;
@@ -138,6 +141,9 @@ export default function CarritoContent({
     paymentMethod: checkoutSelection?.payment,
     pickupPointId: checkoutSelection?.pickupPointId,
     delivery: checkoutSelection?.delivery,
+    termsAccepted,
+    recurringMandateAccepted,
+    marketingOptIn,
     onCheckoutFailed: () => void mutate(),
   });
 
@@ -266,6 +272,14 @@ export default function CarritoContent({
     businessHours: effectivePickupHours,
     pickupPointName: selectedPickupPoint?.name,
     pickupPointAddress: selectedPickupPoint?.address_text,
+    termsAccepted,
+    onTermsAcceptedChange: setTermsAccepted,
+    recurringMandateAccepted,
+    onRecurringMandateAcceptedChange: setRecurringMandateAccepted,
+    marketingOptIn,
+    onMarketingOptInChange: setMarketingOptIn,
+    termsHref: `/sitio/${sitioSlug}/legal?document=terms`,
+    privacyHref: `/sitio/${sitioSlug}/legal?document=privacy`,
   };
 
   return (
@@ -352,6 +366,7 @@ export default function CarritoContent({
           showPrimaryAction={Boolean(checkoutSelection)}
           selectionFooterId="mobile-checkout-fulfillment-footer"
           paymentMethod={activePayment}
+          canSubmit={termsAccepted && (paymentMode !== "recurring" || recurringMandateAccepted)}
         >
           {!checkoutSelection ? (
             <CheckoutFulfillmentStep

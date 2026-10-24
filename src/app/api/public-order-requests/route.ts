@@ -5,6 +5,7 @@ import { createOrderItems } from "@/features/checkout/helpers/orderItems";
 import { getFingerprint } from "@/features/checkout/helpers/checkoutRequest";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cartHasPlans } from "@/features/checkout/services/planCheckoutService";
+import { asLegalAdmin, documentHash, getTenantPurchaseDocuments, hasTenantLegalAcceptance, shouldEnforceExistingLegalActivation } from "@/features/legal/legalActivation";
 
 type RequestBody = {
   tenant_id?: string;
@@ -13,6 +14,8 @@ type RequestBody = {
   customer_phone?: string;
   customer_email?: string;
   scheduled_for?: string | null;
+  accept_terms?: boolean;
+  marketing_opt_in?: boolean;
 };
 
 const cleanPhone = (value: string) => value.replace(/\D/g, "");
@@ -66,6 +69,9 @@ export async function POST(request: Request) {
   if (!body.tenant_id || !body.cart_id || name.length < 2 || phone.length < 10 || phone.length > 15) {
     return NextResponse.json({ error: "Indica tu nombre y un teléfono válido para enviar la solicitud." }, { status: 400 });
   }
+  if (!body.accept_terms) {
+    return NextResponse.json({ error: "Acepta las condiciones de compra para continuar." }, { status: 400 });
+  }
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ error: "Revisa el correo o déjalo vacío." }, { status: 400 });
   }
@@ -89,6 +95,15 @@ export async function POST(request: Request) {
     .maybeSingle();
   if (!tenant || tenant.accepting_orders === false) {
     return NextResponse.json({ error: "Este negocio no está recibiendo pedidos en este momento." }, { status: 409 });
+  }
+  if (shouldEnforceExistingLegalActivation() && !(await hasTenantLegalAcceptance(asLegalAdmin(admin), body.tenant_id))) {
+    return NextResponse.json({ error: "Este negocio necesita que su propietario complete la apertura legal antes de recibir pedidos." }, { status: 409 });
+  }
+  let purchaseDocuments: Awaited<ReturnType<typeof getTenantPurchaseDocuments>>;
+  try {
+    purchaseDocuments = await getTenantPurchaseDocuments(asLegalAdmin(admin), body.tenant_id);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "No pudimos preparar las condiciones de compra." }, { status: 500 });
   }
   const { data: cart } = await admin
     .from("public_carts")
@@ -138,6 +153,11 @@ export async function POST(request: Request) {
     }
     try {
       await createOrderItems(admin, order.id, items);
+      const { error: legalAcceptanceError } = await admin.from("tenant_checkout_legal_acceptances").insert([
+        { tenant_id: body.tenant_id, order_id: order.id, cart_id: body.cart_id, document_snapshot: purchaseDocuments, acceptance_kind: "order_terms", accepted: true, fingerprint_hash: documentHash(fingerprint) },
+        { tenant_id: body.tenant_id, order_id: order.id, cart_id: body.cart_id, document_snapshot: purchaseDocuments, acceptance_kind: "marketing", accepted: body.marketing_opt_in === true, fingerprint_hash: documentHash(fingerprint) },
+      ]);
+      if (legalAcceptanceError) throw new Error("No pudimos guardar la aceptación de compra.");
     } catch (error) {
       await admin.from("orders").delete().eq("id", order.id);
       throw error;
