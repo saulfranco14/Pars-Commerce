@@ -28,6 +28,12 @@ export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, clas
   const actionLabel = promotion.type === "nxm"
     ? `Agregar ${promotion.buy_quantity ?? ""}×${promotion.pay_quantity ?? ""}`
     : "Agregar paquete";
+  const fallbackDetail = promotion.type === "nxm"
+    ? `Lleva ${promotion.buy_quantity ?? ""} y paga ${promotion.pay_quantity ?? ""}`
+    : grouped
+      ? "Incluye los productos del paquete"
+      : "Descuento disponible en este producto";
+  const detail = promotion.description?.trim() || fallbackDetail;
 
   return (
     <section
@@ -60,24 +66,32 @@ export function PromoBanner({ promotion, cartListTotal = 0, onAddPromotion, clas
           <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
           {availability}
         </p>
-        <p className="mt-1 line-clamp-2 text-sm font-bold leading-4 text-foreground">{promotion.name}</p>
+        <p className="mt-1 line-clamp-2 min-h-8 text-sm font-bold leading-4 text-foreground">{promotion.name}</p>
+        <p className="mt-1 line-clamp-1 min-h-3.5 text-[10px] leading-3.5 text-muted-foreground">{detail}</p>
         {remaining > 0 ? (
-          <p className="mt-auto line-clamp-2 rounded-lg bg-amber-50 px-2.5 py-2 text-[10px] font-semibold leading-3.5 text-amber-800">
-            Agrega ${remaining.toFixed(2)} más para activarla
-          </p>
+          <div className="mt-auto flex min-h-11 items-center border-t border-border/80 pt-2">
+            <p className="line-clamp-2 text-[10px] font-semibold leading-3.5 text-amber-800">
+              Agrega ${remaining.toFixed(2)} más para activarla
+            </p>
+          </div>
         ) : grouped ? (
-          <button
-            type="button"
-            onClick={() => onAddPromotion?.(promotion)}
-            className="mt-auto inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl bg-accent px-4 text-xs font-bold text-accent-foreground shadow-md shadow-accent/25 transition active:scale-[0.98]"
-          >
-            <Plus className="h-3.5 w-3.5" aria-hidden />
-            {actionLabel}
-          </button>
+          <div className="mt-auto flex min-h-11 items-center justify-between gap-3 border-t border-border/80 pt-2">
+            <p className="text-[10px] font-semibold leading-3.5 text-muted-foreground">Toca + para agregar</p>
+            <button
+              type="button"
+              onClick={() => onAddPromotion?.(promotion)}
+              aria-label={actionLabel}
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md shadow-accent/25 transition active:scale-[0.94]"
+            >
+              <Plus className="h-5 w-5" aria-hidden />
+            </button>
+          </div>
         ) : (
-          <p className="mt-auto rounded-lg bg-accent/8 px-2.5 py-2 text-[10px] font-semibold leading-3.5 text-accent">
-            Se descuenta automáticamente al agregar productos
-          </p>
+          <div className="mt-auto flex min-h-11 items-center border-t border-border/80 pt-2">
+            <p className="text-[10px] font-semibold leading-3.5 text-accent">
+              Se descuenta automáticamente al agregar productos
+            </p>
+          </div>
         )}
       </div>
     </section>
