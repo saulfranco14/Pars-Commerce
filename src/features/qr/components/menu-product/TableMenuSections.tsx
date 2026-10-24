@@ -241,31 +241,19 @@ export function TableMenuSections({
               )}
             </div>
           </div>
-          <div className="relative">
-            <div
-              className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 pr-5 touch-pan-x"
-              aria-label="Carrusel de promociones"
-            >
-              {activePromotions.map((promotion) => (
-                <PromoBanner
-                  key={promotion.id}
-                  promotion={promotion}
-                  cartListTotal={cartListTotal}
-                  onAddPromotion={onAddPromotion}
-                  className={`${activePromotions.length > 1 ? "basis-[calc(100%-1.25rem)]" : "basis-full"} shrink-0 snap-start`}
-                />
-              ))}
-            </div>
-            {activePromotions.length > 1 && (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-y-0 right-0 flex w-12 items-center justify-end bg-gradient-to-l from-background via-background/90 to-transparent"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-accent/20 bg-surface text-accent shadow-sm">
-                  <ChevronRight className="h-4 w-4" />
-                </span>
-              </span>
-            )}
+          <div
+            className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 pr-5 touch-pan-x"
+            aria-label="Carrusel de promociones"
+          >
+            {activePromotions.map((promotion) => (
+              <PromoBanner
+                key={promotion.id}
+                promotion={promotion}
+                cartListTotal={cartListTotal}
+                onAddPromotion={onAddPromotion}
+                className={`${activePromotions.length > 1 ? "basis-[calc(100%-1.25rem)]" : "basis-full"} shrink-0 snap-start`}
+              />
+            ))}
           </div>
         </section>
       )}
