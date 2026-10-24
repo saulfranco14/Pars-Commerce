@@ -1,6 +1,8 @@
 import { createHash } from "crypto";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
+import { legalProfileSchema, type LegalProfileForm } from "@/features/legal/legalProfileSchema";
+
 type Admin = {
   from: (table: string) => any;
   storage: { from: (bucket: string) => { upload: (path: string, body: Uint8Array, options: Record<string, unknown>) => Promise<{ error: { message: string } | null }> } };
@@ -16,22 +18,13 @@ export const REQUIRED_TLACO_DOCUMENTS = [
 export const LEGAL_REPRESENTATION_DECLARATION =
   "Acepto el acuerdo de Tlaco y declaro que puedo representar este negocio.";
 
-export type LegalPartyInput = {
-  party_type: "individual" | "company";
-  legal_name: string;
-  tax_id: string;
-  address_line1: string;
+export type LegalPartyInput = Omit<
+  LegalProfileForm,
+  "address_line2" | "representative_name" | "representative_role"
+> & {
   address_line2?: string;
-  city: string;
-  state: string;
-  postal_code: string;
-  country?: string;
-  contractual_email: string;
-  contractual_phone: string;
   representative_name?: string;
   representative_role?: string;
-  public_seller_name: string;
-  public_privacy_contact: string;
 };
 
 export function asLegalAdmin(client: unknown): Admin {
@@ -50,27 +43,17 @@ export function shouldEnforceExistingLegalActivation(now = Date.now()): boolean 
   return Number.isFinite(parsed) && parsed <= now;
 }
 
-export function cleanLegalProfile(input: Partial<LegalPartyInput>): LegalPartyInput | null {
-  const required = ["legal_name", "tax_id", "address_line1", "city", "state", "postal_code", "contractual_email", "contractual_phone", "public_seller_name", "public_privacy_contact"] as const;
-  if (input.party_type !== "individual" && input.party_type !== "company") return null;
-  if (required.some((field) => !input[field]?.trim())) return null;
-  if (input.party_type === "company" && (!input.representative_name?.trim() || !input.representative_role?.trim())) return null;
+export function cleanLegalProfile(input: unknown): LegalPartyInput | null {
+  const parsed = legalProfileSchema.safeParse(input);
+  if (!parsed.success) return null;
   return {
-    party_type: input.party_type,
-    legal_name: input.legal_name!.trim(),
-    tax_id: input.tax_id!.trim().toUpperCase(),
-    address_line1: input.address_line1!.trim(),
-    address_line2: input.address_line2?.trim() || undefined,
-    city: input.city!.trim(),
-    state: input.state!.trim(),
-    postal_code: input.postal_code!.trim(),
-    country: input.country?.trim() || "México",
-    contractual_email: input.contractual_email!.trim().toLowerCase(),
-    contractual_phone: input.contractual_phone!.trim(),
-    representative_name: input.representative_name?.trim() || undefined,
-    representative_role: input.representative_role?.trim() || undefined,
-    public_seller_name: input.public_seller_name!.trim(),
-    public_privacy_contact: input.public_privacy_contact!.trim(),
+    ...parsed.data,
+    address_line2: parsed.data.address_line2 || undefined,
+    representative_name: parsed.data.representative_name || undefined,
+    representative_role: parsed.data.representative_role || undefined,
+    contractual_email: parsed.data.contractual_email.toLowerCase(),
+    contractual_phone: parsed.data.contractual_phone.replace(/[\s()-]/g, ""),
+    public_privacy_contact: parsed.data.public_privacy_contact.trim(),
   };
 }
 
