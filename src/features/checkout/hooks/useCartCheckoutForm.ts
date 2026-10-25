@@ -30,6 +30,9 @@ interface CartCheckoutFormParams {
   paymentMethod?: CheckoutPaymentMethod;
   pickupPointId?: string;
   delivery?: CheckoutDeliveryAddress;
+  termsAccepted: boolean;
+  recurringMandateAccepted: boolean;
+  marketingOptIn: boolean;
   onCheckoutFailed?: () => void;
 }
 
@@ -60,6 +63,9 @@ export function useCartCheckoutForm({
   paymentMethod = "mercadopago",
   pickupPointId,
   delivery,
+  termsAccepted,
+  recurringMandateAccepted,
+  marketingOptIn,
   onCheckoutFailed,
 }: CartCheckoutFormParams) {
   const [form, setForm] = useState<CheckoutFormState>(INITIAL_FORM);
@@ -94,6 +100,8 @@ export function useCartCheckoutForm({
     setFieldErrors({});
 
     try {
+      if (!termsAccepted) throw new Error("Acepta las condiciones de compra para continuar.");
+      if (paymentMode === "recurring" && !recurringMandateAccepted) throw new Error("Autoriza el cargo recurrente para continuar.");
       const validated = await checkoutFormSchema.validate(
         {
           customer_name: form.customer_name.trim(),
@@ -103,7 +111,7 @@ export function useCartCheckoutForm({
         { abortEarly: false },
       );
       if (paymentMode === "single") {
-        const result = await checkoutPublic({ tenant_id: tenantId, cart_id: cartId, customer_name: validated.customer_name, customer_email: validated.customer_email, customer_phone: validated.customer_phone, mode: "single", msi_option: msiOption, scheduled_for: form.scheduled_for || null, fulfillment_method: fulfillmentMethod, payment_method: paymentMethod, pickup_point_id: pickupPointId, delivery }, fingerprint);
+        const result = await checkoutPublic({ tenant_id: tenantId, cart_id: cartId, customer_name: validated.customer_name, customer_email: validated.customer_email, customer_phone: validated.customer_phone, mode: "single", msi_option: msiOption, scheduled_for: form.scheduled_for || null, fulfillment_method: fulfillmentMethod, payment_method: paymentMethod, pickup_point_id: pickupPointId, delivery, accept_terms: termsAccepted, marketing_opt_in: marketingOptIn }, fingerprint);
         window.location.href = result.next_action === "open_tracking" && result.tracking_url ? result.tracking_url : result.redirect_url ?? result.payment_link ?? "/";
         return;
       }
@@ -127,6 +135,9 @@ export function useCartCheckoutForm({
           payment_method: paymentMethod,
           pickup_point_id: pickupPointId,
           delivery,
+          accept_terms: termsAccepted,
+          accept_recurring_mandate: recurringMandateAccepted,
+          marketing_opt_in: marketingOptIn,
         },
         fingerprint,
       );
@@ -155,6 +166,7 @@ export function useCartCheckoutForm({
     setError(null);
     setFieldErrors({});
     try {
+      if (!termsAccepted) throw new Error("Acepta las condiciones de compra para continuar.");
       const validated = await checkoutFormSchema.validate({
         customer_name: form.customer_name.trim(),
         customer_email: form.customer_email.trim(),
@@ -170,6 +182,8 @@ export function useCartCheckoutForm({
         customer_email: validated.customer_email,
         customer_phone: validated.customer_phone,
         scheduled_for: form.scheduled_for || null,
+        accept_terms: termsAccepted,
+        marketing_opt_in: marketingOptIn,
       }, fingerprint, idempotencyKey);
       window.location.assign(result.whatsapp_url);
     } catch (err) {
@@ -200,10 +214,14 @@ export function useCartCheckoutForm({
       setFieldErrors(errors);
       return;
     }
+    if (!termsAccepted) {
+      setError("Acepta las condiciones de compra para continuar.");
+      return;
+    }
     if (!beginSubmitting()) return;
     try {
       const key = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${cartId}-${Date.now()}`;
-      const result = await requestOrder({ tenant_id: tenantId, cart_id: cartId, customer_name: name, customer_phone: phone, customer_email: email || undefined, scheduled_for: form.scheduled_for || null }, fingerprint, key);
+      const result = await requestOrder({ tenant_id: tenantId, cart_id: cartId, customer_name: name, customer_phone: phone, customer_email: email || undefined, scheduled_for: form.scheduled_for || null, accept_terms: termsAccepted, marketing_opt_in: marketingOptIn }, fingerprint, key);
       window.location.assign(result.tracking_url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No pudimos enviar tu solicitud.");

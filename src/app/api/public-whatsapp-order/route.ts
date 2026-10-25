@@ -9,6 +9,7 @@ import { createOrderItems } from "@/features/checkout/helpers/orderItems";
 import { getFingerprint } from "@/features/checkout/helpers/checkoutRequest";
 import { validateOrderStock } from "@/features/inventory/services/orderStockValidationService";
 import { checkoutFormSchema } from "@/features/orders/validations/checkoutForm";
+import { asLegalAdmin, documentHash, getTenantPurchaseDocuments, hasTenantLegalAcceptance, shouldEnforceExistingLegalActivation } from "@/features/legal/legalActivation";
 
 const E164 = /^\+[1-9]\d{7,14}$/;
 
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Se requiere una clave de intento válida." }, { status: 400 });
   }
 
-  let body: { tenant_id?: string; cart_id?: string; customer_name?: string; customer_email?: string; customer_phone?: string; scheduled_for?: string | null };
+  let body: { tenant_id?: string; cart_id?: string; customer_name?: string; customer_email?: string; customer_phone?: string; scheduled_for?: string | null; accept_terms?: boolean; marketing_opt_in?: boolean };
   try {
     body = await request.json();
   } catch {
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
   if (!body.tenant_id || !body.cart_id) {
     return NextResponse.json({ error: "tenant_id y cart_id son requeridos." }, { status: 400 });
   }
+  if (!body.accept_terms) return NextResponse.json({ error: "Acepta las condiciones de compra para continuar." }, { status: 400 });
 
   let customer: { customer_name: string; customer_email: string; customer_phone?: string };
   try {
@@ -50,6 +52,7 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient() as any;
+  const purchaseDocuments = await getTenantPurchaseDocuments(asLegalAdmin(admin), body.tenant_id);
   const { data: tenant } = await admin
     .from("tenants")
     .select("id, slug, name, whatsapp_phone, whatsapp_orders_enabled, accepting_orders")
@@ -59,6 +62,9 @@ export async function POST(request: Request) {
   if (!tenant) return NextResponse.json({ error: "Tienda no encontrada." }, { status: 404 });
   if (tenant.accepting_orders === false || !tenant.whatsapp_orders_enabled) {
     return NextResponse.json({ error: "Esta tienda no está recibiendo pedidos por WhatsApp." }, { status: 409 });
+  }
+  if (shouldEnforceExistingLegalActivation() && !(await hasTenantLegalAcceptance(asLegalAdmin(admin), body.tenant_id))) {
+    return NextResponse.json({ error: "Este negocio necesita que su propietario complete la apertura legal antes de recibir pedidos." }, { status: 409 });
   }
   if (!tenant.whatsapp_phone || !E164.test(tenant.whatsapp_phone.trim())) {
     return NextResponse.json({ error: "La tienda no tiene un número de WhatsApp internacional válido." }, { status: 409 });
@@ -135,6 +141,11 @@ export async function POST(request: Request) {
   }
   try {
     await createOrderItems(admin, order.id, items);
+    const { error: legalAcceptanceError } = await admin.from("tenant_checkout_legal_acceptances").insert([
+      { tenant_id: body.tenant_id, order_id: order.id, cart_id: body.cart_id, document_snapshot: purchaseDocuments, acceptance_kind: "order_terms", accepted: true, fingerprint_hash: documentHash(fingerprint) },
+      { tenant_id: body.tenant_id, order_id: order.id, cart_id: body.cart_id, document_snapshot: purchaseDocuments, acceptance_kind: "marketing", accepted: body.marketing_opt_in === true, fingerprint_hash: documentHash(fingerprint) },
+    ]);
+    if (legalAcceptanceError) throw new Error("No pudimos guardar la aceptación de compra.");
     await admin.from("communication_events").insert({
       tenant_id: body.tenant_id,
       channel: "whatsapp",

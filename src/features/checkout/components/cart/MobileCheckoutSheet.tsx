@@ -20,6 +20,7 @@ interface MobileCheckoutSheetProps {
   showPrimaryAction?: boolean;
   selectionFooterId?: string;
   paymentMethod: CheckoutPaymentMethod;
+  canSubmit?: boolean;
   accentColor: string;
   onClose: () => void;
   children: React.ReactNode;
@@ -38,6 +39,7 @@ export function MobileCheckoutSheet({
   showPrimaryAction = true,
   selectionFooterId,
   paymentMethod,
+  canSubmit = true,
   accentColor,
   onClose,
   children,
@@ -124,7 +126,7 @@ export function MobileCheckoutSheet({
             type={primaryAction ? "button" : "submit"}
             form={primaryAction ? undefined : "m-checkout-form"}
             onClick={primaryAction}
-            disabled={submitting}
+            disabled={submitting || !canSubmit}
             className="inline-flex min-h-13 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-base font-bold text-white shadow-sm transition-opacity hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
             style={{ backgroundColor: accentColor }}
           >

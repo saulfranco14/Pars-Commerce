@@ -38,8 +38,9 @@ export async function POST(request: NextRequest) {
     };
     const supabase = createAdminClient();
 
-    // El alta no depende de SendGrid. Auth queda confirmado para permitir
-    // iniciar sesión; la aprobación diferida se guarda en el perfil de Tlaco.
+    // El proveedor de Auth requiere esta marca administrativa para permitir el
+    // acceso inmediato. No se usa como prueba de control del correo: la
+    // verificación real será un flujo posterior y separado del contrato.
     const { error } = await supabase.auth.admin.createUser({
       email,
       password,

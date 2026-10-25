@@ -18,7 +18,7 @@ export const TERMS: LegalDoc = {
       id: "aceptacion",
       title: "1. Aceptación",
       body: [
-        `Al crear una cuenta en ${COMPANY.brand} aceptas estos términos. Si los usas en nombre de un negocio, declaras que tienes facultades para obligarlo.`,
+        `Aceptas estos términos al completar la Ficha de apertura y marcar expresamente la confirmación. Crear una cuenta por sí solo no constituye aceptación. Si usas ${COMPANY.brand} en nombre de un negocio, declaras que tienes facultades para obligarlo.`,
         `El servicio lo presta ${COMPANY.legalName}, con domicilio en ${COMPANY.address}.`,
       ],
     },

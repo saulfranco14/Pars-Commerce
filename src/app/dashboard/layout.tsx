@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -18,6 +18,7 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { btnPrimary } from "@/components/ui/buttonClasses";
 import { isFocusRoute } from "@/lib/focusRoutes";
 import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
+import { LegalDeferredNotice } from "@/features/legal/components/LegalDeferredNotice";
 
 export default function DashboardLayout({
   children,
@@ -44,6 +45,7 @@ export default function DashboardLayout({
     pathParts[1] &&
     pathParts[1] !== "crear-negocio" &&
     pathParts[1] !== "perfil" &&
+    pathParts[1] !== "legal" &&
     pathParts[1] !== "plataforma"
       ? pathParts[1]
       : null;
@@ -89,7 +91,7 @@ export default function DashboardLayout({
     );
   }
 
-  if (isPreparingBusiness) {
+  if (isPreparingBusiness || pathname === "/dashboard/legal") {
     return <div className="min-h-screen bg-white">{children}</div>;
   }
 
@@ -130,8 +132,10 @@ export default function DashboardLayout({
             isFocusRoute(pathname) ? "pb-6" : "pb-24"
           }`}
         >
+          <Suspense fallback={null}><LegalDeferredNotice /></Suspense>
           {pathname === "/dashboard/crear-negocio" ||
           pathname === "/dashboard/perfil" ||
+          pathname === "/dashboard/legal" ||
           pathname === "/dashboard/preparar-negocio" ||
           // Platform routes are cross-tenant (super admin) — they don't belong
           // to a business, so they skip the "select a tenant" gate below.

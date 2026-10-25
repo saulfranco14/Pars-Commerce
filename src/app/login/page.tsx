@@ -48,7 +48,13 @@ async function resolvePostLoginDestination(next: string): Promise<string> {
     const response = await fetch("/api/me/platform-admin", { cache: "no-store" });
     if (!response.ok) return next;
     const payload = (await response.json()) as { isPlatformAdmin?: boolean };
-    return payload.isPlatformAdmin ? "/dashboard/plataforma" : next;
+    if (payload.isPlatformAdmin) return "/dashboard/plataforma";
+    const legalResponse = await fetch("/api/legal/status", { cache: "no-store" });
+    if (!legalResponse.ok) return next;
+    const legal = (await legalResponse.json()) as { pending?: { tenant_id?: string } | null };
+    return legal.pending?.tenant_id
+      ? `/dashboard/legal?tenant=${encodeURIComponent(legal.pending.tenant_id)}`
+      : next;
   } catch {
     return next;
   }

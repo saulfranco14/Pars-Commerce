@@ -71,6 +71,8 @@ export interface CheckoutPickupPayload {
   msi_option?: MsiOption;
   /** ISO de la hora de recolección. `null` = pasa cuando esté listo. */
   scheduled_for?: string | null;
+  accept_terms?: boolean;
+  marketing_opt_in?: boolean;
 }
 
 export interface CheckoutPickupResponse {
@@ -96,6 +98,9 @@ export interface CheckoutSubscriptionPayload {
   payment_method?: CheckoutPaymentMethod;
   pickup_point_id?: string;
   delivery?: CheckoutDeliveryAddress;
+  accept_terms?: boolean;
+  accept_recurring_mandate?: boolean;
+  marketing_opt_in?: boolean;
 }
 
 export interface CheckoutSubscriptionResponse {

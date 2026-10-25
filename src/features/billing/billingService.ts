@@ -178,9 +178,10 @@ export async function createBillingCheckout(input: {
       try {
         await mp.update({ id: previous.mp_preapproval_id, body: { status: "cancelled" } });
       } catch (error) {
-        // The cancellation can already have been delivered by Mercado Pago.
-        // A fresh authorization is still the correct next action.
-        console.warn("Billing: previous preapproval was unavailable", error);
+        // Do not create a second mandate while its predecessor is uncertain.
+        // The owner can retry after Mercado Pago is reconciled.
+        console.warn("Billing: previous preapproval cancellation failed", error);
+        throw new Error("No pudimos confirmar la cancelación del plan anterior. Intenta de nuevo en unos minutos.");
       }
     }
   }
@@ -260,10 +261,16 @@ export async function logBillingActivity(
 
 export async function handleBillingPreapprovalStatus(admin: Db, preapprovalId: string, status: string) {
   const { data: account } = await admin.from("tenant_billing_accounts")
-    .select("tenant_id, plan_code, current_period_end")
+    .select("tenant_id, plan_code, current_period_end, cancel_at_period_end, status")
     .eq("mp_preapproval_id", preapprovalId).maybeSingle();
   if (!account) return false;
-  const next = status === "authorized" ? "active" : status === "cancelled" ? "cancelling" : "pending_payment";
+  // An authorization notification can arrive after the user asked to cancel.
+  // Preserve that later local intent instead of resurrecting the plan.
+  const next = status === "cancelled"
+    ? "cancelling"
+    : account.cancel_at_period_end || account.status === "cancelling"
+      ? "cancelling"
+      : status === "authorized" ? "active" : "pending_payment";
   await admin.from("tenant_billing_accounts").update({ status: next, updated_at: new Date().toISOString() }).eq("tenant_id", account.tenant_id);
   await logBillingActivity(admin, account.tenant_id, "webhook", preapprovalId, "billing.preapproval_status", { status });
   return true;
@@ -287,7 +294,12 @@ export async function handleBillingAuthorizedPayment(admin: Db, input: {
     processing_fee_amount: input.fee, net_amount: input.amount - input.fee,
     status: approved ? "approved" : "rejected", paid_at: approved ? now.toISOString() : null,
   });
-  if (error && error.code !== "23505") throw new Error(error.message);
+  if (error?.code === "23505") {
+    // The provider retried the exact same event. Its original period and
+    // cancellation state are authoritative; never recalculate them from now.
+    return true;
+  }
+  if (error) throw new Error(error.message);
   if (approved) {
     await admin.from("tenant_billing_accounts").update({
       status: "active", current_period_start: now.toISOString(), current_period_end: end.toISOString(),

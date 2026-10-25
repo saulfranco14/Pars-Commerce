@@ -35,6 +35,9 @@ export interface PublicCheckoutPayload {
   pickup_point_id?: string;
   delivery?: CheckoutDeliveryAddress;
   payment_method?: CheckoutPaymentMethod;
+  accept_terms?: boolean;
+  accept_recurring_mandate?: boolean;
+  marketing_opt_in?: boolean;
 }
 
 export interface PublicCheckoutResponse {

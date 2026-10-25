@@ -49,7 +49,10 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
           <input
             ref={ref}
             {...props}
-            className={`block w-full rounded-2xl border-2 border-border bg-background py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none transition-colors ${
+            aria-invalid={error ? true : props["aria-invalid"]}
+            className={`block w-full rounded-2xl border-2 bg-background py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground/50 focus:outline-none transition-colors ${
+              error ? "border-red-500 focus:border-red-500" : "border-border focus:border-accent"
+            } ${
               Icon ? "pl-10 pr-3" : "px-4"
             } ${className}`}
           />

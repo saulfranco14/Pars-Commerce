@@ -287,6 +287,9 @@ export default function ConfiguracionPage() {
             <SlidersHorizontal className="h-4 w-4" aria-hidden />
             Personalizar menú
           </Link>
+          <Link href={`/dashboard/${params.tenantSlug as string}/legal`} className={btnSecondary}>
+            Datos legales
+          </Link>
         </div>
         <div className="sticky top-14 z-10 -mx-4 border-y border-border-soft bg-background px-4 py-2 shadow-sm md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:shadow-none">
           <FilterTabs

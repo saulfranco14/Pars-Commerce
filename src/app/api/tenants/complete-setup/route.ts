@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeMexicanPhone } from "@/lib/phone";
+import { asLegalAdmin, hasTenantLegalAcceptance } from "@/features/legal/legalActivation";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -23,6 +24,11 @@ export async function POST(request: Request) {
   const role = Array.isArray(rawRole) ? rawRole[0] : rawRole;
   if (!membership || membership.status !== "active" || role?.name !== "owner") {
     return NextResponse.json({ error: "Sólo el propietario puede terminar la preparación." }, { status: 403 });
+  }
+
+  const legalAcceptance = await hasTenantLegalAcceptance(asLegalAdmin(admin), body.tenant_id);
+  if (!legalAcceptance) {
+    return NextResponse.json({ error: "Completa los datos legales y acepta el acuerdo de Tlaco antes de abrir pedidos." }, { status: 403 });
   }
 
   const { data: tenant } = await admin
