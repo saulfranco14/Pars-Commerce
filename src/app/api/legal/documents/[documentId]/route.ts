@@ -16,7 +16,7 @@ export async function GET(request: Request, { params }: Context) {
   const admin = asLegalAdmin(createAdminClient());
   const { data: membership } = await admin.from("tenant_memberships").select("id").eq("tenant_id", tenantId).eq("user_id", user.id).eq("status", "active").maybeSingle();
   if (!membership) return NextResponse.json({ error: "No tienes acceso a este documento." }, { status: 403 });
-  const { data: document } = await admin.from("legal_document_versions").select("id, title, version, content, effective_at").eq("id", documentId).is("tenant_id", null).maybeSingle();
+  const { data: document } = await admin.from("legal_document_versions").select("id, title, version, content, content_hash, effective_at").eq("id", documentId).is("tenant_id", null).maybeSingle();
   if (!document) return NextResponse.json({ error: "Documento no encontrado." }, { status: 404 });
   const pdf = await createLetterheadDocumentPdf(document);
   return new Response(pdf, { headers: { "Content-Type": "application/pdf", "Content-Disposition": `inline; filename="tlaco-${document.version}.pdf"`, "Cache-Control": "private, no-store" } });

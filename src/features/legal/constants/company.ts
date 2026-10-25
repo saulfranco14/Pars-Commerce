@@ -7,4 +7,4 @@ export const COMPANY = {
   domain: "tlaco.app",
 } as const;
 
-export const LEGAL_UPDATED_AT = "26 de julio de 2026";
+export const LEGAL_UPDATED_AT = "24 de octubre de 2026";
