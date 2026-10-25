@@ -8,14 +8,15 @@ import { Notification } from "@/components/ui/Notification";
 
 export function LegalDeferredNotice() {
   const tenant = useActiveTenant();
+  const tenantId = tenant?.id;
   const [state, setState] = useState<{ pending?: { tenant_id: string }; collaborator_pending?: { tenant_id: string } } | null>(null);
   useEffect(() => {
-    if (!tenant) return;
-    void fetch(`/api/legal/status?tenant_id=${encodeURIComponent(tenant.id)}`, { cache: "no-store" })
+    if (!tenantId) return;
+    void fetch(`/api/legal/status?tenant_id=${encodeURIComponent(tenantId)}`, { cache: "no-store" })
       .then((response) => response.ok ? response.json() : null)
       .then(setState)
       .catch(() => setState(null));
-  }, [tenant?.id]);
+  }, [tenantId]);
   if (!tenant) return null;
   if (state?.pending?.tenant_id === tenant.id) {
     return <Notification tone="info" title="Te falta un paso antes de abrir pedidos" message={<span>Tu catálogo sigue guardado. <Link className="font-bold underline" href={`/dashboard/legal?tenant=${encodeURIComponent(tenant.id)}`}>Completar datos legales</Link></span>} className="mb-4" />;

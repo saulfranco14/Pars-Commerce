@@ -7,8 +7,7 @@ import { asLegalAdmin, cleanLegalProfile, getOwnerMembership } from "@/features/
 type Context = { params: Promise<{ tenantId: string }> };
 
 export async function GET(_request: Request, { params }: Context) {
-  const { tenantId } = await params;
-  const session = await createClient();
+  const [{ tenantId }, session] = await Promise.all([params, createClient()]);
   const { data: { user } } = await session.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const admin = asLegalAdmin(createAdminClient());
@@ -19,11 +18,14 @@ export async function GET(_request: Request, { params }: Context) {
 }
 
 export async function PATCH(request: Request, { params }: Context) {
-  const { tenantId } = await params;
-  const session = await createClient();
+  const [{ tenantId }, session, rawProfile] = await Promise.all([
+    params,
+    createClient(),
+    request.json().catch(() => null),
+  ]);
   const { data: { user } } = await session.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const profile = cleanLegalProfile(await request.json().catch(() => null));
+  const profile = cleanLegalProfile(rawProfile);
   if (!profile) return NextResponse.json({ error: "Completa los datos legales requeridos." }, { status: 400 });
   const admin = asLegalAdmin(createAdminClient());
   if (!(await getOwnerMembership(admin, tenantId, user.id))) return NextResponse.json({ error: "Sólo el propietario puede guardar estos datos." }, { status: 403 });

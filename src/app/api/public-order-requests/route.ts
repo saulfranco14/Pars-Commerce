@@ -153,7 +153,7 @@ export async function POST(request: Request) {
     }
     try {
       await createOrderItems(admin, order.id, items);
-      const { error: legalAcceptanceError } = await admin.from("tenant_checkout_legal_acceptances").insert([
+      const { error: legalAcceptanceError } = await asLegalAdmin(admin).from("tenant_checkout_legal_acceptances").insert([
         { tenant_id: body.tenant_id, order_id: order.id, cart_id: body.cart_id, document_snapshot: purchaseDocuments, acceptance_kind: "order_terms", accepted: true, fingerprint_hash: documentHash(fingerprint) },
         { tenant_id: body.tenant_id, order_id: order.id, cart_id: body.cart_id, document_snapshot: purchaseDocuments, acceptance_kind: "marketing", accepted: body.marketing_opt_in === true, fingerprint_hash: documentHash(fingerprint) },
       ]);

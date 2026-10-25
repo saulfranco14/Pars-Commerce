@@ -18,19 +18,29 @@ export default function TenantLegalCenterPage() {
 
   useEffect(() => {
     if (!tenant?.id) return;
-    void fetch(`/api/legal/status?tenant_id=${tenant.id}`, { cache: "no-store" }).then((response) => response.json()).then((data) => setAcceptance(data.states?.[0]?.acceptance ?? null));
+    void (async () => {
+      try {
+        const response = await fetch(`/api/legal/status?tenant_id=${tenant.id}`, { cache: "no-store" });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error ?? "No pudimos consultar tus documentos.");
+        setAcceptance(data.states?.[0]?.acceptance ?? null);
+      } catch {
+        setAcceptance(null);
+      }
+    })();
   }, [tenant?.id]);
   if (!tenant) return <p className="text-sm text-muted-foreground">Cargando negocio…</p>;
+  const tenantId = tenant.id;
   async function exportData() {
     setBusy("export"); setMessage(null);
-    try { const response = await fetch(`/api/tenants/${tenant.id}/data-export`, { method: "POST" }); const data = await response.json(); if (!response.ok) throw new Error(data.error); window.open(data.download_url, "_blank", "noopener,noreferrer"); setMessage("Tu exportación está lista. El enlace de descarga dura 15 minutos."); }
+    try { const response = await fetch(`/api/tenants/${tenantId}/data-export`, { method: "POST" }); const data = await response.json(); if (!response.ok) throw new Error(data.error); window.open(data.download_url, "_blank", "noopener,noreferrer"); setMessage("Tu exportación está lista. El enlace de descarga dura 15 minutos."); }
     catch (error) { setMessage(error instanceof Error ? error.message : "No pudimos preparar la exportación."); }
     finally { setBusy(null); }
   }
   async function requestClosure() {
     if (!window.confirm("Se cerrarán los pedidos públicos después de preparar tu exportación. ¿Continuar?")) return;
     setBusy("closure"); setMessage(null);
-    try { const response = await fetch(`/api/tenants/${tenant.id}/closure`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) }); const data = await response.json(); if (!response.ok) throw new Error(data.error); setMessage("La solicitud quedó registrada y los nuevos pedidos fueron detenidos. Conserva tu exportación antes del cierre definitivo."); }
+    try { const response = await fetch(`/api/tenants/${tenantId}/closure`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) }); const data = await response.json(); if (!response.ok) throw new Error(data.error); setMessage("La solicitud quedó registrada y los nuevos pedidos fueron detenidos. Conserva tu exportación antes del cierre definitivo."); }
     catch (error) { setMessage(error instanceof Error ? error.message : "No pudimos solicitar el cierre."); }
     finally { setBusy(null); }
   }

@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   if (!profile || !tenant) return NextResponse.json({ error: "Completa tus datos legales antes de aceptar." }, { status: 400 });
   try {
     const documents = await getPublishedTlacoDocuments(admin);
-    const snapshot = documents.map((document: any) => ({ id: document.id, type: document.document_type, title: document.title, version: document.version, content_hash: document.content_hash }));
+    const snapshot = documents.map((document) => ({ id: document.id, type: document.document_type, title: document.title, version: document.version, content_hash: document.content_hash }));
     const { data: acceptance, error } = await admin.from("tenant_legal_acceptances").upsert({
       tenant_id: body.tenant_id,
       accepted_by: user.id,

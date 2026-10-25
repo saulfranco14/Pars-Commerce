@@ -1,13 +1,12 @@
 import { createHash } from "crypto";
 
 import { createStoredZip } from "@/features/legal/simpleZip";
-
-type Admin = { from: (table: string) => any; storage: { from: (bucket: string) => any } };
+import type { LegalAdmin } from "@/features/legal/legalActivation";
 
 const safeJson = (value: unknown) => JSON.stringify(value, null, 2);
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 
-export async function buildTenantDataExport(admin: Admin, tenantId: string, requestedBy: string) {
+export async function buildTenantDataExport(admin: LegalAdmin, tenantId: string, requestedBy: string) {
   const exportRow = await admin.from("legal_data_exports").insert({ tenant_id: tenantId, requested_by: requestedBy, status: "pending" }).select("id").single();
   if (exportRow.error || !exportRow.data) throw new Error(exportRow.error?.message ?? "No pudimos preparar la exportación.");
   const exportId = exportRow.data.id as string;

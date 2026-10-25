@@ -4,6 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { asLegalAdmin, hasTenantLegalAcceptance } from "@/features/legal/legalActivation";
 
+type LegalMembership = {
+  tenant_id: string;
+  tenant: { id: string; name: string; slug: string } | Array<{ id: string; name: string; slug: string }> | null;
+  role: { name: string } | Array<{ name: string }> | null;
+};
+
 export async function GET(request: Request) {
   const session = await createClient();
   const { data: { user } } = await session.auth.getUser();
@@ -18,7 +24,7 @@ export async function GET(request: Request) {
   if (requestedTenantId) memberships = memberships.eq("tenant_id", requestedTenantId);
   const { data, error } = await memberships;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  const states = await Promise.all((data ?? []).map(async (membership: any) => {
+  const states = await Promise.all(((data ?? []) as LegalMembership[]).map(async (membership) => {
     const tenant = Array.isArray(membership.tenant) ? membership.tenant[0] : membership.tenant;
     const role = Array.isArray(membership.role) ? membership.role[0] : membership.role;
     const acceptance = await hasTenantLegalAcceptance(admin, membership.tenant_id);

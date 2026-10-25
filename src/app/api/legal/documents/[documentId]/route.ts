@@ -8,8 +8,7 @@ type Context = { params: Promise<{ documentId: string }> };
 
 export async function GET(request: Request, { params }: Context) {
   const tenantId = new URL(request.url).searchParams.get("tenant_id");
-  const { documentId } = await params;
-  const session = await createClient();
+  const [{ documentId }, session] = await Promise.all([params, createClient()]);
   const { data: { user } } = await session.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!tenantId) return NextResponse.json({ error: "Falta el negocio." }, { status: 400 });

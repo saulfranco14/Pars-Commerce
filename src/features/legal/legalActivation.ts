@@ -3,11 +3,27 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 
 import { legalProfileSchema, type LegalProfileForm } from "@/features/legal/legalProfileSchema";
 import { normalizeMexicanPhone } from "@/lib/phone";
+import type { createAdminClient } from "@/lib/supabase/admin";
 
-type Admin = {
+export type LegalAdmin = {
+  // The legal tables are introduced by the migrations in this branch. This
+  // single boundary can be removed after regenerating the Supabase types.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   from: (table: string) => any;
-  storage: { from: (bucket: string) => { upload: (path: string, body: Uint8Array, options: Record<string, unknown>) => Promise<{ error: { message: string } | null }> } };
+  storage: ReturnType<typeof createAdminClient>["storage"];
 };
+
+export type PublishedLegalDocument = {
+  id: string;
+  document_type: string;
+  version: string;
+  title: string;
+  content: string;
+  content_hash: string;
+  effective_at: string | null;
+};
+
+type AcceptedDocumentReference = Pick<PublishedLegalDocument, "id" | "content_hash">;
 
 export const REQUIRED_TLACO_DOCUMENTS = [
   "saas_terms",
@@ -51,8 +67,8 @@ export type LegalPartyInput = Omit<
   public_privacy_contact?: string | null;
 };
 
-export function asLegalAdmin(client: unknown): Admin {
-  return client as Admin;
+export function asLegalAdmin(client: unknown): LegalAdmin {
+  return client as LegalAdmin;
 }
 
 export function documentHash(content: string): string {
@@ -89,7 +105,7 @@ export function cleanLegalProfile(input: unknown): LegalPartyInput | null {
   };
 }
 
-export async function getOwnerMembership(admin: Admin, tenantId: string, userId: string) {
+export async function getOwnerMembership(admin: LegalAdmin, tenantId: string, userId: string) {
   const { data } = await admin
     .from("tenant_memberships")
     .select("status, role:tenant_roles(name)")
@@ -100,7 +116,7 @@ export async function getOwnerMembership(admin: Admin, tenantId: string, userId:
   return Boolean(data && data.status === "active" && role?.name === "owner");
 }
 
-export async function getPublishedTlacoDocuments(admin: Admin) {
+export async function getPublishedTlacoDocuments(admin: LegalAdmin): Promise<PublishedLegalDocument[]> {
   const { data, error } = await admin
     .from("legal_document_versions")
     .select("id, document_type, version, title, content, content_hash, effective_at")
@@ -109,14 +125,16 @@ export async function getPublishedTlacoDocuments(admin: Admin) {
     .in("document_type", [...REQUIRED_TLACO_DOCUMENTS])
     .order("published_at", { ascending: false });
   if (error) throw new Error(error.message);
-  const byType = new Map<string, any>();
-  for (const item of data ?? []) if (!byType.has(item.document_type)) byType.set(item.document_type, item);
-  const docs = REQUIRED_TLACO_DOCUMENTS.map((type) => byType.get(type)).filter(Boolean);
+  const byType = new Map<string, PublishedLegalDocument>();
+  for (const item of (data ?? []) as PublishedLegalDocument[]) if (!byType.has(item.document_type)) byType.set(item.document_type, item);
+  const docs = REQUIRED_TLACO_DOCUMENTS
+    .map((type) => byType.get(type))
+    .filter((document): document is PublishedLegalDocument => Boolean(document));
   if (docs.length !== REQUIRED_TLACO_DOCUMENTS.length) throw new Error("Faltan documentos legales publicados.");
   return docs;
 }
 
-export async function hasTenantLegalAcceptance(admin: Admin, tenantId: string) {
+export async function hasTenantLegalAcceptance(admin: LegalAdmin, tenantId: string) {
   const { data } = await admin
     .from("tenant_legal_acceptances")
     .select("id, accepted_at, evidence_path, document_snapshot")
@@ -126,14 +144,14 @@ export async function hasTenantLegalAcceptance(admin: Admin, tenantId: string) {
     .maybeSingle();
   if (!data) return null;
   const currentDocuments = await getPublishedTlacoDocuments(admin);
-  const acceptedDocuments = Array.isArray(data.document_snapshot) ? data.document_snapshot : [];
-  const isCurrent = currentDocuments.every((document: any) => acceptedDocuments.some((accepted: any) =>
+  const acceptedDocuments = (Array.isArray(data.document_snapshot) ? data.document_snapshot : []) as AcceptedDocumentReference[];
+  const isCurrent = currentDocuments.every((document) => acceptedDocuments.some((accepted) =>
     accepted.id === document.id && accepted.content_hash === document.content_hash,
   ));
   return isCurrent ? data : null;
 }
 
-export async function getTenantPurchaseDocuments(admin: Admin, tenantId: string) {
+export async function getTenantPurchaseDocuments(admin: LegalAdmin, tenantId: string) {
   const { data: profile, error } = await admin
     .from("tenant_legal_profiles")
     .select("public_seller_name, public_privacy_contact, legal_name, updated_at")
@@ -206,7 +224,7 @@ function finishPdfPages(pdf: PDFDocument, regular: PDFFont) {
   const pages = pdf.getPages();
   pages.forEach((page, index) => {
     page.drawRectangle({ x: 54, y: 48, width: 487, height: 1, color: PDF_BORDER });
-    page.drawText("Tlaco · Saúl Mauricio Franco Rentería · tlaco.app", { x: 54, y: 30, size: 7.5, font: regular, color: PDF_MUTED });
+    page.drawText("Tlaco · Documento legal versionado · tlaco.app", { x: 54, y: 30, size: 7.5, font: regular, color: PDF_MUTED });
     const pageLabel = `Página ${index + 1} de ${pages.length}`;
     page.drawText(pageLabel, { x: 541 - regular.widthOfTextAtSize(pageLabel, 7.5), y: 30, size: 7.5, font: regular, color: PDF_MUTED });
   });
@@ -223,8 +241,10 @@ export async function createLetterheadDocumentPdf(document: { id: string; title:
   pdf.setProducer("Tlaco");
   pdf.setCreationDate(new Date());
   pdf.setModificationDate(new Date());
-  const regular = await pdf.embedFont(StandardFonts.Helvetica);
-  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const [regular, bold] = await Promise.all([
+    pdf.embedFont(StandardFonts.Helvetica),
+    pdf.embedFont(StandardFonts.HelveticaBold),
+  ]);
   let page = pdf.addPage([595, 842]);
   drawPdfMasthead(page, bold);
 
@@ -235,8 +255,7 @@ export async function createLetterheadDocumentPdf(document: { id: string; title:
     y -= 28;
   }
   page.drawText("Plataforma Tlaco para negocios", { x: 54, y: y - 2, size: 10, font: bold, color: PDF_MUTED });
-  page.drawText("Emitido por Saúl Mauricio Franco Rentería, titular de la marca Tlaco.", { x: 54, y: y - 18, size: 8.5, font: regular, color: PDF_MUTED });
-  y -= 46;
+  y -= 30;
 
   const integrityHash = document.content_hash || documentHash(document.content);
   page.drawRectangle({ x: 54, y: y - 112, width: 487, height: 112, color: PDF_SURFACE, borderColor: PDF_BORDER, borderWidth: 1 });
@@ -310,8 +329,10 @@ export async function createAcceptancePdf(input: {
   pdf.setProducer("Tlaco");
   pdf.setCreationDate(new Date(input.acceptedAt));
   pdf.setModificationDate(new Date(input.acceptedAt));
-  const regular = await pdf.embedFont(StandardFonts.Helvetica);
-  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const [regular, bold] = await Promise.all([
+    pdf.embedFont(StandardFonts.Helvetica),
+    pdf.embedFont(StandardFonts.HelveticaBold),
+  ]);
   let page = pdf.addPage([595, 842]);
   drawPdfMasthead(page, bold);
   page.drawText("Comprobante de apertura", { x: 54, y: 696, size: 23, font: bold, color: PDF_NAVY });

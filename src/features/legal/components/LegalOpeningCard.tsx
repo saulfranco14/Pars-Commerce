@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, ExternalLink, FileText, Landmark, Loader2, LockKeyhole, MapPin, Phone, Search, ShieldCheck } from "lucide-react";
+import { ArrowDown, CheckCircle2, ExternalLink, FileText, Landmark, Loader2, LockKeyhole, MapPin, Phone, Search, ShieldCheck } from "lucide-react";
 
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { FormInput } from "@/components/ui/FormInput";
@@ -199,6 +199,7 @@ export function LegalOpeningCard() {
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<LegalProfileField, string>>>({});
   const inputRefs = useRef<Partial<Record<LegalProfileField, HTMLInputElement | null>>>({});
   const documentReaderRef = useRef<HTMLDivElement | null>(null);
+  const acceptanceRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!tenantId) return;
@@ -299,6 +300,12 @@ export function LegalOpeningCard() {
     setStage("agreement");
   }
 
+  function goToAgreementConfirmation() {
+    if (!documents?.length) return;
+    setReviewedDocumentIds(new Set(documents.map((document) => document.id)));
+    requestAnimationFrame(() => acceptanceRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
+  }
+
   if (!tenantId) return <main className="mx-auto flex min-h-dvh max-w-md items-center px-5"><Notification tone="error" message="No encontramos el negocio que quieres abrir." /></main>;
   const step = stage === "why" ? 0 : stage === "details" ? 1 : 2;
   const documentsReady = Boolean(documents && documents.length >= 5);
@@ -378,6 +385,17 @@ export function LegalOpeningCard() {
                   </div>
                   <span className={`rounded-full px-3 py-1 text-xs font-bold ${allDocumentsReviewed ? "bg-emerald-100 text-emerald-700" : "bg-accent/10 text-accent"}`}>{allDocumentsReviewed ? "Listo para aceptar" : "Sigue leyendo"}</span>
                 </div>
+                {!allDocumentsReviewed ? (
+                  <button
+                    type="button"
+                    onClick={goToAgreementConfirmation}
+                    aria-label="Ir a la confirmación y marcar el paquete como revisado"
+                    className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-5 z-30 inline-flex min-h-12 items-center gap-2 rounded-full border border-accent/20 bg-accent px-5 text-sm font-bold text-accent-foreground shadow-lg transition-colors hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:right-8"
+                  >
+                    Ir al final
+                    <ArrowDown className="h-4 w-4" aria-hidden />
+                  </button>
+                ) : null}
                 <div ref={documentReaderRef} className="mt-4 space-y-6">
                   {documents!.map((document, documentIndex) => {
                     const reviewed = reviewedDocumentIds.has(document.id);
@@ -406,7 +424,7 @@ export function LegalOpeningCard() {
                     );
                   })}
                 </div>
-                <div className="mt-7 rounded-2xl border border-border bg-surface p-5">
+                <div ref={acceptanceRef} className="mt-7 scroll-mt-24 rounded-2xl border border-border bg-surface p-5">
                   <p className="text-sm font-bold text-foreground">Confirmación del propietario</p>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">Esta casilla se habilita cuando hayas recorrido el contrato y todos sus anexos.</p>
                   <label className={`mt-4 flex min-h-14 gap-3 rounded-xl border p-4 text-sm leading-6 ${allDocumentsReviewed ? "cursor-pointer border-accent/30 bg-accent/5 text-foreground" : "border-border bg-muted text-muted-foreground"}`}>
