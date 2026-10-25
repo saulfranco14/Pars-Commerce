@@ -127,10 +127,10 @@ export const PRIVACY: LegalDoc = {
       ],
     },
     {
-      id: "inai",
+      id: "autoridad",
       title: "13. Autoridad",
       body: [
-        "Si consideras que tu derecho a la protección de datos ha sido vulnerado, puedes acudir al Instituto Nacional de Transparencia, Acceso a la Información y Protección de Datos Personales (INAI).",
+        "Si consideras que tu derecho a la protección de datos ha sido vulnerado, puedes acudir a la autoridad federal competente en materia de protección de datos personales en posesión de particulares conforme al marco vigente.",
       ],
     },
   ],

@@ -213,6 +213,8 @@ export async function requestOrder(
     customer_phone: string;
     customer_email?: string;
     scheduled_for?: string | null;
+    accept_terms: boolean;
+    marketing_opt_in?: boolean;
   },
   fingerprintId: string,
   idempotencyKey: string,
@@ -253,6 +255,9 @@ export async function checkoutSubscription(
       payment_method: payload.payment_method,
       pickup_point_id: payload.pickup_point_id,
       delivery: payload.delivery,
+      accept_terms: payload.accept_terms,
+      accept_recurring_mandate: payload.accept_recurring_mandate,
+      marketing_opt_in: payload.marketing_opt_in,
     }),
   });
   const data = await res.json().catch(() => ({}));

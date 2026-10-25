@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requirePermission } from "@/lib/auth/requirePermission";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
+import { asLegalAdmin, hasTenantLegalAcceptance } from "@/features/legal/legalActivation";
 
 interface RequestBody {
   tenant_id: string;
@@ -58,6 +59,12 @@ export async function PATCH(request: Request) {
   }
 
   const admin = createAdminClient();
+  if (body.accepting_orders && !(await hasTenantLegalAcceptance(asLegalAdmin(admin), body.tenant_id))) {
+    return NextResponse.json(
+      { error: "Completa los datos legales y acepta el acuerdo de Tlaco antes de abrir pedidos." },
+      { status: 403 },
+    );
+  }
   const { data: tenant } = await admin
     .from("tenants")
     .select("is_demo")

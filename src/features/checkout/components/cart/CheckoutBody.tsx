@@ -83,6 +83,14 @@ interface CheckoutBodyProps {
     perMonth: number;
     mpFee: number;
   } | null;
+  termsAccepted: boolean;
+  onTermsAcceptedChange: (accepted: boolean) => void;
+  recurringMandateAccepted: boolean;
+  onRecurringMandateAcceptedChange: (accepted: boolean) => void;
+  marketingOptIn: boolean;
+  onMarketingOptInChange: (accepted: boolean) => void;
+  termsHref: string;
+  privacyHref: string;
 }
 
 export function CheckoutBody({
@@ -116,6 +124,14 @@ export function CheckoutBody({
   msiBaseAmount,
   viableMsiOptions,
   msiBreakdown,
+  termsAccepted,
+  onTermsAcceptedChange,
+  recurringMandateAccepted,
+  onRecurringMandateAcceptedChange,
+  marketingOptIn,
+  onMarketingOptInChange,
+  termsHref,
+  privacyHref,
   pickupScheduling,
   businessHours,
   pickupPointName,
@@ -271,6 +287,14 @@ export function CheckoutBody({
             error={fieldErrors.scheduled_for}
           />
         ) : null}
+
+        <section className="space-y-3 rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
+          <p className="text-sm font-semibold text-gray-900">Tu pedido lo vende y atiende este negocio.</p>
+          <p className="text-xs leading-5 text-gray-600">Lee sus <a className="font-bold text-blue-700 underline" href={termsHref} target="_blank" rel="noreferrer">condiciones de compra</a> y <a className="font-bold text-blue-700 underline" href={privacyHref} target="_blank" rel="noreferrer">aviso de privacidad</a>.</p>
+          <label className="flex cursor-pointer gap-2 text-xs leading-5 text-gray-700"><input required type="checkbox" checked={termsAccepted} onChange={(event) => onTermsAcceptedChange(event.target.checked)} className="mt-1 h-4 w-4 accent-blue-600"/>Acepto las condiciones de este pedido.</label>
+          {paymentMode === "recurring" && <label className="flex cursor-pointer gap-2 text-xs leading-5 text-gray-700"><input required type="checkbox" checked={recurringMandateAccepted} onChange={(event) => onRecurringMandateAcceptedChange(event.target.checked)} className="mt-1 h-4 w-4 accent-blue-600"/>Autorizo los cargos recurrentes con la frecuencia elegida. Podré cancelarlos desde mi pedido.</label>}
+          <label className="flex cursor-pointer gap-2 text-xs leading-5 text-gray-600"><input type="checkbox" checked={marketingOptIn} onChange={(event) => onMarketingOptInChange(event.target.checked)} className="mt-1 h-4 w-4 accent-blue-600"/>Quiero recibir promociones de este negocio.</label>
+        </section>
 
         {variant === "desktop" && (
           <div className="space-y-2">
