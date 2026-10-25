@@ -13,6 +13,7 @@ export const REQUIRED_TLACO_DOCUMENTS = [
   "saas_terms",
   "privacy_notice",
   "data_processing",
+  "service_policy",
   "exit_policy",
 ] as const;
 
@@ -245,16 +246,33 @@ export async function createLetterheadDocumentPdf(document: { id: string; title:
   page.drawText("CONTENIDO DEL DOCUMENTO", { x: 68, y: y + 6, size: 9, font: bold, color: PDF_NAVY });
   y -= 26;
 
-  const bodyLines = wrapPdfText(document.content, regular, 10.5, 487);
-  for (const line of bodyLines) {
-    if (y < 78) {
-      page = pdf.addPage([595, 842]);
-      drawPdfMasthead(page, bold, document.title);
-      y = 686;
+  const paragraphs = document.content.split("\n");
+  for (let index = 0; index < paragraphs.length; index += 1) {
+    const paragraph = paragraphs[index].trim();
+    if (!paragraph) { y -= 8; continue; }
+    const isHeading = /^\d+\.\s/.test(paragraph) || (paragraph.length < 90 && paragraph === paragraph.toUpperCase());
+    // The database content includes a plain-text title for portability. The
+    // PDF already printed its branded title above, so it is not duplicated.
+    if (index === 0 && isHeading) continue;
+    const paragraphFont = isHeading ? bold : regular;
+    const paragraphSize = isHeading ? 11 : 10.5;
+    if (isHeading) y -= 8;
+    for (const line of wrapPdfText(paragraph, paragraphFont, paragraphSize, isHeading ? 469 : 487)) {
+      if (!line) continue;
+      if (y < 78) {
+        page = pdf.addPage([595, 842]);
+        drawPdfMasthead(page, bold, document.title);
+        y = 686;
+      }
+      if (isHeading) {
+        page.drawRectangle({ x: 54, y: y - 2, width: 4, height: 14, color: PDF_GOLD });
+        page.drawText(line, { x: 68, y, size: paragraphSize, font: paragraphFont, color: PDF_NAVY });
+      } else {
+        page.drawText(line, { x: 54, y, size: paragraphSize, font: paragraphFont, color: PDF_NAVY });
+      }
+      y -= isHeading ? 18 : 17;
     }
-    if (!line) { y -= 9; continue; }
-    page.drawText(line, { x: 54, y, size: 10.5, font: regular, color: PDF_NAVY });
-    y -= 17;
+    y -= isHeading ? 5 : 9;
   }
 
   finishPdfPages(pdf, regular);
