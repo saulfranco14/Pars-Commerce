@@ -15,6 +15,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { BrandPanel } from "@/features/auth/components/BrandPanel";
+import { HeardFromSelect } from "@/features/auth/components/HeardFromSelect";
+import { recallProspect } from "@/features/growth/services/paraClient";
 import { MobileAuthHeader } from "@/features/auth/components/MobileAuthHeader";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { registroSchema } from "@/features/auth/validations/registroForm";
@@ -182,28 +184,31 @@ function SolutionRegistrationForm({
   email,
   phone,
   password,
+  heardFrom,
   error,
   fieldErrors,
   loading,
   onEmailChange,
   onPhoneChange,
   onPasswordChange,
+  onHeardFromChange,
   onSubmit,
 }: {
   businessName: string;
   email: string;
   phone: string;
   password: string;
+  heardFrom: string;
   error: string | null;
   fieldErrors: Record<string, string>;
   loading: boolean;
   onEmailChange: (value: string) => void;
   onPhoneChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
+  onHeardFromChange: (value: string) => void;
   onSubmit: (event: React.FormEvent) => void;
 }) {
   const [phoneTouched, setPhoneTouched] = useState(false);
-  const phoneDigits = phone.replace(/\D/g, "");
   const livePhoneError = fieldErrors.phone || (phoneTouched && !isValidMexicanPhone(phone) ? "Escribe un WhatsApp mexicano de 10 dígitos" : "");
   const phoneReady = isValidMexicanPhone(phone);
   return (
@@ -218,6 +223,7 @@ function SolutionRegistrationForm({
             <label htmlFor="solution-email" className="mt-6 block text-sm font-medium text-muted-foreground">Correo</label><input id="solution-email" type="email" value={email} onChange={(event) => onEmailChange(event.target.value)} className={`${inputClass} ${fieldErrors.email ? "border-red-500" : ""}`} autoComplete="email" placeholder="tu@email.com" />{fieldErrors.email ? <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p> : null}
             <label htmlFor="solution-phone" className="mt-4 block text-sm font-medium text-muted-foreground">WhatsApp del negocio</label><input id="solution-phone" type="tel" inputMode="tel" pattern="[0-9 ]*" maxLength={18} value={phone} onChange={(event) => { setPhoneTouched(true); onPhoneChange(formatMexicanPhoneInput(event.target.value)); }} onBlur={() => setPhoneTouched(true)} aria-invalid={Boolean(livePhoneError)} aria-describedby="solution-phone-help" className={`${inputClass} ${livePhoneError ? "border-red-500" : phoneReady ? "border-emerald-500" : ""}`} autoComplete="tel" placeholder="55 1234 5678" /><p id="solution-phone-help" className={`mt-1 text-xs ${livePhoneError ? "font-semibold text-red-600" : phoneReady ? "font-semibold text-emerald-700" : "text-muted-foreground"}`}>{livePhoneError || (phoneReady ? "Número válido. Será el contacto visible y de seguimiento." : "Escribe los 10 dígitos de tu WhatsApp.")}</p>
             <div className="mt-4"><PasswordInput id="solution-password" label="Contraseña" value={password} onChange={(event) => onPasswordChange(event.target.value)} required minLength={6} inputClassName={`${inputClass} ${fieldErrors.password ? "border-red-500" : ""}`} autoComplete="new-password" placeholder="Mínimo 6 caracteres" />{fieldErrors.password ? <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p> : null}</div>
+            <div className="mt-4"><HeardFromSelect id="solution-heard-from" value={heardFrom} onChange={onHeardFromChange} className={inputClass} /></div>
             <button type="submit" disabled={loading || !phoneReady} className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 text-sm font-bold text-white disabled:opacity-50">{loading ? "Creando y preparando…" : "Crear mi tienda gratis"}<ArrowRight className="h-4 w-4" /></button>
             <p className="mt-4 text-center text-xs leading-5 text-muted-foreground">Al continuar aceptas los <Link href="/terminos" className="underline">Términos</Link> y el <Link href="/privacidad" className="underline">Aviso de Privacidad</Link>.</p>
           </form>
@@ -245,6 +251,11 @@ function RegistroContent() {
   const [entering, setEntering] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [preparationStage, setPreparationStage] = useState(0);
+  const [heardFrom, setHeardFrom] = useState("");
+
+  function growthIntent() {
+    return { prospectToken: intent.prospectToken ?? recallProspect() ?? undefined, heardFrom: heardFrom || undefined };
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -271,8 +282,9 @@ function RegistroContent() {
     }
 
     setLoading(true);
-    const fullIntent = { ...intent, phone };
-    try { track("registration_started", { plan: intent.plan, giro: intent.giro, solution: intent.solutionKey ?? "direct", ...getAcquisitionProps() }); } catch { /* La analítica no bloquea el registro. */ }
+    const fullIntent = { ...intent, phone, ...growthIntent() };
+    const growthProps = { prospect: fullIntent.prospectToken ? "1" : "0", heard_from: heardFrom || "none" };
+    try { track("registration_started", { plan: intent.plan, giro: intent.giro, solution: intent.solutionKey ?? "direct", ...growthProps, ...getAcquisitionProps() }); } catch { /* La analítica no bloquea el registro. */ }
 
     try {
       const response = await fetch("/api/auth/send-confirmation", {
@@ -295,7 +307,7 @@ function RegistroContent() {
       const cleanEmail = email.trim();
       setRegisteredEmail(cleanEmail);
       setSuccess(true);
-      try { track("registration_completed", { plan: intent.plan, giro: intent.giro, solution: intent.solutionKey ?? "direct", ...getAcquisitionProps() }); } catch { /* La analítica no bloquea el registro. */ }
+      try { track("registration_completed", { plan: intent.plan, giro: intent.giro, solution: intent.solutionKey ?? "direct", ...growthProps, ...getAcquisitionProps() }); } catch { /* La analítica no bloquea el registro. */ }
       void handleStart(cleanEmail);
     } catch (err: unknown) {
       console.error("Error en registro:", err);
@@ -332,7 +344,7 @@ function RegistroContent() {
         slug: deriveSlug(businessName),
         business_type: solution?.catalog.businessType ?? intent.giro,
         catalog_template_key: intent.catalogStartMode === "own" ? undefined : solution?.catalog.key ?? intent.catalogKey,
-        registration_intent: { ...intent, phone },
+        registration_intent: { ...intent, phone, ...growthIntent() },
       }) as { id: string; slug?: string };
       setPreparationStage(2);
       await new Promise((resolve) => window.setTimeout(resolve, 450));
@@ -349,7 +361,7 @@ function RegistroContent() {
   }
 
   if (solution) {
-    return <SolutionRegistrationForm businessName={intent.businessName || solution.preset.defaultName} email={email} phone={phone} password={password} error={error} fieldErrors={fieldErrors} loading={loading} onEmailChange={(value) => { setEmail(value); setFieldErrors((current) => ({ ...current, email: "" })); }} onPhoneChange={(value) => { setPhone(value); setFieldErrors((current) => ({ ...current, phone: "" })); }} onPasswordChange={(value) => { setPassword(value); setFieldErrors((current) => ({ ...current, password: "" })); }} onSubmit={handleSubmit} />;
+    return <SolutionRegistrationForm businessName={intent.businessName || solution.preset.defaultName} email={email} phone={phone} password={password} heardFrom={heardFrom} onHeardFromChange={setHeardFrom} error={error} fieldErrors={fieldErrors} loading={loading} onEmailChange={(value) => { setEmail(value); setFieldErrors((current) => ({ ...current, email: "" })); }} onPhoneChange={(value) => { setPhone(value); setFieldErrors((current) => ({ ...current, phone: "" })); }} onPasswordChange={(value) => { setPassword(value); setFieldErrors((current) => ({ ...current, password: "" })); }} onSubmit={handleSubmit} />;
   }
 
   // Mostrar mensaje de éxito
@@ -509,6 +521,7 @@ function RegistroContent() {
                   </p>
                 )}
               </div>
+              <HeardFromSelect id="heard-from" value={heardFrom} onChange={setHeardFrom} className={inputClass} />
               <button
                 type="submit"
                 disabled={loading || !isValidMexicanPhone(phone)}

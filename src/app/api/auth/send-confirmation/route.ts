@@ -3,13 +3,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 import { PLAN_ORDER } from "@/features/billing/entitlements";
 import { normalizeMexicanPhone } from "@/lib/phone";
+import { HEARD_FROM_VALUES } from "@/features/auth/constants/heardFromOptions";
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password, intent } = await request.json() as {
       email?: string;
       password?: string;
-      intent?: { plan?: string; giro?: string; solutionKey?: string; catalogKey?: string; businessName?: string; themeKey?: string; primaryGoals?: string[]; catalogStartMode?: string; onboardingSessionId?: string; phone?: string; assisted?: boolean };
+      intent?: { plan?: string; giro?: string; solutionKey?: string; catalogKey?: string; businessName?: string; themeKey?: string; primaryGoals?: string[]; catalogStartMode?: string; onboardingSessionId?: string; phone?: string; assisted?: boolean; prospectToken?: string; heardFrom?: string };
     };
 
     if (!email || !password) {
@@ -23,6 +24,8 @@ export async function POST(request: NextRequest) {
     if (!phone) {
       return NextResponse.json({ error: "Ingresa un WhatsApp mexicano de 10 dígitos." }, { status: 400 });
     }
+    const prospectToken = typeof intent?.prospectToken === "string" ? intent.prospectToken.trim().slice(0, 64) : "";
+    const heardFrom = typeof intent?.heardFrom === "string" && HEARD_FROM_VALUES.has(intent.heardFrom) ? intent.heardFrom : "";
     const registrationIntent = {
       plan: PLAN_ORDER.includes(intent?.plan as never) ? intent?.plan : "free",
       giro: intent?.giro?.slice(0, 48) ?? "otro",
@@ -35,6 +38,9 @@ export async function POST(request: NextRequest) {
       onboarding_session_id: intent?.onboardingSessionId?.slice(0, 80) ?? null,
       phone,
       assisted: Boolean(intent?.assisted),
+      // Only present for growth signups, so every other signup keeps the same metadata.
+      ...(prospectToken ? { prospect_token: prospectToken } : {}),
+      ...(heardFrom ? { heard_from: heardFrom } : {}),
     };
     const supabase = createAdminClient();
 
