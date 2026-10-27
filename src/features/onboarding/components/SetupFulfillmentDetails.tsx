@@ -17,6 +17,7 @@ export function SetupFulfillmentDetails({
   delivery,
   onPickupPointChange,
   onDeliveryChange,
+  addressHint,
 }: SetupFulfillmentDetailsProps) {
   if (needsPickupAddress(fulfillment)) {
     return (
@@ -28,6 +29,7 @@ export function SetupFulfillmentDetails({
           </p>
         </div>
         <PickupAddressSearch value={pickupPoint} onChange={onPickupPointChange} />
+        {addressHint ? <p className="text-xs font-semibold text-emerald-700">{addressHint}</p> : null}
         <SettingField
           label="Referencia (opcional)"
           value={pickupPoint.reference ?? ""}

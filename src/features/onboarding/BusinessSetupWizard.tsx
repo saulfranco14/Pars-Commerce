@@ -32,6 +32,7 @@ import { SetupPaymentDetails } from "@/features/onboarding/components/SetupPayme
 import { deriveSlug } from "@/features/onboarding/helpers/deriveSlug";
 import { SETUP_TEST_STEP, resumeSetupStep } from "@/features/onboarding/helpers/setupResume";
 import { needsPickupAddress, setupCheckoutProblem } from "@/features/onboarding/helpers/setupCheckoutValidation";
+import { activateSetup, legalOpeningUrl } from "@/features/onboarding/services/setupActivationService";
 import { newPickupPoint } from "@/features/configuracion/helpers/paymentsAndDeliveryForm";
 import { formatMexicanPhoneInput, normalizeMexicanPhone } from "@/lib/phone";
 import { uploadProductImage } from "@/lib/supabase/storage";
@@ -52,6 +53,7 @@ import type {
   SetupPaymentMethod,
   SetupTransferDraft,
 } from "@/features/onboarding/interfaces/setupCheckout";
+import type { ProspectPrefill } from "@/features/growth/interfaces/prefill";
 
 interface SetupProduct {
   id: string;
@@ -522,6 +524,23 @@ export function BusinessSetupWizard() {
   const [showMemberships, setShowMemberships] = useState(false);
   const [resumed, setResumed] = useState(false);
   const returningFromLegal = searchParams.get("resume") === "activate";
+  const [autoActivate, setAutoActivate] = useState(false);
+  const autoActivationStarted = useRef(false);
+
+  // Back from the legal opening the test was already watched: open orders and go straight to memberships.
+  useEffect(() => {
+    if (!autoActivate || !tenantId || autoActivationStarted.current) return;
+    autoActivationStarted.current = true;
+    void activateSetup(tenantId)
+      .then(async (result) => {
+        if (result.status !== "activated") return;
+        setActivatedSlug(result.slug);
+        setShowMemberships(true);
+        await mutateGlobal("/api/tenants");
+      })
+      .catch((value) => setError(value instanceof Error ? value.message : "No pudimos activar los pedidos"))
+      .finally(() => setAutoActivate(false));
+  }, [autoActivate, tenantId]);
 
   // The tenants cache predates this session's saves (the legal flow keeps the dashboard mounted), so resume from a fresh read.
   useEffect(() => {
@@ -536,7 +555,10 @@ export function BusinessSetupWizard() {
         if (saved?.fulfillment) setFulfillment(saved.fulfillment);
         if (saved?.payment_method) setPaymentMethod(saved.payment_method);
         setStep(next);
-        if (next === SETUP_TEST_STEP && returningFromLegal) setTestStage(TEST_STAGES.length - 1);
+        if (next === SETUP_TEST_STEP && returningFromLegal) {
+          setTestStage(TEST_STAGES.length - 1);
+          setAutoActivate(true);
+        }
       })
       .catch(() => undefined)
       .finally(() => {
@@ -547,11 +569,22 @@ export function BusinessSetupWizard() {
     };
   }, [tenantId, resumed, returningFromLegal]);
 
-  // Resuming the wizard shows what the checkout already has instead of empty fields.
+  const { data: prospectPrefill, error: prospectPrefillError } = useSWR<ProspectPrefill>(
+    tenantId ? `/api/tenants/${encodeURIComponent(tenantId)}/prospect-prefill` : null,
+    swrFetcher,
+    { revalidateOnFocus: false, shouldRetryOnError: false },
+  );
+  const [addressFromProspect, setAddressFromProspect] = useState(false);
+
+  // Resuming the wizard shows what the checkout already has; a claimed store starts from its known address.
   const [prefilled, setPrefilled] = useState(false);
-  if (checkoutSnapshot && !prefilled) {
+  if (checkoutSnapshot && (prospectPrefill || prospectPrefillError) && !prefilled) {
     setPrefilled(true);
     if (checkoutSnapshot.pickupPoint) setPickupPoint(checkoutSnapshot.pickupPoint);
+    else if (prospectPrefill?.pickupPoint) {
+      setPickupPoint(prospectPrefill.pickupPoint);
+      setAddressFromProspect(true);
+    }
     setDelivery(checkoutSnapshot.delivery);
     setTransfer(checkoutSnapshot.transfer);
   }
@@ -601,7 +634,7 @@ export function BusinessSetupWizard() {
       ? "Ingresa un WhatsApp mexicano de 10 dígitos."
       : null;
 
-  if (!tenantsLoaded || !tenant || productsLoading || !resumed) {
+  if (!tenantsLoaded || !tenant || productsLoading || !resumed || autoActivate) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-white">
         <div className="text-center">
@@ -904,23 +937,11 @@ export function BusinessSetupWizard() {
     }
     setBusy(true);
     try {
-      const legalResponse = await fetch(`/api/legal/status?tenant_id=${encodeURIComponent(tenant.id)}`, { cache: "no-store" });
-      const legal = await legalResponse.json() as { pending?: { tenant_id?: string } | null };
-      if (legalResponse.ok && legal.pending?.tenant_id === tenant.id) {
-        router.push(`/dashboard/legal?tenant=${encodeURIComponent(tenant.id)}&return=${encodeURIComponent(`/dashboard/preparar-negocio?tenant=${tenant.id}&resume=activate`)}`);
+      const result = await activateSetup(tenant.id);
+      if (result.status === "legal_pending") {
+        router.push(legalOpeningUrl(tenant.id));
         return;
       }
-      await requestJson("/api/tenants", {
-        method: "PATCH",
-        body: JSON.stringify({
-          tenant_id: tenant.id,
-          settings: { onboarding: { customer_preview_completed: true } },
-        }),
-      });
-      const result = (await requestJson("/api/tenants/complete-setup", {
-        method: "POST",
-        body: JSON.stringify({ tenant_id: tenant.id }),
-      })) as { slug: string };
       setActivatedSlug(result.slug);
       setShowMemberships(true);
       await mutateGlobal("/api/tenants");
@@ -1084,6 +1105,7 @@ export function BusinessSetupWizard() {
                   delivery={delivery}
                   onPickupPointChange={setPickupPoint}
                   onDeliveryChange={setDelivery}
+                  addressHint={addressFromProspect ? "Usamos la dirección registrada de tu negocio. Corrígela si no es exacta." : undefined}
                 />
               </fieldset>
               <fieldset className="mt-6">
