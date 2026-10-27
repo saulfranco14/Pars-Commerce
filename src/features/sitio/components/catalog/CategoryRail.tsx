@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { RAIL_MIDDLE_COPY, useCategoryRail } from "@/features/sitio/hooks/useCategoryRail";
+import { useStoreNavigation } from "@/features/sitio/hooks/useStoreNavigation";
 
 import {
   storeChip,
@@ -22,7 +23,7 @@ const ARROW = `absolute top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 cursor-poin
 
 export function CategoryRail({ slug, state, categories }: CategoryRailProps) {
   const { type, subcatalogId, q, sort } = state;
-  const activeKey = subcatalogId ?? ALL_KEY;
+  const { pendingHref } = useStoreNavigation();
   const entries = [
     { key: ALL_KEY, label: "Todas", count: null, href: catalogHref(slug, { type, q, sort }) },
     ...categories.map((category) => ({
@@ -32,6 +33,8 @@ export function CategoryRail({ slug, state, categories }: CategoryRailProps) {
       href: catalogHref(slug, { type, subcatalogId: category.id, q, sort }),
     })),
   ];
+  // The tapped chip turns active at once; the server catches up behind it.
+  const activeKey = entries.find((entry) => entry.href === pendingHref)?.key ?? subcatalogId ?? ALL_KEY;
   const { scrollerRef, looping, copies, onScroll, step } = useCategoryRail(activeKey, entries.length);
 
   return (
