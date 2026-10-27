@@ -54,11 +54,10 @@ export async function ensureCatalogTemplates(client: unknown): Promise<void> {
       type: item.type,
       name: item.name,
       slug: deriveSlug(item.name),
-      description:
-        item.description ??
-        `${item.name} de ejemplo para ${definition.name}. Puedes editarlo o eliminarlo después.`,
+      description: item.description ?? null,
       price: item.price,
-      unit: "unit",
+      unit: item.unit ?? "unit",
+      is_public: item.isPublic ?? true,
       track_stock: item.type === "product",
       initial_stock: item.type === "product" ? 12 : 0,
       image_url: item.imageUrl ?? catalogImageUrl(),
