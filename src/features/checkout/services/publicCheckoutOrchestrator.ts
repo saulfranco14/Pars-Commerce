@@ -89,7 +89,7 @@ export async function executePublicCheckout({
 
   const { data: tenant } = await providerAdmin
     .from("tenants")
-    .select("id, slug, settings, accepting_orders, merchant_payments_v2_enabled")
+    .select("id, slug, site_slug, settings, accepting_orders, merchant_payments_v2_enabled")
     .eq("id", payload.tenant_id)
     .eq("public_store_enabled", true)
     .single();
@@ -384,7 +384,8 @@ export async function executePublicCheckout({
   const ctx: CheckoutContext = {
     admin,
     payload,
-    tenantSlug: tenant.slug ?? "",
+    // Back URLs land on the storefront, which resolves site_slug, not the dashboard slug.
+    tenantSlug: tenant.site_slug || tenant.slug || "",
     recurringConfig,
     cartItems: normalizedItems,
     planItems: planChargeItems(plans.lines),

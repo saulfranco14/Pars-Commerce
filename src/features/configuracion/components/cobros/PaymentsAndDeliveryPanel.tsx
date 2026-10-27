@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Banknote, CreditCard, Landmark, MapPin, PackagePlus, Plus, Save, Truck } from "lucide-react";
 
 import { usePaymentsAndDelivery } from "@/features/configuracion/hooks/usePaymentsAndDelivery";
+import { usePublicSitePath } from "@/hooks/usePublicSitePath";
 import { FormSheet } from "@/components/ui/FormSheet";
 import { Notification } from "@/components/ui/Notification";
 import { MobileActionBar } from "@/components/layout/MobileActionBar";
@@ -28,6 +29,7 @@ const saveButton =
  */
 export function PaymentsAndDeliveryPanel({ tenantId, tenantSlug, canManagePayments, providerResult }: PaymentsAndDeliveryPanelProps) {
   const settings = usePaymentsAndDelivery(tenantId);
+  const sitePath = usePublicSitePath(tenantSlug);
   const { form, update, pickup } = settings;
   const connected = Boolean(settings.saved?.onlinePaymentConnected);
 
@@ -161,7 +163,7 @@ export function PaymentsAndDeliveryPanel({ tenantId, tenantSlug, canManagePaymen
               message={
                 <>
                   {settings.notice}{" "}
-                  <Link href={`/sitio/${tenantSlug}/inicio`} className="font-bold underline underline-offset-2">
+                  <Link href={`${sitePath}/inicio`} className="font-bold underline underline-offset-2">
                     Ver cómo lo verá el cliente
                   </Link>
                 </>

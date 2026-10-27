@@ -31,6 +31,7 @@ import { deriveSlug } from "@/features/onboarding/helpers/deriveSlug";
 import { SETUP_TEST_STEP, resumeSetupStep } from "@/features/onboarding/helpers/setupResume";
 import { formatMexicanPhoneInput, normalizeMexicanPhone } from "@/lib/phone";
 import { uploadProductImage } from "@/lib/supabase/storage";
+import { publicSitePath } from "@/lib/publicSitePath";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { PRODUCTION_APP_URL } from "@/lib/env/appUrl";
@@ -887,7 +888,7 @@ export function BusinessSetupWizard() {
   }
 
   if (activatedSlug) {
-    const publicUrl = `/sitio/${activatedSlug}`;
+    const publicUrl = publicSitePath(tenant);
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[#f5f7fa] px-4 py-10">
         {showMemberships ? (
