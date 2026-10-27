@@ -2,13 +2,9 @@ import Link from "next/link";
 import { Search, X } from "lucide-react";
 
 import { CatalogSortSelect } from "@/features/sitio/components/catalog/CatalogSortSelect";
+import { CategoryRail } from "@/features/sitio/components/catalog/CategoryRail";
 
-import {
-  storeChip,
-  storeChipActive,
-  storeChipIdle,
-  storeFocusRing,
-} from "@/features/sitio/constants/storeClasses";
+import { storeFocusRing } from "@/features/sitio/constants/storeClasses";
 import { catalogHref } from "@/features/sitio/helpers/storeLinks";
 
 import type { CatalogToolbarProps } from "@/features/sitio/interfaces/storeCatalog";
@@ -25,7 +21,7 @@ export function CatalogToolbar({ slug, state, counts, categories }: CatalogToolb
   const showScopes = counts.products > 0 && counts.services > 0;
 
   return (
-    <div className="sticky top-14 z-30 -mx-4 space-y-3 border-b border-(--store-hairline) bg-(--store-canvas)/85 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
+    <>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         {showScopes ? (
           <nav aria-label="Tipo de catálogo" className="flex rounded-full bg-(--store-well) p-1">
@@ -82,35 +78,7 @@ export function CatalogToolbar({ slug, state, counts, categories }: CatalogToolb
         </div>
       </div>
 
-      {categories.length > 0 ? (
-        <nav aria-label="Categorías">
-          <ul className="flex flex-wrap gap-2">
-            <li>
-              <Link
-                href={catalogHref(slug, { type, q, sort })}
-                aria-current={!subcatalogId ? "page" : undefined}
-                className={`${storeChip} ${!subcatalogId ? storeChipActive : storeChipIdle}`}
-              >
-                Todas
-              </Link>
-            </li>
-            {categories.map((category) => {
-              const active = subcatalogId === category.id;
-              return (
-                <li key={category.id}>
-                  <Link
-                    href={catalogHref(slug, { type, subcatalogId: category.id, q, sort })}
-                    aria-current={active ? "page" : undefined}
-                    className={`${storeChip} ${active ? storeChipActive : storeChipIdle}`}
-                  >
-                    {category.name}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-      ) : null}
-    </div>
+      {categories.length > 0 ? <CategoryRail slug={slug} state={state} categories={categories} /> : null}
+    </>
   );
 }
