@@ -20,7 +20,7 @@ export const engineKey = `${BASE}/settings`;
 export const templatesKey = `${BASE}/templates`;
 export const funnelKey = (days: number) => `${BASE}/funnel?days=${days}`;
 
-export async function patchLead(id: string, body: { outcome?: LeadOutcome; reason?: string; snoozeDays?: number | null; phone?: string }): Promise<GrowthLead> {
+export async function patchLead(id: string, body: { outcome?: LeadOutcome; reason?: string; snoozeDays?: number | null; phone?: string; giro?: string }): Promise<GrowthLead> {
   return (await apiFetch(leadKey(id), { method: "PATCH", body: JSON.stringify(body) })) as GrowthLead;
 }
 

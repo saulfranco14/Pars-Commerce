@@ -37,5 +37,6 @@ export function useGrowthLead(id: string) {
     markOutcome: (outcome: LeadOutcome, reason?: string) => run(() => patchLead(id, { outcome, reason }), "Listo, quedó registrado."),
     snooze: (days: number | null) => run(() => patchLead(id, { snoozeDays: days }), days ? `Pausado ${days} días.` : "Reactivado."),
     updatePhone: (phone: string) => run(() => patchLead(id, { phone }), "Teléfono actualizado. Vuelve a la fila de WhatsApp."),
+    updateGiro: (giro: string) => run(() => patchLead(id, { giro }), "Giro actualizado. Su «Para ti» ya muestra la tienda de ese giro."),
   };
 }

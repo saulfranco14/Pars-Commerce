@@ -43,6 +43,7 @@ export const LEAD_EVENT_LABEL: Record<string, string> = {
   help_clicked: "Pidió ayuda por WhatsApp",
   registered: "Se registró",
   phone_corrected: "Corregiste el teléfono",
+  giro_corrected: "Corregiste el giro",
 };
 
 export const LEAD_STAGE_TABS = [

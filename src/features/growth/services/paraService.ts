@@ -27,7 +27,8 @@ export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPag
 
   const catalogKey = (lead.catalog_template_key as string | null) ?? (lead.giro as string);
   const catalog = STARTER_CATALOGS.find((entry) => entry.key === catalogKey) ?? null;
-  const pool = catalog ? [...catalog.products, ...catalog.services].filter((item) => item.isPublic !== false) : [];
+  // $0 starter items (e.g. "Entrega local") read as free products in a preview.
+  const pool = catalog ? [...catalog.products, ...catalog.services].filter((item) => item.isPublic !== false && item.price > 0) : [];
   const items: ParaItem[] = pickParaItems(pool, PARA_ITEMS_LIMIT).map((item, index) => ({
     id: `item-${index}`,
     name: item.name,

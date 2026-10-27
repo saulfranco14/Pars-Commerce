@@ -150,3 +150,11 @@ export interface LeadPhoneSheetProps {
   onClose: () => void;
   onSubmit: (phone: string) => Promise<boolean>;
 }
+
+export interface LeadGiroSheetProps {
+  isOpen: boolean;
+  currentGiro: string;
+  busy: boolean;
+  onClose: () => void;
+  onSubmit: (giro: string) => Promise<boolean>;
+}

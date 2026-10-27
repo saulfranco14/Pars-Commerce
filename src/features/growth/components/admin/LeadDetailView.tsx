@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, Mail, MapPin, Pencil, Phone, Search } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Mail, MapPin, Pencil, Phone, Search, Store } from "lucide-react";
 
 import { useGrowthLead } from "@/features/growth/hooks/useGrowthLead";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -11,6 +11,7 @@ import { adminActionButtonDanger, adminActionButtonSecondary } from "@/component
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
+import { LeadGiroSheet } from "@/features/growth/components/admin/LeadGiroSheet";
 import { LeadPhoneSheet } from "@/features/growth/components/admin/LeadPhoneSheet";
 import { WhatsappComposer } from "@/features/growth/components/admin/WhatsappComposer";
 
@@ -37,9 +38,10 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 export function LeadDetailView({ id }: { id: string }) {
-  const { detail, error, isLoading, busy, notice, clearNotice, markOutcome, snooze, updatePhone } = useGrowthLead(id);
+  const { detail, error, isLoading, busy, notice, clearNotice, markOutcome, snooze, updatePhone, updateGiro } = useGrowthLead(id);
   const [confirmDrop, setConfirmDrop] = useState(false);
   const [editingPhone, setEditingPhone] = useState(false);
+  const [editingGiro, setEditingGiro] = useState(false);
 
   if (isLoading && !detail) return <LoadingBlock message="Cargando prospecto…" variant="skeleton" />;
   if (error || !detail) return <EmptyState icon={AlertTriangle} title="No encontramos este prospecto" tone="muted" />;
@@ -88,6 +90,9 @@ export function LeadDetailView({ id }: { id: string }) {
           {!closed ? (
             <button type="button" disabled={busy} onClick={() => setEditingPhone(true)} className={adminActionButtonSecondary}><Pencil className="h-4 w-4" aria-hidden />Corregir teléfono</button>
           ) : null}
+          {!closed ? (
+            <button type="button" disabled={busy} onClick={() => setEditingGiro(true)} className={adminActionButtonSecondary}><Store className="h-4 w-4" aria-hidden />Corregir giro</button>
+          ) : null}
         </div>
         {!closed ? (
           <div className="flex flex-wrap gap-2 border-t border-border-soft pt-4">
@@ -117,6 +122,9 @@ export function LeadDetailView({ id }: { id: string }) {
                   <span className="mr-2 rounded-md bg-border-soft/60 px-1.5 py-0.5 text-[11px] font-bold uppercase text-muted-foreground">{ACTOR_LABEL[event.actor] ?? event.actor}</span>
                   {LEAD_EVENT_LABEL[event.type] ?? event.type}
                   {event.template_label ? ` · ${event.template_label}` : ""}
+                  {event.type === "giro_corrected" && typeof event.payload.giro === "string"
+                    ? ` · ${giroCopy(String(event.payload.previous)).label} → ${giroCopy(event.payload.giro).label}`
+                    : ""}
                   {typeof event.payload.reason === "string" ? ` · ${event.payload.reason}` : ""}
                   {typeof event.payload.seconds === "number" ? ` · ${Math.round(event.payload.seconds)} s` : ""}
                 </span>
@@ -145,6 +153,14 @@ export function LeadDetailView({ id }: { id: string }) {
         busy={busy}
         onClose={() => setEditingPhone(false)}
         onSubmit={updatePhone}
+      />
+      <LeadGiroSheet
+        key={lead.giro}
+        isOpen={editingGiro}
+        currentGiro={lead.giro}
+        busy={busy}
+        onClose={() => setEditingGiro(false)}
+        onSubmit={updateGiro}
       />
     </div>
   );

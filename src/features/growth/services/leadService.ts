@@ -1,5 +1,6 @@
 import { LEADS_PAGE_SIZE } from "@/features/growth/constants/leadStages";
 import { TEMPLATE_STEPS } from "@/features/growth/constants/templateVariables";
+import { GIRO_COPY } from "@/features/growth/constants/giroCopy";
 import { internalError, rpcError } from "@/features/growth/services/growthDb";
 import { normalizeMexicanPhone } from "@/lib/phone";
 
@@ -129,5 +130,25 @@ export async function updateLeadPhone(db: GrowthDb, leadId: string, rawPhone: st
   if (!phone) return { ok: false, error: { code: "validation", message: "Escribe los 10 dígitos del teléfono." } };
   const { data, error } = await db.rpc("growth_update_lead_phone", { p_lead_id: leadId, p_phone: phone });
   if (error) return rpcError(error.message);
+  return { ok: true, data: data as GrowthLead };
+}
+
+/** The giro is also the starter catalog key, so fixing it changes what every "Para ti" link shows from now on. */
+export async function updateLeadGiro(db: GrowthDb, leadId: string, giro: string): Promise<ServiceResult<GrowthLead>> {
+  if (!GIRO_COPY[giro]) return { ok: false, error: { code: "validation", message: "Elige un giro de la lista." } };
+  const { data: current, error: readError } = await db.from("growth_leads").select(LIST_COLUMNS).eq("id", leadId).maybeSingle();
+  if (readError) return internalError(readError.message);
+  if (!current) return { ok: false, error: { code: "not_found", message: "El prospecto ya no existe." } };
+  if (current.giro === giro) return { ok: true, data: current as GrowthLead };
+
+  const now = new Date().toISOString();
+  const { data, error } = await db
+    .from("growth_leads")
+    .update({ giro, catalog_template_key: giro, last_activity_at: now, updated_at: now })
+    .eq("id", leadId)
+    .select(LIST_COLUMNS)
+    .maybeSingle();
+  if (error) return internalError(error.message);
+  await db.from("growth_lead_events").insert({ lead_id: leadId, type: "giro_corrected", actor: "operator", payload: { previous: current.giro, giro } });
   return { ok: true, data: data as GrowthLead };
 }
