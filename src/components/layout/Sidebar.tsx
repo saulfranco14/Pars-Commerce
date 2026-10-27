@@ -14,6 +14,7 @@ import { dashboardSectionOf } from "@/constants/dashboardAccess";
 import { menuPreferencesOf, resolveMenu } from "@/constants/dashboardMenu";
 import { staffUsernameOf } from "@/lib/auth/staffLogin";
 import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
+import { isPlatformRoute } from "@/lib/platformRoutes";
 import {
   X,
   Download,
@@ -25,6 +26,9 @@ import {
   Sparkles,
   Plus,
   SlidersHorizontal,
+  Target,
+  Send,
+  Filter,
 } from "lucide-react";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 import { FormSheet } from "@/components/ui/FormSheet";
@@ -135,6 +139,8 @@ function SidebarContent(props: SidebarContentProps) {
   // The business arranges its menu; each role still only sees what it can open.
   const activeTenant = useActiveTenant();
   const menuGroups = resolveMenu(menuPreferencesOf(activeTenant?.settings), canOpen);
+  const onPlatform = isPlatformAdmin && isPlatformRoute(pathname);
+  const showTenantMenu = hasTenant && !onPlatform;
 
   function switchBusiness(
     selected: SidebarContentProps["memberships"][number],
@@ -250,7 +256,7 @@ function SidebarContent(props: SidebarContentProps) {
           </button>
         )}
       </div>
-      {!tenantsLoaded ? (
+      {onPlatform ? null : !tenantsLoaded ? (
         <div
           className="shrink-0 border-b border-border-soft px-4 py-4"
           aria-busy="true"
@@ -311,16 +317,18 @@ function SidebarContent(props: SidebarContentProps) {
         )
       )}
       <nav className="flex min-h-0 flex-1 flex-col space-y-1 overflow-auto p-4">
-        <NavLink
-          href={hasTenant ? base : "/dashboard"}
-          active={pathname === (hasTenant ? base : "/dashboard")}
-          icon={Home}
-          onNavigate={onNavigate}
-        >
-          Inicio
-        </NavLink>
+        {!onPlatform && (
+          <NavLink
+            href={hasTenant ? base : "/dashboard"}
+            active={pathname === (hasTenant ? base : "/dashboard")}
+            icon={Home}
+            onNavigate={onNavigate}
+          >
+            Inicio
+          </NavLink>
+        )}
         {isPlatformAdmin && (
-          <div className="mt-3 border-t border-border-soft pt-4">
+          <div className={onPlatform ? "" : "mt-3 border-t border-border-soft pt-4"}>
             <div className="flex items-center justify-between px-3 pb-2">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                 Plataforma
@@ -371,9 +379,33 @@ function SidebarContent(props: SidebarContentProps) {
             >
               Auditoría
             </NavLink>
+            <NavLink
+              href="/dashboard/plataforma/prospectos"
+              active={pathname.startsWith("/dashboard/plataforma/prospectos")}
+              icon={Target}
+              onNavigate={onNavigate}
+            >
+              Prospectos
+            </NavLink>
+            <NavLink
+              href="/dashboard/plataforma/motor"
+              active={pathname.startsWith("/dashboard/plataforma/motor")}
+              icon={Send}
+              onNavigate={onNavigate}
+            >
+              Motor
+            </NavLink>
+            <NavLink
+              href="/dashboard/plataforma/embudo"
+              active={pathname.startsWith("/dashboard/plataforma/embudo")}
+              icon={Filter}
+              onNavigate={onNavigate}
+            >
+              Embudo
+            </NavLink>
           </div>
         )}
-        {hasTenant &&
+        {showTenantMenu &&
           menuGroups.map((group) => (
             <div key={group.key}>
               <p className="mt-4 border-t border-border-soft px-3 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
@@ -395,7 +427,7 @@ function SidebarContent(props: SidebarContentProps) {
               })}
             </div>
           ))}
-        {hasTenant && canOpen("configuracion") && (
+        {showTenantMenu && canOpen("configuracion") && (
           <Link
             href={`${base}/configuracion/menu`}
             onClick={onNavigate}

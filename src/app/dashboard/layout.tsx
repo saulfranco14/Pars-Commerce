@@ -17,6 +17,7 @@ import { Menu } from "lucide-react";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { btnPrimary } from "@/components/ui/buttonClasses";
 import { isFocusRoute } from "@/lib/focusRoutes";
+import { isPlatformRoute } from "@/lib/platformRoutes";
 import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
 import { LegalDeferredNotice } from "@/features/legal/components/LegalDeferredNotice";
 
@@ -38,6 +39,7 @@ export default function DashboardLayout({
   const setActiveTenantId = useTenantStore((s) => s.setActiveTenantId);
   const activeTenant = useActiveTenant();
   const isPreparingBusiness = pathname === "/dashboard/preparar-negocio";
+  const onPlatform = isPlatformRoute(pathname);
 
   const pathParts = pathname.split("/").filter(Boolean);
   const tenantSlug =
@@ -132,14 +134,12 @@ export default function DashboardLayout({
             isFocusRoute(pathname) ? "pb-6" : "pb-24"
           }`}
         >
-          <Suspense fallback={null}><LegalDeferredNotice /></Suspense>
+          {!onPlatform && <Suspense fallback={null}><LegalDeferredNotice /></Suspense>}
           {pathname === "/dashboard/crear-negocio" ||
           pathname === "/dashboard/perfil" ||
           pathname === "/dashboard/legal" ||
           pathname === "/dashboard/preparar-negocio" ||
-          // Platform routes are cross-tenant (super admin) — they don't belong
-          // to a business, so they skip the "select a tenant" gate below.
-          pathname === "/dashboard/plataforma" ? (
+          onPlatform ? (
             children
           ) : !tenantsLoaded ? (
             <LoadingBlock message="Cargando negocios…" />
@@ -172,6 +172,7 @@ export default function DashboardLayout({
         </main>
       </div>
       {!isFocusRoute(pathname) &&
+        !onPlatform &&
         tenantsLoaded &&
         (memberships.length > 0 || isPlatformAdmin) && (
           <BottomNav
