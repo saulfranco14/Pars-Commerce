@@ -19,6 +19,12 @@ export interface CatalogToolbarProps {
   categories: StoreCategory[];
 }
 
+export interface CategoryRailProps {
+  slug: string;
+  state: CatalogState;
+  categories: StoreCategory[];
+}
+
 export interface CatalogSortSelectProps {
   slug: string;
   state: CatalogState;
