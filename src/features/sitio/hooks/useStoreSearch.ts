@@ -6,7 +6,8 @@ import useSWR from "swr";
 import { SEARCH_MIN_CHARS } from "@/features/sitio/constants/catalog";
 import { searchStore } from "@/features/sitio/services/storefrontClientService";
 
-const DEBOUNCE_MS = 180;
+// Phone typing lands ~200ms apart; a shorter wait fired one request per letter.
+const DEBOUNCE_MS = 320;
 
 export function useStoreSearch({ slug }: { slug: string }) {
   const [query, setQuery] = useState("");

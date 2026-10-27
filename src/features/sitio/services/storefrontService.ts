@@ -7,6 +7,7 @@ import { enrichProducts, type ProductBase } from "@/lib/enrichProducts";
 import { readBusinessHours } from "@/features/configuracion/helpers/businessHours";
 import { listPublicPlans } from "@/features/planes/services/planQueryService";
 import { COLLAGE_MAX_IMAGES, collageImages } from "@/features/promociones/helpers/promotionVisual";
+import { searchPatterns } from "@/features/sitio/helpers/searchPatterns";
 
 import {
   isPromotionActive,
@@ -208,7 +209,19 @@ export async function listCatalogItems(query: CatalogQuery): Promise<CatalogItem
   if (query.type) request = request.eq("type", query.type);
   if (query.subcatalogId) request = request.eq("subcatalog_id", query.subcatalogId);
   const search = query.search ? sanitizeSearch(query.search) : "";
-  if (search) request = request.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+  if (search) {
+    const patterns = searchPatterns(search);
+    // "cerveza" should find the Tecate and Indio in "Cervezas", whose names never say it.
+    const { data: categories } = await db()
+      .from("product_subcatalogs")
+      .select("id")
+      .eq("tenant_id", query.tenantId)
+      .or(patterns.map((pattern) => `name.ilike.${pattern}`).join(","));
+    const categoryIds = ((categories ?? []) as Array<{ id: string }>).map((category) => category.id);
+    const clauses = patterns.flatMap((pattern) => [`name.ilike.${pattern}`, `description.ilike.${pattern}`]);
+    if (categoryIds.length > 0) clauses.push(`subcatalog_id.in.(${categoryIds.join(",")})`);
+    request = request.or(clauses.join(","));
+  }
 
   switch (query.sort) {
     case "newest":
