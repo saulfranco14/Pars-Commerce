@@ -220,6 +220,8 @@ export function LegalOpeningCard() {
         setProfile((current) => ({ ...current, ...stored, tax_id: stored.tax_id ?? "", address_line2: stored.address_line2 ?? "", address_place_id: stored.address_place_id ?? "", address_latitude: stored.address_latitude ?? null, address_longitude: stored.address_longitude ?? null, city: stored.city ?? "", state: stored.state ?? "", postal_code: stored.postal_code ?? "", contractual_email: stored.contractual_email ?? "", contractual_phone: stored.contractual_phone ? formatMexicanPhoneInput(stored.contractual_phone) : "", representative_name: stored.representative_name ?? "", representative_role: stored.representative_role ?? "", public_seller_name: stored.public_seller_name ?? "", public_privacy_contact: stored.public_privacy_contact ?? "" }));
         setShowTaxId(Boolean(stored.tax_id));
       }
+      const knownPhone = profileData.defaults?.contractual_phone as string | null | undefined;
+      if (knownPhone) setProfile((current) => (current.contractual_phone ? current : { ...current, contractual_phone: formatMexicanPhoneInput(knownPhone) }));
       if (Array.isArray(offerData.documents)) setDocuments(offerData.documents);
     }).catch((reason) => {
       setDocuments([]);

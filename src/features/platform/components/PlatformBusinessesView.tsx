@@ -25,6 +25,7 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { PlatformPagination } from "@/features/platform/components/PlatformPagination";
 import type { PlatformTenant, PlatformTenantsResponse } from "@/features/platform/types";
 import { formatMXN } from "@/lib/loanUtils";
+import { publicSitePath } from "@/lib/publicSitePath";
 import { swrFetcher } from "@/lib/swrFetcher";
 
 type Filter = "all" | "accepting_orders" | "paused" | "store_off";
@@ -258,7 +259,7 @@ function BusinessDetailSheet({ tenant, onClose }: { tenant: PlatformTenant | nul
         <div className="grid gap-2 sm:flex sm:justify-end">
           <button type="button" onClick={onClose} className="min-h-12 rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground">Cerrar</button>
           {tenant.public_store_enabled && (
-            <Link href={`/sitio/${tenant.slug}`} target="_blank" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground">
+            <Link href={publicSitePath(tenant)} target="_blank" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground">
               Abrir tienda pública <ArrowUpRight className="h-4 w-4" aria-hidden />
             </Link>
           )}

@@ -8,6 +8,7 @@ import { SiteContentInicioTab } from "./SiteContentInicioTab";
 import { SiteContentNosotrosTab } from "./SiteContentNosotrosTab";
 import { SiteContentContactoTab } from "./SiteContentContactoTab";
 import { FilterTabs } from "@/components/ui/FilterTabs";
+import { usePublicSitePath } from "@/hooks/usePublicSitePath";
 import {
   CONTENT_TABS,
   ACCORDION_SECTIONS,
@@ -27,6 +28,7 @@ export function SiteContentForm({
   onContentSaved,
   embedded = false,
 }: SiteContentFormProps) {
+  const sitePath = usePublicSitePath(tenantSlug);
   const [contentTab, setContentTab] = useState<SectionSlug>("inicio");
   const [expanded, setExpanded] = useState<SectionSlug | null>("inicio");
   const [inicio, setInicio] = useState<SitePageContent>({});
@@ -212,7 +214,7 @@ export function SiteContentForm({
 
       {!embedded && (
         <a
-          href={`/sitio/${tenantSlug}`}
+          href={sitePath}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-6 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"

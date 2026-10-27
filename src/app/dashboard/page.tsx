@@ -21,6 +21,7 @@ import {
   tableBodyCellRightClass,
 } from "@/components/ui/TableWrapper";
 import { formatOrderDate } from "@/lib/formatDate";
+import { publicSitePath } from "@/lib/publicSitePath";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { mergeTicketSettings } from "@/types/ticketSettings";
 import type { TicketSettings } from "@/types/ticketSettings";
@@ -66,11 +67,13 @@ const subscribeToNoBrowserEvents = () => () => {};
 function FirstDashboardLaunch({
   tenantId,
   tenantSlug,
+  sitePath,
   businessName,
   onCreateOrder,
 }: {
   tenantId: string;
   tenantSlug: string;
+  sitePath: string;
   businessName: string;
   onCreateOrder: () => void;
 }) {
@@ -99,7 +102,7 @@ function FirstDashboardLaunch({
   }
 
   async function copyStore() {
-    await navigator.clipboard.writeText(`${window.location.origin}/sitio/${tenantSlug}`);
+    await navigator.clipboard.writeText(`${window.location.origin}${sitePath}`);
     setActiveAction(1);
   }
 
@@ -592,6 +595,7 @@ export default function DashboardPage() {
           <FirstDashboardLaunch
             tenantId={activeTenant.id}
             tenantSlug={activeTenant.slug}
+            sitePath={publicSitePath(activeTenant)}
             businessName={activeTenant.name}
             onCreateOrder={() => setCreateOrderOpen(true)}
           />

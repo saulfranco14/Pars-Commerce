@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   const { data: tenants, error } = await admin
     .from("tenants")
     .select(
-      "id, name, slug, business_type, description, logo_url, public_store_enabled, accepting_orders, catalog_review_status, whatsapp_phone, created_at, updated_at",
+      "id, name, slug, site_slug, business_type, description, logo_url, public_store_enabled, accepting_orders, catalog_review_status, whatsapp_phone, created_at, updated_at",
     )
     .order("updated_at", { ascending: false })
     .limit(500);

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { RefreshCw, ExternalLink, Monitor, Smartphone } from "lucide-react";
 import { ScaledIframe } from "./ScaledIframe";
 
+import { usePublicSitePath } from "@/hooks/usePublicSitePath";
+
 interface SitePreviewPanelProps {
   tenantSlug: string;
 }
@@ -11,7 +13,8 @@ interface SitePreviewPanelProps {
 export function SitePreviewPanel({ tenantSlug }: SitePreviewPanelProps) {
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [reloadKey, setReloadKey] = useState(0);
-  const siteUrl = `/sitio/${tenantSlug}/inicio`;
+  const sitePath = usePublicSitePath(tenantSlug);
+  const siteUrl = `${sitePath}/inicio`;
   const [origin, setOrigin] = useState("");
 
   useEffect(() => {
@@ -31,7 +34,7 @@ export function SitePreviewPanel({ tenantSlug }: SitePreviewPanelProps) {
         </div>
         <div className="mx-2 flex flex-1 min-w-0 items-center rounded-md border border-border/50 bg-background/60 px-2.5 py-1">
           <span className="truncate font-mono text-[10px] text-muted-foreground">
-            {origin}/sitio/{tenantSlug}
+            {origin}{sitePath}
           </span>
         </div>
         <div className="flex overflow-hidden rounded-lg border border-border">

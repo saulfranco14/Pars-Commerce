@@ -7,6 +7,7 @@ import {
 import type { SiteWebGeneralTabProps } from "@/features/sitio-web/interfaces/siteWebGeneralTab";
 import { TemplateSelector } from "@/components/site/TemplateSelector";
 import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
+import { usePublicSitePath } from "@/hooks/usePublicSitePath";
 
 export function SiteWebGeneralTab({
   tenantSlug,
@@ -20,6 +21,7 @@ export function SiteWebGeneralTab({
   onSaveAppearance,
 }: SiteWebGeneralTabProps) {
   const previewColor = themeColor.trim() || DEFAULT_TENANT_ACCENT;
+  const sitePath = usePublicSitePath(tenantSlug);
 
   return (
     <form
@@ -78,7 +80,7 @@ export function SiteWebGeneralTab({
           </div>
           {publicStoreEnabled && (
             <a
-              href={`/sitio/${tenantSlug}`}
+              href={sitePath}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 cursor-pointer"

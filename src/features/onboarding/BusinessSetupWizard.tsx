@@ -28,8 +28,10 @@ import {
 
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { deriveSlug } from "@/features/onboarding/helpers/deriveSlug";
+import { SETUP_TEST_STEP, resumeSetupStep } from "@/features/onboarding/helpers/setupResume";
 import { formatMexicanPhoneInput, normalizeMexicanPhone } from "@/lib/phone";
 import { uploadProductImage } from "@/lib/supabase/storage";
+import { publicSitePath } from "@/lib/publicSitePath";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { useTenantStore } from "@/stores/useTenantStore";
 import { PRODUCTION_APP_URL } from "@/lib/env/appUrl";
@@ -498,6 +500,29 @@ export function BusinessSetupWizard() {
   const [error, setError] = useState<string | null>(null);
   const [activatedSlug, setActivatedSlug] = useState<string | null>(null);
   const [showMemberships, setShowMemberships] = useState(false);
+  const [resumed, setResumed] = useState(false);
+  const returningFromLegal = searchParams.get("resume") === "activate";
+
+  // The tenants cache predates this session's saves (the legal flow keeps the dashboard mounted), so resume from a fresh read.
+  useEffect(() => {
+    if (!tenantId || resumed) return;
+    let cancelled = false;
+    void mutateGlobal("/api/tenants")
+      .then((list) => {
+        if (cancelled) return;
+        const fresh = (Array.isArray(list) ? list : []).find((item) => item.tenant_id === tenantId)?.tenant;
+        const next = resumeSetupStep(fresh?.settings);
+        setStep(next);
+        if (next === SETUP_TEST_STEP && returningFromLegal) setTestStage(TEST_STAGES.length - 1);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setResumed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantId, resumed, returningFromLegal]);
 
   useEffect(() => {
     if (!tenant) return;
@@ -544,7 +569,7 @@ export function BusinessSetupWizard() {
       ? "Ingresa un WhatsApp mexicano de 10 dígitos."
       : null;
 
-  if (!tenantsLoaded || !tenant || productsLoading) {
+  if (!tenantsLoaded || !tenant || productsLoading || !resumed) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-white">
         <div className="text-center">
@@ -834,7 +859,7 @@ export function BusinessSetupWizard() {
       const legalResponse = await fetch(`/api/legal/status?tenant_id=${encodeURIComponent(tenant.id)}`, { cache: "no-store" });
       const legal = await legalResponse.json() as { pending?: { tenant_id?: string } | null };
       if (legalResponse.ok && legal.pending?.tenant_id === tenant.id) {
-        router.push(`/dashboard/legal?tenant=${encodeURIComponent(tenant.id)}&return=${encodeURIComponent(`/dashboard/preparar-negocio?tenant=${tenant.id}`)}`);
+        router.push(`/dashboard/legal?tenant=${encodeURIComponent(tenant.id)}&return=${encodeURIComponent(`/dashboard/preparar-negocio?tenant=${tenant.id}&resume=activate`)}`);
         return;
       }
       await requestJson("/api/tenants", {
@@ -863,7 +888,7 @@ export function BusinessSetupWizard() {
   }
 
   if (activatedSlug) {
-    const publicUrl = `/sitio/${activatedSlug}`;
+    const publicUrl = publicSitePath(tenant);
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[#f5f7fa] px-4 py-10">
         {showMemberships ? (
@@ -928,7 +953,7 @@ export function BusinessSetupWizard() {
   const TestIcon = test.icon;
 
   return (
-    <div className="business-setup-flow min-h-dvh bg-white text-foreground">
+    <div className="business-setup-flow flex min-h-dvh flex-col bg-white text-foreground">
       <header className="border-b border-border-soft">
         <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <TlacoLogo size="md" />
@@ -937,14 +962,12 @@ export function BusinessSetupWizard() {
           </span>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
-        <div className="mx-auto max-w-3xl">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pt-6 sm:px-6 sm:pt-10">
+        <div className="mx-auto w-full max-w-3xl">
           <SetupProgress step={step} />
         </div>
-        {/* On a phone, short steps should finish with their action instead of
-            reserving a screen-sized blank area. Desktop retains the stable
-            step envelope where the extra room is useful. */}
-        <div className="mx-auto mt-7 max-w-3xl sm:mt-9 lg:flex lg:min-h-[calc(100dvh-11rem)] lg:flex-col lg:[&>section]:flex-1">
+        {/* The step grows so the action bar rests at the bottom of the screen even on short steps. */}
+        <div className="mx-auto mt-7 flex w-full max-w-3xl flex-1 flex-col sm:mt-9 [&>section]:flex-1">
           {step === 0 ? (
             <section>
               <p className="text-sm font-bold text-accent">PASO 1 DE 5</p>
@@ -1371,7 +1394,7 @@ export function BusinessSetupWizard() {
               {error}
             </p>
           ) : null}
-          <div className="sticky bottom-0 z-20 -mx-4 mt-8 flex items-center justify-between gap-3 rounded-t-[28px] border-x border-t border-border bg-surface px-4 pb-[max(0.875rem,calc(0.875rem+env(safe-area-inset-bottom)))] pt-4 shadow-[0_-12px_32px_rgba(15,23,42,0.14)] sm:mx-0 sm:rounded-none sm:border-x-0 sm:border-border-soft sm:bg-white/95 sm:px-0 sm:shadow-none">
+          <div className="sticky bottom-0 z-20 -mx-4 mt-8 flex items-center justify-between gap-3 rounded-t-[28px] border-x border-t border-border bg-surface px-4 pb-[max(0.875rem,calc(0.875rem+env(safe-area-inset-bottom)))] pt-4 shadow-[0_-12px_32px_rgba(15,23,42,0.14)] sm:mx-0 sm:rounded-none sm:border-x-0 sm:border-border-soft sm:bg-white/95 sm:px-0 sm:pb-6 sm:shadow-none">
             <button
               type="button"
               onClick={() =>
