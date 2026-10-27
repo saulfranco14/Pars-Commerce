@@ -312,7 +312,10 @@ function RegistroContent() {
     // Let the owner see the first real operation instead of flashing past a
     // blank success screen while we establish their session.
     await new Promise((resolve) => window.setTimeout(resolve, 350));
-    const { error: signInError } = await createClient().auth.signInWithPassword({
+    const supabase = createClient();
+    // A previous account's stale session fails its refresh and would wipe the new session mid-signup.
+    await supabase.auth.signOut({ scope: "local" });
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email: accountEmail,
       password,
     });
