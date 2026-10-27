@@ -337,7 +337,9 @@ export default function CarritoContent({
                 onContinue={continueFromFulfillment}
               />
             ) : (
+              <div className="store-step-forward">
               <CheckoutBody variant="desktop" {...checkoutBodyProps} />
+            </div>
             )}
           </DesktopCheckoutAside>
         )}
@@ -379,7 +381,9 @@ export default function CarritoContent({
               onContinue={continueFromFulfillment}
             />
           ) : (
-            <CheckoutBody variant="mobile" {...checkoutBodyProps} />
+            <div className="store-step-forward">
+              <CheckoutBody variant="mobile" {...checkoutBodyProps} />
+            </div>
           )}
         </MobileCheckoutSheet>
       )}

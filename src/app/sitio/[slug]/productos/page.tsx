@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { SearchX } from "lucide-react";
 
+import { CatalogResults } from "@/features/sitio/components/catalog/CatalogResults";
 import { CatalogToolbar } from "@/features/sitio/components/catalog/CatalogToolbar";
 import { ProductGrid } from "@/features/sitio/components/catalog/ProductGrid";
 import { ServiceList } from "@/features/sitio/components/catalog/ServiceList";
@@ -75,42 +76,44 @@ export default async function ProductosPage({ params, searchParams }: PageProps)
       <StorePageHeader title={pageTitle(state)} description={countLabel} />
       <CatalogToolbar slug={slug} state={state} counts={catalog.counts} categories={catalog.categories} />
 
-      {items.length > 0 ? (
-        groups.map((group) => (
-          <section
-            key={group.id}
-            aria-labelledby={groups.length > 1 ? `catalog-${group.id}` : undefined}
-            aria-label={groups.length > 1 ? undefined : "Resultados del catálogo"}
-            className="pt-2"
-          >
-            {groups.length > 1 ? (
-              <StoreSectionHeader
-                id={`catalog-${group.id}`}
-                title={group.title}
-                subtitle={`${group.items.length} disponibles`}
-              />
-            ) : null}
-            {group.id === "services" && collectionLayout(group.items) === "text" ? (
-              <div className="rounded-3xl bg-(--store-surface) px-4 shadow-sm ring-1 ring-(--store-hairline) sm:px-6">
-                <ServiceList items={group.items} tenantId={tenant.id} slug={slug} />
-              </div>
-            ) : (
-              <ProductGrid items={group.items} tenantId={tenant.id} slug={slug} />
-            )}
-          </section>
-        ))
-      ) : (
-        <StoreEmptyState
-          icon={SearchX}
-          title={state.q ? `Sin resultados para “${state.q}”` : "Nada por aquí todavía"}
-          description={
-            state.q
-              ? "Revisa la ortografía o prueba con una palabra más general."
-              : "Este negocio aún no publica artículos con este filtro."
-          }
-          action={filtered ? { href: catalogHref(slug), label: "Ver todo el catálogo" } : undefined}
-        />
-      )}
+      <CatalogResults key={[state.type, state.subcatalogId, state.q, state.sort].join("|")}>
+        {items.length > 0 ? (
+          groups.map((group) => (
+            <section
+              key={group.id}
+              aria-labelledby={groups.length > 1 ? `catalog-${group.id}` : undefined}
+              aria-label={groups.length > 1 ? undefined : "Resultados del catálogo"}
+              className="pt-2"
+            >
+              {groups.length > 1 ? (
+                <StoreSectionHeader
+                  id={`catalog-${group.id}`}
+                  title={group.title}
+                  subtitle={`${group.items.length} disponibles`}
+                />
+              ) : null}
+              {group.id === "services" && collectionLayout(group.items) === "text" ? (
+                <div className="rounded-3xl bg-(--store-surface) px-4 shadow-sm ring-1 ring-(--store-hairline) sm:px-6">
+                  <ServiceList items={group.items} tenantId={tenant.id} slug={slug} />
+                </div>
+              ) : (
+                <ProductGrid items={group.items} tenantId={tenant.id} slug={slug} />
+              )}
+            </section>
+          ))
+        ) : (
+          <StoreEmptyState
+            icon={SearchX}
+            title={state.q ? `Sin resultados para “${state.q}”` : "Nada por aquí todavía"}
+            description={
+              state.q
+                ? "Revisa la ortografía o prueba con una palabra más general."
+                : "Este negocio aún no publica artículos con este filtro."
+            }
+            action={filtered ? { href: catalogHref(slug), label: "Ver todo el catálogo" } : undefined}
+          />
+        )}
+      </CatalogResults>
     </div>
   );
 }

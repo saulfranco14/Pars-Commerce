@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { alignLoopScrollForStep, centeredScrollLeft, wrapLoopScroll } from "@/features/sitio/helpers/loopScroll";
+import { alignLoopScrollForStep, centeredScrollLeft, nearestLoopPosition, wrapLoopScroll } from "@/features/sitio/helpers/loopScroll";
 
 const ORIGIN = 16;
 const SET = 1000;
@@ -39,5 +39,16 @@ describe("centeredScrollLeft", () => {
 
   it("never scrolls before the start", () => {
     expect(centeredScrollLeft(20, 100, 400)).toBe(0);
+  });
+});
+
+describe("nearestLoopPosition", () => {
+  it("picks the copy of the target closest to the current scroll", () => {
+    expect(nearestLoopPosition(1900, 950, SET, 2600)).toBe(900);
+    expect(nearestLoopPosition(1100, 2050, SET, 2600)).toBe(2100);
+  });
+
+  it("stays within the scrollable range", () => {
+    expect(nearestLoopPosition(400, 100, SET, 2600)).toBe(400);
   });
 });

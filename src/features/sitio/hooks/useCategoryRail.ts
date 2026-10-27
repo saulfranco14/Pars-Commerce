@@ -5,22 +5,26 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import {
   alignLoopScrollForStep,
   centeredScrollLeft,
+  nearestLoopPosition,
   wrapLoopScroll,
 } from "@/features/sitio/helpers/loopScroll";
 
 export const RAIL_COPIES = 3;
 export const RAIL_MIDDLE_COPY = 1;
-const STEP_SETTLE_MS = 500;
+const SMOOTH_SETTLE_MS = 500;
 
 interface LoopMetrics {
   origin: number;
   setWidth: number;
 }
 
+const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 /** Single-row category rail that loops forever once its chips no longer fit. */
 export function useCategoryRail(activeKey: string, itemCount: number) {
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const stepping = useRef(false);
+  const settling = useRef(false);
+  const placedFor = useRef<boolean | null>(null);
   const [looping, setLooping] = useState(false);
 
   const measure = useCallback((): LoopMetrics | null => {
@@ -28,6 +32,33 @@ export function useCategoryRail(activeKey: string, itemCount: number) {
     if (!starts || starts.length < 2) return null;
     return { origin: starts[0].offsetLeft, setWidth: starts[1].offsetLeft - starts[0].offsetLeft };
   }, []);
+
+  const wrap = useCallback(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller || !looping || settling.current) return;
+    // Keyboard focus must stay visible; wrapping would slide the focused chip out of view.
+    const focused = document.activeElement;
+    if (focused && scroller.contains(focused) && focused.matches(":focus-visible")) return;
+    const metrics = measure();
+    if (!metrics) return;
+    const next = wrapLoopScroll(scroller.scrollLeft, metrics.origin, metrics.setWidth);
+    if (next !== scroller.scrollLeft) scroller.scrollLeft = next;
+  }, [looping, measure]);
+
+  const smoothScrollTo = useCallback(
+    (left: number) => {
+      const scroller = scrollerRef.current;
+      if (!scroller) return;
+      const reduceMotion = prefersReducedMotion();
+      settling.current = true;
+      scroller.scrollTo({ left, behavior: reduceMotion ? "auto" : "smooth" });
+      window.setTimeout(() => {
+        settling.current = false;
+        wrap();
+      }, reduceMotion ? 0 : SMOOTH_SETTLE_MS);
+    },
+    [wrap],
+  );
 
   useEffect(() => {
     const scroller = scrollerRef.current;
@@ -53,22 +84,19 @@ export function useCategoryRail(activeKey: string, itemCount: number) {
     const active = scroller?.querySelector<HTMLElement>(`[data-copy="${copy}"][data-active="true"]`);
     if (!scroller || !active) return;
     // "Todas" opens at the start of the row instead of mid-loop, so the previous lap's tail isn't the first thing seen.
-    scroller.scrollLeft = active.hasAttribute("data-copy-start")
+    const target = active.hasAttribute("data-copy-start")
       ? active.offsetLeft - parseFloat(getComputedStyle(scroller).paddingLeft)
       : centeredScrollLeft(active.offsetLeft, active.offsetWidth, scroller.clientWidth);
-  }, [looping, activeKey]);
-
-  const wrap = useCallback(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller || !looping || stepping.current) return;
-    // Keyboard focus must stay visible; wrapping would slide the focused chip out of view.
-    const focused = document.activeElement;
-    if (focused && scroller.contains(focused) && focused.matches(":focus-visible")) return;
-    const metrics = measure();
-    if (!metrics) return;
-    const next = wrapLoopScroll(scroller.scrollLeft, metrics.origin, metrics.setWidth);
-    if (next !== scroller.scrollLeft) scroller.scrollLeft = next;
-  }, [looping, measure]);
+    const firstPlacement = placedFor.current !== looping;
+    placedFor.current = looping;
+    if (firstPlacement) {
+      scroller.scrollLeft = target;
+      return;
+    }
+    const metrics = looping ? measure() : null;
+    const maxLeft = scroller.scrollWidth - scroller.clientWidth;
+    smoothScrollTo(metrics ? nearestLoopPosition(target, scroller.scrollLeft, metrics.setWidth, maxLeft) : target);
+  }, [looping, activeKey, measure, smoothScrollTo]);
 
   const step = useCallback(
     (direction: 1 | -1) => {
@@ -77,15 +105,9 @@ export function useCategoryRail(activeKey: string, itemCount: number) {
       const delta = direction * scroller.clientWidth * 0.7;
       const metrics = looping ? measure() : null;
       if (metrics) scroller.scrollLeft = alignLoopScrollForStep(scroller.scrollLeft, metrics.origin, metrics.setWidth, delta);
-      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      stepping.current = true;
-      scroller.scrollBy({ left: delta, behavior: reduceMotion ? "auto" : "smooth" });
-      window.setTimeout(() => {
-        stepping.current = false;
-        wrap();
-      }, reduceMotion ? 0 : STEP_SETTLE_MS);
+      smoothScrollTo(scroller.scrollLeft + delta);
     },
-    [looping, measure, wrap],
+    [looping, measure, smoothScrollTo],
   );
 
   return { scrollerRef, looping, copies: looping ? RAIL_COPIES : 1, onScroll: wrap, step };

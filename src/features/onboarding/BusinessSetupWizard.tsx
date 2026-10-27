@@ -27,8 +27,12 @@ import {
 } from "lucide-react";
 
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
+import { SetupFulfillmentDetails } from "@/features/onboarding/components/SetupFulfillmentDetails";
+import { SetupPaymentDetails } from "@/features/onboarding/components/SetupPaymentDetails";
 import { deriveSlug } from "@/features/onboarding/helpers/deriveSlug";
 import { SETUP_TEST_STEP, resumeSetupStep } from "@/features/onboarding/helpers/setupResume";
+import { needsPickupAddress, setupCheckoutProblem } from "@/features/onboarding/helpers/setupCheckoutValidation";
+import { newPickupPoint } from "@/features/configuracion/helpers/paymentsAndDeliveryForm";
 import { formatMexicanPhoneInput, normalizeMexicanPhone } from "@/lib/phone";
 import { uploadProductImage } from "@/lib/supabase/storage";
 import { publicSitePath } from "@/lib/publicSitePath";
@@ -40,6 +44,14 @@ import {
   planCapabilities,
 } from "@/features/landing/constants/pricing";
 import type { BillingPlan } from "@/features/billing/entitlements";
+import type { PickupPointDraft } from "@/features/configuracion/interfaces/paymentsAndDelivery";
+import type {
+  SetupCheckoutSnapshot,
+  SetupDeliveryDraft,
+  SetupFulfillment,
+  SetupPaymentMethod,
+  SetupTransferDraft,
+} from "@/features/onboarding/interfaces/setupCheckout";
 
 interface SetupProduct {
   id: string;
@@ -481,7 +493,7 @@ export function BusinessSetupWizard() {
   const [step, setStep] = useState(0);
   const [phone, setPhone] = useState("");
   const [phoneTouched, setPhoneTouched] = useState(false);
-  const [fulfillment, setFulfillment] = useState("pickup");
+  const [fulfillment, setFulfillment] = useState<SetupFulfillment>("pickup");
   const [orderOwner, setOrderOwner] = useState("owner");
   const [items, setItems] = useState<EditableItem[]>([]);
   const [customItems, setCustomItems] = useState([
@@ -494,7 +506,15 @@ export function BusinessSetupWizard() {
     null,
   );
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMethod, setPaymentMethod] = useState<SetupPaymentMethod>("cash");
+  const [pickupPoint, setPickupPoint] = useState<PickupPointDraft>(newPickupPoint);
+  const [delivery, setDelivery] = useState<SetupDeliveryDraft>({ area: "", fee: "" });
+  const [transfer, setTransfer] = useState<SetupTransferDraft>({ bank_name: "", account_holder: "", clabe: "" });
+  const { data: checkoutSnapshot } = useSWR<SetupCheckoutSnapshot>(
+    tenantId ? `/api/tenants/${encodeURIComponent(tenantId)}/setup-checkout` : null,
+    swrFetcher,
+    { revalidateOnFocus: false },
+  );
   const [testStage, setTestStage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -512,6 +532,9 @@ export function BusinessSetupWizard() {
         if (cancelled) return;
         const fresh = (Array.isArray(list) ? list : []).find((item) => item.tenant_id === tenantId)?.tenant;
         const next = resumeSetupStep(fresh?.settings);
+        const saved = (fresh?.settings as { onboarding?: { fulfillment?: SetupFulfillment; payment_method?: SetupPaymentMethod } } | null)?.onboarding;
+        if (saved?.fulfillment) setFulfillment(saved.fulfillment);
+        if (saved?.payment_method) setPaymentMethod(saved.payment_method);
         setStep(next);
         if (next === SETUP_TEST_STEP && returningFromLegal) setTestStage(TEST_STAGES.length - 1);
       })
@@ -523,6 +546,15 @@ export function BusinessSetupWizard() {
       cancelled = true;
     };
   }, [tenantId, resumed, returningFromLegal]);
+
+  // Resuming the wizard shows what the checkout already has instead of empty fields.
+  const [prefilled, setPrefilled] = useState(false);
+  if (checkoutSnapshot && !prefilled) {
+    setPrefilled(true);
+    if (checkoutSnapshot.pickupPoint) setPickupPoint(checkoutSnapshot.pickupPoint);
+    setDelivery(checkoutSnapshot.delivery);
+    setTransfer(checkoutSnapshot.transfer);
+  }
 
   useEffect(() => {
     if (!tenant) return;
@@ -699,6 +731,13 @@ export function BusinessSetupWizard() {
       document.getElementById("setup-phone")?.focus();
       throw new Error("Revisa el WhatsApp antes de continuar.");
     }
+    const checkout = { step: "fulfillment" as const, fulfillment, pickupPoint, delivery };
+    const problem = setupCheckoutProblem(checkout);
+    if (problem) throw new Error(problem);
+    await requestJson(`/api/tenants/${encodeURIComponent(tenant.id)}/setup-checkout`, {
+      method: "POST",
+      body: JSON.stringify(checkout),
+    });
     await requestJson("/api/tenants", {
       method: "PATCH",
       body: JSON.stringify({
@@ -816,6 +855,13 @@ export function BusinessSetupWizard() {
   }
 
   async function savePayment() {
+    const checkout = { step: "payment" as const, method: paymentMethod, transfer };
+    const problem = setupCheckoutProblem(checkout);
+    if (problem) throw new Error(problem);
+    await requestJson(`/api/tenants/${encodeURIComponent(tenant.id)}/setup-checkout`, {
+      method: "POST",
+      body: JSON.stringify(checkout),
+    });
     await requestJson("/api/tenants", {
       method: "PATCH",
       body: JSON.stringify({
@@ -835,6 +881,8 @@ export function BusinessSetupWizard() {
     setError(null);
     try {
       if (step === 0) await saveContact();
+      // Cash is only taken on pickup, so a delivery-only business starts from transfer.
+      if (step === 0 && !needsPickupAddress(fulfillment) && paymentMethod === "cash") setPaymentMethod("transfer");
       if (step === 1) await saveCatalog();
       if (step === 2) await saveAvailability();
       if (step === 3) await savePayment();
@@ -1023,13 +1071,20 @@ export function BusinessSetupWizard() {
                     <button
                       key={option.id}
                       type="button"
-                      onClick={() => setFulfillment(option.id)}
+                      onClick={() => setFulfillment(option.id as SetupFulfillment)}
                       className={`min-h-20 rounded-2xl border p-4 text-left font-semibold ${fulfillment === option.id ? "border-foreground ring-1 ring-foreground" : "border-border"}`}
                     >
                       {option.label}
                     </button>
                   ))}
                 </div>
+                <SetupFulfillmentDetails
+                  fulfillment={fulfillment}
+                  pickupPoint={pickupPoint}
+                  delivery={delivery}
+                  onPickupPointChange={setPickupPoint}
+                  onDeliveryChange={setDelivery}
+                />
               </fieldset>
               <fieldset className="mt-6">
                 <legend className="text-sm font-semibold">
@@ -1280,27 +1335,43 @@ export function BusinessSetupWizard() {
                 confirma dinero por sí solo.
               </p>
               <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                {[
-                  { id: "cash", label: "Efectivo", icon: WalletCards },
-                  { id: "transfer", label: "Transferencia", icon: Send },
-                  { id: "digital", label: "Pago digital", icon: ReceiptText },
-                ].map(({ id, label, icon: Icon }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setPaymentMethod(id)}
-                    className={`min-h-32 rounded-2xl border p-5 text-left ${paymentMethod === id ? "border-foreground ring-1 ring-foreground" : "border-border"}`}
-                  >
-                    <Icon className="h-6 w-6 text-accent" />
-                    <span className="mt-5 block font-semibold">{label}</span>
-                    {paymentMethod === id ? (
-                      <span className="mt-1 block text-xs font-bold text-emerald-700">
-                        Seleccionado
-                      </span>
-                    ) : null}
-                  </button>
-                ))}
+                {(
+                  [
+                    { id: "cash", label: "Efectivo", icon: WalletCards },
+                    { id: "transfer", label: "Transferencia", icon: Send },
+                    { id: "digital", label: "Pago digital", icon: ReceiptText },
+                  ] as const
+                ).map(({ id, label, icon: Icon }) => {
+                  const unavailable = id === "cash" && !needsPickupAddress(fulfillment);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      disabled={unavailable}
+                      onClick={() => setPaymentMethod(id)}
+                      className={`min-h-32 rounded-2xl border p-5 text-left disabled:cursor-not-allowed disabled:opacity-50 ${paymentMethod === id ? "border-foreground ring-1 ring-foreground" : "border-border"}`}
+                    >
+                      <Icon className="h-6 w-6 text-accent" />
+                      <span className="mt-5 block font-semibold">{label}</span>
+                      {unavailable ? (
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          Solo cuando recogen en tu negocio
+                        </span>
+                      ) : paymentMethod === id ? (
+                        <span className="mt-1 block text-xs font-bold text-emerald-700">
+                          Seleccionado
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
+              <SetupPaymentDetails
+                tenantId={tenant.id}
+                method={paymentMethod}
+                transfer={transfer}
+                onTransferChange={setTransfer}
+              />
             </section>
           ) : null}
 

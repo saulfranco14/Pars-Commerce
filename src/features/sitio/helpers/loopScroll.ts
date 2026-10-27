@@ -23,3 +23,11 @@ export function alignLoopScrollForStep(left: number, origin: number, setWidth: n
 export function centeredScrollLeft(itemLeft: number, itemWidth: number, viewportWidth: number): number {
   return Math.max(0, itemLeft - (viewportWidth - itemWidth) / 2);
 }
+
+/** Copy of `target` closest to where the rail already is, so a smooth recenter travels the short way. */
+export function nearestLoopPosition(target: number, current: number, setWidth: number, maxLeft: number): number {
+  if (setWidth <= 0) return target;
+  const candidates = [target - setWidth, target, target + setWidth].filter((left) => left >= 0 && left <= maxLeft);
+  if (candidates.length === 0) return Math.min(Math.max(target, 0), maxLeft);
+  return candidates.reduce((best, left) => (Math.abs(left - current) < Math.abs(best - current) ? left : best));
+}

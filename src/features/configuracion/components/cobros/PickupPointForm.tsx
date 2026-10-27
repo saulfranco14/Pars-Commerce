@@ -112,7 +112,7 @@ function TabButton({
   );
 }
 
-function PickupAddressSearch({
+export function PickupAddressSearch({
   value,
   onChange,
 }: PickupAddressSearchProps) {

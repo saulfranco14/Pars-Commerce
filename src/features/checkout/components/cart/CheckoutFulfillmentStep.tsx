@@ -90,6 +90,7 @@ export function CheckoutFulfillmentStep({
 }: CheckoutFulfillmentStepProps) {
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<"fulfillment" | "payment">("fulfillment");
+  const [motion, setMotion] = useState<"store-step-forward" | "store-step-back" | "">("");
   const now = useMemo(() => new Date(), []);
   const { fulfillment, payment, pickupPointId } = selection;
   const delivery = selection.delivery ?? EMPTY_DELIVERY;
@@ -109,6 +110,12 @@ export function CheckoutFulfillmentStep({
   const orderTotal = subtotal + deliveryFee;
 
   useEffect(() => setMounted(true), []);
+
+  const goToTab = (next: "fulfillment" | "payment") => {
+    if (next === tab) return;
+    setMotion(next === "payment" ? "store-step-forward" : "store-step-back");
+    setTab(next);
+  };
 
   const chooseFulfillment = (next: CheckoutFulfillmentMethod) => {
     let nextPayment = payment;
@@ -136,7 +143,7 @@ export function CheckoutFulfillmentStep({
       <button
         type="button"
         disabled={tab === "fulfillment" ? !fulfillmentComplete : !fulfillmentComplete || !paymentAvailable}
-        onClick={() => tab === "fulfillment" ? setTab("payment") : onContinue(selection)}
+        onClick={() => tab === "fulfillment" ? goToTab("payment") : onContinue(selection)}
         className="inline-flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl px-4 text-base font-bold text-white shadow-sm transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
         style={{ backgroundColor: accentColor }}
       >
@@ -158,13 +165,18 @@ export function CheckoutFulfillmentStep({
         <p className="mt-1 text-sm text-gray-500">Primero elige cómo recibirlo; después cómo pagarlo.</p>
       </div>
 
-      <div className="grid grid-cols-2 rounded-xl bg-gray-100 p-1" role="tablist" aria-label="Entrega y pago">
-        <StepTab active={tab === "fulfillment"} completed={fulfillmentComplete} onClick={() => setTab("fulfillment")} number="1" label="Recibir" icon={MapPin} />
-        <StepTab active={tab === "payment"} completed={paymentAvailable} onClick={() => setTab("payment")} number="2" label="Pagar" icon={CreditCard} />
+      <div className="relative grid grid-cols-2 rounded-xl bg-gray-100 p-1" role="tablist" aria-label="Entrega y pago">
+        <span
+          aria-hidden
+          className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-lg bg-white shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none"
+          style={{ transform: tab === "payment" ? "translateX(100%)" : undefined }}
+        />
+        <StepTab active={tab === "fulfillment"} completed={fulfillmentComplete} onClick={() => goToTab("fulfillment")} number="1" label="Recibir" icon={MapPin} />
+        <StepTab active={tab === "payment"} completed={paymentAvailable} onClick={() => goToTab("payment")} number="2" label="Pagar" icon={CreditCard} />
       </div>
 
       {tab === "fulfillment" ? (
-        <div className="space-y-3">
+        <div key="fulfillment" className={`space-y-3 ${motion}`}>
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
             {options.deliveryEnabled ? <Choice active={fulfillment === "delivery"} onClick={() => chooseFulfillment("delivery")} icon={MapPin} title="Entrega a domicilio" text={`${options.deliveryAreaLabel ?? "Zona disponible"}${options.deliveryFee > 0 ? ` · $${options.deliveryFee.toFixed(2)}` : ""}`} /> : null}
             {options.pickupEnabled ? <Choice active={fulfillment === "pickup"} onClick={() => chooseFulfillment("pickup")} icon={PackageCheck} title="Recoger en un punto" text={`${options.pickupPoints.length} ${options.pickupPoints.length === 1 ? "ubicación disponible" : "ubicaciones disponibles"}`} /> : null}
@@ -173,7 +185,7 @@ export function CheckoutFulfillmentStep({
           {fulfillment === "pickup" ? <PickupPointChoices points={options.pickupPoints} selectedId={pickupPointId} now={now} onSelect={(id) => onSelectionChange({ ...selection, pickupPointId: id })} /> : null}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div key="payment" className={`space-y-3 ${motion}`}>
           <div><p className="text-sm font-bold text-gray-900">¿Cómo quieres pagar?</p><p className="mt-1 text-xs leading-5 text-gray-500">Sólo aparecen los métodos que este negocio ya configuró.</p></div>
           <div className="grid gap-2">
             {options.onlinePaymentEnabled ? <Choice active={payment === "mercadopago"} onClick={() => onSelectionChange({ ...selection, payment: "mercadopago" })} icon={CreditCard} title="Pagar en línea" text="Confirmación inmediata con Mercado Pago." /> : null}
@@ -196,10 +208,10 @@ function StepTab({ active, completed, onClick, number, label, icon: Icon }: { ac
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={`flex h-12 items-center justify-center gap-2 rounded-lg px-3 text-sm font-bold transition ${active ? "bg-white text-gray-950 shadow-sm" : "text-gray-500"}`}
+      className={`relative flex h-12 items-center justify-center gap-2 rounded-lg px-3 text-sm font-bold transition-colors duration-300 ${active ? "text-gray-950" : "text-gray-500"}`}
     >
       <span
-        className={`relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${active ? "bg-blue-600 text-white" : "bg-white text-gray-500"}`}
+        className={`relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-300 ${active ? "bg-blue-600 text-white" : "bg-white text-gray-500"}`}
       >
         <Icon className="h-4 w-4" aria-hidden />
         {completed ? (
