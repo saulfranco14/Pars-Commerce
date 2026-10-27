@@ -35,6 +35,7 @@ export type PlatformTenant = {
   id: string;
   name: string;
   slug: string;
+  site_slug: string | null;
   business_type: string | null;
   description: string | null;
   logo_url: string | null;
