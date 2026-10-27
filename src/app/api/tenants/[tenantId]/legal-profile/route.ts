@@ -12,9 +12,12 @@ export async function GET(_request: Request, { params }: Context) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const admin = asLegalAdmin(createAdminClient());
   if (!(await getOwnerMembership(admin, tenantId, user.id))) return NextResponse.json({ error: "Sólo el propietario puede consultar estos datos." }, { status: 403 });
-  const { data, error } = await admin.from("tenant_legal_profiles").select("*").eq("tenant_id", tenantId).maybeSingle();
+  const [{ data, error }, { data: tenant }] = await Promise.all([
+    admin.from("tenant_legal_profiles").select("*").eq("tenant_id", tenantId).maybeSingle(),
+    createAdminClient().from("tenants").select("whatsapp_phone").eq("id", tenantId).maybeSingle(),
+  ]);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ profile: data ?? null });
+  return NextResponse.json({ profile: data ?? null, defaults: { contractual_phone: tenant?.whatsapp_phone ?? null } });
 }
 
 export async function PATCH(request: Request, { params }: Context) {
