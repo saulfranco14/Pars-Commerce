@@ -928,7 +928,7 @@ export function BusinessSetupWizard() {
   const TestIcon = test.icon;
 
   return (
-    <div className="business-setup-flow min-h-dvh bg-white text-foreground">
+    <div className="business-setup-flow flex min-h-dvh flex-col bg-white text-foreground">
       <header className="border-b border-border-soft">
         <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <TlacoLogo size="md" />
@@ -937,14 +937,12 @@ export function BusinessSetupWizard() {
           </span>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
-        <div className="mx-auto max-w-3xl">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pt-6 sm:px-6 sm:pt-10">
+        <div className="mx-auto w-full max-w-3xl">
           <SetupProgress step={step} />
         </div>
-        {/* On a phone, short steps should finish with their action instead of
-            reserving a screen-sized blank area. Desktop retains the stable
-            step envelope where the extra room is useful. */}
-        <div className="mx-auto mt-7 max-w-3xl sm:mt-9 lg:flex lg:min-h-[calc(100dvh-11rem)] lg:flex-col lg:[&>section]:flex-1">
+        {/* The step grows so the action bar rests at the bottom of the screen even on short steps. */}
+        <div className="mx-auto mt-7 flex w-full max-w-3xl flex-1 flex-col sm:mt-9 [&>section]:flex-1">
           {step === 0 ? (
             <section>
               <p className="text-sm font-bold text-accent">PASO 1 DE 5</p>
@@ -1371,7 +1369,7 @@ export function BusinessSetupWizard() {
               {error}
             </p>
           ) : null}
-          <div className="sticky bottom-0 z-20 -mx-4 mt-8 flex items-center justify-between gap-3 rounded-t-[28px] border-x border-t border-border bg-surface px-4 pb-[max(0.875rem,calc(0.875rem+env(safe-area-inset-bottom)))] pt-4 shadow-[0_-12px_32px_rgba(15,23,42,0.14)] sm:mx-0 sm:rounded-none sm:border-x-0 sm:border-border-soft sm:bg-white/95 sm:px-0 sm:shadow-none">
+          <div className="sticky bottom-0 z-20 -mx-4 mt-8 flex items-center justify-between gap-3 rounded-t-[28px] border-x border-t border-border bg-surface px-4 pb-[max(0.875rem,calc(0.875rem+env(safe-area-inset-bottom)))] pt-4 shadow-[0_-12px_32px_rgba(15,23,42,0.14)] sm:mx-0 sm:rounded-none sm:border-x-0 sm:border-border-soft sm:bg-white/95 sm:px-0 sm:pb-6 sm:shadow-none">
             <button
               type="button"
               onClick={() =>
