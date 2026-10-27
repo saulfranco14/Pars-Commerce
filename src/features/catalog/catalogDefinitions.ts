@@ -1,3 +1,5 @@
+import { GENERIC_CATALOG_IMAGE } from "@/features/catalog/constants/catalogImages";
+
 export interface CatalogItemDefinition {
   name: string;
   price: number;
@@ -6,6 +8,8 @@ export interface CatalogItemDefinition {
   category?: string;
   imageUrl?: string;
   imageAlt?: string;
+  unit?: string;
+  isPublic?: boolean;
 }
 
 export interface CatalogDefinition {
@@ -18,7 +22,7 @@ export interface CatalogDefinition {
   services: CatalogItemDefinition[];
 }
 
-const imageUrl = "/catalog/starter-product.svg";
+const imageUrl = GENERIC_CATALOG_IMAGE;
 
 function productItems(names: string[], base: number, step: number): CatalogItemDefinition[] {
   return names.map((name, index) => ({
