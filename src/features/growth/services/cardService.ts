@@ -3,14 +3,14 @@ import { encodeCallback } from "@/features/growth/helpers/parseTelegramUpdate";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
 import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
 import { createLeadLink, leadLinkUrl } from "@/features/growth/services/leadLinkService";
-import { renderForLead, resolveTemplate } from "@/features/growth/services/templateService";
+import { prepareWhatsappMessage } from "@/features/growth/services/whatsappDraftService";
 import { escapeHtml } from "@/features/growth/services/telegramApi";
 import { formatMexicanPhoneInput } from "@/lib/phone";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
 import type { GrowthLead, NearbyLead } from "@/features/growth/interfaces/lead";
 import type { InlineButton, OutgoingMessage } from "@/features/growth/interfaces/telegram";
-import type { TemplateStep } from "@/features/growth/interfaces/template";
+import type { WhatsappStep } from "@/features/growth/interfaces/whatsapp";
 
 type CardLead = Pick<GrowthLead, "id" | "business_name" | "giro" | "municipio" | "colonia" | "address" | "phone_e164">;
 
@@ -46,13 +46,12 @@ export function visitOutcomeButtons(leadId: string): InlineButton[][] {
 export async function buildWhatsappCard(
   db: GrowthDb,
   lead: CardLead,
-  options: { step: Extract<TemplateStep, "m1" | "seguimiento" | "si">; firma: string; position?: string },
+  options: { step: WhatsappStep; firma: string; position?: string },
 ): Promise<(OutgoingMessage & { body: string }) | null> {
   if (!lead.phone_e164) return null;
-  const template = await resolveTemplate(db, { channel: "whatsapp", step: options.step, giro: lead.giro });
-  if (!template) return null;
-  const token = await createLeadLink(db, { leadId: lead.id, purpose: "para", channel: "whatsapp", templateId: template.id });
-  const { body } = renderForLead(template, lead, { link: leadLinkUrl(token, "para"), firma: options.firma });
+  const message = await prepareWhatsappMessage(db, lead, { step: options.step, firma: options.firma });
+  if (!message) return null;
+  const { template, body } = message;
 
   const header = options.position ? `${options.position} · ` : "";
   const text = [

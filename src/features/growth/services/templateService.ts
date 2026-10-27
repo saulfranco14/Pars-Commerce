@@ -30,11 +30,11 @@ export async function listTemplates(db: GrowthDb): Promise<ServiceResult<GrowthT
   return { ok: true, data: (data ?? []) as GrowthTemplate[] };
 }
 
-/** Giro-specific active versions win over the generic ones; a variant falls back to A. */
-export async function resolveTemplate(
+/** Active versions for a step: the giro-specific ones win over the generic ones. */
+export async function activeTemplatePool(
   db: GrowthDb,
-  input: { channel: TemplateChannel; step: TemplateStep; giro: string; variant?: TemplateVariant },
-): Promise<GrowthTemplate | null> {
+  input: { channel: TemplateChannel; step: TemplateStep; giro: string },
+): Promise<GrowthTemplate[]> {
   const { data } = await db
     .from("growth_templates")
     .select(COLUMNS)
@@ -44,7 +44,15 @@ export async function resolveTemplate(
     .or(`giro.is.null,giro.eq.${input.giro}`);
   const rows = (data ?? []) as GrowthTemplate[];
   const specific = rows.filter((row) => row.giro === input.giro);
-  const pool = specific.length ? specific : rows.filter((row) => row.giro === null);
+  return (specific.length ? specific : rows.filter((row) => row.giro === null)).sort((a, b) => a.variant.localeCompare(b.variant));
+}
+
+/** A requested variant falls back to A; without one, variants rotate at random for the A/B split. */
+export async function resolveTemplate(
+  db: GrowthDb,
+  input: { channel: TemplateChannel; step: TemplateStep; giro: string; variant?: TemplateVariant },
+): Promise<GrowthTemplate | null> {
+  const pool = await activeTemplatePool(db, input);
   if (!pool.length) return null;
   if (input.variant) return pool.find((row) => row.variant === input.variant) ?? pool.find((row) => row.variant === "A") ?? pool[0];
   return pool[Math.floor(Math.random() * pool.length)];

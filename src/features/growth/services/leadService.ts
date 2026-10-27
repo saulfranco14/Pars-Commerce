@@ -1,9 +1,11 @@
 import { LEADS_PAGE_SIZE } from "@/features/growth/constants/leadStages";
+import { TEMPLATE_STEPS } from "@/features/growth/constants/templateVariables";
 import { internalError, rpcError } from "@/features/growth/services/growthDb";
 import { normalizeMexicanPhone } from "@/lib/phone";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
-import type { GrowthLead, LeadActor, LeadDetail, LeadFilters, LeadListResult, LeadOutcome } from "@/features/growth/interfaces/lead";
+import type { GrowthLead, LeadActor, LeadDetail, LeadEvent, LeadFilters, LeadListResult, LeadOutcome } from "@/features/growth/interfaces/lead";
+import type { GrowthTemplate } from "@/features/growth/interfaces/template";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 
 const LIST_COLUMNS =
@@ -94,7 +96,18 @@ export async function getLeadDetail(db: GrowthDb, leadId: string): Promise<Servi
   ]);
   if (error) return internalError(error.message);
   if (!lead) return { ok: false, error: { code: "not_found", message: "El prospecto ya no existe." } };
-  return { ok: true, data: { lead: lead as GrowthLead, events: (events ?? []) as LeadDetail["events"], acquisition: acquisition ?? null } };
+  return { ok: true, data: { lead: lead as GrowthLead, events: await labelTemplates(db, (events ?? []) as LeadEvent[]), acquisition: acquisition ?? null } };
+}
+
+async function labelTemplates(db: GrowthDb, events: LeadEvent[]): Promise<LeadEvent[]> {
+  const ids = [...new Set(events.map((event) => event.template_id).filter((id): id is string => Boolean(id)))];
+  if (!ids.length) return events;
+  const { data } = await db.from("growth_templates").select("id, channel, step, variant, version").in("id", ids);
+  const labels = new Map(((data ?? []) as Array<Pick<GrowthTemplate, "id" | "channel" | "step" | "variant" | "version">>).map((row) => {
+    const step = TEMPLATE_STEPS[row.channel].find((item) => item.value === row.step)?.label ?? row.step;
+    return [row.id, `${step} · ${row.variant}${row.version > 1 ? ` v${row.version}` : ""}`];
+  }));
+  return events.map((event) => ({ ...event, template_label: event.template_id ? labels.get(event.template_id) ?? null : null }));
 }
 
 export async function snoozeLead(db: GrowthDb, leadId: string, days: number | null): Promise<ServiceResult<GrowthLead>> {

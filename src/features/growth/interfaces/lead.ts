@@ -72,6 +72,8 @@ export interface LeadEvent {
   template_id: string | null;
   payload: Record<string, unknown>;
   created_at: string;
+  /** e.g. "Primer mensaje · A v2", resolved from template_id for the timeline. */
+  template_label?: string | null;
 }
 
 export interface NearbyLead {

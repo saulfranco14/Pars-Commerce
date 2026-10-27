@@ -2,7 +2,8 @@ import { apiFetch } from "@/services/apiFetch";
 
 import type { GrowthLead, LeadFilters, LeadOutcome } from "@/features/growth/interfaces/lead";
 import type { GrowthMailbox, GrowthSettings, GrowthSettingsPatch, MailboxInput } from "@/features/growth/interfaces/settings";
-import type { GrowthTemplate, TemplateDraft, TemplatePreview } from "@/features/growth/interfaces/template";
+import type { GrowthTemplate, TemplateDraft, TemplatePreview, TemplateVariant } from "@/features/growth/interfaces/template";
+import type { WhatsappDraft, WhatsappStep } from "@/features/growth/interfaces/whatsapp";
 
 const BASE = "/api/platform/growth";
 
@@ -61,4 +62,8 @@ export async function connectTelegramWebhook(): Promise<{ url: string }> {
 
 export async function confirmUnsubscribe(token: string): Promise<void> {
   await apiFetch(`/api/growth/unsubscribe?t=${encodeURIComponent(token)}`, { method: "POST" });
+}
+
+export async function createWhatsappDraft(id: string, body: { step?: WhatsappStep; variant?: TemplateVariant }): Promise<WhatsappDraft> {
+  return (await apiFetch(`${leadKey(id)}/whatsapp`, { method: "POST", body: JSON.stringify(body) })) as WhatsappDraft;
 }

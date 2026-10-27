@@ -10,7 +10,7 @@ import { getLeadDetail, recordOutcome, snoozeLead, updateLeadPhone } from "@/fea
 
 import type { LeadOutcome } from "@/features/growth/interfaces/lead";
 
-const ADMIN_OUTCOMES: LeadOutcome[] = ["whatsapp_replied", "email_replied", "not_interested", "no_whatsapp", "wrong_number", "visit_closed"];
+const ADMIN_OUTCOMES: LeadOutcome[] = ["whatsapp_sent", "whatsapp_replied", "email_replied", "not_interested", "no_whatsapp", "wrong_number", "visit_closed"];
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const gate = await requirePlatformAdmin();

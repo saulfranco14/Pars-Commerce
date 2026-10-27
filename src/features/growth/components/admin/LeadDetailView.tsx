@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, Mail, MapPin, MessageCircle, Pencil, Phone, Search } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Mail, MapPin, Pencil, Phone, Search } from "lucide-react";
 
 import { useGrowthLead } from "@/features/growth/hooks/useGrowthLead";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -12,8 +12,10 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
 import { LeadPhoneSheet } from "@/features/growth/components/admin/LeadPhoneSheet";
+import { WhatsappComposer } from "@/features/growth/components/admin/WhatsappComposer";
 
-import { buildMapsLink, buildMapsSearchLink, buildWaLink } from "@/features/growth/helpers/buildWaLink";
+import { buildMapsLink, buildMapsSearchLink } from "@/features/growth/helpers/buildWaLink";
+import { suggestWhatsappStep } from "@/features/growth/helpers/suggestWhatsappStep";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
 import { LEAD_EVENT_LABEL, LEAD_STAGE_META, NEXT_CHANNEL_LABEL } from "@/features/growth/constants/leadStages";
 import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
@@ -45,6 +47,7 @@ export function LeadDetailView({ id }: { id: string }) {
   const { lead, events, acquisition } = detail;
   const stage = LEAD_STAGE_META[lead.stage];
   const closed = lead.stage === "registrado" || lead.stage === "descartado";
+  const whatsappSuggestion = suggestWhatsappStep(lead);
 
   return (
     <div className="grid gap-5">
@@ -75,12 +78,7 @@ export function LeadDetailView({ id }: { id: string }) {
         ) : null}
         <div className="flex flex-wrap gap-2">
           {lead.phone_e164 ? (
-            <a href={buildWaLink(lead.phone_e164)} target="_blank" rel="noopener noreferrer" className={adminActionButtonSecondary}>
-              <MessageCircle className="h-4 w-4" aria-hidden />WhatsApp {formatMexicanPhoneInput(lead.phone_e164)}
-            </a>
-          ) : null}
-          {lead.phone_e164 ? (
-            <a href={`tel:${lead.phone_e164}`} className={adminActionButtonSecondary}><Phone className="h-4 w-4" aria-hidden />Llamar</a>
+            <a href={`tel:${lead.phone_e164}`} className={adminActionButtonSecondary}><Phone className="h-4 w-4" aria-hidden />Llamar {formatMexicanPhoneInput(lead.phone_e164)}</a>
           ) : null}
           {lead.email ? <a href={`mailto:${lead.email}`} className={adminActionButtonSecondary}><Mail className="h-4 w-4" aria-hidden />{lead.email}</a> : null}
           {lead.lat && lead.lng ? (
@@ -100,6 +98,12 @@ export function LeadDetailView({ id }: { id: string }) {
         ) : null}
       </section>
 
+      {whatsappSuggestion.step ? (
+        <WhatsappComposer key={`${lead.phone_e164}-${lead.whatsapp_attempts}-${lead.phone_status}`} leadId={lead.id} busy={busy} onOutcome={(outcome) => markOutcome(outcome)} />
+      ) : lead.phone_e164 && !closed ? (
+        <Notification tone="warning" title="WhatsApp" message={whatsappSuggestion.reason} />
+      ) : null}
+
       <section className="grid gap-3 rounded-2xl border border-border bg-surface p-4 sm:p-5">
         <h3 className="text-base font-bold text-foreground">Línea de tiempo</h3>
         {events.length === 0 ? (
@@ -112,6 +116,7 @@ export function LeadDetailView({ id }: { id: string }) {
                 <span className="text-foreground">
                   <span className="mr-2 rounded-md bg-border-soft/60 px-1.5 py-0.5 text-[11px] font-bold uppercase text-muted-foreground">{ACTOR_LABEL[event.actor] ?? event.actor}</span>
                   {LEAD_EVENT_LABEL[event.type] ?? event.type}
+                  {event.template_label ? ` · ${event.template_label}` : ""}
                   {typeof event.payload.reason === "string" ? ` · ${event.payload.reason}` : ""}
                   {typeof event.payload.seconds === "number" ? ` · ${Math.round(event.payload.seconds)} s` : ""}
                 </span>
