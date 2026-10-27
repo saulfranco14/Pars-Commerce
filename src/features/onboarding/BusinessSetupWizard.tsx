@@ -28,6 +28,7 @@ import {
 
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { deriveSlug } from "@/features/onboarding/helpers/deriveSlug";
+import { SETUP_TEST_STEP, resumeSetupStep } from "@/features/onboarding/helpers/setupResume";
 import { formatMexicanPhoneInput, normalizeMexicanPhone } from "@/lib/phone";
 import { uploadProductImage } from "@/lib/supabase/storage";
 import { swrFetcher } from "@/lib/swrFetcher";
@@ -498,6 +499,29 @@ export function BusinessSetupWizard() {
   const [error, setError] = useState<string | null>(null);
   const [activatedSlug, setActivatedSlug] = useState<string | null>(null);
   const [showMemberships, setShowMemberships] = useState(false);
+  const [resumed, setResumed] = useState(false);
+  const returningFromLegal = searchParams.get("resume") === "activate";
+
+  // The tenants cache predates this session's saves (the legal flow keeps the dashboard mounted), so resume from a fresh read.
+  useEffect(() => {
+    if (!tenantId || resumed) return;
+    let cancelled = false;
+    void mutateGlobal("/api/tenants")
+      .then((list) => {
+        if (cancelled) return;
+        const fresh = (Array.isArray(list) ? list : []).find((item) => item.tenant_id === tenantId)?.tenant;
+        const next = resumeSetupStep(fresh?.settings);
+        setStep(next);
+        if (next === SETUP_TEST_STEP && returningFromLegal) setTestStage(TEST_STAGES.length - 1);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setResumed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantId, resumed, returningFromLegal]);
 
   useEffect(() => {
     if (!tenant) return;
@@ -544,7 +568,7 @@ export function BusinessSetupWizard() {
       ? "Ingresa un WhatsApp mexicano de 10 dígitos."
       : null;
 
-  if (!tenantsLoaded || !tenant || productsLoading) {
+  if (!tenantsLoaded || !tenant || productsLoading || !resumed) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-white">
         <div className="text-center">
@@ -834,7 +858,7 @@ export function BusinessSetupWizard() {
       const legalResponse = await fetch(`/api/legal/status?tenant_id=${encodeURIComponent(tenant.id)}`, { cache: "no-store" });
       const legal = await legalResponse.json() as { pending?: { tenant_id?: string } | null };
       if (legalResponse.ok && legal.pending?.tenant_id === tenant.id) {
-        router.push(`/dashboard/legal?tenant=${encodeURIComponent(tenant.id)}&return=${encodeURIComponent(`/dashboard/preparar-negocio?tenant=${tenant.id}`)}`);
+        router.push(`/dashboard/legal?tenant=${encodeURIComponent(tenant.id)}&return=${encodeURIComponent(`/dashboard/preparar-negocio?tenant=${tenant.id}&resume=activate`)}`);
         return;
       }
       await requestJson("/api/tenants", {
