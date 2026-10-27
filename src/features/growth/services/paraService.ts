@@ -2,6 +2,7 @@ import { STARTER_CATALOGS } from "@/features/catalog/catalogDefinitions";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
 import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
 import { buildWaLink } from "@/features/growth/helpers/buildWaLink";
+import { pickParaItems } from "@/features/growth/helpers/pickParaItems";
 import { hashPreviewToken } from "@/features/preview/previewLinks";
 import { findLinkLead } from "@/features/growth/services/leadLinkService";
 import { isGrowthEnabled } from "@/features/growth/services/growthDb";
@@ -9,8 +10,10 @@ import { notifyOperators } from "@/features/growth/services/operatorService";
 import { escapeHtml } from "@/features/growth/services/telegramApi";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
-import type { ParaLinkEvent, ParaPageData } from "@/features/growth/interfaces/para";
+import type { ParaItem, ParaLinkEvent, ParaPageData } from "@/features/growth/interfaces/para";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
+
+const PARA_ITEMS_LIMIT = 8;
 
 export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPageData | null> {
   const link = await findLinkLead(db, token, "para");
@@ -24,7 +27,15 @@ export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPag
 
   const catalogKey = (lead.catalog_template_key as string | null) ?? (lead.giro as string);
   const catalog = STARTER_CATALOGS.find((entry) => entry.key === catalogKey) ?? null;
-  const items = catalog ? [...catalog.products, ...catalog.services].filter((item) => item.isPublic !== false).slice(0, 9) : [];
+  const pool = catalog ? [...catalog.products, ...catalog.services].filter((item) => item.isPublic !== false) : [];
+  const items: ParaItem[] = pickParaItems(pool, PARA_ITEMS_LIMIT).map((item, index) => ({
+    id: `item-${index}`,
+    name: item.name,
+    price: item.price,
+    imageUrl: item.imageUrl ?? null,
+    category: item.category ?? null,
+    type: item.type,
+  }));
   const zone = zoneByMunicipio(lead.municipio as string);
 
   const query = new URLSearchParams({ prospecto: token, giro: catalog?.businessType ?? (lead.giro as string), nombre: lead.business_name as string });
@@ -38,7 +49,16 @@ export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPag
     businessName: lead.business_name as string,
     giroLabel: giroCopy(lead.giro as string).label,
     place: [lead.colonia, zone?.label ?? lead.municipio].filter(Boolean).join(", "),
-    items: items.map((item) => ({ name: item.name, price: item.price, imageUrl: item.imageUrl ?? null, type: item.type })),
+    items,
+    // Items alternate categories, so the first photos already make a varied hero collage.
+    showcase: items
+      .filter((item) => item.imageUrl)
+      .slice(0, 3)
+      .map((item) => ({ id: item.id, name: item.name, price: item.price, image: item.imageUrl as string, href: "#productos" })),
+    counts: {
+      products: pool.filter((item) => item.type === "product").length,
+      services: pool.filter((item) => item.type === "service").length,
+    },
     claimUrl: `/registro?${query.toString()}`,
     helpUrl: helpNumber ? buildWaLink(`+${helpNumber}`, helpText) : null,
   };
