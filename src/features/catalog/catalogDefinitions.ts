@@ -106,8 +106,8 @@ const GENERIC_STARTER_CATALOGS: CatalogDefinition[] = [
   },
 ];
 
-// Los tres giros principales usan catálogos editoriales completos. El resto
-// conserva el catálogo genérico hasta su siguiente fase de lanzamiento.
+// Cada giro con catálogo editorial (precios reales) reemplaza al genérico; la
+// lista genérica fija el orden y cubre giros que aún no tengan uno.
 import { PRIMARY_STARTER_CATALOGS } from "@/features/catalog/starterCatalogs";
 
 export const STARTER_CATALOGS: CatalogDefinition[] = GENERIC_STARTER_CATALOGS.map(

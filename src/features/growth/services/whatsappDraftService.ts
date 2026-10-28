@@ -26,7 +26,7 @@ export async function prepareWhatsappMessage(
   const template = options.variant
     ? pool.find((row) => row.variant === options.variant) ?? pool[0]
     : pool[Math.floor(Math.random() * pool.length)];
-  const token = await createLeadLink(db, { leadId: lead.id, purpose: "para", channel: "whatsapp", templateId: template.id });
+  const token = await createLeadLink(db, { leadId: lead.id, purpose: "para", channel: "whatsapp", templateId: template.id, businessName: lead.business_name });
   const { body } = renderForLead(template, lead, { link: leadLinkUrl(token, "para"), firma: options.firma });
   return { template, body, pool };
 }

@@ -17,6 +17,7 @@ import { WhatsappComposer } from "@/features/growth/components/admin/WhatsappCom
 
 import { buildMapsLink, buildMapsSearchLink } from "@/features/growth/helpers/buildWaLink";
 import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName";
+import { formatVisitSeconds, paraEventDetail } from "@/features/growth/helpers/paraSession";
 import { suggestWhatsappStep } from "@/features/growth/helpers/suggestWhatsappStep";
 import { backToLeads } from "@/features/growth/services/leadsReturn";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
@@ -129,7 +130,8 @@ export function LeadDetailView({ id }: { id: string }) {
                     ? ` · ${giroCopy(String(event.payload.previous)).label} → ${giroCopy(event.payload.giro).label}`
                     : ""}
                   {typeof event.payload.reason === "string" ? ` · ${event.payload.reason}` : ""}
-                  {typeof event.payload.seconds === "number" ? ` · ${Math.round(event.payload.seconds)} s` : ""}
+                  {typeof event.payload.seconds === "number" ? ` · ${formatVisitSeconds(event.payload.seconds)}` : ""}
+                  {paraEventDetail(event.type, event.payload)}
                 </span>
               </li>
             ))}
