@@ -20,6 +20,13 @@ describe("formatBusinessName", () => {
     expect(formatBusinessName("FARMACIA 24HRS")).toBe("Farmacia 24HRS");
     expect(formatBusinessName("  ABARROTES   S.A.  ")).toBe("Abarrotes S.A.");
   });
+
+  it("drops DENUE's 'sin nombre' tail", () => {
+    expect(formatBusinessName("Jugos y Licuados sin Nombre")).toBe("Jugos y Licuados");
+    expect(formatBusinessName("BENEFICIO DEL CAFÉ SIN NOMBRE")).toBe("Beneficio del Café");
+    expect(formatBusinessName("Tienda S/N")).toBe("Tienda");
+    expect(formatBusinessName("Sin Nombre")).toBe("Sin Nombre");
+  });
 });
 
 describe("leadLastTouch", () => {

@@ -3,14 +3,15 @@ import type { StatusTone } from "@/components/admin/StatusBadge";
 import type { LeadStage, NextChannel } from "@/features/growth/interfaces/lead";
 
 export const LEAD_STAGE_META: Record<LeadStage, { label: string; tone: StatusTone }> = {
-  nuevo: { label: "Nuevo", tone: "neutral" },
+  nuevo: { label: "Por contactar", tone: "neutral" },
   contactado: { label: "Contactado", tone: "info" },
-  conversando: { label: "Conversando", tone: "info" },
-  caliente: { label: "Caliente", tone: "warning" },
+  conversando: { label: "Respondió", tone: "info" },
+  caliente: { label: "Vio su tienda", tone: "warning" },
+  cita: { label: "Cita agendada", tone: "info" },
   registrado: { label: "Registrado", tone: "success" },
   sin_respuesta: { label: "Sin respuesta", tone: "neutral" },
   descartado: { label: "Descartado", tone: "danger" },
-  sin_contacto: { label: "Sin contacto", tone: "neutral" },
+  sin_contacto: { label: "Por contactar", tone: "neutral" },
 };
 
 export const NEXT_CHANNEL_LABEL: Record<NextChannel, string> = {
@@ -47,15 +48,25 @@ export const LEAD_EVENT_LABEL: Record<string, string> = {
   registered: "Se registró",
   phone_corrected: "Corregiste el teléfono",
   giro_corrected: "Corregiste el giro",
+  visit_scheduled: "Agendaste una cita",
+  visit_rescheduled: "Cambiaste la cita",
+  visit_cancelled: "Se canceló la cita",
+  reminder_set: "Te pusiste un recordatorio",
+  paused: "Lo pausaste",
+  resumed: "Lo reactivaste",
+  note_added: "Nota",
 };
 
 export const LEAD_STAGE_TABS = [
   { value: "activos", label: "Por trabajar" },
+  { value: "hoy", label: "Para hoy" },
   { value: "en_lote", label: "Apartados" },
   { value: "contactado", label: "Contactados" },
-  { value: "caliente", label: "Calientes" },
-  { value: "conversando", label: "Conversando" },
+  { value: "caliente", label: "Vieron su tienda" },
+  { value: "conversando", label: "Respondieron" },
+  { value: "cita", label: "Con cita" },
   { value: "registrado", label: "Registrados" },
+  { value: "sin_respuesta", label: "Sin respuesta" },
   { value: "descartado", label: "Descartados" },
   { value: "todos", label: "Todos" },
 ] as const;

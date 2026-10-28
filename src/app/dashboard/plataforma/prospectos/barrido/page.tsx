@@ -7,7 +7,7 @@ import { WhatsappSweepView } from "@/features/growth/components/admin/WhatsappSw
 
 export default function BarridoPage() {
   return (
-    <div className="mx-auto w-full max-w-2xl">
+    <div className="mx-auto w-full max-w-2xl lg:max-w-6xl">
       <Suspense fallback={<LoadingBlock message="Preparando el barrido…" variant="skeleton" />}>
         <WhatsappSweepView />
       </Suspense>

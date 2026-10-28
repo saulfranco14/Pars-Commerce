@@ -5,6 +5,7 @@ export type LeadStage =
   | "contactado"
   | "conversando"
   | "caliente"
+  | "cita"
   | "registrado"
   | "sin_respuesta"
   | "descartado"
@@ -63,8 +64,56 @@ export interface GrowthLead {
   registered_tenant_id: string | null;
   last_activity_at: string | null;
   created_at: string;
+  next_step: NextStep | null;
+  next_step_at: string | null;
+  next_step_note: string | null;
+  appointment_at: string | null;
   /** Last time the prospect opened its "Para ti" page; only the list fills it. */
   para_viewed_at?: string | null;
+}
+
+/** Set by the growth_leads_next_step trigger from the stage; "Recordarme" overrides the date. */
+export type NextStep = "whatsapp" | "llamada" | "visita" | "retomar";
+
+export type FollowUpAction = "schedule_visit" | "reschedule_visit" | "cancel_visit" | "remind" | "pause" | "resume" | "note";
+
+export interface FollowUpInput {
+  action: FollowUpAction;
+  at?: string | null;
+  note?: string | null;
+}
+
+export interface NextStepDue {
+  label: string;
+  when: string;
+  tone: "danger" | "warning" | "neutral";
+}
+
+export interface PipelineCounts {
+  por_contactar: number;
+  contactado: number;
+  caliente: number;
+  conversando: number;
+  cita: number;
+  registrado: number;
+  sin_respuesta: number;
+  descartado: number;
+  due_today: number;
+  overdue: number;
+  paused: number;
+}
+
+export type BoardColumnKey = "contactado" | "caliente" | "conversando" | "cita" | "registrado";
+
+export interface BoardColumn {
+  key: BoardColumnKey;
+  total: number;
+  leads: GrowthLead[];
+}
+
+export interface LeadBoard {
+  columns: BoardColumn[];
+  counts: PipelineCounts;
 }
 
 export interface LeadLastTouch {
@@ -102,10 +151,17 @@ export interface NearbyLead {
 
 export type LeadContactFilter = "whatsapp" | "correo" | "ambos" | "sin";
 
-/** `activos` = still worth working (default); `en_lote` = set aside by Telegram or a sweep and not marked yet. */
-export type LeadStageFilter = LeadStage | "activos" | "todos" | "en_lote";
+/**
+ * `activos` = still worth working (default); `en_lote` = set aside by Telegram or a sweep and not marked yet;
+ * `hoy` = next step due by the end of today.
+ */
+export type LeadStageFilter = LeadStage | "activos" | "todos" | "en_lote" | "hoy";
+
+/** Prospectos has two halves: the daily follow-up board and the prospecting list. */
+export type LeadView = "seguimiento" | "contactar";
 
 export interface LeadFilters {
+  vista?: LeadView;
   municipio?: string;
   giro?: string;
   stage?: LeadStageFilter;
