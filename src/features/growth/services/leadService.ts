@@ -53,7 +53,11 @@ export async function listLeads(db: GrowthDb, filters: LeadFilters): Promise<Ser
   let query = db.from("growth_leads").select(LIST_COLUMNS, { count: "exact" });
   if (filters.municipio) query = query.eq("municipio", filters.municipio);
   if (filters.giro) query = query.eq("giro", filters.giro);
-  if (filters.stage && filters.stage !== "todos") query = query.eq("stage", filters.stage);
+  if (filters.stage === "en_lote") query = query.gt("reserved_until", new Date().toISOString());
+  else if (filters.stage && filters.stage !== "todos") query = query.eq("stage", filters.stage);
+  if (filters.contact === "whatsapp" || filters.contact === "ambos") query = query.not("phone_e164", "is", null);
+  if (filters.contact === "correo" || filters.contact === "ambos") query = query.not("email", "is", null);
+  if (filters.contact === "sin") query = query.is("phone_e164", null).is("email", null);
   if (filters.channel) query = query.eq("next_channel", filters.channel);
   const term = filters.q ? sanitizeSearch(filters.q) : "";
   if (term.length >= 2) query = query.ilike("business_name", `%${term}%`);
@@ -65,11 +69,13 @@ export async function listLeads(db: GrowthDb, filters: LeadFilters): Promise<Ser
   if (error) return internalError(error.message);
 
   const head = { count: "exact", head: true };
-  const [total, contacted, conversing, registered] = await Promise.all([
+  const [total, contacted, conversing, registered, withPhone, withEmail] = await Promise.all([
     db.from("growth_leads").select("id", head),
     db.from("growth_leads").select("id", head).in("stage", ["contactado", "conversando", "caliente", "sin_respuesta"]),
     db.from("growth_leads").select("id", head).in("stage", ["conversando", "caliente"]),
     db.from("growth_leads").select("id", head).eq("stage", "registrado"),
+    db.from("growth_leads").select("id", head).not("phone_e164", "is", null),
+    db.from("growth_leads").select("id", head).not("email", "is", null),
   ]);
 
   return {
@@ -84,6 +90,8 @@ export async function listLeads(db: GrowthDb, filters: LeadFilters): Promise<Ser
         contacted: contacted.count ?? 0,
         conversing: conversing.count ?? 0,
         registered: registered.count ?? 0,
+        withPhone: withPhone.count ?? 0,
+        withEmail: withEmail.count ?? 0,
       },
     },
   };

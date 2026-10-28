@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Mail, MapPin, Pencil, Phone, Search, Store } from "lucide-react";
 
 import { useGrowthLead } from "@/features/growth/hooks/useGrowthLead";
@@ -17,6 +17,7 @@ import { WhatsappComposer } from "@/features/growth/components/admin/WhatsappCom
 
 import { buildMapsLink, buildMapsSearchLink } from "@/features/growth/helpers/buildWaLink";
 import { suggestWhatsappStep } from "@/features/growth/helpers/suggestWhatsappStep";
+import { backToLeads } from "@/features/growth/services/leadsReturn";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
 import { LEAD_EVENT_LABEL, LEAD_STAGE_META, NEXT_CHANNEL_LABEL } from "@/features/growth/constants/leadStages";
 import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
@@ -38,6 +39,7 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 export function LeadDetailView({ id }: { id: string }) {
+  const router = useRouter();
   const { detail, error, isLoading, busy, notice, clearNotice, markOutcome, snooze, updatePhone, updateGiro } = useGrowthLead(id);
   const [confirmDrop, setConfirmDrop] = useState(false);
   const [editingPhone, setEditingPhone] = useState(false);
@@ -53,9 +55,9 @@ export function LeadDetailView({ id }: { id: string }) {
 
   return (
     <div className="grid gap-5">
-      <Link href="/dashboard/plataforma/prospectos" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
+      <button type="button" onClick={() => backToLeads(router)} className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" aria-hidden />Prospectos
-      </Link>
+      </button>
       {notice ? <Notification tone={notice.tone} message={notice.message} onDismiss={clearNotice} /> : null}
 
       <section className="grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5">

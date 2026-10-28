@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, MapPin, Search, Target } from "lucide-react";
+import { AlertTriangle, Mail, MapPin, MessageCircle, Search, Target, X } from "lucide-react";
 
 import { useGrowthLeads } from "@/features/growth/hooks/useGrowthLeads";
 import { AdminListCard } from "@/components/admin/AdminListCard";
@@ -15,20 +15,22 @@ import { PlatformPagination } from "@/features/platform/components/PlatformPagin
 import { GIRO_COPY, GIRO_KEYS, giroCopy } from "@/features/growth/constants/giroCopy";
 import { LEAD_STAGE_META, LEAD_STAGE_TABS, NEXT_CHANNEL_LABEL } from "@/features/growth/constants/leadStages";
 import { ZONES, zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
+import { formatMexicanPhoneInput } from "@/lib/phone";
+import { markOpenedFromList } from "@/features/growth/services/leadsReturn";
 
-import type { LeadStage } from "@/features/growth/interfaces/lead";
+import type { LeadContactFilter, LeadStageFilter } from "@/features/growth/interfaces/lead";
 
 const selectClass = "input-form min-h-11 rounded-xl border border-border bg-surface-raised px-3 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
 
 export function LeadsView() {
-  const { data, error, isLoading, filters, update, search, changeSearch } = useGrowthLeads();
+  const { data, error, isLoading, filters, update, search, changeSearch, active, clear } = useGrowthLeads();
 
   if (isLoading && !data) return <LoadingBlock message="Cargando prospectos…" variant="skeleton" />;
   if (error && !data) {
     return <EmptyState icon={AlertTriangle} title="No pudimos cargar los prospectos" description="Revisa que la migración de growth esté aplicada e intenta de nuevo." tone="muted" />;
   }
 
-  const metrics = data?.metrics ?? { total: 0, contacted: 0, conversing: 0, registered: 0 };
+  const metrics = data?.metrics ?? { total: 0, contacted: 0, conversing: 0, registered: 0, withPhone: 0, withEmail: 0 };
   const leads = data?.leads ?? [];
   const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / (data?.pageSize ?? 30)));
 
@@ -46,12 +48,12 @@ export function LeadsView() {
       <FilterTabs
         tabs={LEAD_STAGE_TABS}
         activeValue={filters.stage ?? "todos"}
-        onTabChange={(value) => update({ stage: value as LeadStage | "todos" })}
+        onTabChange={(value) => update({ stage: value as LeadStageFilter })}
         ariaLabel="Filtrar por etapa"
       />
 
       <section className="overflow-hidden rounded-2xl border border-border bg-surface">
-        <div className="grid gap-2 border-b border-border-soft p-3 sm:grid-cols-[1fr_auto_auto] sm:p-4">
+        <div className="grid gap-2 border-b border-border-soft p-3 sm:grid-cols-[1fr_auto_auto_auto] sm:p-4">
           <label className="relative block">
             <span className="sr-only">Buscar prospecto</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
@@ -71,6 +73,23 @@ export function LeadsView() {
             <option value="">Todos los giros</option>
             {GIRO_KEYS.map((key) => <option key={key} value={key}>{GIRO_COPY[key].label}</option>)}
           </select>
+          <select aria-label="Contacto" value={filters.contact ?? ""} onChange={(event) => update({ contact: (event.target.value || undefined) as LeadContactFilter | undefined })} className={selectClass}>
+            <option value="">Cualquier contacto</option>
+            <option value="whatsapp">Con WhatsApp ({metrics.withPhone.toLocaleString("es-MX")})</option>
+            <option value="correo">Con correo ({metrics.withEmail.toLocaleString("es-MX")})</option>
+            <option value="ambos">Con WhatsApp y correo</option>
+            <option value="sin">Sin teléfono ni correo (visita)</option>
+          </select>
+        </div>
+        <div className="flex min-h-11 flex-wrap items-center justify-between gap-2 border-b border-border-soft px-3 sm:px-4">
+          <p className="text-sm text-muted-foreground">
+            {(data?.total ?? 0).toLocaleString("es-MX")} {data?.total === 1 ? "prospecto" : "prospectos"}{active ? " con estos filtros" : ""}
+          </p>
+          {active ? (
+            <button type="button" onClick={clear} className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-accent hover:underline">
+              <X className="h-4 w-4" aria-hidden />Limpiar filtros
+            </button>
+          ) : null}
         </div>
 
         {leads.length === 0 ? (
@@ -80,7 +99,7 @@ export function LeadsView() {
         ) : (
           <div className="grid gap-2 p-3 sm:p-4">
             {leads.map((lead) => (
-              <Link key={lead.id} href={`/dashboard/plataforma/prospectos/${lead.id}`} className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+              <Link key={lead.id} href={`/dashboard/plataforma/prospectos/${lead.id}`} onClick={markOpenedFromList} className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                 <AdminListCard
                   title={lead.business_name}
                   badge={<StatusBadge tone={LEAD_STAGE_META[lead.stage].tone} label={LEAD_STAGE_META[lead.stage].label} compact />}
@@ -89,6 +108,8 @@ export function LeadsView() {
                       <span>{giroCopy(lead.giro).label}</span>
                       <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" aria-hidden />{[lead.colonia, zoneByMunicipio(lead.municipio)?.label ?? lead.municipio].filter(Boolean).join(", ")}</span>
                       <span>Siguiente: {NEXT_CHANNEL_LABEL[lead.next_channel]}</span>
+                      {lead.phone_e164 ? <span className="inline-flex items-center gap-1 text-emerald-700"><MessageCircle className="h-3.5 w-3.5" aria-hidden />{formatMexicanPhoneInput(lead.phone_e164)}</span> : null}
+                      {lead.email ? <span className="inline-flex items-center gap-1 text-accent"><Mail className="h-3.5 w-3.5" aria-hidden />{lead.email}</span> : null}
                     </span>
                   }
                 />

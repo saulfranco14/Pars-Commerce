@@ -1,4 +1,5 @@
 import { apiFetch } from "@/services/apiFetch";
+import { leadFiltersQuery } from "@/features/growth/helpers/leadFiltersQuery";
 
 import type { GrowthLead, LeadFilters, LeadOutcome } from "@/features/growth/interfaces/lead";
 import type { GrowthMailbox, GrowthSettings, GrowthSettingsPatch, MailboxInput } from "@/features/growth/interfaces/settings";
@@ -8,11 +9,7 @@ import type { WhatsappDraft, WhatsappStep } from "@/features/growth/interfaces/w
 const BASE = "/api/platform/growth";
 
 export function leadsKey(filters: LeadFilters): string {
-  const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined && value !== "" && value !== "todos") query.set(key, String(value));
-  }
-  return `${BASE}/leads?${query.toString()}`;
+  return `${BASE}/leads?${leadFiltersQuery(filters)}`;
 }
 
 export const leadKey = (id: string) => `${BASE}/leads/${id}`;

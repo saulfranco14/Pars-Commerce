@@ -91,11 +91,17 @@ export interface NearbyLead {
   distance_m: number;
 }
 
+export type LeadContactFilter = "whatsapp" | "correo" | "ambos" | "sin";
+
+/** `en_lote` = cards handed out in Telegram and not marked yet (reserved_until in the future). */
+export type LeadStageFilter = LeadStage | "todos" | "en_lote";
+
 export interface LeadFilters {
   municipio?: string;
   giro?: string;
-  stage?: LeadStage | "todos";
+  stage?: LeadStageFilter;
   channel?: NextChannel;
+  contact?: LeadContactFilter;
   q?: string;
   page?: number;
 }
@@ -105,6 +111,8 @@ export interface LeadListMetrics {
   contacted: number;
   conversing: number;
   registered: number;
+  withPhone: number;
+  withEmail: number;
 }
 
 export interface LeadListResult {
