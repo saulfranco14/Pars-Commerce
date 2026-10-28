@@ -1,3 +1,5 @@
+import type { StatusTone } from "@/components/admin/StatusBadge";
+
 export type LeadStage =
   | "nuevo"
   | "contactado"
@@ -61,6 +63,13 @@ export interface GrowthLead {
   registered_tenant_id: string | null;
   last_activity_at: string | null;
   created_at: string;
+  /** Last time the prospect opened its "Para ti" page; only the list fills it. */
+  para_viewed_at?: string | null;
+}
+
+export interface LeadLastTouch {
+  label: string;
+  tone: StatusTone;
 }
 
 export interface LeadEvent {
@@ -93,8 +102,8 @@ export interface NearbyLead {
 
 export type LeadContactFilter = "whatsapp" | "correo" | "ambos" | "sin";
 
-/** `en_lote` = cards handed out in Telegram and not marked yet (reserved_until in the future). */
-export type LeadStageFilter = LeadStage | "todos" | "en_lote";
+/** `activos` = still worth working (default); `en_lote` = set aside by Telegram or a sweep and not marked yet. */
+export type LeadStageFilter = LeadStage | "activos" | "todos" | "en_lote";
 
 export interface LeadFilters {
   municipio?: string;

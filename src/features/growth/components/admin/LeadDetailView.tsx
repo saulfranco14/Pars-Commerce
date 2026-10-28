@@ -16,6 +16,7 @@ import { LeadPhoneSheet } from "@/features/growth/components/admin/LeadPhoneShee
 import { WhatsappComposer } from "@/features/growth/components/admin/WhatsappComposer";
 
 import { buildMapsLink, buildMapsSearchLink } from "@/features/growth/helpers/buildWaLink";
+import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName";
 import { suggestWhatsappStep } from "@/features/growth/helpers/suggestWhatsappStep";
 import { backToLeads } from "@/features/growth/services/leadsReturn";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
@@ -54,7 +55,7 @@ export function LeadDetailView({ id }: { id: string }) {
   const whatsappSuggestion = suggestWhatsappStep(lead);
 
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-1 gap-5">
       <button type="button" onClick={() => backToLeads(router)} className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" aria-hidden />Prospectos
       </button>
@@ -63,7 +64,7 @@ export function LeadDetailView({ id }: { id: string }) {
       <section className="grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="grid gap-1">
-            <h2 className="text-xl font-bold tracking-tight text-foreground">{lead.business_name}</h2>
+            <h2 className="text-xl font-bold tracking-tight text-foreground wrap-break-word">{formatBusinessName(lead.business_name)}</h2>
             <p className="inline-flex items-center gap-1 text-sm text-muted-foreground">
               <MapPin className="h-4 w-4" aria-hidden />
               {giroCopy(lead.giro).label} · {[lead.address, lead.colonia, zoneByMunicipio(lead.municipio)?.label ?? lead.municipio].filter(Boolean).join(", ")}

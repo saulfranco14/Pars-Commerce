@@ -11,6 +11,7 @@ BEGIN
 END $$;
 
 DROP FUNCTION IF EXISTS public.growth_update_lead_phone(uuid, text);
+DROP FUNCTION IF EXISTS public.growth_sweep_remaining(text, text, text);
 DROP FUNCTION IF EXISTS public.growth_cron_tick();
 DROP FUNCTION IF EXISTS public.growth_claim_due_messages(integer);
 DROP FUNCTION IF EXISTS public.growth_mailbox_usage_today(uuid);

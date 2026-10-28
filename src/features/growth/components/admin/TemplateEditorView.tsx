@@ -29,7 +29,7 @@ export function TemplateEditorView() {
   if (editor.error) return <EmptyState icon={AlertTriangle} title="No pudimos cargar los mensajes" tone="muted" />;
 
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-1 gap-5">
       <Link href="/dashboard/plataforma/motor" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" aria-hidden />Motor
       </Link>
