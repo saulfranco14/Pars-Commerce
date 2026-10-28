@@ -115,7 +115,7 @@ Cada feature en `src/features/{name}/` sigue exactamente esta estructura
 components/   hooks/   helpers/   constants/   interfaces/   services/   validations/
 ```
 
-Features actuales: `auth`, `checkout`, `configuracion`, `equipo`,
+Features actuales: `auth`, `checkout`, `configuracion`, `equipo`, `growth`,
 `landing`, `onboarding`, `orders`, `planes`, `prestamos`, `productos`,
 `promociones`, `qr`, `servicios`, `sitio`, `sitio-web`, `suscripciones`,
 `ventas`.
@@ -290,6 +290,23 @@ manual (no usar el plugin `persist`).
 veas logs como `serwist Router is responding to: /api/...` en el
 console del browser, vienen del SW. Si una request a un endpoint nuevo
 hace algo raro, revisa la config de Serwist antes que el endpoint en sí.
+
+### 10. Motor de clientes (growth)
+
+Adquisición de negocios (platform admin): prospectos del DENUE, bot de
+Telegram, WhatsApp a un toque, correo desde Gmail y embudo en
+`/dashboard/plataforma/{prospectos,motor,embudo}`. Reglas en
+`ARCHITECTURE.md §6.2`. Lo esencial:
+
+- No puede afectar la operación: tablas `growth_*` aparte, interruptor
+  `GROWTH_ENABLED`, y la atribución del registro corre con `after()` y no
+  lanza nunca.
+- Todo resultado de un prospecto pasa por `growth_record_outcome`
+  (estado, cascada de canales y bajas en una transacción).
+- Un rechazo, por cualquier canal y aunque sea grosero, es baja en todos.
+- WhatsApp nunca se envía en automático: el dueño da Enviar en su app.
+- La página `/para/[token]` cuenta visitas sólo desde el navegador
+  (beacon), porque las vistas previas de WhatsApp abren el link.
 
 ---
 

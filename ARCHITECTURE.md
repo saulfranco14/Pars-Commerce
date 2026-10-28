@@ -179,6 +179,37 @@ propinas, mesas, préstamos):
   - `order:{order_id}:mode:single:attempt:{attempt_id}` → storefront
   - `loan:{id}` / `bulk_loan:{id}` → préstamos
 
+## 6.2 Motor de clientes (`features/growth`)
+
+Adquisición de negocios para Tlaco, sólo para platform admins. Vive aparte
+de la operación de los tenants y no debe tocarla:
+
+- **Datos:** tablas `growth_*` y `tenant_acquisitions`, todas service-role.
+  El estado de un prospecto (teléfono, correo, visita, etapa, siguiente
+  canal) sólo cambia con `growth_record_outcome`; la cascada
+  WhatsApp → correo → visita → sin contacto vive en `growth_next_channel`.
+  No repliques esa lógica en TypeScript.
+- **Interruptor:** sin `GROWTH_ENABLED=true` el tick, el bot y los avisos no
+  hacen nada. `growth_settings.paused` pausa el correo.
+- **Registro:** la atribución corre con `after()` en `/api/tenants` y nunca
+  lanza (`attributeRegistration`). El token de «Para ti» llega como
+  `?prospecto=`; sólo se guarda su hash.
+- **WhatsApp:** no se envía nada solo. El bot arma tarjetas con `wa.me` y el
+  dueño da Enviar desde su app; el resultado vuelve por los botones.
+- **Correo:** Gmail por SMTP/IMAP con contraseña de aplicación. La
+  contraseña vive en la variable que nombra `growth_mailboxes.secret_env_key`,
+  nunca en la base. El pie de baja lo agrega `emailFooter` y no se edita.
+- **Mensajes:** `growth_templates` son versiones inmutables; guardar usa
+  `growth_save_template_version` (archiva la anterior). Variables en
+  `constants/templateVariables.ts`.
+- **Cron:** `growth_cron_tick()` existe tras la migración pero no se agenda;
+  se activa con `supabase/snippets/growth_cron_schedule.sql`.
+- **Variables:** `GROWTH_ENABLED`, `GROWTH_CRON_SECRET`,
+  `GROWTH_MAILBOX_<n>_PASSWORD`, `TELEGRAM_BOT_TOKEN`,
+  `TELEGRAM_WEBHOOK_SECRET`, `GROWTH_POSTAL_ADDRESS`, `GROWTH_WHATSAPP_NUMBER`.
+- **Carga del DENUE:** `npx tsx --env-file=.env.local scripts/growth/importDenue.ts <csv> --dry-run`.
+  El CSV vive en `data/growth/` (ignorado por git).
+
 ---
 
 ## 7. Anti-patrones explícitamente cazados en este repo

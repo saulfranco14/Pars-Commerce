@@ -1,0 +1,13 @@
+"use client";
+
+import { PageHeader } from "@/components/admin/PageHeader";
+import { LeadsView } from "@/features/growth/components/admin/LeadsView";
+
+export default function ProspectosPage() {
+  return (
+    <div className="grid gap-5">
+      <PageHeader eyebrow="Plataforma" title="Prospectos" description="Negocios del DENUE en el oriente, su etapa y el siguiente canal para contactarlos." />
+      <LeadsView />
+    </div>
+  );
+}

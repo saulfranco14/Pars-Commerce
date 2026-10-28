@@ -14,6 +14,9 @@ export interface RegistrationIntent {
   onboardingSessionId?: string;
   phone?: string;
   assisted?: boolean;
+  /** Raw "Para ti" token; only its hash is ever stored. */
+  prospectToken?: string;
+  heardFrom?: string;
 }
 
 type QueryReader = { get(name: string): string | null };
@@ -42,6 +45,7 @@ export function parseRegistrationIntent(query: QueryReader): RegistrationIntent 
     onboardingSessionId: query.get("sesion")?.trim().slice(0, 80) || undefined,
     phone: query.get("telefono")?.trim().slice(0, 24) || undefined,
     assisted: query.get("asistido") === "1",
+    prospectToken: query.get("prospecto")?.trim().slice(0, 64) || undefined,
   };
 }
 
@@ -56,5 +60,6 @@ export function registrationIntentQuery(intent: RegistrationIntent): string {
   if (intent.onboardingSessionId) query.set("sesion", intent.onboardingSessionId);
   if (intent.phone) query.set("telefono", intent.phone);
   if (intent.assisted) query.set("asistido", "1");
+  if (intent.prospectToken) query.set("prospecto", intent.prospectToken);
   return query.toString();
 }

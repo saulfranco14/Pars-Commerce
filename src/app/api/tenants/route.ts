@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import type { Database, Json } from "@/types/database.types";
+import { HEARD_FROM_VALUES } from "@/features/auth/constants/heardFromOptions";
+import { attributeRegistration } from "@/features/growth/services/attributionService";
 import { getAdditionalBusinessAccess } from "@/features/billing/businessExpansion";
 import type { RegistrationIntent } from "@/features/auth/registrationIntent";
 import { ensureCatalogTemplates } from "@/features/catalog/catalogBootstrap";
@@ -148,7 +150,7 @@ export async function POST(request: Request) {
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "") || "negocio";
   const storedIntent = user.user_metadata?.registration_intent as
-    | { plan?: string; giro?: string; solution_key?: string; catalog_key?: string; business_name?: string; theme_key?: string; primary_goals?: string[]; catalog_start_mode?: string; onboarding_session_id?: string; phone?: string; assisted?: boolean; consumed_at?: string; tenant_id?: string }
+    | { plan?: string; giro?: string; solution_key?: string; catalog_key?: string; business_name?: string; theme_key?: string; primary_goals?: string[]; catalog_start_mode?: string; onboarding_session_id?: string; phone?: string; assisted?: boolean; prospect_token?: string | null; heard_from?: string | null; consumed_at?: string; tenant_id?: string }
     | undefined;
   const storedRegistrationIntent = storedIntent?.consumed_at ? undefined : storedIntent;
   const effectivePlan = registration_intent?.plan ?? storedRegistrationIntent?.plan ?? "free";
@@ -287,6 +289,17 @@ export async function POST(request: Request) {
         },
       },
     });
+    // Runs after the response: growth attribution can never slow down or break a signup.
+    const heardFrom = registration_intent?.heardFrom ?? storedRegistrationIntent?.heard_from ?? null;
+    const attribution = {
+      tenantId: tenant.id,
+      businessName: name.trim(),
+      email: user.email ?? null,
+      phone: effectivePhone,
+      prospectToken: registration_intent?.prospectToken ?? storedRegistrationIntent?.prospect_token ?? null,
+      heardFrom: heardFrom && HEARD_FROM_VALUES.has(heardFrom) ? heardFrom : null,
+    };
+    after(() => attributeRegistration(admin, attribution));
   }
 
   return NextResponse.json(tenant);
