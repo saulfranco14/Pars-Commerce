@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, Mail, MapPin, MessageCircle, Search, Target } from "lucide-react";
+import { AlertTriangle, Mail, MapPin, MessageCircle, Search, Target, X } from "lucide-react";
 
 import { useGrowthLeads } from "@/features/growth/hooks/useGrowthLeads";
 import { AdminListCard } from "@/components/admin/AdminListCard";
@@ -16,13 +16,14 @@ import { GIRO_COPY, GIRO_KEYS, giroCopy } from "@/features/growth/constants/giro
 import { LEAD_STAGE_META, LEAD_STAGE_TABS, NEXT_CHANNEL_LABEL } from "@/features/growth/constants/leadStages";
 import { ZONES, zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
 import { formatMexicanPhoneInput } from "@/lib/phone";
+import { markOpenedFromList } from "@/features/growth/services/leadsReturn";
 
 import type { LeadContactFilter, LeadStageFilter } from "@/features/growth/interfaces/lead";
 
 const selectClass = "input-form min-h-11 rounded-xl border border-border bg-surface-raised px-3 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
 
 export function LeadsView() {
-  const { data, error, isLoading, filters, update, search, changeSearch } = useGrowthLeads();
+  const { data, error, isLoading, filters, update, search, changeSearch, active, clear } = useGrowthLeads();
 
   if (isLoading && !data) return <LoadingBlock message="Cargando prospectos…" variant="skeleton" />;
   if (error && !data) {
@@ -80,6 +81,16 @@ export function LeadsView() {
             <option value="sin">Sin teléfono ni correo (visita)</option>
           </select>
         </div>
+        <div className="flex min-h-11 flex-wrap items-center justify-between gap-2 border-b border-border-soft px-3 sm:px-4">
+          <p className="text-sm text-muted-foreground">
+            {(data?.total ?? 0).toLocaleString("es-MX")} {data?.total === 1 ? "prospecto" : "prospectos"}{active ? " con estos filtros" : ""}
+          </p>
+          {active ? (
+            <button type="button" onClick={clear} className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-accent hover:underline">
+              <X className="h-4 w-4" aria-hidden />Limpiar filtros
+            </button>
+          ) : null}
+        </div>
 
         {leads.length === 0 ? (
           <div className="p-4">
@@ -88,7 +99,7 @@ export function LeadsView() {
         ) : (
           <div className="grid gap-2 p-3 sm:p-4">
             {leads.map((lead) => (
-              <Link key={lead.id} href={`/dashboard/plataforma/prospectos/${lead.id}`} className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+              <Link key={lead.id} href={`/dashboard/plataforma/prospectos/${lead.id}`} onClick={markOpenedFromList} className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                 <AdminListCard
                   title={lead.business_name}
                   badge={<StatusBadge tone={LEAD_STAGE_META[lead.stage].tone} label={LEAD_STAGE_META[lead.stage].label} compact />}
