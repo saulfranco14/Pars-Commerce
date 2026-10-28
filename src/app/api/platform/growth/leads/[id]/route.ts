@@ -6,7 +6,7 @@ import { requirePlatformAdmin } from "@/app/api/platform/_lib";
 
 import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
 import { growthDb } from "@/features/growth/services/growthDb";
-import { getLeadDetail, recordOutcome, snoozeLead, updateLeadGiro, updateLeadPhone } from "@/features/growth/services/leadService";
+import { getLeadDetail, recordOutcome, skipLead, snoozeLead, updateLeadGiro, updateLeadPhone } from "@/features/growth/services/leadService";
 
 import type { LeadOutcome } from "@/features/growth/interfaces/lead";
 
@@ -25,7 +25,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const gate = await requirePlatformAdmin();
   if ("error" in gate) return gate.error;
   const { id } = await params;
-  const body = await readJson<{ outcome?: LeadOutcome; reason?: string; snoozeDays?: number | null; phone?: string; giro?: string }>(request);
+  const body = await readJson<{ outcome?: LeadOutcome; reason?: string; snoozeDays?: number | null; phone?: string; giro?: string; skip?: boolean }>(request);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
   const db = growthDb(createAdminClient());
 
@@ -37,6 +37,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       actor: "operator",
       payload: body.outcome === "not_interested" ? { reason: body.reason === "competencia" ? "competencia" : "rechazo" } : {},
     });
+    if (!result.ok) return serviceErrorToResponse(result.error);
+    return NextResponse.json(result.data);
+  }
+  if (body.skip === true) {
+    const result = await skipLead(db, id);
     if (!result.ok) return serviceErrorToResponse(result.error);
     return NextResponse.json(result.data);
   }

@@ -47,13 +47,16 @@ export const LEAD_EVENT_LABEL: Record<string, string> = {
 };
 
 export const LEAD_STAGE_TABS = [
-  { value: "todos", label: "Todos" },
-  { value: "en_lote", label: "En lote (Telegram)" },
+  { value: "activos", label: "Por trabajar" },
+  { value: "en_lote", label: "Apartados" },
   { value: "contactado", label: "Contactados" },
-  { value: "conversando", label: "Conversando" },
   { value: "caliente", label: "Calientes" },
+  { value: "conversando", label: "Conversando" },
   { value: "registrado", label: "Registrados" },
   { value: "descartado", label: "Descartados" },
+  { value: "todos", label: "Todos" },
 ] as const;
+
+export const CLOSED_STAGES = ["registrado", "descartado"] as const;
 
 export const LEADS_PAGE_SIZE = 30;

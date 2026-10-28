@@ -50,7 +50,7 @@ export function useGrowthLeads() {
   const active = query !== "";
   function clear() {
     setSearch("");
-    navigate({ stage: "todos", page: 1 });
+    navigate({ page: 1 });
   }
 
   return { data, error, isLoading, filters, update, search, changeSearch: setSearch, active, clear };

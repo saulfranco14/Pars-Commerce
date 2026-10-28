@@ -10,6 +10,8 @@ interface AdminListCardProps {
   body?: ReactNode;
   actions?: ReactNode;
   highlighted?: boolean;
+  /** Tighter padding for long lists scanned row by row. */
+  compact?: boolean;
 }
 
 export function AdminListCard({
@@ -21,10 +23,11 @@ export function AdminListCard({
   body,
   actions,
   highlighted,
+  compact,
 }: AdminListCardProps) {
   return (
     <article
-      className={`flex flex-col gap-3 rounded-2xl border bg-surface p-4 transition-colors ${
+      className={`flex flex-col rounded-2xl border bg-surface transition-colors ${compact ? "h-full gap-2 px-3 py-2.5" : "gap-3 p-4"} ${
         highlighted
           ? "border-accent shadow-md shadow-accent/10"
           : "border-border hover:border-accent/40"

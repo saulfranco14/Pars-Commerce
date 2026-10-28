@@ -8,6 +8,7 @@ import { FilterTabs } from "@/components/ui/FilterTabs";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
 
+import { sameTabOnPhones } from "@/features/growth/helpers/openWhatsapp";
 import { TEMPLATE_STEPS } from "@/features/growth/constants/templateVariables";
 
 import type { TemplateVariant } from "@/features/growth/interfaces/template";
@@ -58,7 +59,7 @@ export function WhatsappComposer({ leadId, busy, onOutcome }: WhatsappComposerPr
         <>
           <p className={`whitespace-pre-wrap rounded-xl border border-border-soft bg-surface-raised p-3 text-sm leading-relaxed text-foreground ${composer.loading ? "opacity-60" : ""}`}>{draft.body}</p>
           <div className="flex flex-wrap gap-2">
-            <a href={draft.waLink} target="_blank" rel="noopener noreferrer" onClick={composer.markOpened} className={adminActionButtonPrimary}>
+            <a href={draft.waLink} target="_blank" rel="noopener noreferrer" onClick={(event) => { composer.markOpened(); sameTabOnPhones(event); }} className={adminActionButtonPrimary}>
               <MessageCircle className="h-4 w-4" aria-hidden />Abrir WhatsApp con este mensaje
             </a>
             <button type="button" disabled={composer.loading} onClick={() => void composer.reload()} className={adminActionButtonSecondary}>

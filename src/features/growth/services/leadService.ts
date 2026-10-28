@@ -1,4 +1,5 @@
-import { LEADS_PAGE_SIZE } from "@/features/growth/constants/leadStages";
+import { CLOSED_STAGES, LEADS_PAGE_SIZE } from "@/features/growth/constants/leadStages";
+import { SWEEP_SKIP_HOURS, SWEEP_SKIPPED_KIND } from "@/features/growth/constants/sweep";
 import { TEMPLATE_STEPS } from "@/features/growth/constants/templateVariables";
 import { GIRO_COPY } from "@/features/growth/constants/giroCopy";
 import { internalError, rpcError } from "@/features/growth/services/growthDb";
@@ -48,13 +49,21 @@ function sanitizeSearch(value: string): string {
   return value.replace(/[%_,()*]/g, " ").trim().slice(0, 60);
 }
 
+type ListRow = GrowthLead & { growth_lead_links: Array<{ purpose: string; last_viewed_at: string | null }> | null };
+
+function withParaView({ growth_lead_links: links, ...lead }: ListRow): GrowthLead {
+  const views = (links ?? []).flatMap((link) => (link.purpose === "para" && link.last_viewed_at ? [link.last_viewed_at] : []));
+  return { ...lead, para_viewed_at: views.sort().at(-1) ?? null };
+}
+
 export async function listLeads(db: GrowthDb, filters: LeadFilters): Promise<ServiceResult<LeadListResult>> {
   const page = Math.max(1, filters.page ?? 1);
-  let query = db.from("growth_leads").select(LIST_COLUMNS, { count: "exact" });
+  let query = db.from("growth_leads").select(`${LIST_COLUMNS}, growth_lead_links(purpose, last_viewed_at)`, { count: "exact" });
   if (filters.municipio) query = query.eq("municipio", filters.municipio);
   if (filters.giro) query = query.eq("giro", filters.giro);
-  if (filters.stage === "en_lote") query = query.gt("reserved_until", new Date().toISOString());
-  else if (filters.stage && filters.stage !== "todos") query = query.eq("stage", filters.stage);
+  if (filters.stage === "en_lote") query = query.gt("reserved_until", new Date().toISOString()).neq("reserved_kind", SWEEP_SKIPPED_KIND);
+  else if (filters.stage === "activos" || !filters.stage) query = query.not("stage", "in", `(${CLOSED_STAGES.join(",")})`);
+  else if (filters.stage !== "todos") query = query.eq("stage", filters.stage);
   if (filters.contact === "whatsapp" || filters.contact === "ambos") query = query.not("phone_e164", "is", null);
   if (filters.contact === "correo" || filters.contact === "ambos") query = query.not("email", "is", null);
   if (filters.contact === "sin") query = query.is("phone_e164", null).is("email", null);
@@ -81,7 +90,7 @@ export async function listLeads(db: GrowthDb, filters: LeadFilters): Promise<Ser
   return {
     ok: true,
     data: {
-      leads: (data ?? []) as GrowthLead[],
+      leads: ((data ?? []) as ListRow[]).map(withParaView),
       total: count ?? 0,
       page,
       pageSize: LEADS_PAGE_SIZE,
@@ -130,6 +139,20 @@ export async function snoozeLead(db: GrowthDb, leadId: string, days: number | nu
   if (error) return internalError(error.message);
   if (!data) return { ok: false, error: { code: "not_found", message: "El prospecto ya no existe." } };
   return { ok: true, data: data as GrowthLead };
+}
+
+/** "Later" from the sweep: keeps the card out of the sweep and Telegram batches for the rest of the day. */
+export async function skipLead(db: GrowthDb, leadId: string): Promise<ServiceResult<{ id: string }>> {
+  const until = new Date(Date.now() + SWEEP_SKIP_HOURS * 3_600_000).toISOString();
+  const { data, error } = await db
+    .from("growth_leads")
+    .update({ reserved_until: until, reserved_kind: SWEEP_SKIPPED_KIND })
+    .eq("id", leadId)
+    .select("id")
+    .maybeSingle();
+  if (error) return internalError(error.message);
+  if (!data) return { ok: false, error: { code: "not_found", message: "El prospecto ya no existe." } };
+  return { ok: true, data: { id: data.id as string } };
 }
 
 /** Swaps in a better number (e.g. from Google Maps); the SQL side resets the WhatsApp state and the cascade. */

@@ -1,13 +1,22 @@
 import { useCallback, useState } from "react";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 
-import { leadKey, patchLead } from "@/features/growth/services/growthClient";
+import { isLeadsListKey, leadKey, patchLead } from "@/features/growth/services/growthClient";
+import { forgetWhatsappOpened } from "@/features/growth/services/whatsappOpened";
 import { swrFetcher } from "@/lib/swrFetcher";
 
 import type { LeadDetail, LeadOutcome } from "@/features/growth/interfaces/lead";
 
+const OUTCOME_NOTICE: Partial<Record<LeadOutcome, string>> = {
+  whatsapp_sent: "Quedó como enviado. En la lista ya aparece «WhatsApp enviado».",
+  no_whatsapp: "Marcado sin WhatsApp: sigue por correo o visita.",
+  wrong_number: "Marcado como número equivocado: sigue por correo o visita.",
+  not_interested: "Dado de baja. Ya no aparece en «Por trabajar».",
+};
+
 export function useGrowthLead(id: string) {
   const { data, error, isLoading, mutate } = useSWR<LeadDetail>(leadKey(id), swrFetcher);
+  const { mutate: mutateGlobal } = useSWRConfig();
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ tone: "success" | "error"; message: string } | null>(null);
   const clearNotice = useCallback(() => setNotice(null), []);
@@ -17,7 +26,7 @@ export function useGrowthLead(id: string) {
     try {
       await action();
       setNotice({ tone: "success", message: success });
-      await mutate();
+      await Promise.all([mutate(), mutateGlobal(isLeadsListKey)]);
       return true;
     } catch (err) {
       setNotice({ tone: "error", message: err instanceof Error ? err.message : "No pudimos guardar el cambio." });
@@ -34,7 +43,11 @@ export function useGrowthLead(id: string) {
     busy,
     notice,
     clearNotice,
-    markOutcome: (outcome: LeadOutcome, reason?: string) => run(() => patchLead(id, { outcome, reason }), "Listo, quedó registrado."),
+    markOutcome: async (outcome: LeadOutcome, reason?: string) => {
+      const saved = await run(() => patchLead(id, { outcome, reason }), OUTCOME_NOTICE[outcome] ?? "Listo, quedó registrado.");
+      if (saved) forgetWhatsappOpened();
+      return saved;
+    },
     snooze: (days: number | null) => run(() => patchLead(id, { snoozeDays: days }), days ? `Pausado ${days} días.` : "Reactivado."),
     updatePhone: (phone: string) => run(() => patchLead(id, { phone }), "Teléfono actualizado. Vuelve a la fila de WhatsApp."),
     updateGiro: (giro: string) => run(() => patchLead(id, { giro }), "Giro actualizado. Su «Para ti» ya muestra la tienda de ese giro."),

@@ -4,6 +4,7 @@ import { leadFiltersQuery } from "@/features/growth/helpers/leadFiltersQuery";
 import type { GrowthLead, LeadFilters, LeadOutcome } from "@/features/growth/interfaces/lead";
 import type { GrowthMailbox, GrowthSettings, GrowthSettingsPatch, MailboxInput } from "@/features/growth/interfaces/settings";
 import type { GrowthTemplate, TemplateDraft, TemplatePreview, TemplateVariant } from "@/features/growth/interfaces/template";
+import type { SweepBatch, SweepFilters } from "@/features/growth/interfaces/sweep";
 import type { WhatsappDraft, WhatsappStep } from "@/features/growth/interfaces/whatsapp";
 
 const BASE = "/api/platform/growth";
@@ -13,11 +14,13 @@ export function leadsKey(filters: LeadFilters): string {
 }
 
 export const leadKey = (id: string) => `${BASE}/leads/${id}`;
+/** Every filtered list page, so an action on one prospect refreshes whichever list the operator goes back to. */
+export const isLeadsListKey = (key: unknown) => typeof key === "string" && key.startsWith(`${BASE}/leads?`);
 export const engineKey = `${BASE}/settings`;
 export const templatesKey = `${BASE}/templates`;
 export const funnelKey = (days: number) => `${BASE}/funnel?days=${days}`;
 
-export async function patchLead(id: string, body: { outcome?: LeadOutcome; reason?: string; snoozeDays?: number | null; phone?: string; giro?: string }): Promise<GrowthLead> {
+export async function patchLead(id: string, body: { outcome?: LeadOutcome; reason?: string; snoozeDays?: number | null; phone?: string; giro?: string; skip?: boolean }): Promise<GrowthLead> {
   return (await apiFetch(leadKey(id), { method: "PATCH", body: JSON.stringify(body) })) as GrowthLead;
 }
 
@@ -63,4 +66,8 @@ export async function confirmUnsubscribe(token: string): Promise<void> {
 
 export async function createWhatsappDraft(id: string, body: { step?: WhatsappStep; variant?: TemplateVariant }): Promise<WhatsappDraft> {
   return (await apiFetch(`${leadKey(id)}/whatsapp`, { method: "POST", body: JSON.stringify(body) })) as WhatsappDraft;
+}
+
+export async function fetchSweep(filters: SweepFilters, exclude: string[]): Promise<SweepBatch> {
+  return (await apiFetch(`${BASE}/sweep`, { method: "POST", body: JSON.stringify({ ...filters, exclude }) })) as SweepBatch;
 }

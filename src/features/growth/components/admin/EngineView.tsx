@@ -48,7 +48,7 @@ export function EngineView() {
   const { settings, mailboxes, telegram } = overview;
 
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-1 gap-5">
       {engine.notice ? <Notification tone={engine.notice.tone} message={engine.notice.message} onDismiss={engine.clearNotice} /> : null}
       {!overview.enabled ? (
         <Notification tone="warning" title="El motor está apagado" message="Falta GROWTH_ENABLED=true en las variables de entorno. Mientras tanto no sale ningún correo y el bot no responde." />
