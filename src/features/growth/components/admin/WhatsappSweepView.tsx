@@ -31,14 +31,14 @@ export function WhatsappSweepView() {
 
   return (
     <div className="grid grid-cols-1 gap-4">
-      <div className="grid gap-1">
+      <div className="grid gap-1 lg:flex lg:items-center lg:gap-4">
         <button type="button" onClick={() => backToLeads(router)} className="-ml-1 inline-flex min-h-11 w-fit items-center gap-2 px-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" aria-hidden />Prospectos
         </button>
         <PageHeader title="Barrido de WhatsApp" />
       </div>
 
-      <section className="grid grid-cols-1 gap-2 rounded-2xl border border-border bg-surface p-3 sm:p-4">
+      <section className="grid grid-cols-1 gap-2 rounded-2xl border border-border bg-surface p-3 sm:p-4 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center lg:gap-4 lg:py-2">
         <FilterTabs
           tabs={SWEEP_KIND_TABS}
           activeValue={filters.kind}
@@ -51,7 +51,7 @@ export function WhatsappSweepView() {
             <span className="truncate"><span className="font-semibold text-foreground">{zone}</span></span>
             <span className="inline-flex shrink-0 items-center gap-1 font-semibold text-accent">Cambiar<ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden /></span>
           </summary>
-          <div className="grid grid-cols-2 gap-2 pt-2">
+          <div className="grid grid-cols-2 gap-2 pt-2 lg:min-w-md">
             <select aria-label="Municipio" value={filters.municipio ?? ""} onChange={(event) => sweep.changeFilters({ municipio: event.target.value || undefined })} className={selectClass}>
               <option value="">Todos los municipios</option>
               {ZONES.map((item) => <option key={item.municipio} value={item.municipio}>{item.label}</option>)}
@@ -62,7 +62,7 @@ export function WhatsappSweepView() {
             </select>
           </div>
         </details>
-        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border-soft pt-2 text-sm tabular-nums text-muted-foreground" aria-label="Avance de hoy">
+        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border-soft pt-2 text-sm tabular-nums text-muted-foreground lg:border-0 lg:pt-0" aria-label="Avance de hoy">
           <li className="inline-flex items-center gap-1.5"><Send className="h-4 w-4 text-emerald-600" aria-hidden /><b className="text-foreground">{today.sent}</b> enviados hoy</li>
           <li className="inline-flex items-center gap-1.5"><XCircle className="h-4 w-4 text-red-600" aria-hidden /><b className="text-foreground">{today.noWhatsapp + today.wrongNumber}</b> sin WhatsApp</li>
           <li className="inline-flex items-center gap-1.5"><SkipForward className="h-4 w-4 text-amber-600" aria-hidden /><b className="text-foreground">{sweep.skipped}</b> saltados</li>
@@ -91,7 +91,7 @@ export function WhatsappSweepView() {
           tone="muted"
         />
       ) : current ? (
-        <SweepCard key={`${current.id}-${current.phone_e164}`} lead={current} onOutcome={sweep.mark} onSkip={sweep.skip} onPhoneChanged={sweep.replaceCurrent} />
+        <SweepCard key={`${current.id}-${current.phone_e164}`} lead={current} next={next} onOutcome={sweep.mark} onSkip={sweep.skip} onPhoneChanged={sweep.replaceCurrent} />
       ) : (
         <EmptyState
           icon={PartyPopper}
@@ -111,7 +111,7 @@ export function WhatsappSweepView() {
       )}
 
       {current && next ? (
-        <p className="truncate text-sm text-muted-foreground">
+        <p className="truncate text-sm text-muted-foreground lg:hidden">
           Sigue: <span className="font-semibold text-foreground">{formatBusinessName(next.business_name)}</span>{next.colonia ? ` · ${formatBusinessName(next.colonia)}` : ""}
         </p>
       ) : null}

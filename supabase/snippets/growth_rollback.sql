@@ -1,7 +1,6 @@
--- Reverts 20261029000001_growth_leads.sql, 20261029000002_growth_outreach.sql,
--- 20261029000003_growth_cron.sql and the growth functions of later growth
--- migrations (through 20261030000001). Only growth objects are touched; set
--- GROWTH_ENABLED=false and deploy the code without growth before running it.
+-- Reverts the growth migrations (20261029000001 to 20261030000002). Only growth
+-- objects are touched; set GROWTH_ENABLED=false and deploy the code without growth
+-- before running it.
 BEGIN;
 
 DO $$
@@ -13,6 +12,9 @@ END $$;
 
 DROP FUNCTION IF EXISTS public.growth_update_lead_phone(uuid, text);
 DROP FUNCTION IF EXISTS public.growth_sweep_remaining(text, text, text);
+DROP FUNCTION IF EXISTS public.growth_follow_up(uuid, text, timestamptz, text);
+DROP FUNCTION IF EXISTS public.growth_pipeline_counts(text, text);
+DROP FUNCTION IF EXISTS public.growth_leads_next_step() CASCADE;
 DROP FUNCTION IF EXISTS public.growth_cron_tick();
 DROP FUNCTION IF EXISTS public.growth_claim_due_messages(integer);
 DROP FUNCTION IF EXISTS public.growth_mailbox_usage_today(uuid);

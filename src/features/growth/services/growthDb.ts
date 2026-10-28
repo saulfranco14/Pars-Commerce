@@ -25,5 +25,8 @@ export function rpcError(message: string): ServiceResult<never> {
   if (message.includes("PHONE_TAKEN")) return { ok: false, error: { code: "validation", message: "Ese teléfono ya es de otro prospecto." } };
   if (message.includes("PHONE_SUPPRESSED")) return { ok: false, error: { code: "validation", message: "Ese teléfono pidió no recibir mensajes o estaba equivocado." } };
   if (message.includes("INVALID_PHONE")) return { ok: false, error: { code: "validation", message: "Escribe los 10 dígitos del teléfono." } };
+  if (message.includes("INVALID_TRANSITION")) return { ok: false, error: { code: "validation", message: "Ese paso no aplica en la etapa en que está este negocio." } };
+  if (message.includes("DATE_REQUIRED")) return { ok: false, error: { code: "validation", message: "Elige la fecha." } };
+  if (message.includes("NOTE_REQUIRED")) return { ok: false, error: { code: "validation", message: "Escribe la nota." } };
   return internalError(message);
 }

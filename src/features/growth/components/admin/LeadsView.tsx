@@ -6,15 +6,16 @@ import { AlertTriangle, Mail, MessageCircle, Search, Send, Target, X } from "luc
 import { useGrowthLeads } from "@/features/growth/hooks/useGrowthLeads";
 import { AdminListCard } from "@/components/admin/AdminListCard";
 import { EmptyState } from "@/components/admin/EmptyState";
-import { MetricsStrip } from "@/components/admin/MetricsStrip";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { adminActionButtonPrimary } from "@/components/admin/actionButtonClasses";
 import { FilterTabs } from "@/components/ui/FilterTabs";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { PlatformPagination } from "@/features/platform/components/PlatformPagination";
+import { PipelineDots } from "@/features/growth/components/admin/PipelineDots";
 
 import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName";
 import { leadLastTouch } from "@/features/growth/helpers/leadLastTouch";
+import { nextStepDue } from "@/features/growth/helpers/leadPipeline";
 import { sweepFiltersQuery } from "@/features/growth/helpers/sweepFilters";
 import { GIRO_COPY, GIRO_KEYS, giroCopy } from "@/features/growth/constants/giroCopy";
 import { LEAD_STAGE_META, LEAD_STAGE_TABS, NEXT_CHANNEL_LABEL } from "@/features/growth/constants/leadStages";
@@ -55,17 +56,6 @@ export function LeadsView() {
           <Send className="h-4 w-4" aria-hidden />Empezar
         </Link>
       </section>
-
-      <div className="hidden sm:block">
-        <MetricsStrip
-        metrics={[
-          { label: "Prospectos", value: metrics.total.toLocaleString("es-MX") },
-          { label: "Contactados", value: metrics.contacted.toLocaleString("es-MX"), tone: "accent" },
-          { label: "Conversando", value: metrics.conversing.toLocaleString("es-MX"), tone: "amber" },
-          { label: "Registrados", value: metrics.registered.toLocaleString("es-MX"), tone: "emerald" },
-        ]}
-        />
-      </div>
 
       <FilterTabs
         tabs={LEAD_STAGE_TABS}
@@ -122,6 +112,7 @@ export function LeadsView() {
           <div className="grid grid-cols-1 gap-2 p-3 sm:p-4 xl:grid-cols-2">
             {leads.map((lead) => {
               const touch = leadLastTouch(lead, now);
+              const due = nextStepDue(lead, now);
               const place = [lead.colonia ? formatBusinessName(lead.colonia) : null, zoneByMunicipio(lead.municipio)?.label ?? lead.municipio].filter(Boolean).join(", ");
               return (
                 <Link key={lead.id} href={`/dashboard/plataforma/prospectos/${lead.id}`} onClick={markOpenedFromList} className="block min-w-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
@@ -131,13 +122,13 @@ export function LeadsView() {
                     badge={<StatusBadge tone={LEAD_STAGE_META[lead.stage].tone} label={LEAD_STAGE_META[lead.stage].label} compact />}
                     meta={<span className="block truncate">{giroCopy(lead.giro).label} · {place} · Siguiente: {NEXT_CHANNEL_LABEL[lead.next_channel]}</span>}
                     body={
-                      lead.phone_e164 || lead.email || touch ? (
-                        <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                      <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                          <PipelineDots stage={lead.stage} />
                           {lead.phone_e164 ? <span className="inline-flex items-center gap-1 tabular-nums text-emerald-700"><MessageCircle className="h-3.5 w-3.5" aria-hidden />{formatMexicanPhoneInput(lead.phone_e164)}</span> : null}
                           {lead.email ? <span className="inline-flex min-w-0 max-w-full items-center gap-1 text-accent"><Mail className="h-3.5 w-3.5 shrink-0" aria-hidden /><span className="truncate">{lead.email}</span></span> : null}
                           {touch ? <StatusBadge tone={touch.tone} label={touch.label} compact dot={false} /> : null}
-                        </span>
-                      ) : undefined
+                          {due ? <StatusBadge tone={due.tone} label={`${due.label} · ${due.when}`} compact dot={false} /> : null}
+                      </span>
                     }
                   />
                 </Link>
