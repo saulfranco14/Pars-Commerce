@@ -48,6 +48,7 @@ export const LEAD_EVENT_LABEL: Record<string, string> = {
 
 export const LEAD_STAGE_TABS = [
   { value: "todos", label: "Todos" },
+  { value: "en_lote", label: "En lote (Telegram)" },
   { value: "contactado", label: "Contactados" },
   { value: "conversando", label: "Conversando" },
   { value: "caliente", label: "Calientes" },
