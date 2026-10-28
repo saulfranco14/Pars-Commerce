@@ -70,7 +70,7 @@ export async function buildWhatsappCard(
 }
 
 export async function buildVisitCard(db: GrowthDb, lead: NearbyLead, position: number): Promise<OutgoingMessage> {
-  const token = await createLeadLink(db, { leadId: lead.id, purpose: "para", channel: "visita" });
+  const token = await createLeadLink(db, { leadId: lead.id, purpose: "para", channel: "visita", businessName: lead.business_name });
   const revisit = lead.revisit_at ? " · toca regresar hoy" : "";
   const text = [
     `<b>${position}. ${escapeHtml(lead.business_name)}</b> · ${lead.distance_m} m${revisit}`,

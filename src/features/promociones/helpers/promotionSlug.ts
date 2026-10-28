@@ -1,12 +1,7 @@
-/** URL-safe slug in Spanish: "Café 2x1 ¡Hoy!" → "cafe-2x1-hoy". */
+import { slugify } from "@/lib/slugify";
+
 export function slugifyPromotionName(name: string): string {
-  return name
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
+  return slugify(name).slice(0, 80);
 }
 
 /** First free slug given the ones already taken: "pack", "pack-2", "pack-3"… */
