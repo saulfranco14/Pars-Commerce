@@ -5,10 +5,14 @@ function titleCase(word: string): string {
   return word.toLocaleLowerCase("es-MX").replace(/(^|[-'])(\p{L})/gu, (_, sep: string, letter: string) => sep + letter.toLocaleUpperCase("es-MX"));
 }
 
+// DENUE appends "sin nombre" / "S/N" to names it only half knows ("Jugos y Licuados sin Nombre").
+const NAMELESS_SUFFIX = /\s+(sin\s+nombre|s\/n|sn)\.?$/i;
+
 /** DENUE writes names in caps ("ACABADOS CERAMICOS") or with every word capitalized ("Aluminio Y Vidrio"). */
 export function formatBusinessName(raw: string): string {
-  const words = raw.trim().split(/\s+/).filter(Boolean);
-  const shouting = !/\p{Ll}/u.test(raw);
+  const name = raw.trim().replace(NAMELESS_SUFFIX, "");
+  const words = name.split(/\s+/).filter(Boolean);
+  const shouting = !/\p{Ll}/u.test(name);
   return words
     .map((word, index) => {
       const lower = word.toLocaleLowerCase("es-MX");

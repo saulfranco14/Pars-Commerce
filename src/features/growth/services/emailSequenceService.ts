@@ -163,7 +163,7 @@ export async function runEmailSequence(db: GrowthDb, settings: GrowthSettings, n
 
   const { data: due } = await db.rpc("growth_claim_due_enrollments", { p_limit: Math.min(room + 10, 50) });
   for (const item of (due ?? []) as DueEnrollment[]) {
-    if (["registrado", "descartado", "conversando"].includes(item.stage) || ["rebotado", "respondio"].includes(item.email_status)) {
+    if (["registrado", "descartado", "conversando", "cita"].includes(item.stage) || ["rebotado", "respondio"].includes(item.email_status)) {
       await stop(db, item.enrollment_id, item.stage === "registrado" ? "registrado" : "respuesta_o_baja");
       result.stopped++;
       continue;

@@ -35,6 +35,7 @@ export interface SweepLastAction {
 
 export interface SweepCardProps {
   lead: SweepLead;
+  next: SweepLead | null;
   onOutcome: (outcome: SweepOutcome) => void;
   onSkip: () => void;
   onPhoneChanged: (lead: SweepLead) => void;

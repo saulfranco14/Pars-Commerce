@@ -5,7 +5,7 @@ import { useSWRConfig } from "swr";
 import { parseSweepFilters, sweepFiltersQuery } from "@/features/growth/helpers/sweepFilters";
 import { mergeSweepQueue } from "@/features/growth/helpers/sweepQueue";
 import { SWEEP_OUTCOME_LABEL, SWEEP_REFILL_AT } from "@/features/growth/constants/sweep";
-import { fetchSweep, isLeadsListKey, patchLead } from "@/features/growth/services/growthClient";
+import { fetchSweep, isBoardKey, isLeadsListKey, patchLead } from "@/features/growth/services/growthClient";
 import { forgetWhatsappOpened } from "@/features/growth/services/whatsappOpened";
 
 import type { SweepFilters, SweepLastAction, SweepLead, SweepOutcome, SweepToday } from "@/features/growth/interfaces/sweep";
@@ -79,7 +79,10 @@ export function useWhatsappSweep() {
     forgetWhatsappOpened();
 
     save()
-      .then(() => void mutateGlobal(isLeadsListKey))
+      .then(() => {
+        void mutateGlobal(isLeadsListKey);
+        void mutateGlobal(isBoardKey);
+      })
       .catch((err: unknown) => {
         undo();
         setQueue((current) => [lead, ...current.filter((item) => item.id !== lead.id)]);

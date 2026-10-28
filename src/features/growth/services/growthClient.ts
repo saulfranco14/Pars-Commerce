@@ -1,7 +1,7 @@
 import { apiFetch } from "@/services/apiFetch";
 import { leadFiltersQuery } from "@/features/growth/helpers/leadFiltersQuery";
 
-import type { GrowthLead, LeadFilters, LeadOutcome } from "@/features/growth/interfaces/lead";
+import type { FollowUpInput, GrowthLead, LeadFilters, LeadOutcome } from "@/features/growth/interfaces/lead";
 import type { GrowthMailbox, GrowthSettings, GrowthSettingsPatch, MailboxInput } from "@/features/growth/interfaces/settings";
 import type { GrowthTemplate, TemplateDraft, TemplatePreview, TemplateVariant } from "@/features/growth/interfaces/template";
 import type { SweepBatch, SweepFilters } from "@/features/growth/interfaces/sweep";
@@ -70,4 +70,17 @@ export async function createWhatsappDraft(id: string, body: { step?: WhatsappSte
 
 export async function fetchSweep(filters: SweepFilters, exclude: string[]): Promise<SweepBatch> {
   return (await apiFetch(`${BASE}/sweep`, { method: "POST", body: JSON.stringify({ ...filters, exclude }) })) as SweepBatch;
+}
+
+export function boardKey(zone: { municipio?: string; giro?: string }): string {
+  const query = new URLSearchParams();
+  if (zone.municipio) query.set("municipio", zone.municipio);
+  if (zone.giro) query.set("giro", zone.giro);
+  return `${BASE}/board?${query.toString()}`;
+}
+
+export const isBoardKey = (key: unknown) => typeof key === "string" && key.startsWith(`${BASE}/board?`);
+
+export async function followUpLead(id: string, input: FollowUpInput): Promise<GrowthLead> {
+  return (await apiFetch(`${leadKey(id)}/follow-up`, { method: "POST", body: JSON.stringify(input) })) as GrowthLead;
 }

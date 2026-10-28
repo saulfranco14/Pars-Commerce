@@ -2,6 +2,7 @@ import { CLOSED_STAGES, LEADS_PAGE_SIZE } from "@/features/growth/constants/lead
 import { SWEEP_SKIP_HOURS, SWEEP_SKIPPED_KIND } from "@/features/growth/constants/sweep";
 import { TEMPLATE_STEPS } from "@/features/growth/constants/templateVariables";
 import { GIRO_COPY } from "@/features/growth/constants/giroCopy";
+import { daysFromToday } from "@/features/growth/helpers/leadPipeline";
 import { internalError, rpcError } from "@/features/growth/services/growthDb";
 import { normalizeMexicanPhone } from "@/lib/phone";
 
@@ -10,8 +11,8 @@ import type { GrowthLead, LeadActor, LeadDetail, LeadEvent, LeadFilters, LeadLis
 import type { GrowthTemplate } from "@/features/growth/interfaces/template";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 
-const LIST_COLUMNS =
-  "id, denue_id, business_name, giro, catalog_template_key, municipio, colonia, address, lat, lng, phone_e164, email, staff_range, phone_status, email_status, visit_status, stage, next_channel, whatsapp_attempts, visit_attempts, last_whatsapp_at, revisit_at, snoozed_until, drop_reason, registered_tenant_id, last_activity_at, created_at";
+export const LEAD_COLUMNS =
+  "id, denue_id, business_name, giro, catalog_template_key, municipio, colonia, address, lat, lng, phone_e164, email, staff_range, phone_status, email_status, visit_status, stage, next_channel, whatsapp_attempts, visit_attempts, last_whatsapp_at, revisit_at, snoozed_until, drop_reason, registered_tenant_id, last_activity_at, created_at, next_step, next_step_at, next_step_note, appointment_at";
 
 const SENT_OUTCOMES: LeadOutcome[] = ["whatsapp_sent", "email_sent"];
 
@@ -58,10 +59,11 @@ function withParaView({ growth_lead_links: links, ...lead }: ListRow): GrowthLea
 
 export async function listLeads(db: GrowthDb, filters: LeadFilters): Promise<ServiceResult<LeadListResult>> {
   const page = Math.max(1, filters.page ?? 1);
-  let query = db.from("growth_leads").select(`${LIST_COLUMNS}, growth_lead_links(purpose, last_viewed_at)`, { count: "exact" });
+  let query = db.from("growth_leads").select(`${LEAD_COLUMNS}, growth_lead_links(purpose, last_viewed_at)`, { count: "exact" });
   if (filters.municipio) query = query.eq("municipio", filters.municipio);
   if (filters.giro) query = query.eq("giro", filters.giro);
   if (filters.stage === "en_lote") query = query.gt("reserved_until", new Date().toISOString()).neq("reserved_kind", SWEEP_SKIPPED_KIND);
+  else if (filters.stage === "hoy") query = query.lt("next_step_at", daysFromToday(1, 0));
   else if (filters.stage === "activos" || !filters.stage) query = query.not("stage", "in", `(${CLOSED_STAGES.join(",")})`);
   else if (filters.stage !== "todos") query = query.eq("stage", filters.stage);
   if (filters.contact === "whatsapp" || filters.contact === "ambos") query = query.not("phone_e164", "is", null);
@@ -71,6 +73,7 @@ export async function listLeads(db: GrowthDb, filters: LeadFilters): Promise<Ser
   const term = filters.q ? sanitizeSearch(filters.q) : "";
   if (term.length >= 2) query = query.ilike("business_name", `%${term}%`);
 
+  if (filters.stage === "hoy") query = query.order("next_step_at");
   const { data, error, count } = await query
     .order("last_activity_at", { ascending: false, nullsFirst: false })
     .order("business_name")
@@ -108,7 +111,7 @@ export async function listLeads(db: GrowthDb, filters: LeadFilters): Promise<Ser
 
 export async function getLeadDetail(db: GrowthDb, leadId: string): Promise<ServiceResult<LeadDetail>> {
   const [{ data: lead, error }, { data: events }, { data: acquisition }] = await Promise.all([
-    db.from("growth_leads").select(LIST_COLUMNS).eq("id", leadId).maybeSingle(),
+    db.from("growth_leads").select(LEAD_COLUMNS).eq("id", leadId).maybeSingle(),
     db.from("growth_lead_events").select("id, lead_id, type, channel, actor, template_id, payload, created_at").eq("lead_id", leadId).order("created_at", { ascending: false }).limit(100),
     db.from("tenant_acquisitions").select("bucket, channel, tenant_id").eq("lead_id", leadId).maybeSingle(),
   ]);
@@ -134,7 +137,7 @@ export async function snoozeLead(db: GrowthDb, leadId: string, days: number | nu
     .from("growth_leads")
     .update({ snoozed_until: until, updated_at: new Date().toISOString() })
     .eq("id", leadId)
-    .select(LIST_COLUMNS)
+    .select(LEAD_COLUMNS)
     .maybeSingle();
   if (error) return internalError(error.message);
   if (!data) return { ok: false, error: { code: "not_found", message: "El prospecto ya no existe." } };
@@ -167,7 +170,7 @@ export async function updateLeadPhone(db: GrowthDb, leadId: string, rawPhone: st
 /** The giro is also the starter catalog key, so fixing it changes what every "Para ti" link shows from now on. */
 export async function updateLeadGiro(db: GrowthDb, leadId: string, giro: string): Promise<ServiceResult<GrowthLead>> {
   if (!GIRO_COPY[giro]) return { ok: false, error: { code: "validation", message: "Elige un giro de la lista." } };
-  const { data: current, error: readError } = await db.from("growth_leads").select(LIST_COLUMNS).eq("id", leadId).maybeSingle();
+  const { data: current, error: readError } = await db.from("growth_leads").select(LEAD_COLUMNS).eq("id", leadId).maybeSingle();
   if (readError) return internalError(readError.message);
   if (!current) return { ok: false, error: { code: "not_found", message: "El prospecto ya no existe." } };
   if (current.giro === giro) return { ok: true, data: current as GrowthLead };
@@ -177,7 +180,7 @@ export async function updateLeadGiro(db: GrowthDb, leadId: string, giro: string)
     .from("growth_leads")
     .update({ giro, catalog_template_key: giro, last_activity_at: now, updated_at: now })
     .eq("id", leadId)
-    .select(LIST_COLUMNS)
+    .select(LEAD_COLUMNS)
     .maybeSingle();
   if (error) return internalError(error.message);
   await db.from("growth_lead_events").insert({ lead_id: leadId, type: "giro_corrected", actor: "operator", payload: { previous: current.giro, giro } });

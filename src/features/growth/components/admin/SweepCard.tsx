@@ -29,7 +29,7 @@ function typingTarget(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 }
 
-export function SweepCard({ lead, onOutcome, onSkip, onPhoneChanged }: SweepCardProps) {
+export function SweepCard({ lead, next, onOutcome, onSkip, onPhoneChanged }: SweepCardProps) {
   const composer = useWhatsappDraft(lead.id);
   const { draft, opened } = composer;
   const [editingPhone, setEditingPhone] = useState(false);
@@ -89,46 +89,48 @@ export function SweepCard({ lead, onOutcome, onSkip, onPhoneChanged }: SweepCard
   ) : null;
 
   return (
-    <section className="grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5" aria-label={`Barrido: ${name}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="grid min-w-0 gap-1">
-          <h2 className="text-xl font-bold tracking-tight text-foreground wrap-break-word">{name}</h2>
-          <p className="text-sm text-muted-foreground">{giroCopy(lead.giro).label} · {place}</p>
-          {lead.phone_e164 ? (
-            <a href={`tel:${lead.phone_e164}`} className="inline-flex w-fit items-center gap-1.5 text-base font-semibold tabular-nums text-foreground">
-              <Phone className="h-4 w-4 text-muted-foreground" aria-hidden />{formatMexicanPhoneInput(lead.phone_e164)}
-            </a>
-          ) : null}
+    <section className="grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-6" aria-label={`Barrido: ${name}`}>
+      <div className="grid min-w-0 content-start gap-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="grid min-w-0 gap-1">
+            <h2 className="text-xl font-bold tracking-tight text-foreground wrap-break-word">{name}</h2>
+            <p className="text-sm text-muted-foreground">{giroCopy(lead.giro).label} · {place}</p>
+            {lead.phone_e164 ? (
+              <a href={`tel:${lead.phone_e164}`} className="inline-flex w-fit items-center gap-1.5 text-base font-semibold tabular-nums text-foreground">
+                <Phone className="h-4 w-4 text-muted-foreground" aria-hidden />{formatMexicanPhoneInput(lead.phone_e164)}
+              </a>
+            ) : null}
+          </div>
+          <StatusBadge tone={lead.whatsapp_attempts > 0 ? "info" : "neutral"} label={lead.whatsapp_attempts > 0 ? "Seguimiento" : "Primer mensaje"} compact />
         </div>
-        <StatusBadge tone={lead.whatsapp_attempts > 0 ? "info" : "neutral"} label={lead.whatsapp_attempts > 0 ? "Seguimiento" : "Primer mensaje"} compact />
+  
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+          <a href={buildMapsSearchLink(lead)} target="_blank" rel="noopener noreferrer" className={linkButton}><Search className="h-4 w-4" aria-hidden />Ver en Maps</a>
+          <button type="button" onClick={() => setEditingPhone(true)} className={linkButton}><Pencil className="h-4 w-4" aria-hidden />Corregir número</button>
+          <a href={`/dashboard/plataforma/prospectos/${lead.id}`} target="_blank" rel="noopener noreferrer" className={linkButton}><ExternalLink className="h-4 w-4" aria-hidden />Ficha</a>
+        </div>
+  
+        {phoneError ? <Notification tone="error" message={phoneError} onDismiss={() => setPhoneError(null)} /> : null}
+        {composer.error ? <Notification tone="error" message={composer.error} /> : null}
+  
+        {draft && draft.variants.length > 1 ? (
+          <FilterTabs
+            tabs={draft.variants.map((variant) => ({ value: variant, label: `Mensaje ${variant}` }))}
+            activeValue={draft.variant}
+            onTabChange={(value) => composer.selectVariant(value as TemplateVariant)}
+            ariaLabel="Variante del mensaje"
+            disabled={composer.loading}
+          />
+        ) : null}
+        {composer.loading && !draft ? <LoadingBlock message="Armando el mensaje…" variant="skeleton" /> : null}
+        {draft ? (
+          <p className={`max-h-56 overflow-y-auto whitespace-pre-wrap rounded-xl border border-border-soft bg-surface-raised p-3 text-sm leading-relaxed text-foreground sm:max-h-none lg:max-h-[calc(100vh-32rem)] ${composer.loading ? "opacity-60" : ""}`}>
+            {draft.body}
+          </p>
+        ) : null}
       </div>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1">
-        <a href={buildMapsSearchLink(lead)} target="_blank" rel="noopener noreferrer" className={linkButton}><Search className="h-4 w-4" aria-hidden />Ver en Maps</a>
-        <button type="button" onClick={() => setEditingPhone(true)} className={linkButton}><Pencil className="h-4 w-4" aria-hidden />Corregir número</button>
-        <a href={`/dashboard/plataforma/prospectos/${lead.id}`} target="_blank" rel="noopener noreferrer" className={linkButton}><ExternalLink className="h-4 w-4" aria-hidden />Ficha</a>
-      </div>
-
-      {phoneError ? <Notification tone="error" message={phoneError} onDismiss={() => setPhoneError(null)} /> : null}
-      {composer.error ? <Notification tone="error" message={composer.error} /> : null}
-
-      {draft && draft.variants.length > 1 ? (
-        <FilterTabs
-          tabs={draft.variants.map((variant) => ({ value: variant, label: `Mensaje ${variant}` }))}
-          activeValue={draft.variant}
-          onTabChange={(value) => composer.selectVariant(value as TemplateVariant)}
-          ariaLabel="Variante del mensaje"
-          disabled={composer.loading}
-        />
-      ) : null}
-      {composer.loading && !draft ? <LoadingBlock message="Armando el mensaje…" variant="skeleton" /> : null}
-      {draft ? (
-        <p className={`max-h-56 overflow-y-auto whitespace-pre-wrap rounded-xl border border-border-soft bg-surface-raised p-3 text-sm leading-relaxed text-foreground sm:max-h-none ${composer.loading ? "opacity-60" : ""}`}>
-          {draft.body}
-        </p>
-      ) : null}
-
-      <div className="sticky bottom-0 -mx-4 grid gap-2 border-t border-border-soft bg-surface px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:static sm:mx-0 sm:border-0 sm:p-0">
+      <div className="sticky bottom-0 -mx-4 grid content-start gap-2 border-t border-border-soft bg-surface px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:static sm:mx-0 sm:border-0 sm:p-0 lg:sticky lg:top-20 lg:self-start lg:border-l lg:pl-6">
         {opened ? (
           <>
             <p className="text-sm font-semibold text-foreground">¿Cómo te fue con {name}?</p>
@@ -154,6 +156,11 @@ export function SweepCard({ lead, onOutcome, onSkip, onPhoneChanged }: SweepCard
             </button>
           </>
         )}
+        {next ? (
+          <p className="hidden truncate border-t border-border-soft pt-3 text-sm text-muted-foreground lg:block">
+            Sigue: <span className="font-semibold text-foreground">{formatBusinessName(next.business_name)}</span>
+          </p>
+        ) : null}
         <p className="hidden text-xs text-muted-foreground md:block">Teclas: W abrir · E enviado · N sin WhatsApp · X equivocado · S saltar</p>
       </div>
 
