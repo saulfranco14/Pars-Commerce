@@ -5,7 +5,7 @@ import { TemplateEditorView } from "@/features/growth/components/admin/TemplateE
 
 export default function MensajesPage() {
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-1 gap-5">
       <PageHeader eyebrow="Motor" title="Mensajes" description="Edita cada WhatsApp y cada correo por giro y paso. Guardar crea una versión nueva; nada se borra." />
       <TemplateEditorView />
     </div>

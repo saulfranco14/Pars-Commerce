@@ -1,3 +1,4 @@
+import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
 import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
 
@@ -33,13 +34,13 @@ export function buildTemplateVars(lead: LeadForVars, extra: { link: string; firm
   const zone = zoneByMunicipio(lead.municipio);
   const street = lead.address?.trim();
   const negocio = isGenericBusinessName(lead.business_name) && street
-    ? `${copy.label.toLowerCase()} de ${street}`
-    : lead.business_name;
+    ? `${copy.label.toLowerCase()} de ${formatBusinessName(street)}`
+    : formatBusinessName(lead.business_name);
 
   return {
     saludo: greetingFor(mexicoHour(extra.now ?? new Date())),
     negocio,
-    colonia: lead.colonia ?? zone?.label ?? lead.municipio,
+    colonia: lead.colonia ? formatBusinessName(lead.colonia) : zone?.label ?? lead.municipio,
     municipio: zone?.label ?? lead.municipio,
     cercania: zone?.cercania ?? "del oriente, de Chimalhuacán",
     giro: copy.label.toLowerCase(),

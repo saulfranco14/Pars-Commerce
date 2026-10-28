@@ -55,7 +55,7 @@ export function FunnelView() {
   const municipios = Object.entries(report.by_municipio);
 
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-1 gap-5">
       <FilterTabs tabs={RANGE_TABS} activeValue={String(days)} onTabChange={(value) => setDays(Number(value))} ariaLabel="Periodo" />
       <MetricsStrip
         metrics={[

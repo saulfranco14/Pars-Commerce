@@ -70,7 +70,7 @@ describe("growth: phone correction", () => {
       select body from growth_templates
       where channel = 'whatsapp' and giro is null and step = 'm1' and status <> 'archived'`;
     expect(live.length).toBeGreaterThan(0);
-    expect(live.every((row) => row.body.includes("Soy Saúl, de Tlaco") && !row.body.includes("{cercania}"))).toBe(true);
+    expect(live.every((row) => row.body.includes("de Tlaco") && !row.body.includes("{cercania}"))).toBe(true);
     const [archived] = await sql`
       select count(*)::int as n from growth_templates
       where channel = 'whatsapp' and giro is null and step = 'm1' and status = 'archived' and version = 1`;

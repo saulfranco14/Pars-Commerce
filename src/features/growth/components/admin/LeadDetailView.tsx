@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Mail, MapPin, Pencil, Phone, Search, Store } from "lucide-react";
 
 import { useGrowthLead } from "@/features/growth/hooks/useGrowthLead";
@@ -16,7 +16,9 @@ import { LeadPhoneSheet } from "@/features/growth/components/admin/LeadPhoneShee
 import { WhatsappComposer } from "@/features/growth/components/admin/WhatsappComposer";
 
 import { buildMapsLink, buildMapsSearchLink } from "@/features/growth/helpers/buildWaLink";
+import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName";
 import { suggestWhatsappStep } from "@/features/growth/helpers/suggestWhatsappStep";
+import { backToLeads } from "@/features/growth/services/leadsReturn";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
 import { LEAD_EVENT_LABEL, LEAD_STAGE_META, NEXT_CHANNEL_LABEL } from "@/features/growth/constants/leadStages";
 import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
@@ -38,6 +40,7 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 export function LeadDetailView({ id }: { id: string }) {
+  const router = useRouter();
   const { detail, error, isLoading, busy, notice, clearNotice, markOutcome, snooze, updatePhone, updateGiro } = useGrowthLead(id);
   const [confirmDrop, setConfirmDrop] = useState(false);
   const [editingPhone, setEditingPhone] = useState(false);
@@ -52,16 +55,16 @@ export function LeadDetailView({ id }: { id: string }) {
   const whatsappSuggestion = suggestWhatsappStep(lead);
 
   return (
-    <div className="grid gap-5">
-      <Link href="/dashboard/plataforma/prospectos" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
+    <div className="grid grid-cols-1 gap-5">
+      <button type="button" onClick={() => backToLeads(router)} className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" aria-hidden />Prospectos
-      </Link>
+      </button>
       {notice ? <Notification tone={notice.tone} message={notice.message} onDismiss={clearNotice} /> : null}
 
       <section className="grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="grid gap-1">
-            <h2 className="text-xl font-bold tracking-tight text-foreground">{lead.business_name}</h2>
+            <h2 className="text-xl font-bold tracking-tight text-foreground wrap-break-word">{formatBusinessName(lead.business_name)}</h2>
             <p className="inline-flex items-center gap-1 text-sm text-muted-foreground">
               <MapPin className="h-4 w-4" aria-hidden />
               {giroCopy(lead.giro).label} · {[lead.address, lead.colonia, zoneByMunicipio(lead.municipio)?.label ?? lead.municipio].filter(Boolean).join(", ")}

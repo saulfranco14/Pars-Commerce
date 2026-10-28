@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { createWhatsappDraft } from "@/features/growth/services/growthClient";
+import { rememberWhatsappOpened, wasWhatsappOpened } from "@/features/growth/services/whatsappOpened";
 
 import type { TemplateVariant } from "@/features/growth/interfaces/template";
 import type { WhatsappDraft, WhatsappStep } from "@/features/growth/interfaces/whatsapp";
@@ -10,12 +11,11 @@ export function useWhatsappDraft(leadId: string) {
   const [draft, setDraft] = useState<WhatsappDraft | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [opened, setOpened] = useState(false);
+  const [opened, setOpened] = useState(() => wasWhatsappOpened(leadId));
 
   const load = useCallback(async (selection: { step?: WhatsappStep; variant?: TemplateVariant } = {}) => {
     setLoading(true);
     setError(null);
-    setOpened(false);
     try {
       setDraft(await createWhatsappDraft(leadId, selection));
     } catch (err) {
@@ -34,9 +34,15 @@ export function useWhatsappDraft(leadId: string) {
     loading,
     error,
     opened,
-    markOpened: () => setOpened(true),
+    markOpened: () => {
+      rememberWhatsappOpened(leadId);
+      setOpened(true);
+    },
     selectStep: (step: WhatsappStep) => load({ step }),
     selectVariant: (variant: TemplateVariant) => load({ step: draft?.step, variant }),
-    reload: () => load(),
+    reload: () => {
+      setOpened(false);
+      return load();
+    },
   };
 }
