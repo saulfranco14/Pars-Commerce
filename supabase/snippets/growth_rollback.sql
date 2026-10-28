@@ -1,5 +1,6 @@
--- Reverts 20261029000001_growth_leads.sql, 20261029000002_growth_outreach.sql
--- and 20261029000003_growth_cron.sql. Only growth objects are touched; set
+-- Reverts 20261029000001_growth_leads.sql, 20261029000002_growth_outreach.sql,
+-- 20261029000003_growth_cron.sql and the growth functions of later growth
+-- migrations (through 20261030000001). Only growth objects are touched; set
 -- GROWTH_ENABLED=false and deploy the code without growth before running it.
 BEGIN;
 
@@ -19,6 +20,7 @@ DROP FUNCTION IF EXISTS public.growth_enroll_email_leads(integer);
 DROP FUNCTION IF EXISTS public.growth_funnel(timestamptz, timestamptz);
 DROP FUNCTION IF EXISTS public.growth_save_template_version(text, text, text, text, text, text, uuid);
 DROP FUNCTION IF EXISTS public.growth_link_registration(uuid, text, text, text, text, jsonb);
+DROP FUNCTION IF EXISTS public.growth_track_link(text, text, integer, jsonb);
 DROP FUNCTION IF EXISTS public.growth_track_link(text, text, integer);
 DROP FUNCTION IF EXISTS public.growth_nearby_leads(double precision, double precision, integer);
 DROP FUNCTION IF EXISTS public.growth_reserve_batch(text, text, text, integer, integer);

@@ -1,11 +1,11 @@
-import type { ParaLinkEvent } from "@/features/growth/interfaces/para";
+import type { ParaEventInput, ParaLinkEvent } from "@/features/growth/interfaces/para";
 
 const PROSPECT_KEY = "tlaco_prospect";
 
 /** Beacons survive the page closing, which is when the time-on-page event fires. */
-export function sendParaEvent(token: string, event: ParaLinkEvent, seconds?: number): void {
+export function sendParaEvent(token: string, event: ParaLinkEvent, input: ParaEventInput = {}): void {
   const url = `/api/growth/para/${encodeURIComponent(token)}/event`;
-  const body = JSON.stringify({ event, seconds });
+  const body = JSON.stringify({ event, ...input });
   try {
     if (navigator.sendBeacon?.(url, new Blob([body], { type: "application/json" }))) return;
   } catch {

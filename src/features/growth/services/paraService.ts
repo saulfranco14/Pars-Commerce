@@ -1,16 +1,20 @@
 import { STARTER_CATALOGS } from "@/features/catalog/catalogDefinitions";
+import { GENERIC_CATALOG_IMAGE } from "@/features/catalog/constants/catalogImages";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
 import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
 import { buildWaLink } from "@/features/growth/helpers/buildWaLink";
+import { describeParaSession, formatVisitSeconds, paraOutcome, parsePlacement, sanitizeParaSession } from "@/features/growth/helpers/paraSession";
+import { senderFromSignature } from "@/features/growth/helpers/paraSender";
 import { pickParaItems } from "@/features/growth/helpers/pickParaItems";
 import { hashPreviewToken } from "@/features/preview/previewLinks";
 import { findLinkLead } from "@/features/growth/services/leadLinkService";
 import { isGrowthEnabled } from "@/features/growth/services/growthDb";
 import { notifyOperators } from "@/features/growth/services/operatorService";
+import { getSettings } from "@/features/growth/services/settingsService";
 import { escapeHtml } from "@/features/growth/services/telegramApi";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
-import type { ParaItem, ParaLinkEvent, ParaPageData } from "@/features/growth/interfaces/para";
+import type { ParaEventInput, ParaItem, ParaLinkEvent, ParaPageData, ParaSessionPayload } from "@/features/growth/interfaces/para";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 
 const PARA_ITEMS_LIMIT = 8;
@@ -33,7 +37,8 @@ export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPag
     id: `item-${index}`,
     name: item.name,
     price: item.price,
-    imageUrl: item.imageUrl ?? null,
+    // The shared placeholder reads as an empty mock-up; the card shows initials instead.
+    imageUrl: item.imageUrl && item.imageUrl !== GENERIC_CATALOG_IMAGE ? item.imageUrl : null,
     category: item.category ?? null,
     type: item.type,
   }));
@@ -43,13 +48,16 @@ export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPag
   if (catalog) query.set("catalogo", catalog.key);
   if (lead.phone_e164) query.set("telefono", (lead.phone_e164 as string).slice(3));
 
+  const sender = await loadSender(db);
   const helpNumber = process.env.GROWTH_WHATSAPP_NUMBER?.replace(/\D/g, "");
-  const helpText = `Hola, vi la tienda de ejemplo de ${lead.business_name} y quiero que me ayuden a activarla.`;
+  const helpText = `Hola${sender ? ` ${sender.firstName}` : ""}, vi la tienda de ejemplo de ${lead.business_name} y quiero que me ayuden a activarla.`;
 
   return {
     businessName: lead.business_name as string,
     giroLabel: giroCopy(lead.giro as string).label,
     place: [lead.colonia, zone?.label ?? lead.municipio].filter(Boolean).join(", "),
+    headline: giroCopy(catalog?.key ?? (lead.giro as string)).titular,
+    sender,
     items,
     // Items alternate categories, so the first photos already make a varied hero collage.
     showcase: items
@@ -62,20 +70,51 @@ export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPag
     },
     claimUrl: `/registro?${query.toString()}`,
     helpUrl: helpNumber ? buildWaLink(`+${helpNumber}`, helpText) : null,
+    helpLabel: sender ? `Que ${sender.firstName} me la deje lista` : "Prefiero que me ayuden por WhatsApp",
   };
+}
+
+async function loadSender(db: GrowthDb) {
+  try {
+    return senderFromSignature((await getSettings(db)).signature);
+  } catch {
+    return null;
+  }
+}
+
+function clickPayload(event: ParaLinkEvent, raw: unknown): { placement: string } | null {
+  if (event !== "claim_clicked" && event !== "help_clicked") return null;
+  const placement = parsePlacement((raw as { placement?: unknown } | null)?.placement);
+  return placement ? { placement } : null;
+}
+
+function visitSummary(name: string, zone: string, seconds: number, payload: ParaSessionPayload): string {
+  const time = formatVisitSeconds(seconds);
+  const outcome = paraOutcome(payload);
+  const headline =
+    outcome === "claim"
+      ? `<b>${name}</b> (${zone}) tocó «Activar» y está en el registro · ${time}`
+      : outcome === "help"
+        ? `<b>${name}</b> (${zone}) pidió ayuda por WhatsApp · ${time}. Revisa tu WhatsApp.`
+        : `${name} (${zone}) salió de su tienda · ${time}`;
+  const { seen, tapped } = describeParaSession(payload);
+  return [headline, seen ? `Vio: ${escapeHtml(seen)}` : null, tapped ? `Tocó: ${escapeHtml(tapped)}` : null].filter(Boolean).join("\n");
 }
 
 export async function trackParaEvent(
   db: GrowthDb,
   token: string,
   event: ParaLinkEvent,
-  seconds?: number,
+  input: ParaEventInput = {},
 ): Promise<ServiceResult<{ tracked: boolean }>> {
   if (token.length < 32) return { ok: true, data: { tracked: false } };
+  const seconds = typeof input.seconds === "number" && Number.isFinite(input.seconds) ? Math.min(Math.max(Math.round(input.seconds), 0), 3600) : null;
+  const session = event === "para_left" ? sanitizeParaSession(input.payload) : null;
   const { data, error } = await db.rpc("growth_track_link", {
     p_token_hash: hashPreviewToken(token),
     p_event: event,
-    p_seconds: seconds && Number.isFinite(seconds) ? Math.min(Math.round(seconds), 3600) : null,
+    p_seconds: seconds,
+    p_payload: session ?? clickPayload(event, input.payload),
   });
   if (error) return { ok: false, error: { code: "internal", message: error.message } };
   const row = (Array.isArray(data) ? data[0] : data) as { business_name: string; municipio: string; view_count: number; became_hot: boolean } | undefined;
@@ -88,10 +127,9 @@ export async function trackParaEvent(
       await notifyOperators(db, { text: `<b>Caliente</b> · ${name} (${zone}) abrió su tienda por ${row.view_count}.ª vez.` });
     } else if (event === "para_viewed" && row.view_count === 1) {
       await notifyOperators(db, { text: `${name} (${zone}) abrió su tienda.` });
-    } else if (event === "claim_clicked") {
-      await notifyOperators(db, { text: `<b>${name}</b> tocó «Reclamar mi tienda» y está en el registro.` });
-    } else if (event === "help_clicked") {
-      await notifyOperators(db, { text: `<b>${name}</b> pidió ayuda por WhatsApp. Revisa tu WhatsApp.` });
+    } else if (session) {
+      // Buttons are reported here, once per visit, instead of one alert per tap.
+      await notifyOperators(db, { text: visitSummary(name, zone, seconds ?? 0, session) });
     }
   }
   return { ok: true, data: { tracked: true } };
