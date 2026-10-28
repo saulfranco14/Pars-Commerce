@@ -78,7 +78,7 @@ async function sendOne(db: GrowthDb, item: DueEnrollment, slot: Slot, settings: 
   if (!template) return "skipped";
 
   const [paraToken, bajaToken] = await Promise.all([
-    createLeadLink(db, { leadId: item.lead_id, purpose: "para", channel: "correo", templateId: template.id }),
+    createLeadLink(db, { leadId: item.lead_id, purpose: "para", channel: "correo", templateId: template.id, businessName: item.business_name }),
     createLeadLink(db, { leadId: item.lead_id, purpose: "baja", channel: "correo" }),
   ]);
   const appUrl = getPublicAppUrl();

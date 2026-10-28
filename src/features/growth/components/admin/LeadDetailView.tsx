@@ -21,6 +21,7 @@ import { WhatsappComposer } from "@/features/growth/components/admin/WhatsappCom
 import { buildMapsLink, buildMapsSearchLink } from "@/features/growth/helpers/buildWaLink";
 import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName";
 import { formatDayTime, pipelineIndex } from "@/features/growth/helpers/leadPipeline";
+import { formatVisitSeconds, paraEventDetail } from "@/features/growth/helpers/paraSession";
 import { suggestWhatsappStep } from "@/features/growth/helpers/suggestWhatsappStep";
 import { backToLeads } from "@/features/growth/services/leadsReturn";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
@@ -45,9 +46,9 @@ function eventDetail(event: LeadEvent): string {
     event.type === "giro_corrected" && typeof payload.giro === "string" ? `${giroCopy(String(payload.previous)).label} → ${giroCopy(payload.giro).label}` : null,
     typeof payload.at === "string" ? formatDayTime(payload.at) : null,
     typeof payload.reason === "string" ? payload.reason : null,
-    typeof payload.seconds === "number" ? `${Math.round(payload.seconds)} s` : null,
+    typeof payload.seconds === "number" ? formatVisitSeconds(payload.seconds) : null,
   ].filter(Boolean);
-  return parts.length ? ` · ${parts.join(" · ")}` : "";
+  return `${parts.length ? ` · ${parts.join(" · ")}` : ""}${paraEventDetail(event.type, payload)}`;
 }
 
 function Field({ label, value }: { label: string; value: string }) {

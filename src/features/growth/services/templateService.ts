@@ -1,3 +1,4 @@
+import { leadLinkSlug } from "@/features/growth/helpers/leadLinkToken";
 import { renderTemplate } from "@/features/growth/helpers/renderTemplate";
 import { buildTemplateVars } from "@/features/growth/helpers/templateVars";
 import { validateTemplate } from "@/features/growth/helpers/validateTemplate";
@@ -112,6 +113,6 @@ export async function previewTemplate(db: GrowthDb, draft: TemplateDraft, firma:
     colonia: "Xochitenco",
     address: "Calle Hidalgo 12",
   };
-  const rendered = renderForLead({ subject: draft.subject, body: draft.body }, lead, { link: "https://tlaco.app/para/…", firma });
+  const rendered = renderForLead({ subject: draft.subject, body: draft.body }, lead, { link: `https://tlaco.app/para/${leadLinkSlug(lead.business_name)}-7Kq2Xm9aTzPb`, firma });
   return { ok: true, data: { ...rendered, leadName: lead.business_name } };
 }
