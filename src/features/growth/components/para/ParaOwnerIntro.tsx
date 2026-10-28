@@ -4,10 +4,10 @@ import { ParaActions } from "@/features/growth/components/para/ParaActions";
 
 import { PARA_OWNER_BENEFITS } from "@/features/growth/constants/para";
 
-import type { ParaStorefrontProps } from "@/features/growth/interfaces/para";
+import type { ParaPageData } from "@/features/growth/interfaces/para";
 
 /** First thing the owner reads: who made this, and that below is what their customers would see. */
-export function ParaOwnerIntro({ data }: ParaStorefrontProps) {
+export function ParaOwnerIntro({ data }: { data: ParaPageData }) {
   const { sender } = data;
   return (
     <section

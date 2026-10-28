@@ -6,17 +6,29 @@ import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { ParaActions } from "@/features/growth/components/para/ParaActions";
 import { ParaStorefront } from "@/features/growth/components/para/ParaStorefront";
 import { ParaTracker } from "@/features/growth/components/para/ParaTracker";
+import { ParaVisitButton } from "@/features/growth/components/para/ParaVisitButton";
 
-import { growthDb } from "@/features/growth/services/growthDb";
-import { loadParaPage } from "@/features/growth/services/paraService";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getParaPage } from "@/features/growth/services/paraService";
 
-export const metadata: Metadata = { title: "Tu tienda de ejemplo · Tlaco", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-export default async function ParaPage({ params }: { params: Promise<{ token: string }> }) {
+type ParaParams = { params: Promise<{ token: string }> };
+
+/** WhatsApp shows this card under the link, so it names the business instead of a generic title. */
+export async function generateMetadata({ params }: ParaParams): Promise<Metadata> {
+  const data = await getParaPage((await params).token);
+  const robots = { index: false, follow: false };
+  if (!data) return { title: "Tienda de ejemplo · Tlaco", robots };
+  const title = `${data.businessName} · Su tienda de ejemplo`;
+  const description = data.sender
+    ? `${data.sender.name}, de Tlaco, preparó esta vista para ${data.businessName}. Así la verían sus clientes.`
+    : `Así verían los clientes de ${data.businessName} su tienda en línea.`;
+  return { title, description, robots, openGraph: { title, description, siteName: "Tlaco", type: "website" } };
+}
+
+export default async function ParaPage({ params }: ParaParams) {
   const { token } = await params;
-  const data = await loadParaPage(growthDb(createAdminClient()), token);
+  const data = await getParaPage(token);
   if (!data) notFound();
 
   return (
@@ -33,7 +45,7 @@ export default async function ParaPage({ params }: { params: Promise<{ token: st
         Vista privada para {data.businessName}. Sólo usted tiene el link.
       </p>
 
-      <ParaStorefront data={data} />
+      <ParaStorefront token={token} data={data} />
 
       <section data-para-section="cierre" className="border-t border-border-soft bg-surface px-4 py-12 sm:px-6">
         <div className="mx-auto grid max-w-xl gap-5 text-center">
@@ -43,7 +55,9 @@ export default async function ParaPage({ params }: { params: Promise<{ token: st
               La activa con estos productos y la ajusta a su negocio: precios, fotos, horarios y entregas.
             </p>
           </div>
-          <ParaActions claimUrl={data.claimUrl} helpUrl={data.helpUrl} helpLabel={data.helpLabel} layout="block" />
+          <ParaActions claimUrl={data.claimUrl} helpUrl={data.helpUrl} helpLabel={data.helpLabel} layout="block">
+            {data.visit ? <ParaVisitButton token={token} offer={data.visit} placement="final" /> : null}
+          </ParaActions>
           <p className="text-xs text-muted-foreground">
             Vista de ejemplo preparada por Tlaco para {data.businessName} · {data.giroLabel} · {data.place}. No está publicada ni aparece en buscadores.
           </p>

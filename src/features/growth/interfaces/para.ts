@@ -2,13 +2,41 @@ import type { HeroShowcaseItem } from "@/features/sitio/interfaces/storeHome";
 import type { StoreCatalogCounts } from "@/features/sitio/interfaces/storefront";
 
 /** `para_seconds` only arrives from pages cached before `para_left` replaced it. */
-export type ParaLinkEvent = "para_viewed" | "para_seconds" | "para_left" | "claim_clicked" | "help_clicked";
+export type ParaLinkEvent = "para_viewed" | "para_seconds" | "para_left" | "claim_clicked" | "help_clicked" | "objection_chosen" | "visit_requested";
 
-export type ParaSection = "intro" | "tienda" | "productos" | "cierre";
+export type ParaSection = "intro" | "tienda" | "productos" | "dudas" | "cierre";
 
-export type ParaPlacement = "bar" | "intro" | "final";
+export type ParaObjection = "costo" | "tiempo" | "duda" | "whatsapp";
 
-export type ParaAction = `claim:${ParaPlacement}` | `help:${ParaPlacement}`;
+export type ParaVisitSlot = "manana" | "tarde";
+
+export interface ParaVisitDay {
+  /** YYYY-MM-DD in the business's time zone. */
+  value: string;
+  label: string;
+}
+
+export interface ParaVisitRequest {
+  day: string;
+  slot: ParaVisitSlot;
+}
+
+export interface ParaVisitOffer {
+  days: ParaVisitDay[];
+  label: string;
+}
+
+export interface ParaObjectionOption {
+  id: ParaObjection;
+  label: string;
+  /** `who` is the sender's first name, or a generic «alguien de Tlaco». */
+  answer: (who: string) => string;
+  next: "claim" | "visit" | "help";
+}
+
+export type ParaPlacement = "bar" | "intro" | "dudas" | "final";
+
+export type ParaAction = `claim:${ParaPlacement}` | `help:${ParaPlacement}` | `visit:${ParaPlacement}`;
 
 /** What one visit saw and tapped, reported when the prospect leaves the page. */
 export interface ParaSessionPayload {
@@ -49,6 +77,8 @@ export interface ParaPageData {
   claimUrl: string;
   helpUrl: string | null;
   helpLabel: string;
+  /** Only for businesses in the zones where visits are made. */
+  visit: ParaVisitOffer | null;
 }
 
 export interface ParaActionsProps {
@@ -57,8 +87,17 @@ export interface ParaActionsProps {
   helpLabel: string;
   /** `bar` is the sticky strip, `intro` the owner card and `block` the closing call to action. */
   layout: "bar" | "intro" | "block";
+  /** Extra action for the closing block, shown between activating and WhatsApp. */
+  children?: React.ReactNode;
 }
 
-export interface ParaStorefrontProps {
+export interface ParaVisitButtonProps {
+  token: string;
+  offer: ParaVisitOffer;
+  placement: ParaPlacement;
+}
+
+export interface ParaInteractiveProps {
+  token: string;
   data: ParaPageData;
 }

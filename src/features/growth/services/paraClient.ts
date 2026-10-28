@@ -1,4 +1,6 @@
-import type { ParaEventInput, ParaLinkEvent } from "@/features/growth/interfaces/para";
+import { apiFetch } from "@/services/apiFetch";
+
+import type { ParaEventInput, ParaLinkEvent, ParaVisitRequest } from "@/features/growth/interfaces/para";
 
 const PROSPECT_KEY = "tlaco_prospect";
 
@@ -33,4 +35,8 @@ export function recallProspect(maxAgeDays = 30): string | null {
   } catch {
     return null;
   }
+}
+
+export async function requestParaVisit(token: string, request: ParaVisitRequest): Promise<ParaVisitRequest> {
+  return (await apiFetch(`/api/growth/para/${encodeURIComponent(token)}/visit`, { method: "POST", body: JSON.stringify(request) })) as ParaVisitRequest;
 }

@@ -3,6 +3,7 @@ import { Store } from "lucide-react";
 import { StoreHero } from "@/features/sitio/components/home/StoreHero";
 import { StorePurchaseSteps } from "@/features/sitio/components/home/StorePurchaseSteps";
 import { StoreSectionHeader } from "@/features/sitio/components/StoreSectionHeader";
+import { ParaObjections } from "@/features/growth/components/para/ParaObjections";
 import { ParaOwnerIntro } from "@/features/growth/components/para/ParaOwnerIntro";
 import { ParaProductCard } from "@/features/growth/components/para/ParaProductCard";
 
@@ -12,10 +13,10 @@ import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateSt
 import { resolveHeroCopy } from "@/features/sitio/helpers/storeHome";
 import { buildStoreThemeStyle, resolveStoreTheme } from "@/features/sitio/helpers/storeTheme";
 
-import type { ParaStorefrontProps } from "@/features/growth/interfaces/para";
+import type { ParaInteractiveProps } from "@/features/growth/interfaces/para";
 
 /** The owner's intro, then their store framed as their customers would see it, built from the storefront's own blocks. */
-export function ParaStorefront({ data }: ParaStorefrontProps) {
+export function ParaStorefront({ token, data }: ParaInteractiveProps) {
   const theme = resolveStoreTheme(null);
   const hero = resolveHeroCopy({}, data.counts, null);
 
@@ -65,6 +66,8 @@ export function ParaStorefront({ data }: ParaStorefrontProps) {
         </div>
 
         <StorePurchaseSteps steps={PARA_ACTIVATION_STEPS} title="Qué pasa al activarla" subtitle="Su tienda queda lista en un par de minutos." />
+
+        <ParaObjections token={token} data={data} />
       </div>
     </div>
   );

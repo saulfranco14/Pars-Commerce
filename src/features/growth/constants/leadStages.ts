@@ -42,6 +42,8 @@ export const LEAD_EVENT_LABEL: Record<string, string> = {
   para_left: "Salió de su tienda",
   claim_clicked: "Tocó «Activar mi tienda»",
   help_clicked: "Pidió ayuda por WhatsApp",
+  objection_chosen: "Dijo qué le falta",
+  visit_requested: "Pidió una visita",
   registered: "Se registró",
   phone_corrected: "Corregiste el teléfono",
   giro_corrected: "Corregiste el giro",

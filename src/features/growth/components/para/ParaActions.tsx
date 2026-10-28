@@ -8,7 +8,7 @@ import type { ParaActionsProps } from "@/features/growth/interfaces/para";
 const CLAIM_LABEL = "Activar mi tienda gratis";
 
 /** Taps are recorded by `useParaSession` through the data-para-action attributes. */
-export function ParaActions({ claimUrl, helpUrl, helpLabel, layout }: ParaActionsProps) {
+export function ParaActions({ claimUrl, helpUrl, helpLabel, layout, children }: ParaActionsProps) {
   const placement = PARA_PLACEMENT_BY_LAYOUT[layout];
   const claim = `claim:${placement}`;
   const help = `help:${placement}`;
@@ -79,6 +79,7 @@ export function ParaActions({ claimUrl, helpUrl, helpLabel, layout }: ParaAction
         <ArrowRight className="h-5 w-5" aria-hidden />
       </Link>
       <p className="text-center text-sm text-muted-foreground">Sin tarjeta y sin costo para empezar. Toma un par de minutos.</p>
+      {children}
       {helpUrl ? (
         <a
           href={helpUrl}

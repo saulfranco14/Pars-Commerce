@@ -7,10 +7,10 @@ describe("sanitizeParaSession", () => {
   it("keeps known sections in page order and drops unknown actions", () => {
     const payload = sanitizeParaSession({
       sections: ["cierre", "intro", "admin", "productos"],
-      actions: ["claim:bar", "claim:bar", "delete:all", "help:final", 7],
+      actions: ["claim:bar", "claim:bar", "delete:all", "help:final", "visit:dudas", 7],
       items: [" Cemento 50 kg ", "Cemento 50 kg", 3, ""],
     });
-    expect(payload).toEqual({ sections: ["intro", "productos", "cierre"], actions: ["claim:bar", "help:final"], items: ["Cemento 50 kg"] });
+    expect(payload).toEqual({ sections: ["intro", "productos", "cierre"], actions: ["claim:bar", "help:final", "visit:dudas"], items: ["Cemento 50 kg"] });
   });
 
   it("caps product names and how many are reported", () => {
@@ -52,6 +52,8 @@ describe("visit summary", () => {
     expect(paraEventDetail("claim_clicked", { placement: "final" })).toBe(" · al final");
     expect(paraEventDetail("para_left", { sections: ["intro", "tienda"], actions: [], items: [] })).toBe(" · vio presentación, su tienda");
     expect(paraEventDetail("email_sent", { placement: "final" })).toBe("");
+    expect(paraEventDetail("objection_chosen", { reason: "costo" })).toBe(" · «¿Cuánto me va a costar?»");
+    expect(paraEventDetail("visit_requested", { day: "2026-10-30", slot: "tarde" })).toBe(" · viernes 30 de octubre en la tarde");
   });
 });
 

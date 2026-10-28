@@ -59,6 +59,28 @@ describe("growth: «Para ti» visits", () => {
     });
   });
 
+  it("marks the lead hot when the owner asks for a visit, and keeps the day", async () => {
+    await inRollback(async (tx) => {
+      const leadId = await seedLink(tx);
+      await tx`update growth_leads set stage = 'contactado' where id = ${leadId}`;
+      const visit = { day: "2026-10-30", slot: "tarde" };
+      await tx`select * from growth_track_link('itest-para-hash', 'visit_requested', null, ${tx.json(visit)})`;
+
+      expect(await lastEvent(tx, leadId)).toEqual({ type: "visit_requested", payload: { ...visit, view_count: 0 } });
+      const [lead] = await tx`select stage from growth_leads where id = ${leadId}`;
+      expect(lead.stage).toBe("caliente");
+    });
+  });
+
+  it("records what holds the owner back", async () => {
+    await inRollback(async (tx) => {
+      const leadId = await seedLink(tx);
+      await tx`select * from growth_track_link('itest-para-hash', 'objection_chosen', null, ${tx.json({ reason: "costo" })})`;
+
+      expect(await lastEvent(tx, leadId)).toEqual({ type: "objection_chosen", payload: { reason: "costo", view_count: 0 } });
+    });
+  });
+
   it("rejects unknown events and non-object payloads", async () => {
     await inRollback(async (tx) => {
       await seedLink(tx);

@@ -1,4 +1,5 @@
-import { PARA_ITEM_NAME_MAX, PARA_PLACEMENT_LABEL, PARA_REPORTED_ITEMS, PARA_SECTION_LABEL } from "@/features/growth/constants/para";
+import { PARA_ITEM_NAME_MAX, PARA_OBJECTION_LABEL, PARA_PLACEMENT_LABEL, PARA_REPORTED_ITEMS, PARA_SECTION_LABEL, PARA_VISIT_SLOT_LABEL } from "@/features/growth/constants/para";
+import { parseObjection, visitDayLong } from "@/features/growth/helpers/paraVisit";
 
 import type { ParaAction, ParaPlacement, ParaSection, ParaSessionPayload } from "@/features/growth/interfaces/para";
 
@@ -7,6 +8,8 @@ const PLACEMENTS = Object.keys(PARA_PLACEMENT_LABEL) as ParaPlacement[];
 
 export type ParaOutcome = "claim" | "help" | "left";
 
+const ACTION_LABEL = { claim: "Activar", help: "WhatsApp", visit: "Pedir visita" };
+
 export function parsePlacement(raw: unknown): ParaPlacement | null {
   return PLACEMENTS.includes(raw as ParaPlacement) ? (raw as ParaPlacement) : null;
 }
@@ -14,7 +17,7 @@ export function parsePlacement(raw: unknown): ParaPlacement | null {
 function parseAction(raw: unknown): ParaAction | null {
   if (typeof raw !== "string") return null;
   const [kind, placement] = raw.split(":");
-  return (kind === "claim" || kind === "help") && parsePlacement(placement) ? (raw as ParaAction) : null;
+  return (kind === "claim" || kind === "help" || kind === "visit") && parsePlacement(placement) ? (raw as ParaAction) : null;
 }
 
 function list(raw: unknown): unknown[] {
@@ -51,8 +54,8 @@ export function formatVisitSeconds(seconds: number): string {
 }
 
 function actionLabel(action: ParaAction): string {
-  const [kind, placement] = action.split(":") as ["claim" | "help", ParaPlacement];
-  return `${kind === "claim" ? "Activar" : "Ayuda por WhatsApp"} (${PARA_PLACEMENT_LABEL[placement]})`;
+  const [kind, placement] = action.split(":") as [keyof typeof ACTION_LABEL, ParaPlacement];
+  return `${ACTION_LABEL[kind]} (${PARA_PLACEMENT_LABEL[placement]})`;
 }
 
 /** Plain-text pieces of a visit, shared by the Telegram alert and the lead timeline. */
@@ -70,6 +73,13 @@ export function paraEventDetail(type: string, payload: Record<string, unknown>):
   if (type === "claim_clicked" || type === "help_clicked") {
     const placement = parsePlacement(payload.placement);
     return placement ? ` · ${PARA_PLACEMENT_LABEL[placement]}` : "";
+  }
+  if (type === "objection_chosen") {
+    const reason = parseObjection(payload);
+    return reason ? ` · «${PARA_OBJECTION_LABEL[reason]}»` : "";
+  }
+  if (type === "visit_requested" && typeof payload.day === "string" && typeof payload.slot === "string") {
+    return ` · ${visitDayLong(payload.day)} ${PARA_VISIT_SLOT_LABEL[payload.slot as keyof typeof PARA_VISIT_SLOT_LABEL] ?? ""}`.trimEnd();
   }
   if (type !== "para_left") return "";
   const { seen, tapped } = describeParaSession(sanitizeParaSession(payload));

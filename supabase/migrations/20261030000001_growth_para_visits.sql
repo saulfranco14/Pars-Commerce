@@ -1,8 +1,9 @@
 -- =============================================================================
--- GROWTH: «Para ti» visit summaries. growth_track_link takes an optional payload
--- that is kept on the lead event: what a visit saw and tapped (para_left) and
--- which button was used (claim_clicked / help_clicked, with its placement).
--- Callers that send only (token, event, seconds) keep working through the default.
+-- GROWTH: «Para ti» visits. growth_track_link takes an optional payload that is
+-- kept on the lead event: what a visit saw and tapped (para_left), which button
+-- was used (claim_clicked / help_clicked), what holds the owner back
+-- (objection_chosen) and when they want a visit (visit_requested, which also
+-- marks the lead hot). Callers that send only (token, event, seconds) keep working.
 -- Reverted by supabase/snippets/growth_rollback.sql.
 -- =============================================================================
 
@@ -24,7 +25,7 @@ DECLARE
   v_lead public.growth_leads;
   v_hot boolean := false;
 BEGIN
-  IF p_event NOT IN ('para_viewed', 'para_seconds', 'para_left', 'claim_clicked', 'help_clicked') THEN
+  IF p_event NOT IN ('para_viewed', 'para_seconds', 'para_left', 'claim_clicked', 'help_clicked', 'objection_chosen', 'visit_requested') THEN
     RAISE EXCEPTION 'UNKNOWN_LINK_EVENT';
   END IF;
   IF p_payload IS NOT NULL AND jsonb_typeof(p_payload) <> 'object' THEN
@@ -44,7 +45,8 @@ BEGIN
   END IF;
 
   SELECT * INTO v_lead FROM public.growth_leads WHERE id = v_link.lead_id FOR UPDATE;
-  IF p_event = 'para_viewed' AND v_link.view_count >= 2 AND v_lead.stage IN ('nuevo', 'contactado') THEN
+  IF ((p_event = 'para_viewed' AND v_link.view_count >= 2) OR p_event = 'visit_requested')
+     AND v_lead.stage IN ('nuevo', 'contactado') THEN
     v_hot := true;
   END IF;
 

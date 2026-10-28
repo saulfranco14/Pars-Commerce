@@ -44,7 +44,7 @@ export function useParaSession(token: string): void {
       if (!action) return;
       actions.add(action);
       const [kind, placement] = action.split(":");
-      sendParaEvent(token, kind === "claim" ? "claim_clicked" : "help_clicked", { payload: { placement } });
+      if (kind === "claim" || kind === "help") sendParaEvent(token, kind === "claim" ? "claim_clicked" : "help_clicked", { payload: { placement } });
     };
     // Product cards are not links, and iOS only sends click to elements that are.
     const onPointerUp = (event: PointerEvent) => {
