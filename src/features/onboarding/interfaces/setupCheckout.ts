@@ -43,6 +43,8 @@ export interface SetupFulfillmentDetailsProps {
   delivery: SetupDeliveryDraft;
   onPickupPointChange: (next: PickupPointDraft) => void;
   onDeliveryChange: (next: SetupDeliveryDraft) => void;
+  /** Shown under the address when it came prefilled from somewhere else. */
+  addressHint?: string;
 }
 
 export interface SetupPaymentDetailsProps {

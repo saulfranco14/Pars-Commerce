@@ -76,4 +76,20 @@ describe("POST /api/auth/send-confirmation", () => {
     });
     expect(mocks.createUser).not.toHaveBeenCalled();
   });
+
+  it("keeps the prospect token and a known 'heard from' answer, and drops unknown answers", async () => {
+    mocks.createUser.mockResolvedValue({ data: { user: { id: "user-2" } }, error: null });
+    const body = (heardFrom: string) => JSON.stringify({
+      email: "prospecto@ejemplo.com",
+      password: "secreto-seguro",
+      intent: { phone: "55 1234 5678", prospectToken: "t".repeat(43), heardFrom },
+    });
+
+    await POST(new Request("https://tlaco.test/api/auth/send-confirmation", { method: "POST", body: body("saul") }) as never);
+    const saved = mocks.createUser.mock.calls[0][0].user_metadata.registration_intent;
+    expect(saved).toMatchObject({ prospect_token: "t".repeat(43), heard_from: "saul" });
+
+    await POST(new Request("https://tlaco.test/api/auth/send-confirmation", { method: "POST", body: body("<script>") }) as never);
+    expect(mocks.createUser.mock.calls[1][0].user_metadata.registration_intent).not.toHaveProperty("heard_from");
+  });
 });
