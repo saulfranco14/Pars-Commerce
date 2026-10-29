@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildMapsLink, buildMapsSearchLink, buildWaLink } from "@/features/growth/helpers/buildWaLink";
 import { classifyReply, stripQuoted } from "@/features/growth/helpers/classifyReply";
+import { emailFooter, replySubject } from "@/features/growth/helpers/emailFooter";
 import { normalizeLead, parseCsvLine } from "@/features/growth/helpers/normalizeLead";
 import { decodeCallback, encodeCallback, parseTelegramUpdate } from "@/features/growth/helpers/parseTelegramUpdate";
 import { safeEqual } from "@/features/growth/helpers/safeEqual";
@@ -105,5 +106,18 @@ describe("safeEqual", () => {
     expect(safeEqual("abc", "abd")).toBe(false);
     expect(safeEqual(null, "abc")).toBe(false);
     expect(safeEqual("abc", undefined)).toBe(false);
+  });
+});
+
+describe("email thread", () => {
+  it("answers in the same thread with the first subject", () => {
+    expect(replySubject("Una tienda en línea para Ferretería El Tornillo")).toBe("Re: Una tienda en línea para Ferretería El Tornillo");
+    expect(replySubject("RE: Pregunta para Abarrotes Lupita")).toBe("RE: Pregunta para Abarrotes Lupita");
+  });
+
+  it("keeps the opt-out link and privacy notice in usted", () => {
+    const footer = emailFooter({ unsubscribeUrl: "https://tlaco.app/baja/x", postalAddress: null, privacyUrl: "https://tlaco.app/privacidad" });
+    expect(footer).toContain("Si ya no desea recibir estos correos: https://tlaco.app/baja/x");
+    expect(footer).toContain("Tlaco · Aviso de privacidad: https://tlaco.app/privacidad");
   });
 });
