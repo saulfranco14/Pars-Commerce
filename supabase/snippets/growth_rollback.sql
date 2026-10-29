@@ -1,4 +1,4 @@
--- Reverts the growth migrations (20261029000001 to 20261030000002). Only growth
+-- Reverts the growth migrations (20261029000001 to 20261030000003). Only growth
 -- objects are touched; set GROWTH_ENABLED=false and deploy the code without growth
 -- before running it.
 BEGIN;

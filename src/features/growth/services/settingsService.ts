@@ -1,4 +1,5 @@
 import { internalError } from "@/features/growth/services/growthDb";
+import { SEND_HOUR_MAX, SEND_HOUR_MIN } from "@/features/growth/constants/sendWindow";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
 import type { GrowthSettings, GrowthSettingsPatch } from "@/features/growth/interfaces/settings";
@@ -26,8 +27,8 @@ export async function updateSettings(db: GrowthDb, patch: GrowthSettingsPatch): 
   if (patch.send_start_hour !== undefined || patch.send_end_hour !== undefined) {
     const start = patch.send_start_hour ?? 9;
     const end = patch.send_end_hour ?? 18;
-    if (!Number.isInteger(start) || !Number.isInteger(end) || start < 6 || end > 21 || start >= end) {
-      return { ok: false, error: { code: "validation", message: "El horario debe estar entre 6:00 y 21:00 y empezar antes de terminar." } };
+    if (!Number.isInteger(start) || !Number.isInteger(end) || start < SEND_HOUR_MIN || end > SEND_HOUR_MAX || start >= end) {
+      return { ok: false, error: { code: "validation", message: `El horario debe estar entre ${SEND_HOUR_MIN}:00 y ${SEND_HOUR_MAX}:00 y empezar antes de terminar.` } };
     }
     fields.send_start_hour = start;
     fields.send_end_hour = end;
