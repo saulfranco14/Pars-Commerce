@@ -1,3 +1,4 @@
+import type { ActivationStage } from "@/features/growth/interfaces/activation";
 import type { TemplateVariant } from "@/features/growth/interfaces/template";
 
 export type WhatsappStep =
@@ -20,6 +21,7 @@ export type WhatsappStep =
 /** Why growth_lead_next_action picked its step; the reason text is built from it in TypeScript. */
 export type NextActionCode =
   | "registered"
+  | "activation"
   | "dropped"
   | "no_phone"
   | "bad_phone"
@@ -51,6 +53,8 @@ export interface NextActionFacts {
   visit?: { day: string | null; slot: string | null; at: string };
   reply_at?: string;
   appointment_at?: string;
+  /** Set for registered leads: how far the business got (growth_activation_stage). */
+  activation?: ActivationStage;
 }
 
 export interface NextAction {

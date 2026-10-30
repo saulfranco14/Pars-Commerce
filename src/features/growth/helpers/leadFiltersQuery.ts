@@ -4,7 +4,7 @@ const STAGES: LeadStageFilter[] = ["activos", "hoy", "todos", "en_lote", "nuevo"
 const CHANNELS: NextChannel[] = ["whatsapp", "visita", "correo", "ninguno"];
 const CONTACTS: LeadContactFilter[] = ["whatsapp", "correo", "ambos", "sin"];
 const DEFAULT_STAGE: LeadStageFilter = "activos";
-const VIEWS: LeadView[] = ["seguimiento", "contactar", "mapa"];
+const VIEWS: LeadView[] = ["seguimiento", "activacion", "contactar", "mapa"];
 const DEFAULT_VIEW: LeadView = "seguimiento";
 // "me", "none" (nobody has it yet) or a member's user id.
 const OWNER = /^(me|none|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;

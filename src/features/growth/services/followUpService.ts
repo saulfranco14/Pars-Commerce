@@ -1,10 +1,13 @@
 import { BOARD_COLUMNS, BOARD_COLUMN_LIMIT, BOARD_REGISTERED_DAYS } from "@/features/growth/constants/leadPipeline";
 import { internalError, rpcError } from "@/features/growth/services/growthDb";
+import { memberNames } from "@/features/growth/services/memberService";
+import { ACTIVATION_STAGES } from "@/features/growth/constants/activation";
 import { LEAD_COLUMNS, withOwnerNames } from "@/features/growth/services/leadService";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
 import type { BoardColumn, BoardColumnKey, BoardZone, FollowUpInput, GrowthLead, LeadBoard, MyDay, PipelineCounts } from "@/features/growth/interfaces/lead";
 import type { GrowthActor } from "@/features/growth/interfaces/member";
+import type { ActivationColumn, ActivationLead } from "@/features/growth/interfaces/activation";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 
 /** Every operator move (cita, recordatorio, pausa, nota) goes through growth_follow_up, which checks the pipeline and the owner. */
@@ -63,4 +66,14 @@ export async function myDay(db: GrowthDb, actor: GrowthActor): Promise<ServiceRe
   const { data, error } = await db.rpc("growth_my_day", { p_workspace_id: actor.workspaceId, p_actor_id: actor.userId });
   if (error) return rpcError(error.message);
   return { ok: true, data: data as MyDay };
+}
+
+/** Registered prospects by how far their business got, so the team follows them until they sell. */
+export async function activationBoard(db: GrowthDb, actor: GrowthActor, owner?: string): Promise<ServiceResult<ActivationColumn[]>> {
+  const { data, error } = await db.rpc("growth_activation_board", { p_workspace_id: actor.workspaceId, p_actor_id: actor.userId, p_owner: owner ?? null });
+  if (error) return rpcError(error.message);
+  const rows = (data ?? []) as ActivationLead[];
+  const names = await memberNames(db, actor.workspaceId, rows.map((row) => row.owner_user_id ?? ""));
+  const named = rows.map((row) => ({ ...row, owner_name: row.owner_user_id ? names[row.owner_user_id] ?? null : null }));
+  return { ok: true, data: ACTIVATION_STAGES.map(({ stage }) => ({ stage, leads: named.filter((row) => row.activation === stage) })) };
 }

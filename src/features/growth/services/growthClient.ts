@@ -35,6 +35,7 @@ export const growthMeKey = `${BASE}/me`;
 export const teamKey = `${BASE}/members`;
 export const myDayKey = `${BASE}/my-day`;
 export const importsKey = `${BASE}/imports`;
+export const activationKey = (owner?: string) => `${BASE}/activation${owner ? `?owner=${encodeURIComponent(owner)}` : ""}`;
 export const templatesKey = `${BASE}/templates`;
 export const funnelKey = (days: number) => `${BASE}/funnel?days=${days}`;
 

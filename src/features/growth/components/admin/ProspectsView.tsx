@@ -10,6 +10,7 @@ import { FilterTabs } from "@/components/ui/FilterTabs";
 import { FollowUpView } from "@/features/growth/components/admin/FollowUpView";
 import { LeadsView } from "@/features/growth/components/admin/LeadsView";
 import { MapView } from "@/features/growth/components/admin/MapView";
+import { ActivationView } from "@/features/growth/components/admin/ActivationView";
 import { NewLeadSheet } from "@/features/growth/components/admin/NewLeadSheet";
 import { ProspectingGuide } from "@/features/growth/components/admin/ProspectingGuide";
 import { TodayPanel } from "@/features/growth/components/admin/TodayPanel";
@@ -24,6 +25,7 @@ import type { LeadFilters, LeadView } from "@/features/growth/interfaces/lead";
 
 const VIEW_TABS = [
   { value: "seguimiento", label: "Seguimiento" },
+  { value: "activacion", label: "Activación" },
   { value: "contactar", label: "Prospectar" },
   { value: "mapa", label: "Mapa" },
 ];
@@ -92,6 +94,7 @@ export function ProspectsView() {
         </button>
       </div>
       {filters.vista === "seguimiento" ? <FollowUpView filters={filters} showOwner={isCoordinator && filters.owner !== "me"} /> : null}
+      {filters.vista === "activacion" ? <ActivationView owner={filters.owner} showOwner={isCoordinator && filters.owner !== "me"} /> : null}
       {filters.vista === "contactar" ? <LeadsView /> : null}
       {filters.vista === "mapa" ? <MapView giro={filters.giro} owner={filters.owner} people={team?.members ?? []} /> : null}
       <NewLeadSheet isOpen={adding} onClose={() => setAdding(false)} />

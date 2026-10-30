@@ -7,7 +7,7 @@ import { sql } from "@/test/integration/setup";
 import type { TransactionSql } from "postgres";
 
 // Reverse snippets run newest first, so the later ones go before the workspaces one.
-const ROLLBACK = ["growth_map_imports", "growth_my_day", "growth_assisted_registration", "growth_next_action", "growth_workspaces"]
+const ROLLBACK = ["growth_activation", "growth_map_imports", "growth_my_day", "growth_assisted_registration", "growth_next_action", "growth_workspaces"]
   .map((name) => readFileSync(fileURLToPath(new URL(`../../../../supabase/snippets/${name}_rollback.sql`, import.meta.url)), "utf8"))
   .join("\n")
   .replace(/^\s*(BEGIN|COMMIT);\s*$/gim, "");
@@ -205,6 +205,32 @@ describe("growth: workspaces, members and owners", () => {
       const [second] = await tx`select (growth_claim_import(${job.id}, 60)).id as id`;
       expect(first.id).toBe(job.id);
       expect(second.id).toBeNull();
+    });
+  });
+
+  it("follows a registered business until it sells, and suggests the matching message", async () => {
+    await inRollback(async (tx) => {
+      const lead = await seedTeam(tx);
+      const norte = lead["itest-ws-1"];
+      const tenant = "00000000-0000-4000-8000-0000000000d2";
+      await tx`insert into tenants (id, name, slug) values (${tenant}, 'ITest Activa', 'itest-activa-equipo')`;
+      await tx`select growth_mark_registered(${norte}, ${tenant}, ${ANA})`;
+      const stage = async () => (await tx`select growth_activation_stage(${tenant}) as s`)[0].s;
+      const step = async () => (await tx`select growth_lead_next_action(${norte}) as a`)[0].a.step;
+
+      expect(await stage()).toBe("registrado");
+      expect(await step()).toBe("activacion_tienda");
+      await tx`update tenants set settings = coalesce(settings, '{}'::jsonb) || '{"onboarding":{"status":"active"}}'::jsonb where id = ${tenant}`;
+      expect(await stage()).toBe("tienda_lista");
+      expect(await step()).toBe("activacion_mp");
+      await tx`insert into payment_provider_connections (tenant_id, provider, status) values (${tenant}, 'mercadopago', 'connected')`;
+      expect(await stage()).toBe("cobros");
+      expect(await step()).toBe("activacion_venta");
+
+      const board = await tx`select lead_id, activation from growth_activation_board(${TLACO}, ${ANA})`;
+      expect(board).toEqual([expect.objectContaining({ lead_id: norte, activation: "cobros" })]);
+      const others = await tx`select lead_id from growth_activation_board(${TLACO}, ${BETO})`;
+      expect(others).toHaveLength(0);
     });
   });
 

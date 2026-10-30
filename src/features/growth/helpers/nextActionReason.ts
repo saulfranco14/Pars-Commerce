@@ -23,6 +23,19 @@ function reasonFor(action: NextAction, now: Date): string {
   switch (action.code) {
     case "registered":
       return "Ya se registró. Ayúdale a dejar lista su tienda y a cobrar.";
+    case "activation":
+      switch (facts.activation) {
+        case "tienda_lista":
+          return "Su tienda ya está lista; falta conectar Mercado Pago para que cobre.";
+        case "cobros":
+          return "Ya puede cobrar y todavía no vende. Ayúdale a compartir su enlace.";
+        case "primera_venta":
+          return wait ? "Ya vendió y ya le ayudaste a compartir su enlace. Revisa en unos días." : "Ya vendió una vez. Ayúdale a llegar a 5 pedidos al mes.";
+        case "activo":
+          return "Ya vende seguido. No hace falta escribirle.";
+        default:
+          return "Se registró pero no ha terminado su tienda. Ofrécele ayuda.";
+      }
     case "dropped":
       return "Está dado de baja: no se le vuelve a escribir.";
     case "no_phone":
