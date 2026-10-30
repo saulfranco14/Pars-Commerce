@@ -168,6 +168,20 @@ describe("growth: workspaces, members and owners", () => {
     });
   });
 
+  it("«Tu día» counts only the member's own prospects and today's sends", async () => {
+    await inRollback(async (tx) => {
+      const lead = await seedTeam(tx);
+      await tx`select growth_record_outcome(${lead["itest-ws-1"]}, 'whatsapp_sent', 'operator', '{}'::jsonb, null, null, ${ANA})`;
+      await tx`select growth_record_outcome(${lead["itest-ws-2"]}, 'whatsapp_sent', 'operator', '{}'::jsonb, null, null, ${ANA})`;
+      await tx`select growth_record_outcome(${lead["itest-ws-2"]}, 'whatsapp_replied', 'operator', '{}'::jsonb, null, null, ${ANA})`;
+      const [day] = await tx`select growth_my_day(${TLACO}, ${ANA}) as d`;
+      expect(day.d).toMatchObject({ replied_due: 1, sent_today: 2, daily_goal: 20 });
+      const [beto] = await tx`select growth_my_day(${TLACO}, ${BETO}) as d`;
+      expect(beto.d).toMatchObject({ replied_due: 0, sent_today: 0, first_messages_left: 1 });
+      expect(await failure(tx, (sp) => sp`select growth_my_day(${TLACO}, '00000000-0000-4000-8000-0000000000e9')`)).toContain("NOT_A_MEMBER");
+    });
+  });
+
   it("only coordinators reassign, and the move is logged", async () => {
     await inRollback(async (tx) => {
       const lead = await seedTeam(tx);

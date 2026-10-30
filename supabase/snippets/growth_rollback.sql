@@ -9,6 +9,9 @@ BEGIN
   END IF;
 END $$;
 
+-- 20261031000004_growth_my_day
+DROP FUNCTION IF EXISTS public.growth_my_day(uuid, uuid);
+
 -- 20261031000003_growth_assisted_registration
 DROP FUNCTION IF EXISTS public.growth_mark_registered(uuid, uuid, uuid);
 

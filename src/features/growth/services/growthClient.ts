@@ -30,6 +30,7 @@ export const isLeadsListKey = (key: unknown) => typeof key === "string" && key.s
 export const engineKey = `${BASE}/settings`;
 export const growthMeKey = `${BASE}/me`;
 export const teamKey = `${BASE}/members`;
+export const myDayKey = `${BASE}/my-day`;
 export const templatesKey = `${BASE}/templates`;
 export const funnelKey = (days: number) => `${BASE}/funnel?days=${days}`;
 
@@ -93,7 +94,8 @@ export function boardKey(zone: BoardZone): string {
   return `${BASE}/board?${query.toString()}`;
 }
 
-export const isBoardKey = (key: unknown) => typeof key === "string" && key.startsWith(`${BASE}/board?`);
+/** The board and «Tu día» change together whenever a prospect moves. */
+export const isBoardKey = (key: unknown) => typeof key === "string" && (key.startsWith(`${BASE}/board?`) || key === myDayKey);
 
 export async function followUpLead(id: string, input: FollowUpInput): Promise<GrowthLead> {
   return (await apiFetch(`${leadKey(id)}/follow-up`, { method: "POST", body: JSON.stringify(input) })) as GrowthLead;

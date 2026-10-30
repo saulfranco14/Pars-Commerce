@@ -3,7 +3,7 @@ import { internalError, rpcError } from "@/features/growth/services/growthDb";
 import { LEAD_COLUMNS, withOwnerNames } from "@/features/growth/services/leadService";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
-import type { BoardColumn, BoardColumnKey, BoardZone, FollowUpInput, GrowthLead, LeadBoard, PipelineCounts } from "@/features/growth/interfaces/lead";
+import type { BoardColumn, BoardColumnKey, BoardZone, FollowUpInput, GrowthLead, LeadBoard, MyDay, PipelineCounts } from "@/features/growth/interfaces/lead";
 import type { GrowthActor } from "@/features/growth/interfaces/member";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 
@@ -56,4 +56,11 @@ export async function loadBoard(db: GrowthDb, actor: GrowthActor, zone: BoardZon
   if (!counts.ok) return counts;
   const columns = await Promise.all(BOARD_COLUMNS.map((key) => boardColumn(db, actor, key, zone, counts.data[key])));
   return { ok: true, data: { columns, counts: counts.data } };
+}
+
+/** What this member should do today, over their own prospects. */
+export async function myDay(db: GrowthDb, actor: GrowthActor): Promise<ServiceResult<MyDay>> {
+  const { data, error } = await db.rpc("growth_my_day", { p_workspace_id: actor.workspaceId, p_actor_id: actor.userId });
+  if (error) return rpcError(error.message);
+  return { ok: true, data: data as MyDay };
 }

@@ -338,3 +338,15 @@ export interface LeadSummary {
 export interface LeadSummaryCardProps {
   summary: LeadSummary;
 }
+
+/** «Tu día»: counts for the signed-in member's own prospects (growth_my_day). */
+export interface MyDay {
+  replied_due: number;
+  hot_due: number;
+  follow_ups_due: number;
+  overdue: number;
+  visits_today: number;
+  first_messages_left: number;
+  sent_today: number;
+  daily_goal: number;
+}

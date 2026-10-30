@@ -10,6 +10,8 @@ import { FilterTabs } from "@/components/ui/FilterTabs";
 import { FollowUpView } from "@/features/growth/components/admin/FollowUpView";
 import { LeadsView } from "@/features/growth/components/admin/LeadsView";
 import { NewLeadSheet } from "@/features/growth/components/admin/NewLeadSheet";
+import { ProspectingGuide } from "@/features/growth/components/admin/ProspectingGuide";
+import { TodayPanel } from "@/features/growth/components/admin/TodayPanel";
 import { pageHeaderCta } from "@/components/admin/actionButtonClasses";
 
 import { leadFiltersQuery, parseLeadFilters } from "@/features/growth/helpers/leadFiltersQuery";
@@ -48,6 +50,8 @@ export function ProspectsView() {
 
   return (
     <div className="grid grid-cols-1 gap-4">
+      {filters.vista === "seguimiento" ? <TodayPanel /> : null}
+      <ProspectingGuide />
       <div className="grid grid-cols-1 gap-2 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center">
         <FilterTabs
           tabs={VIEW_TABS}

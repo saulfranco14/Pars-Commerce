@@ -13,6 +13,25 @@ export const PIPELINE_STEPS: Array<{ key: PipelineStepKey; label: string; stages
 ];
 
 export const BOARD_COLUMNS: BoardColumnKey[] = ["contactado", "caliente", "conversando", "cita", "registrado"];
+
+/** One line under each board column: what to do with the prospects in it. */
+export const BOARD_COLUMN_HINT: Record<BoardColumnKey, string> = {
+  contactado: "Ya le escribiste. Si no contesta en 3 días, toca seguimiento.",
+  caliente: "Abrió su tienda. Es el mejor momento para escribirle.",
+  conversando: "Te contestó. Resuelve su duda y ofrece alta o visita.",
+  cita: "Visitas agendadas. El día de la cita aparece en «Tu día».",
+  registrado: "Ya tiene cuenta. Acompáñalo hasta que venda.",
+};
+
+/** «Cómo funciona»: the six steps and what the person does at each one. */
+export const PIPELINE_GUIDE = [
+  { label: "Por contactar", todo: "Mándale el primer mensaje desde el barrido de tu zona." },
+  { label: "Contactado", todo: "Espera 3 días. Si no responde, el seguimiento aparece solo en «Tu día»." },
+  { label: "Vio su tienda", todo: "Abrió su enlace: escríbele hoy, está interesado." },
+  { label: "Respondió", todo: "Contesta su duda y ofrécele darlo de alta o visitarlo." },
+  { label: "Cita agendada", todo: "Visítalo el día acordado; te lo recordamos ese día." },
+  { label: "Registrado", todo: "Ayúdale a dejar lista su tienda, conectar cobros y vender." },
+];
 export const BOARD_COLUMN_LIMIT = 25;
 /** The Registrado column only shows the latest wins. */
 export const BOARD_REGISTERED_DAYS = 7;

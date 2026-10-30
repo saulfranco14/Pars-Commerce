@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, CalendarClock, PauseCircle, Sparkles } from "lucide-react";
+import { AlertTriangle, CalendarClock } from "lucide-react";
 
 import { useLeadBoard } from "@/features/growth/hooks/useLeadBoard";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -10,7 +10,7 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { BoardLeadCard } from "@/features/growth/components/admin/BoardLeadCard";
 
 import { nextStepDue } from "@/features/growth/helpers/leadPipeline";
-import { PIPELINE_STEPS } from "@/features/growth/constants/leadPipeline";
+import { BOARD_COLUMN_HINT, PIPELINE_STEPS } from "@/features/growth/constants/leadPipeline";
 
 import type { BoardColumnKey } from "@/features/growth/interfaces/lead";
 import type { FollowUpViewProps } from "@/features/growth/interfaces/pipeline";
@@ -38,12 +38,9 @@ export function FollowUpView({ filters, showOwner }: FollowUpViewProps) {
 
   return (
     <div className="grid grid-cols-1 gap-4">
-      <ul className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground" aria-label="Resumen de hoy">
-        <li className="inline-flex items-center gap-1.5"><CalendarClock className="h-4 w-4 text-amber-600" aria-hidden /><b className="text-foreground">{counts.due_today}</b> para hoy</li>
-        <li className="inline-flex items-center gap-1.5"><AlertTriangle className="h-4 w-4 text-red-600" aria-hidden /><b className="text-foreground">{counts.overdue}</b> vencidos</li>
-        <li className="inline-flex items-center gap-1.5"><PauseCircle className="h-4 w-4 text-muted-foreground" aria-hidden /><b className="text-foreground">{counts.paused}</b> en pausa</li>
-        <li className="inline-flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-emerald-600" aria-hidden /><b className="text-foreground">{counts.registrado}</b> registrados</li>
-      </ul>
+      <p className="text-sm text-muted-foreground">
+        {counts.due_today.toLocaleString("es-MX")} para hoy · {counts.overdue.toLocaleString("es-MX")} vencidos · {counts.paused.toLocaleString("es-MX")} en pausa
+      </p>
 
       <div className="lg:hidden">
         <FilterTabs
@@ -55,6 +52,7 @@ export function FollowUpView({ filters, showOwner }: FollowUpViewProps) {
           onTabChange={(value) => setMobileTab(value as MobileTab)}
           ariaLabel="Etapa"
         />
+        {mobileTab !== "hoy" ? <p className="mt-2 text-xs text-muted-foreground">{BOARD_COLUMN_HINT[mobileTab]}</p> : null}
         <div className="mt-3 grid gap-2">
           {mobileLeads.length ? (
             mobileLeads.map((lead) => <BoardLeadCard key={lead.id} lead={lead} now={now} showOwner={showOwner} />)
@@ -67,9 +65,12 @@ export function FollowUpView({ filters, showOwner }: FollowUpViewProps) {
       <div className="hidden gap-3 lg:grid lg:grid-cols-5">
         {columns.map((column) => (
           <section key={column.key} className="flex min-w-0 flex-col rounded-2xl border border-border bg-surface-raised/60" aria-label={COLUMN_LABEL[column.key]}>
-            <header className="flex items-center justify-between gap-2 border-b border-border-soft px-3 py-2.5">
-              <h3 className="truncate text-sm font-bold text-foreground">{COLUMN_LABEL[column.key]}</h3>
-              <span className="rounded-full bg-border-soft px-2 py-0.5 text-xs font-bold tabular-nums text-muted-foreground">{column.total.toLocaleString("es-MX")}</span>
+            <header className="grid gap-1 border-b border-border-soft px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="truncate text-sm font-bold text-foreground">{COLUMN_LABEL[column.key]}</h3>
+                <span className="rounded-full bg-border-soft px-2 py-0.5 text-xs font-bold tabular-nums text-muted-foreground">{column.total.toLocaleString("es-MX")}</span>
+              </div>
+              <p className="text-xs leading-snug text-muted-foreground">{BOARD_COLUMN_HINT[column.key]}</p>
             </header>
             <div className="grid max-h-[calc(100vh-19.5rem)] min-h-40 content-start gap-2 overflow-y-auto p-2">
               {column.leads.length ? (

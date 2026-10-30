@@ -5,6 +5,7 @@ import { PipelineDots } from "@/features/growth/components/admin/PipelineDots";
 
 import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName";
 import { nextStepDue } from "@/features/growth/helpers/leadPipeline";
+import { boardCardReason } from "@/features/growth/helpers/boardCardReason";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
 import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
 import { markOpenedFromList } from "@/features/growth/services/leadsReturn";
@@ -26,6 +27,7 @@ export function BoardLeadCard({ lead, now, showOwner }: BoardLeadCardProps) {
       <span className="truncate text-sm font-bold text-foreground" title={formatBusinessName(lead.business_name)}>{formatBusinessName(lead.business_name)}</span>
       <span className="truncate text-xs text-muted-foreground">{giroCopy(lead.giro).label} · {place}</span>
       <PipelineDots stage={lead.stage} />
+      {boardCardReason(lead, now) ? <span className="truncate text-xs text-muted-foreground">{boardCardReason(lead, now)}</span> : null}
       {due ? (
         <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
           <span className="text-xs font-semibold text-foreground">{due.label}</span>
