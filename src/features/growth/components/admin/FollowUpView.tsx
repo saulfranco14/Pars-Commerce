@@ -20,8 +20,8 @@ type MobileTab = BoardColumnKey | "hoy";
 const COLUMN_LABEL = Object.fromEntries(PIPELINE_STEPS.map((step) => [step.key, step.label])) as Record<BoardColumnKey, string>;
 
 /** Daily follow-up: a board per stage on wide screens, one stage at a time on phones. */
-export function FollowUpView({ filters }: FollowUpViewProps) {
-  const { data, error, isLoading } = useLeadBoard({ municipio: filters.municipio, giro: filters.giro });
+export function FollowUpView({ filters, showOwner }: FollowUpViewProps) {
+  const { data, error, isLoading } = useLeadBoard({ municipio: filters.municipio, giro: filters.giro, owner: filters.owner });
   const [mobileTab, setMobileTab] = useState<MobileTab>("hoy");
   const now = new Date();
 
@@ -57,7 +57,7 @@ export function FollowUpView({ filters }: FollowUpViewProps) {
         />
         <div className="mt-3 grid gap-2">
           {mobileLeads.length ? (
-            mobileLeads.map((lead) => <BoardLeadCard key={lead.id} lead={lead} now={now} />)
+            mobileLeads.map((lead) => <BoardLeadCard key={lead.id} lead={lead} now={now} showOwner={showOwner} />)
           ) : (
             <EmptyState icon={CalendarClock} title={mobileTab === "hoy" ? "Nada pendiente para hoy" : "Nadie en esta etapa"} description={mobileTab === "hoy" ? "Manda primeros mensajes desde «Prospectar»." : undefined} tone="muted" />
           )}
@@ -73,7 +73,7 @@ export function FollowUpView({ filters }: FollowUpViewProps) {
             </header>
             <div className="grid max-h-[calc(100vh-19.5rem)] min-h-40 content-start gap-2 overflow-y-auto p-2">
               {column.leads.length ? (
-                column.leads.map((lead) => <BoardLeadCard key={lead.id} lead={lead} now={now} />)
+                column.leads.map((lead) => <BoardLeadCard key={lead.id} lead={lead} now={now} showOwner={showOwner} />)
               ) : (
                 <p className="px-1 py-6 text-center text-xs text-muted-foreground">{column.key === "registrado" ? "Sin registros en los últimos 7 días" : "Nadie en esta etapa"}</p>
               )}

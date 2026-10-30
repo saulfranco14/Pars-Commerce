@@ -62,6 +62,8 @@ export interface GrowthLead {
   snoozed_until: string | null;
   drop_reason: string | null;
   registered_tenant_id: string | null;
+  owner_user_id: string | null;
+  owned_at: string | null;
   last_activity_at: string | null;
   created_at: string;
   next_step: NextStep | null;
@@ -70,6 +72,8 @@ export interface GrowthLead {
   appointment_at: string | null;
   /** Last time the prospect opened its "Para ti" page; only the list fills it. */
   para_viewed_at?: string | null;
+  /** Owner's display name; lists and the detail fill it. */
+  owner_name?: string | null;
 }
 
 /** Set by the growth_leads_next_step trigger from the stage; "Recordarme" overrides the date. */
@@ -111,6 +115,13 @@ export interface BoardColumn {
   leads: GrowthLead[];
 }
 
+/** Board filters; `owner` is "me", "all" or a member's user id (coordinators only). */
+export interface BoardZone {
+  municipio?: string;
+  giro?: string;
+  owner?: string;
+}
+
 export interface LeadBoard {
   columns: BoardColumn[];
   counts: PipelineCounts;
@@ -127,6 +138,9 @@ export interface LeadEvent {
   type: string;
   channel: string | null;
   actor: LeadActor;
+  actor_user_id: string | null;
+  /** Team member who did it, when the actor is an operator. */
+  actor_name?: string | null;
   template_id: string | null;
   payload: Record<string, unknown>;
   created_at: string;
@@ -168,6 +182,8 @@ export interface LeadFilters {
   channel?: NextChannel;
   contact?: LeadContactFilter;
   q?: string;
+  /** "me", "none" or a member's user id; prospectors always see only their own. */
+  owner?: string;
   page?: number;
 }
 
@@ -191,6 +207,8 @@ export interface LeadListResult {
 export interface LeadDetail {
   lead: GrowthLead;
   events: LeadEvent[];
+  /** Whether the viewer may act on it (own lead, or unowned inside their zones). */
+  canAct: boolean;
   acquisition: { bucket: string; channel: string | null; tenant_id: string } | null;
 }
 
@@ -230,4 +248,37 @@ export interface LeadGiroSheetProps {
   busy: boolean;
   onClose: () => void;
   onSubmit: (giro: string) => Promise<boolean>;
+}
+
+export type LeadSourceDetail = "visita" | "referido" | "redes" | "otro";
+
+/** «Nuevo prospecto»: someone the team met outside the DENUE list. */
+export interface NewLeadInput {
+  business_name: string;
+  phone: string;
+  email: string;
+  giro: string;
+  municipio: string;
+  colonia: string;
+  source_detail: LeadSourceDetail;
+  note: string;
+}
+
+/** Who already works a phone or an email; nothing else of that lead is shared. */
+export interface ContactConflict {
+  leadId: string;
+  ownerName: string | null;
+  stage: LeadStage;
+  since: string;
+  suppressed: boolean;
+}
+
+export type NewLeadResult =
+  | { status: "created"; leadId: string }
+  | { status: "conflict"; conflict: ContactConflict }
+  | { status: "suppressed" };
+
+export interface NewLeadSheetProps {
+  isOpen: boolean;
+  onClose: () => void;
 }

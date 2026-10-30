@@ -13,6 +13,7 @@ export const TEMPLATE_VARIABLES: Array<{ key: string; label: string }> = [
   { key: "giro_pregunta", label: "Pregunta del giro" },
   { key: "link", label: "Link a su «Para ti»" },
   { key: "firma", label: "Firma" },
+  { key: "nombre", label: "Nombre de quien escribe" },
 ];
 
 export const TEMPLATE_VARIABLE_KEYS = new Set(TEMPLATE_VARIABLES.map((variable) => variable.key));

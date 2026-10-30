@@ -1,3 +1,4 @@
+import { TLACO_WORKSPACE_ID } from "@/features/growth/constants/workspace";
 import { internalError } from "@/features/growth/services/growthDb";
 import { SEND_HOUR_MAX, SEND_HOUR_MIN } from "@/features/growth/constants/sendWindow";
 
@@ -7,13 +8,13 @@ import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 
 const COLUMNS = "paused, paused_reason, timezone, send_days, send_start_hour, send_end_hour, signature, visit_municipios, email_variant_weights, digest_hour, last_digest_on";
 
-export async function getSettings(db: GrowthDb): Promise<GrowthSettings> {
-  const { data, error } = await db.from("growth_settings").select(COLUMNS).eq("id", true).single();
+export async function getSettings(db: GrowthDb, workspaceId = TLACO_WORKSPACE_ID): Promise<GrowthSettings> {
+  const { data, error } = await db.from("growth_settings").select(COLUMNS).eq("workspace_id", workspaceId).single();
   if (error || !data) throw new Error(error?.message ?? "growth_settings missing");
   return data as GrowthSettings;
 }
 
-export async function updateSettings(db: GrowthDb, patch: GrowthSettingsPatch): Promise<ServiceResult<GrowthSettings>> {
+export async function updateSettings(db: GrowthDb, workspaceId: string, patch: GrowthSettingsPatch): Promise<ServiceResult<GrowthSettings>> {
   const fields: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (patch.paused !== undefined) {
     fields.paused = patch.paused;
@@ -39,7 +40,7 @@ export async function updateSettings(db: GrowthDb, patch: GrowthSettingsPatch): 
     fields.send_days = days.sort();
   }
 
-  const { data, error } = await db.from("growth_settings").update(fields).eq("id", true).select(COLUMNS).single();
+  const { data, error } = await db.from("growth_settings").update(fields).eq("workspace_id", workspaceId).select(COLUMNS).single();
   if (error) return internalError(error.message);
   return { ok: true, data: data as GrowthSettings };
 }

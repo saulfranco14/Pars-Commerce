@@ -46,8 +46,8 @@ export async function sentTodayByMailbox(db: GrowthDb, now = new Date()): Promis
   return counts;
 }
 
-export async function listMailboxes(db: GrowthDb): Promise<GrowthMailbox[]> {
-  const { data } = await db.from("growth_mailboxes").select(COLUMNS).order("created_at");
+export async function listMailboxes(db: GrowthDb, workspaceId: string): Promise<GrowthMailbox[]> {
+  const { data } = await db.from("growth_mailboxes").select(COLUMNS).eq("workspace_id", workspaceId).order("created_at");
   const sent = await sentTodayByMailbox(db);
   return ((data ?? []) as GrowthMailbox[]).map((mailbox) => ({
     ...mailbox,
@@ -57,7 +57,7 @@ export async function listMailboxes(db: GrowthDb): Promise<GrowthMailbox[]> {
   }));
 }
 
-export async function createMailbox(db: GrowthDb, input: MailboxInput): Promise<ServiceResult<GrowthMailbox>> {
+export async function createMailbox(db: GrowthDb, workspaceId: string, input: MailboxInput): Promise<ServiceResult<GrowthMailbox>> {
   const address = input.address?.trim().toLowerCase() ?? "";
   const displayName = input.display_name?.trim() ?? "";
   const envKey = input.secret_env_key?.trim().toUpperCase() ?? "";
@@ -69,7 +69,7 @@ export async function createMailbox(db: GrowthDb, input: MailboxInput): Promise<
 
   const { data, error } = await db
     .from("growth_mailboxes")
-    .insert({ address, display_name: displayName, secret_env_key: envKey, daily_cap: cap })
+    .insert({ workspace_id: workspaceId, address, display_name: displayName, secret_env_key: envKey, daily_cap: cap })
     .select(COLUMNS)
     .single();
   if (error) {
@@ -79,7 +79,7 @@ export async function createMailbox(db: GrowthDb, input: MailboxInput): Promise<
   return { ok: true, data: data as GrowthMailbox };
 }
 
-export async function updateMailbox(db: GrowthDb, id: string, patch: { is_active?: boolean; daily_cap?: number }): Promise<ServiceResult<GrowthMailbox>> {
+export async function updateMailbox(db: GrowthDb, workspaceId: string, id: string, patch: { is_active?: boolean; daily_cap?: number }): Promise<ServiceResult<GrowthMailbox>> {
   const fields: Record<string, unknown> = {};
   if (patch.is_active !== undefined) {
     fields.is_active = patch.is_active;
@@ -91,7 +91,7 @@ export async function updateMailbox(db: GrowthDb, id: string, patch: { is_active
     }
     fields.daily_cap = patch.daily_cap;
   }
-  const { data, error } = await db.from("growth_mailboxes").update(fields).eq("id", id).select(COLUMNS).maybeSingle();
+  const { data, error } = await db.from("growth_mailboxes").update(fields).eq("id", id).eq("workspace_id", workspaceId).select(COLUMNS).maybeSingle();
   if (error) return internalError(error.message);
   if (!data) return { ok: false, error: { code: "not_found", message: "Ese buzón ya no existe." } };
   return { ok: true, data: data as GrowthMailbox };
@@ -102,8 +102,8 @@ export async function pauseMailbox(db: GrowthDb, id: string, reason: string): Pr
 }
 
 /** Checks the app password on SMTP and IMAP and mails the mailbox itself. */
-export async function testMailbox(db: GrowthDb, id: string): Promise<ServiceResult<{ smtp: string; imap: string }>> {
-  const { data } = await db.from("growth_mailboxes").select(COLUMNS).eq("id", id).maybeSingle();
+export async function testMailbox(db: GrowthDb, workspaceId: string, id: string): Promise<ServiceResult<{ smtp: string; imap: string }>> {
+  const { data } = await db.from("growth_mailboxes").select(COLUMNS).eq("id", id).eq("workspace_id", workspaceId).maybeSingle();
   if (!data) return { ok: false, error: { code: "not_found", message: "Ese buzón ya no existe." } };
   const mailbox = data as GrowthMailbox;
   const transport = smtpTransport(mailbox);

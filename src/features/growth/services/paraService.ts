@@ -14,7 +14,8 @@ import { pickParaItems } from "@/features/growth/helpers/pickParaItems";
 import { hashPreviewToken } from "@/features/preview/previewLinks";
 import { findLinkLead } from "@/features/growth/services/leadLinkService";
 import { growthDb, isGrowthEnabled } from "@/features/growth/services/growthDb";
-import { notifyOperators } from "@/features/growth/services/operatorService";
+import { leadAlertTarget, notifyOperators } from "@/features/growth/services/operatorService";
+import { memberContact } from "@/features/growth/services/memberService";
 import { getSettings } from "@/features/growth/services/settingsService";
 import { escapeHtml } from "@/features/growth/services/telegramApi";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -31,7 +32,7 @@ export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPag
   if (!link) return null;
   const { data: lead } = await db
     .from("growth_leads")
-    .select("business_name, giro, catalog_template_key, municipio, colonia, phone_e164")
+    .select("business_name, giro, catalog_template_key, municipio, colonia, phone_e164, workspace_id, owner_user_id")
     .eq("id", link.leadId)
     .maybeSingle();
   if (!lead) return null;
@@ -56,9 +57,11 @@ export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPag
   if (lead.phone_e164) query.set("telefono", (lead.phone_e164 as string).slice(3));
 
   const settings = await loadSettings(db);
-  const sender = senderFromSignature(settings?.signature);
+  // The person who works this prospect signs the page and answers its WhatsApp.
+  const owner = lead.owner_user_id ? await memberContact(db, lead.workspace_id as string, lead.owner_user_id as string) : null;
+  const sender = senderFromSignature(owner?.signature ?? owner?.displayName ?? settings?.signature);
   const visits = Boolean(settings?.visit_municipios.includes(lead.municipio as string));
-  const helpNumber = process.env.GROWTH_WHATSAPP_NUMBER?.replace(/\D/g, "");
+  const helpNumber = (owner?.whatsappE164 ?? process.env.GROWTH_WHATSAPP_NUMBER)?.replace(/\D/g, "");
   const helpText = `Hola${sender ? ` ${sender.firstName}` : ""}, vi la tienda de ejemplo de ${lead.business_name} y quiero que me ayuden a activarla.`;
 
   return {
@@ -139,21 +142,22 @@ export async function trackParaEvent(
     p_payload: session ?? (objection ? { reason: objection } : clickPayload(event, input.payload)),
   });
   if (error) return { ok: false, error: { code: "internal", message: error.message } };
-  const row = (Array.isArray(data) ? data[0] : data) as { business_name: string; municipio: string; view_count: number; became_hot: boolean } | undefined;
+  const row = (Array.isArray(data) ? data[0] : data) as { lead_id: string; business_name: string; municipio: string; view_count: number; became_hot: boolean } | undefined;
   if (!row) return { ok: true, data: { tracked: false } };
 
   if (isGrowthEnabled()) {
+    const target = await leadAlertTarget(db, row.lead_id);
     const name = escapeHtml(row.business_name);
     const zone = placeOf(row);
     if (event === "para_viewed" && row.became_hot) {
-      await notifyOperators(db, { text: `<b>Caliente</b> · ${name} (${zone}) abrió su tienda por ${row.view_count}.ª vez.` });
+      await notifyOperators(db, { text: `<b>Caliente</b> · ${name} (${zone}) abrió su tienda por ${row.view_count}.ª vez.` }, target);
     } else if (event === "para_viewed" && row.view_count === 1) {
-      await notifyOperators(db, { text: `${name} (${zone}) abrió su tienda.` });
+      await notifyOperators(db, { text: `${name} (${zone}) abrió su tienda.` }, target);
     } else if (session) {
       // Buttons are reported here, once per visit, instead of one alert per tap.
-      await notifyOperators(db, { text: visitSummary(name, zone, seconds ?? 0, session) });
+      await notifyOperators(db, { text: visitSummary(name, zone, seconds ?? 0, session) }, target);
     } else if (objection) {
-      await notifyOperators(db, { text: `<b>${name}</b> (${zone}) respondió «${escapeHtml(PARA_OBJECTION_LABEL[objection])}».` });
+      await notifyOperators(db, { text: `<b>${name}</b> (${zone}) respondió «${escapeHtml(PARA_OBJECTION_LABEL[objection])}».` }, target);
     }
   }
   return { ok: true, data: { tracked: true } };
@@ -164,7 +168,7 @@ export async function requestParaVisit(db: GrowthDb, token: string, raw: unknown
   const link = isLeadLinkToken(token) ? await findLinkLead(db, token, "para") : null;
   if (!link) return { ok: false, error: { code: "not_found", message: "Este enlace ya no está disponible." } };
   const settings = await loadSettings(db);
-  const { data: lead } = await db.from("growth_leads").select("municipio, address, colonia, lat, lng").eq("id", link.leadId).maybeSingle();
+  const { data: lead } = await db.from("growth_leads").select("municipio, address, colonia, lat, lng, workspace_id, owner_user_id").eq("id", link.leadId).maybeSingle();
   if (!lead || !settings?.visit_municipios.includes(lead.municipio as string)) {
     return { ok: false, error: { code: "validation", message: "Por ahora no hacemos visitas en su zona. Escríbanos por WhatsApp." } };
   }
@@ -191,7 +195,7 @@ export async function requestParaVisit(db: GrowthDb, token: string, raw: unknown
         .filter(Boolean)
         .join("\n"),
       buttons: [[{ text: "Cómo llegar", url: directions }]],
-    });
+    }, { workspaceId: lead.workspace_id as string, ownerId: (lead.owner_user_id as string | null) ?? null });
   }
   return { ok: true, data: request };
 }

@@ -1,13 +1,14 @@
 import { apiFetch } from "@/services/apiFetch";
 import { leadFiltersQuery } from "@/features/growth/helpers/leadFiltersQuery";
 
-import type { FollowUpInput, GrowthLead, LeadFilters, LeadOutcome } from "@/features/growth/interfaces/lead";
+import type { BoardZone, FollowUpInput, GrowthLead, LeadFilters, LeadOutcome, NewLeadInput, NewLeadResult } from "@/features/growth/interfaces/lead";
+import type { GrowthMember, MemberInviteInput, MemberInviteResult, MemberPatch } from "@/features/growth/interfaces/member";
 import type { GrowthMailbox, GrowthSettings, GrowthSettingsPatch, MailboxInput } from "@/features/growth/interfaces/settings";
 import type { GrowthTemplate, TemplateDraft, TemplatePreview, TemplateVariant } from "@/features/growth/interfaces/template";
 import type { SweepBatch, SweepFilters } from "@/features/growth/interfaces/sweep";
 import type { WhatsappDraft, WhatsappStep } from "@/features/growth/interfaces/whatsapp";
 
-const BASE = "/api/platform/growth";
+const BASE = "/api/growth";
 
 export function leadsKey(filters: LeadFilters): string {
   return `${BASE}/leads?${leadFiltersQuery(filters)}`;
@@ -17,10 +18,12 @@ export const leadKey = (id: string) => `${BASE}/leads/${id}`;
 /** Every filtered list page, so an action on one prospect refreshes whichever list the operator goes back to. */
 export const isLeadsListKey = (key: unknown) => typeof key === "string" && key.startsWith(`${BASE}/leads?`);
 export const engineKey = `${BASE}/settings`;
+export const growthMeKey = `${BASE}/me`;
+export const teamKey = `${BASE}/members`;
 export const templatesKey = `${BASE}/templates`;
 export const funnelKey = (days: number) => `${BASE}/funnel?days=${days}`;
 
-export async function patchLead(id: string, body: { outcome?: LeadOutcome; reason?: string; snoozeDays?: number | null; phone?: string; giro?: string; skip?: boolean }): Promise<GrowthLead> {
+export async function patchLead(id: string, body: { outcome?: LeadOutcome; reason?: string; body?: string; snoozeDays?: number | null; phone?: string; email?: string; giro?: string; skip?: boolean }): Promise<GrowthLead> {
   return (await apiFetch(leadKey(id), { method: "PATCH", body: JSON.stringify(body) })) as GrowthLead;
 }
 
@@ -72,10 +75,11 @@ export async function fetchSweep(filters: SweepFilters, exclude: string[]): Prom
   return (await apiFetch(`${BASE}/sweep`, { method: "POST", body: JSON.stringify({ ...filters, exclude }) })) as SweepBatch;
 }
 
-export function boardKey(zone: { municipio?: string; giro?: string }): string {
+export function boardKey(zone: BoardZone): string {
   const query = new URLSearchParams();
   if (zone.municipio) query.set("municipio", zone.municipio);
   if (zone.giro) query.set("giro", zone.giro);
+  if (zone.owner) query.set("owner", zone.owner);
   return `${BASE}/board?${query.toString()}`;
 }
 
@@ -83,4 +87,20 @@ export const isBoardKey = (key: unknown) => typeof key === "string" && key.start
 
 export async function followUpLead(id: string, input: FollowUpInput): Promise<GrowthLead> {
   return (await apiFetch(`${leadKey(id)}/follow-up`, { method: "POST", body: JSON.stringify(input) })) as GrowthLead;
+}
+
+export async function createLead(input: NewLeadInput): Promise<NewLeadResult> {
+  return (await apiFetch(`${BASE}/leads`, { method: "POST", body: JSON.stringify(input) })) as NewLeadResult;
+}
+
+export async function assignLeads(leadIds: string[], ownerId: string | null): Promise<{ moved: number }> {
+  return (await apiFetch(`${BASE}/leads/assign`, { method: "POST", body: JSON.stringify({ leadIds, ownerId }) })) as { moved: number };
+}
+
+export async function inviteMember(input: MemberInviteInput): Promise<MemberInviteResult> {
+  return (await apiFetch(teamKey, { method: "POST", body: JSON.stringify(input) })) as MemberInviteResult;
+}
+
+export async function updateMember(userId: string, patch: MemberPatch): Promise<GrowthMember> {
+  return (await apiFetch(`${teamKey}/${userId}`, { method: "PATCH", body: JSON.stringify(patch) })) as GrowthMember;
 }

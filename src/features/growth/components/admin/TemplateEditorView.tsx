@@ -14,6 +14,7 @@ import { Notification } from "@/components/ui/Notification";
 
 import { GIRO_COPY, GIRO_KEYS } from "@/features/growth/constants/giroCopy";
 import { TEMPLATE_STEPS, TEMPLATE_VARIABLES } from "@/features/growth/constants/templateVariables";
+import { ENGINE_PATH } from "@/features/growth/constants/routes";
 
 import type { TemplateChannel, TemplateStep, TemplateVariant } from "@/features/growth/interfaces/template";
 
@@ -30,7 +31,7 @@ export function TemplateEditorView() {
 
   return (
     <div className="grid grid-cols-1 gap-5">
-      <Link href="/dashboard/plataforma/motor" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
+      <Link href={ENGINE_PATH} className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" aria-hidden />Motor
       </Link>
       {editor.notice ? <Notification tone={editor.notice.tone} message={editor.notice.message} onDismiss={editor.clearNotice} /> : null}

@@ -1,6 +1,7 @@
 import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
 import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
+import { senderFromSignature } from "@/features/growth/helpers/paraSender";
 
 import type { TemplateVars } from "@/features/growth/interfaces/template";
 
@@ -50,5 +51,7 @@ export function buildTemplateVars(lead: LeadForVars, extra: { link: string; firm
     giro_pregunta: copy.pregunta,
     link: extra.link,
     firma: extra.firma,
+    // Whoever signs: each team member introduces themselves by name.
+    nombre: senderFromSignature(extra.firma)?.firstName ?? extra.firma.split(/[·|,]/)[0].trim().split(" ")[0],
   };
 }

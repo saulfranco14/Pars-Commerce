@@ -2,6 +2,7 @@ import { leadLinkSlug } from "@/features/growth/helpers/leadLinkToken";
 import { renderTemplate } from "@/features/growth/helpers/renderTemplate";
 import { buildTemplateVars } from "@/features/growth/helpers/templateVars";
 import { validateTemplate } from "@/features/growth/helpers/validateTemplate";
+import { TLACO_WORKSPACE_ID } from "@/features/growth/constants/workspace";
 import { internalError } from "@/features/growth/services/growthDb";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
@@ -18,10 +19,11 @@ import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 
 const COLUMNS = "id, channel, giro, step, variant, version, subject, body, status, created_at";
 
-export async function listTemplates(db: GrowthDb): Promise<ServiceResult<GrowthTemplate[]>> {
+export async function listTemplates(db: GrowthDb, workspaceId: string): Promise<ServiceResult<GrowthTemplate[]>> {
   const { data, error } = await db
     .from("growth_templates")
     .select(COLUMNS)
+    .eq("workspace_id", workspaceId)
     .order("channel")
     .order("step")
     .order("variant")
@@ -34,11 +36,12 @@ export async function listTemplates(db: GrowthDb): Promise<ServiceResult<GrowthT
 /** Active versions for a step: the giro-specific ones win over the generic ones. */
 export async function activeTemplatePool(
   db: GrowthDb,
-  input: { channel: TemplateChannel; step: TemplateStep; giro: string },
+  input: { channel: TemplateChannel; step: TemplateStep; giro: string; workspaceId?: string },
 ): Promise<GrowthTemplate[]> {
   const { data } = await db
     .from("growth_templates")
     .select(COLUMNS)
+    .eq("workspace_id", input.workspaceId ?? TLACO_WORKSPACE_ID)
     .eq("channel", input.channel)
     .eq("step", input.step)
     .eq("status", "active")
@@ -51,7 +54,7 @@ export async function activeTemplatePool(
 /** A requested variant falls back to A; without one, variants rotate at random for the A/B split. */
 export async function resolveTemplate(
   db: GrowthDb,
-  input: { channel: TemplateChannel; step: TemplateStep; giro: string; variant?: TemplateVariant },
+  input: { channel: TemplateChannel; step: TemplateStep; giro: string; variant?: TemplateVariant; workspaceId?: string },
 ): Promise<GrowthTemplate | null> {
   const pool = await activeTemplatePool(db, input);
   if (!pool.length) return null;
@@ -71,7 +74,7 @@ export function renderForLead(
   };
 }
 
-export async function saveTemplateVersion(db: GrowthDb, draft: TemplateDraft, userId: string): Promise<ServiceResult<GrowthTemplate>> {
+export async function saveTemplateVersion(db: GrowthDb, workspaceId: string, draft: TemplateDraft, userId: string): Promise<ServiceResult<GrowthTemplate>> {
   const errors = validateTemplate(draft);
   if (errors.length) return { ok: false, error: { code: "validation", message: errors.join(" ") } };
 
@@ -83,16 +86,18 @@ export async function saveTemplateVersion(db: GrowthDb, draft: TemplateDraft, us
     p_subject: draft.channel === "email" ? draft.subject?.trim() ?? null : null,
     p_body: draft.body.trim(),
     p_created_by: userId,
+    p_workspace_id: workspaceId,
   });
   if (error) return internalError(error.message);
   return { ok: true, data: data as GrowthTemplate };
 }
 
-export async function setTemplateStatus(db: GrowthDb, id: string, status: "active" | "paused"): Promise<ServiceResult<GrowthTemplate>> {
+export async function setTemplateStatus(db: GrowthDb, workspaceId: string, id: string, status: "active" | "paused"): Promise<ServiceResult<GrowthTemplate>> {
   const { data, error } = await db
     .from("growth_templates")
     .update({ status })
     .eq("id", id)
+    .eq("workspace_id", workspaceId)
     .neq("status", "archived")
     .select(COLUMNS)
     .maybeSingle();
@@ -102,8 +107,8 @@ export async function setTemplateStatus(db: GrowthDb, id: string, status: "activ
 }
 
 /** Previews a draft against a real prospect of that giro (or any prospect) without saving. */
-export async function previewTemplate(db: GrowthDb, draft: TemplateDraft, firma: string): Promise<ServiceResult<TemplatePreview>> {
-  let query = db.from("growth_leads").select("business_name, giro, municipio, colonia, address").limit(1);
+export async function previewTemplate(db: GrowthDb, workspaceId: string, draft: TemplateDraft, firma: string): Promise<ServiceResult<TemplatePreview>> {
+  let query = db.from("growth_leads").select("business_name, giro, municipio, colonia, address").eq("workspace_id", workspaceId).limit(1);
   if (draft.giro) query = query.eq("giro", draft.giro);
   const { data } = await query.maybeSingle();
   const lead = (data as Pick<GrowthLead, "business_name" | "giro" | "municipio" | "colonia" | "address"> | null) ?? {

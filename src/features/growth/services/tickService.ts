@@ -3,6 +3,7 @@ import { runEmailSequence } from "@/features/growth/services/emailSequenceServic
 import { processInboxes } from "@/features/growth/services/inboxService";
 import { recordOutcome } from "@/features/growth/services/leadService";
 import { notifyOperators } from "@/features/growth/services/operatorService";
+import { TLACO_WORKSPACE_ID } from "@/features/growth/constants/workspace";
 import { getSettings } from "@/features/growth/services/settingsService";
 import { dayStats, startOfMexicoDay, statsText } from "@/features/growth/services/statsService";
 
@@ -61,7 +62,7 @@ export async function runTick(db: GrowthDb, now = new Date()): Promise<TickResul
 
   const clock = localClock(now, settings.timezone);
   if (clock.hour >= settings.digest_hour && settings.last_digest_on !== clock.date) {
-    await db.from("growth_settings").update({ last_digest_on: clock.date }).eq("id", true);
+    await db.from("growth_settings").update({ last_digest_on: clock.date }).eq("workspace_id", TLACO_WORKSPACE_ID);
     const stats = await dayStats(db, startOfMexicoDay(now));
     await notifyOperators(db, { text: `${statsText(`Cierre del día · ${clock.date}`, stats)}\n\n/pendientes · /calientes · /registros` });
     result.digestSent = true;

@@ -181,8 +181,25 @@ propinas, mesas, préstamos):
 
 ## 6.2 Motor de clientes (`features/growth`)
 
-Adquisición de negocios para Tlaco, sólo para platform admins. Vive aparte
-de la operación de los tenants y no debe tocarla:
+Adquisición de negocios. Vive aparte de la operación de los tenants y no
+debe tocarla:
+
+- **Espacios y equipo:** todo cuelga de un `growth_workspaces` (Tlaco es
+  `TLACO_WORKSPACE_ID`, `tenant_id` nulo). Quien prospecta es una fila de
+  `growth_members` con rol `coordinador` o `prospector` y sus `zones`; un
+  platform admin coordina Tlaco aunque no tenga fila. Las rutas viven en
+  `/dashboard/prospeccion/**` y `/api/growth/**`, con `requireGrowthMember`
+  (`src/app/api/growth/_lib.ts`), nunca `requirePlatformAdmin`.
+- **Dueño de cada prospecto:** `growth_leads.owner_user_id`. La regla vive en
+  SQL (`growth_can_act`, `growth_lock_for_actor`): un prospector actúa sobre
+  lo suyo o sobre lo que nadie tiene dentro de sus zonas; el primer envío o el
+  alta manual (`growth_add_lead`) lo deja a su nombre; sólo el coordinador
+  reasigna (`growth_assign_leads`). Toda RPC que cambia un prospecto recibe
+  `p_actor_id`; pásalo siempre desde la ruta. Teléfono y correo son únicos
+  por espacio y el conflicto dice quién lo trabaja (`growth_contact_owner`).
+- **Firma por persona:** `{firma}` y `{nombre}` salen del miembro que manda el
+  mensaje; «Para ti» muestra el nombre y el WhatsApp del dueño del prospecto,
+  y los avisos de Telegram de un prospecto van a su dueño y a los coordinadores.
 
 - **Datos:** tablas `growth_*` y `tenant_acquisitions`, todas service-role.
   El estado de un prospecto (teléfono, correo, visita, etapa, siguiente

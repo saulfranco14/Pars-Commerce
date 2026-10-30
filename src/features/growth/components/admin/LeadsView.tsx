@@ -19,7 +19,7 @@ import { nextStepDue } from "@/features/growth/helpers/leadPipeline";
 import { sweepFiltersQuery } from "@/features/growth/helpers/sweepFilters";
 import { GIRO_COPY, GIRO_KEYS, giroCopy } from "@/features/growth/constants/giroCopy";
 import { LEAD_STAGE_META, LEAD_STAGE_TABS, NEXT_CHANNEL_LABEL } from "@/features/growth/constants/leadStages";
-import { SWEEP_PATH } from "@/features/growth/constants/sweep";
+import { SWEEP_PATH, leadPath } from "@/features/growth/constants/routes";
 import { ZONES, zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
 import { markOpenedFromList } from "@/features/growth/services/leadsReturn";
 import { formatMexicanPhoneInput } from "@/lib/phone";
@@ -115,7 +115,7 @@ export function LeadsView() {
               const due = nextStepDue(lead, now);
               const place = [lead.colonia ? formatBusinessName(lead.colonia) : null, zoneByMunicipio(lead.municipio)?.label ?? lead.municipio].filter(Boolean).join(", ");
               return (
-                <Link key={lead.id} href={`/dashboard/plataforma/prospectos/${lead.id}`} onClick={markOpenedFromList} className="block min-w-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                <Link key={lead.id} href={leadPath(lead.id)} onClick={markOpenedFromList} className="block min-w-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                   <AdminListCard
                     compact
                     title={formatBusinessName(lead.business_name)}

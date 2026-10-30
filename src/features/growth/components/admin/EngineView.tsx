@@ -16,6 +16,7 @@ import { Notification } from "@/components/ui/Notification";
 import { MailboxSheet } from "@/features/growth/components/admin/MailboxSheet";
 
 import { engineSettingsSchema } from "@/features/growth/validations/engineSchemas";
+import { TEMPLATES_PATH } from "@/features/growth/constants/routes";
 
 import type { EngineSettingsFormValues } from "@/features/growth/validations/engineSchemas";
 import type { GrowthSettings } from "@/features/growth/interfaces/settings";
@@ -133,7 +134,7 @@ export function EngineView() {
         ) : null}
       </section>
 
-      <Link href="/dashboard/plataforma/motor/mensajes" className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 font-semibold text-foreground hover:border-accent/40 sm:p-5">
+      <Link href={TEMPLATES_PATH} className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 font-semibold text-foreground hover:border-accent/40 sm:p-5">
         <span className="inline-flex items-center gap-2"><MessageSquareText className="h-4 w-4" aria-hidden />Mensajes: edita lo que se envía</span>
         <span className="text-sm text-accent">Abrir</span>
       </Link>

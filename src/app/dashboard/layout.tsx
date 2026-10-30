@@ -17,8 +17,10 @@ import { Menu } from "lucide-react";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { btnPrimary } from "@/components/ui/buttonClasses";
 import { isFocusRoute } from "@/lib/focusRoutes";
-import { isPlatformRoute } from "@/lib/platformRoutes";
+import { isPlatformRoute, isProspectingRoute } from "@/lib/platformRoutes";
 import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
+import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
+import { PROSPECTING_PATH } from "@/features/growth/constants/routes";
 import { LegalDeferredNotice } from "@/features/legal/components/LegalDeferredNotice";
 
 export default function DashboardLayout({
@@ -30,6 +32,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isPlatformAdmin = useIsPlatformAdmin();
+  const { actor: growthActor } = useGrowthMe();
   useAuthInitializer();
   useAuthProfileAndTenants();
   const profile = useSessionStore((s) => s.profile);
@@ -39,7 +42,7 @@ export default function DashboardLayout({
   const setActiveTenantId = useTenantStore((s) => s.setActiveTenantId);
   const activeTenant = useActiveTenant();
   const isPreparingBusiness = pathname === "/dashboard/preparar-negocio";
-  const onPlatform = isPlatformRoute(pathname);
+  const onPlatform = isPlatformRoute(pathname) || isProspectingRoute(pathname);
 
   const pathParts = pathname.split("/").filter(Boolean);
   const tenantSlug =
@@ -48,7 +51,8 @@ export default function DashboardLayout({
     pathParts[1] !== "crear-negocio" &&
     pathParts[1] !== "perfil" &&
     pathParts[1] !== "legal" &&
-    pathParts[1] !== "plataforma"
+    pathParts[1] !== "plataforma" &&
+    pathParts[1] !== "prospeccion"
       ? pathParts[1]
       : null;
 
@@ -61,6 +65,13 @@ export default function DashboardLayout({
       router.replace("/dashboard/plataforma");
     }
   }, [isPlatformAdmin, pathname, router]);
+
+  // Someone who only prospects has no business: their home is the prospecting board.
+  useEffect(() => {
+    if (pathname === "/dashboard" && !isPlatformAdmin && growthActor && tenantsLoaded && memberships.length === 0) {
+      router.replace(PROSPECTING_PATH);
+    }
+  }, [growthActor, isPlatformAdmin, memberships.length, pathname, router, tenantsLoaded]);
 
   useEffect(() => {
     if (!tenantSlug || memberships.length === 0) return;

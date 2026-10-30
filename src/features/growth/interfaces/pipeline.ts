@@ -22,8 +22,11 @@ export interface FollowUpSheetProps {
 export interface BoardLeadCardProps {
   lead: GrowthLead;
   now: Date;
+  /** Coordinators looking at the whole team see whose each card is. */
+  showOwner?: boolean;
 }
 
 export interface FollowUpViewProps {
   filters: LeadFilters;
+  showOwner?: boolean;
 }

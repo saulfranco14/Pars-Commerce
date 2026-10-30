@@ -19,6 +19,7 @@ import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
 import { patchLead } from "@/features/growth/services/growthClient";
 import { forgetWhatsappOpened } from "@/features/growth/services/whatsappOpened";
 import { formatMexicanPhoneInput } from "@/lib/phone";
+import { leadPath } from "@/features/growth/constants/routes";
 
 import type { SweepCardProps } from "@/features/growth/interfaces/sweep";
 import type { TemplateVariant } from "@/features/growth/interfaces/template";
@@ -107,7 +108,7 @@ export function SweepCard({ lead, next, onOutcome, onSkip, onPhoneChanged }: Swe
         <div className="flex flex-wrap gap-x-4 gap-y-1">
           <a href={buildMapsSearchLink(lead)} target="_blank" rel="noopener noreferrer" className={linkButton}><Search className="h-4 w-4" aria-hidden />Ver en Maps</a>
           <button type="button" onClick={() => setEditingPhone(true)} className={linkButton}><Pencil className="h-4 w-4" aria-hidden />Corregir número</button>
-          <a href={`/dashboard/plataforma/prospectos/${lead.id}`} target="_blank" rel="noopener noreferrer" className={linkButton}><ExternalLink className="h-4 w-4" aria-hidden />Ficha</a>
+          <a href={leadPath(lead.id)} target="_blank" rel="noopener noreferrer" className={linkButton}><ExternalLink className="h-4 w-4" aria-hidden />Ficha</a>
         </div>
   
         {phoneError ? <Notification tone="error" message={phoneError} onDismiss={() => setPhoneError(null)} /> : null}

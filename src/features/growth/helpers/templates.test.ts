@@ -49,9 +49,9 @@ describe("validateTemplate", () => {
   });
 
   it("rejects unknown variables, missing subject and missing link", () => {
-    const errors = validateTemplate({ channel: "email", giro: null, step: "d3", variant: "A", subject: "", body: "Hola {nombre}, te escribo otra vez." });
+    const errors = validateTemplate({ channel: "email", giro: null, step: "d3", variant: "A", subject: "", body: "Hola {apodo}, te escribo otra vez." });
     expect(errors).toContain("El correo necesita un asunto.");
-    expect(errors).toContain("Estas variables no existen: {nombre}.");
+    expect(errors).toContain("Estas variables no existen: {apodo}.");
     expect(errors).toContain("Este paso necesita el link a su tienda: agrega {link}.");
   });
 

@@ -20,4 +20,3 @@ export const SWEEP_OUTCOME_LABEL: Record<SweepOutcome | "skip", string> = {
   skip: "Saltado",
 };
 
-export const SWEEP_PATH = "/dashboard/plataforma/prospectos/barrido";
