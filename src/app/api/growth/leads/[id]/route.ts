@@ -23,7 +23,7 @@ const OPERATOR_OUTCOMES: LeadOutcome[] = ["whatsapp_sent", "whatsapp_replied", "
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-type LeadPatch = { outcome?: LeadOutcome; reason?: string; sent?: Partial<SentWhatsapp>; snoozeDays?: number | null; phone?: string; email?: string; giro?: string; skip?: boolean };
+type LeadPatch = { outcome?: LeadOutcome; reason?: string; reply?: string; sent?: Partial<SentWhatsapp>; snoozeDays?: number | null; phone?: string; email?: string; giro?: string; skip?: boolean };
 
 /** The exact text, step and variant sent, so the conversation shows what the prospect read and the next step never repeats it. */
 function sentPayload(sent: Partial<SentWhatsapp> | undefined): { payload: Record<string, unknown>; templateId: string | null } {
@@ -58,6 +58,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const sent = body.outcome === "whatsapp_sent" ? sentPayload(body.sent) : { payload: {}, templateId: null };
     const payload: Record<string, unknown> = { ...sent.payload };
     if (body.outcome === "not_interested") payload.reason = body.reason === "competencia" ? "competencia" : "rechazo";
+    // What the prospect answered, pasted by the operator, so the conversation reads both sides.
+    if (body.outcome === "whatsapp_replied" && typeof body.reply === "string" && body.reply.trim()) payload.text = body.reply.trim().slice(0, 1000);
     const result = await recordOutcome(db, { leadId: id, outcome: body.outcome, actor: "operator", actorId: actor.userId, payload, templateId: sent.templateId });
     if (!result.ok) return serviceErrorToResponse(result.error);
     return NextResponse.json(result.data);

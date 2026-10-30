@@ -8,6 +8,8 @@ export interface PipelineStageProps {
 export interface NextStepCardProps {
   lead: GrowthLead;
   busy: boolean;
+  /** Why this step, in plain words (from growth_lead_next_action). */
+  reason?: string | null;
   onAction: (action: StageAction) => void;
 }
 

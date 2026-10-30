@@ -5,23 +5,18 @@ import { canActOn } from "@/features/growth/services/leadService";
 import { ensureParaLink, leadLinkUrl } from "@/features/growth/services/leadLinkService";
 import { getSettings } from "@/features/growth/services/settingsService";
 import { activeTemplatePool, renderForLead } from "@/features/growth/services/templateService";
+import { nextAction } from "@/features/growth/services/nextActionService";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
 import type { GrowthLead } from "@/features/growth/interfaces/lead";
 import type { GrowthActor } from "@/features/growth/interfaces/member";
 import type { GrowthTemplate, TemplateVariant } from "@/features/growth/interfaces/template";
-import type { NextAction, WhatsappDraft, WhatsappStep } from "@/features/growth/interfaces/whatsapp";
+import type { WhatsappDraft, WhatsappStep } from "@/features/growth/interfaces/whatsapp";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 
 type MessageLead = Pick<GrowthLead, "id" | "business_name" | "giro" | "municipio" | "colonia" | "address" | "phone_e164">;
 
 const DRAFT_COLUMNS = "id, business_name, giro, municipio, colonia, address, phone_e164, stage, phone_status, whatsapp_attempts, last_whatsapp_at";
-
-/** Which message fits now and the facts behind it; the decision lives in growth_lead_next_action. */
-export async function nextAction(db: GrowthDb, leadId: string): Promise<NextAction | null> {
-  const { data } = await db.rpc("growth_lead_next_action", { p_lead_id: leadId });
-  return (data as NextAction | null) ?? null;
-}
 
 /**
  * Template + the lead's "Para ti" link + rendered text. Telegram cards and the composer share it.

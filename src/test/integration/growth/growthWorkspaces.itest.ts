@@ -151,6 +151,23 @@ describe("growth: workspaces, members and owners", () => {
     });
   });
 
+  it("registers a prospect's business from its card and credits whoever works it", async () => {
+    await inRollback(async (tx) => {
+      const lead = await seedTeam(tx);
+      const norte = lead["itest-ws-1"];
+      const tenant = "00000000-0000-4000-8000-0000000000d1";
+      await tx`insert into tenants (id, name, slug) values (${tenant}, 'ITest Alta', 'itest-alta-equipo')`;
+      expect(await failure(tx, (sp) => sp`select growth_mark_registered(${norte}, ${tenant}, ${BETO})`)).toContain("NOT_YOUR_LEAD");
+
+      await tx`select growth_mark_registered(${norte}, ${tenant}, ${ANA})`;
+      const [registered] = await tx`select stage, registered_tenant_id, owner_user_id from growth_leads where id = ${norte}`;
+      expect(registered).toMatchObject({ stage: "registrado", registered_tenant_id: tenant, owner_user_id: ANA });
+      const [acquisition] = await tx`select bucket, channel, acquired_by from tenant_acquisitions where tenant_id = ${tenant}`;
+      expect(acquisition).toMatchObject({ bucket: "assisted", channel: "equipo", acquired_by: ANA });
+      expect(await failure(tx, (sp) => sp`select growth_mark_registered(${norte}, ${tenant}, ${ANA})`)).toContain("ALREADY_REGISTERED");
+    });
+  });
+
   it("only coordinators reassign, and the move is logged", async () => {
     await inRollback(async (tx) => {
       const lead = await seedTeam(tx);

@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 
-import { followUpLead, isBoardKey, isLeadsListKey, leadKey, patchLead } from "@/features/growth/services/growthClient";
+import { assignLeads, followUpLead, isBoardKey, isLeadsListKey, leadKey, patchLead } from "@/features/growth/services/growthClient";
 import { forgetWhatsappOpened } from "@/features/growth/services/whatsappOpened";
 import { swrFetcher } from "@/lib/swrFetcher";
 
@@ -64,6 +64,9 @@ export function useGrowthLead(id: string) {
     followUp: (input: FollowUpInput) => run(() => followUpLead(id, input), FOLLOW_UP_NOTICE[input.action]),
     snooze: (days: number | null) => run(() => patchLead(id, { snoozeDays: days }), days ? `Pausado ${days} días.` : "Reactivado."),
     updatePhone: (phone: string) => run(() => patchLead(id, { phone }), "Teléfono actualizado. Vuelve a la fila de WhatsApp."),
+    logReply: (reply: string) => run(() => patchLead(id, { outcome: "whatsapp_replied", reply }), "Quedó su respuesta en la conversación."),
+    reassign: (ownerId: string | null) => run(() => assignLeads([id], ownerId), ownerId ? "Listo, ya lo trabaja otra persona." : "Quedó sin asignar."),
+    refresh: () => Promise.all([mutate(), mutateGlobal(isLeadsListKey), mutateGlobal(isBoardKey)]),
     updateGiro: (giro: string) => run(() => patchLead(id, { giro }), "Giro actualizado. Su «Para ti» ya muestra la tienda de ese giro."),
   };
 }

@@ -1,7 +1,17 @@
 import { apiFetch } from "@/services/apiFetch";
 import { leadFiltersQuery } from "@/features/growth/helpers/leadFiltersQuery";
 
-import type { BoardZone, FollowUpInput, GrowthLead, LeadFilters, LeadOutcome, NewLeadInput, NewLeadResult } from "@/features/growth/interfaces/lead";
+import type {
+  BoardZone,
+  FollowUpInput,
+  GrowthLead,
+  LeadFilters,
+  LeadOutcome,
+  LeadRegistrationInput,
+  LeadRegistrationResult,
+  NewLeadInput,
+  NewLeadResult,
+} from "@/features/growth/interfaces/lead";
 import type { GrowthMember, MemberInviteInput, MemberInviteResult, MemberPatch } from "@/features/growth/interfaces/member";
 import type { GrowthMailbox, GrowthSettings, GrowthSettingsPatch, MailboxInput } from "@/features/growth/interfaces/settings";
 import type { GrowthTemplate, TemplateDraft, TemplatePreview, TemplateVariant } from "@/features/growth/interfaces/template";
@@ -23,7 +33,7 @@ export const teamKey = `${BASE}/members`;
 export const templatesKey = `${BASE}/templates`;
 export const funnelKey = (days: number) => `${BASE}/funnel?days=${days}`;
 
-export async function patchLead(id: string, body: { outcome?: LeadOutcome; reason?: string; sent?: SentWhatsapp; snoozeDays?: number | null; phone?: string; email?: string; giro?: string; skip?: boolean }): Promise<GrowthLead> {
+export async function patchLead(id: string, body: { outcome?: LeadOutcome; reason?: string; reply?: string; sent?: SentWhatsapp; snoozeDays?: number | null; phone?: string; email?: string; giro?: string; skip?: boolean }): Promise<GrowthLead> {
   return (await apiFetch(leadKey(id), { method: "PATCH", body: JSON.stringify(body) })) as GrowthLead;
 }
 
@@ -103,4 +113,12 @@ export async function inviteMember(input: MemberInviteInput): Promise<MemberInvi
 
 export async function updateMember(userId: string, patch: MemberPatch): Promise<GrowthMember> {
   return (await apiFetch(`${teamKey}/${userId}`, { method: "PATCH", body: JSON.stringify(patch) })) as GrowthMember;
+}
+
+export async function registerLead(id: string, input: LeadRegistrationInput): Promise<LeadRegistrationResult> {
+  return (await apiFetch(`${leadKey(id)}/register`, { method: "POST", body: JSON.stringify(input) })) as LeadRegistrationResult;
+}
+
+export async function fetchClaimLink(id: string): Promise<{ url: string }> {
+  return (await apiFetch(`${leadKey(id)}/claim-link`, { method: "POST" })) as { url: string };
 }

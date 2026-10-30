@@ -1,6 +1,6 @@
 import { cache } from "react";
 
-import { STARTER_CATALOGS } from "@/features/catalog/catalogDefinitions";
+import { claimPath, leadCatalog } from "@/features/growth/helpers/claimLink";
 import { GENERIC_CATALOG_IMAGE } from "@/features/catalog/constants/catalogImages";
 import { PARA_OBJECTION_LABEL, PARA_VISIT_SLOT_LABEL } from "@/features/growth/constants/para";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
@@ -37,8 +37,7 @@ export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPag
     .maybeSingle();
   if (!lead) return null;
 
-  const catalogKey = (lead.catalog_template_key as string | null) ?? (lead.giro as string);
-  const catalog = STARTER_CATALOGS.find((entry) => entry.key === catalogKey) ?? null;
+  const catalog = leadCatalog({ giro: lead.giro as string, catalog_template_key: lead.catalog_template_key as string | null });
   // $0 starter items (e.g. "Entrega local") read as free products in a preview.
   const pool = catalog ? [...catalog.products, ...catalog.services].filter((item) => item.isPublic !== false && item.price > 0) : [];
   const items: ParaItem[] = pickParaItems(pool, PARA_ITEMS_LIMIT).map((item, index) => ({
@@ -52,9 +51,6 @@ export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPag
   }));
   const zone = zoneByMunicipio(lead.municipio as string);
 
-  const query = new URLSearchParams({ prospecto: token, giro: catalog?.businessType ?? (lead.giro as string), nombre: lead.business_name as string });
-  if (catalog) query.set("catalogo", catalog.key);
-  if (lead.phone_e164) query.set("telefono", (lead.phone_e164 as string).slice(3));
 
   const settings = await loadSettings(db);
   // The person who works this prospect signs the page and answers its WhatsApp.
@@ -80,7 +76,7 @@ export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPag
       products: pool.filter((item) => item.type === "product").length,
       services: pool.filter((item) => item.type === "service").length,
     },
-    claimUrl: `/registro?${query.toString()}`,
+    claimUrl: claimPath(lead, token),
     helpUrl: helpNumber ? buildWaLink(`+${helpNumber}`, helpText) : null,
     helpLabel: sender ? `Escribirle a ${sender.firstName} por WhatsApp` : "Escribirnos por WhatsApp",
     visit:

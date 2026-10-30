@@ -35,3 +35,12 @@ export const newLeadSchema = yup.object({
 });
 
 export type NewLeadFormValues = yup.InferType<typeof newLeadSchema>;
+
+export const leadRegistrationSchema = yup.object({
+  business_name: yup.string().trim().min(2, "Escribe el nombre del negocio.").max(160).required("Escribe el nombre del negocio."),
+  owner_name: yup.string().trim().min(2, "Escribe el nombre del dueño.").max(80).required("Escribe el nombre del dueño."),
+  owner_email: yup.string().trim().email("Escribe un correo válido.").required("Escribe su correo: ahí le llega su acceso."),
+  owner_phone: optionalPhone("Escribe los 10 dígitos de su teléfono."),
+});
+
+export type LeadRegistrationFormValues = yup.InferType<typeof leadRegistrationSchema>;

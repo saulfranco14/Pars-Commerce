@@ -5,6 +5,8 @@ import { GIRO_COPY } from "@/features/growth/constants/giroCopy";
 import { daysFromToday } from "@/features/growth/helpers/leadPipeline";
 import { internalError, rpcError } from "@/features/growth/services/growthDb";
 import { memberNames } from "@/features/growth/services/memberService";
+import { nextAction } from "@/features/growth/services/nextActionService";
+import { describeNextAction } from "@/features/growth/helpers/nextActionReason";
 import { normalizeMexicanPhone } from "@/lib/phone";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
@@ -158,11 +160,12 @@ export async function listLeads(db: GrowthDb, actor: GrowthActor, filters: LeadF
 
 /** A prospector opens leads they can act on, plus the ones they once worked; anything else reads as missing. */
 export async function getLeadDetail(db: GrowthDb, actor: GrowthActor, leadId: string): Promise<ServiceResult<LeadDetail>> {
-  const [{ data: lead, error }, { data: events }, { data: acquisition }, canAct] = await Promise.all([
+  const [{ data: lead, error }, { data: events }, { data: acquisition }, canAct, action] = await Promise.all([
     db.from("growth_leads").select(LEAD_COLUMNS).eq("id", leadId).eq("workspace_id", actor.workspaceId).maybeSingle(),
     db.from("growth_lead_events").select("id, lead_id, type, channel, actor, actor_user_id, template_id, payload, created_at").eq("lead_id", leadId).order("created_at", { ascending: false }).limit(100),
     db.from("tenant_acquisitions").select("bucket, channel, tenant_id").eq("lead_id", leadId).maybeSingle(),
     canActOn(db, actor, leadId),
+    nextAction(db, leadId),
   ]);
   if (error) return internalError(error.message);
   if (!lead) return NOT_FOUND;
@@ -177,6 +180,7 @@ export async function getLeadDetail(db: GrowthDb, actor: GrowthActor, leadId: st
       lead: { ...(lead as GrowthLead), owner_name: lead.owner_user_id ? names[lead.owner_user_id] ?? null : null },
       events: await labelTemplates(db, named),
       canAct,
+      suggestion: action ? describeNextAction(action) : null,
       acquisition: acquisition ?? null,
     },
   };

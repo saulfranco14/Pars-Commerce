@@ -1,4 +1,5 @@
 import type { StatusTone } from "@/components/admin/StatusBadge";
+import type { WhatsappSuggestion } from "@/features/growth/interfaces/whatsapp";
 
 export type LeadStage =
   | "nuevo"
@@ -209,6 +210,8 @@ export interface LeadDetail {
   events: LeadEvent[];
   /** Whether the viewer may act on it (own lead, or unowned inside their zones). */
   canAct: boolean;
+  /** What to send next and why (growth_lead_next_action). */
+  suggestion: WhatsappSuggestion | null;
   acquisition: { bucket: string; channel: string | null; tenant_id: string } | null;
 }
 
@@ -281,4 +284,57 @@ export type NewLeadResult =
 export interface NewLeadSheetProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+/** «Dar de alta su negocio»: the owner gets an email to create a password and enter. */
+export interface LeadRegistrationInput {
+  owner_name: string;
+  owner_email: string;
+  owner_phone: string;
+  business_name: string;
+}
+
+export interface LeadRegistrationResult {
+  tenantSlug: string | null;
+  emailDelivery: "sent" | "failed" | "not_needed";
+  invitationUrl: string | null;
+  previewUrl: string | null;
+}
+
+export interface RegisterLeadSheetProps {
+  isOpen: boolean;
+  lead: GrowthLead;
+  onClose: () => void;
+  onRegistered: () => void;
+}
+
+export interface ReplySheetProps {
+  isOpen: boolean;
+  businessName: string;
+  busy: boolean;
+  onClose: () => void;
+  onSubmit: (text: string) => Promise<boolean>;
+}
+
+export interface LeadConversationProps {
+  events: LeadEvent[];
+  viewerId: string | null;
+  onLogReply: () => void;
+}
+
+export interface LeadSummary {
+  sent: number;
+  lastSentAt: string | null;
+  views: number;
+  lastViewAt: string | null;
+  averageSeconds: number | null;
+  objection: string | null;
+  visitRequest: { day: string | null; slot: string | null } | null;
+  claimClicked: boolean;
+  repliedAt: string | null;
+  lastReply: string | null;
+}
+
+export interface LeadSummaryCardProps {
+  summary: LeadSummary;
 }
