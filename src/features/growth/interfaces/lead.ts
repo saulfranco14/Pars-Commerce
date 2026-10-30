@@ -173,7 +173,7 @@ export type LeadContactFilter = "whatsapp" | "correo" | "ambos" | "sin";
 export type LeadStageFilter = LeadStage | "activos" | "todos" | "en_lote" | "hoy";
 
 /** Prospectos has two halves: the daily follow-up board and the prospecting list. */
-export type LeadView = "seguimiento" | "contactar";
+export type LeadView = "seguimiento" | "contactar" | "mapa";
 
 export interface LeadFilters {
   vista?: LeadView;

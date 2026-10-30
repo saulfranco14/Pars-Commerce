@@ -29,6 +29,7 @@
     "html-to-image": "^1.11.13",
     "imapflow": "^2.9.1",
     "isomorphic-dompurify": "^3.0.0-rc.2",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.563.0",
     "mailparser": "^3.12.4",
     "mercadopago": "^2.12.0",
@@ -39,6 +40,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.71.2",
+    "react-leaflet": "^5.0.0",
     "recharts": "^3.7.0",
     "swr": "^2.4.0",
     "yup": "^1.7.1",
@@ -48,6 +50,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/leaflet": "^1.9.12",
     "@types/mailparser": "^3.9.0",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.2",

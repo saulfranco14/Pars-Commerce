@@ -16,7 +16,7 @@ import { staffUsernameOf } from "@/lib/auth/staffLogin";
 import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
 import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
 import { GROWTH_ROLE_LABEL } from "@/features/growth/constants/growthRoles";
-import { ENGINE_PATH, FUNNEL_PATH, PROSPECTING_PATH, TEAM_PATH } from "@/features/growth/constants/routes";
+import { ENGINE_PATH, FUNNEL_PATH, IMPORT_PATH, PROSPECTING_PATH, TEAM_PATH } from "@/features/growth/constants/routes";
 import { isPlatformRoute, isProspectingRoute } from "@/lib/platformRoutes";
 import {
   X,
@@ -145,7 +145,7 @@ function SidebarContent(props: SidebarContentProps) {
   const menuGroups = resolveMenu(menuPreferencesOf(activeTenant?.settings), canOpen);
   const onProspecting = Boolean(growthActor) && isProspectingRoute(pathname);
   const onPlatform = (isPlatformAdmin && isPlatformRoute(pathname)) || onProspecting;
-  const prospectingSection = [TEAM_PATH, ENGINE_PATH, FUNNEL_PATH].find((path) => pathname.startsWith(path));
+  const prospectingSection = [TEAM_PATH, IMPORT_PATH, ENGINE_PATH, FUNNEL_PATH].find((path) => pathname.startsWith(path));
   const showTenantMenu = hasTenant && !onPlatform;
 
   function switchBusiness(
@@ -409,6 +409,9 @@ function SidebarContent(props: SidebarContentProps) {
               <>
                 <NavLink href={TEAM_PATH} active={prospectingSection === TEAM_PATH} icon={Users} onNavigate={onNavigate}>
                   Equipo
+                </NavLink>
+                <NavLink href={IMPORT_PATH} active={prospectingSection === IMPORT_PATH} icon={Download} onNavigate={onNavigate}>
+                  Importar
                 </NavLink>
                 <NavLink href={ENGINE_PATH} active={prospectingSection === ENGINE_PATH} icon={Send} onNavigate={onNavigate}>
                   Motor

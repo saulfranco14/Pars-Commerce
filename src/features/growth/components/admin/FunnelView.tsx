@@ -5,6 +5,7 @@ import { AlertTriangle } from "lucide-react";
 import { useGrowthFunnel } from "@/features/growth/hooks/useGrowthFunnel";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { MetricsStrip } from "@/components/admin/MetricsStrip";
+import { StatusBadge } from "@/components/admin/StatusBadge";
 import { FilterTabs } from "@/components/ui/FilterTabs";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 
@@ -33,6 +34,13 @@ function Bar({ label, value, max }: { label: string; value: number; max: number 
       <span className="text-right font-bold tabular-nums text-foreground">{value}</span>
     </div>
   );
+}
+
+/** From this many contacts a giro's rates stop moving with each new prospect. */
+const SAMPLE_ENOUGH = 50;
+
+function percent(part: number, total: number): string {
+  return total ? `${Math.round((part / total) * 100)} %` : "—";
 }
 
 export function FunnelView() {
@@ -96,6 +104,48 @@ export function FunnelView() {
           ) : <p className="text-sm text-muted-foreground">Todavía no hay contactos en este periodo.</p>}
         </section>
       </div>
+
+      <section className="grid gap-3 rounded-2xl border border-border bg-surface p-4 sm:p-5">
+        <div>
+          <h2 className="text-base font-bold text-foreground">Rendimiento por giro</h2>
+          <p className="text-sm text-muted-foreground">Qué giro responde y se registra más. Con {SAMPLE_ENOUGH} contactos o más el dato ya es confiable.</p>
+        </div>
+        {report.by_giro.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] text-left text-sm">
+              <thead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <tr><th className="py-2">Giro</th><th>Contactados</th><th>Respondió</th><th>Vio su tienda</th><th>Registró</th><th /></tr>
+              </thead>
+              <tbody className="divide-y divide-border-soft">
+                {report.by_giro.map((row) => (
+                  <tr key={row.giro}>
+                    <td className="py-2 font-semibold text-foreground">{giroCopy(row.giro).label}</td>
+                    <td className="tabular-nums">{row.contacted}</td>
+                    <td className="tabular-nums">{percent(row.replied, row.contacted)}</td>
+                    <td className="tabular-nums">{percent(row.viewed, row.contacted)}</td>
+                    <td className="font-bold tabular-nums text-foreground">{percent(row.registered, row.contacted)}</td>
+                    <td>{row.contacted >= SAMPLE_ENOUGH ? <StatusBadge tone="success" label="Muestra suficiente" compact /> : null}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : <p className="text-sm text-muted-foreground">Cuando el equipo contacte negocios, aquí verás qué giro conviene más.</p>}
+      </section>
+
+      <section className="grid gap-3 rounded-2xl border border-border bg-surface p-4 sm:p-5">
+        <h2 className="text-base font-bold text-foreground">Por persona</h2>
+        {report.by_member.length ? (
+          <ul className="grid gap-2 text-sm">
+            {report.by_member.map((row) => (
+              <li key={row.user_id} className="flex flex-wrap justify-between gap-x-3 gap-y-1">
+                <span className="font-semibold text-foreground">{row.name}</span>
+                <span className="tabular-nums text-muted-foreground">{row.contacted} contactados · {row.replied} respondieron · <b className="text-foreground">{row.registered}</b> registrados</span>
+              </li>
+            ))}
+          </ul>
+        ) : <p className="text-sm text-muted-foreground">Todavía no hay actividad del equipo en este periodo.</p>}
+      </section>
 
       <section className="grid gap-3 rounded-2xl border border-border bg-surface p-4 sm:p-5">
         <h2 className="text-base font-bold text-foreground">Qué versión de mensaje funciona</h2>

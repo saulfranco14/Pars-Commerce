@@ -9,6 +9,11 @@ BEGIN
   END IF;
 END $$;
 
+-- 20261031000005_growth_map_imports
+DROP FUNCTION IF EXISTS public.growth_map_points(uuid, uuid, double precision, double precision, double precision, double precision, text, text, integer);
+DROP FUNCTION IF EXISTS public.growth_claim_import(uuid, integer);
+DROP TABLE IF EXISTS public.growth_imports;
+
 -- 20261031000004_growth_my_day
 DROP FUNCTION IF EXISTS public.growth_my_day(uuid, uuid);
 

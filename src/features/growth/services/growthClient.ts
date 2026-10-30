@@ -17,6 +17,9 @@ import type { GrowthMailbox, GrowthSettings, GrowthSettingsPatch, MailboxInput }
 import type { GrowthTemplate, TemplateDraft, TemplatePreview, TemplateVariant } from "@/features/growth/interfaces/template";
 import type { SweepBatch, SweepFilters } from "@/features/growth/interfaces/sweep";
 import type { SentWhatsapp, WhatsappDraft, WhatsappStep } from "@/features/growth/interfaces/whatsapp";
+import type { CsvImportInput, CsvImportResult, GrowthImport, ImportInput, ImportPreview } from "@/features/growth/interfaces/importJob";
+import type { MapQuery } from "@/features/growth/interfaces/map";
+import type { NearbyLead } from "@/features/growth/interfaces/lead";
 
 const BASE = "/api/growth";
 
@@ -31,6 +34,7 @@ export const engineKey = `${BASE}/settings`;
 export const growthMeKey = `${BASE}/me`;
 export const teamKey = `${BASE}/members`;
 export const myDayKey = `${BASE}/my-day`;
+export const importsKey = `${BASE}/imports`;
 export const templatesKey = `${BASE}/templates`;
 export const funnelKey = (days: number) => `${BASE}/funnel?days=${days}`;
 
@@ -123,4 +127,33 @@ export async function registerLead(id: string, input: LeadRegistrationInput): Pr
 
 export async function fetchClaimLink(id: string): Promise<{ url: string }> {
   return (await apiFetch(`${leadKey(id)}/claim-link`, { method: "POST" })) as { url: string };
+}
+
+export async function previewImport(input: ImportInput): Promise<ImportPreview> {
+  return (await apiFetch(`${importsKey}/preview`, { method: "POST", body: JSON.stringify(input) })) as ImportPreview;
+}
+
+export async function startImport(input: ImportInput): Promise<GrowthImport> {
+  return (await apiFetch(importsKey, { method: "POST", body: JSON.stringify(input) })) as GrowthImport;
+}
+
+export async function uploadCsv(input: CsvImportInput): Promise<CsvImportResult> {
+  return (await apiFetch(`${importsKey}/csv`, { method: "POST", body: JSON.stringify(input) })) as CsvImportResult;
+}
+
+/** Bounds rounded to ~100 m so small pans reuse the same cached request. */
+export function mapKey(query: MapQuery): string {
+  const params = new URLSearchParams({
+    minLat: query.minLat.toFixed(3),
+    minLng: query.minLng.toFixed(3),
+    maxLat: query.maxLat.toFixed(3),
+    maxLng: query.maxLng.toFixed(3),
+  });
+  if (query.giro) params.set("giro", query.giro);
+  if (query.owner) params.set("owner", query.owner);
+  return `${BASE}/map?${params.toString()}`;
+}
+
+export async function fetchNearby(lat: number, lng: number): Promise<NearbyLead[]> {
+  return (await apiFetch(`${BASE}/nearby?lat=${lat}&lng=${lng}`)) as NearbyLead[];
 }

@@ -6,7 +6,10 @@ import { sql } from "@/test/integration/setup";
 
 import type { TransactionSql } from "postgres";
 
-const ROLLBACK = readFileSync(fileURLToPath(new URL("../../../../supabase/snippets/growth_workspaces_rollback.sql", import.meta.url)), "utf8")
+// Reverse snippets run newest first, so the later ones go before the workspaces one.
+const ROLLBACK = ["growth_map_imports", "growth_my_day", "growth_assisted_registration", "growth_next_action", "growth_workspaces"]
+  .map((name) => readFileSync(fileURLToPath(new URL(`../../../../supabase/snippets/${name}_rollback.sql`, import.meta.url)), "utf8"))
+  .join("\n")
   .replace(/^\s*(BEGIN|COMMIT);\s*$/gim, "");
 
 class RolledBack extends Error {}
@@ -179,6 +182,29 @@ describe("growth: workspaces, members and owners", () => {
       const [beto] = await tx`select growth_my_day(${TLACO}, ${BETO}) as d`;
       expect(beto.d).toMatchObject({ replied_due: 0, sent_today: 0, first_messages_left: 1 });
       expect(await failure(tx, (sp) => sp`select growth_my_day(${TLACO}, '00000000-0000-4000-8000-0000000000e9')`)).toContain("NOT_A_MEMBER");
+    });
+  });
+
+  it("the map shows a prospector only what they may work, and a coordinator everything", async () => {
+    await inRollback(async (tx) => {
+      const lead = await seedTeam(tx);
+      await tx`update growth_leads set lat = 19.4, lng = -98.9 where denue_id like 'itest-ws-%'`;
+      const box = [19.39, -98.91, 19.41, -98.89];
+      const ana = await tx`select id, total from growth_map_points(${TLACO}, ${ANA}, ${box[0]}, ${box[1]}, ${box[2]}, ${box[3]}) where municipio in (${NORTE}, ${SUR})`;
+      expect(ana.map((row) => row.id).sort()).toEqual([lead["itest-ws-1"], lead["itest-ws-2"]].sort());
+      const coord = await tx`select id from growth_map_points(${TLACO}, ${COORD}, ${box[0]}, ${box[1]}, ${box[2]}, ${box[3]}, null, 'none') where municipio in (${NORTE}, ${SUR})`;
+      expect(coord).toHaveLength(4);
+    });
+  });
+
+  it("an import job is worked by one runner at a time", async () => {
+    await inRollback(async (tx) => {
+      await seedTeam(tx);
+      const [job] = await tx`insert into growth_imports (workspace_id, created_by, giros, municipios) values (${TLACO}, ${COORD}, '{tienda}', '{15031}') returning id`;
+      const [first] = await tx`select (growth_claim_import(${job.id}, 60)).id as id`;
+      const [second] = await tx`select (growth_claim_import(${job.id}, 60)).id as id`;
+      expect(first.id).toBe(job.id);
+      expect(second.id).toBeNull();
     });
   });
 

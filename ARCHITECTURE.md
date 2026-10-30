@@ -223,9 +223,19 @@ debe tocarla:
   se activa con `supabase/snippets/growth_cron_schedule.sql`.
 - **Variables:** `GROWTH_ENABLED`, `GROWTH_CRON_SECRET`,
   `GROWTH_MAILBOX_<n>_PASSWORD`, `TELEGRAM_BOT_TOKEN`,
-  `TELEGRAM_WEBHOOK_SECRET`, `GROWTH_POSTAL_ADDRESS`, `GROWTH_WHATSAPP_NUMBER`.
-- **Carga del DENUE:** `npx tsx --env-file=.env.local scripts/growth/importDenue.ts <csv> --dry-run`.
-  El CSV vive en `data/growth/` (ignorado por git).
+  `TELEGRAM_WEBHOOK_SECRET`, `GROWTH_POSTAL_ADDRESS`, `GROWTH_WHATSAPP_NUMBER`,
+  `INEGI_DENUE_TOKEN` (importar desde la API del DENUE) y `GROWTH_LINK_SECRET`
+  (opcional: sella el link «Para ti» para reusarlo; sin ella se usa la service role).
+- **Mensaje siguiente:** qué mandar lo decide `growth_lead_next_action` con el
+  historial (enviados, vistas, dudas, visitas, respuestas); el cuándo, el trigger
+  `growth_leads_next_step`. El texto enviado queda en `payload.body` del evento.
+- **Carga del DENUE:** desde Prospección → Importar (`growth_imports`, una fila
+  por trabajo con cursores; el cron termina lo que no quepa en la petición) o
+  por consola: `npx tsx --env-file=.env.local scripts/growth/importDenue.ts <csv> --dry-run`.
+  El CSV vive en `data/growth/` (ignorado por git). Giro → clases SCIAN en
+  `constants/denue.ts`.
+- **Reversas:** cada migración del motor tiene su `supabase/snippets/*_rollback.sql`;
+  se aplican de la más nueva a la más vieja.
 
 ---
 

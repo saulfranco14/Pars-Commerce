@@ -9,6 +9,7 @@ import { useGrowthTeam } from "@/features/growth/hooks/useGrowthTeam";
 import { FilterTabs } from "@/components/ui/FilterTabs";
 import { FollowUpView } from "@/features/growth/components/admin/FollowUpView";
 import { LeadsView } from "@/features/growth/components/admin/LeadsView";
+import { MapView } from "@/features/growth/components/admin/MapView";
 import { NewLeadSheet } from "@/features/growth/components/admin/NewLeadSheet";
 import { ProspectingGuide } from "@/features/growth/components/admin/ProspectingGuide";
 import { TodayPanel } from "@/features/growth/components/admin/TodayPanel";
@@ -24,6 +25,7 @@ import type { LeadFilters, LeadView } from "@/features/growth/interfaces/lead";
 const VIEW_TABS = [
   { value: "seguimiento", label: "Seguimiento" },
   { value: "contactar", label: "Prospectar" },
+  { value: "mapa", label: "Mapa" },
 ];
 
 const selectClass = "input-form min-h-11 w-full min-w-0 rounded-xl border border-border bg-surface-raised px-3 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
@@ -60,7 +62,7 @@ export function ProspectsView() {
           ariaLabel="Vista"
           density="touch"
         />
-        {filters.vista === "seguimiento" ? (
+        {filters.vista !== "contactar" ? (
           <div className={`grid gap-2 lg:ml-auto ${isCoordinator ? "grid-cols-2 sm:grid-cols-3 lg:w-2xl" : "grid-cols-2 lg:w-md"}`}>
             {isCoordinator ? (
               <select
@@ -89,7 +91,9 @@ export function ProspectsView() {
           Nuevo prospecto
         </button>
       </div>
-      {filters.vista === "seguimiento" ? <FollowUpView filters={filters} showOwner={isCoordinator && filters.owner !== "me"} /> : <LeadsView />}
+      {filters.vista === "seguimiento" ? <FollowUpView filters={filters} showOwner={isCoordinator && filters.owner !== "me"} /> : null}
+      {filters.vista === "contactar" ? <LeadsView /> : null}
+      {filters.vista === "mapa" ? <MapView giro={filters.giro} owner={filters.owner} people={team?.members ?? []} /> : null}
       <NewLeadSheet isOpen={adding} onClose={() => setAdding(false)} />
     </div>
   );
