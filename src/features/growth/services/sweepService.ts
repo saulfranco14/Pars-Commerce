@@ -1,5 +1,4 @@
-import { FOLLOW_UP_DAYS } from "@/features/growth/helpers/suggestWhatsappStep";
-import { SWEEP_BATCH, SWEEP_RESERVE_MINUTES } from "@/features/growth/constants/sweep";
+import { FOLLOW_UP_DAYS, SWEEP_BATCH, SWEEP_RESERVE_MINUTES } from "@/features/growth/constants/sweep";
 import { internalError, rpcError } from "@/features/growth/services/growthDb";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";

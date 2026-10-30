@@ -6,6 +6,7 @@ import { forgetWhatsappOpened } from "@/features/growth/services/whatsappOpened"
 import { swrFetcher } from "@/lib/swrFetcher";
 
 import type { FollowUpAction, FollowUpInput, LeadDetail, LeadOutcome } from "@/features/growth/interfaces/lead";
+import type { SentWhatsapp } from "@/features/growth/interfaces/whatsapp";
 
 const FOLLOW_UP_NOTICE: Record<FollowUpAction, string> = {
   schedule_visit: "Cita agendada. Ya está en la columna «Cita agendada».",
@@ -55,8 +56,8 @@ export function useGrowthLead(id: string) {
     busy,
     notice,
     clearNotice,
-    markOutcome: async (outcome: LeadOutcome, reason?: string) => {
-      const saved = await run(() => patchLead(id, { outcome, reason }), OUTCOME_NOTICE[outcome] ?? "Listo, quedó registrado.");
+    markOutcome: async (outcome: LeadOutcome, reason?: string, sent?: SentWhatsapp) => {
+      const saved = await run(() => patchLead(id, { outcome, reason, sent }), OUTCOME_NOTICE[outcome] ?? "Listo, quedó registrado.");
       if (saved) forgetWhatsappOpened();
       return saved;
     },

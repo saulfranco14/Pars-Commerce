@@ -14,11 +14,27 @@ import {
   updateLeadPhone,
 } from "@/features/growth/services/leadService";
 
+import { WHATSAPP_STEPS } from "@/features/growth/constants/templateVariables";
+
 import type { LeadOutcome } from "@/features/growth/interfaces/lead";
+import type { SentWhatsapp } from "@/features/growth/interfaces/whatsapp";
 
 const OPERATOR_OUTCOMES: LeadOutcome[] = ["whatsapp_sent", "whatsapp_replied", "email_replied", "not_interested", "no_whatsapp", "wrong_number", "visit_closed"];
 
-type LeadPatch = { outcome?: LeadOutcome; reason?: string; body?: string; snoozeDays?: number | null; phone?: string; email?: string; giro?: string; skip?: boolean };
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+type LeadPatch = { outcome?: LeadOutcome; reason?: string; sent?: Partial<SentWhatsapp>; snoozeDays?: number | null; phone?: string; email?: string; giro?: string; skip?: boolean };
+
+/** The exact text, step and variant sent, so the conversation shows what the prospect read and the next step never repeats it. */
+function sentPayload(sent: Partial<SentWhatsapp> | undefined): { payload: Record<string, unknown>; templateId: string | null } {
+  if (!sent) return { payload: {}, templateId: null };
+  const payload: Record<string, unknown> = {};
+  if (typeof sent.body === "string" && sent.body.trim()) payload.body = sent.body.trim().slice(0, 4000);
+  if (sent.step && WHATSAPP_STEPS.includes(sent.step)) payload.step = sent.step;
+  if (sent.variant === "A" || sent.variant === "B" || sent.variant === "C") payload.variant = sent.variant;
+  if (typeof sent.edited === "boolean") payload.edited = sent.edited;
+  return { payload, templateId: typeof sent.templateId === "string" && UUID.test(sent.templateId) ? sent.templateId : null };
+}
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const gate = await requireGrowthMember();
@@ -39,11 +55,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   if (body.outcome) {
     if (!OPERATOR_OUTCOMES.includes(body.outcome)) return NextResponse.json({ error: "Acción no válida" }, { status: 400 });
-    const payload: Record<string, unknown> = {};
+    const sent = body.outcome === "whatsapp_sent" ? sentPayload(body.sent) : { payload: {}, templateId: null };
+    const payload: Record<string, unknown> = { ...sent.payload };
     if (body.outcome === "not_interested") payload.reason = body.reason === "competencia" ? "competencia" : "rechazo";
-    // The exact text sent, so the conversation shows what the prospect really read.
-    if (body.outcome === "whatsapp_sent" && typeof body.body === "string" && body.body.trim()) payload.body = body.body.trim().slice(0, 4000);
-    const result = await recordOutcome(db, { leadId: id, outcome: body.outcome, actor: "operator", actorId: actor.userId, payload });
+    const result = await recordOutcome(db, { leadId: id, outcome: body.outcome, actor: "operator", actorId: actor.userId, payload, templateId: sent.templateId });
     if (!result.ok) return serviceErrorToResponse(result.error);
     return NextResponse.json(result.data);
   }

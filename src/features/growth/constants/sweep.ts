@@ -1,5 +1,8 @@
 import type { SweepKind, SweepOutcome } from "@/features/growth/interfaces/sweep";
 
+/** Same wait the Telegram /seguimientos batch uses (growth_reserve_batch). */
+export const FOLLOW_UP_DAYS = 3;
+
 /** Cards the sweep keeps set aside at once; it tops up when two are left. */
 export const SWEEP_BATCH = 5;
 export const SWEEP_REFILL_AT = 2;

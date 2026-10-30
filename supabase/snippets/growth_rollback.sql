@@ -9,6 +9,9 @@ BEGIN
   END IF;
 END $$;
 
+-- 20261031000002_growth_next_action
+DROP FUNCTION IF EXISTS public.growth_lead_next_action(uuid);
+
 -- 20261031000001_growth_workspaces
 DROP FUNCTION IF EXISTS public.growth_add_lead(uuid, uuid, jsonb);
 DROP FUNCTION IF EXISTS public.growth_assign_leads(uuid, uuid, uuid[], uuid);

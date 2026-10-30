@@ -6,7 +6,7 @@ import type { GrowthMember, MemberInviteInput, MemberInviteResult, MemberPatch }
 import type { GrowthMailbox, GrowthSettings, GrowthSettingsPatch, MailboxInput } from "@/features/growth/interfaces/settings";
 import type { GrowthTemplate, TemplateDraft, TemplatePreview, TemplateVariant } from "@/features/growth/interfaces/template";
 import type { SweepBatch, SweepFilters } from "@/features/growth/interfaces/sweep";
-import type { WhatsappDraft, WhatsappStep } from "@/features/growth/interfaces/whatsapp";
+import type { SentWhatsapp, WhatsappDraft, WhatsappStep } from "@/features/growth/interfaces/whatsapp";
 
 const BASE = "/api/growth";
 
@@ -23,7 +23,7 @@ export const teamKey = `${BASE}/members`;
 export const templatesKey = `${BASE}/templates`;
 export const funnelKey = (days: number) => `${BASE}/funnel?days=${days}`;
 
-export async function patchLead(id: string, body: { outcome?: LeadOutcome; reason?: string; body?: string; snoozeDays?: number | null; phone?: string; email?: string; giro?: string; skip?: boolean }): Promise<GrowthLead> {
+export async function patchLead(id: string, body: { outcome?: LeadOutcome; reason?: string; sent?: SentWhatsapp; snoozeDays?: number | null; phone?: string; email?: string; giro?: string; skip?: boolean }): Promise<GrowthLead> {
   return (await apiFetch(leadKey(id), { method: "PATCH", body: JSON.stringify(body) })) as GrowthLead;
 }
 

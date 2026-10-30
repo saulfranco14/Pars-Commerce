@@ -43,10 +43,10 @@ export function SweepCard({ lead, next, onOutcome, onSkip, onPhoneChanged }: Swe
     function onKey(event: KeyboardEvent) {
       if (editingPhone || event.metaKey || event.ctrlKey || event.altKey || typingTarget(event.target)) return;
       const key = event.key.toLowerCase();
-      if (key === "w" && draft) {
-        window.open(draft.waLink, "_blank", "noopener,noreferrer");
+      if (key === "w" && composer.waLink) {
+        window.open(composer.waLink, "_blank", "noopener,noreferrer");
         composer.markOpened();
-      } else if (key === "e" && opened) onOutcome("whatsapp_sent");
+      } else if (key === "e" && opened) onOutcome("whatsapp_sent", composer.sent());
       else if (key === "n" && opened) onOutcome("no_whatsapp");
       else if (key === "x" && opened) onOutcome("wrong_number");
       else if (key === "s") onSkip();
@@ -55,7 +55,7 @@ export function SweepCard({ lead, next, onOutcome, onSkip, onPhoneChanged }: Swe
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [composer, draft, editingPhone, onOutcome, onSkip, opened]);
+  }, [composer, editingPhone, onOutcome, onSkip, opened]);
 
   async function savePhone(phone: string): Promise<boolean> {
     setPhoneBusy(true);
@@ -73,9 +73,9 @@ export function SweepCard({ lead, next, onOutcome, onSkip, onPhoneChanged }: Swe
     }
   }
 
-  const openLink = draft ? (
+  const openLink = composer.waLink ? (
     <a
-      href={draft.waLink}
+      href={composer.waLink}
       target="_blank"
       rel="noopener noreferrer"
       onClick={(event) => {
@@ -125,9 +125,16 @@ export function SweepCard({ lead, next, onOutcome, onSkip, onPhoneChanged }: Swe
         ) : null}
         {composer.loading && !draft ? <LoadingBlock message="Armando el mensaje…" variant="skeleton" /> : null}
         {draft ? (
-          <p className={`max-h-56 overflow-y-auto whitespace-pre-wrap rounded-xl border border-border-soft bg-surface-raised p-3 text-sm leading-relaxed text-foreground sm:max-h-none lg:max-h-[calc(100vh-32rem)] ${composer.loading ? "opacity-60" : ""}`}>
-            {draft.body}
-          </p>
+          <label className="grid gap-1">
+            <span className="text-xs text-muted-foreground">{composer.edited ? "Editado por ti · se guardará así" : "Puedes editarlo antes de abrir WhatsApp."}</span>
+            <textarea
+              value={composer.text}
+              onChange={(event) => composer.setText(event.target.value)}
+              rows={8}
+              disabled={composer.loading}
+              className={`input-form min-h-44 w-full resize-y rounded-xl border border-border-soft bg-surface-raised p-3 text-sm leading-relaxed text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 ${composer.loading ? "opacity-60" : ""}`}
+            />
+          </label>
         ) : null}
       </div>
 
@@ -135,7 +142,7 @@ export function SweepCard({ lead, next, onOutcome, onSkip, onPhoneChanged }: Swe
         {opened ? (
           <>
             <p className="text-sm font-semibold text-foreground">¿Cómo te fue con {name}?</p>
-            <button type="button" onClick={() => onOutcome("whatsapp_sent")} className={`${adminActionButtonPrimary} min-h-14 w-full text-base`}>
+            <button type="button" onClick={() => onOutcome("whatsapp_sent", composer.sent())} className={`${adminActionButtonPrimary} min-h-14 w-full text-base`}>
               <Check className="h-5 w-5" aria-hidden />Enviado
             </button>
             <div className="grid grid-cols-2 gap-2">

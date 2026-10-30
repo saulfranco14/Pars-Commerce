@@ -22,7 +22,6 @@ import { buildMapsLink, buildMapsSearchLink } from "@/features/growth/helpers/bu
 import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName";
 import { formatDayTime, pipelineIndex } from "@/features/growth/helpers/leadPipeline";
 import { formatVisitSeconds, paraEventDetail } from "@/features/growth/helpers/paraSession";
-import { suggestWhatsappStep } from "@/features/growth/helpers/suggestWhatsappStep";
 import { backToLeads } from "@/features/growth/services/leadsReturn";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
 import { LEAD_EVENT_LABEL, LEAD_STAGE_META, NEXT_CHANNEL_LABEL } from "@/features/growth/constants/leadStages";
@@ -74,7 +73,8 @@ export function LeadDetailView({ id }: { id: string }) {
   const { lead, events, acquisition } = detail;
   const stage = LEAD_STAGE_META[lead.stage];
   const closed = lead.stage === "registrado" || lead.stage === "descartado";
-  const whatsappSuggestion = suggestWhatsappStep(lead);
+  const badPhone = lead.phone_status === "sin_whatsapp" || lead.phone_status === "equivocado";
+  const canMessage = Boolean(lead.phone_e164) && !badPhone && lead.stage !== "descartado";
   const name = formatBusinessName(lead.business_name);
 
   function handleAction(action: StageAction) {
@@ -108,10 +108,10 @@ export function LeadDetailView({ id }: { id: string }) {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:items-start">
         <aside className="grid min-w-0 gap-4 lg:sticky lg:top-20 lg:order-2 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
           <NextStepCard lead={lead} busy={busy} onAction={handleAction} />
-          {whatsappSuggestion.step ? (
-            <WhatsappComposer key={`${lead.phone_e164}-${lead.whatsapp_attempts}-${lead.phone_status}`} leadId={lead.id} busy={busy} onOutcome={(outcome) => markOutcome(outcome)} />
-          ) : lead.phone_e164 && !closed ? (
-            <Notification tone="warning" title="WhatsApp" message={whatsappSuggestion.reason} />
+          {canMessage ? (
+            <WhatsappComposer key={`${lead.phone_e164}-${lead.whatsapp_attempts}-${lead.phone_status}-${lead.stage}`} leadId={lead.id} busy={busy} onOutcome={(outcome, sent) => markOutcome(outcome, undefined, sent)} />
+          ) : badPhone && !closed ? (
+            <Notification tone="warning" title="WhatsApp" message="Ese número no sirve para WhatsApp. Si encontraste otro, usa «Corregir teléfono»." />
           ) : null}
         </aside>
 

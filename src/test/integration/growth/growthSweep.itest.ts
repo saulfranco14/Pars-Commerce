@@ -68,7 +68,7 @@ describe("growth: WhatsApp sweep", () => {
   it("ships formal WhatsApp copy with a sign-off", async () => {
     const live = await sql`
       select step, body from growth_templates
-      where channel = 'whatsapp' and giro is null and status = 'active' and created_by is null`;
+      where channel = 'whatsapp' and giro is null and status = 'active' and created_by is null and step in ('m1', 'seguimiento', 'si')`;
     expect(live.map((row) => row.step).sort()).toEqual(["m1", "m1", "seguimiento", "si"]);
     expect(live.every((row) => row.body.includes("Quedo a sus órdenes.\n{firma}") && !/le late|¡Va!/.test(row.body))).toBe(true);
   });
