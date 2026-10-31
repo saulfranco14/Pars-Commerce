@@ -27,11 +27,13 @@ const EMPTY_STATS: GrowthMemberStats = { active: 0, replied: 0, registered: 0 };
 
 type MemberRow = Omit<GrowthMember, "email" | "stats">;
 
-function toActor(workspaceId: string, row: MemberRow): GrowthActor {
+function toActor(workspace: { id: string; name: string; tenant_id: string | null }, role: GrowthRole, row: MemberRow): GrowthActor {
   return {
-    workspaceId,
+    workspaceId: workspace.id,
+    workspaceName: workspace.name,
+    tenantId: workspace.tenant_id,
     userId: row.user_id,
-    role: row.role,
+    role,
     displayName: row.display_name,
     signature: row.signature,
     whatsappE164: row.whatsapp_e164,
@@ -40,23 +42,45 @@ function toActor(workspaceId: string, row: MemberRow): GrowthActor {
   };
 }
 
-/** Null when the user cannot work this workspace; the first request of an invited member activates them. */
+/**
+ * Null when the user cannot work this workspace. The role always comes from SQL (growth_member_role), so a
+ * business that removes someone's permission removes their access; the member row only keeps zones and signature.
+ */
 export async function resolveActor(db: GrowthDb, userId: string, workspaceId = TLACO_WORKSPACE_ID): Promise<GrowthActor | null> {
-  const { data: role } = await db.rpc("growth_member_role", { p_workspace_id: workspaceId, p_user_id: userId });
-  if (role !== "coordinador" && role !== "prospector") return null;
+  const [{ data: role }, { data: workspace }] = await Promise.all([
+    db.rpc("growth_member_role", { p_workspace_id: workspaceId, p_user_id: userId }),
+    db.from("growth_workspaces").select("id, name, tenant_id").eq("id", workspaceId).maybeSingle(),
+  ]);
+  if ((role !== "coordinador" && role !== "prospector") || !workspace) return null;
 
   const { data: row } = await db.from("growth_members").select(MEMBER_COLUMNS).eq("workspace_id", workspaceId).eq("user_id", userId).maybeSingle();
   if (row) {
     if (row.status === "invited") {
       await db.from("growth_members").update({ status: "active", joined_at: new Date().toISOString() }).eq("workspace_id", workspaceId).eq("user_id", userId);
     }
-    return toActor(workspaceId, row as MemberRow);
+    return toActor(workspace, role, row as MemberRow);
   }
 
-  // A platform admin coordinates Tlaco without a member row.
   const { data: profile } = await db.from("profiles").select("display_name, email").eq("id", userId).maybeSingle();
   const name = (profile?.display_name as string | null)?.trim() || (profile?.email as string | null)?.split("@")[0] || "Coordinador";
-  return { workspaceId, userId, role: "coordinador", displayName: name, signature: null, whatsappE164: null, zones: [], dailyGoal: 20 };
+  // In a business's workspace the team comes from its own members: keep a row so zones and signature can be set.
+  if (workspace.tenant_id) {
+    const { data: created } = await db
+      .from("growth_members")
+      .upsert({ workspace_id: workspaceId, user_id: userId, role, status: "active", display_name: name.slice(0, 80), signature: `${name} · ${workspace.name}`.slice(0, 80), joined_at: new Date().toISOString() }, { onConflict: "workspace_id,user_id" })
+      .select(MEMBER_COLUMNS)
+      .maybeSingle();
+    if (created) return toActor(workspace, role, created as MemberRow);
+  }
+  // A platform admin coordinates Tlaco without a member row.
+  return { workspaceId, workspaceName: workspace.name, tenantId: workspace.tenant_id, userId, role, displayName: name, signature: null, whatsappE164: null, zones: [], dailyGoal: 20 };
+}
+
+/** The workspace a request works on: a business the user chose (cookie), if their plan and role allow it, else Tlaco. */
+export async function chosenWorkspace(db: GrowthDb, userId: string, choice: string | undefined): Promise<string> {
+  if (!choice || choice === "tlaco" || !/^[0-9a-f-]{36}$/i.test(choice)) return TLACO_WORKSPACE_ID;
+  const { data } = await db.rpc("growth_tenant_workspace", { p_tenant_id: choice, p_user_id: userId });
+  return (data as string | null) ?? TLACO_WORKSPACE_ID;
 }
 
 /** How a prospect reaches the person who works it: «Para ti» shows this name and WhatsApp. */

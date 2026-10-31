@@ -62,10 +62,19 @@ export async function resolveTemplate(
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+/** Who is prospecting and what they offer, for {espacio} and {oferta}. */
+export async function workspaceCopy(db: GrowthDb, workspaceId: string): Promise<{ espacio: string; oferta: string }> {
+  const [{ data: workspace }, { data: settings }] = await Promise.all([
+    db.from("growth_workspaces").select("name").eq("id", workspaceId).maybeSingle(),
+    db.from("growth_settings").select("offer_title").eq("workspace_id", workspaceId).maybeSingle(),
+  ]);
+  return { espacio: (workspace?.name as string | undefined) ?? "Tlaco", oferta: (settings?.offer_title as string | null) ?? "" };
+}
+
 export function renderForLead(
   template: Pick<GrowthTemplate, "subject" | "body">,
   lead: Pick<GrowthLead, "business_name" | "giro" | "municipio" | "colonia" | "address">,
-  extra: { link: string; firma: string; now?: Date },
+  extra: { link: string; firma: string; espacio?: string; oferta?: string; now?: Date },
 ): { subject: string | null; body: string } {
   const vars = buildTemplateVars(lead, extra);
   return {
@@ -118,6 +127,6 @@ export async function previewTemplate(db: GrowthDb, workspaceId: string, draft: 
     colonia: "Xochitenco",
     address: "Calle Hidalgo 12",
   };
-  const rendered = renderForLead({ subject: draft.subject, body: draft.body }, lead, { link: `https://tlaco.app/para/${leadLinkSlug(lead.business_name)}-7Kq2Xm9aTzPb`, firma });
+  const rendered = renderForLead({ subject: draft.subject, body: draft.body }, lead, { link: `https://tlaco.app/para/${leadLinkSlug(lead.business_name)}-7Kq2Xm9aTzPb`, firma, ...(await workspaceCopy(db, workspaceId)) });
   return { ok: true, data: { ...rendered, leadName: lead.business_name } };
 }

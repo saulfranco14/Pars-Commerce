@@ -10,6 +10,9 @@ export interface GrowthZone {
 /** Who is acting, resolved on every growth request; the SQL side checks the same role again. */
 export interface GrowthActor {
   workspaceId: string;
+  workspaceName: string;
+  /** Set when the workspace belongs to a business; null for Tlaco's own. */
+  tenantId: string | null;
   userId: string;
   role: GrowthRole;
   displayName: string;

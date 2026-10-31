@@ -9,6 +9,11 @@ BEGIN
   END IF;
 END $$;
 
+-- 20261031000009_growth_tenant_workspaces
+DROP FUNCTION IF EXISTS public.growth_tenant_workspace(uuid, uuid);
+DROP FUNCTION IF EXISTS public.growth_tenant_role(uuid, uuid);
+UPDATE public.billing_plans SET entitlements = entitlements - 'prospecting';
+
 -- 20261031000006_growth_activation
 DROP FUNCTION IF EXISTS public.growth_activation_board(uuid, uuid, text);
 DROP FUNCTION IF EXISTS public.growth_activation_stage(uuid);

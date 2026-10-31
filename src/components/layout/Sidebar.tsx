@@ -9,6 +9,7 @@ import {
   useTenantStore,
   useActiveTenant,
   useCanOpenSection,
+  usePermission,
 } from "@/stores/useTenantStore";
 import { dashboardSectionOf } from "@/constants/dashboardAccess";
 import { menuPreferencesOf, resolveMenu } from "@/constants/dashboardMenu";
@@ -141,6 +142,9 @@ function SidebarContent(props: SidebarContentProps) {
   const userRole = activeMembership?.role?.name || "member";
   // Account ownership (other businesses, billing) stays an owner check; menu visibility is by permission.
   const canOpen = useCanOpenSection();
+  const can = usePermission();
+  // Owners pass every permission; a custom role needs one of the prospecting ones.
+  const canProspect = can("prospects.work") || can("prospects.manage");
   // The business arranges its menu; each role still only sees what it can open.
   const activeTenant = useActiveTenant();
   const menuGroups = resolveMenu(menuPreferencesOf(activeTenant?.settings), canOpen);
@@ -399,8 +403,8 @@ function SidebarContent(props: SidebarContentProps) {
         {growthActor && (
           <div className={onPlatform && !isPlatformAdmin ? "" : "mt-3 border-t border-border-soft pt-4"}>
             <div className="flex items-center justify-between px-3 pb-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                Prospección
+              <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                Prospección{growthActor.tenantId ? ` · ${growthActor.workspaceName}` : ""}
               </p>
               <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold text-accent">
                 {GROWTH_ROLE_LABEL[growthActor.role]}
@@ -414,6 +418,11 @@ function SidebarContent(props: SidebarContentProps) {
             >
               Prospectos
             </NavLink>
+            {growthActor.tenantId && isPlatformAdmin ? (
+              <NavLink href={`${PROSPECTING_PATH}?ws=tlaco`} active={false} icon={Target} onNavigate={onNavigate}>
+                Volver a Tlaco
+              </NavLink>
+            ) : null}
             {isCoordinator && (
               <>
                 <NavLink href={TEAM_PATH} active={prospectingSection === TEAM_PATH} icon={Users} onNavigate={onNavigate}>
@@ -454,6 +463,13 @@ function SidebarContent(props: SidebarContentProps) {
               })}
             </div>
           ))}
+        {showTenantMenu && activeTenantId && canProspect && growthActor?.tenantId !== activeTenantId ? (
+          <div className="mt-4 border-t border-border-soft pt-4">
+            <NavLink href={`${PROSPECTING_PATH}?ws=${activeTenantId}`} active={false} icon={Target} onNavigate={onNavigate}>
+              Prospección
+            </NavLink>
+          </div>
+        ) : null}
         {showTenantMenu && canOpen("configuracion") && (
           <Link
             href={`${base}/configuracion/menu`}

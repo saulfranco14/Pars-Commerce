@@ -22,12 +22,45 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
 import type { GrowthSettings } from "@/features/growth/interfaces/settings";
-import type { ParaEventInput, ParaItem, ParaLinkEvent, ParaPageData, ParaSessionPayload, ParaVisitRequest } from "@/features/growth/interfaces/para";
+import type { ParaEventInput, ParaItem, ParaLinkEvent, ParaOfferData, ParaPageData, ParaSessionPayload, ParaVisitRequest } from "@/features/growth/interfaces/para";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 
 const PARA_ITEMS_LIMIT = 8;
 
-export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPageData | null> {
+/** A business's offer page: its title and text from Motor, its public products and WhatsApp to whoever wrote. */
+async function loadOfferPage(db: GrowthDb, lead: { business_name: string; workspace_id: string; owner_user_id: string | null }, workspace: { name: string; tenant_id: string }): Promise<ParaOfferData> {
+  const [{ data: tenant }, { data: settings }, { data: products }, owner] = await Promise.all([
+    db.from("tenants").select("name, logo_url, whatsapp_phone").eq("id", workspace.tenant_id).maybeSingle(),
+    db.from("growth_settings").select("signature, offer_title, offer_text, cta_label").eq("workspace_id", lead.workspace_id).maybeSingle(),
+    db.from("products").select("id, name, price, image_url, type").eq("tenant_id", workspace.tenant_id).eq("is_public", true).is("deleted_at", null).order("created_at", { ascending: false }).limit(PARA_ITEMS_LIMIT),
+    lead.owner_user_id ? memberContact(db, lead.workspace_id, lead.owner_user_id) : Promise.resolve(null),
+  ]);
+  const name = (tenant?.name as string | undefined) ?? workspace.name;
+  const sender = senderFromSignature(owner?.signature ?? owner?.displayName ?? (settings?.signature as string | undefined));
+  const phone = (owner?.whatsappE164 ?? (tenant?.whatsapp_phone as string | null) ?? "").replace(/\D/g, "");
+  const ctaLabel = (settings?.cta_label as string | null) || "Me interesa";
+  return {
+    kind: "offer",
+    businessName: lead.business_name,
+    workspaceName: name,
+    logoUrl: (tenant?.logo_url as string | null) ?? null,
+    title: (settings?.offer_title as string | null) || `${name} tiene una propuesta para usted`,
+    text: (settings?.offer_text as string | null) ?? null,
+    ctaLabel,
+    sender,
+    items: ((products ?? []) as Array<{ id: string; name: string; price: number; image_url: string | null; type: string }>).map((item) => ({
+      id: item.id,
+      name: item.name,
+      price: Number(item.price),
+      imageUrl: item.image_url,
+      category: null,
+      type: item.type === "service" ? "service" : "product",
+    })),
+    helpUrl: phone.length >= 10 ? buildWaLink(`+52${phone.slice(-10)}`, `Hola${sender ? ` ${sender.firstName}` : ""}, vi la propuesta de ${name} para ${lead.business_name}. ${ctaLabel}.`) : null,
+  };
+}
+
+export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPageData | ParaOfferData | null> {
   const link = await findLinkLead(db, token, "para");
   if (!link) return null;
   const { data: lead } = await db
@@ -36,6 +69,8 @@ export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPag
     .eq("id", link.leadId)
     .maybeSingle();
   if (!lead) return null;
+  const { data: workspace } = await db.from("growth_workspaces").select("name, tenant_id").eq("id", lead.workspace_id).maybeSingle();
+  if (workspace?.tenant_id) return loadOfferPage(db, lead, workspace);
 
   const catalog = leadCatalog({ giro: lead.giro as string, catalog_template_key: lead.catalog_template_key as string | null });
   // $0 starter items (e.g. "Entrega local") read as free products in a preview.
@@ -61,6 +96,7 @@ export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPag
   const helpText = `Hola${sender ? ` ${sender.firstName}` : ""}, vi la tienda de ejemplo de ${lead.business_name} y quiero que me ayuden a activarla.`;
 
   return {
+    kind: "store",
     businessName: lead.business_name as string,
     giroLabel: giroCopy(lead.giro as string).label,
     place: [lead.colonia, zone?.label ?? lead.municipio].filter(Boolean).join(", "),

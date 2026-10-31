@@ -21,6 +21,8 @@ export interface TenantEntitlements {
   operations_board: boolean;
   /** Create and edit roles beyond the system presets. */
   custom_roles: boolean;
+  /** Prospect other businesses with the team (Prospección), as Tlaco does. */
+  prospecting: boolean;
 }
 
 export interface BillingPlan {
@@ -64,6 +66,7 @@ export const DEFAULT_FREE_ENTITLEMENTS: TenantEntitlements = {
   // them paid later is a DB update on the `free` plan, not a deploy.
   operations_board: true,
   custom_roles: true,
+  prospecting: false,
 };
 
 export function hasBillingCapability(

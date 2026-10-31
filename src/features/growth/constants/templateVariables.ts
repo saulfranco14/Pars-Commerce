@@ -15,6 +15,8 @@ export const TEMPLATE_VARIABLES: Array<{ key: string; label: string }> = [
   { key: "link", label: "Link a su «Para ti»" },
   { key: "firma", label: "Firma" },
   { key: "nombre", label: "Nombre de quien escribe" },
+  { key: "espacio", label: "Tu negocio (quien prospecta)" },
+  { key: "oferta", label: "Tu oferta (Motor)" },
 ];
 
 export const TEMPLATE_VARIABLE_KEYS = new Set(TEMPLATE_VARIABLES.map((variable) => variable.key));

@@ -65,6 +65,8 @@ export interface GrowthLead {
   registered_tenant_id: string | null;
   owner_user_id: string | null;
   owned_at: string | null;
+  /** Only rows read with "*" carry it (Telegram); lists know their workspace already. */
+  workspace_id?: string;
   last_activity_at: string | null;
   created_at: string;
   next_step: NextStep | null;

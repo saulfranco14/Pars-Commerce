@@ -7,7 +7,7 @@ import { sql } from "@/test/integration/setup";
 import type { TransactionSql } from "postgres";
 
 // Reverse snippets run newest first, so the later ones go before the workspaces one.
-const ROLLBACK = ["growth_activation", "growth_map_imports", "growth_my_day", "growth_assisted_registration", "growth_next_action", "growth_workspaces"]
+const ROLLBACK = ["growth_tenant_workspaces", "growth_activation", "growth_map_imports", "growth_my_day", "growth_assisted_registration", "growth_next_action", "growth_workspaces"]
   .map((name) => readFileSync(fileURLToPath(new URL(`../../../../supabase/snippets/${name}_rollback.sql`, import.meta.url)), "utf8"))
   .join("\n")
   .replace(/^\s*(BEGIN|COMMIT);\s*$/gim, "");

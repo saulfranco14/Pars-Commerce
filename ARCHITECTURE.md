@@ -200,6 +200,15 @@ debe tocarla:
 - **Firma por persona:** `{firma}` y `{nombre}` salen del miembro que manda el
   mensaje; «Para ti» muestra el nombre y el WhatsApp del dueño del prospecto,
   y los avisos de Telegram de un prospecto van a su dueño y a los coordinadores.
+- **Prospección para negocios:** un tenant con la capacidad `prospecting` (plan
+  Escala) tiene su propio espacio, creado al primer uso por
+  `growth_tenant_workspace`. Ahí el rol sale de su propio equipo (owner o
+  `prospects.manage` → coordinador, `prospects.work` → prospector), nunca de
+  `growth_members`. El navegador elige el espacio con `?ws=<tenant>|tlaco`
+  (cookie `growth_ws`) y el servidor siempre revisa el acceso. Su «Para ti» es
+  su propuesta (`ParaOffer`, con `offer_title/offer_text/cta_label` de Motor y sus
+  productos públicos); no tiene correo automático ni zonas de visita, y
+  `{espacio}`/`{oferta}` nombran al negocio en sus mensajes.
 
 - **Datos:** tablas `growth_*` y `tenant_acquisitions`, todas service-role.
   El estado de un prospecto (teléfono, correo, visita, etapa, siguiente

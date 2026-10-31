@@ -6,7 +6,7 @@ import type { GrowthDb } from "@/features/growth/services/growthDb";
 import type { GrowthSettings, GrowthSettingsPatch } from "@/features/growth/interfaces/settings";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 
-const COLUMNS = "paused, paused_reason, timezone, send_days, send_start_hour, send_end_hour, signature, visit_municipios, email_variant_weights, digest_hour, last_digest_on";
+const COLUMNS = "paused, paused_reason, timezone, send_days, send_start_hour, send_end_hour, signature, visit_municipios, email_variant_weights, digest_hour, last_digest_on, offer_title, offer_text, cta_label";
 
 export async function getSettings(db: GrowthDb, workspaceId = TLACO_WORKSPACE_ID): Promise<GrowthSettings> {
   const { data, error } = await db.from("growth_settings").select(COLUMNS).eq("workspace_id", workspaceId).single();
@@ -33,6 +33,13 @@ export async function updateSettings(db: GrowthDb, workspaceId: string, patch: G
     }
     fields.send_start_hour = start;
     fields.send_end_hour = end;
+  }
+  const offerFields: Array<["offer_title" | "offer_text" | "cta_label", number]> = [["offer_title", 120], ["offer_text", 1200], ["cta_label", 40]];
+  for (const [field, max] of offerFields) {
+    const value = patch[field];
+    if (value === undefined) continue;
+    if (value.trim().length > max) return { ok: false, error: { code: "validation", message: `Ese texto pasa de ${max} caracteres.` } };
+    fields[field] = value.trim() || null;
   }
   if (patch.send_days !== undefined) {
     const days = [...new Set(patch.send_days)].filter((day) => Number.isInteger(day) && day >= 0 && day <= 6);

@@ -10,6 +10,10 @@ export interface GrowthSettings {
   email_variant_weights: Record<string, number>;
   digest_hour: number;
   last_digest_on: string | null;
+  /** «Para ti» of a business: what it offers and the button's words. */
+  offer_title: string | null;
+  offer_text: string | null;
+  cta_label: string | null;
 }
 
 export interface GrowthSettingsPatch {
@@ -19,6 +23,9 @@ export interface GrowthSettingsPatch {
   send_start_hour?: number;
   send_end_hour?: number;
   send_days?: number[];
+  offer_title?: string;
+  offer_text?: string;
+  cta_label?: string;
 }
 
 export interface GrowthMailbox {

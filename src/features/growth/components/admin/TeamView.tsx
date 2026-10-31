@@ -35,11 +35,16 @@ export function TeamView() {
           {members.length === 1 ? "1 persona" : `${members.length} personas`}
           {uncovered.length ? ` · ${uncovered.length === 1 ? "1 zona" : `${uncovered.length} zonas`} sin asignar` : ""}
         </p>
-        <button type="button" onClick={() => setSheet({ open: true, member: null })} className={pageHeaderCta}>
-          <UserPlus className="h-4 w-4" aria-hidden />
-          Invitar persona
-        </button>
+        {!actor?.tenantId ? (
+          <button type="button" onClick={() => setSheet({ open: true, member: null })} className={pageHeaderCta}>
+            <UserPlus className="h-4 w-4" aria-hidden />
+            Invitar persona
+          </button>
+        ) : null}
       </div>
+      {actor?.tenantId ? (
+        <Notification tone="info" message="Quien prospecta sale de Equipo de tu negocio: dale a su rol el permiso «Prospectar» (o «Coordinar la prospección») y aparece aquí al entrar. Aquí le asignas zonas, firma y meta." />
+      ) : null}
 
       {team.notice ? <Notification tone={team.notice.tone} message={team.notice.message} onDismiss={team.clearNotice} /> : null}
       {uncovered.length ? (

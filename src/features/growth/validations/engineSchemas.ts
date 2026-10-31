@@ -39,3 +39,12 @@ export const leadPhoneSchema = yup.object({
 });
 
 export type LeadPhoneFormValues = yup.InferType<typeof leadPhoneSchema>;
+
+export const offerSchema = yup.object({
+  offer_title: yup.string().trim().min(4, "Escribe el título de tu propuesta.").max(120, "Máximo 120 caracteres.").required("Escribe el título de tu propuesta."),
+  offer_text: yup.string().trim().max(1200, "Máximo 1,200 caracteres.").default(""),
+  cta_label: yup.string().trim().min(2, "Escribe el texto del botón.").max(40, "Máximo 40 caracteres.").required("Escribe el texto del botón."),
+  signature: yup.string().trim().min(2, "Mínimo 2 caracteres.").max(60, "Máximo 60 caracteres.").required("La firma es obligatoria."),
+});
+
+export type OfferFormValues = yup.InferType<typeof offerSchema>;

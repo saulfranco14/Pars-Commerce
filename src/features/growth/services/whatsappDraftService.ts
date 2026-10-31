@@ -1,10 +1,11 @@
 import { describeNextAction } from "@/features/growth/helpers/nextActionReason";
+import { TLACO_WORKSPACE_ID } from "@/features/growth/constants/workspace";
 import { pickVariant } from "@/features/growth/helpers/pickVariant";
 import { internalError } from "@/features/growth/services/growthDb";
 import { canActOn } from "@/features/growth/services/leadService";
 import { ensureParaLink, leadLinkUrl } from "@/features/growth/services/leadLinkService";
 import { getSettings } from "@/features/growth/services/settingsService";
-import { activeTemplatePool, renderForLead } from "@/features/growth/services/templateService";
+import { activeTemplatePool, renderForLead, workspaceCopy } from "@/features/growth/services/templateService";
 import { nextAction } from "@/features/growth/services/nextActionService";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
@@ -14,7 +15,7 @@ import type { GrowthTemplate, TemplateVariant } from "@/features/growth/interfac
 import type { WhatsappDraft, WhatsappStep } from "@/features/growth/interfaces/whatsapp";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 
-type MessageLead = Pick<GrowthLead, "id" | "business_name" | "giro" | "municipio" | "colonia" | "address" | "phone_e164">;
+type MessageLead = Pick<GrowthLead, "id" | "business_name" | "giro" | "municipio" | "colonia" | "address" | "phone_e164" | "workspace_id">;
 
 const DRAFT_COLUMNS = "id, business_name, giro, municipio, colonia, address, phone_e164, stage, phone_status, whatsapp_attempts, last_whatsapp_at";
 
@@ -27,12 +28,13 @@ export async function prepareWhatsappMessage(
   lead: MessageLead,
   options: { step: WhatsappStep; firma: string; variant?: TemplateVariant; sentVariants?: string[]; workspaceId?: string },
 ): Promise<{ template: GrowthTemplate; body: string; pool: GrowthTemplate[] } | null> {
-  const pool = await activeTemplatePool(db, { channel: "whatsapp", step: options.step, giro: lead.giro, workspaceId: options.workspaceId });
+  const workspaceId = options.workspaceId ?? lead.workspace_id ?? TLACO_WORKSPACE_ID;
+  const pool = await activeTemplatePool(db, { channel: "whatsapp", step: options.step, giro: lead.giro, workspaceId });
   const variant = pickVariant(pool.map((row) => row.variant), { requested: options.variant, sent: options.sentVariants ?? [], seed: lead.id });
   const template = pool.find((row) => row.variant === variant);
   if (!template) return null;
   const token = await ensureParaLink(db, { leadId: lead.id, channel: "whatsapp", templateId: template.id, businessName: lead.business_name });
-  const { body } = renderForLead(template, lead, { link: leadLinkUrl(token, "para"), firma: options.firma });
+  const { body } = renderForLead(template, lead, { link: leadLinkUrl(token, "para"), firma: options.firma, ...(await workspaceCopy(db, workspaceId)) });
   return { template, body, pool };
 }
 
