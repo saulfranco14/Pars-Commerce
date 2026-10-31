@@ -30,6 +30,7 @@ import {
   Plus,
   SlidersHorizontal,
   Target,
+  Landmark,
   Send,
   Filter,
 } from "lucide-react";
@@ -80,7 +81,7 @@ function NavLink({
 
 interface SidebarContentProps {
   pathname: string;
-  platformView: "operation" | "users" | "businesses" | "audit";
+  platformView: "operation" | "users" | "businesses" | "audit" | "liquidaciones";
   slug: string | null;
   base: string;
   hasTenant: boolean;
@@ -385,6 +386,14 @@ function SidebarContent(props: SidebarContentProps) {
             >
               Auditoría
             </NavLink>
+            <NavLink
+              href="/dashboard/plataforma?view=liquidaciones"
+              active={pathname === "/dashboard/plataforma" && platformView === "liquidaciones"}
+              icon={Landmark}
+              onNavigate={onNavigate}
+            >
+              Liquidaciones
+            </NavLink>
           </div>
         )}
         {growthActor && (
@@ -580,7 +589,8 @@ export function Sidebar({
   const platformView: SidebarContentProps["platformView"] =
     requestedPlatformView === "users" ||
     requestedPlatformView === "businesses" ||
-    requestedPlatformView === "audit"
+    requestedPlatformView === "audit" ||
+    requestedPlatformView === "liquidaciones"
       ? requestedPlatformView
       : "operation";
 
