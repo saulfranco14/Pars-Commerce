@@ -20,6 +20,7 @@ import { isFocusRoute } from "@/lib/focusRoutes";
 import { isPlatformRoute, isProspectingRoute } from "@/lib/platformRoutes";
 import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
 import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
+import { GrowthWorkspaceSync } from "@/features/growth/components/admin/GrowthWorkspaceSync";
 import { PROSPECTING_PATH } from "@/features/growth/constants/routes";
 import { LegalDeferredNotice } from "@/features/legal/components/LegalDeferredNotice";
 
@@ -110,6 +111,7 @@ export default function DashboardLayout({
 
   return (
     <div className="dashboard-root no-print flex min-h-screen bg-background">
+      <Suspense fallback={null}><GrowthWorkspaceSync /></Suspense>
       <div className="no-print md:fixed md:left-0 md:top-0 md:z-20 md:h-screen md:w-64">
         <Sidebar
           tenantSlug={tenantSlug}

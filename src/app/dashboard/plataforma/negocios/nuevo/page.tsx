@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Copy, ExternalLink, Store } from "lucide-react";
 
@@ -20,7 +20,7 @@ type AssistedResult = {
   email_delivery?: string;
 };
 
-export default function NuevoNegocioAsistidoPage() {
+function NuevoNegocioAsistido() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   // Usuarios → «Crear su negocio» opens this page with the owner already filled in.
@@ -97,5 +97,14 @@ export default function NuevoNegocioAsistidoPage() {
         <button type="button" onClick={() => void submit()} disabled={saving || !name || !ownerEmail} className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground disabled:opacity-50"><Store className="h-4 w-4" />{saving ? "Preparando negocio…" : "Preparar negocio y acceso"}</button>
       </section>
     </div>
+  );
+}
+
+/** The form reads the prefill from the URL, so it renders inside Suspense. */
+export default function NuevoNegocioAsistidoPage() {
+  return (
+    <Suspense fallback={null}>
+      <NuevoNegocioAsistido />
+    </Suspense>
   );
 }
