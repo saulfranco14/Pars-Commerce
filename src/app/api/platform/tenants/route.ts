@@ -38,7 +38,7 @@ export async function GET(request: Request) {
 
   const ids = (tenants ?? []).map((tenant) => tenant.id);
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
-  const [membershipsResult, tablesResult, ordersResult, addressesResult, billingResult] =
+  const [membershipsResult, tablesResult, ordersResult, addressesResult, billingResult, connectionsResult] =
     await Promise.all([
       ids.length
         ? admin
@@ -74,7 +74,15 @@ export async function GET(request: Request) {
             .select("tenant_id, plan_code, status, current_period_end")
             .in("tenant_id", ids)
         : Promise.resolve({ data: [] }),
+      ids.length
+        ? admin
+            .from("payment_provider_connections" as never)
+            .select("tenant_id, status")
+            .eq("provider", "mercadopago")
+            .in("tenant_id", ids)
+        : Promise.resolve({ data: [] }),
     ]);
+  const mpStatusByTenant = new Map(((connectionsResult.data ?? []) as Array<{ tenant_id: string; status: string }>).map((row) => [row.tenant_id, row.status]));
 
   const memberships = (membershipsResult.data ?? []) as unknown as MembershipRow[];
   const ownerIds = memberships
@@ -150,6 +158,7 @@ export async function GET(request: Request) {
         (order) => !["paid", "completed", "cancelled"].includes(order.status),
       ).length,
       last_order_at: lastOrderAt,
+      mp_status: mpStatusByTenant.get(tenant.id) ?? null,
       can_open_dashboard: team.some(
         (membership) =>
           membership.user_id === gate.user.id &&

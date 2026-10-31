@@ -20,6 +20,27 @@ export type PlatformUser = {
     tenant: { name: string; slug: string } | null;
     role: string;
   }>;
+  tenant: { id: string; name: string; slug: string } | null;
+  activation: UserActivation;
+  mp_connected: boolean;
+  plan: string | null;
+  origin: "engine" | "assisted" | "self";
+  acquired_by_name: string | null;
+};
+
+/** How far the user's business got; "sin_negocio" when they have none. */
+export type UserActivation = "sin_negocio" | "registrado" | "tienda_lista" | "cobros" | "primera_venta" | "activo";
+
+export type UserSort = "created_at" | "last_sign_in_at" | "name" | "email" | "activation";
+
+export type UserFilters = {
+  q?: string;
+  status?: PlatformAccountStatus;
+  activation?: UserActivation | "sin_mp";
+  mp?: "connected" | "not";
+  origin?: "engine" | "assisted" | "self";
+  plan?: string;
+  idle_days?: number;
 };
 
 export type PlatformUsersResponse = {
@@ -28,7 +49,7 @@ export type PlatformUsersResponse = {
   page: number;
   per_page: number;
   total_pages: number;
-  stats: { total: number; active: number; pending: number; suspended: number };
+  stats: { total: number; active: number; pending: number; suspended: number; without_business: number; without_mp: number; from_engine: number };
 };
 
 export type PlatformTenant = {
@@ -57,6 +78,8 @@ export type PlatformTenant = {
   open_orders: number;
   last_order_at: string | null;
   can_open_dashboard: boolean;
+  /** Mercado Pago connection: null when the business never started connecting. */
+  mp_status: "pending" | "connected" | "expired" | "revoked" | "failed" | null;
 };
 
 export type PlatformTenantsResponse = {

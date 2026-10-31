@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Copy, ExternalLink, Store } from "lucide-react";
 
 import { PageHeader } from "@/components/admin/PageHeader";
@@ -22,9 +23,11 @@ type AssistedResult = {
 export default function NuevoNegocioAsistidoPage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
-  const [ownerName, setOwnerName] = useState("");
-  const [ownerEmail, setOwnerEmail] = useState("");
-  const [ownerPhone, setOwnerPhone] = useState("");
+  // Usuarios → «Crear su negocio» opens this page with the owner already filled in.
+  const prefill = useSearchParams();
+  const [ownerName, setOwnerName] = useState(prefill.get("owner_name") ?? "");
+  const [ownerEmail, setOwnerEmail] = useState(prefill.get("owner_email") ?? "");
+  const [ownerPhone, setOwnerPhone] = useState(prefill.get("owner_phone") ?? "");
   const [catalog, setCatalog] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
