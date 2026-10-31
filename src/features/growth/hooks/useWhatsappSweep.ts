@@ -9,6 +9,7 @@ import { fetchSweep, isBoardKey, isLeadsListKey, patchLead } from "@/features/gr
 import { forgetWhatsappOpened } from "@/features/growth/services/whatsappOpened";
 
 import type { SweepFilters, SweepLastAction, SweepLead, SweepOutcome, SweepToday } from "@/features/growth/interfaces/sweep";
+import type { SentWhatsapp } from "@/features/growth/interfaces/whatsapp";
 
 const TODAY_FIELD: Record<SweepOutcome, keyof SweepToday> = {
   whatsapp_sent: "sent",
@@ -97,12 +98,12 @@ export function useWhatsappSweep() {
     if (left <= SWEEP_REFILL_AT) void load(false);
   }
 
-  function mark(outcome: SweepOutcome) {
+  function mark(outcome: SweepOutcome, sent?: SentWhatsapp) {
     const lead = queue[0];
     if (!lead) return;
     const field = TODAY_FIELD[outcome];
     setToday((value) => ({ ...value, [field]: value[field] + 1 }));
-    advance(lead, SWEEP_OUTCOME_LABEL[outcome], () => patchLead(lead.id, { outcome }), () => setToday((value) => ({ ...value, [field]: value[field] - 1 })));
+    advance(lead, SWEEP_OUTCOME_LABEL[outcome], () => patchLead(lead.id, { outcome, sent: outcome === "whatsapp_sent" ? sent : undefined }), () => setToday((value) => ({ ...value, [field]: value[field] - 1 })));
   }
 
   function skip() {

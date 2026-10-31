@@ -1,13 +1,27 @@
 import { apiFetch } from "@/services/apiFetch";
 import { leadFiltersQuery } from "@/features/growth/helpers/leadFiltersQuery";
 
-import type { FollowUpInput, GrowthLead, LeadFilters, LeadOutcome } from "@/features/growth/interfaces/lead";
+import type {
+  BoardZone,
+  FollowUpInput,
+  GrowthLead,
+  LeadFilters,
+  LeadOutcome,
+  LeadRegistrationInput,
+  LeadRegistrationResult,
+  NewLeadInput,
+  NewLeadResult,
+} from "@/features/growth/interfaces/lead";
+import type { GrowthMember, MemberInviteInput, MemberInviteResult, MemberPatch } from "@/features/growth/interfaces/member";
 import type { GrowthMailbox, GrowthSettings, GrowthSettingsPatch, MailboxInput } from "@/features/growth/interfaces/settings";
 import type { GrowthTemplate, TemplateDraft, TemplatePreview, TemplateVariant } from "@/features/growth/interfaces/template";
 import type { SweepBatch, SweepFilters } from "@/features/growth/interfaces/sweep";
-import type { WhatsappDraft, WhatsappStep } from "@/features/growth/interfaces/whatsapp";
+import type { SentWhatsapp, WhatsappDraft, WhatsappStep } from "@/features/growth/interfaces/whatsapp";
+import type { CsvImportInput, CsvImportResult, GrowthImport, ImportInput, ImportPreview } from "@/features/growth/interfaces/importJob";
+import type { MapQuery } from "@/features/growth/interfaces/map";
+import type { NearbyLead } from "@/features/growth/interfaces/lead";
 
-const BASE = "/api/platform/growth";
+const BASE = "/api/growth";
 
 export function leadsKey(filters: LeadFilters): string {
   return `${BASE}/leads?${leadFiltersQuery(filters)}`;
@@ -17,10 +31,15 @@ export const leadKey = (id: string) => `${BASE}/leads/${id}`;
 /** Every filtered list page, so an action on one prospect refreshes whichever list the operator goes back to. */
 export const isLeadsListKey = (key: unknown) => typeof key === "string" && key.startsWith(`${BASE}/leads?`);
 export const engineKey = `${BASE}/settings`;
+export const growthMeKey = `${BASE}/me`;
+export const teamKey = `${BASE}/members`;
+export const myDayKey = `${BASE}/my-day`;
+export const importsKey = `${BASE}/imports`;
+export const activationKey = (owner?: string) => `${BASE}/activation${owner ? `?owner=${encodeURIComponent(owner)}` : ""}`;
 export const templatesKey = `${BASE}/templates`;
 export const funnelKey = (days: number) => `${BASE}/funnel?days=${days}`;
 
-export async function patchLead(id: string, body: { outcome?: LeadOutcome; reason?: string; snoozeDays?: number | null; phone?: string; giro?: string; skip?: boolean }): Promise<GrowthLead> {
+export async function patchLead(id: string, body: { outcome?: LeadOutcome; reason?: string; reply?: string; sent?: SentWhatsapp; snoozeDays?: number | null; phone?: string; email?: string; giro?: string; skip?: boolean }): Promise<GrowthLead> {
   return (await apiFetch(leadKey(id), { method: "PATCH", body: JSON.stringify(body) })) as GrowthLead;
 }
 
@@ -72,15 +91,70 @@ export async function fetchSweep(filters: SweepFilters, exclude: string[]): Prom
   return (await apiFetch(`${BASE}/sweep`, { method: "POST", body: JSON.stringify({ ...filters, exclude }) })) as SweepBatch;
 }
 
-export function boardKey(zone: { municipio?: string; giro?: string }): string {
+export function boardKey(zone: BoardZone): string {
   const query = new URLSearchParams();
   if (zone.municipio) query.set("municipio", zone.municipio);
   if (zone.giro) query.set("giro", zone.giro);
+  if (zone.owner) query.set("owner", zone.owner);
   return `${BASE}/board?${query.toString()}`;
 }
 
-export const isBoardKey = (key: unknown) => typeof key === "string" && key.startsWith(`${BASE}/board?`);
+/** The board and «Tu día» change together whenever a prospect moves. */
+export const isBoardKey = (key: unknown) => typeof key === "string" && (key.startsWith(`${BASE}/board?`) || key === myDayKey);
 
 export async function followUpLead(id: string, input: FollowUpInput): Promise<GrowthLead> {
   return (await apiFetch(`${leadKey(id)}/follow-up`, { method: "POST", body: JSON.stringify(input) })) as GrowthLead;
+}
+
+export async function createLead(input: NewLeadInput): Promise<NewLeadResult> {
+  return (await apiFetch(`${BASE}/leads`, { method: "POST", body: JSON.stringify(input) })) as NewLeadResult;
+}
+
+export async function assignLeads(leadIds: string[], ownerId: string | null): Promise<{ moved: number }> {
+  return (await apiFetch(`${BASE}/leads/assign`, { method: "POST", body: JSON.stringify({ leadIds, ownerId }) })) as { moved: number };
+}
+
+export async function inviteMember(input: MemberInviteInput): Promise<MemberInviteResult> {
+  return (await apiFetch(teamKey, { method: "POST", body: JSON.stringify(input) })) as MemberInviteResult;
+}
+
+export async function updateMember(userId: string, patch: MemberPatch): Promise<GrowthMember> {
+  return (await apiFetch(`${teamKey}/${userId}`, { method: "PATCH", body: JSON.stringify(patch) })) as GrowthMember;
+}
+
+export async function registerLead(id: string, input: LeadRegistrationInput): Promise<LeadRegistrationResult> {
+  return (await apiFetch(`${leadKey(id)}/register`, { method: "POST", body: JSON.stringify(input) })) as LeadRegistrationResult;
+}
+
+export async function fetchClaimLink(id: string): Promise<{ url: string }> {
+  return (await apiFetch(`${leadKey(id)}/claim-link`, { method: "POST" })) as { url: string };
+}
+
+export async function previewImport(input: ImportInput): Promise<ImportPreview> {
+  return (await apiFetch(`${importsKey}/preview`, { method: "POST", body: JSON.stringify(input) })) as ImportPreview;
+}
+
+export async function startImport(input: ImportInput): Promise<GrowthImport> {
+  return (await apiFetch(importsKey, { method: "POST", body: JSON.stringify(input) })) as GrowthImport;
+}
+
+export async function uploadCsv(input: CsvImportInput): Promise<CsvImportResult> {
+  return (await apiFetch(`${importsKey}/csv`, { method: "POST", body: JSON.stringify(input) })) as CsvImportResult;
+}
+
+/** Bounds rounded to ~100 m so small pans reuse the same cached request. */
+export function mapKey(query: MapQuery): string {
+  const params = new URLSearchParams({
+    minLat: query.minLat.toFixed(3),
+    minLng: query.minLng.toFixed(3),
+    maxLat: query.maxLat.toFixed(3),
+    maxLng: query.maxLng.toFixed(3),
+  });
+  if (query.giro) params.set("giro", query.giro);
+  if (query.owner) params.set("owner", query.owner);
+  return `${BASE}/map?${params.toString()}`;
+}
+
+export async function fetchNearby(lat: number, lng: number): Promise<NearbyLead[]> {
+  return (await apiFetch(`${BASE}/nearby?lat=${lat}&lng=${lng}`)) as NearbyLead[];
 }

@@ -108,7 +108,7 @@ async function handleMail(db: GrowthDb, mailbox: InboxMailbox, mail: ParsedMail,
   const snippet = stripQuoted(mail.text ?? "").slice(0, 300);
   await notifyOperators(db, {
     text: `<b>Respondió por correo</b> · ${escapeHtml(name)}\n«${escapeHtml(snippet)}»\n\nContesta desde ${escapeHtml(mailbox.address)}.`,
-  });
+  }, { ownerId: updated.ok ? updated.data.owner_user_id : null });
 }
 
 /** Pauses a mailbox whose 7-day bounce rate passes 4%, before Gmail suspends it. */

@@ -9,12 +9,16 @@ import {
   useTenantStore,
   useActiveTenant,
   useCanOpenSection,
+  usePermission,
 } from "@/stores/useTenantStore";
 import { dashboardSectionOf } from "@/constants/dashboardAccess";
 import { menuPreferencesOf, resolveMenu } from "@/constants/dashboardMenu";
 import { staffUsernameOf } from "@/lib/auth/staffLogin";
 import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
-import { isPlatformRoute } from "@/lib/platformRoutes";
+import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
+import { GROWTH_ROLE_LABEL } from "@/features/growth/constants/growthRoles";
+import { ENGINE_PATH, FUNNEL_PATH, IMPORT_PATH, PROSPECTING_PATH, TEAM_PATH } from "@/features/growth/constants/routes";
+import { isPlatformRoute, isProspectingRoute } from "@/lib/platformRoutes";
 import {
   X,
   Download,
@@ -27,6 +31,7 @@ import {
   Plus,
   SlidersHorizontal,
   Target,
+  Landmark,
   Send,
   Filter,
 } from "lucide-react";
@@ -77,7 +82,7 @@ function NavLink({
 
 interface SidebarContentProps {
   pathname: string;
-  platformView: "operation" | "users" | "businesses" | "audit";
+  platformView: "operation" | "users" | "businesses" | "audit" | "liquidaciones";
   slug: string | null;
   base: string;
   hasTenant: boolean;
@@ -108,6 +113,7 @@ interface SidebarContentProps {
 function SidebarContent(props: SidebarContentProps) {
   const router = useRouter();
   const isPlatformAdmin = useIsPlatformAdmin();
+  const { actor: growthActor, isCoordinator } = useGrowthMe();
   const [expansionOpen, setExpansionOpen] = useState(false);
   const [checkingExpansion, setCheckingExpansion] = useState(false);
   const [activatingOperation, setActivatingOperation] = useState(false);
@@ -136,10 +142,15 @@ function SidebarContent(props: SidebarContentProps) {
   const userRole = activeMembership?.role?.name || "member";
   // Account ownership (other businesses, billing) stays an owner check; menu visibility is by permission.
   const canOpen = useCanOpenSection();
+  const can = usePermission();
+  // Owners pass every permission; a custom role needs one of the prospecting ones.
+  const canProspect = can("prospects.work") || can("prospects.manage");
   // The business arranges its menu; each role still only sees what it can open.
   const activeTenant = useActiveTenant();
   const menuGroups = resolveMenu(menuPreferencesOf(activeTenant?.settings), canOpen);
-  const onPlatform = isPlatformAdmin && isPlatformRoute(pathname);
+  const onProspecting = Boolean(growthActor) && isProspectingRoute(pathname);
+  const onPlatform = (isPlatformAdmin && isPlatformRoute(pathname)) || onProspecting;
+  const prospectingSection = [TEAM_PATH, IMPORT_PATH, ENGINE_PATH, FUNNEL_PATH].find((path) => pathname.startsWith(path));
   const showTenantMenu = hasTenant && !onPlatform;
 
   function switchBusiness(
@@ -380,29 +391,54 @@ function SidebarContent(props: SidebarContentProps) {
               Auditoría
             </NavLink>
             <NavLink
-              href="/dashboard/plataforma/prospectos"
-              active={pathname.startsWith("/dashboard/plataforma/prospectos")}
+              href="/dashboard/plataforma?view=liquidaciones"
+              active={pathname === "/dashboard/plataforma" && platformView === "liquidaciones"}
+              icon={Landmark}
+              onNavigate={onNavigate}
+            >
+              Liquidaciones
+            </NavLink>
+          </div>
+        )}
+        {growthActor && (
+          <div className={onPlatform && !isPlatformAdmin ? "" : "mt-3 border-t border-border-soft pt-4"}>
+            <div className="flex items-center justify-between px-3 pb-2">
+              <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                Prospección{growthActor.tenantId ? ` · ${growthActor.workspaceName}` : ""}
+              </p>
+              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold text-accent">
+                {GROWTH_ROLE_LABEL[growthActor.role]}
+              </span>
+            </div>
+            <NavLink
+              href={PROSPECTING_PATH}
+              active={isProspectingRoute(pathname) && !prospectingSection}
               icon={Target}
               onNavigate={onNavigate}
             >
               Prospectos
             </NavLink>
-            <NavLink
-              href="/dashboard/plataforma/motor"
-              active={pathname.startsWith("/dashboard/plataforma/motor")}
-              icon={Send}
-              onNavigate={onNavigate}
-            >
-              Motor
-            </NavLink>
-            <NavLink
-              href="/dashboard/plataforma/embudo"
-              active={pathname.startsWith("/dashboard/plataforma/embudo")}
-              icon={Filter}
-              onNavigate={onNavigate}
-            >
-              Embudo
-            </NavLink>
+            {growthActor.tenantId && isPlatformAdmin ? (
+              <NavLink href={`${PROSPECTING_PATH}?ws=tlaco`} active={false} icon={Target} onNavigate={onNavigate}>
+                Volver a Tlaco
+              </NavLink>
+            ) : null}
+            {isCoordinator && (
+              <>
+                <NavLink href={TEAM_PATH} active={prospectingSection === TEAM_PATH} icon={Users} onNavigate={onNavigate}>
+                  Equipo
+                </NavLink>
+                <NavLink href={IMPORT_PATH} active={prospectingSection === IMPORT_PATH} icon={Download} onNavigate={onNavigate}>
+                  Importar
+                </NavLink>
+                <NavLink href={ENGINE_PATH} active={prospectingSection === ENGINE_PATH} icon={Send} onNavigate={onNavigate}>
+                  Motor
+                </NavLink>
+                <NavLink href={FUNNEL_PATH} active={prospectingSection === FUNNEL_PATH} icon={Filter} onNavigate={onNavigate}>
+                  Embudo
+                </NavLink>
+              </>
+            )}
           </div>
         )}
         {showTenantMenu &&
@@ -427,6 +463,13 @@ function SidebarContent(props: SidebarContentProps) {
               })}
             </div>
           ))}
+        {showTenantMenu && activeTenantId && canProspect && growthActor?.tenantId !== activeTenantId ? (
+          <div className="mt-4 border-t border-border-soft pt-4">
+            <NavLink href={`${PROSPECTING_PATH}?ws=${activeTenantId}`} active={false} icon={Target} onNavigate={onNavigate}>
+              Prospección
+            </NavLink>
+          </div>
+        ) : null}
         {showTenantMenu && canOpen("configuracion") && (
           <Link
             href={`${base}/configuracion/menu`}
@@ -562,7 +605,8 @@ export function Sidebar({
   const platformView: SidebarContentProps["platformView"] =
     requestedPlatformView === "users" ||
     requestedPlatformView === "businesses" ||
-    requestedPlatformView === "audit"
+    requestedPlatformView === "audit" ||
+    requestedPlatformView === "liquidaciones"
       ? requestedPlatformView
       : "operation";
 

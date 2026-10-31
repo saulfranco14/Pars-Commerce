@@ -7,6 +7,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { AlertTriangle, Bot, Mail, MessageSquareText, Pause, Play, Plus } from "lucide-react";
 
 import { useGrowthEngine } from "@/features/growth/hooks/useGrowthEngine";
+import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { adminActionButtonPrimary, adminActionButtonSecondary } from "@/components/admin/actionButtonClasses";
@@ -15,9 +16,10 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
 import { MailboxSheet } from "@/features/growth/components/admin/MailboxSheet";
 
-import { engineSettingsSchema } from "@/features/growth/validations/engineSchemas";
+import { engineSettingsSchema, offerSchema } from "@/features/growth/validations/engineSchemas";
+import { TEMPLATES_PATH } from "@/features/growth/constants/routes";
 
-import type { EngineSettingsFormValues } from "@/features/growth/validations/engineSchemas";
+import type { EngineSettingsFormValues, OfferFormValues } from "@/features/growth/validations/engineSchemas";
 import type { GrowthSettings } from "@/features/growth/interfaces/settings";
 
 function SettingsForm({ settings, busy, onSave }: { settings: GrowthSettings; busy: boolean; onSave: (values: EngineSettingsFormValues) => void }) {
@@ -35,8 +37,31 @@ function SettingsForm({ settings, busy, onSave }: { settings: GrowthSettings; bu
   );
 }
 
+function OfferForm({ settings, busy, onSave }: { settings: GrowthSettings; busy: boolean; onSave: (values: OfferFormValues) => void }) {
+  const { register, handleSubmit, formState: { errors, isDirty } } = useForm<OfferFormValues>({
+    resolver: yupResolver(offerSchema),
+    values: { offer_title: settings.offer_title ?? "", offer_text: settings.offer_text ?? "", cta_label: settings.cta_label ?? "Me interesa", signature: settings.signature },
+  });
+  return (
+    <form onSubmit={handleSubmit(onSave)} className="grid gap-3" noValidate>
+      <FormInput label="Título de tu propuesta" hint="Lo primero que ve el negocio al abrir su enlace. También va en {oferta}." error={errors.offer_title?.message} {...register("offer_title")} />
+      <label className="grid gap-1.5 text-sm font-semibold text-foreground">
+        Qué le ofreces
+        <textarea rows={5} className="input-form w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20" {...register("offer_text")} />
+        {errors.offer_text?.message ? <span className="text-xs text-red-500">{errors.offer_text.message}</span> : null}
+      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <FormInput label="Texto del botón" error={errors.cta_label?.message} {...register("cta_label")} />
+        <FormInput label="Firma por defecto" error={errors.signature?.message} {...register("signature")} />
+      </div>
+      <button type="submit" disabled={busy || !isDirty} className={`${adminActionButtonPrimary} w-fit`}>Guardar propuesta</button>
+    </form>
+  );
+}
+
 export function EngineView() {
   const engine = useGrowthEngine();
+  const { actor } = useGrowthMe();
   const [sheetOpen, setSheetOpen] = useState(false);
   const { overview } = engine;
 
@@ -46,17 +71,29 @@ export function EngineView() {
   }
 
   const { settings, mailboxes, telegram } = overview;
+  // A business prospects by WhatsApp with its own offer; email from Tlaco's mailboxes is Tlaco's only.
+  const isBusiness = Boolean(actor?.tenantId);
 
   return (
     <div className="grid grid-cols-1 gap-5">
       {engine.notice ? <Notification tone={engine.notice.tone} message={engine.notice.message} onDismiss={engine.clearNotice} /> : null}
-      {!overview.enabled ? (
+      {isBusiness ? (
+        <section className="grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5">
+          <div className="grid gap-1">
+            <h2 className="text-base font-bold text-foreground">Tu propuesta</h2>
+            <p className="text-sm text-muted-foreground">Es la página que recibe cada negocio en su enlace, con tus productos públicos y un botón a WhatsApp de quien le escribió.</p>
+          </div>
+          <OfferForm settings={settings} busy={engine.busy === "settings"} onSave={(values) => engine.saveSettings(values)} />
+        </section>
+      ) : null}
+      {!isBusiness && !overview.enabled ? (
         <Notification tone="warning" title="El motor está apagado" message="Falta GROWTH_ENABLED=true en las variables de entorno. Mientras tanto no sale ningún correo y el bot no responde." />
       ) : null}
-      {!overview.postalAddressSet ? (
+      {!isBusiness && !overview.postalAddressSet ? (
         <Notification tone="info" message="Agrega GROWTH_POSTAL_ADDRESS para que el pie de los correos lleve tu dirección." />
       ) : null}
 
+      {!isBusiness ? (
       <section className="grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="grid gap-1">
@@ -72,7 +109,9 @@ export function EngineView() {
         </div>
         <SettingsForm settings={settings} busy={engine.busy === "settings"} onSave={(values) => engine.saveSettings(values)} />
       </section>
+      ) : null}
 
+      {!isBusiness ? (
       <section className="grid gap-3 rounded-2xl border border-border bg-surface p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-bold text-foreground">Buzones de Gmail</h2>
@@ -108,6 +147,7 @@ export function EngineView() {
           </div>
         )}
       </section>
+      ) : null}
 
       <section className="grid gap-3 rounded-2xl border border-border bg-surface p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -118,7 +158,7 @@ export function EngineView() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" disabled={!telegram.configured || engine.busy === "webhook"} onClick={() => engine.connectWebhook()} className={adminActionButtonSecondary}>Conectar bot</button>
+            {!isBusiness ? <button type="button" disabled={!telegram.configured || engine.busy === "webhook"} onClick={() => engine.connectWebhook()} className={adminActionButtonSecondary}>Conectar bot</button> : null}
             <button type="button" disabled={!telegram.configured || engine.busy === "telegram"} onClick={() => engine.linkTelegram()} className={adminActionButtonPrimary}>Vincular mi Telegram</button>
           </div>
         </div>
@@ -133,7 +173,7 @@ export function EngineView() {
         ) : null}
       </section>
 
-      <Link href="/dashboard/plataforma/motor/mensajes" className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 font-semibold text-foreground hover:border-accent/40 sm:p-5">
+      <Link href={TEMPLATES_PATH} className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 font-semibold text-foreground hover:border-accent/40 sm:p-5">
         <span className="inline-flex items-center gap-2"><MessageSquareText className="h-4 w-4" aria-hidden />Mensajes: edita lo que se envía</span>
         <span className="text-sm text-accent">Abrir</span>
       </Link>

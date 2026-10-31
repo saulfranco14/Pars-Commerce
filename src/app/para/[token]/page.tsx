@@ -4,6 +4,7 @@ import { LockKeyhole } from "lucide-react";
 
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { ParaActions } from "@/features/growth/components/para/ParaActions";
+import { ParaOffer } from "@/features/growth/components/para/ParaOffer";
 import { ParaStorefront } from "@/features/growth/components/para/ParaStorefront";
 import { ParaTracker } from "@/features/growth/components/para/ParaTracker";
 import { ParaVisitButton } from "@/features/growth/components/para/ParaVisitButton";
@@ -19,6 +20,11 @@ export async function generateMetadata({ params }: ParaParams): Promise<Metadata
   const data = await getParaPage((await params).token);
   const robots = { index: false, follow: false };
   if (!data) return { title: "Tienda de ejemplo · Tlaco", robots };
+  if (data.kind === "offer") {
+    const title = `${data.workspaceName} · Propuesta para ${data.businessName}`;
+    const description = data.sender ? `${data.sender.name}, de ${data.workspaceName}, preparó esta propuesta para ${data.businessName}.` : data.title;
+    return { title, description, robots, openGraph: { title, description, siteName: data.workspaceName, type: "website" } };
+  }
   const title = `${data.businessName} · Su tienda de ejemplo`;
   const description = data.sender
     ? `${data.sender.name}, de Tlaco, preparó esta vista para ${data.businessName}. Así la verían sus clientes.`
@@ -30,6 +36,14 @@ export default async function ParaPage({ params }: ParaParams) {
   const { token } = await params;
   const data = await getParaPage(token);
   if (!data) notFound();
+  if (data.kind === "offer") {
+    return (
+      <main className="min-h-dvh bg-background text-foreground">
+        <ParaTracker token={token} />
+        <ParaOffer data={data} />
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-dvh bg-background text-foreground">

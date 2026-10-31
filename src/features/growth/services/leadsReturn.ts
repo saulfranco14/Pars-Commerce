@@ -1,4 +1,5 @@
-const LIST_PATH = "/dashboard/plataforma/prospectos";
+import { PROSPECTING_PATH as LIST_PATH } from "@/features/growth/constants/routes";
+
 const QUERY_KEY = "tlaco_growth_leads_query";
 const FROM_LIST_KEY = "tlaco_growth_leads_from_list";
 

@@ -293,10 +293,15 @@ hace algo raro, revisa la config de Serwist antes que el endpoint en sí.
 
 ### 10. Motor de clientes (growth)
 
-Adquisición de negocios (platform admin): prospectos del DENUE, bot de
-Telegram, WhatsApp a un toque, correo desde Gmail y embudo en
-`/dashboard/plataforma/{prospectos,motor,embudo}`. Reglas en
+Adquisición de negocios con un equipo de prospección: prospectos del DENUE,
+bot de Telegram, WhatsApp a un toque, correo desde Gmail y embudo en
+`/dashboard/prospeccion/{,equipo,motor,embudo}`. Reglas en
 `ARCHITECTURE.md §6.2`. Lo esencial:
+
+- Todo es por espacio (`growth_workspaces`; Tlaco es el primero) y por
+  persona (`growth_members`). Cada prospecto tiene dueño y la regla de quién
+  puede tocarlo vive en SQL (`growth_can_act`): no la repliques en TS y pasa
+  siempre `p_actor_id` a las RPC.
 
 - No puede afectar la operación: tablas `growth_*` aparte, interruptor
   `GROWTH_ENABLED`, y la atribución del registro corre con `after()` y no

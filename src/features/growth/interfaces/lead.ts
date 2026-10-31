@@ -1,4 +1,5 @@
 import type { StatusTone } from "@/components/admin/StatusBadge";
+import type { WhatsappSuggestion } from "@/features/growth/interfaces/whatsapp";
 
 export type LeadStage =
   | "nuevo"
@@ -62,6 +63,10 @@ export interface GrowthLead {
   snoozed_until: string | null;
   drop_reason: string | null;
   registered_tenant_id: string | null;
+  owner_user_id: string | null;
+  owned_at: string | null;
+  /** Only rows read with "*" carry it (Telegram); lists know their workspace already. */
+  workspace_id?: string;
   last_activity_at: string | null;
   created_at: string;
   next_step: NextStep | null;
@@ -70,6 +75,8 @@ export interface GrowthLead {
   appointment_at: string | null;
   /** Last time the prospect opened its "Para ti" page; only the list fills it. */
   para_viewed_at?: string | null;
+  /** Owner's display name; lists and the detail fill it. */
+  owner_name?: string | null;
 }
 
 /** Set by the growth_leads_next_step trigger from the stage; "Recordarme" overrides the date. */
@@ -111,6 +118,13 @@ export interface BoardColumn {
   leads: GrowthLead[];
 }
 
+/** Board filters; `owner` is "me", "all" or a member's user id (coordinators only). */
+export interface BoardZone {
+  municipio?: string;
+  giro?: string;
+  owner?: string;
+}
+
 export interface LeadBoard {
   columns: BoardColumn[];
   counts: PipelineCounts;
@@ -127,6 +141,9 @@ export interface LeadEvent {
   type: string;
   channel: string | null;
   actor: LeadActor;
+  actor_user_id: string | null;
+  /** Team member who did it, when the actor is an operator. */
+  actor_name?: string | null;
   template_id: string | null;
   payload: Record<string, unknown>;
   created_at: string;
@@ -158,7 +175,7 @@ export type LeadContactFilter = "whatsapp" | "correo" | "ambos" | "sin";
 export type LeadStageFilter = LeadStage | "activos" | "todos" | "en_lote" | "hoy";
 
 /** Prospectos has two halves: the daily follow-up board and the prospecting list. */
-export type LeadView = "seguimiento" | "contactar";
+export type LeadView = "seguimiento" | "activacion" | "contactar" | "mapa";
 
 export interface LeadFilters {
   vista?: LeadView;
@@ -168,6 +185,8 @@ export interface LeadFilters {
   channel?: NextChannel;
   contact?: LeadContactFilter;
   q?: string;
+  /** "me", "none" or a member's user id; prospectors always see only their own. */
+  owner?: string;
   page?: number;
 }
 
@@ -191,6 +210,10 @@ export interface LeadListResult {
 export interface LeadDetail {
   lead: GrowthLead;
   events: LeadEvent[];
+  /** Whether the viewer may act on it (own lead, or unowned inside their zones). */
+  canAct: boolean;
+  /** What to send next and why (growth_lead_next_action). */
+  suggestion: WhatsappSuggestion | null;
   acquisition: { bucket: string; channel: string | null; tenant_id: string } | null;
 }
 
@@ -230,4 +253,102 @@ export interface LeadGiroSheetProps {
   busy: boolean;
   onClose: () => void;
   onSubmit: (giro: string) => Promise<boolean>;
+}
+
+export type LeadSourceDetail = "visita" | "referido" | "redes" | "otro";
+
+/** «Nuevo prospecto»: someone the team met outside the DENUE list. */
+export interface NewLeadInput {
+  business_name: string;
+  phone: string;
+  email: string;
+  giro: string;
+  municipio: string;
+  colonia: string;
+  source_detail: LeadSourceDetail;
+  note: string;
+}
+
+/** Who already works a phone or an email; nothing else of that lead is shared. */
+export interface ContactConflict {
+  leadId: string;
+  ownerName: string | null;
+  stage: LeadStage;
+  since: string;
+  suppressed: boolean;
+}
+
+export type NewLeadResult =
+  | { status: "created"; leadId: string }
+  | { status: "conflict"; conflict: ContactConflict }
+  | { status: "suppressed" };
+
+export interface NewLeadSheetProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+/** «Dar de alta su negocio»: the owner gets an email to create a password and enter. */
+export interface LeadRegistrationInput {
+  owner_name: string;
+  owner_email: string;
+  owner_phone: string;
+  business_name: string;
+}
+
+export interface LeadRegistrationResult {
+  tenantSlug: string | null;
+  emailDelivery: "sent" | "failed" | "not_needed";
+  invitationUrl: string | null;
+  previewUrl: string | null;
+}
+
+export interface RegisterLeadSheetProps {
+  isOpen: boolean;
+  lead: GrowthLead;
+  onClose: () => void;
+  onRegistered: () => void;
+}
+
+export interface ReplySheetProps {
+  isOpen: boolean;
+  businessName: string;
+  busy: boolean;
+  onClose: () => void;
+  onSubmit: (text: string) => Promise<boolean>;
+}
+
+export interface LeadConversationProps {
+  events: LeadEvent[];
+  viewerId: string | null;
+  onLogReply: () => void;
+}
+
+export interface LeadSummary {
+  sent: number;
+  lastSentAt: string | null;
+  views: number;
+  lastViewAt: string | null;
+  averageSeconds: number | null;
+  objection: string | null;
+  visitRequest: { day: string | null; slot: string | null } | null;
+  claimClicked: boolean;
+  repliedAt: string | null;
+  lastReply: string | null;
+}
+
+export interface LeadSummaryCardProps {
+  summary: LeadSummary;
+}
+
+/** «Tu día»: counts for the signed-in member's own prospects (growth_my_day). */
+export interface MyDay {
+  replied_due: number;
+  hot_due: number;
+  follow_ups_due: number;
+  overdue: number;
+  visits_today: number;
+  first_messages_left: number;
+  sent_today: number;
+  daily_goal: number;
 }

@@ -3,6 +3,7 @@ import { HideOnCheckout } from "@/features/sitio/components/shell/HideOnCheckout
 import { StoreFooter } from "@/features/sitio/components/shell/StoreFooter";
 import { StoreHeader } from "@/features/sitio/components/shell/StoreHeader";
 import { StoreNavigation } from "@/features/sitio/components/shell/StoreNavigation";
+import { StoreViewBeacon } from "@/features/sitio/components/shell/StoreViewBeacon";
 
 import { storeSans } from "@/features/sitio/constants/storeFonts";
 import { buildStoreThemeStyle } from "@/features/sitio/helpers/storeTheme";
@@ -15,6 +16,7 @@ export function StoreShell({ chrome, theme, accent, tenantId, notice, children }
       className={`site-template ${theme.dark ? "site-template-dark" : ""} ${storeSans.variable} flex min-h-dvh min-w-0 flex-col overflow-x-clip bg-(--store-canvas) font-(family-name:--font-store-sans) text-(--store-ink) antialiased`}
       style={buildStoreThemeStyle(theme, accent)}
     >
+      <StoreViewBeacon tenantId={tenantId} />
       <StoreNavigation>
         <CartProvider tenantId={tenantId}>
           <StoreHeader chrome={chrome} />

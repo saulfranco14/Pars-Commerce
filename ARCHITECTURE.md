@@ -181,8 +181,34 @@ propinas, mesas, préstamos):
 
 ## 6.2 Motor de clientes (`features/growth`)
 
-Adquisición de negocios para Tlaco, sólo para platform admins. Vive aparte
-de la operación de los tenants y no debe tocarla:
+Adquisición de negocios. Vive aparte de la operación de los tenants y no
+debe tocarla:
+
+- **Espacios y equipo:** todo cuelga de un `growth_workspaces` (Tlaco es
+  `TLACO_WORKSPACE_ID`, `tenant_id` nulo). Quien prospecta es una fila de
+  `growth_members` con rol `coordinador` o `prospector` y sus `zones`; un
+  platform admin coordina Tlaco aunque no tenga fila. Las rutas viven en
+  `/dashboard/prospeccion/**` y `/api/growth/**`, con `requireGrowthMember`
+  (`src/app/api/growth/_lib.ts`), nunca `requirePlatformAdmin`.
+- **Dueño de cada prospecto:** `growth_leads.owner_user_id`. La regla vive en
+  SQL (`growth_can_act`, `growth_lock_for_actor`): un prospector actúa sobre
+  lo suyo o sobre lo que nadie tiene dentro de sus zonas; el primer envío o el
+  alta manual (`growth_add_lead`) lo deja a su nombre; sólo el coordinador
+  reasigna (`growth_assign_leads`). Toda RPC que cambia un prospecto recibe
+  `p_actor_id`; pásalo siempre desde la ruta. Teléfono y correo son únicos
+  por espacio y el conflicto dice quién lo trabaja (`growth_contact_owner`).
+- **Firma por persona:** `{firma}` y `{nombre}` salen del miembro que manda el
+  mensaje; «Para ti» muestra el nombre y el WhatsApp del dueño del prospecto,
+  y los avisos de Telegram de un prospecto van a su dueño y a los coordinadores.
+- **Prospección para negocios:** un tenant con la capacidad `prospecting` (plan
+  Escala) tiene su propio espacio, creado al primer uso por
+  `growth_tenant_workspace`. Ahí el rol sale de su propio equipo (owner o
+  `prospects.manage` → coordinador, `prospects.work` → prospector), nunca de
+  `growth_members`. El navegador elige el espacio con `?ws=<tenant>|tlaco`
+  (cookie `growth_ws`) y el servidor siempre revisa el acceso. Su «Para ti» es
+  su propuesta (`ParaOffer`, con `offer_title/offer_text/cta_label` de Motor y sus
+  productos públicos); no tiene correo automático ni zonas de visita, y
+  `{espacio}`/`{oferta}` nombran al negocio en sus mensajes.
 
 - **Datos:** tablas `growth_*` y `tenant_acquisitions`, todas service-role.
   El estado de un prospecto (teléfono, correo, visita, etapa, siguiente
@@ -206,9 +232,21 @@ de la operación de los tenants y no debe tocarla:
   se activa con `supabase/snippets/growth_cron_schedule.sql`.
 - **Variables:** `GROWTH_ENABLED`, `GROWTH_CRON_SECRET`,
   `GROWTH_MAILBOX_<n>_PASSWORD`, `TELEGRAM_BOT_TOKEN`,
-  `TELEGRAM_WEBHOOK_SECRET`, `GROWTH_POSTAL_ADDRESS`, `GROWTH_WHATSAPP_NUMBER`.
-- **Carga del DENUE:** `npx tsx --env-file=.env.local scripts/growth/importDenue.ts <csv> --dry-run`.
-  El CSV vive en `data/growth/` (ignorado por git).
+  `TELEGRAM_WEBHOOK_SECRET`, `GROWTH_POSTAL_ADDRESS`, `GROWTH_WHATSAPP_NUMBER`,
+  `INEGI_DENUE_TOKEN` (importar desde la API del DENUE) y `GROWTH_LINK_SECRET`
+  (opcional: sella el link «Para ti» para reusarlo; sin ella se usa la service role)
+  y `NEXT_PUBLIC_CARTO_API_KEY` (mosaicos del mapa, llave gratis en
+  carto.com/basemaps/apikey; sin ella el mapa usa OpenStreetMap).
+- **Mensaje siguiente:** qué mandar lo decide `growth_lead_next_action` con el
+  historial (enviados, vistas, dudas, visitas, respuestas); el cuándo, el trigger
+  `growth_leads_next_step`. El texto enviado queda en `payload.body` del evento.
+- **Carga del DENUE:** desde Prospección → Importar (`growth_imports`, una fila
+  por trabajo con cursores; el cron termina lo que no quepa en la petición) o
+  por consola: `npx tsx --env-file=.env.local scripts/growth/importDenue.ts <csv> --dry-run`.
+  El CSV vive en `data/growth/` (ignorado por git). Giro → clases SCIAN en
+  `constants/denue.ts`.
+- **Reversas:** cada migración del motor tiene su `supabase/snippets/*_rollback.sql`;
+  se aplican de la más nueva a la más vieja.
 
 ---
 

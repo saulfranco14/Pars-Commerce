@@ -62,6 +62,8 @@ export const PERMISSION_CATALOG: PermissionDefinition[] = [
   { key: "sales.assign", group: "sales", label: "Asignar ventas", requires: ["sales.view_all"] },
   { key: "sales.update_assigned", group: "sales", label: "Editar sus ventas", requires: ["sales.read"] },
   { key: "reports.read", group: "sales", label: "Ver reportes" },
+  { key: "prospects.work", group: "sales", label: "Prospectar", phrase: "prospectar negocios y darles seguimiento" },
+  { key: "prospects.manage", group: "sales", label: "Coordinar la prospección", phrase: "coordinar la prospección, importar negocios y editar los mensajes", requires: ["prospects.work"] },
 
   { key: "products.read", group: "catalog", label: "Consultar productos" },
   { key: "products.write", group: "catalog", label: "Administrar productos", phrase: "administrar productos", requires: ["products.read"] },

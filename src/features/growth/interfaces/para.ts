@@ -66,6 +66,7 @@ export interface ParaItem {
 }
 
 export interface ParaPageData {
+  kind: "store";
   businessName: string;
   giroLabel: string;
   place: string;
@@ -100,4 +101,22 @@ export interface ParaVisitButtonProps {
 export interface ParaInteractiveProps {
   token: string;
   data: ParaPageData;
+}
+
+/** «Para ti» sent by a business that prospects with Tlaco: its offer and products, not a sample store. */
+export interface ParaOfferData {
+  kind: "offer";
+  businessName: string;
+  workspaceName: string;
+  logoUrl: string | null;
+  title: string;
+  text: string | null;
+  ctaLabel: string;
+  sender: ParaSender | null;
+  items: ParaItem[];
+  helpUrl: string | null;
+}
+
+export interface ParaOfferProps {
+  data: ParaOfferData;
 }

@@ -31,7 +31,8 @@ async function seed(tx: TransactionSql) {
   await tx`insert into growth_suppressions (email, reason) values ('baja@example.com', 'opt_out')`;
 }
 
-describe("growth outreach: email enrollment", () => {
+// Isolating from the ~50k local prospects (one mass update per test) takes a few seconds.
+describe("growth outreach: email enrollment", { timeout: 20_000 }, () => {
   it("enrolls only email-channel leads, skips suppressed ones and WhatsApp leads, best giros first", async () => {
     await inRollback(async (tx) => {
       await seed(tx);

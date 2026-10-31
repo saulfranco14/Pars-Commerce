@@ -155,7 +155,10 @@ export function PlatformBusinessesView() {
                           <p className="truncate text-xs text-muted-foreground">{tenant.owner?.email ?? `/${tenant.slug}`}</p>
                         </td>
                         <td className="px-4 py-3"><StatusBadge tone={status.tone} label={status.label} /></td>
-                        <td className="px-4 py-3 font-semibold text-foreground">{PLAN_LABELS[tenant.billing.plan_code] ?? tenant.billing.plan_code}</td>
+                        <td className="px-4 py-3 font-semibold text-foreground">
+                          {PLAN_LABELS[tenant.billing.plan_code] ?? tenant.billing.plan_code}
+                          <span className={`block text-xs font-normal ${tenant.mp_status === "connected" ? "text-emerald-700" : "text-muted-foreground"}`}>{tenant.mp_status === "connected" ? "Cobra con MP" : "Sin MP"}</span>
+                        </td>
                         <td className="px-4 py-3 text-muted-foreground"><span className="font-semibold tabular-nums text-foreground">{tenant.team_active}</span> activos</td>
                         <td className="px-4 py-3"><p className="font-semibold tabular-nums text-foreground">{formatMXN(tenant.sales_30d)}</p><p className="text-xs text-muted-foreground">{tenant.orders_30d} pedidos</p></td>
                         <td className="px-5 py-3 text-right">
@@ -276,6 +279,7 @@ function BusinessDetailSheet({ tenant, onClose }: { tenant: PlatformTenant | nul
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge tone={status.tone} label={status.label} />
             <StatusBadge tone="info" label={`Plan ${PLAN_LABELS[tenant.billing.plan_code] ?? tenant.billing.plan_code}`} />
+            <StatusBadge tone={tenant.mp_status === "connected" ? "success" : tenant.mp_status ? "danger" : "warning"} label={tenant.mp_status === "connected" ? "Mercado Pago conectado" : tenant.mp_status ? "Mercado Pago con problema" : "Sin Mercado Pago"} />
           </div>
 
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">

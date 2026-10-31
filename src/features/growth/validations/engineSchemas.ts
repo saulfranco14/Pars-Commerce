@@ -1,5 +1,6 @@
 import * as yup from "yup";
 
+import { SEND_HOUR_MAX, SEND_HOUR_MIN } from "@/features/growth/constants/sendWindow";
 import { normalizeMexicanPhone } from "@/lib/phone";
 
 export const mailboxSchema = yup.object({
@@ -17,12 +18,12 @@ export type MailboxFormValues = yup.InferType<typeof mailboxSchema>;
 
 export const engineSettingsSchema = yup.object({
   signature: yup.string().trim().min(2, "Mínimo 2 caracteres.").max(60, "Máximo 60 caracteres.").required("La firma es obligatoria."),
-  send_start_hour: yup.number().typeError("Escribe una hora.").integer().min(6, "Desde las 6:00.").max(20).required(),
+  send_start_hour: yup.number().typeError("Escribe una hora.").integer().min(SEND_HOUR_MIN, `Desde las ${SEND_HOUR_MIN}:00.`).max(SEND_HOUR_MAX - 1).required(),
   send_end_hour: yup
     .number()
     .typeError("Escribe una hora.")
     .integer()
-    .max(21, "Hasta las 21:00.")
+    .max(SEND_HOUR_MAX, `Hasta las ${SEND_HOUR_MAX}:00.`)
     .moreThan(yup.ref("send_start_hour"), "Debe terminar después de empezar.")
     .required(),
 });
@@ -38,3 +39,12 @@ export const leadPhoneSchema = yup.object({
 });
 
 export type LeadPhoneFormValues = yup.InferType<typeof leadPhoneSchema>;
+
+export const offerSchema = yup.object({
+  offer_title: yup.string().trim().min(4, "Escribe el título de tu propuesta.").max(120, "Máximo 120 caracteres.").required("Escribe el título de tu propuesta."),
+  offer_text: yup.string().trim().max(1200, "Máximo 1,200 caracteres.").default(""),
+  cta_label: yup.string().trim().min(2, "Escribe el texto del botón.").max(40, "Máximo 40 caracteres.").required("Escribe el texto del botón."),
+  signature: yup.string().trim().min(2, "Mínimo 2 caracteres.").max(60, "Máximo 60 caracteres.").required("La firma es obligatoria."),
+});
+
+export type OfferFormValues = yup.InferType<typeof offerSchema>;

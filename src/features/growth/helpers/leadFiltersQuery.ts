@@ -4,8 +4,10 @@ const STAGES: LeadStageFilter[] = ["activos", "hoy", "todos", "en_lote", "nuevo"
 const CHANNELS: NextChannel[] = ["whatsapp", "visita", "correo", "ninguno"];
 const CONTACTS: LeadContactFilter[] = ["whatsapp", "correo", "ambos", "sin"];
 const DEFAULT_STAGE: LeadStageFilter = "activos";
-const VIEWS: LeadView[] = ["seguimiento", "contactar"];
+const VIEWS: LeadView[] = ["seguimiento", "activacion", "contactar", "mapa"];
 const DEFAULT_VIEW: LeadView = "seguimiento";
+// "me", "none" (nobody has it yet) or a member's user id.
+const OWNER = /^(me|none|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
 
 function pick<T extends string>(allowed: readonly T[], value: string | null): T | undefined {
   return allowed.find((item) => item === value);
@@ -22,6 +24,7 @@ export function parseLeadFilters(params: Pick<URLSearchParams, "get">): LeadFilt
     channel: pick(CHANNELS, params.get("channel")),
     contact: pick(CONTACTS, params.get("contact")),
     q: params.get("q")?.slice(0, 60) || undefined,
+    owner: OWNER.test(params.get("owner") ?? "") ? (params.get("owner") as string) : undefined,
     page: Number.isInteger(page) && page > 1 ? page : 1,
   };
 }

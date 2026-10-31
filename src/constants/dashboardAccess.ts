@@ -58,7 +58,7 @@ const LANDING_ORDER = [
 ];
 
 // Top-level dashboard routes that are not a tenant.
-const ACCOUNT_ROUTES = new Set(["plataforma", "perfil", "crear-negocio", "preparar-negocio"]);
+const ACCOUNT_ROUTES = new Set(["plataforma", "prospeccion", "perfil", "crear-negocio", "preparar-negocio"]);
 
 /**
  * Section of a dashboard path: the first segment after `/dashboard/[tenantSlug]/`

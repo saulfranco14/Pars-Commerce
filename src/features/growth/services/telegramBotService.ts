@@ -4,13 +4,14 @@ import { GIRO_COPY, GIRO_KEYS } from "@/features/growth/constants/giroCopy";
 import { ZONES, zoneBySlug } from "@/features/growth/constants/zoneCopy";
 import { afterSentButtons, buildVisitCard, buildWhatsappCard } from "@/features/growth/services/cardService";
 import { recordOutcome } from "@/features/growth/services/leadService";
-import { isLinkedChat, linkChat } from "@/features/growth/services/operatorService";
+import { chatActor, linkChat } from "@/features/growth/services/operatorService";
 import { getSettings, updateSettings } from "@/features/growth/services/settingsService";
 import { dayStats, registrationsText, startOfMexicoDay, statsText } from "@/features/growth/services/statsService";
 import { answerCallback, escapeHtml, replaceButtons, sendMessage } from "@/features/growth/services/telegramApi";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
 import type { GrowthLead, LeadOutcome, NearbyLead } from "@/features/growth/interfaces/lead";
+import type { GrowthActor } from "@/features/growth/interfaces/member";
 import type { InlineButton, OutgoingMessage, TelegramAction } from "@/features/growth/interfaces/telegram";
 
 const HELP = [
@@ -41,6 +42,10 @@ const STUCK_REASONS: Record<string, string> = { p: "precio", r: "registro", c: "
 
 function addDays(days: number): string {
   return new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+}
+
+async function firmaFor(db: GrowthDb, actor: GrowthActor): Promise<string> {
+  return actor.signature ?? (await getSettings(db, actor.workspaceId)).signature;
 }
 
 async function reply(chatId: number, message: OutgoingMessage | string) {
@@ -82,13 +87,15 @@ async function giroPicker(chatId: number, zoneSlug: string) {
   await reply(chatId, { text: `${escapeHtml(zone.label)}: ¿qué giro?`, buttons });
 }
 
-async function sendBatch(db: GrowthDb, chatId: number, kind: "whatsapp" | "seguimiento", zoneSlug?: string, giro?: string) {
+async function sendBatch(db: GrowthDb, actor: GrowthActor, chatId: number, kind: "whatsapp" | "seguimiento", zoneSlug?: string, giro?: string) {
   const zone = zoneSlug ? zoneBySlug(zoneSlug) : undefined;
   const { data, error } = await db.rpc("growth_reserve_batch", {
     p_kind: kind,
     p_municipio: zone?.municipio ?? null,
     p_giro: giro && giro !== "*" ? giro : null,
     p_limit: 10,
+    p_workspace_id: actor.workspaceId,
+    p_actor_id: actor.userId,
   });
   if (error) {
     await reply(chatId, "No pude armar el lote. Intenta de nuevo en un momento.");
@@ -99,21 +106,25 @@ async function sendBatch(db: GrowthDb, chatId: number, kind: "whatsapp" | "segui
     await reply(chatId, kind === "seguimiento" ? "No hay seguimientos pendientes hoy." : "Ya no quedan negocios con WhatsApp en ese filtro. Prueba otro giro o municipio.");
     return;
   }
-  const settings = await getSettings(db);
-  const sent = await sendCards(db, chatId, leads, kind === "seguimiento" ? "seguimiento" : "m1", settings.signature);
+  const sent = await sendCards(db, chatId, leads, kind === "seguimiento" ? "seguimiento" : "m1", await firmaFor(db, actor));
   await reply(chatId, `Listo: ${sent} tarjetas. Marca cada una cuando la mandes.`);
 }
 
-async function sendLeadList(db: GrowthDb, chatId: number, leads: GrowthLead[], empty: string, step: "m1" | "seguimiento") {
+async function sendLeadList(db: GrowthDb, actor: GrowthActor, chatId: number, leads: GrowthLead[], empty: string, step: "m1" | "seguimiento") {
   if (!leads.length) {
     await reply(chatId, empty);
     return;
   }
-  const settings = await getSettings(db);
-  await sendCards(db, chatId, leads, step, settings.signature);
+  await sendCards(db, chatId, leads, step, await firmaFor(db, actor));
 }
 
-async function handleCommand(db: GrowthDb, chatId: number, command: string, args: string) {
+/** Prospectors only see their own prospects; coordinators see the whole workspace. */
+function leadsFor(db: GrowthDb, actor: GrowthActor) {
+  const query = db.from("growth_leads").select("*").eq("workspace_id", actor.workspaceId);
+  return actor.role === "prospector" ? query.eq("owner_user_id", actor.userId) : query;
+}
+
+async function handleCommand(db: GrowthDb, actor: GrowthActor, chatId: number, command: string, args: string) {
   switch (command) {
     case "start":
     case "ayuda":
@@ -124,16 +135,16 @@ async function handleCommand(db: GrowthDb, chatId: number, command: string, args
       await zonePicker(chatId);
       return;
     case "seguimientos":
-      await sendBatch(db, chatId, "seguimiento");
+      await sendBatch(db, actor, chatId, "seguimiento");
       return;
     case "pendientes": {
-      const { data } = await db.from("growth_leads").select("*").not("reserved_kind", "is", null).order("reserved_until", { ascending: false }).limit(10);
-      await sendLeadList(db, chatId, (data ?? []) as GrowthLead[], "No tienes tarjetas sin marcar.", "m1");
+      const { data } = await db.from("growth_leads").select("*").eq("workspace_id", actor.workspaceId).eq("reserved_by", actor.userId).not("reserved_kind", "is", null).order("reserved_until", { ascending: false }).limit(10);
+      await sendLeadList(db, actor, chatId, (data ?? []) as GrowthLead[], "No tienes tarjetas sin marcar.", "m1");
       return;
     }
     case "calientes": {
-      const { data } = await db.from("growth_leads").select("*").eq("stage", "caliente").not("phone_e164", "is", null).order("last_activity_at", { ascending: false }).limit(10);
-      await sendLeadList(db, chatId, (data ?? []) as GrowthLead[], "Todavía no hay prospectos calientes.", "seguimiento");
+      const { data } = await leadsFor(db, actor).eq("stage", "caliente").not("phone_e164", "is", null).order("last_activity_at", { ascending: false }).limit(10);
+      await sendLeadList(db, actor, chatId, (data ?? []) as GrowthLead[], "Todavía no hay prospectos calientes.", "seguimiento");
       return;
     }
     case "buscar": {
@@ -142,7 +153,7 @@ async function handleCommand(db: GrowthDb, chatId: number, command: string, args
         await reply(chatId, "Escribe al menos 3 letras: /buscar clavo");
         return;
       }
-      const { data } = await db.from("growth_leads").select("*").ilike("business_name", `%${term}%`).order("last_activity_at", { ascending: false, nullsFirst: false }).limit(5);
+      const { data } = await leadsFor(db, actor).ilike("business_name", `%${term}%`).order("last_activity_at", { ascending: false, nullsFirst: false }).limit(5);
       const leads = (data ?? []) as GrowthLead[];
       if (!leads.length) {
         await reply(chatId, "No encontré ese negocio.");
@@ -165,11 +176,13 @@ async function handleCommand(db: GrowthDb, chatId: number, command: string, args
       await reply(chatId, await registrationsText(db, new Date()));
       return;
     case "pausa":
-      await updateSettings(db, { paused: true, paused_reason: "Pausado desde Telegram" });
+      if (actor.role !== "coordinador") return reply(chatId, "Solo el coordinador puede pausar el correo.");
+      await updateSettings(db, actor.workspaceId, { paused: true, paused_reason: "Pausado desde Telegram" });
       await reply(chatId, "Pausé el correo automático. Los lotes de WhatsApp siguen disponibles. /reanudar para seguir.");
       return;
     case "reanudar":
-      await updateSettings(db, { paused: false });
+      if (actor.role !== "coordinador") return reply(chatId, "Solo el coordinador puede reanudar el correo.");
+      await updateSettings(db, actor.workspaceId, { paused: false });
       await reply(chatId, "Listo, el correo automático sigue.");
       return;
     default:
@@ -177,7 +190,7 @@ async function handleCommand(db: GrowthDb, chatId: number, command: string, args
   }
 }
 
-async function handleOutcome(db: GrowthDb, chatId: number, messageId: number | null, code: string, leadId: string, extra?: string) {
+async function handleOutcome(db: GrowthDb, actor: GrowthActor, chatId: number, messageId: number | null, code: string, leadId: string, extra?: string) {
   if (code === "ni") {
     if (messageId) {
       await replaceButtons(chatId, messageId, [[
@@ -213,6 +226,7 @@ async function handleOutcome(db: GrowthDb, chatId: number, messageId: number | n
     leadId,
     outcome: mapped.outcome,
     actor: "operator",
+    actorId: actor.userId,
     payload: mapped.reason ? { reason: mapped.reason, ...(extra ? { note: extra } : {}) } : {},
   });
   if (!result.ok) {
@@ -223,25 +237,25 @@ async function handleOutcome(db: GrowthDb, chatId: number, messageId: number | n
     await replaceButtons(chatId, messageId, mapped.outcome === "whatsapp_sent" ? afterSentButtons(leadId) : [[{ text: `✓ ${mapped.label}`, callback_data: "x" }]]);
   }
   if (mapped.outcome === "whatsapp_replied") {
-    const settings = await getSettings(db);
-    const card = await buildWhatsappCard(db, result.data, { step: "si", firma: settings.signature, position: "Respuesta sugerida" });
+    const card = await buildWhatsappCard(db, result.data, { step: "si", firma: await firmaFor(db, actor), position: "Respuesta sugerida" });
     if (card) await reply(chatId, card);
   }
 }
 
-async function handleCallback(db: GrowthDb, action: Extract<TelegramAction, { kind: "callback" }>) {
+async function handleCallback(db: GrowthDb, actor: GrowthActor, action: Extract<TelegramAction, { kind: "callback" }>) {
   const { action: verb, args } = decodeCallback(action.data);
   await answerCallback(action.callbackId);
   if (verb === "x") return;
   if (verb === "l") return giroPicker(action.chatId, args[0]);
-  if (verb === "lg") return sendBatch(db, action.chatId, "whatsapp", args[0], args[1]);
-  if (verb === "o") return handleOutcome(db, action.chatId, action.messageId, args[0], args[1]);
+  if (verb === "lg") return sendBatch(db, actor, action.chatId, "whatsapp", args[0], args[1]);
+  if (verb === "o") return handleOutcome(db, actor, action.chatId, action.messageId, args[0], args[1]);
   if (verb === "vd") {
     const [kind, days, leadId] = args;
     const result = await recordOutcome(db, {
       leadId,
       outcome: kind === "i" ? "visit_interested" : "visit_absent",
       actor: "operator",
+      actorId: actor.userId,
       revisitAt: addDays(Number(days) || 1),
     });
     if (!result.ok) return reply(action.chatId, result.error.message);
@@ -250,14 +264,14 @@ async function handleCallback(db: GrowthDb, action: Extract<TelegramAction, { ki
   }
   if (verb === "st") {
     const [key, leadId] = args;
-    const result = await recordOutcome(db, { leadId, outcome: "visit_stuck", actor: "operator", payload: { reason: STUCK_REASONS[key] ?? "otro" } });
+    const result = await recordOutcome(db, { leadId, outcome: "visit_stuck", actor: "operator", actorId: actor.userId, payload: { reason: STUCK_REASONS[key] ?? "otro" } });
     if (!result.ok) return reply(action.chatId, result.error.message);
     if (action.messageId) await replaceButtons(action.chatId, action.messageId, [[{ text: `✓ Se trabó: ${STUCK_REASONS[key] ?? "otro"}`, callback_data: "x" }]]);
   }
 }
 
-async function handleLocation(db: GrowthDb, chatId: number, lat: number, lng: number) {
-  const { data, error } = await db.rpc("growth_nearby_leads", { p_lat: lat, p_lng: lng, p_limit: 10 });
+async function handleLocation(db: GrowthDb, actor: GrowthActor, chatId: number, lat: number, lng: number) {
+  const { data, error } = await db.rpc("growth_nearby_leads", { p_lat: lat, p_lng: lng, p_limit: 10, p_workspace_id: actor.workspaceId, p_actor_id: actor.userId });
   if (error) {
     await reply(chatId, "No pude armar la ruta. Intenta de nuevo.");
     return;
@@ -283,14 +297,15 @@ export async function handleTelegramAction(db: GrowthDb, action: TelegramAction)
     return;
   }
 
-  if (!(await isLinkedChat(db, action.chatId))) {
+  const actor = await chatActor(db, action.chatId);
+  if (!actor) {
     if (action.kind === "callback") await answerCallback(action.callbackId, "Chat no vinculado");
     else await reply(action.chatId, "Este bot es privado.");
     return;
   }
 
-  if (action.kind === "command") return handleCommand(db, action.chatId, action.command, action.args);
-  if (action.kind === "callback") return handleCallback(db, action);
-  if (action.kind === "location") return handleLocation(db, action.chatId, action.lat, action.lng);
+  if (action.kind === "command") return handleCommand(db, actor, action.chatId, action.command, action.args);
+  if (action.kind === "callback") return handleCallback(db, actor, action);
+  if (action.kind === "location") return handleLocation(db, actor, action.chatId, action.lat, action.lng);
   await reply(action.chatId, HELP);
 }

@@ -18,6 +18,7 @@ import { GIRO_COPY, GIRO_KEYS, giroCopy } from "@/features/growth/constants/giro
 import { SWEEP_KIND_TABS } from "@/features/growth/constants/sweep";
 import { ZONES, zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
 import { backToLeads } from "@/features/growth/services/leadsReturn";
+import { leadPath } from "@/features/growth/constants/routes";
 
 import type { SweepKind } from "@/features/growth/interfaces/sweep";
 
@@ -75,7 +76,7 @@ export function WhatsappSweepView() {
         <p className="inline-flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
           <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
           <span className="truncate">
-            {last.label}: <Link href={`/dashboard/plataforma/prospectos/${last.lead.id}`} className="font-semibold text-foreground hover:underline">{formatBusinessName(last.lead.business_name)}</Link>
+            {last.label}: <Link href={leadPath(last.lead.id)} className="font-semibold text-foreground hover:underline">{formatBusinessName(last.lead.business_name)}</Link>
           </span>
         </p>
       ) : null}

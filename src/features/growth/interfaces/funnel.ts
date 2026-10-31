@@ -11,6 +11,22 @@ export interface FunnelTemplateRow {
   registered: number;
 }
 
+export interface FunnelGiroRow {
+  giro: string;
+  contacted: number;
+  replied: number;
+  viewed: number;
+  registered: number;
+}
+
+export interface FunnelMemberRow {
+  user_id: string;
+  name: string;
+  contacted: number;
+  replied: number;
+  registered: number;
+}
+
 export interface FunnelReport {
   days: number;
   contacted: number;
@@ -25,4 +41,6 @@ export interface FunnelReport {
   drop_reasons: Record<string, number>;
   by_municipio: Record<string, { contacted: number; registered: number }>;
   by_template: FunnelTemplateRow[];
+  by_giro: FunnelGiroRow[];
+  by_member: FunnelMemberRow[];
 }

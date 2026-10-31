@@ -1,6 +1,7 @@
 import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
 import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
+import { senderFromSignature } from "@/features/growth/helpers/paraSender";
 
 import type { TemplateVars } from "@/features/growth/interfaces/template";
 
@@ -29,7 +30,7 @@ interface LeadForVars {
   address: string | null;
 }
 
-export function buildTemplateVars(lead: LeadForVars, extra: { link: string; firma: string; now?: Date }): TemplateVars {
+export function buildTemplateVars(lead: LeadForVars, extra: { link: string; firma: string; espacio?: string; oferta?: string; now?: Date }): TemplateVars {
   const copy = giroCopy(lead.giro);
   const zone = zoneByMunicipio(lead.municipio);
   const street = lead.address?.trim();
@@ -50,5 +51,10 @@ export function buildTemplateVars(lead: LeadForVars, extra: { link: string; firm
     giro_pregunta: copy.pregunta,
     link: extra.link,
     firma: extra.firma,
+    // Whoever signs: each team member introduces themselves by name.
+    nombre: senderFromSignature(extra.firma)?.firstName ?? extra.firma.split(/[·|,]/)[0].trim().split(" ")[0],
+    // A business prospecting with Tlaco names itself and its offer.
+    espacio: extra.espacio ?? "Tlaco",
+    oferta: extra.oferta ?? "",
   };
 }

@@ -1,6 +1,6 @@
 import { hashPreviewToken } from "@/features/preview/previewLinks";
 import { growthDb, isGrowthEnabled } from "@/features/growth/services/growthDb";
-import { notifyOperators } from "@/features/growth/services/operatorService";
+import { leadAlertTarget, notifyOperators } from "@/features/growth/services/operatorService";
 import { escapeHtml } from "@/features/growth/services/telegramApi";
 
 const BUCKET_LABEL: Record<string, string> = { engine: "motor", assisted: "asistido", self: "solo" };
@@ -37,10 +37,10 @@ export async function attributeRegistration(admin: unknown, input: AttributionIn
       return;
     }
     if (!isGrowthEnabled()) return;
-    const row = (Array.isArray(data) ? data[0] : data) as { bucket: string; channel: string | null } | undefined;
+    const row = (Array.isArray(data) ? data[0] : data) as { bucket: string; lead_id: string | null; channel: string | null } | undefined;
     const bucket = BUCKET_LABEL[row?.bucket ?? "self"] ?? "solo";
     const channel = row?.channel ? ` · ${CHANNEL_LABEL[row.channel] ?? row.channel}` : "";
-    await notifyOperators(db, { text: `<b>Registro nuevo</b> · ${bucket}${channel}\n${escapeHtml(input.businessName)}` });
+    await notifyOperators(db, { text: `<b>Registro nuevo</b> · ${bucket}${channel}\n${escapeHtml(input.businessName)}` }, await leadAlertTarget(db, row?.lead_id));
   } catch (error) {
     console.error("[growth] attribution error:", error);
   }

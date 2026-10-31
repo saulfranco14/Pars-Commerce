@@ -83,3 +83,14 @@ export function mexicoInputToIso(date: string, time: string): string {
 export function todayInputValue(now: Date = new Date()): string {
   return dayKey(now);
 }
+
+const URGENCY: Record<string, number> = { danger: 0, warning: 1 };
+
+/** Overdue first, then today, then the rest in their original order. */
+export function sortByUrgency<T extends DueLead>(leads: T[], now: Date = new Date()): T[] {
+  const rank = (lead: T) => {
+    const tone = nextStepDue(lead, now)?.tone;
+    return tone ? URGENCY[tone] ?? 2 : 3;
+  };
+  return leads.map((lead, index) => ({ lead, index, rank: rank(lead) })).sort((a, b) => a.rank - b.rank || a.index - b.index).map((item) => item.lead);
+}

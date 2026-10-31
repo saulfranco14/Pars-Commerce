@@ -1,5 +1,7 @@
 export type TemplateChannel = "whatsapp" | "email";
-export type TemplateStep = "m1" | "seguimiento" | "si" | "d0" | "d3" | "d7";
+import type { WhatsappStep } from "@/features/growth/interfaces/whatsapp";
+
+export type TemplateStep = WhatsappStep | "d0" | "d3" | "d7";
 export type TemplateVariant = "A" | "B" | "C";
 export type TemplateStatus = "active" | "paused" | "archived";
 

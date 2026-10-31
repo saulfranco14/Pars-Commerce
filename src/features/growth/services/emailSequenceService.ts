@@ -1,4 +1,4 @@
-import { EMAIL_STEP_GAPS_DAYS, EMAIL_STEPS, emailFooter } from "@/features/growth/helpers/emailFooter";
+import { EMAIL_STEP_GAPS_DAYS, EMAIL_STEPS, emailFooter, replySubject } from "@/features/growth/helpers/emailFooter";
 import { warmupCap } from "@/features/growth/helpers/warmupCap";
 import { createLeadLink, leadLinkUrl } from "@/features/growth/services/leadLinkService";
 import { recordOutcome } from "@/features/growth/services/leadService";
@@ -72,6 +72,18 @@ function pickSlot(slots: Slot[], mailboxId: string | null): Slot | null {
   return slots.filter((slot) => slot.remaining > 0).sort((a, b) => b.remaining - a.remaining)[0] ?? null;
 }
 
+async function firstSubject(db: GrowthDb, enrollmentId: string): Promise<string | null> {
+  const { data } = await db
+    .from("growth_messages")
+    .select("subject")
+    .eq("enrollment_id", enrollmentId)
+    .eq("direction", "outbound")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return (data?.subject as string | null) ?? null;
+}
+
 async function sendOne(db: GrowthDb, item: DueEnrollment, slot: Slot, settings: GrowthSettings): Promise<"sent" | "failed" | "skipped"> {
   const step = EMAIL_STEPS[item.current_step];
   const template = await resolveTemplate(db, { channel: "email", step, giro: item.giro, variant: item.variant });
@@ -85,7 +97,8 @@ async function sendOne(db: GrowthDb, item: DueEnrollment, slot: Slot, settings: 
   const rendered = renderForLead(template, item, { link: leadLinkUrl(paraToken, "para"), firma: settings.signature });
   const unsubscribeUrl = leadLinkUrl(bajaToken, "baja");
   const text = rendered.body + "\n" + emailFooter({ unsubscribeUrl, postalAddress: process.env.GROWTH_POSTAL_ADDRESS ?? null, privacyUrl: `${appUrl}/privacidad` });
-  const subject = rendered.subject ?? item.business_name;
+  const threadSubject = item.thread_message_id ? await firstSubject(db, item.enrollment_id) : null;
+  const subject = threadSubject ? replySubject(threadSubject) : rendered.subject ?? item.business_name;
 
   try {
     const info = await slot.transport.sendMail({

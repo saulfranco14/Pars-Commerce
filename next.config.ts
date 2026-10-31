@@ -14,6 +14,10 @@ const withSerwist = withSerwistInit({
 const nextConfig: NextConfig = {
   async redirects() {
     return [
+      { source: "/dashboard/plataforma/prospectos", destination: "/dashboard/prospeccion", permanent: true },
+      { source: "/dashboard/plataforma/prospectos/:path*", destination: "/dashboard/prospeccion/:path*", permanent: true },
+      { source: "/dashboard/plataforma/motor/:path*", destination: "/dashboard/prospeccion/motor/:path*", permanent: true },
+      { source: "/dashboard/plataforma/embudo", destination: "/dashboard/prospeccion/embudo", permanent: true },
       { source: "/demo", destination: "/soluciones/tienda", permanent: true },
       {
         source: "/demo/abarrotes",

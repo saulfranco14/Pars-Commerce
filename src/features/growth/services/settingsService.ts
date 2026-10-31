@@ -1,18 +1,20 @@
+import { TLACO_WORKSPACE_ID } from "@/features/growth/constants/workspace";
 import { internalError } from "@/features/growth/services/growthDb";
+import { SEND_HOUR_MAX, SEND_HOUR_MIN } from "@/features/growth/constants/sendWindow";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
 import type { GrowthSettings, GrowthSettingsPatch } from "@/features/growth/interfaces/settings";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 
-const COLUMNS = "paused, paused_reason, timezone, send_days, send_start_hour, send_end_hour, signature, visit_municipios, email_variant_weights, digest_hour, last_digest_on";
+const COLUMNS = "paused, paused_reason, timezone, send_days, send_start_hour, send_end_hour, signature, visit_municipios, email_variant_weights, digest_hour, last_digest_on, offer_title, offer_text, cta_label";
 
-export async function getSettings(db: GrowthDb): Promise<GrowthSettings> {
-  const { data, error } = await db.from("growth_settings").select(COLUMNS).eq("id", true).single();
+export async function getSettings(db: GrowthDb, workspaceId = TLACO_WORKSPACE_ID): Promise<GrowthSettings> {
+  const { data, error } = await db.from("growth_settings").select(COLUMNS).eq("workspace_id", workspaceId).single();
   if (error || !data) throw new Error(error?.message ?? "growth_settings missing");
   return data as GrowthSettings;
 }
 
-export async function updateSettings(db: GrowthDb, patch: GrowthSettingsPatch): Promise<ServiceResult<GrowthSettings>> {
+export async function updateSettings(db: GrowthDb, workspaceId: string, patch: GrowthSettingsPatch): Promise<ServiceResult<GrowthSettings>> {
   const fields: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (patch.paused !== undefined) {
     fields.paused = patch.paused;
@@ -26,11 +28,18 @@ export async function updateSettings(db: GrowthDb, patch: GrowthSettingsPatch): 
   if (patch.send_start_hour !== undefined || patch.send_end_hour !== undefined) {
     const start = patch.send_start_hour ?? 9;
     const end = patch.send_end_hour ?? 18;
-    if (!Number.isInteger(start) || !Number.isInteger(end) || start < 6 || end > 21 || start >= end) {
-      return { ok: false, error: { code: "validation", message: "El horario debe estar entre 6:00 y 21:00 y empezar antes de terminar." } };
+    if (!Number.isInteger(start) || !Number.isInteger(end) || start < SEND_HOUR_MIN || end > SEND_HOUR_MAX || start >= end) {
+      return { ok: false, error: { code: "validation", message: `El horario debe estar entre ${SEND_HOUR_MIN}:00 y ${SEND_HOUR_MAX}:00 y empezar antes de terminar.` } };
     }
     fields.send_start_hour = start;
     fields.send_end_hour = end;
+  }
+  const offerFields: Array<["offer_title" | "offer_text" | "cta_label", number]> = [["offer_title", 120], ["offer_text", 1200], ["cta_label", 40]];
+  for (const [field, max] of offerFields) {
+    const value = patch[field];
+    if (value === undefined) continue;
+    if (value.trim().length > max) return { ok: false, error: { code: "validation", message: `Ese texto pasa de ${max} caracteres.` } };
+    fields[field] = value.trim() || null;
   }
   if (patch.send_days !== undefined) {
     const days = [...new Set(patch.send_days)].filter((day) => Number.isInteger(day) && day >= 0 && day <= 6);
@@ -38,7 +47,7 @@ export async function updateSettings(db: GrowthDb, patch: GrowthSettingsPatch): 
     fields.send_days = days.sort();
   }
 
-  const { data, error } = await db.from("growth_settings").update(fields).eq("id", true).select(COLUMNS).single();
+  const { data, error } = await db.from("growth_settings").update(fields).eq("workspace_id", workspaceId).select(COLUMNS).single();
   if (error) return internalError(error.message);
   return { ok: true, data: data as GrowthSettings };
 }
