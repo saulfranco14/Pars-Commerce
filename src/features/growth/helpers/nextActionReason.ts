@@ -39,7 +39,9 @@ function reasonFor(action: NextAction, now: Date): string {
     case "dropped":
       return "Está dado de baja: no se le vuelve a escribir.";
     case "no_phone":
-      return "No tiene teléfono.";
+      return facts.views
+        ? `Abrió su tienda ${times(facts.views)}, pero no tenemos su teléfono: síguelo por correo o visítalo. Si consigues su número, usa «Corregir teléfono».`
+        : "No tenemos su teléfono: síguelo por correo o visítalo. Si consigues su número, usa «Corregir teléfono».";
     case "bad_phone":
       return "Ese número no sirve para WhatsApp. Si encontraste otro, usa «Corregir teléfono».";
     case "visit_passed":

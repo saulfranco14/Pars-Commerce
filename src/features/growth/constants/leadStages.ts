@@ -1,6 +1,6 @@
 import type { StatusTone } from "@/components/admin/StatusBadge";
 
-import type { LeadStage, NextChannel } from "@/features/growth/interfaces/lead";
+import type { EmailStatus, LeadStage, NextChannel, PhoneStatus, VisitStatus } from "@/features/growth/interfaces/lead";
 
 export const LEAD_STAGE_META: Record<LeadStage, { label: string; tone: StatusTone }> = {
   nuevo: { label: "Por contactar", tone: "neutral" },
@@ -19,6 +19,31 @@ export const NEXT_CHANNEL_LABEL: Record<NextChannel, string> = {
   visita: "Visita",
   correo: "Correo",
   ninguno: "Sin canal",
+};
+
+export const PHONE_STATUS_LABEL: Record<PhoneStatus, string> = {
+  desconocido: "Sin escribirle",
+  enviado: "Mensaje enviado",
+  respondio: "Respondió",
+  sin_respuesta: "No contestó",
+  sin_whatsapp: "No tiene WhatsApp",
+  equivocado: "Número equivocado",
+};
+
+export const EMAIL_STATUS_LABEL: Record<EmailStatus, string> = {
+  desconocido: "Sin enviar",
+  enviado: "Correo enviado",
+  respondio: "Respondió",
+  sin_respuesta: "No contestó",
+  rebotado: "El correo rebotó",
+};
+
+export const VISIT_STATUS_LABEL: Record<VisitStatus, string> = {
+  pendiente: "Sin visitar",
+  no_estaba: "No estaba el dueño",
+  interesado: "Le interesó",
+  cerrado: "Estaba cerrado",
+  hecha: "Ya se visitó",
 };
 
 export const LEAD_EVENT_LABEL: Record<string, string> = {

@@ -192,7 +192,7 @@ async function labelTemplates(db: GrowthDb, events: LeadEvent[]): Promise<LeadEv
   const { data } = await db.from("growth_templates").select("id, channel, step, variant, version").in("id", ids);
   const labels = new Map(((data ?? []) as Array<Pick<GrowthTemplate, "id" | "channel" | "step" | "variant" | "version">>).map((row) => {
     const step = TEMPLATE_STEPS[row.channel].find((item) => item.value === row.step)?.label ?? row.step;
-    return [row.id, `${step} Â· ${row.variant}${row.version > 1 ? ` v${row.version}` : ""}`];
+    return [row.id, `${step} · ${row.variant}${row.version > 1 ? ` v${row.version}` : ""}`];
   }));
   return events.map((event) => ({ ...event, template_label: event.template_id ? labels.get(event.template_id) ?? null : null }));
 }

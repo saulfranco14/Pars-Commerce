@@ -32,3 +32,11 @@ export interface FollowUpViewProps {
   filters: LeadFilters;
   showOwner?: boolean;
 }
+
+export type BoardLayout = "tablero" | "lista";
+
+export interface LeadBoardTableProps {
+  leads: GrowthLead[];
+  now: Date;
+  showOwner?: boolean;
+}

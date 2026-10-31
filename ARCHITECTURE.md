@@ -234,7 +234,9 @@ debe tocarla:
   `GROWTH_MAILBOX_<n>_PASSWORD`, `TELEGRAM_BOT_TOKEN`,
   `TELEGRAM_WEBHOOK_SECRET`, `GROWTH_POSTAL_ADDRESS`, `GROWTH_WHATSAPP_NUMBER`,
   `INEGI_DENUE_TOKEN` (importar desde la API del DENUE) y `GROWTH_LINK_SECRET`
-  (opcional: sella el link «Para ti» para reusarlo; sin ella se usa la service role).
+  (opcional: sella el link «Para ti» para reusarlo; sin ella se usa la service role)
+  y `NEXT_PUBLIC_CARTO_API_KEY` (mosaicos del mapa, llave gratis en
+  carto.com/basemaps/apikey; sin ella el mapa usa OpenStreetMap).
 - **Mensaje siguiente:** qué mandar lo decide `growth_lead_next_action` con el
   historial (enviados, vistas, dudas, visitas, respuestas); el cuándo, el trigger
   `growth_leads_next_step`. El texto enviado queda en `payload.body` del evento.

@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowLeft, Mail, MapPin, Pencil, Phone, Search, Store, UserRound } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Contact, Mail, MapPin, Pencil, Phone, Search, Store, UserRound } from "lucide-react";
 
 import { useGrowthLead } from "@/features/growth/hooks/useGrowthLead";
 import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
 import { useGrowthTeam } from "@/features/growth/hooks/useGrowthTeam";
+import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { adminActionButtonSecondary } from "@/components/admin/actionButtonClasses";
@@ -30,7 +31,8 @@ import { buildLeadSummary } from "@/features/growth/helpers/leadSummary";
 import { pipelineIndex } from "@/features/growth/helpers/leadPipeline";
 import { backToLeads } from "@/features/growth/services/leadsReturn";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
-import { LEAD_STAGE_META, NEXT_CHANNEL_LABEL } from "@/features/growth/constants/leadStages";
+import { PIPELINE_GUIDE } from "@/features/growth/constants/leadPipeline";
+import { EMAIL_STATUS_LABEL, LEAD_STAGE_META, NEXT_CHANNEL_LABEL, PHONE_STATUS_LABEL, VISIT_STATUS_LABEL } from "@/features/growth/constants/leadStages";
 import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
 import { formatMexicanPhoneInput } from "@/lib/phone";
 
@@ -42,11 +44,15 @@ const selectClass = "input-form min-h-11 rounded-xl border border-border bg-surf
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid gap-1 rounded-xl border border-border-soft bg-surface-raised px-3 py-2">
+    <div className="grid gap-0.5 rounded-xl border border-border-soft bg-surface-raised px-3 py-2">
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className="text-sm font-semibold text-foreground">{value}</span>
     </div>
   );
+}
+
+function attempts(count: number): string {
+  return count ? ` · ${count} ${count === 1 ? "intento" : "intentos"}` : "";
 }
 
 /** Everything about one prospect: who works it, what happened, what to send and what to do next. */
@@ -72,6 +78,7 @@ export function LeadDetailView({ id }: { id: string }) {
   const canMessage = canAct && Boolean(lead.phone_e164) && !badPhone && lead.stage !== "descartado";
   const name = formatBusinessName(lead.business_name);
   const people = (team?.members ?? []).filter((member) => member.status !== "suspended");
+  const guide = PIPELINE_GUIDE[pipelineIndex(lead.stage)];
 
   function handleAction(action: StageAction) {
     if (action === "not_interested") setConfirmDrop(true);
@@ -96,28 +103,28 @@ export function LeadDetailView({ id }: { id: string }) {
               <MapPin className="h-4 w-4 shrink-0" aria-hidden />
               {giroCopy(lead.giro).label} · {[lead.address, lead.colonia, zoneByMunicipio(lead.municipio)?.label ?? lead.municipio].filter(Boolean).join(", ")}
             </p>
-            <p className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-              <UserRound className="h-4 w-4 shrink-0" aria-hidden />
-              {lead.owner_user_id ? `Lo trabaja ${lead.owner_user_id === actor?.userId ? "tú" : lead.owner_name ?? "alguien del equipo"}` : "Sin asignar: el primero que le escriba se lo queda"}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {pipelineIndex(lead.stage) < 0 ? <StatusBadge tone={stage.tone} label={stage.label} /> : null}
             {isCoordinator && people.length ? (
-              <select
-                aria-label="Reasignar"
-                value={lead.owner_user_id ?? ""}
-                disabled={busy}
-                onChange={(event) => void reassign(event.target.value || null)}
-                className={selectClass}
-              >
-                <option value="">Sin asignar</option>
-                {people.map((member) => <option key={member.user_id} value={member.user_id}>{member.user_id === actor?.userId ? "Yo" : member.display_name}</option>)}
-              </select>
-            ) : null}
+              <label className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <UserRound className="h-4 w-4 shrink-0" aria-hidden />
+                Lo trabaja
+                <select value={lead.owner_user_id ?? ""} disabled={busy} onChange={(event) => void reassign(event.target.value || null)} className={selectClass}>
+                  <option value="">Nadie (el primero que le escriba)</option>
+                  {people.map((member) => <option key={member.user_id} value={member.user_id}>{member.user_id === actor?.userId ? `Tú (${member.display_name})` : member.display_name}</option>)}
+                </select>
+              </label>
+            ) : (
+              <p className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                <UserRound className="h-4 w-4 shrink-0" aria-hidden />
+                {lead.owner_user_id ? `Lo trabaja ${lead.owner_user_id === actor?.userId ? "tú" : lead.owner_name ?? "alguien del equipo"}` : "Sin asignar: el primero que le escriba se lo queda"}
+              </p>
+            )}
           </div>
+          {pipelineIndex(lead.stage) < 0 ? <StatusBadge tone={stage.tone} label={stage.label} /> : null}
         </div>
-        <PipelineStepper stage={lead.stage} />
+        <div className="grid gap-1.5">
+          <PipelineStepper stage={lead.stage} />
+          {guide ? <p className="text-sm text-muted-foreground"><b className="font-semibold text-foreground">{guide.means}</b> {guide.todo}</p> : null}
+        </div>
       </header>
 
       {!canAct ? <Notification tone="info" message={`Ahora lo trabaja ${lead.owner_name ?? "otra persona del equipo"}. Puedes ver su historial, pero ya no escribirle desde aquí.`} /> : null}
@@ -129,23 +136,28 @@ export function LeadDetailView({ id }: { id: string }) {
             <WhatsappComposer key={`${lead.phone_e164}-${lead.whatsapp_attempts}-${lead.phone_status}-${lead.stage}`} leadId={lead.id} busy={busy} onOutcome={(outcome, sent) => markOutcome(outcome, undefined, sent)} />
           ) : badPhone && !closed && canAct ? (
             <Notification tone="warning" title="WhatsApp" message="Ese número no sirve para WhatsApp. Si encontraste otro, usa «Corregir teléfono»." />
+          ) : !lead.phone_e164 && !closed && canAct ? (
+            <Notification tone="info" title="Sin teléfono" message={`No podemos armarte el WhatsApp porque no tenemos su número.${lead.email ? " El motor le escribe por correo." : ""} Si lo consigues, usa «Corregir teléfono» en «Contacto y canales».`} />
           ) : null}
         </aside>
 
         <div className="grid min-w-0 gap-4 lg:order-1">
           <LeadSummaryCard summary={buildLeadSummary(events)} />
 
-          <section className="grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5">
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <Field label="Siguiente canal" value={NEXT_CHANNEL_LABEL[lead.next_channel]} />
-              <Field label="WhatsApp" value={`${lead.phone_status} · ${lead.whatsapp_attempts} intento(s)`} />
-              <Field label="Correo" value={lead.email ? lead.email_status : "Sin correo"} />
-              <Field label="Visita" value={`${lead.visit_status} · ${lead.visit_attempts} intento(s)`} />
-            </div>
+          <CollapsibleSection icon={Contact} title="Contacto y canales" description="Cómo contactarlo y en qué va cada canal." defaultOpenOnMobile={false}>
+            <div className="grid gap-4">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <Field label="Por dónde sigue" value={NEXT_CHANNEL_LABEL[lead.next_channel]} />
+                <Field label="WhatsApp" value={lead.phone_e164 ? `${PHONE_STATUS_LABEL[lead.phone_status]}${attempts(lead.whatsapp_attempts)}` : "Sin teléfono"} />
+                <Field label="Correo" value={lead.email ? EMAIL_STATUS_LABEL[lead.email_status] : "Sin correo"} />
+                <Field label="Visita" value={`${VISIT_STATUS_LABEL[lead.visit_status]}${attempts(lead.visit_attempts)}`} />
+              </div>
             {acquisition ? (
               <Notification tone="success" message={`Se registró · ${acquisition.bucket === "engine" ? "motor" : acquisition.bucket === "assisted" ? "asistido" : "solo"}${acquisition.channel ? ` por ${acquisition.channel}` : ""}.`} />
             ) : null}
-            <div className="flex flex-wrap gap-2">
+              <div className="grid gap-2">
+                <p className="text-xs font-semibold text-muted-foreground">Contactar</p>
+                <div className="flex flex-wrap gap-2">
               {lead.phone_e164 ? (
                 <a href={`tel:${lead.phone_e164}`} className={adminActionButtonSecondary}><Phone className="h-4 w-4" aria-hidden />Llamar {formatMexicanPhoneInput(lead.phone_e164)}</a>
               ) : null}
@@ -154,14 +166,19 @@ export function LeadDetailView({ id }: { id: string }) {
                 <a href={buildMapsLink(lead.lat, lead.lng)} target="_blank" rel="noopener noreferrer" className={adminActionButtonSecondary}><MapPin className="h-4 w-4" aria-hidden />Cómo llegar</a>
               ) : null}
               <a href={buildMapsSearchLink(lead)} target="_blank" rel="noopener noreferrer" className={adminActionButtonSecondary}><Search className="h-4 w-4" aria-hidden />Ver en Google Maps</a>
+                </div>
+              </div>
               {!closed && canAct ? (
-                <button type="button" disabled={busy} onClick={() => setEditingPhone(true)} className={adminActionButtonSecondary}><Pencil className="h-4 w-4" aria-hidden />Corregir teléfono</button>
-              ) : null}
-              {!closed && canAct ? (
-                <button type="button" disabled={busy} onClick={() => setEditingGiro(true)} className={adminActionButtonSecondary}><Store className="h-4 w-4" aria-hidden />Corregir giro</button>
+                <div className="grid gap-2">
+                  <p className="text-xs font-semibold text-muted-foreground">¿Algún dato está mal? Corrígelo para que los mensajes salgan bien.</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" disabled={busy} onClick={() => setEditingPhone(true)} className={adminActionButtonSecondary}><Pencil className="h-4 w-4" aria-hidden />Corregir teléfono</button>
+                    <button type="button" disabled={busy} onClick={() => setEditingGiro(true)} className={adminActionButtonSecondary}><Store className="h-4 w-4" aria-hidden />Corregir giro</button>
+                  </div>
+                </div>
               ) : null}
             </div>
-          </section>
+          </CollapsibleSection>
 
           <LeadConversation events={events} viewerId={actor?.userId ?? null} onLogReply={() => setLoggingReply(true)} />
         </div>

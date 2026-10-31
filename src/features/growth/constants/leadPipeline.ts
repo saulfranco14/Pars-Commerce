@@ -23,14 +23,44 @@ export const BOARD_COLUMN_HINT: Record<BoardColumnKey, string> = {
   registrado: "Ya tiene cuenta. Acompáñalo hasta que venda.",
 };
 
-/** «Cómo funciona»: the six steps and what the person does at each one. */
+/** «Cómo funciona»: what each step means, what to do there and what moves it forward. */
 export const PIPELINE_GUIDE = [
-  { label: "Por contactar", todo: "Mándale el primer mensaje desde el barrido de tu zona." },
-  { label: "Contactado", todo: "Espera 3 días. Si no responde, el seguimiento aparece solo en «Tu día»." },
-  { label: "Vio su tienda", todo: "Abrió su enlace: escríbele hoy, está interesado." },
-  { label: "Respondió", todo: "Contesta su duda y ofrécele darlo de alta o visitarlo." },
-  { label: "Cita agendada", todo: "Visítalo el día acordado; te lo recordamos ese día." },
-  { label: "Registrado", todo: "Ayúdale a dejar lista su tienda, conectar cobros y vender." },
+  {
+    label: "Por contactar",
+    means: "Nadie le ha escrito todavía.",
+    todo: "Mándale el primer mensaje desde el barrido de tu zona.",
+    moves: "Pasa a «Contactado» cuando confirmas «Sí, enviado».",
+  },
+  {
+    label: "Contactado",
+    means: "Ya le escribiste y no ha contestado.",
+    todo: "Espera 3 días. Si no responde, el seguimiento aparece solo en «Tu día».",
+    moves: "Pasa solo a «Vio su tienda» si abre su enlace, o tú tocas «Marcar que respondió».",
+  },
+  {
+    label: "Vio su tienda",
+    means: "Abrió el enlace de su tienda de muestra.",
+    todo: "Escríbele hoy: es cuando más interés tiene.",
+    moves: "Toca «Marcar que respondió» cuando te conteste.",
+  },
+  {
+    label: "Respondió",
+    means: "Te contestó por WhatsApp o correo.",
+    todo: "Resuelve su duda y ofrécele darlo de alta o visitarlo.",
+    moves: "«Agendar cita» o «Dar de alta su negocio».",
+  },
+  {
+    label: "Cita agendada",
+    means: "Quedaron de verse un día y hora.",
+    todo: "Visítalo; ese día aparece en «Tu día».",
+    moves: "«Dar de alta su negocio» en la visita.",
+  },
+  {
+    label: "Registrado",
+    means: "Ya tiene su cuenta en Tlaco.",
+    todo: "Ayúdale a dejar lista su tienda, conectar Mercado Pago y vender.",
+    moves: "Lo sigues en la pestaña «Activación» hasta que vende seguido.",
+  },
 ];
 export const BOARD_COLUMN_LIMIT = 25;
 /** The Registrado column only shows the latest wins. */
@@ -54,14 +84,14 @@ export const STAGE_ACTIONS: Record<LeadStage, StageAction[]> = {
 };
 
 export const STAGE_ACTION_LABEL: Record<StageAction, string> = {
-  replied: "Respondió",
+  replied: "Marcar que respondió",
   schedule_visit: "Agendar cita",
   reschedule_visit: "Cambiar la cita",
   cancel_visit: "Cancelar la cita",
-  remind: "Recordarme",
+  remind: "Recordármelo después",
   pause: "Pausar hasta…",
   resume: "Reactivar",
-  note: "Nota",
+  note: "Agregar nota",
   not_interested: "No le interesa",
   register: "Dar de alta su negocio",
 };
@@ -91,4 +121,28 @@ export const PAUSE_PRESETS = [
   { days: 7, label: "Una semana" },
   { days: 15, label: "15 días" },
   { days: 30, label: "Un mes" },
+];
+
+/** The tabs on Prospectos and what each one is for, shown under the tabs and in the guide. */
+export const PROSPECT_VIEWS = [
+  { value: "seguimiento", label: "Seguimiento", hint: "Los negocios a los que ya les escribiste, por etapa. Aquí trabajas el día a día." },
+  { value: "activacion", label: "Activación", hint: "Los que ya se registraron: acompáñalos hasta que su tienda vende." },
+  { value: "contactar", label: "Prospectar", hint: "La lista completa de tu zona para mandar primeros mensajes y buscar a alguien." },
+  { value: "mapa", label: "Mapa", hint: "Dónde está cada negocio y qué tan avanzado va; sirve para armar una ruta de visitas." },
+] as const;
+
+/** «Cómo funciona» → the day, in the order «Tu día» shows it. */
+export const DAY_GUIDE = [
+  { title: "Contesta a quien respondió", detail: "Son los más cerca de registrarse. Abre su ficha, lee lo que dijo y usa el mensaje sugerido." },
+  { title: "Escribe a quien le toca", detail: "Quien vio su tienda o lleva días sin contestar. La ficha te dice por qué y qué mandarle." },
+  { title: "Manda primeros mensajes", detail: "El barrido te da uno por uno los negocios de tu zona hasta llegar a tu meta del día." },
+];
+
+/** «Cómo funciona» → the rules everyone on the team shares. */
+export const TEAM_RULES = [
+  "Quien le escribe primero a un negocio, o lo da de alta, se queda con él. Nadie más puede escribirle.",
+  "Un teléfono o correo no se puede registrar dos veces: si ya existe, te decimos quién lo trabaja.",
+  "Tlaco nunca manda WhatsApp solo: tú lo envías desde tu celular y al regresar confirmas «Sí, enviado».",
+  "«No le interesa» lo da de baja en todos los canales y para todo el equipo.",
+  "El coordinador puede reasignar negocios y ver el trabajo de todos.",
 ];

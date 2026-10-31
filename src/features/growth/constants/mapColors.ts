@@ -16,8 +16,13 @@ export const STAGE_MAP_GROUP: Record<LeadStage, { label: string; color: string }
   descartado: { label: "Sin respuesta o baja", color: "#cbd5e1" },
 };
 
-/** Map tiles with streets and labels; free with attribution. */
-export const MAP_TILES = {
-  url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-};
+const CARTO_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY;
+const OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+
+/** CARTO's light tiles need a free key (carto.com/basemaps/apikey); without one, OpenStreetMap's own tiles. */
+export const MAP_TILES = CARTO_KEY
+  ? {
+      url: `https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png?key=${CARTO_KEY}`,
+      attribution: `${OSM_ATTRIBUTION} &copy; <a href="https://carto.com/attributions">CARTO</a>`,
+    }
+  : { url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", attribution: OSM_ATTRIBUTION };

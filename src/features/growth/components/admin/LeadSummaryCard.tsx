@@ -1,4 +1,8 @@
-import { Eye, MessageCircle, MessageSquareReply, MousePointerClick } from "lucide-react";
+"use client";
+
+import { Activity, Eye, MessageCircle, MessageSquareReply, MousePointerClick } from "lucide-react";
+
+import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 
 import { formatVisitSeconds } from "@/features/growth/helpers/paraSession";
 import { timeAgo } from "@/features/growth/helpers/nextActionReason";
@@ -30,9 +34,8 @@ export function LeadSummaryCard({ summary }: LeadSummaryCardProps) {
   ].filter(Boolean);
 
   return (
-    <section className="grid gap-3 rounded-2xl border border-border bg-surface-raised/60 p-4 sm:p-5" aria-label="Resumen">
-      <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Resumen</p>
-      <div className="grid gap-3 sm:grid-cols-2">
+    <CollapsibleSection icon={Activity} title="Resumen" description="Lo que ha pasado con este negocio, de un vistazo.">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Fact
           icon={MessageCircle}
           title={summary.sent ? `${summary.sent} ${summary.sent === 1 ? "mensaje enviado" : "mensajes enviados"}` : "Todavía no le escribes"}
@@ -50,6 +53,6 @@ export function LeadSummaryCard({ summary }: LeadSummaryCardProps) {
           detail={summary.lastReply ? `«${summary.lastReply}»` : null}
         />
       </div>
-    </section>
+    </CollapsibleSection>
   );
 }

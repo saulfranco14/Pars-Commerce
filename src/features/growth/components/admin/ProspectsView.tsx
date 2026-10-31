@@ -18,17 +18,11 @@ import { pageHeaderCta } from "@/components/admin/actionButtonClasses";
 
 import { leadFiltersQuery, parseLeadFilters } from "@/features/growth/helpers/leadFiltersQuery";
 import { GIRO_COPY, GIRO_KEYS } from "@/features/growth/constants/giroCopy";
+import { PROSPECT_VIEWS } from "@/features/growth/constants/leadPipeline";
 import { ZONES } from "@/features/growth/constants/zoneCopy";
 import { rememberLeadsList } from "@/features/growth/services/leadsReturn";
 
 import type { LeadFilters, LeadView } from "@/features/growth/interfaces/lead";
-
-const VIEW_TABS = [
-  { value: "seguimiento", label: "Seguimiento" },
-  { value: "activacion", label: "Activación" },
-  { value: "contactar", label: "Prospectar" },
-  { value: "mapa", label: "Mapa" },
-];
 
 const selectClass = "input-form min-h-11 w-full min-w-0 rounded-xl border border-border bg-surface-raised px-3 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
 
@@ -42,6 +36,7 @@ export function ProspectsView() {
   const { team } = useGrowthTeam(isCoordinator);
   const [adding, setAdding] = useState(false);
   const people = (team?.members ?? []).filter((member) => member.user_id !== actor?.userId && member.status !== "suspended");
+  const view = PROSPECT_VIEWS.find((item) => item.value === (filters.vista ?? "seguimiento")) ?? PROSPECT_VIEWS[0];
 
   useEffect(() => {
     if (filters.vista === "seguimiento") rememberLeadsList(query);
@@ -58,7 +53,7 @@ export function ProspectsView() {
       <ProspectingGuide />
       <div className="grid grid-cols-1 gap-2 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center">
         <FilterTabs
-          tabs={VIEW_TABS}
+          tabs={PROSPECT_VIEWS}
           activeValue={filters.vista ?? "seguimiento"}
           onTabChange={(value) => navigate({ vista: value as LeadView, municipio: filters.municipio, giro: filters.giro, owner: filters.owner })}
           ariaLabel="Vista"
@@ -93,6 +88,7 @@ export function ProspectsView() {
           Nuevo prospecto
         </button>
       </div>
+      <p className="-mt-2 text-sm text-muted-foreground"><b className="font-semibold text-foreground">{view.label}:</b> {view.hint}</p>
       {filters.vista === "seguimiento" ? <FollowUpView filters={filters} showOwner={isCoordinator && filters.owner !== "me"} /> : null}
       {filters.vista === "activacion" ? <ActivationView owner={filters.owner} showOwner={isCoordinator && filters.owner !== "me"} /> : null}
       {filters.vista === "contactar" ? <LeadsView /> : null}

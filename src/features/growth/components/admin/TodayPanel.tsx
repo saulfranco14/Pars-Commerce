@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarClock, Eye, MessageSquareReply, Send } from "lucide-react";
+import { CalendarClock, Eye, ListChecks, MessageSquareReply, Send } from "lucide-react";
 
 import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
 import { useMyDay } from "@/features/growth/hooks/useMyDay";
+import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
+import { StatusBadge } from "@/components/admin/StatusBadge";
 import { adminActionButtonPrimary, adminActionButtonSecondary } from "@/components/admin/actionButtonClasses";
 
 import { leadFiltersQuery } from "@/features/growth/helpers/leadFiltersQuery";
@@ -21,13 +23,19 @@ function greeting(now: Date): string {
   return hour < 12 ? "Buenos días" : hour < 19 ? "Buenas tardes" : "Buenas noches";
 }
 
+/** A handle like "saul.franco1420" is not a name; greet without it until the person sets one in Equipo. */
+function firstName(displayName: string): string | null {
+  const first = displayName.trim().split(/\s+/)[0] ?? "";
+  return /^\p{L}{2,}$/u.test(first) ? first : null;
+}
+
 /** «Tu día»: the three things to do today, in order, each with its own button. */
 export function TodayPanel() {
   const { actor } = useGrowthMe();
   const { data } = useMyDay();
   if (!actor || !data) return null;
 
-  const firstName = actor.displayName.split(" ")[0];
+  const name = firstName(actor.displayName);
   const writeToday = data.hot_due + data.follow_ups_due;
   const progress = Math.min(100, Math.round((data.sent_today / Math.max(data.daily_goal, 1)) * 100));
   const tasks = [
@@ -36,7 +44,7 @@ export function TodayPanel() {
       title: "Contesta a quien respondió",
       detail: data.replied_due ? `${data.replied_due} ${data.replied_due === 1 ? "persona espera" : "personas esperan"} tu respuesta.` : "Nadie espera respuesta ahorita.",
       href: listHref({ stage: "conversando" }),
-      cta: data.replied_due ? `Contestar a ${data.replied_due}` : "Ver",
+      cta: data.replied_due ? `Ver a quién contestar (${data.replied_due})` : "Ver la lista",
       urgent: data.replied_due > 0,
     },
     {
@@ -46,7 +54,7 @@ export function TodayPanel() {
         ? `${data.hot_due ? `${data.hot_due} vieron su tienda` : ""}${data.hot_due && data.follow_ups_due ? " y " : ""}${data.follow_ups_due ? `${data.follow_ups_due} ${data.follow_ups_due === 1 ? "toca seguimiento" : "tocan seguimiento"}` : ""}. Te sugerimos qué mandarle a cada uno.`
         : "No tienes seguimientos para hoy.",
       href: listHref({ stage: "hoy" }),
-      cta: writeToday ? `Empezar con ${writeToday}` : "Ver",
+      cta: writeToday ? `Ver a quién escribir (${writeToday})` : "Ver la lista",
       urgent: writeToday > 0 && data.replied_due === 0,
     },
     {
@@ -54,19 +62,19 @@ export function TodayPanel() {
       title: "Primeros mensajes de tu zona",
       detail: `Llevas ${data.sent_today} de ${data.daily_goal} hoy. Quedan ${data.first_messages_left.toLocaleString("es-MX")} por contactar.`,
       href: SWEEP_PATH,
-      cta: data.sent_today ? "Seguir el barrido" : "Empezar el barrido",
+      cta: data.sent_today ? "Seguir mandando primeros mensajes" : "Mandar primeros mensajes",
       urgent: data.replied_due === 0 && writeToday === 0,
     },
   ];
 
   return (
-    <section className="grid gap-3 rounded-2xl border border-border bg-surface p-4 sm:p-5" aria-label="Tu día">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-lg font-bold tracking-tight text-foreground">{greeting(new Date())}, {firstName}</h2>
-        <p className="text-sm text-muted-foreground">
-          {data.overdue ? `${data.overdue} ${data.overdue === 1 ? "pendiente vencido" : "pendientes vencidos"} · ` : ""}Empieza por la primera.
-        </p>
-      </div>
+    <CollapsibleSection
+      icon={ListChecks}
+      title={`${greeting(new Date())}${name ? `, ${name}` : ""}`}
+      description="Tu día en 3 pasos, en orden. Cada botón abre la lista de negocios de ese paso."
+      aside={data.overdue ? <StatusBadge tone="danger" label={`${data.overdue} ${data.overdue === 1 ? "vencido" : "vencidos"}`} compact dot={false} /> : null}
+    >
+      <div className="grid gap-3">
       {data.visits_today ? (
         <Link href={listHref({ stage: "cita" })} className="inline-flex w-fit items-center gap-2 rounded-xl bg-accent/10 px-3 py-2 text-sm font-semibold text-accent">
           <CalendarClock className="h-4 w-4" aria-hidden />Hoy tienes {data.visits_today === 1 ? "1 visita" : `${data.visits_today} visitas`}
@@ -91,6 +99,7 @@ export function TodayPanel() {
           </li>
         ))}
       </ol>
-    </section>
+      </div>
+    </CollapsibleSection>
   );
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { calendarDaysBetween, canFollowUp, daysFromToday, nextStepDue, pipelineIndex } from "@/features/growth/helpers/leadPipeline";
+import { calendarDaysBetween, canFollowUp, daysFromToday, nextStepDue, pipelineIndex, sortByUrgency } from "@/features/growth/helpers/leadPipeline";
 
 // 2026-10-28 12:00 in Mexico City.
 const now = new Date("2026-10-28T18:00:00Z");
@@ -54,5 +54,16 @@ describe("canFollowUp", () => {
 describe("daysFromToday", () => {
   it("lands on the given hour in Mexico City", () => {
     expect(daysFromToday(1, 10, now)).toBe("2026-10-29T16:00:00.000Z");
+  });
+});
+
+describe("urgency order", () => {
+  it("puts overdue first, then today, then later and undated, keeping ties in place", () => {
+    const later = { ...base, id: "later", next_step_at: "2026-10-31T16:00:00Z" };
+    const none = { ...base, id: "none", next_step_at: null };
+    const today = { ...base, id: "today", next_step_at: "2026-10-29T05:30:00Z" };
+    const overdue = { ...base, id: "overdue", next_step_at: "2026-10-26T16:00:00Z" };
+    const later2 = { ...base, id: "later2", next_step_at: "2026-11-02T16:00:00Z" };
+    expect(sortByUrgency([none, later, today, overdue, later2], now).map((lead) => lead.id)).toEqual(["overdue", "today", "later", "later2", "none"]);
   });
 });
