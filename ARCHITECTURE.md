@@ -264,7 +264,7 @@ debe tocarla:
 - **Tlaco IA:** la moneda de «Tlaco te lo enseña» (`components/brand/TlacoMascot`)
   en su propia tarjeta, arriba de «Tu día». Cuando la tarjeta sale de la
   pantalla queda flotando abajo a la derecha (`TlacoAiFab`, saluda una vez al
-  día); en la ficha flota siempre (`TlacoAiLauncher`) y abre «Para activar». Los pasos del día salen de reglas puras
+  día; «Entendido» o ✕ la dejan sólo flotando el resto del día); en la ficha flota siempre (`TlacoAiLauncher`) y abre «Para activar». Los pasos del día salen de reglas puras
   (`helpers/todayPlan.ts`: día y hora de CDMX, `WRITE_WINDOWS`); la IA sólo los
   redacta (`POST /api/growth/assistant/today`, tope `TODAY_AI_WAIT_MS`, si no
   llega se muestra el texto de las reglas). Se guarda por día y firma en

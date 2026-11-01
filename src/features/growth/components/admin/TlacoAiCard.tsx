@@ -25,13 +25,13 @@ function nowLabel(): string {
 
 /**
  * Tlaco IA above «Tu día»: four lines at most of what to do today, the rest in its sheet. It floats once scrolled away;
- * «Entendido» leaves only the floating button and ✕ hides it for the day.
+ * «Entendido» or ✕ leave only the floating button for the rest of the day.
  */
 export function TlacoAiCard({ facts, onStep }: TlacoAiCardProps) {
   const { plan, text, fresh, writing, again } = useTodayPlan(facts);
   const { actor } = useGrowthMe();
   const isTlaco = !actor?.tenantId;
-  const { placement, float, hide } = useTlacoAiPlacement();
+  const { placement, float } = useTlacoAiPlacement();
   const [topic, setTopic] = useState<TlacoAiTopic | null>(null);
   const [clamped, setClamped] = useState(false);
   const [inView, setInView] = useState(true);
@@ -59,7 +59,6 @@ export function TlacoAiCard({ facts, onStep }: TlacoAiCardProps) {
     onStep(action);
   };
 
-  if (placement === "hidden") return null;
   const sheet = (
     <TlacoAiSheet
       isOpen={topic !== null}
@@ -92,7 +91,7 @@ export function TlacoAiCard({ facts, onStep }: TlacoAiCardProps) {
           <TlacoAiTag />
           <span className="truncate text-xs text-muted-foreground first-letter:uppercase">{nowLabel()}</span>
         </div>
-        <button type="button" onClick={hide} aria-label="Ocultar Tlaco IA por hoy" title="Ocultar por hoy" className={`${adminActionButtonIcon} -mr-1 -mt-1 self-start border-transparent bg-transparent`}>
+        <button type="button" onClick={float} aria-label="Cerrar y dejar Tlaco IA abajo" title="Cerrar" className={`${adminActionButtonIcon} -mr-1 -mt-1 self-start border-transparent bg-transparent`}>
           <X className="h-4 w-4" aria-hidden />
         </button>
       </div>
