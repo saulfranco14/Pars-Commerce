@@ -66,7 +66,7 @@ export default function ProspectMap({ points, route, colorOf, onBoundsChange, fo
       bounds={[[INITIAL_BOUNDS.minLat, INITIAL_BOUNDS.minLng], [INITIAL_BOUNDS.maxLat, INITIAL_BOUNDS.maxLng]]}
       preferCanvas
       scrollWheelZoom
-      className="h-[60vh] min-h-80 w-full rounded-2xl"
+      className="isolate h-[60vh] min-h-80 w-full rounded-2xl lg:h-[calc(100dvh-27rem)] lg:min-h-60"
     >
       <TileLayer url={MAP_TILES.url} attribution={MAP_TILES.attribution} />
       <BoundsWatcher onChange={onBoundsChange} />

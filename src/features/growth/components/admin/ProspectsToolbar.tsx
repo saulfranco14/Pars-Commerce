@@ -53,7 +53,7 @@ export function ProspectsToolbar({ filters, search, onSearch, onChange, onClear,
             type="search"
             value={search}
             onChange={(event) => onSearch(event.target.value)}
-            placeholder={filters.vista === "mapa" ? "Buscar negocio para ir a él en el mapa" : "Buscar negocio por nombre o teléfono"}
+            placeholder={filters.vista === "mapa" ? "Negocio para ubicarlo en el mapa" : "Nombre o teléfono"}
             className="input-form min-h-11 w-full rounded-xl border border-border bg-surface pl-10 pr-3 text-sm text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
         </label>

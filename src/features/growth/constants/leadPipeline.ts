@@ -1,4 +1,4 @@
-import type { BoardColumnKey, FollowUpAction, LeadStage } from "@/features/growth/interfaces/lead";
+import type { BoardColumnKey, FollowUpAction, FollowUpList, LeadStage } from "@/features/growth/interfaces/lead";
 
 export type PipelineStepKey = "por_contactar" | BoardColumnKey;
 
@@ -63,6 +63,21 @@ export const PIPELINE_GUIDE = [
   },
 ];
 export const BOARD_COLUMN_LIMIT = 25;
+/** «Para hoy» loads every due lead up to this; a member rarely has more than a few dozen. */
+export const DUE_LIMIT = 200;
+/** Rows a list group shows before «Ver todos». */
+export const LIST_GROUP_PREVIEW = 5;
+
+/** The «¿Qué negocios ver?» sheet: each follow-up list, what it holds. */
+export const FOLLOW_UP_LISTS: Array<{ value: FollowUpList; label: string; hint: string }> = [
+  { value: "hoy", label: "Para hoy", hint: "Vencidos y los que tocan hoy, lo más atrasado primero." },
+  { value: "conversando", label: "Respondió", hint: BOARD_COLUMN_HINT.conversando },
+  { value: "caliente", label: "Vio su tienda", hint: BOARD_COLUMN_HINT.caliente },
+  { value: "contactado", label: "Contactado", hint: BOARD_COLUMN_HINT.contactado },
+  { value: "cita", label: "Cita agendada", hint: BOARD_COLUMN_HINT.cita },
+  { value: "registrado", label: "Registrado", hint: "Se registraron en los últimos 7 días: pásalos a Activación." },
+  { value: "todos", label: "Todos", hint: "Todos los negocios en seguimiento, lo más urgente primero." },
+];
 /** The Registrado column only shows the latest wins. */
 export const BOARD_REGISTERED_DAYS = 7;
 

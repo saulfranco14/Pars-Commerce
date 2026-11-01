@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-import type { StoreNavigationBarProps } from "@/features/sitio/interfaces/storeNavigation";
+import type { NavigationProgressBarProps } from "@/types/navigation";
 
 const FINISH_MS = 320;
 
-export function StoreNavigationBar({ active }: StoreNavigationBarProps) {
+export function NavigationProgressBar({ active }: NavigationProgressBarProps) {
   const [wasActive, setWasActive] = useState(active);
   const [finishing, setFinishing] = useState(false);
   if (wasActive !== active) {
@@ -23,7 +23,7 @@ export function StoreNavigationBar({ active }: StoreNavigationBarProps) {
   if (!active && !finishing) return null;
   return (
     <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-70 h-0.75">
-      <div className={`h-full origin-left bg-accent ${active ? "store-progress-loading" : "store-progress-done"}`} />
+      <div className={`h-full origin-left bg-accent ${active ? "nav-progress-loading" : "nav-progress-done"}`} />
     </div>
   );
 }

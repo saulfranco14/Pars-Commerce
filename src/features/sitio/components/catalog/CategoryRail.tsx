@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { RAIL_MIDDLE_COPY, useCategoryRail } from "@/features/sitio/hooks/useCategoryRail";
-import { useStoreNavigation } from "@/features/sitio/hooks/useStoreNavigation";
+import { useNavigationFeedback } from "@/hooks/useNavigationFeedback";
 
 import {
   storeChip,
@@ -23,7 +23,7 @@ const ARROW = `absolute top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 cursor-poin
 
 export function CategoryRail({ slug, state, categories }: CategoryRailProps) {
   const { type, subcatalogId, q, sort } = state;
-  const { pendingHref } = useStoreNavigation();
+  const { pendingHref } = useNavigationFeedback();
   const entries = [
     { key: ALL_KEY, label: "Todas", count: null, href: catalogHref(slug, { type, q, sort }) },
     ...categories.map((category) => ({

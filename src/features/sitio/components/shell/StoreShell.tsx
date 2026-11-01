@@ -1,8 +1,8 @@
+import { NavigationFeedback } from "@/components/navigation/NavigationFeedback";
 import { CartProvider } from "@/features/sitio/components/cart/CartProvider";
 import { HideOnCheckout } from "@/features/sitio/components/shell/HideOnCheckout";
 import { StoreFooter } from "@/features/sitio/components/shell/StoreFooter";
 import { StoreHeader } from "@/features/sitio/components/shell/StoreHeader";
-import { StoreNavigation } from "@/features/sitio/components/shell/StoreNavigation";
 import { StoreViewBeacon } from "@/features/sitio/components/shell/StoreViewBeacon";
 
 import { storeSans } from "@/features/sitio/constants/storeFonts";
@@ -17,7 +17,7 @@ export function StoreShell({ chrome, theme, accent, tenantId, notice, children }
       style={buildStoreThemeStyle(theme, accent)}
     >
       <StoreViewBeacon tenantId={tenantId} />
-      <StoreNavigation>
+      <NavigationFeedback>
         <CartProvider tenantId={tenantId}>
           <StoreHeader chrome={chrome} />
           <main className="site-template-main mx-auto w-full max-w-6xl flex-1 px-4 pb-16 pt-4 sm:px-6">
@@ -28,7 +28,7 @@ export function StoreShell({ chrome, theme, accent, tenantId, notice, children }
         <HideOnCheckout>
           <StoreFooter chrome={chrome} />
         </HideOnCheckout>
-      </StoreNavigation>
+      </NavigationFeedback>
     </div>
   );
 }

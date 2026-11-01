@@ -3,7 +3,7 @@
 import { MoreHorizontal } from "lucide-react";
 
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { adminActionButtonDanger, adminActionButtonPrimary, adminActionButtonSecondary } from "@/components/admin/actionButtonClasses";
+import { adminActionButtonDanger, adminActionButtonIcon, adminActionButtonPrimary, adminActionButtonSecondary } from "@/components/admin/actionButtonClasses";
 import { LeadActionBar } from "@/features/growth/components/admin/LeadActionBar";
 import { LeadMessage } from "@/features/growth/components/admin/LeadMessage";
 
@@ -37,9 +37,15 @@ export function LeadNowCard({ lead, busy, reason, showMessage, onAction, onOpenA
           </button>
         );
       })}
-      <button type="button" onClick={onOpenActions} aria-label="Más acciones" className={`${adminActionButtonSecondary} ${picks.length ? "w-11 shrink-0 px-0" : "flex-1"}`}>
-        <MoreHorizontal className="h-4 w-4" aria-hidden />{picks.length ? null : "Más acciones"}
-      </button>
+      {picks.length ? (
+        <button type="button" onClick={onOpenActions} aria-label="Más acciones" className={adminActionButtonIcon}>
+          <MoreHorizontal className="h-4 w-4" aria-hidden />
+        </button>
+      ) : (
+        <button type="button" onClick={onOpenActions} className={`${adminActionButtonSecondary} flex-1`}>
+          <MoreHorizontal className="h-4 w-4" aria-hidden />Más acciones
+        </button>
+      )}
     </div>
   );
 

@@ -8,22 +8,24 @@ import { useGrowthLead } from "@/features/growth/hooks/useGrowthLead";
 import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
 import { useGrowthTeam } from "@/features/growth/hooks/useGrowthTeam";
 import { EmptyState } from "@/components/admin/EmptyState";
-import { adminActionButtonSecondary } from "@/components/admin/actionButtonClasses";
-import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { adminActionButtonIcon, adminActionButtonSecondary } from "@/components/admin/actionButtonClasses";
 import { Notification } from "@/components/ui/Notification";
 import { DropLeadSheet } from "@/features/growth/components/admin/DropLeadSheet";
 import { FollowUpSheet } from "@/features/growth/components/admin/FollowUpSheet";
 import { LeadActionsSheet } from "@/features/growth/components/admin/LeadActionsSheet";
 import { LeadConversation } from "@/features/growth/components/admin/LeadConversation";
 import { LeadDataCard } from "@/features/growth/components/admin/LeadDataCard";
+import { LeadDetailSkeleton } from "@/features/growth/components/admin/LeadDetailSkeleton";
 import { LeadGiroSheet } from "@/features/growth/components/admin/LeadGiroSheet";
 import { LeadNowCard } from "@/features/growth/components/admin/LeadNowCard";
 import { LeadOwnerSheet } from "@/features/growth/components/admin/LeadOwnerSheet";
 import { LeadPhoneSheet } from "@/features/growth/components/admin/LeadPhoneSheet";
+import { LeadQueueBar } from "@/features/growth/components/admin/LeadQueueBar";
 import { LeadSummaryCard } from "@/features/growth/components/admin/LeadSummaryCard";
 import { PipelineStepper } from "@/features/growth/components/admin/PipelineStepper";
 import { RegisterLeadSheet } from "@/features/growth/components/admin/RegisterLeadSheet";
 import { ReplySheet } from "@/features/growth/components/admin/ReplySheet";
+import { TlacoAiLauncher } from "@/features/growth/components/admin/TlacoAiLauncher";
 
 import { buildMapsLink, buildMapsSearchLink } from "@/features/growth/helpers/buildWaLink";
 import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName";
@@ -62,7 +64,7 @@ export function LeadDetailView({ id }: { id: string }) {
     setJustSent(readLastSent()?.leadId === id);
   }, [id]);
 
-  if (isLoading && !detail) return <LoadingBlock message="Cargando prospecto…" variant="skeleton" />;
+  if (isLoading && !detail) return <LeadDetailSkeleton />;
   if (error || !detail) return <EmptyState icon={AlertTriangle} title="No encontramos este prospecto" description="Puede que ya lo trabaje otra persona del equipo." tone="muted" />;
 
   const { lead, events, acquisition, canAct, suggestion } = detail;
@@ -115,7 +117,7 @@ export function LeadDetailView({ id }: { id: string }) {
           <ArrowLeft className="h-4 w-4" aria-hidden />Prospectos
         </button>
         {hasActions ? (
-          <button type="button" onClick={() => setActionsOpen(true)} aria-label="Acciones" className={`${adminActionButtonSecondary} w-11 px-0`}>
+          <button type="button" onClick={() => setActionsOpen(true)} aria-label="Acciones" className={adminActionButtonIcon}>
             <MoreHorizontal className="h-4 w-4" aria-hidden />
           </button>
         ) : null}
@@ -136,6 +138,8 @@ export function LeadDetailView({ id }: { id: string }) {
           }
         />
       ) : notice ? <Notification tone={notice.tone} message={notice.message} onDismiss={clearNotice} /> : null}
+
+      <LeadQueueBar leadId={lead.id} done={justSent || notice?.tone === "success"} />
 
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div className="grid min-w-0 gap-1.5 md:flex-1">
@@ -188,6 +192,7 @@ export function LeadDetailView({ id }: { id: string }) {
         </div>
       </div>
 
+      <TlacoAiLauncher />
       <LeadActionsSheet isOpen={actionsOpen} busy={busy} groups={groups} onClose={() => setActionsOpen(false)} onPick={handleAction} />
       <DropLeadSheet
         isOpen={confirmDrop}

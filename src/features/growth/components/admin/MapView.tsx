@@ -27,6 +27,9 @@ const ProspectMap = dynamic(() => import("@/features/growth/components/admin/Pro
   loading: () => <LoadingBlock message="Cargando el mapa…" variant="skeleton" />,
 });
 
+// Only the top few: the side panel must fit next to the map without its own scroll.
+const GAP_PREVIEW = 3;
+
 const MODES = [
   { value: "estado", label: "Por estado" },
   { value: "persona", label: "Por persona" },
@@ -70,7 +73,7 @@ export function MapView({ giro, owner, people, q }: MapViewProps) {
     const key = `${point.colonia}|${point.municipio}`;
     acc.set(key, (acc.get(key) ?? 0) + 1);
     return acc;
-  }, new Map<string, number>())].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  }, new Map<string, number>())].sort((a, b) => b[1] - a[1]).slice(0, GAP_PREVIEW);
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
@@ -107,13 +110,13 @@ export function MapView({ giro, owner, people, q }: MapViewProps) {
         </p>
       </div>
 
-      <aside className="grid content-start gap-4">
-        <section className="grid gap-2 rounded-2xl border border-border bg-surface p-4">
+      <aside className="grid min-w-0 content-start gap-3 *:min-w-0">
+        <section className="grid gap-2 rounded-2xl border border-border bg-surface p-3">
           <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">En pantalla</p>
-          <ul className="grid gap-1.5 text-sm">
+          <ul className="grid grid-cols-2 gap-x-3 gap-y-1 text-[13px]">
             {legend(points, colorOf, labelOf).map((item) => (
-              <li key={item.label} className="flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-2 text-foreground"><span className="h-2.5 w-2.5 rounded-full" style={{ background: item.color }} aria-hidden />{item.label}</span>
+              <li key={item.label} className="flex min-w-0 items-center justify-between gap-1.5">
+                <span className="inline-flex min-w-0 items-center gap-1.5 text-foreground"><span className="h-2 w-2 shrink-0 rounded-full" style={{ background: item.color }} aria-hidden /><span className="truncate">{item.label}</span></span>
                 <b className="tabular-nums text-foreground">{item.count.toLocaleString("es-MX")}</b>
               </li>
             ))}
@@ -121,16 +124,18 @@ export function MapView({ giro, owner, people, q }: MapViewProps) {
           {points.length ? <p className="text-xs text-muted-foreground">{touched.toLocaleString("es-MX")} ya tienen contacto ({Math.round((touched / points.length) * 100)} %).</p> : null}
         </section>
 
-        <section className="grid gap-2 rounded-2xl border border-border bg-surface p-4">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Ruta de hoy</p>
-          <p className="text-sm text-muted-foreground">Con tu ubicación, los 8 negocios más cercanos para visitar, en orden.</p>
+        <section className="grid gap-2 rounded-2xl border border-border bg-surface p-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Ruta de hoy</p>
+            <span className="text-xs text-muted-foreground">Los 8 más cercanos</span>
+          </div>
           {map.routeState === "error" && map.routeError ? <Notification tone="error" message={map.routeError} /> : null}
           {map.route.length ? (
             <>
-              <ol className="grid gap-1.5 text-sm">
+              <ol className="grid gap-1 text-[13px]">
                 {map.route.map((stop, index) => (
-                  <li key={stop.id} className="flex items-start gap-2">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-foreground text-[11px] font-bold text-background">{index + 1}</span>
+                  <li key={stop.id} className="flex items-center gap-2">
+                    <span className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-foreground text-[10px] font-bold text-background">{index + 1}</span>
                     <Link href={leadPath(stop.id)} className="min-w-0 truncate font-semibold text-foreground hover:underline">{formatBusinessName(stop.business_name)}</Link>
                     <span className="ml-auto shrink-0 tabular-nums text-xs text-muted-foreground">{Math.round(stop.distance_m)} m</span>
                   </li>
@@ -145,15 +150,17 @@ export function MapView({ giro, owner, people, q }: MapViewProps) {
           )}
         </section>
 
-        {gaps.length ? (
-          <section className="grid gap-2 rounded-2xl border border-border bg-surface p-4">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Colonias sin dueño</p>
-            <p className="text-xs text-muted-foreground">Donde hay más negocios que nadie trabaja todavía.</p>
-            <ul className="grid gap-1 text-sm">
+        {gaps.length && !map.route.length ? (
+          <section className="grid gap-2 rounded-2xl border border-border bg-surface p-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Colonias sin dueño</p>
+              <span className="text-xs text-muted-foreground">Nadie las trabaja</span>
+            </div>
+            <ul className="grid gap-1 text-[13px]">
               {gaps.map(([key, count]) => {
                 const [colonia, municipio] = key.split("|");
                 return (
-                  <li key={key} className="flex items-center justify-between gap-2">
+                  <li key={key} className="flex min-w-0 items-center justify-between gap-2">
                     <span className="inline-flex min-w-0 items-center gap-1.5 text-foreground"><MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden /><span className="truncate">{formatBusinessName(colonia)}, {municipio}</span></span>
                     <b className="tabular-nums">{count}</b>
                   </li>

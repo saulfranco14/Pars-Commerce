@@ -130,6 +130,8 @@ export interface BoardZone {
 export interface LeadBoard {
   columns: BoardColumn[];
   counts: PipelineCounts;
+  /** Every lead whose next step is today or overdue, oldest first (up to DUE_LIMIT). */
+  due: GrowthLead[];
 }
 
 export interface LeadLastTouch {
@@ -179,8 +181,12 @@ export type LeadStageFilter = LeadStage | "activos" | "todos" | "en_lote" | "hoy
 /** Prospectos has two halves: the daily follow-up board and the prospecting list. */
 export type LeadView = "seguimiento" | "activacion" | "contactar" | "mapa";
 
+/** Which follow-up businesses the list shows: due today (overdue first), all, or one stage. */
+export type FollowUpList = "hoy" | "todos" | BoardColumnKey;
+
 export interface LeadFilters {
   vista?: LeadView;
+  lista?: FollowUpList;
   municipio?: string;
   giro?: string;
   stage?: LeadStageFilter;
