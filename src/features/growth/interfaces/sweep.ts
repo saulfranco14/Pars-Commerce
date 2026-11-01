@@ -34,10 +34,17 @@ export interface SweepLastAction {
   label: string;
 }
 
+/** The last WhatsApp marked as sent, kept so a wrong guess can be corrected after coming back. */
+export interface LastSent {
+  leadId: string;
+  name: string;
+}
+
 export interface SweepCardProps {
   lead: SweepLead;
   next: SweepLead | null;
-  onOutcome: (outcome: SweepOutcome, sent?: SentWhatsapp) => void;
+  /** Tapping «Enviar por WhatsApp» counts as sent (it almost always is) and moves on. */
+  onSend: (sent?: SentWhatsapp) => void;
   onSkip: () => void;
   onPhoneChanged: (lead: SweepLead) => void;
 }

@@ -33,7 +33,7 @@ const LIST_HINT: Record<"hoy" | "todos", string> = {
 
 /** Daily follow-up: a board per stage or one sorted list on wide screens; phones get the list as cards. */
 export function FollowUpView({ filters, showOwner }: FollowUpViewProps) {
-  const { data, error, isLoading } = useLeadBoard({ municipio: filters.municipio, giro: filters.giro, owner: filters.owner });
+  const { data, error, isLoading } = useLeadBoard({ municipio: filters.municipio, giro: filters.giro, owner: filters.owner, q: filters.q });
   const [layout, setLayout] = useBoardLayout();
   const [listTab, setListTab] = useState<ListTab>("hoy");
   const now = new Date();
@@ -52,7 +52,7 @@ export function FollowUpView({ filters, showOwner }: FollowUpViewProps) {
   const listHint = listTab === "hoy" || listTab === "todos" ? LIST_HINT[listTab] : BOARD_COLUMN_HINT[listTab];
 
   const list = (
-    <div className={`grid gap-3 ${layout === "tablero" ? "lg:hidden" : ""}`}>
+    <div className={`grid min-w-0 grid-cols-1 gap-3 ${layout === "tablero" ? "lg:hidden" : ""}`}>
       <FilterTabs
         tabs={[
           { value: "hoy", label: `Para hoy ${dueToday.length}` },
@@ -66,7 +66,7 @@ export function FollowUpView({ filters, showOwner }: FollowUpViewProps) {
       <p className="text-xs text-muted-foreground sm:text-sm">{listHint}</p>
       {listLeads.length ? (
         <>
-          <div className="grid gap-2 lg:hidden">
+          <div className="grid grid-cols-1 gap-2 lg:hidden">
             {listLeads.map((lead) => <BoardLeadCard key={lead.id} lead={lead} now={now} showOwner={showOwner} />)}
           </div>
           <div className="hidden lg:block">

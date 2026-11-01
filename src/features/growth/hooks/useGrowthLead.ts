@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 
 import { assignLeads, followUpLead, isBoardKey, isLeadsListKey, leadKey, patchLead } from "@/features/growth/services/growthClient";
-import { forgetWhatsappOpened } from "@/features/growth/services/whatsappOpened";
 import { swrFetcher } from "@/lib/swrFetcher";
 
 import type { FollowUpAction, FollowUpInput, LeadDetail, LeadOutcome } from "@/features/growth/interfaces/lead";
@@ -57,9 +56,7 @@ export function useGrowthLead(id: string) {
     notice,
     clearNotice,
     markOutcome: async (outcome: LeadOutcome, reason?: string, sent?: SentWhatsapp) => {
-      const saved = await run(() => patchLead(id, { outcome, reason, sent }), OUTCOME_NOTICE[outcome] ?? "Listo, quedó registrado.");
-      if (saved) forgetWhatsappOpened();
-      return saved;
+      return run(() => patchLead(id, { outcome, reason, sent }, { keepalive: outcome === "whatsapp_sent" }), OUTCOME_NOTICE[outcome] ?? "Listo, quedó registrado.");
     },
     followUp: (input: FollowUpInput) => run(() => followUpLead(id, input), FOLLOW_UP_NOTICE[input.action]),
     snooze: (days: number | null) => run(() => patchLead(id, { snoozeDays: days }), days ? `Pausado ${days} días.` : "Reactivado."),

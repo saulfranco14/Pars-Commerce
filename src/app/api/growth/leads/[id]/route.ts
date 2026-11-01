@@ -4,6 +4,7 @@ import { readJson } from "@/lib/readJson";
 import { requireGrowthMember } from "@/app/api/growth/_lib";
 
 import { serviceErrorToResponse } from "@/features/qr/services/serviceErrorToResponse";
+import { DROP_REASONS } from "@/features/growth/constants/dropReasons";
 import {
   getLeadDetail,
   recordOutcome,
@@ -57,7 +58,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!OPERATOR_OUTCOMES.includes(body.outcome)) return NextResponse.json({ error: "Acción no válida" }, { status: 400 });
     const sent = body.outcome === "whatsapp_sent" ? sentPayload(body.sent) : { payload: {}, templateId: null };
     const payload: Record<string, unknown> = { ...sent.payload };
-    if (body.outcome === "not_interested") payload.reason = body.reason === "competencia" ? "competencia" : "rechazo";
+    if (body.outcome === "not_interested") payload.reason = body.reason === "competencia" ? "competencia" : DROP_REASONS.find((item) => item.value === body.reason)?.value ?? "rechazo";
     // What the prospect answered, pasted by the operator, so the conversation reads both sides.
     if (body.outcome === "whatsapp_replied" && typeof body.reply === "string" && body.reply.trim()) payload.text = body.reply.trim().slice(0, 1000);
     const result = await recordOutcome(db, { leadId: id, outcome: body.outcome, actor: "operator", actorId: actor.userId, payload, templateId: sent.templateId });

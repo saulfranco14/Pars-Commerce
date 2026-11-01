@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, PartyPopper, Send, SkipForward, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, PartyPopper, PhoneOff, XCircle } from "lucide-react";
 
+import { useMyDay } from "@/features/growth/hooks/useMyDay";
 import { useWhatsappSweep } from "@/features/growth/hooks/useWhatsappSweep";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { PageHeader } from "@/components/admin/PageHeader";
@@ -27,7 +28,10 @@ const selectClass = "input-form min-h-11 w-full min-w-0 rounded-xl border border
 export function WhatsappSweepView() {
   const router = useRouter();
   const sweep = useWhatsappSweep();
-  const { filters, current, next, today, last } = sweep;
+  const { filters, current, next, today, last, lastSent } = sweep;
+  const { data: day } = useMyDay();
+  const goal = Math.max(day?.daily_goal ?? 20, 1);
+  const progress = Math.min(100, Math.round((today.sent / goal) * 100));
   const zone = [filters.municipio ? zoneByMunicipio(filters.municipio)?.label ?? filters.municipio : "Todos los municipios", filters.giro ? giroCopy(filters.giro).label : "todos los giros"].join(" · ");
 
   return (
@@ -63,16 +67,33 @@ export function WhatsappSweepView() {
             </select>
           </div>
         </details>
-        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border-soft pt-2 text-sm tabular-nums text-muted-foreground lg:border-0 lg:pt-0" aria-label="Avance de hoy">
-          <li className="inline-flex items-center gap-1.5"><Send className="h-4 w-4 text-emerald-600" aria-hidden /><b className="text-foreground">{today.sent}</b> enviados hoy</li>
-          <li className="inline-flex items-center gap-1.5"><XCircle className="h-4 w-4 text-red-600" aria-hidden /><b className="text-foreground">{today.noWhatsapp + today.wrongNumber}</b> sin WhatsApp</li>
-          <li className="inline-flex items-center gap-1.5"><SkipForward className="h-4 w-4 text-amber-600" aria-hidden /><b className="text-foreground">{sweep.skipped}</b> saltados</li>
-          <li className="ml-auto font-semibold text-accent">Quedan {sweep.remaining === null ? "…" : sweep.remaining.toLocaleString("es-MX")}</li>
-        </ul>
+        <div className="grid gap-1.5 border-t border-border-soft pt-2 lg:min-w-64 lg:border-0 lg:pt-0" aria-label="Avance de hoy">
+          <p className="flex items-center justify-between gap-2 text-sm tabular-nums text-muted-foreground">
+            <span><b className="text-foreground">{today.sent} de {goal}</b> hoy{today.sent >= goal ? " · meta cumplida" : ""}</span>
+            <span>Quedan {sweep.remaining === null ? "…" : sweep.remaining.toLocaleString("es-MX")}</span>
+          </p>
+          <div className="h-2 overflow-hidden rounded-full bg-border-soft" role="progressbar" aria-valuenow={today.sent} aria-valuemax={goal} aria-label="Meta del día">
+            <div className={`h-full rounded-full ${today.sent >= goal ? "bg-emerald-600" : "bg-accent"}`} style={{ width: `${progress}%` }} />
+          </div>
+        </div>
       </section>
 
       {sweep.actionError ? <Notification tone="error" message={sweep.actionError} onDismiss={sweep.clearActionError} /> : null}
-      {last ? (
+      {lastSent ? (
+        <Notification
+          tone="success"
+          onDismiss={sweep.dismissLastSent}
+          message={
+            <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span>Enviado a <Link href={leadPath(lastSent.leadId)} className="font-semibold underline-offset-2 hover:underline">{lastSent.name}</Link>. ¿No se envió?</span>
+              <span className="flex flex-wrap gap-1">
+                <button type="button" onClick={() => void sweep.correctLast("no_whatsapp")} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 font-semibold hover:bg-emerald-100"><PhoneOff className="h-4 w-4" aria-hidden />No tiene WhatsApp</button>
+                <button type="button" onClick={() => void sweep.correctLast("wrong_number")} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 font-semibold hover:bg-emerald-100"><XCircle className="h-4 w-4" aria-hidden />Número equivocado</button>
+              </span>
+            </span>
+          }
+        />
+      ) : last ? (
         <p className="inline-flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
           <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
           <span className="truncate">
@@ -92,7 +113,7 @@ export function WhatsappSweepView() {
           tone="muted"
         />
       ) : current ? (
-        <SweepCard key={`${current.id}-${current.phone_e164}`} lead={current} next={next} onOutcome={sweep.mark} onSkip={sweep.skip} onPhoneChanged={sweep.replaceCurrent} />
+        <SweepCard key={`${current.id}-${current.phone_e164}`} lead={current} next={next} onSend={sweep.send} onSkip={sweep.skip} onPhoneChanged={sweep.replaceCurrent} />
       ) : (
         <EmptyState
           icon={PartyPopper}
@@ -111,11 +132,6 @@ export function WhatsappSweepView() {
         />
       )}
 
-      {current && next ? (
-        <p className="truncate text-sm text-muted-foreground lg:hidden">
-          Sigue: <span className="font-semibold text-foreground">{formatBusinessName(next.business_name)}</span>{next.colonia ? ` · ${formatBusinessName(next.colonia)}` : ""}
-        </p>
-      ) : null}
     </div>
   );
 }

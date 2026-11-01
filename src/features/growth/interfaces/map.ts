@@ -43,6 +43,8 @@ export interface ProspectMapProps {
   route: NearbyLead[];
   colorOf: (point: MapPoint) => string;
   onBoundsChange: (bounds: MapBounds) => void;
+  /** A business picked in the search: the map flies to it and opens its card. */
+  focus?: MapPoint | null;
 }
 
 export interface MapLegendItem {
@@ -55,4 +57,6 @@ export interface MapViewProps {
   giro?: string;
   owner?: string;
   people: GrowthMember[];
+  /** The header search: on the map it lists matches to fly to instead of filtering points. */
+  q?: string;
 }

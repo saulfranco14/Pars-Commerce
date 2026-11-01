@@ -2,7 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { CircleMarker, MapContainer, Popup, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
 
 import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName";
@@ -11,7 +11,9 @@ import { MAP_TILES } from "@/features/growth/constants/mapColors";
 import { leadPath } from "@/features/growth/constants/routes";
 import { INITIAL_BOUNDS } from "@/features/growth/hooks/useProspectMap";
 
-import type { MapBounds, ProspectMapProps } from "@/features/growth/interfaces/map";
+import type { CircleMarker as LeafletCircleMarker } from "leaflet";
+
+import type { MapBounds, MapPoint, ProspectMapProps } from "@/features/growth/interfaces/map";
 
 function BoundsWatcher({ onChange }: { onChange: (bounds: MapBounds) => void }) {
   const map = useMapEvents({
@@ -32,8 +34,33 @@ function RouteFocus({ route }: Pick<ProspectMapProps, "route">) {
   return null;
 }
 
+/** Flies to the searched business and opens its card once it lands. */
+function SearchFocus({ focus }: { focus: MapPoint }) {
+  const map = useMap();
+  const marker = useRef<LeafletCircleMarker>(null);
+  useEffect(() => {
+    map.flyTo([focus.lat, focus.lng], 17, { duration: 0.8 });
+    const open = () => marker.current?.openPopup();
+    map.once("moveend", open);
+    return () => {
+      map.off("moveend", open);
+    };
+  }, [map, focus]);
+  return (
+    <CircleMarker ref={marker} center={[focus.lat, focus.lng]} radius={10} pathOptions={{ color: "#ffffff", weight: 3, fillColor: "#0f1c33", fillOpacity: 1 }}>
+      <Popup>
+        <strong>{formatBusinessName(focus.business_name)}</strong>
+        <br />
+        {giroCopy(focus.giro).label} · {focus.colonia ? formatBusinessName(focus.colonia) : focus.municipio}
+        <br />
+        <a href={leadPath(focus.id)}>Abrir su ficha</a>
+      </Popup>
+    </CircleMarker>
+  );
+}
+
 /** Leaflet map drawn on canvas, so 2,000 points stay smooth on a phone. */
-export default function ProspectMap({ points, route, colorOf, onBoundsChange }: ProspectMapProps) {
+export default function ProspectMap({ points, route, colorOf, onBoundsChange, focus }: ProspectMapProps) {
   return (
     <MapContainer
       bounds={[[INITIAL_BOUNDS.minLat, INITIAL_BOUNDS.minLng], [INITIAL_BOUNDS.maxLat, INITIAL_BOUNDS.maxLng]]}
@@ -44,6 +71,7 @@ export default function ProspectMap({ points, route, colorOf, onBoundsChange }: 
       <TileLayer url={MAP_TILES.url} attribution={MAP_TILES.attribution} />
       <BoundsWatcher onChange={onBoundsChange} />
       <RouteFocus route={route} />
+      {focus ? <SearchFocus key={focus.id} focus={focus} /> : null}
       {points.map((point) => (
         <CircleMarker
           key={point.id}

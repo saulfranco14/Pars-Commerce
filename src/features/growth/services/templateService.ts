@@ -14,6 +14,7 @@ import type {
   TemplatePreview,
   TemplateStep,
   TemplateVariant,
+  VariantStats,
 } from "@/features/growth/interfaces/template";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 
@@ -60,6 +61,13 @@ export async function resolveTemplate(
   if (!pool.length) return null;
   if (input.variant) return pool.find((row) => row.variant === input.variant) ?? pool.find((row) => row.variant === "A") ?? pool[0];
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/** Opens, replies and claims per variant for the first send of a step; empty when the query fails. */
+export async function variantStats(db: GrowthDb, workspaceId: string, step: TemplateStep, days = 90): Promise<Partial<Record<string, VariantStats>>> {
+  const { data, error } = await db.rpc("growth_variant_stats", { p_workspace_id: workspaceId, p_step: step, p_days: days });
+  if (error) return {};
+  return Object.fromEntries(((data ?? []) as VariantStats[]).map((row) => [row.variant, row]));
 }
 
 /** Who is prospecting and what they offer, for {espacio} and {oferta}. */

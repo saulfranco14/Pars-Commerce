@@ -133,6 +133,35 @@
   .store-drop-in { animation: none; }
 }
 
+/* AI at work: a light sweeps the button and the placeholder lines shimmer slowly. */
+@keyframes ai-sheen {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+@keyframes ai-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.ai-busy::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, color-mix(in srgb, var(--accent) 22%, transparent) 50%, transparent 80%);
+  animation: ai-sheen 1.6s linear infinite;
+}
+
+.ai-line {
+  background: linear-gradient(90deg, var(--border-soft) 0%, color-mix(in srgb, var(--accent) 16%, var(--border-soft)) 50%, var(--border-soft) 100%);
+  background-size: 200% 100%;
+  animation: ai-shimmer 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-busy::after, .ai-line { animation: none; }
+}
+
 /* Storefront navigation: the bar starts on the tap, the next page fades in when it lands. */
 @keyframes store-progress {
   from { transform: scaleX(0.08); }

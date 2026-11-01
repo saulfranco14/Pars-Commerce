@@ -120,3 +120,31 @@ export interface ParaOfferData {
 export interface ParaOfferProps {
   data: ParaOfferData;
 }
+
+export type ParaDesign = "clasica" | "tienda" | "hazla";
+
+/** How each «Para ti» design does with the people who opened it (growth_para_design_stats). */
+export interface ParaDesignStats {
+  design: ParaDesign;
+  visitors: number;
+  median_seconds: number;
+  reached_store: number;
+  claimed: number;
+  registered: number;
+}
+
+export interface ParaStickyCtaProps {
+  claimUrl: string;
+  helpUrl: string | null;
+  helpLabel: string;
+}
+
+export type ParaColorKey = "azul" | "rojo" | "verde" | "morado" | "negro";
+export type ParaHoursKey = "manana" | "dia" | "tarde" | "siempre";
+
+/** What the owner picked in «Hazla tuya»; null until they touch that step. */
+export interface ParaCustomization {
+  color: ParaColorKey | null;
+  price: number | null;
+  hours: ParaHoursKey | null;
+}

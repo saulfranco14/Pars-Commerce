@@ -11,6 +11,8 @@ import { FilterTabs } from "@/components/ui/FilterTabs";
 import { FormInput } from "@/components/ui/FormInput";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
+import { ParaDesignStatsPanel } from "@/features/growth/components/admin/ParaDesignStatsPanel";
+import { VariantStatsPanel } from "@/features/growth/components/admin/VariantStatsPanel";
 
 import { GIRO_COPY, GIRO_KEYS } from "@/features/growth/constants/giroCopy";
 import { TEMPLATE_STEPS, TEMPLATE_VARIABLES } from "@/features/growth/constants/templateVariables";
@@ -53,6 +55,7 @@ export function TemplateEditorView() {
             </select>
           </label>
         </div>
+        {selection.channel === "whatsapp" ? <VariantStatsPanel step={selection.step} /> : null}
         <FilterTabs tabs={VARIANT_TABS} activeValue={selection.variant} onTabChange={(value) => editor.select({ variant: value as TemplateVariant })} ariaLabel="Variante" />
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           {live ? (
@@ -124,6 +127,8 @@ export function TemplateEditorView() {
           <p className="text-xs text-muted-foreground">Cuántos registros trajo cada versión está en Embudo.</p>
         </section>
       ) : null}
+
+      {selection.channel === "whatsapp" ? <ParaDesignStatsPanel /> : null}
     </div>
   );
 }

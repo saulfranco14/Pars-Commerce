@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ArrowRight, CircleCheck, HelpCircle } from "lucide-react";
 
-import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
+import { adminActionButtonPrimary } from "@/components/admin/actionButtonClasses";
 import { FilterTabs } from "@/components/ui/FilterTabs";
+import { FormSheet } from "@/components/ui/FormSheet";
 
 import { DAY_GUIDE, PIPELINE_GUIDE, PROSPECT_VIEWS, TEAM_RULES } from "@/features/growth/constants/leadPipeline";
 
-const STORAGE_KEY = "tlaco_growth_guide_seen";
+import type { ProspectingGuideProps } from "@/features/growth/interfaces/prospects";
 
 const TOPICS = [
   { value: "dia", label: "Tu día" },
@@ -17,47 +18,22 @@ const TOPICS = [
   { value: "reglas", label: "Reglas del equipo" },
 ];
 
-function seen(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function remember(open: boolean) {
-  try {
-    localStorage.setItem(STORAGE_KEY, open ? "0" : "1");
-  } catch {
-    // Private mode: the guide just opens again next time.
-  }
-}
-
-/** «Cómo funciona»: the day, the stages, the tabs and the team rules; open on the first visit, then on demand. */
-export function ProspectingGuide() {
-  const [open, setOpen] = useState(false);
+/** «Ayuda»: the day, the stages, the tabs and the team rules, in a sheet that opens from the header. */
+export function ProspectingGuide({ isOpen, onClose }: ProspectingGuideProps) {
   const [topic, setTopic] = useState("dia");
 
-  useEffect(() => {
-    setOpen(!seen());
-  }, []);
-
-  function change(next: boolean) {
-    setOpen(next);
-    remember(next);
-  }
-
   return (
-    <CollapsibleSection
+    <FormSheet
+      isOpen={isOpen}
+      onClose={onClose}
       icon={HelpCircle}
-      tone="accent"
       title="¿Cómo funciona la prospección?"
       description="Qué hacer cada día, qué significa cada etapa y para qué sirve cada pestaña."
-      open={open}
-      onOpenChange={change}
+      maxWidth="max-w-3xl"
+      footer={<button type="button" onClick={onClose} className={`${adminActionButtonPrimary} w-full`}>Entendido</button>}
     >
       <div className="grid gap-4">
-        <FilterTabs tabs={TOPICS} activeValue={topic} onTabChange={setTopic} ariaLabel="Tema de la guía" />
+        <FilterTabs tabs={TOPICS} activeValue={topic} onTabChange={setTopic} ariaLabel="Tema de la ayuda" />
 
         {topic === "dia" ? (
           <ol className="grid gap-3 md:grid-cols-3">
@@ -74,7 +50,7 @@ export function ProspectingGuide() {
         ) : null}
 
         {topic === "etapas" ? (
-          <ol className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          <ol className="grid gap-2 sm:grid-cols-2">
             {PIPELINE_GUIDE.map((step, index) => (
               <li key={step.label} className="grid gap-1.5 rounded-xl border border-border-soft bg-surface p-3">
                 <span className="flex items-center gap-2 text-sm font-bold text-foreground">
@@ -109,9 +85,7 @@ export function ProspectingGuide() {
             ))}
           </ul>
         ) : null}
-
-        <button type="button" onClick={() => change(false)} className="w-fit text-sm font-semibold text-accent hover:underline">Entendido, ocultar la guía</button>
       </div>
-    </CollapsibleSection>
+    </FormSheet>
   );
 }

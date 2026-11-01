@@ -24,7 +24,8 @@ export function FilterTabs({
   disabled = false,
 }: FilterTabsProps) {
   return (
-    <div className="relative">
+    // min-w-0: inside a grid or flex row the tabs scroll on their own instead of widening the page.
+    <div className="relative min-w-0 max-w-full">
       <div
         className="flex gap-1 overflow-x-auto pb-0.5 scrollbar-hide"
         role="tablist"

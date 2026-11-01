@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, Mail, MessageCircle, Search, Send, Target, X } from "lucide-react";
+import { AlertTriangle, Mail, MessageCircle, Send, Target } from "lucide-react";
 
 import { useGrowthLeads } from "@/features/growth/hooks/useGrowthLeads";
 import { AdminListCard } from "@/components/admin/AdminListCard";
@@ -17,19 +17,17 @@ import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName
 import { leadLastTouch } from "@/features/growth/helpers/leadLastTouch";
 import { nextStepDue } from "@/features/growth/helpers/leadPipeline";
 import { sweepFiltersQuery } from "@/features/growth/helpers/sweepFilters";
-import { GIRO_COPY, GIRO_KEYS, giroCopy } from "@/features/growth/constants/giroCopy";
+import { giroCopy } from "@/features/growth/constants/giroCopy";
 import { LEAD_STAGE_META, LEAD_STAGE_TABS, NEXT_CHANNEL_LABEL } from "@/features/growth/constants/leadStages";
 import { SWEEP_PATH, leadPath } from "@/features/growth/constants/routes";
-import { ZONES, zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
+import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
 import { markOpenedFromList } from "@/features/growth/services/leadsReturn";
 import { formatMexicanPhoneInput } from "@/lib/phone";
 
-import type { LeadContactFilter, LeadStageFilter } from "@/features/growth/interfaces/lead";
-
-const selectClass = "input-form min-h-11 w-full min-w-0 rounded-xl border border-border bg-surface-raised px-3 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+import type { LeadStageFilter } from "@/features/growth/interfaces/lead";
 
 export function LeadsView() {
-  const { data, error, isLoading, filters, update, search, changeSearch, active, clear } = useGrowthLeads();
+  const { data, error, isLoading, filters, update, active } = useGrowthLeads();
 
   if (isLoading && !data) return <LoadingBlock message="Cargando prospectos…" variant="skeleton" />;
   if (error && !data) {
@@ -65,43 +63,11 @@ export function LeadsView() {
       />
 
       <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface">
-        <div className="grid grid-cols-2 gap-2 border-b border-border-soft p-3 sm:p-4 lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]">
-          <label className="relative col-span-2 block lg:col-span-1">
-            <span className="sr-only">Buscar prospecto</span>
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => changeSearch(event.target.value)}
-              placeholder="Buscar por nombre del negocio"
-              className="input-form min-h-11 w-full rounded-xl border border-border bg-surface-raised pl-10 pr-3 text-sm text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
-            />
-          </label>
-          <select aria-label="Municipio" value={filters.municipio ?? ""} onChange={(event) => update({ municipio: event.target.value || undefined })} className={selectClass}>
-            <option value="">Todos los municipios</option>
-            {ZONES.map((zone) => <option key={zone.municipio} value={zone.municipio}>{zone.label}</option>)}
-          </select>
-          <select aria-label="Giro" value={filters.giro ?? ""} onChange={(event) => update({ giro: event.target.value || undefined })} className={selectClass}>
-            <option value="">Todos los giros</option>
-            {GIRO_KEYS.map((key) => <option key={key} value={key}>{GIRO_COPY[key].label}</option>)}
-          </select>
-          <select aria-label="Contacto" value={filters.contact ?? ""} onChange={(event) => update({ contact: (event.target.value || undefined) as LeadContactFilter | undefined })} className={`${selectClass} col-span-2 lg:col-span-1`}>
-            <option value="">Cualquier contacto</option>
-            <option value="whatsapp">Con WhatsApp ({metrics.withPhone.toLocaleString("es-MX")})</option>
-            <option value="correo">Con correo ({metrics.withEmail.toLocaleString("es-MX")})</option>
-            <option value="ambos">Con WhatsApp y correo</option>
-            <option value="sin">Sin teléfono ni correo (visita)</option>
-          </select>
-        </div>
         <div className="flex min-h-11 flex-wrap items-center justify-between gap-2 border-b border-border-soft px-3 sm:px-4">
           <p className="text-sm text-muted-foreground">
             {(data?.total ?? 0).toLocaleString("es-MX")} {data?.total === 1 ? "prospecto" : "prospectos"}{active ? " con estos filtros" : ""}
+            {metrics.withPhone ? ` · ${metrics.withPhone.toLocaleString("es-MX")} con WhatsApp` : ""}
           </p>
-          {active ? (
-            <button type="button" onClick={clear} className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-accent hover:underline">
-              <X className="h-4 w-4" aria-hidden />Limpiar filtros
-            </button>
-          ) : null}
         </div>
 
         {leads.length === 0 ? (

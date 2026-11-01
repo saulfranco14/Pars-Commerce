@@ -16,6 +16,12 @@ UPDATE public.billing_plans SET entitlements = entitlements - 'prospecting';
 
 -- 20261031000006_growth_activation
 DROP FUNCTION IF EXISTS public.growth_activation_board(uuid, uuid, text);
+-- 20261101000002_growth_para_design_stats
+DROP FUNCTION IF EXISTS public.growth_para_design_stats(uuid, timestamptz);
+-- 20261101000001_growth_cold_leads_and_variants
+DROP FUNCTION IF EXISTS public.growth_cold_leads(uuid, uuid, integer, text);
+DROP FUNCTION IF EXISTS public.growth_bulk_drop(uuid, uuid, uuid[], text);
+DROP FUNCTION IF EXISTS public.growth_variant_stats(uuid, text, integer);
 DROP FUNCTION IF EXISTS public.growth_activation_stage(uuid);
 
 -- 20261031000005_growth_map_imports

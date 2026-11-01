@@ -5,15 +5,20 @@ import { LockKeyhole } from "lucide-react";
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { ParaActions } from "@/features/growth/components/para/ParaActions";
 import { ParaOffer } from "@/features/growth/components/para/ParaOffer";
+import { ParaMakeItYours } from "@/features/growth/components/para/ParaMakeItYours";
+import { ParaPhoneFirst } from "@/features/growth/components/para/ParaPhoneFirst";
+import { ParaStickyCta } from "@/features/growth/components/para/ParaStickyCta";
 import { ParaStorefront } from "@/features/growth/components/para/ParaStorefront";
 import { ParaTracker } from "@/features/growth/components/para/ParaTracker";
 import { ParaVisitButton } from "@/features/growth/components/para/ParaVisitButton";
 
 import { getParaPage } from "@/features/growth/services/paraService";
+import { paraDesignFromHash, requestedParaDesign } from "@/features/growth/helpers/paraDesign";
+import { hashPreviewToken } from "@/features/preview/previewLinks";
 
 export const dynamic = "force-dynamic";
 
-type ParaParams = { params: Promise<{ token: string }> };
+type ParaParams = { params: Promise<{ token: string }>; searchParams?: Promise<Record<string, string | string[] | undefined>> };
 
 /** WhatsApp shows this card under the link, so it names the business instead of a generic title. */
 export async function generateMetadata({ params }: ParaParams): Promise<Metadata> {
@@ -32,8 +37,9 @@ export async function generateMetadata({ params }: ParaParams): Promise<Metadata
   return { title, description, robots, openGraph: { title, description, siteName: "Tlaco", type: "website" } };
 }
 
-export default async function ParaPage({ params }: ParaParams) {
+export default async function ParaPage({ params, searchParams }: ParaParams) {
   const { token } = await params;
+  const design = requestedParaDesign((await searchParams)?.d) ?? paraDesignFromHash(hashPreviewToken(token));
   const data = await getParaPage(token);
   if (!data) notFound();
   if (data.kind === "offer") {
@@ -46,7 +52,7 @@ export default async function ParaPage({ params }: ParaParams) {
   }
 
   return (
-    <main className="min-h-dvh bg-background text-foreground">
+    <main className={`min-h-dvh bg-background text-foreground ${design === "clasica" ? "" : "pb-24 sm:pb-0"}`}>
       <ParaTracker token={token} />
       <header className="sticky top-0 z-30 border-b border-border-soft bg-surface/95 backdrop-blur">
         <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
@@ -59,7 +65,13 @@ export default async function ParaPage({ params }: ParaParams) {
         Vista privada para {data.businessName}. Sólo usted tiene el link.
       </p>
 
-      <ParaStorefront token={token} data={data} />
+      {design === "tienda" ? (
+        <ParaPhoneFirst token={token} data={data} />
+      ) : design === "hazla" ? (
+        <ParaMakeItYours token={token} data={data} />
+      ) : (
+        <ParaStorefront token={token} data={data} />
+      )}
 
       <section data-para-section="cierre" className="border-t border-border-soft bg-surface px-4 py-12 sm:px-6">
         <div className="mx-auto grid max-w-xl gap-5 text-center">
@@ -77,6 +89,7 @@ export default async function ParaPage({ params }: ParaParams) {
           </p>
         </div>
       </section>
+      {design !== "clasica" ? <ParaStickyCta claimUrl={data.claimUrl} helpUrl={data.helpUrl} helpLabel={data.helpLabel} /> : null}
     </main>
   );
 }

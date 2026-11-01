@@ -2,7 +2,7 @@ import { BOARD_COLUMNS, BOARD_COLUMN_LIMIT, BOARD_REGISTERED_DAYS } from "@/feat
 import { internalError, rpcError } from "@/features/growth/services/growthDb";
 import { memberNames } from "@/features/growth/services/memberService";
 import { ACTIVATION_STAGES } from "@/features/growth/constants/activation";
-import { LEAD_COLUMNS, withOwnerNames } from "@/features/growth/services/leadService";
+import { LEAD_COLUMNS, applyLeadSearch, withOwnerNames } from "@/features/growth/services/leadService";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
 import type { BoardColumn, BoardColumnKey, BoardZone, FollowUpInput, GrowthLead, LeadBoard, MyDay, PipelineCounts } from "@/features/growth/interfaces/lead";
@@ -46,11 +46,14 @@ async function boardColumn(db: GrowthDb, actor: GrowthActor, key: BoardColumnKey
   if (owner) query = query.eq("owner_user_id", owner);
   if (zone.municipio) query = query.eq("municipio", zone.municipio);
   if (zone.giro) query = query.eq("giro", zone.giro);
+  query = applyLeadSearch(query, zone.q);
   query = key === "registrado"
     ? query.gt("last_activity_at", new Date(Date.now() - BOARD_REGISTERED_DAYS * 86_400_000).toISOString()).order("last_activity_at", { ascending: false })
     : query.order("next_step_at", { nullsFirst: false }).order("last_activity_at", { ascending: false });
   const { data } = await query.limit(BOARD_COLUMN_LIMIT);
-  return { key, total, leads: await withOwnerNames(db, actor.workspaceId, (data ?? []) as GrowthLead[]) };
+  const leads = (data ?? []) as GrowthLead[];
+  // The stage counts know nothing of the search, so a searched column counts what it found.
+  return { key, total: zone.q ? leads.length : total, leads: await withOwnerNames(db, actor.workspaceId, leads) };
 }
 
 /** One column per follow-up stage, most urgent first. */

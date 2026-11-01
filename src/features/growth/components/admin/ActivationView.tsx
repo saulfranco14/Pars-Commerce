@@ -16,8 +16,10 @@ import { leadPath } from "@/features/growth/constants/routes";
 import type { ActivationViewProps } from "@/features/growth/interfaces/activation";
 
 /** Registered businesses by how far they got, until they sell on their own. */
-export function ActivationView({ owner, showOwner }: ActivationViewProps) {
-  const { data, error, isLoading } = useActivationBoard(owner);
+export function ActivationView({ owner, q, showOwner }: ActivationViewProps) {
+  const { data: board, error, isLoading } = useActivationBoard(owner);
+  const term = q?.trim().toLowerCase() ?? "";
+  const data = term ? board?.map((column) => ({ ...column, leads: column.leads.filter((lead) => lead.business_name.toLowerCase().includes(term)) })) : board;
   const now = new Date();
 
   if (isLoading && !data) return <LoadingBlock message="Cargando activación…" variant="skeleton" />;

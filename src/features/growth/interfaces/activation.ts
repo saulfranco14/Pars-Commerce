@@ -21,5 +21,7 @@ export interface ActivationColumn {
 
 export interface ActivationViewProps {
   owner?: string;
+  /** The header search, matched against the business name. */
+  q?: string;
   showOwner: boolean;
 }

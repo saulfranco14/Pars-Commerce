@@ -1,6 +1,8 @@
 import { apiFetch } from "@/services/apiFetch";
 import { leadFiltersQuery } from "@/features/growth/helpers/leadFiltersQuery";
 
+import type { AiDraft } from "@/features/growth/interfaces/aiDraft";
+import type { DropReason } from "@/features/growth/interfaces/cleanup";
 import type {
   BoardZone,
   FollowUpInput,
@@ -37,10 +39,17 @@ export const myDayKey = `${BASE}/my-day`;
 export const importsKey = `${BASE}/imports`;
 export const activationKey = (owner?: string) => `${BASE}/activation${owner ? `?owner=${encodeURIComponent(owner)}` : ""}`;
 export const templatesKey = `${BASE}/templates`;
+export const paraDesignsKey = `${BASE}/para-designs`;
+export const variantStatsKey = (step: string) => `${BASE}/templates/stats?step=${encodeURIComponent(step)}`;
 export const funnelKey = (days: number) => `${BASE}/funnel?days=${days}`;
 
-export async function patchLead(id: string, body: { outcome?: LeadOutcome; reason?: string; reply?: string; sent?: SentWhatsapp; snoozeDays?: number | null; phone?: string; email?: string; giro?: string; skip?: boolean }): Promise<GrowthLead> {
-  return (await apiFetch(leadKey(id), { method: "PATCH", body: JSON.stringify(body) })) as GrowthLead;
+/** `keepalive` lets the save finish when a phone leaves the page for WhatsApp right after the tap. */
+export async function patchLead(
+  id: string,
+  body: { outcome?: LeadOutcome; reason?: string; reply?: string; sent?: SentWhatsapp; snoozeDays?: number | null; phone?: string; email?: string; giro?: string; skip?: boolean },
+  options?: { keepalive?: boolean },
+): Promise<GrowthLead> {
+  return (await apiFetch(leadKey(id), { method: "PATCH", body: JSON.stringify(body), keepalive: options?.keepalive })) as GrowthLead;
 }
 
 export async function saveSettings(patch: GrowthSettingsPatch): Promise<GrowthSettings> {
@@ -96,6 +105,7 @@ export function boardKey(zone: BoardZone): string {
   if (zone.municipio) query.set("municipio", zone.municipio);
   if (zone.giro) query.set("giro", zone.giro);
   if (zone.owner) query.set("owner", zone.owner);
+  if (zone.q) query.set("q", zone.q);
   return `${BASE}/board?${query.toString()}`;
 }
 
@@ -143,6 +153,8 @@ export async function uploadCsv(input: CsvImportInput): Promise<CsvImportResult>
 }
 
 /** Bounds rounded to ~100 m so small pans reuse the same cached request. */
+export const mapSearchKey = (q: string) => `${BASE}/map/search?q=${encodeURIComponent(q)}`;
+
 export function mapKey(query: MapQuery): string {
   const params = new URLSearchParams({
     minLat: query.minLat.toFixed(3),
@@ -157,4 +169,15 @@ export function mapKey(query: MapQuery): string {
 
 export async function fetchNearby(lat: number, lng: number): Promise<NearbyLead[]> {
   return (await apiFetch(`${BASE}/nearby?lat=${lat}&lng=${lng}`)) as NearbyLead[];
+}
+
+export const coldLeadsKey = (days: number, owner?: string) => `${BASE}/leads/cold?days=${days}${owner ? `&owner=${encodeURIComponent(owner)}` : ""}`;
+
+export async function dropLeads(leadIds: string[], reason: DropReason): Promise<{ dropped: number }> {
+  return (await apiFetch(`${BASE}/leads/drop`, { method: "POST", body: JSON.stringify({ leadIds, reason }) })) as { dropped: number };
+}
+
+/** A follow-up written by the AI from the lead's history; the operator reviews it before sending. */
+export async function fetchAiDraft(id: string): Promise<AiDraft> {
+  return (await apiFetch(`${leadKey(id)}/ai-draft`, { method: "POST" })) as AiDraft;
 }

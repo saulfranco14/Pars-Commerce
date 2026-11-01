@@ -92,9 +92,3 @@ export interface SentWhatsapp {
 }
 
 export type ComposerOutcome = "whatsapp_sent" | "no_whatsapp" | "wrong_number";
-
-export interface WhatsappComposerProps {
-  leadId: string;
-  busy: boolean;
-  onOutcome: (outcome: ComposerOutcome, sent?: SentWhatsapp) => Promise<boolean>;
-}

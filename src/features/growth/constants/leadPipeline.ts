@@ -92,7 +92,7 @@ export const STAGE_ACTION_LABEL: Record<StageAction, string> = {
   pause: "Pausar hasta…",
   resume: "Reactivar",
   note: "Agregar nota",
-  not_interested: "No le interesa",
+  not_interested: "Dar de baja",
   register: "Dar de alta su negocio",
 };
 
@@ -106,7 +106,7 @@ export const STAGE_ACTION_HINT: Record<StageAction, string> = {
   pause: "Nadie le escribe y sale de tu lista hasta esa fecha.",
   resume: "Vuelve a tu lista hoy.",
   note: "Algo que debas recordar de este negocio.",
-  not_interested: "Baja en WhatsApp, correo y visitas. No se le vuelve a escribir.",
+  not_interested: "No le interesa, cerró o nunca abrió: eliges el motivo y no se le vuelve a escribir.",
   register: "Le llega su acceso por correo, o lo registras en su celular.",
 };
 

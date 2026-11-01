@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquarePlus, MessagesSquare } from "lucide-react";
+import { MessageSquarePlus } from "lucide-react";
 
-import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 import { FilterTabs } from "@/components/ui/FilterTabs";
-import { adminActionButtonSecondary } from "@/components/admin/actionButtonClasses";
+import { adminActionButtonText } from "@/components/admin/actionButtonClasses";
 
 import { conversationItems } from "@/features/growth/helpers/conversation";
 import { formatDayTime } from "@/features/growth/helpers/leadPipeline";
@@ -71,27 +70,24 @@ export function LeadConversation({ events, viewerId, onLogReply }: LeadConversat
   const items = conversationItems(events, filter);
 
   return (
-    <CollapsibleSection
-      icon={MessagesSquare}
-      title="Conversación"
-      description="Lo que le mandaste, lo que contestó y lo que hizo en su tienda."
-      aside={events.length ? <span className="rounded-full bg-border-soft px-2 py-0.5 text-xs font-bold tabular-nums text-muted-foreground">{events.length}</span> : null}
-      defaultOpenOnMobile={false}
-    >
-      <div className="grid gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-border-soft/40 px-3 py-2.5">
-          <p className="min-w-0 flex-1 text-xs text-muted-foreground sm:text-sm">¿Te contestó por WhatsApp? Pega aquí lo que dijo para que el equipo lo vea y te sugiramos qué responder.</p>
-          <button type="button" onClick={onLogReply} className={adminActionButtonSecondary}>
-            <MessageSquarePlus className="h-4 w-4" aria-hidden />Registrar lo que contestó
+    <section className="grid gap-3" aria-label="Historial">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="inline-flex items-center gap-2 text-base font-bold text-foreground">
+          Historial
+          {events.length ? <span className="rounded-full bg-border-soft px-2 py-0.5 text-xs font-bold tabular-nums text-muted-foreground">{events.length}</span> : null}
+        </h3>
+        {onLogReply ? (
+          <button type="button" onClick={onLogReply} className={`${adminActionButtonText} -mr-3`}>
+            <MessageSquarePlus className="h-4 w-4" aria-hidden />Pegar lo que contestó
           </button>
-        </div>
-        <FilterTabs tabs={FILTERS} activeValue={filter} onTabChange={(value) => setFilter(value as ConversationFilter)} ariaLabel="Qué ver" />
-        {items.length ? (
-          <ol className="grid gap-3">{items.map((item) => <Row key={item.event.id} item={item} viewerId={viewerId} />)}</ol>
-        ) : (
-          <p className="text-sm text-muted-foreground">{filter === "todo" ? "Todavía no hay actividad con este negocio." : "Nada en esta vista todavía."}</p>
-        )}
+        ) : null}
       </div>
-    </CollapsibleSection>
+      <FilterTabs tabs={FILTERS} activeValue={filter} onTabChange={(value) => setFilter(value as ConversationFilter)} ariaLabel="Qué ver" />
+      {items.length ? (
+        <ol className="grid gap-3">{items.map((item) => <Row key={item.event.id} item={item} viewerId={viewerId} />)}</ol>
+      ) : (
+        <p className="text-sm text-muted-foreground">{filter === "todo" ? "Todavía no hay actividad con este negocio." : "Nada en esta vista todavía."}</p>
+      )}
+    </section>
   );
 }

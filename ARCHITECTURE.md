@@ -236,10 +236,22 @@ debe tocarla:
   `INEGI_DENUE_TOKEN` (importar desde la API del DENUE) y `GROWTH_LINK_SECRET`
   (opcional: sella el link «Para ti» para reusarlo; sin ella se usa la service role)
   y `NEXT_PUBLIC_CARTO_API_KEY` (mosaicos del mapa, llave gratis en
-  carto.com/basemaps/apikey; sin ella el mapa usa OpenStreetMap).
+  carto.com/basemaps/apikey; sin ella el mapa usa OpenStreetMap) e `IA_GEMINI`
+  (o `GEMINI_API_KEY`; seguimientos escritos con IA en `src/lib/ai/gemini.ts`).
 - **Mensaje siguiente:** qué mandar lo decide `growth_lead_next_action` con el
   historial (enviados, vistas, dudas, visitas, respuestas); el cuándo, el trigger
   `growth_leads_next_step`. El texto enviado queda en `payload.body` del evento.
+- **Enviar = enviado:** tocar «Enviar por WhatsApp» registra `whatsapp_sent` al
+  momento (`keepalive`); «¿No se envió?» lo corrige con `no_whatsapp` o
+  `wrong_number`. Nunca se envía WhatsApp sin que la persona lo abra.
+- **Versiones del mensaje:** `pickVariant` reparte primero las versiones con menos
+  de 15 envíos y luego da 7 de cada 10 a la que más gente lleva a abrir su tienda
+  (`growth_variant_stats`). Ningún primer mensaje va sin `{link}`.
+- **Diseños de «Para ti»:** `clasica`, `tienda` y `hazla`, fijos por enlace a
+  partir del hash del token (`paraDesignFromHash` = SQL de
+  `growth_para_design_stats`); `?d=` sólo previsualiza.
+- **Limpieza:** `growth_cold_leads` + `growth_bulk_drop` dan de baja de un jalón a
+  quien nunca abrió su tienda ni contestó.
 - **Carga del DENUE:** desde Prospección → Importar (`growth_imports`, una fila
   por trabajo con cursores; el cron termina lo que no quepa en la petición) o
   por consola: `npx tsx --env-file=.env.local scripts/growth/importDenue.ts <csv> --dry-run`.
