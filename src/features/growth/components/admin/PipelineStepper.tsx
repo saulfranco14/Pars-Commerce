@@ -1,6 +1,4 @@
-import { Check } from "lucide-react";
-
-import { PipelineDots } from "@/features/growth/components/admin/PipelineDots";
+import { StatusBadge } from "@/components/admin/StatusBadge";
 
 import { pipelineIndex } from "@/features/growth/helpers/leadPipeline";
 import { LEAD_STAGE_META } from "@/features/growth/constants/leadStages";
@@ -8,38 +6,21 @@ import { PIPELINE_STEPS } from "@/features/growth/constants/leadPipeline";
 
 import type { PipelineStageProps } from "@/features/growth/interfaces/pipeline";
 
-/** The prospect's road to a store: done steps checked and the current one highlighted; phones get one line. */
+/** The prospect's stage, a six-segment bar of how far it got and «3 de 6», in one line. */
 export function PipelineStepper({ stage }: PipelineStageProps) {
   const index = pipelineIndex(stage);
-  if (index < 0) {
-    return <p className="text-sm font-semibold text-muted-foreground">Fuera del recorrido: {LEAD_STAGE_META[stage].label}</p>;
-  }
+  if (index < 0) return <StatusBadge tone={LEAD_STAGE_META[stage].tone} label={LEAD_STAGE_META[stage].label} />;
   return (
-    <>
-      <p className="flex items-center gap-2 text-sm text-muted-foreground sm:hidden">
-        <PipelineDots stage={stage} />
-        Paso {index + 1} de {PIPELINE_STEPS.length} · <b className="text-foreground">{PIPELINE_STEPS[index].label}</b>
-      </p>
-      <ol className="hidden flex-wrap items-center gap-x-1.5 gap-y-2 sm:flex" aria-label="Recorrido del prospecto">
-        {PIPELINE_STEPS.map((step, position) => {
-          const done = position < index;
-          const current = position === index;
-          return (
-            <li key={step.key} className="inline-flex items-center gap-1.5">
-              {position > 0 ? <span className={`h-px w-5 ${done || current ? "bg-accent" : "bg-border"}`} aria-hidden /> : null}
-              <span
-                aria-current={current ? "step" : undefined}
-                className={`inline-flex min-h-8 items-center gap-1 rounded-full px-2.5 text-xs font-semibold ${
-                  current ? "bg-accent text-accent-foreground" : done ? "bg-accent/10 text-accent" : "bg-border-soft/60 text-muted-foreground"
-                }`}
-              >
-                {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : null}
-                {step.label}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-    </>
+    <div className="flex min-w-0 items-center gap-2.5">
+      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-bold text-accent">
+        <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />{PIPELINE_STEPS[index].label}
+      </span>
+      <span className="flex min-w-20 max-w-48 flex-1 gap-1" role="img" aria-label={`Paso ${index + 1} de ${PIPELINE_STEPS.length}`}>
+        {PIPELINE_STEPS.map((step, position) => (
+          <span key={step.key} className={`h-1.5 flex-1 rounded-full ${position < index ? "bg-accent/40" : position === index ? "bg-accent" : "bg-border"}`} aria-hidden />
+        ))}
+      </span>
+      <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{index + 1} de {PIPELINE_STEPS.length}</span>
+    </div>
   );
 }

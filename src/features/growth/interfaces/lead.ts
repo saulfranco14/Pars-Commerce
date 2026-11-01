@@ -123,6 +123,8 @@ export interface BoardZone {
   municipio?: string;
   giro?: string;
   owner?: string;
+  /** Name or phone; with it, each column shows only matches. */
+  q?: string;
 }
 
 export interface LeadBoard {
@@ -321,7 +323,8 @@ export interface ReplySheetProps {
 export interface LeadConversationProps {
   events: LeadEvent[];
   viewerId: string | null;
-  onLogReply: () => void;
+  /** Absent when the viewer can't act on the lead. */
+  onLogReply?: () => void;
 }
 
 export interface LeadSummary {

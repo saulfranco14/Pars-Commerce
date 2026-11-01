@@ -73,7 +73,7 @@ describe("growth: phone correction", () => {
     expect(live.every((row) => row.body.includes("de Tlaco") && !row.body.includes("{cercania}"))).toBe(true);
     const [archived] = await sql`
       select count(*)::int as n from growth_templates
-      where channel = 'whatsapp' and giro is null and step = 'm1' and status = 'archived' and version = 1`;
+      where channel = 'whatsapp' and giro is null and step = 'm1' and variant in ('A', 'B') and status = 'archived' and version = 1`;
     expect(archived.n).toBe(2);
   });
 });

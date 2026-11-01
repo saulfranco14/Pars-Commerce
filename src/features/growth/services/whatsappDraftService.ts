@@ -5,7 +5,7 @@ import { internalError } from "@/features/growth/services/growthDb";
 import { canActOn } from "@/features/growth/services/leadService";
 import { ensureParaLink, leadLinkUrl } from "@/features/growth/services/leadLinkService";
 import { getSettings } from "@/features/growth/services/settingsService";
-import { activeTemplatePool, renderForLead, workspaceCopy } from "@/features/growth/services/templateService";
+import { activeTemplatePool, renderForLead, variantStats, workspaceCopy } from "@/features/growth/services/templateService";
 import { nextAction } from "@/features/growth/services/nextActionService";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
@@ -21,7 +21,7 @@ const DRAFT_COLUMNS = "id, business_name, giro, municipio, colonia, address, pho
 
 /**
  * Template + the lead's "Para ti" link + rendered text. Telegram cards and the composer share it.
- * The variant is never random: the requested one, else one this lead has not received for the step.
+ * The variant is never random: the requested one, else one this lead has not received, leaning to the one that opens best.
  */
 export async function prepareWhatsappMessage(
   db: GrowthDb,
@@ -29,8 +29,11 @@ export async function prepareWhatsappMessage(
   options: { step: WhatsappStep; firma: string; variant?: TemplateVariant; sentVariants?: string[]; workspaceId?: string },
 ): Promise<{ template: GrowthTemplate; body: string; pool: GrowthTemplate[] } | null> {
   const workspaceId = options.workspaceId ?? lead.workspace_id ?? TLACO_WORKSPACE_ID;
-  const pool = await activeTemplatePool(db, { channel: "whatsapp", step: options.step, giro: lead.giro, workspaceId });
-  const variant = pickVariant(pool.map((row) => row.variant), { requested: options.variant, sent: options.sentVariants ?? [], seed: lead.id });
+  const [pool, stats] = await Promise.all([
+    activeTemplatePool(db, { channel: "whatsapp", step: options.step, giro: lead.giro, workspaceId }),
+    variantStats(db, workspaceId, options.step),
+  ]);
+  const variant = pickVariant(pool.map((row) => row.variant), { requested: options.variant, sent: options.sentVariants ?? [], seed: lead.id, stats });
   const template = pool.find((row) => row.variant === variant);
   if (!template) return null;
   const token = await ensureParaLink(db, { leadId: lead.id, channel: "whatsapp", templateId: template.id, businessName: lead.business_name });

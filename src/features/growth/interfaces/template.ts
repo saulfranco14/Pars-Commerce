@@ -40,3 +40,12 @@ export interface TemplatePreview {
   body: string;
   leadName: string;
 }
+
+/** How a variant did as the first send of its step (growth_variant_stats). */
+export interface VariantStats {
+  variant: TemplateVariant;
+  sent: number;
+  opened: number;
+  replied: number;
+  claimed: number;
+}

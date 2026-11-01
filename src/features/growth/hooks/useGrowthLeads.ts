@@ -1,57 +1,25 @@
-import { useEffect, useRef, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import useSWR from "swr";
 
-import { leadFiltersQuery, parseLeadFilters } from "@/features/growth/helpers/leadFiltersQuery";
+import { useProspectFilters } from "@/features/growth/hooks/useProspectFilters";
+
+import { leadFiltersQuery } from "@/features/growth/helpers/leadFiltersQuery";
 import { leadsKey } from "@/features/growth/services/growthClient";
 import { rememberLeadsList } from "@/features/growth/services/leadsReturn";
 import { swrFetcher } from "@/lib/swrFetcher";
 
-import type { LeadFilters, LeadListResult } from "@/features/growth/interfaces/lead";
+import type { LeadListResult } from "@/features/growth/interfaces/lead";
 
-const SEARCH_DEBOUNCE_MS = 300;
-
+/** «Prospectar» list: the shared header owns search and filters; this adds the stage, the page and the data. */
 export function useGrowthLeads() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const filters = parseLeadFilters(searchParams);
+  const { filters, update } = useProspectFilters();
   const query = leadFiltersQuery(filters);
-  const [search, setSearch] = useState(filters.q ?? "");
   const { data, error, isLoading } = useSWR<LeadListResult>(leadsKey(filters), swrFetcher, { keepPreviousData: true });
 
-  // The debounced search reads the latest filters, not the ones from when the user started typing.
-  const latest = useRef(filters);
   useEffect(() => {
-    latest.current = filters;
     rememberLeadsList(query);
-  });
+  }, [query]);
 
-  function navigate(next: LeadFilters) {
-    const nextQuery = leadFiltersQuery(next);
-    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
-  }
-
-  function update(patch: Partial<LeadFilters>) {
-    navigate({ ...filters, ...patch, page: patch.page ?? 1 });
-  }
-
-  // Typing stays instant; the URL (and the request) follow once the operator pauses.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const term = search.trim();
-      if (term === (latest.current.q ?? "")) return;
-      navigate({ ...latest.current, q: term || undefined, page: 1 });
-    }, SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only the typed text schedules a search
-  }, [search]);
-
-  const active = query !== "";
-  function clear() {
-    setSearch("");
-    navigate({ vista: "contactar", page: 1 });
-  }
-
-  return { data, error, isLoading, filters, update, search, changeSearch: setSearch, active, clear };
+  const active = Boolean(filters.q || filters.municipio || filters.giro || filters.contact || filters.owner);
+  return { data, error, isLoading, filters, update, active };
 }

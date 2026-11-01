@@ -1,4 +1,5 @@
-import { rpcError } from "@/features/growth/services/growthDb";
+import { internalError, rpcError } from "@/features/growth/services/growthDb";
+import { applyLeadSearch } from "@/features/growth/services/leadService";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
 import type { MapPoint, MapQuery, MapResult } from "@/features/growth/interfaces/map";
@@ -22,6 +23,23 @@ export async function mapPoints(db: GrowthDb, actor: GrowthActor, query: MapQuer
   if (error) return rpcError(error.message);
   const rows = (data ?? []) as Array<MapPoint & { total: number }>;
   return { ok: true, data: { points: rows, total: Number(rows[0]?.total ?? 0) } };
+}
+
+const SEARCH_LIMIT = 8;
+
+/** Prospects with a location that match a name or phone, so the map can fly to one that is off screen. */
+export async function searchMapLeads(db: GrowthDb, actor: GrowthActor, q: string): Promise<ServiceResult<MapPoint[]>> {
+  const base = db
+    .from("growth_leads")
+    .select("id, business_name, giro, municipio, colonia, lat, lng, stage, owner_user_id, phone_e164")
+    .eq("workspace_id", actor.workspaceId)
+    .not("lat", "is", null)
+    .not("lng", "is", null);
+  const scoped = actor.role === "prospector" ? base.or(`owner_user_id.eq.${actor.userId},owner_user_id.is.null`) : base;
+  const { data, error } = await applyLeadSearch(scoped, q).order("business_name").limit(SEARCH_LIMIT);
+  if (error) return internalError(error.message);
+  const rows = (data ?? []) as Array<Omit<MapPoint, "has_phone"> & { phone_e164: string | null }>;
+  return { ok: true, data: rows.map(({ phone_e164: phone, ...row }) => ({ ...row, has_phone: Boolean(phone) })) };
 }
 
 /** «Ruta de hoy»: the closest prospects to visit from where the person stands. */

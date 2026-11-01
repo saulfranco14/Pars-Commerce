@@ -84,6 +84,17 @@ function sanitizeSearch(value: string): string {
   return value.replace(/[%_,()*]/g, " ").trim().slice(0, 60);
 }
 
+type Searchable<Q> = { or(filter: string): Q; ilike(column: string, pattern: string): Q };
+
+/** Name, or phone when the text has four digits or more ("8923 7209" finds the business too). */
+export function applyLeadSearch<Q extends Searchable<Q>>(query: Q, raw: string | undefined): Q {
+  const term = raw ? sanitizeSearch(raw) : "";
+  const digits = term.replace(/\D/g, "");
+  if (digits.length >= 4) return query.or(`business_name.ilike.%${term}%,phone_e164.ilike.%${digits}%`);
+  if (term.length >= 2) return query.ilike("business_name", `%${term}%`);
+  return query;
+}
+
 type ListRow = GrowthLead & { growth_lead_links: Array<{ purpose: string; last_viewed_at: string | null }> | null };
 
 function withParaView({ growth_lead_links: links, ...lead }: ListRow): GrowthLead {
@@ -118,8 +129,7 @@ export async function listLeads(db: GrowthDb, actor: GrowthActor, filters: LeadF
   if (filters.contact === "correo" || filters.contact === "ambos") query = query.not("email", "is", null);
   if (filters.contact === "sin") query = query.is("phone_e164", null).is("email", null);
   if (filters.channel) query = query.eq("next_channel", filters.channel);
-  const term = filters.q ? sanitizeSearch(filters.q) : "";
-  if (term.length >= 2) query = query.ilike("business_name", `%${term}%`);
+  query = applyLeadSearch(query, filters.q);
 
   if (filters.stage === "hoy") query = query.order("next_step_at");
   const { data, error, count } = await query

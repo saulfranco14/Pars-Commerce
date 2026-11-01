@@ -13,6 +13,7 @@ export async function GET(request: Request) {
     municipio: params.get("municipio")?.slice(0, 80) || undefined,
     giro: params.get("giro")?.slice(0, 40) || undefined,
     owner: params.get("owner")?.slice(0, 40) || undefined,
+    q: params.get("q")?.slice(0, 60) || undefined,
   });
   if (!result.ok) return serviceErrorToResponse(result.error);
   return NextResponse.json(result.data);

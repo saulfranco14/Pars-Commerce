@@ -3,7 +3,8 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState } from "react";
-import { LocateFixed, MapPin } from "lucide-react";
+import useSWR from "swr";
+import { LocateFixed, MapPin, Search } from "lucide-react";
 
 import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
 import { useProspectMap } from "@/features/growth/hooks/useProspectMap";
@@ -15,6 +16,9 @@ import { adminActionButtonPrimary, adminActionButtonSecondary } from "@/componen
 import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName";
 import { MAP_NEUTRAL, MAP_SERIES, STAGE_MAP_GROUP } from "@/features/growth/constants/mapColors";
 import { leadPath } from "@/features/growth/constants/routes";
+import { giroCopy } from "@/features/growth/constants/giroCopy";
+import { mapSearchKey } from "@/features/growth/services/growthClient";
+import { swrFetcher } from "@/lib/swrFetcher";
 
 import type { MapColorMode, MapLegendItem, MapPoint, MapViewProps } from "@/features/growth/interfaces/map";
 
@@ -41,10 +45,13 @@ function legend(points: MapPoint[], colorOf: (point: MapPoint) => string, labelO
 }
 
 /** Where the team has worked, what is left, whose zone is whose, and today's visiting route. */
-export function MapView({ giro, owner, people }: MapViewProps) {
+export function MapView({ giro, owner, people, q }: MapViewProps) {
   const { actor } = useGrowthMe();
   const map = useProspectMap({ giro, owner });
   const [mode, setMode] = useState<MapColorMode>("estado");
+  const [focus, setFocus] = useState<MapPoint | null>(null);
+  const term = q?.trim() ?? "";
+  const { data: matches, isLoading: searching } = useSWR<MapPoint[]>(term.length >= 2 ? mapSearchKey(term) : null, swrFetcher, { keepPreviousData: true });
   const points = map.result?.points ?? [];
   const personColor = new Map(people.map((member, index) => [member.user_id, MAP_SERIES[index % MAP_SERIES.length]]));
   const personName = new Map(people.map((member) => [member.user_id, member.user_id === actor?.userId ? "Tú" : member.display_name]));
@@ -68,8 +75,33 @@ export function MapView({ giro, owner, people }: MapViewProps) {
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="grid min-w-0 gap-3">
+        {term.length >= 2 ? (
+          <section className="grid gap-2 rounded-2xl border border-border bg-surface p-3" aria-label="Resultados de la búsqueda">
+            <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
+              <Search className="h-4 w-4 text-muted-foreground" aria-hidden />
+              {searching && !matches ? "Buscando…" : matches?.length ? `Toca uno para ir a él en el mapa (${matches.length})` : `Nada con ubicación para «${term}»`}
+            </p>
+            {matches?.length ? (
+              <ul className="grid gap-1 sm:grid-cols-2">
+                {matches.map((point) => (
+                  <li key={point.id}>
+                    <button
+                      type="button"
+                      onClick={() => setFocus(point)}
+                      aria-pressed={focus?.id === point.id}
+                      className={`grid w-full gap-0.5 rounded-xl px-3 py-2 text-left transition-colors ${focus?.id === point.id ? "bg-accent/10" : "hover:bg-border-soft/50"}`}
+                    >
+                      <span className="truncate text-sm font-semibold text-foreground">{formatBusinessName(point.business_name)}</span>
+                      <span className="truncate text-xs text-muted-foreground">{giroCopy(point.giro).label} · {point.colonia ? formatBusinessName(point.colonia) : point.municipio} · {STAGE_MAP_GROUP[point.stage].label}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        ) : null}
         <FilterTabs tabs={MODES} activeValue={mode} onTabChange={(value) => setMode(value as MapColorMode)} ariaLabel="Colorear por" />
-        <ProspectMap points={points} route={map.route} colorOf={colorOf} onBoundsChange={map.setBounds} />
+        <ProspectMap points={points} route={map.route} colorOf={colorOf} onBoundsChange={map.setBounds} focus={focus} />
         <p className="text-xs text-muted-foreground">
           {map.result ? `Mostrando ${points.length.toLocaleString("es-MX")} de ${map.result.total.toLocaleString("es-MX")} negocios en esta zona; acerca el mapa para ver todos.` : "Cargando negocios…"}
         </p>

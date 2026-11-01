@@ -1,206 +1,215 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowLeft, Contact, Mail, MapPin, Pencil, Phone, Search, Store, UserRound } from "lucide-react";
+import { AlertTriangle, ArrowLeft, MapPin, MoreHorizontal, Phone, PhoneOff, XCircle } from "lucide-react";
 
 import { useGrowthLead } from "@/features/growth/hooks/useGrowthLead";
 import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
 import { useGrowthTeam } from "@/features/growth/hooks/useGrowthTeam";
-import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 import { EmptyState } from "@/components/admin/EmptyState";
-import { StatusBadge } from "@/components/admin/StatusBadge";
 import { adminActionButtonSecondary } from "@/components/admin/actionButtonClasses";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
+import { DropLeadSheet } from "@/features/growth/components/admin/DropLeadSheet";
 import { FollowUpSheet } from "@/features/growth/components/admin/FollowUpSheet";
+import { LeadActionsSheet } from "@/features/growth/components/admin/LeadActionsSheet";
 import { LeadConversation } from "@/features/growth/components/admin/LeadConversation";
+import { LeadDataCard } from "@/features/growth/components/admin/LeadDataCard";
 import { LeadGiroSheet } from "@/features/growth/components/admin/LeadGiroSheet";
+import { LeadNowCard } from "@/features/growth/components/admin/LeadNowCard";
+import { LeadOwnerSheet } from "@/features/growth/components/admin/LeadOwnerSheet";
 import { LeadPhoneSheet } from "@/features/growth/components/admin/LeadPhoneSheet";
 import { LeadSummaryCard } from "@/features/growth/components/admin/LeadSummaryCard";
-import { NextStepCard } from "@/features/growth/components/admin/NextStepCard";
 import { PipelineStepper } from "@/features/growth/components/admin/PipelineStepper";
 import { RegisterLeadSheet } from "@/features/growth/components/admin/RegisterLeadSheet";
 import { ReplySheet } from "@/features/growth/components/admin/ReplySheet";
-import { WhatsappComposer } from "@/features/growth/components/admin/WhatsappComposer";
 
 import { buildMapsLink, buildMapsSearchLink } from "@/features/growth/helpers/buildWaLink";
 import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName";
 import { buildLeadSummary } from "@/features/growth/helpers/leadSummary";
-import { pipelineIndex } from "@/features/growth/helpers/leadPipeline";
+import { canFollowUp } from "@/features/growth/helpers/leadPipeline";
+import { forgetLastSent, readLastSent, rememberLastSent } from "@/features/growth/services/lastSent";
 import { backToLeads } from "@/features/growth/services/leadsReturn";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
-import { PIPELINE_GUIDE } from "@/features/growth/constants/leadPipeline";
-import { EMAIL_STATUS_LABEL, LEAD_STAGE_META, NEXT_CHANNEL_LABEL, PHONE_STATUS_LABEL, VISIT_STATUS_LABEL } from "@/features/growth/constants/leadStages";
+import { OPEN_STAGES, STAGE_ACTIONS } from "@/features/growth/constants/leadPipeline";
 import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
-import { formatMexicanPhoneInput } from "@/lib/phone";
 
 import type { StageAction } from "@/features/growth/constants/leadPipeline";
 import type { FollowUpAction } from "@/features/growth/interfaces/lead";
+import type { LeadActionGroup, LeadSheetAction } from "@/features/growth/interfaces/leadActions";
 
-const SHEET_ACTIONS: FollowUpAction[] = ["schedule_visit", "reschedule_visit", "remind", "pause", "note"];
-const selectClass = "input-form min-h-11 rounded-xl border border-border bg-surface-raised px-3 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+const SHEET_ACTIONS: LeadSheetAction[] = ["schedule_visit", "reschedule_visit", "remind", "pause", "note"];
 
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="grid gap-0.5 rounded-xl border border-border-soft bg-surface-raised px-3 py-2">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="text-sm font-semibold text-foreground">{value}</span>
-    </div>
-  );
-}
-
-function attempts(count: number): string {
-  return count ? ` · ${count} ${count === 1 ? "intento" : "intentos"}` : "";
-}
-
-/** Everything about one prospect: who works it, what happened, what to send and what to do next. */
+/** Everything about one prospect: who it is, what to do now and what has happened. */
 export function LeadDetailView({ id }: { id: string }) {
   const router = useRouter();
   const { detail, error, isLoading, busy, notice, clearNotice, markOutcome, followUp, updatePhone, updateGiro, logReply, reassign, refresh } = useGrowthLead(id);
   const { actor, isCoordinator } = useGrowthMe();
   const { team } = useGrowthTeam(isCoordinator);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const [confirmDrop, setConfirmDrop] = useState(false);
   const [editingPhone, setEditingPhone] = useState(false);
   const [editingGiro, setEditingGiro] = useState(false);
+  const [editingOwner, setEditingOwner] = useState(false);
   const [loggingReply, setLoggingReply] = useState(false);
   const [registering, setRegistering] = useState(false);
+  const [wantsMessage, setWantsMessage] = useState(false);
   const [sheetAction, setSheetAction] = useState<FollowUpAction | null>(null);
+  const [justSent, setJustSent] = useState(false);
+
+  useEffect(() => {
+    setJustSent(readLastSent()?.leadId === id);
+  }, [id]);
 
   if (isLoading && !detail) return <LoadingBlock message="Cargando prospecto…" variant="skeleton" />;
   if (error || !detail) return <EmptyState icon={AlertTriangle} title="No encontramos este prospecto" description="Puede que ya lo trabaje otra persona del equipo." tone="muted" />;
 
   const { lead, events, acquisition, canAct, suggestion } = detail;
-  const stage = LEAD_STAGE_META[lead.stage];
-  const closed = lead.stage === "registrado" || lead.stage === "descartado";
+  const now = new Date();
+  const open = OPEN_STAGES.includes(lead.stage);
+  const closed = !open;
   const badPhone = lead.phone_status === "sin_whatsapp" || lead.phone_status === "equivocado";
   const canMessage = canAct && Boolean(lead.phone_e164) && !badPhone && lead.stage !== "descartado";
+  const showMessage = canMessage && (lead.stage !== "cita" || wantsMessage);
   const name = formatBusinessName(lead.business_name);
+  const place = [lead.colonia ? formatBusinessName(lead.colonia) : null, zoneByMunicipio(lead.municipio)?.label ?? lead.municipio].filter(Boolean).join(", ");
   const people = (team?.members ?? []).filter((member) => member.status !== "suspended");
-  const guide = PIPELINE_GUIDE[pipelineIndex(lead.stage)];
+  const canEdit = canAct && !closed;
+  const canReassign = isCoordinator && people.length > 0;
+  const ownerLabel = lead.owner_user_id ? (lead.owner_user_id === actor?.userId ? "Tú" : lead.owner_name ?? "Alguien del equipo") : "Nadie todavía";
+  const paused = Boolean(lead.snoozed_until && new Date(lead.snoozed_until) > now);
+  const moves = canAct ? [...STAGE_ACTIONS[lead.stage], ...(paused ? (["resume"] as StageAction[]) : [])].filter((action) => canFollowUp(lead, action, now)) : [];
 
-  function handleAction(action: StageAction) {
+  const groups: LeadActionGroup[] = [
+    { title: "Con el negocio", actions: [...moves.filter((action) => action !== "register"), ...(canMessage && !showMessage ? (["whatsapp"] as LeadSheetAction[]) : [])] },
+    { title: "Datos", actions: canEdit ? ["phone", "giro"] : [] },
+    { title: "Quién lo trabaja", actions: canReassign ? ["owner"] : [] },
+    { title: "Cerrar", actions: [...(moves.includes("register") ? (["register"] as LeadSheetAction[]) : []), ...(canAct && open ? (["not_interested"] as LeadSheetAction[]) : [])] },
+  ];
+  const hasActions = groups.some((group) => group.actions.length);
+
+  async function correctSend(outcome: "no_whatsapp" | "wrong_number") {
+    setJustSent(false);
+    forgetLastSent();
+    await markOutcome(outcome);
+  }
+
+  function handleAction(action: LeadSheetAction) {
+    setActionsOpen(false);
     if (action === "not_interested") setConfirmDrop(true);
     else if (action === "register") setRegistering(true);
-    else if (action === "replied") void markOutcome(lead.email_status === "enviado" && lead.phone_status !== "enviado" ? "email_replied" : "whatsapp_replied");
-    else if (SHEET_ACTIONS.includes(action)) setSheetAction(action);
-    else void followUp({ action });
+    else if (action === "replied") setLoggingReply(true);
+    else if (action === "whatsapp") setWantsMessage(true);
+    else if (action === "phone") setEditingPhone(true);
+    else if (action === "giro") setEditingGiro(true);
+    else if (action === "owner") setEditingOwner(true);
+    else if (SHEET_ACTIONS.includes(action)) setSheetAction(action as FollowUpAction);
+    else void followUp({ action: action as FollowUpAction });
   }
 
   return (
     <div className="grid grid-cols-1 gap-4">
-      <button type="button" onClick={() => backToLeads(router)} className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" aria-hidden />Prospectos
-      </button>
-      {notice ? <Notification tone={notice.tone} message={notice.message} onDismiss={clearNotice} /> : null}
+      <div className="flex items-center justify-between gap-2">
+        <button type="button" onClick={() => backToLeads(router)} className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" aria-hidden />Prospectos
+        </button>
+        {hasActions ? (
+          <button type="button" onClick={() => setActionsOpen(true)} aria-label="Acciones" className={`${adminActionButtonSecondary} w-11 px-0`}>
+            <MoreHorizontal className="h-4 w-4" aria-hidden />
+          </button>
+        ) : null}
+      </div>
 
-      <header className="grid gap-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="grid min-w-0 gap-1">
-            <h2 className="text-xl font-bold tracking-tight text-foreground wrap-break-word sm:text-2xl">{name}</h2>
-            <p className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4 shrink-0" aria-hidden />
-              {giroCopy(lead.giro).label} · {[lead.address, lead.colonia, zoneByMunicipio(lead.municipio)?.label ?? lead.municipio].filter(Boolean).join(", ")}
-            </p>
-            {isCoordinator && people.length ? (
-              <label className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                <UserRound className="h-4 w-4 shrink-0" aria-hidden />
-                Lo trabaja
-                <select value={lead.owner_user_id ?? ""} disabled={busy} onChange={(event) => void reassign(event.target.value || null)} className={selectClass}>
-                  <option value="">Nadie (el primero que le escriba)</option>
-                  {people.map((member) => <option key={member.user_id} value={member.user_id}>{member.user_id === actor?.userId ? `Tú (${member.display_name})` : member.display_name}</option>)}
-                </select>
-              </label>
-            ) : (
-              <p className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-                <UserRound className="h-4 w-4 shrink-0" aria-hidden />
-                {lead.owner_user_id ? `Lo trabaja ${lead.owner_user_id === actor?.userId ? "tú" : lead.owner_name ?? "alguien del equipo"}` : "Sin asignar: el primero que le escriba se lo queda"}
-              </p>
-            )}
-          </div>
-          {pipelineIndex(lead.stage) < 0 ? <StatusBadge tone={stage.tone} label={stage.label} /> : null}
-        </div>
-        <div className="grid gap-1.5">
+      {justSent ? (
+        <Notification
+          tone="success"
+          onDismiss={() => { setJustSent(false); forgetLastSent(); }}
+          message={
+            <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span>Quedó como enviado. ¿No se envió?</span>
+              <span className="flex flex-wrap gap-1">
+                <button type="button" disabled={busy} onClick={() => void correctSend("no_whatsapp")} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 font-semibold hover:bg-emerald-100"><PhoneOff className="h-4 w-4" aria-hidden />No tiene WhatsApp</button>
+                <button type="button" disabled={busy} onClick={() => void correctSend("wrong_number")} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 font-semibold hover:bg-emerald-100"><XCircle className="h-4 w-4" aria-hidden />Número equivocado</button>
+              </span>
+            </span>
+          }
+        />
+      ) : notice ? <Notification tone={notice.tone} message={notice.message} onDismiss={clearNotice} /> : null}
+
+      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="grid min-w-0 gap-1.5 md:flex-1">
+          <h2 className="text-xl font-bold tracking-tight text-foreground wrap-break-word sm:text-2xl">{name}</h2>
+          <p className="text-sm text-muted-foreground">{giroCopy(lead.giro).label}{place ? ` · ${place}` : ""}</p>
           <PipelineStepper stage={lead.stage} />
-          {guide ? <p className="text-sm text-muted-foreground"><b className="font-semibold text-foreground">{guide.means}</b> {guide.todo}</p> : null}
+        </div>
+        <div className="flex gap-2 md:shrink-0">
+          {lead.phone_e164 ? (
+            <a href={`tel:${lead.phone_e164}`} className={`${adminActionButtonSecondary} flex-1 md:flex-none`}><Phone className="h-4 w-4" aria-hidden />Llamar</a>
+          ) : null}
+          <a href={lead.lat && lead.lng ? buildMapsLink(lead.lat, lead.lng) : buildMapsSearchLink(lead)} target="_blank" rel="noopener noreferrer" className={`${adminActionButtonSecondary} flex-1 md:flex-none`}>
+            <MapPin className="h-4 w-4" aria-hidden />{lead.lat && lead.lng ? "Cómo llegar" : "Ver en Maps"}
+          </a>
         </div>
       </header>
 
       {!canAct ? <Notification tone="info" message={`Ahora lo trabaja ${lead.owner_name ?? "otra persona del equipo"}. Puedes ver su historial, pero ya no escribirle desde aquí.`} /> : null}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:items-start">
-        <aside className="grid min-w-0 gap-4 lg:sticky lg:top-20 lg:order-2 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-          {canAct ? <NextStepCard lead={lead} busy={busy} reason={suggestion?.reason} onAction={handleAction} /> : null}
-          {canMessage ? (
-            <WhatsappComposer key={`${lead.phone_e164}-${lead.whatsapp_attempts}-${lead.phone_status}-${lead.stage}`} leadId={lead.id} busy={busy} onOutcome={(outcome, sent) => markOutcome(outcome, undefined, sent)} />
-          ) : badPhone && !closed && canAct ? (
-            <Notification tone="warning" title="WhatsApp" message="Ese número no sirve para WhatsApp. Si encontraste otro, usa «Corregir teléfono»." />
-          ) : !lead.phone_e164 && !closed && canAct ? (
-            <Notification tone="info" title="Sin teléfono" message={`No podemos armarte el WhatsApp porque no tenemos su número.${lead.email ? " El motor le escribe por correo." : ""} Si lo consigues, usa «Corregir teléfono» en «Contacto y canales».`} />
-          ) : null}
-        </aside>
-
-        <div className="grid min-w-0 gap-4 lg:order-1">
-          <LeadSummaryCard summary={buildLeadSummary(events)} />
-
-          <CollapsibleSection icon={Contact} title="Contacto y canales" description="Cómo contactarlo y en qué va cada canal." defaultOpenOnMobile={false}>
-            <div className="grid gap-4">
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <Field label="Por dónde sigue" value={NEXT_CHANNEL_LABEL[lead.next_channel]} />
-                <Field label="WhatsApp" value={lead.phone_e164 ? `${PHONE_STATUS_LABEL[lead.phone_status]}${attempts(lead.whatsapp_attempts)}` : "Sin teléfono"} />
-                <Field label="Correo" value={lead.email ? EMAIL_STATUS_LABEL[lead.email_status] : "Sin correo"} />
-                <Field label="Visita" value={`${VISIT_STATUS_LABEL[lead.visit_status]}${attempts(lead.visit_attempts)}`} />
-              </div>
-            {acquisition ? (
-              <Notification tone="success" message={`Se registró · ${acquisition.bucket === "engine" ? "motor" : acquisition.bucket === "assisted" ? "asistido" : "solo"}${acquisition.channel ? ` por ${acquisition.channel}` : ""}.`} />
+      <div className={`grid grid-cols-1 gap-5 lg:items-start ${canAct ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]" : ""}`}>
+        {canAct ? (
+          <aside className="grid min-w-0 gap-3 lg:sticky lg:top-20 lg:order-2 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+            <LeadNowCard
+              lead={lead}
+              busy={busy}
+              reason={suggestion?.reason}
+              showMessage={showMessage}
+              onAction={handleAction}
+              onOpenActions={() => setActionsOpen(true)}
+              onOutcome={(outcome, sent) => {
+                if (outcome === "whatsapp_sent") {
+                  rememberLastSent({ leadId: lead.id, name });
+                  setJustSent(true);
+                }
+                return markOutcome(outcome, undefined, sent);
+              }}
+            />
+            {badPhone && !closed ? (
+              <Notification tone="warning" title="WhatsApp" message="Ese número no sirve para WhatsApp. Si encontraste otro, corrígelo en «Datos»." />
+            ) : !lead.phone_e164 && !closed ? (
+              <Notification tone="info" title="Sin teléfono" message={`No podemos armarte el WhatsApp porque no tenemos su número.${lead.email ? " El motor le escribe por correo." : ""} Si lo consigues, agrégalo en «Datos».`} />
             ) : null}
-              <div className="grid gap-2">
-                <p className="text-xs font-semibold text-muted-foreground">Contactar</p>
-                <div className="flex flex-wrap gap-2">
-              {lead.phone_e164 ? (
-                <a href={`tel:${lead.phone_e164}`} className={adminActionButtonSecondary}><Phone className="h-4 w-4" aria-hidden />Llamar {formatMexicanPhoneInput(lead.phone_e164)}</a>
-              ) : null}
-              {lead.email ? <a href={`mailto:${lead.email}`} className={`${adminActionButtonSecondary} max-w-full`}><Mail className="h-4 w-4 shrink-0" aria-hidden /><span className="truncate">{lead.email}</span></a> : null}
-              {lead.lat && lead.lng ? (
-                <a href={buildMapsLink(lead.lat, lead.lng)} target="_blank" rel="noopener noreferrer" className={adminActionButtonSecondary}><MapPin className="h-4 w-4" aria-hidden />Cómo llegar</a>
-              ) : null}
-              <a href={buildMapsSearchLink(lead)} target="_blank" rel="noopener noreferrer" className={adminActionButtonSecondary}><Search className="h-4 w-4" aria-hidden />Ver en Google Maps</a>
-                </div>
-              </div>
-              {!closed && canAct ? (
-                <div className="grid gap-2">
-                  <p className="text-xs font-semibold text-muted-foreground">¿Algún dato está mal? Corrígelo para que los mensajes salgan bien.</p>
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button" disabled={busy} onClick={() => setEditingPhone(true)} className={adminActionButtonSecondary}><Pencil className="h-4 w-4" aria-hidden />Corregir teléfono</button>
-                    <button type="button" disabled={busy} onClick={() => setEditingGiro(true)} className={adminActionButtonSecondary}><Store className="h-4 w-4" aria-hidden />Corregir giro</button>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </CollapsibleSection>
+          </aside>
+        ) : null}
 
-          <LeadConversation events={events} viewerId={actor?.userId ?? null} onLogReply={() => setLoggingReply(true)} />
+        <div className="grid min-w-0 gap-5 lg:order-1">
+          <LeadSummaryCard summary={buildLeadSummary(events)} />
+          <LeadConversation events={events} viewerId={actor?.userId ?? null} onLogReply={canAct ? () => setLoggingReply(true) : undefined} />
+          <LeadDataCard lead={lead} acquisition={acquisition} ownerLabel={ownerLabel} canEdit={canEdit} canReassign={canReassign} onAction={handleAction} />
         </div>
       </div>
 
-      <ConfirmDialog
+      <LeadActionsSheet isOpen={actionsOpen} busy={busy} groups={groups} onClose={() => setActionsOpen(false)} onPick={handleAction} />
+      <DropLeadSheet
         isOpen={confirmDrop}
+        businessName={name}
+        busy={busy}
         onClose={() => setConfirmDrop(false)}
-        onConfirm={async () => {
-          await markOutcome("not_interested", "rechazo");
+        onConfirm={async (reason) => {
+          await markOutcome("not_interested", reason);
           setConfirmDrop(false);
         }}
-        title="¿Marcar que no le interesa?"
-        description="Se da de baja en WhatsApp, correo y visitas, y nunca se le vuelve a escribir."
-        confirmLabel="Sí, dar de baja"
-        variant="danger"
-        loading={busy}
       />
       <FollowUpSheet key={sheetAction ?? "closed"} action={sheetAction} businessName={name} busy={busy} onClose={() => setSheetAction(null)} onSubmit={followUp} />
       <LeadPhoneSheet isOpen={editingPhone} currentPhone={lead.phone_e164} busy={busy} onClose={() => setEditingPhone(false)} onSubmit={updatePhone} />
       <LeadGiroSheet key={lead.giro} isOpen={editingGiro} currentGiro={lead.giro} busy={busy} onClose={() => setEditingGiro(false)} onSubmit={updateGiro} />
-      <ReplySheet isOpen={loggingReply} businessName={name} busy={busy} onClose={() => setLoggingReply(false)} onSubmit={logReply} />
+      <LeadOwnerSheet key={`${lead.owner_user_id ?? "none"}-${editingOwner}`} isOpen={editingOwner} busy={busy} ownerId={lead.owner_user_id} actorId={actor?.userId ?? null} people={people} onClose={() => setEditingOwner(false)} onSubmit={reassign} />
+      <ReplySheet
+        isOpen={loggingReply}
+        businessName={name}
+        busy={busy}
+        onClose={() => setLoggingReply(false)}
+        onSubmit={(text) => (text ? logReply(text) : markOutcome(lead.email_status === "enviado" && lead.phone_status !== "enviado" ? "email_replied" : "whatsapp_replied"))}
+      />
       <RegisterLeadSheet isOpen={registering} lead={lead} onClose={() => setRegistering(false)} onRegistered={() => void refresh()} />
     </div>
   );

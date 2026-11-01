@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, ExternalLink, MessageCircle, Pencil, Phone, PhoneOff, Search, SkipForward, XCircle } from "lucide-react";
+import { ExternalLink, MapPin, MessageCircle, Pencil, Phone, RefreshCw, SkipForward, Sparkles } from "lucide-react";
 
 import { useWhatsappDraft } from "@/features/growth/hooks/useWhatsappDraft";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { adminActionButtonPrimary, adminActionButtonSecondary } from "@/components/admin/actionButtonClasses";
-import { FilterTabs } from "@/components/ui/FilterTabs";
+import { adminActionButtonAi, adminActionButtonPrimary, adminActionButtonText } from "@/components/admin/actionButtonClasses";
+import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
+import { AiWritingState } from "@/features/growth/components/admin/AiWritingState";
 import { LeadPhoneSheet } from "@/features/growth/components/admin/LeadPhoneSheet";
 
 import { buildMapsSearchLink } from "@/features/growth/helpers/buildWaLink";
@@ -16,28 +17,37 @@ import { formatBusinessName } from "@/features/growth/helpers/formatBusinessName
 import { sameTabOnPhones } from "@/features/growth/helpers/openWhatsapp";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
 import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
+import { prefetchWhatsappDraft } from "@/features/growth/services/draftPrefetch";
 import { patchLead } from "@/features/growth/services/growthClient";
-import { forgetWhatsappOpened } from "@/features/growth/services/whatsappOpened";
 import { formatMexicanPhoneInput } from "@/lib/phone";
 import { leadPath } from "@/features/growth/constants/routes";
 
 import type { SweepCardProps } from "@/features/growth/interfaces/sweep";
-import type { TemplateVariant } from "@/features/growth/interfaces/template";
-
-const linkButton = "inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-accent hover:underline";
 
 function typingTarget(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 }
 
-export function SweepCard({ lead, next, onOutcome, onSkip, onPhoneChanged }: SweepCardProps) {
+/** One business at a time: the message is ready, one tap sends it and the next one appears. */
+export function SweepCard({ lead, next, onSend, onSkip, onPhoneChanged }: SweepCardProps) {
   const composer = useWhatsappDraft(lead.id);
-  const { draft, opened } = composer;
+  const { draft } = composer;
+  const [editing, setEditing] = useState(false);
   const [editingPhone, setEditingPhone] = useState(false);
   const [phoneBusy, setPhoneBusy] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const name = formatBusinessName(lead.business_name);
   const place = [lead.colonia ? formatBusinessName(lead.colonia) : null, zoneByMunicipio(lead.municipio)?.label ?? lead.municipio].filter(Boolean).join(", ");
+  const variants = draft?.variants ?? [];
+  const nextVariant = draft && variants.length > 1 ? variants[(variants.indexOf(draft.variant) + 1) % variants.length] : null;
+
+  useEffect(() => {
+    if (next) prefetchWhatsappDraft(next.id);
+  }, [next]);
+
+  function send() {
+    onSend(composer.sent());
+  }
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -45,24 +55,20 @@ export function SweepCard({ lead, next, onOutcome, onSkip, onPhoneChanged }: Swe
       const key = event.key.toLowerCase();
       if (key === "w" && composer.waLink) {
         window.open(composer.waLink, "_blank", "noopener,noreferrer");
-        composer.markOpened();
-      } else if (key === "e" && opened) onOutcome("whatsapp_sent", composer.sent());
-      else if (key === "n" && opened) onOutcome("no_whatsapp");
-      else if (key === "x" && opened) onOutcome("wrong_number");
-      else if (key === "s") onSkip();
+        onSend(composer.sent());
+      } else if (key === "s") onSkip();
       else return;
       event.preventDefault();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [composer, editingPhone, onOutcome, onSkip, opened]);
+  }, [composer, editingPhone, onSend, onSkip]);
 
   async function savePhone(phone: string): Promise<boolean> {
     setPhoneBusy(true);
     setPhoneError(null);
     try {
       const updated = await patchLead(lead.id, { phone });
-      forgetWhatsappOpened();
       onPhoneChanged({ ...lead, phone_e164: updated.phone_e164, whatsapp_attempts: updated.whatsapp_attempts, last_whatsapp_at: updated.last_whatsapp_at });
       return true;
     } catch (err) {
@@ -73,103 +79,94 @@ export function SweepCard({ lead, next, onOutcome, onSkip, onPhoneChanged }: Swe
     }
   }
 
-  const openLink = composer.waLink ? (
-    <a
-      href={composer.waLink}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={(event) => {
-        composer.markOpened();
-        sameTabOnPhones(event);
-      }}
-      className={opened ? linkButton : `${adminActionButtonPrimary} min-h-14 w-full text-base`}
-    >
-      <MessageCircle className="h-5 w-5" aria-hidden />
-      {opened ? "Abrir WhatsApp otra vez" : "Abrir WhatsApp"}
-    </a>
-  ) : null;
+  const more = [
+    ...(lead.phone_e164 ? [{ label: `Llamar ${formatMexicanPhoneInput(lead.phone_e164)}`, icon: Phone, onClick: () => { window.location.href = `tel:${lead.phone_e164}`; } }] : []),
+    { label: "Ver en Google Maps", icon: MapPin, onClick: () => window.open(buildMapsSearchLink(lead), "_blank", "noopener,noreferrer") },
+    { label: "Corregir número", icon: Pencil, onClick: () => setEditingPhone(true) },
+    { label: "Abrir su ficha", icon: ExternalLink, onClick: () => window.open(leadPath(lead.id), "_blank", "noopener,noreferrer") },
+  ];
 
   return (
-    <section className="grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-6" aria-label={`Barrido: ${name}`}>
-      <div className="grid min-w-0 content-start gap-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="grid min-w-0 gap-1">
-            <h2 className="text-xl font-bold tracking-tight text-foreground wrap-break-word">{name}</h2>
-            <p className="text-sm text-muted-foreground">{giroCopy(lead.giro).label} · {place}</p>
-            {lead.phone_e164 ? (
-              <a href={`tel:${lead.phone_e164}`} className="inline-flex w-fit items-center gap-1.5 text-base font-semibold tabular-nums text-foreground">
-                <Phone className="h-4 w-4 text-muted-foreground" aria-hidden />{formatMexicanPhoneInput(lead.phone_e164)}
-              </a>
-            ) : null}
-          </div>
+    <section className="grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5" aria-label={`Barrido: ${name}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="grid min-w-0 gap-1">
+          <h2 className="text-xl font-bold tracking-tight text-foreground wrap-break-word">{name}</h2>
+          <p className="text-sm text-muted-foreground">
+            {giroCopy(lead.giro).label} · {place}
+            {lead.phone_e164 ? <span className="tabular-nums"> · {formatMexicanPhoneInput(lead.phone_e164)}</span> : null}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
           <StatusBadge tone={lead.whatsapp_attempts > 0 ? "info" : "neutral"} label={lead.whatsapp_attempts > 0 ? "Seguimiento" : "Primer mensaje"} compact />
+          <ActionsMenu items={more} aria-label="Más acciones" />
         </div>
-  
-        <div className="flex flex-wrap gap-x-4 gap-y-1">
-          <a href={buildMapsSearchLink(lead)} target="_blank" rel="noopener noreferrer" className={linkButton}><Search className="h-4 w-4" aria-hidden />Ver en Maps</a>
-          <button type="button" onClick={() => setEditingPhone(true)} className={linkButton}><Pencil className="h-4 w-4" aria-hidden />Corregir número</button>
-          <a href={leadPath(lead.id)} target="_blank" rel="noopener noreferrer" className={linkButton}><ExternalLink className="h-4 w-4" aria-hidden />Ficha</a>
-        </div>
-  
-        {phoneError ? <Notification tone="error" message={phoneError} onDismiss={() => setPhoneError(null)} /> : null}
-        {composer.error ? <Notification tone="error" message={composer.error} /> : null}
-  
-        {draft && draft.variants.length > 1 ? (
-          <FilterTabs
-            tabs={draft.variants.map((variant) => ({ value: variant, label: `Mensaje ${variant}` }))}
-            activeValue={draft.variant}
-            onTabChange={(value) => composer.selectVariant(value as TemplateVariant)}
-            ariaLabel="Variante del mensaje"
-            disabled={composer.loading}
-          />
-        ) : null}
-        {composer.loading && !draft ? <LoadingBlock message="Armando el mensaje…" variant="skeleton" /> : null}
-        {draft ? (
-          <label className="grid gap-1">
-            <span className="text-xs text-muted-foreground">{composer.edited ? "Editado por ti · se guardará así" : "Puedes editarlo antes de abrir WhatsApp."}</span>
-            <textarea
-              value={composer.text}
-              onChange={(event) => composer.setText(event.target.value)}
-              rows={8}
-              disabled={composer.loading}
-              className={`input-form min-h-44 w-full resize-y rounded-xl border border-border-soft bg-surface-raised p-3 text-sm leading-relaxed text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 ${composer.loading ? "opacity-60" : ""}`}
-            />
-          </label>
-        ) : null}
       </div>
 
-      <div className="sticky bottom-0 -mx-4 grid content-start gap-2 border-t border-border-soft bg-surface px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:static sm:mx-0 sm:border-0 sm:p-0 lg:sticky lg:top-20 lg:self-start lg:border-l lg:pl-6">
-        {opened ? (
-          <>
-            <p className="text-sm font-semibold text-foreground">¿Cómo te fue con {name}?</p>
-            <button type="button" onClick={() => onOutcome("whatsapp_sent", composer.sent())} className={`${adminActionButtonPrimary} min-h-14 w-full text-base`}>
-              <Check className="h-5 w-5" aria-hidden />Enviado
-            </button>
-            <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => onOutcome("no_whatsapp")} className={adminActionButtonSecondary}><PhoneOff className="h-4 w-4" aria-hidden />Sin WhatsApp</button>
-              <button type="button" onClick={() => onOutcome("wrong_number")} className={adminActionButtonSecondary}><XCircle className="h-4 w-4" aria-hidden />Equivocado</button>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              {openLink}
-              <button type="button" onClick={onSkip} className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground">
-                <SkipForward className="h-4 w-4" aria-hidden />Saltar
-              </button>
-            </div>
-          </>
+      {phoneError ? <Notification tone="error" message={phoneError} onDismiss={() => setPhoneError(null)} /> : null}
+      {composer.error ? <Notification tone="error" message={composer.error} /> : null}
+      {composer.loading && !draft ? <LoadingBlock message="Armando el mensaje…" variant="skeleton" /> : null}
+
+      {composer.aiBusy && !composer.aiWritten ? <AiWritingState /> : draft ? (
+        editing ? (
+          <textarea
+            aria-label="Mensaje"
+            value={composer.text}
+            onChange={(event) => composer.setText(event.target.value)}
+            rows={8}
+            autoFocus
+            className="input-form min-h-44 w-full resize-y rounded-xl border border-border-soft bg-surface-raised p-3 text-sm leading-relaxed text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+          />
         ) : (
-          <>
-            {openLink}
-            <button type="button" onClick={onSkip} className={`${adminActionButtonSecondary} w-full`}>
-              <SkipForward className="h-4 w-4" aria-hidden />Saltar por ahora
+          <button type="button" onClick={() => setEditing(true)} className="line-clamp-4 w-full cursor-text whitespace-pre-wrap rounded-xl border border-border-soft bg-surface-raised p-3 text-left text-sm leading-relaxed text-foreground hover:border-accent/40" title="Toca para editar">
+            {composer.text}
+          </button>
+        )
+      ) : null}
+
+      {draft ? (
+        <div className="-mt-2 flex flex-wrap items-center gap-1">
+          <button type="button" disabled={composer.aiBusy} onClick={() => setEditing((value) => !value)} className={adminActionButtonText}>
+            <Pencil className="h-4 w-4" aria-hidden />{editing ? "Listo" : "Editar"}
+          </button>
+          {nextVariant ? (
+            <button type="button" disabled={composer.loading || composer.aiBusy} onClick={() => { setEditing(false); void composer.selectVariant(nextVariant); }} className={adminActionButtonText}>
+              <RefreshCw className="h-4 w-4" aria-hidden />Otro mensaje ({variants.indexOf(draft.variant) + 1} de {variants.length})
             </button>
-          </>
-        )}
-        {next ? (
-          <p className="hidden truncate border-t border-border-soft pt-3 text-sm text-muted-foreground lg:block">
-            Sigue: <span className="font-semibold text-foreground">{formatBusinessName(next.business_name)}</span>
-          </p>
+          ) : null}
+          {lead.whatsapp_attempts > 0 ? (
+            <button type="button" disabled={composer.aiBusy || composer.loading} onClick={() => { setEditing(false); void composer.writeWithAi(); }} className={`${adminActionButtonAi} ${composer.aiBusy ? "ai-busy" : ""}`}>
+              <Sparkles className={`h-4 w-4 ${composer.aiBusy ? "motion-safe:animate-spin" : ""}`} aria-hidden />{composer.aiBusy ? "Escribiendo…" : "Escribir con IA"}
+            </button>
+          ) : null}
+          {composer.aiWritten ? <span className="text-xs text-muted-foreground">Escrito con IA: revísalo antes de enviar.</span> : composer.edited ? <span className="text-xs text-muted-foreground">Se enviará tal como lo editaste.</span> : null}
+        </div>
+      ) : null}
+
+      <div className="sticky bottom-0 -mx-4 grid gap-1 border-t border-border-soft bg-surface px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:static sm:mx-0 sm:border-0 sm:p-0">
+        {composer.waLink ? (
+          <a
+            href={composer.waLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-disabled={composer.aiBusy}
+            onClick={(event) => {
+              if (composer.aiBusy) {
+                event.preventDefault();
+                return;
+              }
+              send();
+              sameTabOnPhones(event);
+            }}
+            className={`${adminActionButtonPrimary} min-h-14 w-full text-base ${composer.aiBusy ? "pointer-events-none opacity-60" : ""}`}
+          >
+            <MessageCircle className="h-5 w-5" aria-hidden />Enviar por WhatsApp
+          </a>
         ) : null}
-        <p className="hidden text-xs text-muted-foreground md:block">Teclas: W abrir · E enviado · N sin WhatsApp · X equivocado · S saltar</p>
+        <button type="button" onClick={onSkip} className={adminActionButtonText}>
+          <SkipForward className="h-4 w-4" aria-hidden />Saltar por ahora
+        </button>
+        {next ? <p className="truncate text-center text-xs text-muted-foreground">Sigue: <span className="font-semibold text-foreground">{formatBusinessName(next.business_name)}</span></p> : null}
+        <p className="hidden text-center text-xs text-muted-foreground md:block">Teclas: W enviar · S saltar</p>
       </div>
 
       <LeadPhoneSheet isOpen={editingPhone} currentPhone={lead.phone_e164} busy={phoneBusy} onClose={() => setEditingPhone(false)} onSubmit={savePhone} />

@@ -6,25 +6,19 @@ import { StoreSectionHeader } from "@/features/sitio/components/StoreSectionHead
 import { ParaObjections } from "@/features/growth/components/para/ParaObjections";
 import { ParaOwnerIntro } from "@/features/growth/components/para/ParaOwnerIntro";
 import { ParaProductCard } from "@/features/growth/components/para/ParaProductCard";
+import { ParaThemeFrame } from "@/features/growth/components/para/ParaThemeFrame";
 
 import { PARA_ACTIVATION_STEPS } from "@/features/growth/constants/para";
-import { storeSans } from "@/features/sitio/constants/storeFonts";
-import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
 import { resolveHeroCopy } from "@/features/sitio/helpers/storeHome";
-import { buildStoreThemeStyle, resolveStoreTheme } from "@/features/sitio/helpers/storeTheme";
 
 import type { ParaInteractiveProps } from "@/features/growth/interfaces/para";
 
 /** The owner's intro, then their store framed as their customers would see it, built from the storefront's own blocks. */
 export function ParaStorefront({ token, data }: ParaInteractiveProps) {
-  const theme = resolveStoreTheme(null);
   const hero = resolveHeroCopy({}, data.counts, null);
 
   return (
-    <div
-      className={`site-template ${theme.dark ? "site-template-dark" : ""} ${storeSans.variable} min-w-0 overflow-x-clip bg-(--store-canvas) font-(family-name:--font-store-sans) text-(--store-ink) antialiased`}
-      style={buildStoreThemeStyle(theme, DEFAULT_TENANT_ACCENT)}
-    >
+    <ParaThemeFrame>
       <div className="mx-auto w-full max-w-6xl space-y-10 px-4 pb-16 pt-5 sm:space-y-14 sm:px-6 sm:pt-8">
         <ParaOwnerIntro data={data} />
 
@@ -69,6 +63,6 @@ export function ParaStorefront({ token, data }: ParaInteractiveProps) {
 
         <ParaObjections token={token} data={data} />
       </div>
-    </div>
+    </ParaThemeFrame>
   );
 }

@@ -1,8 +1,6 @@
 "use client";
 
-import { Activity, Eye, MessageCircle, MessageSquareReply, MousePointerClick } from "lucide-react";
-
-import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
+import { Eye, MessageCircle, MessageSquareReply, MousePointerClick } from "lucide-react";
 
 import { formatVisitSeconds } from "@/features/growth/helpers/paraSession";
 import { timeAgo } from "@/features/growth/helpers/nextActionReason";
@@ -12,47 +10,53 @@ import { PARA_OBJECTION_LABEL, PARA_VISIT_SLOT_LABEL } from "@/features/growth/c
 import type { LeadSummaryCardProps } from "@/features/growth/interfaces/lead";
 import type { ParaObjection, ParaVisitSlot } from "@/features/growth/interfaces/para";
 
-function Fact({ icon: Icon, title, detail }: { icon: typeof Eye; title: string; detail: string | null }) {
+function Tile({ icon: Icon, label, value, detail, hot }: { icon: typeof Eye; label: string; value: string; detail: string | null; hot: boolean }) {
   return (
-    <div className="flex min-w-0 gap-2.5">
-      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-      <div className="min-w-0">
-        <p className="text-sm font-bold text-foreground">{title}</p>
-        {detail ? <p className="text-xs text-muted-foreground">{detail}</p> : null}
-      </div>
+    <div className={`grid min-w-0 content-start gap-0.5 rounded-xl border px-3 py-2.5 ${hot ? "border-amber-300 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-950/30" : "border-border bg-surface"}`}>
+      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"><Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />{label}</span>
+      <span className="text-sm font-bold text-foreground wrap-break-word">{value}</span>
+      {detail ? <span className="line-clamp-2 text-xs text-muted-foreground wrap-break-word">{detail}</span> : null}
     </div>
   );
 }
 
-/** Messages, store visits, what they tapped and whether they answered, read from the history. */
+/** Four facts read from the history; the freshest sign of interest is highlighted. */
 export function LeadSummaryCard({ summary }: LeadSummaryCardProps) {
   const now = new Date();
   const tapped = [
-    summary.objection ? `Marcó «${PARA_OBJECTION_LABEL[summary.objection as ParaObjection] ?? summary.objection}»` : null,
+    summary.objection ? `«${PARA_OBJECTION_LABEL[summary.objection as ParaObjection] ?? summary.objection}»` : null,
     summary.visitRequest ? `Pidió visita${summary.visitRequest.day ? ` el ${visitDayLong(summary.visitRequest.day)}` : ""}${summary.visitRequest.slot ? ` ${PARA_VISIT_SLOT_LABEL[summary.visitRequest.slot as ParaVisitSlot] ?? ""}` : ""}` : null,
-    summary.claimClicked ? "Tocó «Activar mi tienda»" : null,
+    summary.claimClicked ? "«Activar mi tienda»" : null,
   ].filter(Boolean);
+  const hot = summary.repliedAt ? "reply" : tapped.length ? "tapped" : summary.views ? "views" : null;
 
   return (
-    <CollapsibleSection icon={Activity} title="Resumen" description="Lo que ha pasado con este negocio, de un vistazo.">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Fact
+    <section className="grid gap-2" aria-label="De un vistazo">
+      <h3 className="text-base font-bold text-foreground">De un vistazo</h3>
+      <div className="grid grid-cols-2 gap-2 2xl:grid-cols-4">
+        <Tile
           icon={MessageCircle}
-          title={summary.sent ? `${summary.sent} ${summary.sent === 1 ? "mensaje enviado" : "mensajes enviados"}` : "Todavía no le escribes"}
+          label="Mensajes"
+          value={summary.sent ? `${summary.sent} ${summary.sent === 1 ? "enviado" : "enviados"}` : "Ninguno todavía"}
           detail={summary.lastSentAt ? `El último ${timeAgo(summary.lastSentAt, now)}` : null}
+          hot={false}
         />
-        <Fact
+        <Tile
           icon={Eye}
-          title={summary.views ? `Abrió su tienda ${summary.views === 1 ? "1 vez" : `${summary.views} veces`}` : "No ha abierto su tienda"}
-          detail={summary.lastViewAt ? `La última ${timeAgo(summary.lastViewAt, now)}${summary.averageSeconds ? ` · ${formatVisitSeconds(summary.averageSeconds)} en promedio` : ""}` : null}
+          label="Su tienda"
+          value={summary.views ? `La abrió ${summary.views === 1 ? "1 vez" : `${summary.views} veces`}` : "No la ha abierto"}
+          detail={summary.lastViewAt ? `${timeAgo(summary.lastViewAt, now)}${summary.averageSeconds ? ` · ${formatVisitSeconds(summary.averageSeconds)}` : ""}` : null}
+          hot={hot === "views"}
         />
-        <Fact icon={MousePointerClick} title={tapped.length ? tapped.join(" · ") : "No ha tocado nada en su tienda"} detail={null} />
-        <Fact
+        <Tile icon={MousePointerClick} label="Qué tocó" value={tapped.length ? tapped.join(" · ") : "Nada todavía"} detail={null} hot={hot === "tapped"} />
+        <Tile
           icon={MessageSquareReply}
-          title={summary.repliedAt ? `Respondió ${timeAgo(summary.repliedAt, now)}` : "No ha respondido"}
+          label="Respuesta"
+          value={summary.repliedAt ? `Respondió ${timeAgo(summary.repliedAt, now)}` : "No ha respondido"}
           detail={summary.lastReply ? `«${summary.lastReply}»` : null}
+          hot={hot === "reply"}
         />
       </div>
-    </CollapsibleSection>
+    </section>
   );
 }
