@@ -3,12 +3,12 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-import { StoreNavigationContext } from "@/features/sitio/hooks/useStoreNavigation";
-import { StoreNavigationBar } from "@/features/sitio/components/shell/StoreNavigationBar";
+import { NavigationFeedbackContext } from "@/hooks/useNavigationFeedback";
+import { NavigationProgressBar } from "@/components/navigation/NavigationProgressBar";
 
-import { internalNavigationTarget } from "@/features/sitio/helpers/navigationIntent";
+import { internalNavigationTarget } from "@/lib/navigationIntent";
 
-import type { NavigationSettledProps, StoreNavigationProps } from "@/features/sitio/interfaces/storeNavigation";
+import type { NavigationFeedbackProps, NavigationSettledProps } from "@/types/navigation";
 
 // A navigation that never lands (offline, aborted) must not leave the bar running forever.
 const SAFETY_TIMEOUT_MS = 12000;
@@ -20,8 +20,8 @@ function NavigationSettled({ onSettle }: NavigationSettledProps) {
   return null;
 }
 
-/** Gives every storefront tap instant feedback while the next page renders on the server. */
-export function StoreNavigation({ children }: StoreNavigationProps) {
+/** Gives every in-app tap instant feedback (top bar + `pendingHref`) while the next page renders. */
+export function NavigationFeedback({ children }: NavigationFeedbackProps) {
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const settle = useCallback(() => setPendingHref(null), []);
 
@@ -52,14 +52,14 @@ export function StoreNavigation({ children }: StoreNavigationProps) {
   };
 
   return (
-    <StoreNavigationContext.Provider value={{ pendingHref }}>
+    <NavigationFeedbackContext.Provider value={{ pendingHref }}>
       <div className="contents" onClick={onClick} onSubmit={onSubmit}>
         {children}
       </div>
       <Suspense fallback={null}>
         <NavigationSettled onSettle={settle} />
       </Suspense>
-      <StoreNavigationBar active={pendingHref !== null} />
-    </StoreNavigationContext.Provider>
+      <NavigationProgressBar active={pendingHref !== null} />
+    </NavigationFeedbackContext.Provider>
   );
 }

@@ -252,6 +252,38 @@ debe tocarla:
   `growth_para_design_stats`); `?d=` sólo previsualiza.
 - **Limpieza:** `growth_cold_leads` + `growth_bulk_drop` dan de baja de un jalón a
   quien nunca abrió su tienda ni contestó.
+- **«Para hoy» completo:** `loadBoard` devuelve `due` (todo lo vencido o de hoy,
+  hasta `DUE_LIMIT`) con el mismo filtro que `due_today` de
+  `growth_pipeline_counts`; las columnas siguen limitadas a 25. No armes «Para
+  hoy» con las columnas o el número no cuadra.
+- **Modo fila:** «Empezar» o tocar un negocio guarda la lista en `sessionStorage`
+  (`services/leadQueue.ts`) y la ficha muestra «n de N · Siguiente»
+  (`LeadQueueBar`). La lista elegida vive en la URL (`lista=`).
+- **Íconos animados:** sólo las tarjetas de sección usan `@animateicons/react`
+  (trazos de Lucide, respeta reducir movimiento); el resto sigue con `lucide-react`.
+- **Tlaco IA:** la moneda de «Tlaco te lo enseña» (`components/brand/TlacoMascot`)
+  en su propia tarjeta, arriba de «Tu día». Cuando la tarjeta sale de la
+  pantalla queda flotando abajo a la derecha (`TlacoAiFab`, saluda una vez al
+  día); en la ficha flota siempre (`TlacoAiLauncher`) y abre «Para activar». Los pasos del día salen de reglas puras
+  (`helpers/todayPlan.ts`: día y hora de CDMX, `WRITE_WINDOWS`); la IA sólo los
+  redacta (`POST /api/growth/assistant/today`, tope `TODAY_AI_WAIT_MS`, si no
+  llega se muestra el texto de las reglas). Se guarda por día y firma en
+  `localStorage`, sólo si lo escribió la IA. Las dudas para activar
+  (`POST /api/growth/assistant/ask`, sólo en el espacio de Tlaco) contestan sólo
+  con `buildKnowledge`, que lee la plataforma: funciones del landing
+  (`PLATFORM_CAPABILITIES`), planes vivos de `billing_plans`, comisiones de
+  `commissionConfig`, FAQ y pasos de activación. Las frecuentes no llaman a la
+  IA. Cada respuesta se guarda en `growth_ai_answers` por `questionKey` (pregunta
+  normalizada) y versión del conocimiento: la misma duda, escrita distinto, no se
+  paga dos veces, y un cambio de precio o comisión invalida lo viejo solo.
+  Tlaco IA llama a Gemini con `thinkingLevel: "minimal"` y tope de tokens. Un
+  tema nuevo = una entrada en `TLACO_AI_TOPICS` y su pestaña. El video vive en
+  `public/tour/` (no se precachea en el SW).
+- **Carga y clics:** Prospección usa `NavigationFeedback` (barra azul al tocar un
+  enlace, compartido con el storefront), `press-feedback` (atenuado al presionar)
+  y `template.tsx` con `page-enter`. Prospectos espera tablero, activación y
+  «Mi día» detrás de `ProspectsSkeleton` y entra completo; navega con `<Link>`,
+  no con `router.push`, para que haya barra.
 - **Carga del DENUE:** desde Prospección → Importar (`growth_imports`, una fila
   por trabajo con cursores; el cron termina lo que no quepa en la petición) o
   por consola: `npx tsx --env-file=.env.local scripts/growth/importDenue.ts <csv> --dry-run`.

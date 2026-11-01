@@ -1,21 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Lock, Target } from "lucide-react";
 
 import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { adminActionButtonPrimary } from "@/components/admin/actionButtonClasses";
+import { ProspectsSkeleton } from "@/features/growth/components/admin/ProspectsSkeleton";
 
+import { PROSPECTING_PATH } from "@/features/growth/constants/routes";
 import { registerInterest } from "@/services/featureInterestService";
 
 /** A business without «prospecting» in its plan sees what it is and can say it wants it. */
 export function ProspectingGate({ children }: { children: React.ReactNode }) {
   const { actor, loaded, choice } = useGrowthMe();
   const [interested, setInterested] = useState(false);
+  const pathname = usePathname();
 
-  if (!loaded) return <LoadingBlock message="Cargando prospección…" variant="skeleton" />;
+  // Prospectos keeps one skeleton from the first paint until its data is in.
+  if (!loaded) return pathname === PROSPECTING_PATH ? <ProspectsSkeleton /> : <LoadingBlock message="Cargando prospección…" variant="skeleton" />;
   if (actor) return <>{children}</>;
 
   const tenantId = choice && choice !== "tlaco" ? choice : null;

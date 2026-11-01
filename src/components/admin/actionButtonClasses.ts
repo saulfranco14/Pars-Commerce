@@ -11,6 +11,10 @@ export const adminActionButtonDanger =
 export const adminActionButtonAi =
   "relative inline-flex min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg border border-accent/30 bg-accent/10 px-4 py-2.5 text-sm font-bold text-accent transition-colors hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2";
 
+/** Square secondary button with only an icon (⋯, +, ?); always give it an aria-label. */
+export const adminActionButtonIcon =
+  "inline-flex h-(--touch-target,44px) w-(--touch-target,44px) shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-surface text-foreground transition-colors hover:bg-border-soft/60 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2";
+
 /** The least important move on the screen (skip, back to the suggestion). */
 export const adminActionButtonText =
   "inline-flex min-h-(--touch-target,44px) cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-border-soft/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50";

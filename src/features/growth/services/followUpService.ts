@@ -1,4 +1,5 @@
-import { BOARD_COLUMNS, BOARD_COLUMN_LIMIT, BOARD_REGISTERED_DAYS } from "@/features/growth/constants/leadPipeline";
+import { mexicoDayStart } from "@/features/growth/helpers/leadPipeline";
+import { BOARD_COLUMNS, BOARD_COLUMN_LIMIT, BOARD_REGISTERED_DAYS, DUE_LIMIT } from "@/features/growth/constants/leadPipeline";
 import { internalError, rpcError } from "@/features/growth/services/growthDb";
 import { memberNames } from "@/features/growth/services/memberService";
 import { ACTIVATION_STAGES } from "@/features/growth/constants/activation";
@@ -56,12 +57,28 @@ async function boardColumn(db: GrowthDb, actor: GrowthActor, key: BoardColumnKey
   return { key, total: zone.q ? leads.length : total, leads: await withOwnerNames(db, actor.workspaceId, leads) };
 }
 
-/** One column per follow-up stage, most urgent first. */
+// Same predicate as growth_pipeline_counts' due_today, so «Para hoy» and its count agree.
+async function dueLeads(db: GrowthDb, actor: GrowthActor, zone: BoardZone): Promise<GrowthLead[]> {
+  const tomorrow = new Date(mexicoDayStart().getTime() + 86_400_000);
+  let query = db.from("growth_leads").select(LEAD_COLUMNS).eq("workspace_id", actor.workspaceId).lt("next_step_at", tomorrow.toISOString());
+  const owner = boardOwner(actor, zone);
+  if (owner) query = query.eq("owner_user_id", owner);
+  if (zone.municipio) query = query.eq("municipio", zone.municipio);
+  if (zone.giro) query = query.eq("giro", zone.giro);
+  query = applyLeadSearch(query, zone.q);
+  const { data } = await query.order("next_step_at").limit(DUE_LIMIT);
+  return withOwnerNames(db, actor.workspaceId, (data ?? []) as GrowthLead[]);
+}
+
+/** One column per follow-up stage, most urgent first, plus everything due today. */
 export async function loadBoard(db: GrowthDb, actor: GrowthActor, zone: BoardZone): Promise<ServiceResult<LeadBoard>> {
   const counts = await pipelineCounts(db, actor, zone);
   if (!counts.ok) return counts;
-  const columns = await Promise.all(BOARD_COLUMNS.map((key) => boardColumn(db, actor, key, zone, counts.data[key])));
-  return { ok: true, data: { columns, counts: counts.data } };
+  const [columns, due] = await Promise.all([
+    Promise.all(BOARD_COLUMNS.map((key) => boardColumn(db, actor, key, zone, counts.data[key]))),
+    dueLeads(db, actor, zone),
+  ]);
+  return { ok: true, data: { columns, counts: counts.data, due } };
 }
 
 /** What this member should do today, over their own prospects. */

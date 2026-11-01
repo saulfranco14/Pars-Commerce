@@ -1,4 +1,4 @@
-import type { LeadContactFilter, LeadFilters, LeadStageFilter, LeadView, NextChannel } from "@/features/growth/interfaces/lead";
+import type { FollowUpList, LeadContactFilter, LeadFilters, LeadStageFilter, LeadView, NextChannel } from "@/features/growth/interfaces/lead";
 
 const STAGES: LeadStageFilter[] = ["activos", "hoy", "todos", "en_lote", "nuevo", "contactado", "conversando", "caliente", "cita", "registrado", "sin_respuesta", "descartado", "sin_contacto"];
 const CHANNELS: NextChannel[] = ["whatsapp", "visita", "correo", "ninguno"];
@@ -6,6 +6,8 @@ const CONTACTS: LeadContactFilter[] = ["whatsapp", "correo", "ambos", "sin"];
 const DEFAULT_STAGE: LeadStageFilter = "activos";
 const VIEWS: LeadView[] = ["seguimiento", "activacion", "contactar", "mapa"];
 const DEFAULT_VIEW: LeadView = "seguimiento";
+const LISTS: FollowUpList[] = ["hoy", "todos", "contactado", "caliente", "conversando", "cita", "registrado"];
+const DEFAULT_LIST: FollowUpList = "hoy";
 // "me", "none" (nobody has it yet) or a member's user id.
 const OWNER = /^(me|none|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
 
@@ -18,6 +20,7 @@ export function parseLeadFilters(params: Pick<URLSearchParams, "get">): LeadFilt
   const page = Number(params.get("page"));
   return {
     vista: pick(VIEWS, params.get("vista")) ?? DEFAULT_VIEW,
+    lista: pick(LISTS, params.get("lista")) ?? DEFAULT_LIST,
     stage: pick(STAGES, params.get("stage")) ?? DEFAULT_STAGE,
     municipio: params.get("municipio")?.slice(0, 80) || undefined,
     giro: params.get("giro")?.slice(0, 40) || undefined,
@@ -33,7 +36,7 @@ export function parseLeadFilters(params: Pick<URLSearchParams, "get">): LeadFilt
 export function leadFiltersQuery(filters: LeadFilters): string {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) {
-    if (value === undefined || value === "" || (key === "stage" && value === DEFAULT_STAGE) || (key === "vista" && value === DEFAULT_VIEW) || (key === "page" && value === 1)) continue;
+    if (value === undefined || value === "" || (key === "stage" && value === DEFAULT_STAGE) || (key === "vista" && value === DEFAULT_VIEW) || (key === "lista" && value === DEFAULT_LIST) || (key === "page" && value === 1)) continue;
     query.set(key, String(value));
   }
   return query.toString();

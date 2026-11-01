@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { internalNavigationTarget } from "@/features/sitio/helpers/navigationIntent";
+import { internalNavigationTarget } from "@/lib/navigationIntent";
 
 const HERE = "https://tlaco.app/sitio/tienda/productos?subcatalog_id=a";
 

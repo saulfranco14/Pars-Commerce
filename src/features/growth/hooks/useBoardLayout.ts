@@ -4,15 +4,15 @@ import type { BoardLayout } from "@/features/growth/interfaces/pipeline";
 
 const STORAGE_KEY = "tlaco_growth_board_layout";
 
-/** Board or list on wide screens, remembered per browser; phones always get the list. */
+/** Grouped list or board on wide screens, remembered per browser; phones always get the list. */
 export function useBoardLayout(): [BoardLayout, (layout: BoardLayout) => void] {
-  const [layout, setLayout] = useState<BoardLayout>("tablero");
+  const [layout, setLayout] = useState<BoardLayout>("lista");
 
   useEffect(() => {
     try {
-      if (localStorage.getItem(STORAGE_KEY) === "lista") setLayout("lista");
+      if (localStorage.getItem(STORAGE_KEY) === "tablero") setLayout("tablero");
     } catch {
-      // Private mode: start on the board.
+      // Private mode: start on the list.
     }
   }, []);
 

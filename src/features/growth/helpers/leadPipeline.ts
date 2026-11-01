@@ -10,13 +10,19 @@ export function pipelineIndex(stage: LeadStage): number {
   return PIPELINE_STEPS.findIndex((step) => step.stages.includes(stage));
 }
 
-function dayKey(date: Date): string {
+/** Calendar day (YYYY-MM-DD) of an instant in Mexico City. */
+export function mexicoDayKey(date: Date): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE }).format(date);
+}
+
+/** Midnight of the given instant's day in Mexico City, which has kept UTC-6 all year since 2022. */
+export function mexicoDayStart(now: Date = new Date()): Date {
+  return new Date(`${mexicoDayKey(now)}T00:00:00-06:00`);
 }
 
 /** Whole calendar days between two instants, counted in Mexico City. */
 export function calendarDaysBetween(from: Date, to: Date): number {
-  return Math.round((Date.parse(dayKey(to)) - Date.parse(dayKey(from))) / 86_400_000);
+  return Math.round((Date.parse(mexicoDayKey(to)) - Date.parse(mexicoDayKey(from))) / 86_400_000);
 }
 
 export function formatDayTime(iso: string): string {
@@ -71,7 +77,7 @@ export function canFollowUp(lead: Pick<GrowthLead, "stage" | "snoozed_until">, a
 
 /** ISO date `days` after today at the given hour in Mexico City (UTC-6, no DST since 2022). */
 export function daysFromToday(days: number, hour = 10, now: Date = new Date()): string {
-  const day = new Date(Date.parse(dayKey(now)) + days * 86_400_000).toISOString().slice(0, 10);
+  const day = new Date(Date.parse(mexicoDayKey(now)) + days * 86_400_000).toISOString().slice(0, 10);
   return new Date(`${day}T${String(hour).padStart(2, "0")}:00:00-06:00`).toISOString();
 }
 
@@ -81,7 +87,7 @@ export function mexicoInputToIso(date: string, time: string): string {
 }
 
 export function todayInputValue(now: Date = new Date()): string {
-  return dayKey(now);
+  return mexicoDayKey(now);
 }
 
 const URGENCY: Record<string, number> = { danger: 0, warning: 1 };

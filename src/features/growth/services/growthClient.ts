@@ -22,6 +22,7 @@ import type { SentWhatsapp, WhatsappDraft, WhatsappStep } from "@/features/growt
 import type { CsvImportInput, CsvImportResult, GrowthImport, ImportInput, ImportPreview } from "@/features/growth/interfaces/importJob";
 import type { MapQuery } from "@/features/growth/interfaces/map";
 import type { NearbyLead } from "@/features/growth/interfaces/lead";
+import type { AskTlacoInput, TlacoAnswer, TodayFacts, TodayPlanText } from "@/features/growth/interfaces/tlacoAi";
 
 const BASE = "/api/growth";
 
@@ -180,4 +181,13 @@ export async function dropLeads(leadIds: string[], reason: DropReason): Promise<
 /** A follow-up written by the AI from the lead's history; the operator reviews it before sending. */
 export async function fetchAiDraft(id: string): Promise<AiDraft> {
   return (await apiFetch(`${leadKey(id)}/ai-draft`, { method: "POST" })) as AiDraft;
+}
+
+/** Tlaco IA's words for the day's plan; the server falls back to the rules' text when the AI is busy. */
+export async function fetchTodayPlanText(facts: TodayFacts): Promise<TodayPlanText> {
+  return (await apiFetch(`${BASE}/assistant/today`, { method: "POST", body: JSON.stringify(facts) })) as TodayPlanText;
+}
+
+export async function askTlacoAi(input: AskTlacoInput): Promise<TlacoAnswer> {
+  return (await apiFetch(`${BASE}/assistant/ask`, { method: "POST", body: JSON.stringify(input) })) as TlacoAnswer;
 }

@@ -7,7 +7,7 @@ import type { SitioTemplateProps } from "@/features/sitio/interfaces/storeNaviga
 // Keyed by path: Next only remounts a template when its direct child segment changes, which skipped product detail pages.
 export default function SitioTemplate({ children }: SitioTemplateProps) {
   return (
-    <div key={usePathname()} className="store-page-enter">
+    <div key={usePathname()} className="page-enter">
       {children}
     </div>
   );

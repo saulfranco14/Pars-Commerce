@@ -1,4 +1,4 @@
-import type { FollowUpAction, FollowUpInput, GrowthLead, LeadFilters, LeadStage } from "@/features/growth/interfaces/lead";
+import type { FollowUpAction, FollowUpInput, GrowthLead, LeadStage } from "@/features/growth/interfaces/lead";
 
 export interface PipelineStageProps {
   stage: LeadStage;
@@ -19,15 +19,5 @@ export interface BoardLeadCardProps {
   showOwner?: boolean;
 }
 
-export interface FollowUpViewProps {
-  filters: LeadFilters;
-  showOwner?: boolean;
-}
-
 export type BoardLayout = "tablero" | "lista";
 
-export interface LeadBoardTableProps {
-  leads: GrowthLead[];
-  now: Date;
-  showOwner?: boolean;
-}
