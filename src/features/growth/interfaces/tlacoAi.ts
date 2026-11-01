@@ -2,7 +2,7 @@ import type { FollowUpList } from "@/features/growth/interfaces/lead";
 
 export type TlacoAiTopic = "hoy" | "activar" | "tour";
 
-export type TlacoAiPlacement = "card" | "floating" | "hidden";
+export type TlacoAiPlacement = "card" | "floating";
 
 /** What the person has today, as «Tu día» already shows it. */
 export interface TodayFacts {
