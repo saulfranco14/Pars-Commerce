@@ -55,3 +55,7 @@ CLAUDE.md
 
 # Growth prospect data (phones and emails, never committed)
 /data/growth/
+
+# Studio QA artifacts can contain private business designs and session cookies.
+/artifacts/studio-qa/
+/.studio-qa-session.json

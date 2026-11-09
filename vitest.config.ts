@@ -8,6 +8,9 @@ const srcPath = fileURLToPath(new URL("./src", import.meta.url));
 export default defineConfig({
   resolve: {
     alias: {
+      "server-only": fileURLToPath(
+        new URL("./src/test/serverOnly.ts", import.meta.url),
+      ),
       "@/": `${srcPath}/`,
     },
   },
