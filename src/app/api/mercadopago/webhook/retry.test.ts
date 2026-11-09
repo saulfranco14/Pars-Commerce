@@ -32,6 +32,16 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({}),
 }));
 
+// Studio's own lookup: by default it finds nothing; one test makes it fail.
+const studioLookup = vi.fn();
+vi.mock("@/features/studio/services/studioDb", () => ({
+  studioDb: () => ({
+    from: () => ({
+      select: () => ({ eq: () => ({ maybeSingle: () => studioLookup() }) }),
+    }),
+  }),
+}));
+
 import { POST } from "@/app/api/mercadopago/webhook/route";
 
 function req(body: unknown): Request {
@@ -44,6 +54,7 @@ function req(body: unknown): Request {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  studioLookup.mockResolvedValue({ data: null, error: null });
 });
 
 describe("webhook retry contract (P1)", () => {
@@ -78,6 +89,21 @@ describe("webhook retry contract (P1)", () => {
     expect(res.status).toBe(200);
     // never even asked MP about a payment
     expect(getMock).not.toHaveBeenCalled();
+  });
+
+  it("still processes a merchant payment when the Studio lookup fails", async () => {
+    studioLookup.mockRejectedValue(new Error("studio tables unreachable"));
+    getMock.mockResolvedValue({
+      id: "mp-1",
+      external_reference: "qr_table:o1",
+      status: "approved",
+      transaction_amount: 100,
+    });
+    handleQrTableMpPayment.mockResolvedValueOnce(undefined);
+
+    const res = await POST(req({ type: "payment", data: { id: "mp-1" } }));
+    expect(res.status).toBe(200);
+    expect(handleQrTableMpPayment).toHaveBeenCalled();
   });
 
   it("returns 200 when the MP payment has no external_reference (nothing to route)", async () => {

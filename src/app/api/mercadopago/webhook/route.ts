@@ -2,6 +2,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { paymentClient } from "@/lib/mercadopago";
 import { verifyWebhookSignature } from "@/lib/mercadopagoWebhookVerify";
 import { NextResponse } from "next/server";
+import {
+  dispatchStudioWebhook,
+  belongsToStudio,
+} from "@/features/studio/services/studioWebhookService";
 import { parseCheckoutReference } from "@/features/orders/helpers/parseCheckoutReference";
 import type { Database } from "@/types/database.types";
 import {
@@ -58,6 +62,31 @@ export async function POST(request: Request) {
       { status: 401 },
     );
   }
+  if (
+    body.data?.id &&
+    body.type &&
+    (process.env.STUDIO_ENABLED === "true" ||
+      process.env.STUDIO_BILLING_WEBHOOK_ENABLED === "true" ||
+      (await belongsToStudio(body.type, String(body.data.id))))
+  ) {
+    try {
+      if (
+        await dispatchStudioWebhook(
+          body.type,
+          String(body.data.id),
+          body.action ?? "",
+        )
+      ) {
+        return NextResponse.json({ received: true, product: "studio" });
+      }
+    } catch (error) {
+      console.error("[studio] webhook needs retry", {
+        type: body.type,
+        error: error instanceof Error ? error.message : "Unknown",
+      });
+      return NextResponse.json({ error: "processing_failed" }, { status: 500 });
+    }
+  }
   if (body.type === "subscription_preapproval" && body.data?.id) {
     try {
       await handlePreapprovalStatusChange(body.data.id);
@@ -99,6 +128,19 @@ export async function POST(request: Request) {
     }
 
     const externalRef = mpPayment.external_reference;
+    if (
+      externalRef.startsWith("studio_credit_pack:") ||
+      externalRef.startsWith("studio_subscription:")
+    ) {
+      const handled = await dispatchStudioWebhook(
+        "payment",
+        String(paymentId),
+        "guarded",
+      );
+      if (!handled)
+        throw new Error("Studio payment requires its billing account");
+      return NextResponse.json({ received: true, product: "studio" });
+    }
     const mpStatus = mpPayment.status;
     const transactionAmount = Number(mpPayment.transaction_amount ?? 0);
     const netReceived =
@@ -431,6 +473,20 @@ async function handlePreapprovalStatusChange(
   }
 
   const mpData = await mpRes.json();
+  if (
+    mpData.external_reference?.startsWith("studio_subscription:") ||
+    (await belongsToStudio("subscription_preapproval", preapprovalId))
+  ) {
+    if (
+      !(await dispatchStudioWebhook(
+        "subscription_preapproval",
+        preapprovalId,
+        "guarded",
+      ))
+    )
+      throw new Error("Studio preapproval requires its billing account");
+    return;
+  }
   const mpStatus: string = mpData.status;
 
   const statusMap: Record<string, string> = {
@@ -450,8 +506,14 @@ async function handlePreapprovalStatusChange(
 
   // SaaS memberships are intentionally a separate billing domain from a
   // merchant's own customer subscriptions.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- billing schema is introduced by its accompanying migration.
-  if (await handleBillingPreapprovalStatus(supabase as any, preapprovalId, mpStatus)) {
+  if (
+    await handleBillingPreapprovalStatus(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- billing schema is introduced by its accompanying migration.
+      supabase as any,
+      preapprovalId,
+      mpStatus,
+    )
+  ) {
     return;
   }
 
@@ -523,12 +585,16 @@ async function handlePreapprovalPayment(
   let fee = 0;
   let paymentStatus = "approved";
   try {
-    const mpRes = await fetchMercadoPagoResource(`authorized_payments/${authorizedPaymentId}`);
+    const mpRes = await fetchMercadoPagoResource(
+      `authorized_payments/${authorizedPaymentId}`,
+    );
     if (mpRes.ok) {
       const mpData = await mpRes.json();
       preapprovalId = mpData.preapproval_id ?? null;
       amount = Number(mpData.transaction_amount ?? 0);
-      const net = Number(mpData.transaction_details?.net_received_amount ?? amount);
+      const net = Number(
+        mpData.transaction_details?.net_received_amount ?? amount,
+      );
       fee = Math.max(0, Math.round((amount - net) * 100) / 100);
       paymentStatus = String(mpData.status ?? "approved");
     }
@@ -539,10 +605,30 @@ async function handlePreapprovalPayment(
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- billing schema is introduced by its accompanying migration.
-  if (await handleBillingAuthorizedPayment(supabase as any, {
-    authorizedPaymentId, preapprovalId, amount, fee, status: paymentStatus,
-  })) {
+  if (
+    preapprovalId &&
+    (await belongsToStudio("subscription_preapproval", preapprovalId))
+  ) {
+    if (
+      !(await dispatchStudioWebhook(
+        "subscription_authorized_payment",
+        authorizedPaymentId,
+        "guarded",
+      ))
+    )
+      throw new Error("Studio recurring payment requires its billing account");
+    return;
+  }
+  if (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- billing schema is introduced by its accompanying migration.
+    await handleBillingAuthorizedPayment(supabase as any, {
+      authorizedPaymentId,
+      preapprovalId,
+      amount,
+      fee,
+      status: paymentStatus,
+    })
+  ) {
     return;
   }
 
@@ -566,7 +652,8 @@ async function handlePreapprovalPayment(
  * separated after Mercado Pago sends the webhook. */
 async function fetchMercadoPagoResource(path: string) {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
-  if (!token) throw new Error("No hay credenciales de Mercado Pago configuradas");
+  if (!token)
+    throw new Error("No hay credenciales de Mercado Pago configuradas");
   return fetch(`https://api.mercadopago.com/${path}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
