@@ -1,4 +1,5 @@
 "use client";
+import { StudioActionLink } from "@/features/studio/components/StudioActionLink";
 
 import { useState, useEffect, useRef, useId } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -38,12 +39,14 @@ export default function EditarProductoPage() {
   const productsPath = `/dashboard/${tenantSlug}/productos`;
   const requestedReturnTo = searchParams.get("returnTo");
   const returnTo =
-    (requestedReturnTo === productsPath || requestedReturnTo?.startsWith(`${productsPath}?`))
+    requestedReturnTo === productsPath ||
+    requestedReturnTo?.startsWith(`${productsPath}?`)
       ? requestedReturnTo
       : productsPath;
 
   function returnPathAfterSave(nextSubcatalogId: string) {
-    if (!product || (product.subcatalog_id ?? "") === nextSubcatalogId) return returnTo;
+    if (!product || (product.subcatalog_id ?? "") === nextSubcatalogId)
+      return returnTo;
     const query = new URLSearchParams(returnTo.split("?")[1] ?? "");
     nextSubcatalogId
       ? query.set("subcatalog_id", nextSubcatalogId)
@@ -193,8 +196,13 @@ export default function EditarProductoPage() {
       setFieldErrors({ cost_price: "El costo debe ser mayor o igual a 0" });
       return;
     }
-    const stockNum = hasVariants || stock.trim() === "" ? undefined : parseInt(stock, 10);
-    if (!hasVariants && stockNum !== undefined && (Number.isNaN(stockNum) || stockNum < 0)) {
+    const stockNum =
+      hasVariants || stock.trim() === "" ? undefined : parseInt(stock, 10);
+    if (
+      !hasVariants &&
+      stockNum !== undefined &&
+      (Number.isNaN(stockNum) || stockNum < 0)
+    ) {
       setError("Stock debe ser un número mayor o igual a 0");
       return;
     }
@@ -313,10 +321,17 @@ export default function EditarProductoPage() {
         <p className="mt-0.5 text-sm text-muted-foreground">
           Modifica los datos del producto
         </p>
+        <div className="mt-3">
+          <StudioActionLink source="product" id={productId} />
+        </div>
       </div>
 
       <div className="rounded-xl border border-border bg-surface-raised shadow-sm">
-        <form id={formId} onSubmit={handleSubmit} className="flex flex-col pb-40 md:pb-0">
+        <form
+          id={formId}
+          onSubmit={handleSubmit}
+          className="flex flex-col pb-40 md:pb-0"
+        >
           <div className="space-y-3 p-3 sm:p-5 md:p-8">
             {error && (
               <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 alert-error">
@@ -326,354 +341,377 @@ export default function EditarProductoPage() {
             <details className="group overflow-hidden rounded-xl border border-border bg-surface">
               <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none sm:px-5">
                 <span>
-                  <span className="block font-bold text-foreground">Información general</span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground">Nombre, categoría y datos de venta.</span>
+                  <span className="block font-bold text-foreground">
+                    Información general
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    Nombre, categoría y datos de venta.
+                  </span>
                 </span>
-                <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+                <ChevronDown
+                  className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+                  aria-hidden
+                />
               </summary>
               <div className="border-t border-border p-4 sm:p-5">
-            <div className="flex flex-col gap-8 md:flex-row md:items-start">
-              <div className="min-w-0 flex-1">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div className="space-y-4 md:col-span-2 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
-                    <div>
-                      <label
-                        htmlFor="name"
-                        className="block text-sm font-medium text-muted-foreground"
-                      >
-                        Nombre *
-                      </label>
-                      <input
-                        id="name"
-                        type="text"
-                        value={name}
-                        onChange={handleNameChange}
-                        className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                        placeholder="Ej. Mesa 14x10"
-                      />
-                      {fieldErrors.name && (
-                        <p className="mt-1 text-sm text-red-600">
-                          {fieldErrors.name}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="slug"
-                        className="block text-sm font-medium text-muted-foreground"
-                      >
-                        Slug (URL) *
-                      </label>
-                      <input
-                        id="slug"
-                        type="text"
-                        value={slug}
-                        onChange={(e) => setSlug(e.target.value)}
-                        className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                        placeholder="mesa-14x10"
-                      />
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Minúsculas, números y guiones.
-                      </p>
-                      {fieldErrors.slug && (
-                        <p className="mt-1 text-sm text-red-600">
-                          {fieldErrors.slug}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                <div className="flex flex-col gap-8 md:flex-row md:items-start">
+                  <div className="min-w-0 flex-1">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                      <div className="space-y-4 md:col-span-2 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
+                        <div>
+                          <label
+                            htmlFor="name"
+                            className="block text-sm font-medium text-muted-foreground"
+                          >
+                            Nombre *
+                          </label>
+                          <input
+                            id="name"
+                            type="text"
+                            value={name}
+                            onChange={handleNameChange}
+                            className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                            placeholder="Ej. Mesa 14x10"
+                          />
+                          {fieldErrors.name && (
+                            <p className="mt-1 text-sm text-red-600">
+                              {fieldErrors.name}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="slug"
+                            className="block text-sm font-medium text-muted-foreground"
+                          >
+                            Slug (URL) *
+                          </label>
+                          <input
+                            id="slug"
+                            type="text"
+                            value={slug}
+                            onChange={(e) => setSlug(e.target.value)}
+                            className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                            placeholder="mesa-14x10"
+                          />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Minúsculas, números y guiones.
+                          </p>
+                          {fieldErrors.slug && (
+                            <p className="mt-1 text-sm text-red-600">
+                              {fieldErrors.slug}
+                            </p>
+                          )}
+                        </div>
+                      </div>
 
-                  <div>
-                    <label
-                      htmlFor="price"
-                      className="block text-sm font-medium text-muted-foreground"
-                    >
-                      Precio de venta *
-                    </label>
-                    <input
-                      id="price"
-                      type="text"
-                      inputMode="decimal"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      disabled={hasVariants}
-                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:bg-border-soft/50 disabled:text-muted-foreground"
-                      placeholder="0.00"
-                    />
-                    {hasVariants ? (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Se calculará con el precio más bajo de tus variantes.
-                      </p>
-                    ) : null}
-                    {fieldErrors.price && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {fieldErrors.price}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="cost_price"
-                      className="block text-sm font-medium text-muted-foreground"
-                    >
-                      Costo del producto *
-                    </label>
-                    <input
-                      id="cost_price"
-                      type="text"
-                      inputMode="decimal"
-                      value={costPrice}
-                      onChange={(e) => setCostPrice(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                      placeholder="0.00"
-                    />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Cuánto te cuesta este producto (para calcular ganancias)
-                    </p>
-                    {fieldErrors.cost_price && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {fieldErrors.cost_price}
-                      </p>
-                    )}
-                  </div>
-                  <details className="group rounded-xl border border-border bg-surface-raised md:col-span-2">
-                    <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-bold text-foreground [&::-webkit-details-marker]:hidden">
-                      <span>
-                        Más información y control
-                        <span className="mt-0.5 block text-xs font-normal text-muted-foreground">SKU, categoría, inventario, visibilidad y mayoreo.</span>
-                      </span>
-                      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
-                    </summary>
-                    <div className="grid grid-cols-1 gap-6 border-t border-border p-4 md:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="sku"
-                      className="block text-sm font-medium text-muted-foreground"
-                    >
-                      SKU (opcional)
-                    </label>
-                    <input
-                      id="sku"
-                      type="text"
-                      value={sku}
-                      onChange={(e) => setSku(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                      placeholder="Ej. MESA-001"
-                    />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Código único en inventario.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="unit"
-                      className="block text-sm font-medium text-muted-foreground"
-                    >
-                      Unidad *
-                    </label>
-                    <input
-                      id="unit"
-                      type="text"
-                      value={unit}
-                      onChange={(e) => setUnit(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                      placeholder="unit, kg, pza, hora..."
-                    />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Cómo se vende: &quot;unit&quot; = por pieza,
-                      &quot;kg&quot; = por kilo, &quot;pza&quot; = pieza,
-                      &quot;hora&quot; = por hora, etc.
-                    </p>
-                    {fieldErrors.unit && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {fieldErrors.unit}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="theme"
-                      className="block text-sm font-medium text-muted-foreground"
-                    >
-                      Tema o categoría (opcional)
-                    </label>
-                    <input
-                      id="theme"
-                      type="text"
-                      value={theme}
-                      onChange={(e) => setTheme(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                      placeholder="Ej. Mobiliario, Promociones"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      id="subcatalog-label"
-                      htmlFor="subcatalog"
-                      className="block text-sm font-medium text-muted-foreground"
-                    >
-                      Subcatalog (opcional)
-                    </label>
-                    <div className="mt-1">
-                      <SubcatalogSelect
-                        id="subcatalog"
-                        subcatalogs={subcatalogs}
-                        value={subcatalogId}
-                        onChange={setSubcatalogId}
-                      />
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Agrupa para buscar más rápido al agregar a órdenes.
-                    </p>
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="commission_amount"
-                      className="block text-sm font-medium text-muted-foreground"
-                    >
-                      Comisión por unidad (opcional)
-                    </label>
-                    <input
-                      id="commission_amount"
-                      type="text"
-                      inputMode="decimal"
-                      value={commissionAmount}
-                      onChange={(e) => setCommissionAmount(e.target.value)}
-                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                      placeholder="0.00"
-                    />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Comisión que se pagará por cada unidad vendida
-                    </p>
-                    {fieldErrors.commission_amount && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {fieldErrors.commission_amount}
-                      </p>
-                    )}
-                  </div>
-
-                  <details className="md:col-span-2 rounded-lg border border-border overflow-hidden">
-                    <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground bg-border-soft/30">
-                      Mayoreo (opcional)
-                    </summary>
-                    <div className="px-4 py-4 grid grid-cols-1 gap-6 md:grid-cols-2">
                       <div>
                         <label
-                          htmlFor="wholesale_min"
+                          htmlFor="price"
                           className="block text-sm font-medium text-muted-foreground"
                         >
-                          Cantidad mínima para mayoreo
+                          Precio de venta *
                         </label>
                         <input
-                          id="wholesale_min"
-                          type="number"
-                          min={1}
-                          value={wholesaleMinQuantity}
-                          onChange={(e) =>
-                            setWholesaleMinQuantity(e.target.value)
-                          }
-                          className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                          placeholder="Ej. 10"
+                          id="price"
+                          type="text"
+                          inputMode="decimal"
+                          value={price}
+                          onChange={(e) => setPrice(e.target.value)}
+                          disabled={hasVariants}
+                          className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:bg-border-soft/50 disabled:text-muted-foreground"
+                          placeholder="0.00"
                         />
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Si uno tiene valor, el otro es requerido
-                        </p>
+                        {hasVariants ? (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Se calculará con el precio más bajo de tus
+                            variantes.
+                          </p>
+                        ) : null}
+                        {fieldErrors.price && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {fieldErrors.price}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label
-                          htmlFor="wholesale_price"
+                          htmlFor="cost_price"
                           className="block text-sm font-medium text-muted-foreground"
                         >
-                          Precio mayoreo por unidad
+                          Costo del producto *
                         </label>
                         <input
-                          id="wholesale_price"
+                          id="cost_price"
                           type="text"
                           inputMode="decimal"
-                          value={wholesalePrice}
-                          onChange={(e) => setWholesalePrice(e.target.value)}
+                          value={costPrice}
+                          onChange={(e) => setCostPrice(e.target.value)}
                           className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                           placeholder="0.00"
                         />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Cuánto te cuesta este producto (para calcular
+                          ganancias)
+                        </p>
+                        {fieldErrors.cost_price && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {fieldErrors.cost_price}
+                          </p>
+                        )}
                       </div>
-                    </div>
-                    {fieldErrors.wholesale && (
-                      <p className="px-4 pb-4 text-sm text-red-600">
-                        {fieldErrors.wholesale}
-                      </p>
-                    )}
-                  </details>
+                      <details className="group rounded-xl border border-border bg-surface-raised md:col-span-2">
+                        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-bold text-foreground [&::-webkit-details-marker]:hidden">
+                          <span>
+                            Más información y control
+                            <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                              SKU, categoría, inventario, visibilidad y mayoreo.
+                            </span>
+                          </span>
+                          <ChevronDown
+                            className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+                            aria-hidden
+                          />
+                        </summary>
+                        <div className="grid grid-cols-1 gap-6 border-t border-border p-4 md:grid-cols-2">
+                          <div>
+                            <label
+                              htmlFor="sku"
+                              className="block text-sm font-medium text-muted-foreground"
+                            >
+                              SKU (opcional)
+                            </label>
+                            <input
+                              id="sku"
+                              type="text"
+                              value={sku}
+                              onChange={(e) => setSku(e.target.value)}
+                              className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                              placeholder="Ej. MESA-001"
+                            />
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Código único en inventario.
+                            </p>
+                          </div>
 
-                  {product.type === "product" && !hasVariants && (
-                    <div className="md:col-span-2">
-                      <label
-                        htmlFor="stock"
-                        className="block text-sm font-medium text-muted-foreground"
-                      >
-                        Stock
-                      </label>
-                      <input
-                        id="stock"
-                        type="number"
-                        min={0}
-                        value={stock}
-                        onChange={(e) => setStock(e.target.value)}
-                        className="input-form mt-1 w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                      />
-                    </div>
-                  )}
+                          <div>
+                            <label
+                              htmlFor="unit"
+                              className="block text-sm font-medium text-muted-foreground"
+                            >
+                              Unidad *
+                            </label>
+                            <input
+                              id="unit"
+                              type="text"
+                              value={unit}
+                              onChange={(e) => setUnit(e.target.value)}
+                              className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                              placeholder="unit, kg, pza, hora..."
+                            />
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Cómo se vende: &quot;unit&quot; = por pieza,
+                              &quot;kg&quot; = por kilo, &quot;pza&quot; =
+                              pieza, &quot;hora&quot; = por hora, etc.
+                            </p>
+                            {fieldErrors.unit && (
+                              <p className="mt-1 text-sm text-red-600">
+                                {fieldErrors.unit}
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="theme"
+                              className="block text-sm font-medium text-muted-foreground"
+                            >
+                              Tema o categoría (opcional)
+                            </label>
+                            <input
+                              id="theme"
+                              type="text"
+                              value={theme}
+                              onChange={(e) => setTheme(e.target.value)}
+                              className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                              placeholder="Ej. Mobiliario, Promociones"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              id="subcatalog-label"
+                              htmlFor="subcatalog"
+                              className="block text-sm font-medium text-muted-foreground"
+                            >
+                              Subcatalog (opcional)
+                            </label>
+                            <div className="mt-1">
+                              <SubcatalogSelect
+                                id="subcatalog"
+                                subcatalogs={subcatalogs}
+                                value={subcatalogId}
+                                onChange={setSubcatalogId}
+                              />
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Agrupa para buscar más rápido al agregar a
+                              órdenes.
+                            </p>
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="commission_amount"
+                              className="block text-sm font-medium text-muted-foreground"
+                            >
+                              Comisión por unidad (opcional)
+                            </label>
+                            <input
+                              id="commission_amount"
+                              type="text"
+                              inputMode="decimal"
+                              value={commissionAmount}
+                              onChange={(e) =>
+                                setCommissionAmount(e.target.value)
+                              }
+                              className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                              placeholder="0.00"
+                            />
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Comisión que se pagará por cada unidad vendida
+                            </p>
+                            {fieldErrors.commission_amount && (
+                              <p className="mt-1 text-sm text-red-600">
+                                {fieldErrors.commission_amount}
+                              </p>
+                            )}
+                          </div>
 
-                  <div className="flex flex-wrap gap-6 md:col-span-2">
-                    {!hasVariants ? <label className="flex cursor-pointer items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={trackStock}
-                        onChange={(e) => setTrackStock(e.target.checked)}
-                        className="h-4 w-4 rounded border-border"
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        Controlar stock
-                      </span>
-                    </label> : (
-                      <p className="rounded-lg bg-accent/5 px-3 py-2 text-sm font-medium text-accent">
-                        El stock se controla por cada talla y color.
-                      </p>
-                    )}
-                    <label className="flex cursor-pointer items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={isPublic}
-                        onChange={(e) => setIsPublic(e.target.checked)}
-                        className="h-4 w-4 rounded border-border"
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        Visible en sitio público
-                      </span>
-                    </label>
+                          <details className="md:col-span-2 rounded-lg border border-border overflow-hidden">
+                            <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground bg-border-soft/30">
+                              Mayoreo (opcional)
+                            </summary>
+                            <div className="px-4 py-4 grid grid-cols-1 gap-6 md:grid-cols-2">
+                              <div>
+                                <label
+                                  htmlFor="wholesale_min"
+                                  className="block text-sm font-medium text-muted-foreground"
+                                >
+                                  Cantidad mínima para mayoreo
+                                </label>
+                                <input
+                                  id="wholesale_min"
+                                  type="number"
+                                  min={1}
+                                  value={wholesaleMinQuantity}
+                                  onChange={(e) =>
+                                    setWholesaleMinQuantity(e.target.value)
+                                  }
+                                  className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                                  placeholder="Ej. 10"
+                                />
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  Si uno tiene valor, el otro es requerido
+                                </p>
+                              </div>
+                              <div>
+                                <label
+                                  htmlFor="wholesale_price"
+                                  className="block text-sm font-medium text-muted-foreground"
+                                >
+                                  Precio mayoreo por unidad
+                                </label>
+                                <input
+                                  id="wholesale_price"
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={wholesalePrice}
+                                  onChange={(e) =>
+                                    setWholesalePrice(e.target.value)
+                                  }
+                                  className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                                  placeholder="0.00"
+                                />
+                              </div>
+                            </div>
+                            {fieldErrors.wholesale && (
+                              <p className="px-4 pb-4 text-sm text-red-600">
+                                {fieldErrors.wholesale}
+                              </p>
+                            )}
+                          </details>
+
+                          {product.type === "product" && !hasVariants && (
+                            <div className="md:col-span-2">
+                              <label
+                                htmlFor="stock"
+                                className="block text-sm font-medium text-muted-foreground"
+                              >
+                                Stock
+                              </label>
+                              <input
+                                id="stock"
+                                type="number"
+                                min={0}
+                                value={stock}
+                                onChange={(e) => setStock(e.target.value)}
+                                className="input-form mt-1 w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                              />
+                            </div>
+                          )}
+
+                          <div className="flex flex-wrap gap-6 md:col-span-2">
+                            {!hasVariants ? (
+                              <label className="flex cursor-pointer items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={trackStock}
+                                  onChange={(e) =>
+                                    setTrackStock(e.target.checked)
+                                  }
+                                  className="h-4 w-4 rounded border-border"
+                                />
+                                <span className="text-sm text-muted-foreground">
+                                  Controlar stock
+                                </span>
+                              </label>
+                            ) : (
+                              <p className="rounded-lg bg-accent/5 px-3 py-2 text-sm font-medium text-accent">
+                                El stock se controla por cada talla y color.
+                              </p>
+                            )}
+                            <label className="flex cursor-pointer items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={isPublic}
+                                onChange={(e) => setIsPublic(e.target.checked)}
+                                className="h-4 w-4 rounded border-border"
+                              />
+                              <span className="text-sm text-muted-foreground">
+                                Visible en sitio público
+                              </span>
+                            </label>
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label
+                              htmlFor="description"
+                              className="block text-sm font-medium text-muted-foreground"
+                            >
+                              Descripción (opcional)
+                            </label>
+                            <textarea
+                              id="description"
+                              value={description}
+                              onChange={(e) => setDescription(e.target.value)}
+                              rows={2}
+                              className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                              placeholder="Descripción del producto"
+                            />
+                          </div>
+                        </div>
+                      </details>
+                    </div>
                   </div>
-
-                  <div className="md:col-span-2">
-                    <label
-                      htmlFor="description"
-                      className="block text-sm font-medium text-muted-foreground"
-                    >
-                      Descripción (opcional)
-                    </label>
-                    <textarea
-                      id="description"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      rows={2}
-                      className="input-form mt-1 block w-full min-h-11 rounded-xl border px-3 py-2.5 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                      placeholder="Descripción del producto"
-                    />
-                  </div>
-                    </div>
-                  </details>
                 </div>
-              </div>
-            </div>
               </div>
             </details>
 
@@ -681,10 +719,17 @@ export default function EditarProductoPage() {
               <details className="group overflow-hidden rounded-xl border border-border bg-surface">
                 <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none sm:px-5">
                   <span>
-                    <span className="block font-bold text-foreground">Imágenes</span>
-                    <span className="mt-0.5 block text-xs text-muted-foreground">Fotos generales que verá tu cliente.</span>
+                    <span className="block font-bold text-foreground">
+                      Imágenes
+                    </span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      Fotos generales que verá tu cliente.
+                    </span>
                   </span>
-                  <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+                  <ChevronDown
+                    className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+                    aria-hidden
+                  />
                 </summary>
                 <div className="border-t border-border p-4 sm:p-5">
                   <MultiImageUpload

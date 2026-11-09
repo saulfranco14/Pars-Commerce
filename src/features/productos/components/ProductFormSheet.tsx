@@ -25,12 +25,13 @@ import { createProductFromForm } from "@/features/productos/services/productAdap
 import { create as createSubcatalog } from "@/services/subcatalogsService";
 
 import type { ProductFieldValues } from "@/features/productos/validations/productFieldSchema";
+import type { ProductCreated } from "@/types/products";
 
 interface ProductFormSheetProps {
   isOpen: boolean;
   onClose: () => void;
   tenantId: string;
-  onCreated: () => void;
+  onCreated: (product: ProductCreated) => void;
   initialSubcatalogId?: string;
 }
 
@@ -58,9 +59,13 @@ export function ProductFormSheet({
   const form = useSchemaForm<ProductFieldValues>(
     fields,
     async (values) => {
-      await createProductFromForm(tenantId, values, imageUploadRef.current);
+      const created = await createProductFromForm(
+        tenantId,
+        values,
+        imageUploadRef.current,
+      );
       setImageUrls([]);
-      onCreated();
+      onCreated(created);
     },
     productCrossFieldRules,
   );

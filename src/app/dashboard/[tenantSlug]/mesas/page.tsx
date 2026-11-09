@@ -8,6 +8,7 @@ import { ClipboardList, Plus, RefreshCw, Store } from "lucide-react";
 import { useActiveTenant } from "@/stores/useTenantStore";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { PageHeader } from "@/components/admin/PageHeader";
+import { StudioActionLink } from "@/features/studio/components/StudioActionLink";
 import { pageHeaderCta } from "@/components/admin/actionButtonClasses";
 import { FabSpeedDial } from "@/components/ui/FabSpeedDial";
 import { FormSheet } from "@/components/ui/FormSheet";
@@ -100,6 +101,10 @@ export default function MesasPage() {
 
   return (
     <div className="space-y-4">
+      <StudioActionLink
+        destination="publicaciones"
+        label="Campañas y anuncios en mesas"
+      />
       <TablesOnboardingOverlay />
       <div className="space-y-1.5">
         <PageHeader
@@ -113,13 +118,22 @@ export default function MesasPage() {
                 href={`/dashboard/${tenantSlug}/pedidos/nuevo`}
                 aria-disabled={refreshingTables}
                 tabIndex={refreshingTables ? -1 : undefined}
-                onClick={refreshingTables ? (event) => event.preventDefault() : undefined}
+                onClick={
+                  refreshingTables
+                    ? (event) => event.preventDefault()
+                    : undefined
+                }
                 className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-2 text-sm font-bold text-foreground transition-colors hover:bg-border-soft/40"
               >
                 <ClipboardList className="h-4 w-4" />
                 Tomar pedido
               </Link>
-              <button type="button" onClick={openCreate} disabled={refreshingTables} className={`${primaryCta} disabled:cursor-not-allowed disabled:opacity-55`}>
+              <button
+                type="button"
+                onClick={openCreate}
+                disabled={refreshingTables}
+                className={`${primaryCta} disabled:cursor-not-allowed disabled:opacity-55`}
+              >
                 <Plus className="h-4 w-4" />
                 Agregar mesa
               </button>
@@ -221,11 +235,7 @@ export default function MesasPage() {
           title="Aún no tienes mesas"
           description="Crea tu primera mesa para que tus clientes puedan escanear y ordenar desde su celular."
           action={
-            <button
-              type="button"
-              onClick={openCreate}
-              className={primaryCta}
-            >
+            <button type="button" onClick={openCreate} className={primaryCta}>
               <Plus className="h-4 w-4" />
               Crear primera mesa
             </button>

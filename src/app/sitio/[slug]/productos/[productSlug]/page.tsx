@@ -1,3 +1,4 @@
+import { StudioCampaign } from "@/features/studio/components/StudioCampaign";
 /* eslint-disable @typescript-eslint/no-explicit-any -- Commerce schema types are regenerated after the migration rollout. */
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -17,10 +18,16 @@ import ProductReviewsList, {
 import { buildProductPromoMap } from "@/lib/promotionPrice";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { DEFAULT_TENANT_ACCENT } from "@/features/sitio-web/constants/templateStyles";
-import { storeDisplayFont, storeFocusRing } from "@/features/sitio/constants/storeClasses";
+import {
+  storeDisplayFont,
+  storeFocusRing,
+} from "@/features/sitio/constants/storeClasses";
 import { collectionLayout } from "@/features/sitio/helpers/catalogMedia";
 import { toPromotionsForPrice } from "@/features/sitio/helpers/promotions";
-import { catalogHref, productInquiryHref } from "@/features/sitio/helpers/storeLinks";
+import {
+  catalogHref,
+  productInquiryHref,
+} from "@/features/sitio/helpers/storeLinks";
 import {
   getActivePromotions,
   getRequestBaseUrl,
@@ -46,20 +53,24 @@ type ProductRow = ProductBase & {
 
 const RELATED_LIMIT = 4;
 
-const getProduct = cache(async (tenantId: string, productSlug: string): Promise<ProductRow | null> => {
-  const db = createAdminClient() as unknown as { from: (table: string) => any };
-  const { data } = await db
-    .from("products")
-    .select(
-      "id, name, slug, description, price, image_url, subcatalog_id, type, has_variants, material_info, care_instructions, size_guide",
-    )
-    .eq("tenant_id", tenantId)
-    .eq("slug", productSlug)
-    .eq("is_public", true)
-    .is("deleted_at", null)
-    .maybeSingle();
-  return (data as ProductRow | null) ?? null;
-});
+const getProduct = cache(
+  async (tenantId: string, productSlug: string): Promise<ProductRow | null> => {
+    const db = createAdminClient() as unknown as {
+      from: (table: string) => any;
+    };
+    const { data } = await db
+      .from("products")
+      .select(
+        "id, name, slug, description, price, image_url, subcatalog_id, type, has_variants, material_info, care_instructions, size_guide",
+      )
+      .eq("tenant_id", tenantId)
+      .eq("slug", productSlug)
+      .eq("is_public", true)
+      .is("deleted_at", null)
+      .maybeSingle();
+    return (data as ProductRow | null) ?? null;
+  },
+);
 
 function RelatedSection({
   id,
@@ -91,7 +102,9 @@ function RelatedSection({
   );
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { slug, productSlug } = await params;
   const tenant = await getStoreTenant(slug);
   const product = tenant ? await getProduct(tenant.id, productSlug) : null;
@@ -113,29 +126,35 @@ export default async function ProductoDetallePage({ params }: PageProps) {
 
   const supabase = createAdminClient();
   const db = supabase as unknown as { from: (table: string) => any };
-  const [imagesRes, promotions, ratingRowsRes, initialReviewsRes, catalog, baseUrl] =
-    await Promise.all([
-      supabase
-        .from("product_images")
-        .select("url, position")
-        .eq("product_id", product.id)
-        .order("position", { ascending: true }),
-      getActivePromotions(tenant.id),
-      db
-        .from("product_reviews")
-        .select("rating", { count: "exact" })
-        .eq("product_id", product.id)
-        .eq("status", "published"),
-      db
-        .from("product_reviews")
-        .select("id, rating, comment, published_at")
-        .eq("product_id", product.id)
-        .eq("status", "published")
-        .order("published_at", { ascending: false })
-        .limit(4),
-      listCatalogItems({ tenantId: tenant.id, limit: RELATED_LIMIT * 2 + 1 }),
-      getRequestBaseUrl(),
-    ]);
+  const [
+    imagesRes,
+    promotions,
+    ratingRowsRes,
+    initialReviewsRes,
+    catalog,
+    baseUrl,
+  ] = await Promise.all([
+    supabase
+      .from("product_images")
+      .select("url, position")
+      .eq("product_id", product.id)
+      .order("position", { ascending: true }),
+    getActivePromotions(tenant.id),
+    db
+      .from("product_reviews")
+      .select("rating", { count: "exact" })
+      .eq("product_id", product.id)
+      .eq("status", "published"),
+    db
+      .from("product_reviews")
+      .select("id, rating, comment, published_at")
+      .eq("product_id", product.id)
+      .eq("status", "published")
+      .order("published_at", { ascending: false })
+      .limit(4),
+    listCatalogItems({ tenantId: tenant.id, limit: RELATED_LIMIT * 2 + 1 }),
+    getRequestBaseUrl(),
+  ]);
 
   const images = imagesRes.data ?? [];
   const imageUrls = images.length
@@ -163,15 +182,21 @@ export default async function ProductoDetallePage({ params }: PageProps) {
       const rightSame = right.subcatalog_id === product.subcatalog_id ? 0 : 1;
       return leftSame - rightSame;
     });
-  const similarProducts = related.filter((item) => item.type === product.type).slice(0, RELATED_LIMIT);
-  const complementaryProducts = related.filter((item) => item.type !== product.type).slice(0, RELATED_LIMIT);
+  const similarProducts = related
+    .filter((item) => item.type === product.type)
+    .slice(0, RELATED_LIMIT);
+  const complementaryProducts = related
+    .filter((item) => item.type !== product.type)
+    .slice(0, RELATED_LIMIT);
 
   const ratingRows = (ratingRowsRes.data ?? []) as Array<{ rating: number }>;
   const reviewsTotal = ratingRowsRes.count ?? ratingRows.length;
   const averageRating = ratingRows.length
-    ? ratingRows.reduce((sum, review) => sum + Number(review.rating), 0) / ratingRows.length
+    ? ratingRows.reduce((sum, review) => sum + Number(review.rating), 0) /
+      ratingRows.length
     : null;
-  const initialReviews = (initialReviewsRes.data ?? []) as PublicProductReview[];
+  const initialReviews = (initialReviewsRes.data ??
+    []) as PublicProductReview[];
 
   const productUrl = `${baseUrl}/sitio/${slug}/productos/${product.slug || product.id}`;
   const waHref = tenant.whatsapp_phone
@@ -181,14 +206,31 @@ export default async function ProductoDetallePage({ params }: PageProps) {
   const isService = product.type === "service";
 
   const customerDetails = [
-    product.description ? { label: "Descripción", value: product.description, icon: null } : null,
-    product.material_info ? { label: "Materiales", value: product.material_info, icon: Shirt } : null,
-    product.care_instructions ? { label: "Cuidados", value: product.care_instructions, icon: Sparkles } : null,
-    product.size_guide ? { label: "Referencia de medidas", value: product.size_guide, icon: Ruler } : null,
+    product.description
+      ? { label: "Descripción", value: product.description, icon: null }
+      : null,
+    product.material_info
+      ? { label: "Materiales", value: product.material_info, icon: Shirt }
+      : null,
+    product.care_instructions
+      ? { label: "Cuidados", value: product.care_instructions, icon: Sparkles }
+      : null,
+    product.size_guide
+      ? {
+          label: "Referencia de medidas",
+          value: product.size_guide,
+          icon: Ruler,
+        }
+      : null,
   ].filter((detail) => detail !== null);
 
   return (
     <div className="space-y-12 pb-[calc(10rem+env(safe-area-inset-bottom))] sm:space-y-16 md:pb-16">
+      <StudioCampaign
+        tenantId={tenant.id}
+        sourceId={product.id}
+        surface="product_campaign"
+      />
       <div>
         <Link
           href={catalogHref(slug, { type: isService ? "service" : "product" })}
@@ -200,7 +242,9 @@ export default async function ProductoDetallePage({ params }: PageProps) {
 
         <article
           className={`overflow-hidden rounded-(--store-radius) bg-white ring-1 ring-(--store-hairline) ${
-            imageUrls.length > 0 ? "lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(380px,0.9fr)]" : ""
+            imageUrls.length > 0
+              ? "lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(380px,0.9fr)]"
+              : ""
           }`}
         >
           {imageUrls.length > 0 ? (
@@ -210,7 +254,11 @@ export default async function ProductoDetallePage({ params }: PageProps) {
                   {badgeText}
                 </span>
               ) : null}
-              <ProductImageGallery imageUrls={imageUrls} productName={product.name} accentColor={accentColor} />
+              <ProductImageGallery
+                imageUrls={imageUrls}
+                productName={product.name}
+                accentColor={accentColor}
+              />
             </section>
           ) : null}
 
@@ -222,7 +270,12 @@ export default async function ProductoDetallePage({ params }: PageProps) {
                 href="#resenas"
                 className="inline-flex min-h-8 items-center gap-1.5 text-sm font-medium text-gray-700 hover:underline"
               >
-                <Star className="h-4 w-4 text-gray-900" fill="currentColor" strokeWidth={0} aria-hidden />
+                <Star
+                  className="h-4 w-4 text-gray-900"
+                  fill="currentColor"
+                  strokeWidth={0}
+                  aria-hidden
+                />
                 {averageRating.toFixed(1)}
                 <span className="font-normal text-gray-500">
                   ({reviewsTotal} {reviewsTotal === 1 ? "reseña" : "reseñas"})
@@ -236,11 +289,16 @@ export default async function ProductoDetallePage({ params }: PageProps) {
             </h1>
 
             <div className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span id="product-price" className="text-3xl font-semibold tabular-nums tracking-tight text-gray-950">
+              <span
+                id="product-price"
+                className="text-3xl font-semibold tabular-nums tracking-tight text-gray-950"
+              >
                 {formatCurrency(displayPrice)}
               </span>
               {showOriginalPrice ? (
-                <span className="text-base tabular-nums text-gray-500 line-through">{formatCurrency(basePrice)}</span>
+                <span className="text-base tabular-nums text-gray-500 line-through">
+                  {formatCurrency(basePrice)}
+                </span>
               ) : null}
             </div>
             {badgeText ? (
@@ -270,16 +328,29 @@ export default async function ProductoDetallePage({ params }: PageProps) {
       </div>
 
       {customerDetails.length > 0 ? (
-        <section aria-labelledby="product-information-title" className="mx-auto max-w-3xl">
+        <section
+          aria-labelledby="product-information-title"
+          className="mx-auto max-w-3xl"
+        >
           <StoreSectionHeader id="product-information-title" title="Detalles" />
           <dl className="divide-y divide-(--store-hairline) border-y border-(--store-hairline)">
             {customerDetails.map(({ label, value, icon: Icon }) => (
-              <div key={label} className="grid gap-2 py-5 sm:grid-cols-[180px_1fr] sm:gap-6">
+              <div
+                key={label}
+                className="grid gap-2 py-5 sm:grid-cols-[180px_1fr] sm:gap-6"
+              >
                 <dt className="flex items-center gap-2 text-[15px] font-semibold text-(--store-ink)">
-                  {Icon ? <Icon className="h-4 w-4 text-(--store-ink-2)" aria-hidden /> : null}
+                  {Icon ? (
+                    <Icon
+                      className="h-4 w-4 text-(--store-ink-2)"
+                      aria-hidden
+                    />
+                  ) : null}
                   {label}
                 </dt>
-                <dd className="whitespace-pre-line text-[15px] leading-relaxed text-(--store-ink-2)">{value}</dd>
+                <dd className="whitespace-pre-line text-[15px] leading-relaxed text-(--store-ink-2)">
+                  {value}
+                </dd>
               </div>
             ))}
           </dl>

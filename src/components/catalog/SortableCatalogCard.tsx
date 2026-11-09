@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, PackagePlus, Pencil, Trash2 } from "lucide-react";
@@ -8,6 +9,7 @@ import { GripVertical, PackagePlus, Pencil, Trash2 } from "lucide-react";
 import { btnDanger, btnSecondaryFlex } from "@/components/ui/buttonClasses";
 
 interface SortableCatalogCardProps {
+  extraActions?: ReactNode;
   id: string;
   name: string;
   imageUrl?: string | null;
@@ -28,6 +30,7 @@ interface SortableCatalogCardProps {
  * virtual shelf.
  */
 export function SortableCatalogCard({
+  extraActions,
   id,
   name,
   imageUrl,
@@ -86,16 +89,20 @@ export function SortableCatalogCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
-            <p className="min-w-0 flex-1 truncate font-semibold text-foreground">{name}</p>
-            {onQuickUpdate ? <button
-              type="button"
-              onClick={onQuickUpdate}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border text-accent transition-colors hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-              aria-label={`Actualizar existencias o precio de ${name}`}
-              title="Actualizar existencias o precio"
-            >
-              <PackagePlus className="h-4 w-4" aria-hidden />
-            </button> : null}
+            <p className="min-w-0 flex-1 truncate font-semibold text-foreground">
+              {name}
+            </p>
+            {onQuickUpdate ? (
+              <button
+                type="button"
+                onClick={onQuickUpdate}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border text-accent transition-colors hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                aria-label={`Actualizar existencias o precio de ${name}`}
+                title="Actualizar existencias o precio"
+              >
+                <PackagePlus className="h-4 w-4" aria-hidden />
+              </button>
+            ) : null}
           </div>
           {tag ? (
             <span className="mt-0.5 inline-flex rounded-md bg-accent/10 px-1.5 py-0.5 text-[11px] font-medium text-accent">
@@ -124,6 +131,7 @@ export function SortableCatalogCard({
           <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
           {deleting ? "..." : "Eliminar"}
         </button>
+        {extraActions}
       </div>
     </article>
   );

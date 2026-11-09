@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { StudioArtworkView } from "@/features/studio/components/StudioArtworkView";
 import Link from "next/link";
 import { Check, Clock, Loader2, Plus, RotateCcw } from "lucide-react";
 
@@ -18,10 +19,24 @@ import {
 
 import type { PromotionCardProps } from "@/features/sitio/interfaces/storeComponents";
 
-const ADD_ICONS = { idle: Plus, adding: Loader2, added: Check, error: RotateCcw } as const;
-const ADD_LABELS = { idle: "Agregar", adding: "Agregando…", added: "Agregada", error: "Reintentar" } as const;
+const ADD_ICONS = {
+  idle: Plus,
+  adding: Loader2,
+  added: Check,
+  error: RotateCcw,
+} as const;
+const ADD_LABELS = {
+  idle: "Agregar",
+  adding: "Agregando…",
+  added: "Agregada",
+  error: "Reintentar",
+} as const;
 
-export function PromotionCard({ promotion, tenantId, slug }: PromotionCardProps) {
+export function PromotionCard({
+  promotion,
+  tenantId,
+  slug,
+}: PromotionCardProps) {
   const href = `/sitio/${slug}/promociones/${promotion.slug || promotion.id}`;
   const deadline = formatPromotionDeadline(promotion.valid_until);
   const addable = isPromotionAddable(promotion);
@@ -31,23 +46,40 @@ export function PromotionCard({ promotion, tenantId, slug }: PromotionCardProps)
   });
   const AddIcon = ADD_ICONS[status];
 
+  const originalVisual = (
+    <div className="relative aspect-16/10 overflow-hidden bg-(--store-well)">
+      {promotion.image_url ? (
+        <Image
+          src={promotion.image_url}
+          alt=""
+          fill
+          sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 380px"
+          className="object-cover motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-[1.03]"
+        />
+      ) : (
+        <PromotionCollage
+          {...promotionCollageLabel(promotion)}
+          images={promotion.preview_images ?? []}
+        />
+      )}
+    </div>
+  );
+
   return (
     <article className="group relative flex h-full flex-col overflow-hidden rounded-(--store-radius) bg-(--store-surface) ring-1 ring-(--store-hairline)">
-      <div className="relative aspect-16/10 overflow-hidden bg-(--store-well)">
-        {promotion.image_url ? (
-          <Image
-            src={promotion.image_url}
-            alt=""
-            fill
-            sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 380px"
-            className="object-cover motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-[1.03]"
-          />
-        ) : (
-          <PromotionCollage {...promotionCollageLabel(promotion)} images={promotion.preview_images ?? []} />
-        )}
-      </div>
+      {promotion.studio_artwork ? (
+        <StudioArtworkView
+          artwork={promotion.studio_artwork}
+          mode="embedded"
+          fallback={originalVisual}
+        />
+      ) : (
+        originalVisual
+      )}
       <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <p className="text-sm font-semibold text-(--store-ink-2)">{formatPromotionValue(promotion)}</p>
+        <p className="text-sm font-semibold text-(--store-ink-2)">
+          {formatPromotionValue(promotion)}
+        </p>
         <h3 className="mt-1 text-lg font-semibold leading-snug text-(--store-ink)">
           <Link
             href={href}
@@ -72,7 +104,10 @@ export function PromotionCard({ promotion, tenantId, slug }: PromotionCardProps)
               disabled={!ready || status === "adding"}
               className={`relative z-10 inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-60 motion-safe:active:scale-[0.98] ${storeFocusRing}`}
             >
-              <AddIcon className={`h-4 w-4 ${status === "adding" ? "animate-spin" : ""}`} aria-hidden />
+              <AddIcon
+                className={`h-4 w-4 ${status === "adding" ? "animate-spin" : ""}`}
+                aria-hidden
+              />
               {ADD_LABELS[status]}
             </button>
           ) : null}

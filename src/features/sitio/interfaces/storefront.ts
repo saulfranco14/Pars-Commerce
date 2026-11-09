@@ -1,4 +1,5 @@
 import type { EnrichedProduct } from "@/lib/enrichProducts";
+import type { StudioArtwork } from "@/features/studio/interfaces/studio";
 
 export type CatalogType = "product" | "service";
 
@@ -54,6 +55,7 @@ export interface StoreChrome {
 }
 
 export interface ActivePromotion {
+  studio_artwork?: StudioArtwork;
   id: string;
   name: string;
   slug: string | null;

@@ -3,6 +3,8 @@ import { getPendingMergeRequests } from "@/features/qr/services/tableMergeReques
 import { filterActivePromotions } from "@/features/qr/helpers/filterActivePromotions";
 import { requiresReadyBeforePayment } from "@/features/qr/helpers/paymentReadiness";
 import { NextResponse } from "next/server";
+import { resolveStudioArtworkBatch } from "@/features/studio/services/studioPlacementService";
+import type { QrPromotion } from "@/features/qr/interfaces/promotion";
 
 const DEVICE_COLORS = [
   "#8b5cf6", // violeta
@@ -53,7 +55,9 @@ export async function GET(request: Request) {
 
   const { data: tenant } = await admin
     .from("tenants")
-    .select("id, name, slug, logo_url, public_store_enabled, onsite_promotions_enabled")
+    .select(
+      "id, name, slug, logo_url, public_store_enabled, onsite_promotions_enabled",
+    )
     .eq("id", qrCode.tenant_id)
     .single();
 
@@ -121,7 +125,10 @@ export async function GET(request: Request) {
       const stillFollowable =
         isSingleUseTicket &&
         existingOrder?.status === "paid" &&
-        !requiresReadyBeforePayment(existingOrder.source, existingOrder.order_type) &&
+        !requiresReadyBeforePayment(
+          existingOrder.source,
+          existingOrder.order_type,
+        ) &&
         (existingOrder.fulfillment_status ?? "received") !== "ready";
       const hasHistoricalReceipt =
         isSingleUseTicket && existingOrder?.status === "paid";
@@ -185,7 +192,10 @@ export async function GET(request: Request) {
           .eq("id", ticketQr.current_order_id)
           .maybeSingle();
 
-        if (kioskOrder?.source === "kiosk" && kioskOrder.status !== "cancelled") {
+        if (
+          kioskOrder?.source === "kiosk" &&
+          kioskOrder.status !== "cancelled"
+        ) {
           response.kiosk_handoff = {
             order_id: kioskOrder.id,
             order_number: kioskOrder.order_number ?? null,
@@ -285,7 +295,9 @@ export async function GET(request: Request) {
         if (!device && insertDeviceError?.code === "23505") {
           const retryExisting = await admin
             .from("order_devices")
-            .select("id, display_name, color_hex, joined_at, last_seen_at, is_owner")
+            .select(
+              "id, display_name, color_hex, joined_at, last_seen_at, is_owner",
+            )
             .eq("order_id", orderId)
             .eq("device_fingerprint", fingerprint)
             .maybeSingle();
@@ -431,36 +443,63 @@ export async function GET(request: Request) {
     }));
     response.categories = categories ?? [];
 
-    response.promotions = tenant.onsite_promotions_enabled === false ? [] : filterActivePromotions(
-      promoRows ?? [], Date.now(),
-    ).map((p) => ({
-      id: p.id,
-      name: p.name,
-      type: p.type,
-      value: p.value,
-      badge_label: p.badge_label,
-      image_url: p.image_url,
-      preview_images: [...new Set([
-        ...(p.promotion_items ?? []).map((item) => item.product_id),
-        ...(p.product_ids ?? []),
-        ...(p.bundle_product_ids ?? []),
-      ])].flatMap((productId) => imagesByProduct.get(productId)?.slice(0, 1) ?? []).slice(0, 3),
-      description: p.description,
-      valid_until: p.valid_until,
-      valid_from: p.valid_from,
-      status: p.status,
-      applies_to: p.applies_to,
-      product_ids: p.product_ids,
-      subcatalog_ids: p.subcatalog_ids,
-      bundle_product_ids: p.bundle_product_ids,
-      quantity: p.quantity,
-      buy_quantity: p.buy_quantity,
-      pay_quantity: p.pay_quantity,
-      min_amount: p.min_amount === null ? null : Number(p.min_amount),
-      sales_channels: p.sales_channels ?? ["public_store", "onsite"],
-      promotion_items: p.promotion_items ?? [],
-    }));
+    response.promotions =
+      tenant.onsite_promotions_enabled === false
+        ? []
+        : filterActivePromotions(promoRows ?? [], Date.now()).map((p) => ({
+            id: p.id,
+            name: p.name,
+            type: p.type,
+            value: p.value,
+            badge_label: p.badge_label,
+            image_url: p.image_url,
+            preview_images: [
+              ...new Set([
+                ...(p.promotion_items ?? []).map((item) => item.product_id),
+                ...(p.product_ids ?? []),
+                ...(p.bundle_product_ids ?? []),
+              ]),
+            ]
+              .flatMap(
+                (productId) =>
+                  imagesByProduct.get(productId)?.slice(0, 1) ?? [],
+              )
+              .slice(0, 3),
+            description: p.description,
+            valid_until: p.valid_until,
+            valid_from: p.valid_from,
+            status: p.status,
+            applies_to: p.applies_to,
+            product_ids: p.product_ids,
+            subcatalog_ids: p.subcatalog_ids,
+            bundle_product_ids: p.bundle_product_ids,
+            quantity: p.quantity,
+            buy_quantity: p.buy_quantity,
+            pay_quantity: p.pay_quantity,
+            min_amount: p.min_amount === null ? null : Number(p.min_amount),
+            sales_channels: p.sales_channels ?? ["public_store", "onsite"],
+            promotion_items: p.promotion_items ?? [],
+          }));
   }
 
-  return NextResponse.json(response);
+  if (Array.isArray(response.menu)) {
+    const promotions = (response.promotions ?? []) as QrPromotion[];
+    const [artwork, campaign] = await Promise.all([
+      resolveStudioArtworkBatch(
+        tenant.id,
+        "table_qr",
+        "qr_promotion",
+        promotions.map((p) => p.id),
+      ),
+      resolveStudioArtworkBatch(tenant.id, "table_qr", "qr_menu_campaign"),
+    ]);
+    response.promotions = promotions.map((p) => ({
+      ...p,
+      studio_artwork: artwork.get(p.id),
+    }));
+    response.studio_campaign = campaign.get("campaign") ?? null;
+  }
+  return NextResponse.json(response, {
+    headers: { "Cache-Control": "no-store" },
+  });
 }

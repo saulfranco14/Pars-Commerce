@@ -1,4 +1,5 @@
 import type { IntervalUnit } from "@/lib/offers/planPeriods";
+import type { StudioArtwork } from "@/features/studio/interfaces/studio";
 
 export type OfferPlanKind = "subscription" | "membership";
 export type OfferPlanStatus = "draft" | "active" | "paused" | "archived";
@@ -36,7 +37,11 @@ export interface OfferPlanWriteInput {
 export interface NormalizedOfferPlan {
   fields: Record<string, unknown>;
   /** null = leave items untouched; array = replace them. */
-  items: Array<{ product_id: string; product_variant_id: string | null; quantity: number }> | null;
+  items: Array<{
+    product_id: string;
+    product_variant_id: string | null;
+    quantity: number;
+  }> | null;
 }
 
 export interface OfferPlanItem {
@@ -75,6 +80,7 @@ export interface OfferPlan {
 
 /** What the storefront needs to render and sell a plan. */
 export interface PublicOfferPlan {
+  studio_artwork?: StudioArtwork;
   id: string;
   kind: OfferPlanKind;
   name: string;
@@ -87,7 +93,13 @@ export interface PublicOfferPlan {
   max_periods: number | null;
   fulfillment_methods: PlanFulfillmentMethod[];
   preferred_weekday: number | null;
-  items: Array<{ product_id: string; name: string; image_url: string | null; quantity: number; price: number }>;
+  items: Array<{
+    product_id: string;
+    name: string;
+    image_url: string | null;
+    quantity: number;
+    price: number;
+  }>;
   /** Sum of the items at list price, for "Valor normal". */
   list_value: number;
 }

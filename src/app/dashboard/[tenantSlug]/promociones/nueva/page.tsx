@@ -20,8 +20,14 @@ function NewOffer() {
       businessType={tenant.business_type}
       templateKey={searchParams.get("template")}
       onClose={() => router.push(listUrl)}
-      onSaved={() => router.push(listUrl)}
-      onStartPlan={(key) => router.push(`${listUrl}/planes/nueva?template=${encodeURIComponent(key)}`)}
+      onSaved={(id) =>
+        router.push(`${listUrl}?anuncio=${encodeURIComponent(id)}`)
+      }
+      onStartPlan={(key) =>
+        router.push(
+          `${listUrl}/planes/nueva?template=${encodeURIComponent(key)}`,
+        )
+      }
     />
   );
 }

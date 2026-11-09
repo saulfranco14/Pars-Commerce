@@ -1,3 +1,5 @@
+import { resolveStudioArtworkBatch } from "@/features/studio/services/studioPlacementService";
+import { StudioArtworkView } from "@/features/studio/components/StudioArtworkView";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -9,14 +11,24 @@ import { formatOfferLabel } from "@/lib/offers/formatOfferLabel";
 import { whatsappHref } from "@/features/sitio/helpers/storeLinks";
 import { isAddablePromotionType } from "@/features/sitio/helpers/promotions";
 import { PromotionCollage } from "@/features/promociones/components/PromotionCollage";
-import { collageImages, promotionCollageLabel } from "@/features/promociones/helpers/promotionVisual";
+import {
+  collageImages,
+  promotionCollageLabel,
+} from "@/features/promociones/helpers/promotionVisual";
 
 interface PageProps {
   params: Promise<{ slug: string; promoSlug: string }>;
 }
 
-function buildWhatsAppUrl(phone: string, promoName: string, baseUrl: string): string {
-  return whatsappHref(phone, `Hola, me interesa la promoción: ${promoName}\n${baseUrl}`);
+function buildWhatsAppUrl(
+  phone: string,
+  promoName: string,
+  baseUrl: string,
+): string {
+  return whatsappHref(
+    phone,
+    `Hola, me interesa la promoción: ${promoName}\n${baseUrl}`,
+  );
 }
 
 export default async function PromocionDetallePage({ params }: PageProps) {
@@ -36,7 +48,9 @@ export default async function PromocionDetallePage({ params }: PageProps) {
 
   const { data: bySlug } = await supabase
     .from("promotions")
-    .select("id, name, slug, type, value, quantity, min_amount, valid_from, valid_until, image_url, description, badge_label, product_ids, subcatalog_ids, bundle_product_ids, buy_quantity, pay_quantity")
+    .select(
+      "id, name, slug, type, value, quantity, min_amount, valid_from, valid_until, image_url, description, badge_label, product_ids, subcatalog_ids, bundle_product_ids, buy_quantity, pay_quantity",
+    )
     .eq("tenant_id", tenant.id)
     .eq("status", "active")
     .contains("sales_channels", ["public_store"])
@@ -47,7 +61,9 @@ export default async function PromocionDetallePage({ params }: PageProps) {
   if (!promotion) {
     const { data: byId } = await supabase
       .from("promotions")
-      .select("id, name, slug, type, value, quantity, min_amount, valid_from, valid_until, image_url, description, badge_label, product_ids, subcatalog_ids, bundle_product_ids, buy_quantity, pay_quantity")
+      .select(
+        "id, name, slug, type, value, quantity, min_amount, valid_from, valid_until, image_url, description, badge_label, product_ids, subcatalog_ids, bundle_product_ids, buy_quantity, pay_quantity",
+      )
       .eq("tenant_id", tenant.id)
       .eq("status", "active")
       .contains("sales_channels", ["public_store"])
@@ -71,7 +87,16 @@ export default async function PromocionDetallePage({ params }: PageProps) {
   ].filter(Boolean);
   const uniqueProductIds = [...new Set(allProductIds)];
 
-  const productsMap: Record<string, { id: string; name: string; slug: string | null; image_url: string | null; price: number }> = {};
+  const productsMap: Record<
+    string,
+    {
+      id: string;
+      name: string;
+      slug: string | null;
+      image_url: string | null;
+      price: number;
+    }
+  > = {};
   if (uniqueProductIds.length > 0) {
     const { data: products } = await supabase
       .from("products")
@@ -104,7 +129,8 @@ export default async function PromocionDetallePage({ params }: PageProps) {
 
   const headersList = await headers();
   const host = headersList.get("host") ?? "";
-  const protocol = headersList.get("x-forwarded-proto") === "https" ? "https" : "http";
+  const protocol =
+    headersList.get("x-forwarded-proto") === "https" ? "https" : "http";
   const baseUrl = host ? `${protocol}://${host}` : "";
   const promoUrl = `${baseUrl}/sitio/${slug}/promociones/${promotion.slug || promotion.id}`;
   const waHref = tenant.whatsapp_phone
@@ -113,12 +139,25 @@ export default async function PromocionDetallePage({ params }: PageProps) {
 
   const accentColor = tenant.theme_color?.trim() || DEFAULT_TENANT_ACCENT;
   const imageUrls = (promoImages ?? []).map((i) => i.url);
+  const studioArtwork = (
+    await resolveStudioArtworkBatch(
+      tenant.id,
+      "public_store",
+      "promotion_detail",
+      [promotion.id],
+    )
+  ).get(promotion.id);
   const mainImage = promotion.image_url ?? imageUrls[0];
   const galleryImages = promotion.image_url ? imageUrls : imageUrls.slice(1);
 
-  const products = uniqueProductIds.map((id) => productsMap[id]).filter(Boolean);
-  const subcatalogs = subcatalogIds.map((id) => subcatalogsMap[id]).filter(Boolean);
-  const hasAddableProducts = products.length > 0 && isAddablePromotionType(promotion.type);
+  const products = uniqueProductIds
+    .map((id) => productsMap[id])
+    .filter(Boolean);
+  const subcatalogs = subcatalogIds
+    .map((id) => subcatalogsMap[id])
+    .filter(Boolean);
+  const hasAddableProducts =
+    products.length > 0 && isAddablePromotionType(promotion.type);
 
   return (
     <div className="space-y-6">
@@ -133,8 +172,32 @@ export default async function PromocionDetallePage({ params }: PageProps) {
       <div className="overflow-hidden rounded-2xl bg-white shadow-md">
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-4">
-            <div className="relative aspect-square overflow-hidden bg-gray-100">
-              {mainImage ? (
+            <div
+              className={`relative overflow-hidden bg-gray-100 ${studioArtwork ? "" : "aspect-square"}`}
+            >
+              {studioArtwork ? (
+                <StudioArtworkView
+                  artwork={studioArtwork}
+                  mode="embedded"
+                  fallback={
+                    mainImage ? (
+                      <img
+                        src={mainImage}
+                        alt={promotion.name}
+                        className="h-auto w-full object-contain"
+                      />
+                    ) : (
+                      <PromotionCollage
+                        {...promotionCollageLabel(promotion)}
+                        images={collageImages(
+                          uniqueProductIds,
+                          (id) => productsMap[id]?.image_url,
+                        )}
+                      />
+                    )
+                  }
+                />
+              ) : mainImage ? (
                 <img
                   src={mainImage}
                   alt={promotion.name}
@@ -143,10 +206,13 @@ export default async function PromocionDetallePage({ params }: PageProps) {
               ) : (
                 <PromotionCollage
                   {...promotionCollageLabel(promotion)}
-                  images={collageImages(uniqueProductIds, (id) => productsMap[id]?.image_url)}
+                  images={collageImages(
+                    uniqueProductIds,
+                    (id) => productsMap[id]?.image_url,
+                  )}
                 />
               )}
-              {promotion.badge_label && (
+              {!studioArtwork && promotion.badge_label && (
                 <div
                   className="absolute left-4 top-4 rounded-lg px-4 py-2 text-sm font-bold text-white shadow-md"
                   style={{ backgroundColor: accentColor }}
@@ -154,7 +220,7 @@ export default async function PromocionDetallePage({ params }: PageProps) {
                   {promotion.badge_label}
                 </div>
               )}
-              {mainImage ? (
+              {!studioArtwork && mainImage ? (
                 <div
                   className="absolute right-4 top-4 rounded-lg px-4 py-2 text-lg font-bold text-white shadow-md"
                   style={{ backgroundColor: accentColor }}
@@ -193,13 +259,17 @@ export default async function PromocionDetallePage({ params }: PageProps) {
               <p className="mt-1 text-sm text-gray-500">
                 {promotion.valid_from && (
                   <span>
-                    Desde {new Date(promotion.valid_from).toLocaleDateString("es-MX")}
+                    Desde{" "}
+                    {new Date(promotion.valid_from).toLocaleDateString("es-MX")}
                   </span>
                 )}
                 {promotion.valid_from && promotion.valid_until && " · "}
                 {promotion.valid_until && (
                   <span>
-                    Hasta {new Date(promotion.valid_until).toLocaleDateString("es-MX")}
+                    Hasta{" "}
+                    {new Date(promotion.valid_until).toLocaleDateString(
+                      "es-MX",
+                    )}
                   </span>
                 )}
               </p>
@@ -267,7 +337,10 @@ export default async function PromocionDetallePage({ params }: PageProps) {
                   <h3 className="font-medium text-gray-900 group-hover:text-gray-700 truncate">
                     {prod.name}
                   </h3>
-                  <p className="text-sm font-semibold" style={{ color: accentColor }}>
+                  <p
+                    className="text-sm font-semibold"
+                    style={{ color: accentColor }}
+                  >
                     ${prod.price.toFixed(2)}
                   </p>
                 </div>

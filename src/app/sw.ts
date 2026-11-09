@@ -1,5 +1,9 @@
 import { defaultCache } from "@serwist/next/worker";
-import type { PrecacheEntry, RuntimeCaching, SerwistGlobalConfig } from "serwist";
+import type {
+  PrecacheEntry,
+  RuntimeCaching,
+  SerwistGlobalConfig,
+} from "serwist";
 import { NetworkFirst, NetworkOnly, Serwist } from "serwist";
 
 declare global {
@@ -24,6 +28,14 @@ declare const self: ServiceWorkerGlobalScope;
  * short-lived fallback on a network blip is safe and improves resilience.
  */
 const appRuntimeCaching: RuntimeCaching[] = [
+  {
+    matcher: ({ sameOrigin, url }) =>
+      sameOrigin &&
+      (url.pathname === "/dashboard" ||
+        url.pathname.startsWith("/dashboard/") ||
+        url.pathname.startsWith("/studio/entrar")),
+    handler: new NetworkOnly(),
+  },
   {
     matcher: ({ sameOrigin, url }) =>
       sameOrigin && url.pathname.startsWith("/api/"),

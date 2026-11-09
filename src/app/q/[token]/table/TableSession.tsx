@@ -106,7 +106,12 @@ export function TableSession({ token }: TableSessionProps) {
             ¿Usar {data.qr_code.label} para tu pedido?
           </h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Encontramos el pedido <span className="font-mono font-bold text-foreground">{ticketLabel}</span> por {formatCurrency(data.kiosk_handoff.total)}. Al continuar, las personas que escaneen esta mesa se unirán al mismo pedido.
+            Encontramos el pedido{" "}
+            <span className="font-mono font-bold text-foreground">
+              {ticketLabel}
+            </span>{" "}
+            por {formatCurrency(data.kiosk_handoff.total)}. Al continuar, las
+            personas que escaneen esta mesa se unirán al mismo pedido.
           </p>
           <div className="mt-6 space-y-2.5">
             <button
@@ -115,7 +120,11 @@ export function TableSession({ token }: TableSessionProps) {
               disabled={attachingKiosk}
               className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-base font-bold text-accent-foreground shadow-md shadow-accent/20 transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {attachingKiosk ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Link2 className="h-5 w-5" aria-hidden />}
+              {attachingKiosk ? (
+                <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+              ) : (
+                <Link2 className="h-5 w-5" aria-hidden />
+              )}
               {attachingKiosk ? "Vinculando mesa..." : "Usar esta mesa"}
             </button>
             <button
@@ -146,6 +155,7 @@ export function TableSession({ token }: TableSessionProps) {
       incomingMerge={data.incoming_merge_request ?? null}
       outgoingMerge={data.outgoing_merge_request ?? null}
       promotions={data.promotions ?? []}
+      studioCampaign={data.studio_campaign ?? null}
       onSessionRefresh={refresh}
     />
   );

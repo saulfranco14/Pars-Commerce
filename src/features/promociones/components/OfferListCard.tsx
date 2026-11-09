@@ -1,13 +1,25 @@
 "use client";
 
 import Image from "next/image";
-import { Archive, Copy, ExternalLink, Pause, Pencil, Play, Tag } from "lucide-react";
+import { StudioActionLink } from "@/features/studio/components/StudioActionLink";
+import {
+  Archive,
+  Copy,
+  ExternalLink,
+  Pause,
+  Pencil,
+  Play,
+  Tag,
+} from "lucide-react";
 
 import { AdminListCard } from "@/components/admin/AdminListCard";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ActionsMenu, type ActionsMenuItem } from "@/components/ui/ActionsMenu";
 
-import { formatOfferDeadline, formatOfferLabel } from "@/lib/offers/formatOfferLabel";
+import {
+  formatOfferDeadline,
+  formatOfferLabel,
+} from "@/lib/offers/formatOfferLabel";
 import { OFFER_STATUS_META } from "@/features/promociones/helpers/offerStatus";
 
 import type { OfferListEntry } from "@/features/promociones/hooks/useOffersList";
@@ -24,7 +36,9 @@ function scopeLabel(entry: OfferListEntry): string {
     return `${count} ${count === 1 ? "categoría" : "categorías"}`;
   }
   const count = promotion.product_ids?.length ?? 0;
-  return count === 0 ? "Sin productos" : `${count} ${count === 1 ? "producto" : "productos"}`;
+  return count === 0
+    ? "Sin productos"
+    : `${count} ${count === 1 ? "producto" : "productos"}`;
 }
 
 interface OfferListCardProps {
@@ -40,7 +54,17 @@ interface OfferListCardProps {
   onArchive: () => void;
 }
 
-export function OfferListCard({ entry, previewImage, storeUrl, busy, onEdit, onPause, onActivate, onDuplicate, onArchive }: OfferListCardProps) {
+export function OfferListCard({
+  entry,
+  previewImage,
+  storeUrl,
+  busy,
+  onEdit,
+  onPause,
+  onActivate,
+  onDuplicate,
+  onArchive,
+}: OfferListCardProps) {
   const { promotion, status } = entry;
   const meta = OFFER_STATUS_META[status];
   const deadline = formatOfferDeadline(promotion.valid_until);
@@ -50,10 +74,30 @@ export function OfferListCard({ entry, previewImage, storeUrl, busy, onEdit, onP
     { label: "Editar", icon: Pencil, onClick: onEdit },
     isRunning
       ? { label: "Pausar", icon: Pause, onClick: onPause, disabled: busy }
-      : { label: status === "expired" ? "Activar (revisa las fechas)" : "Activar", icon: Play, onClick: onActivate, disabled: busy },
+      : {
+          label:
+            status === "expired" ? "Activar (revisa las fechas)" : "Activar",
+          icon: Play,
+          onClick: onActivate,
+          disabled: busy,
+        },
     { label: "Duplicar", icon: Copy, onClick: onDuplicate, disabled: busy },
-    ...(storeUrl && status === "active" ? [{ label: "Ver en tienda", icon: ExternalLink, onClick: () => window.open(storeUrl, "_blank", "noopener") }] : []),
-    { label: "Archivar", icon: Archive, onClick: onArchive, danger: true, disabled: busy },
+    ...(storeUrl && status === "active"
+      ? [
+          {
+            label: "Ver en tienda",
+            icon: ExternalLink,
+            onClick: () => window.open(storeUrl, "_blank", "noopener"),
+          },
+        ]
+      : []),
+    {
+      label: "Archivar",
+      icon: Archive,
+      onClick: onArchive,
+      danger: true,
+      disabled: busy,
+    },
   ];
 
   return (
@@ -62,7 +106,13 @@ export function OfferListCard({ entry, previewImage, storeUrl, busy, onEdit, onP
       thumbnail={
         <span className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-accent/10">
           {promotion.image_url || previewImage ? (
-            <Image src={(promotion.image_url || previewImage) as string} alt="" fill sizes="56px" className="object-cover" />
+            <Image
+              src={(promotion.image_url || previewImage) as string}
+              alt=""
+              fill
+              sizes="56px"
+              className="object-cover"
+            />
           ) : (
             <Tag className="h-6 w-6 text-accent" aria-hidden />
           )}
@@ -70,7 +120,9 @@ export function OfferListCard({ entry, previewImage, storeUrl, busy, onEdit, onP
       }
       meta={
         <span className="flex flex-col gap-0.5">
-          <span className="font-semibold text-foreground">{formatOfferLabel(promotion)}</span>
+          <span className="font-semibold text-foreground">
+            {formatOfferLabel(promotion)}
+          </span>
           <span>
             {scopeLabel(entry)}
             {deadline ? ` · hasta el ${deadline}` : ""}
@@ -79,7 +131,7 @@ export function OfferListCard({ entry, previewImage, storeUrl, busy, onEdit, onP
       }
       badge={<StatusBadge tone={meta.tone} label={meta.label} />}
       actions={
-        <div className="flex w-full items-center justify-between gap-2">
+        <div className="flex w-full flex-wrap items-center justify-between gap-2">
           <button
             type="button"
             onClick={onEdit}
@@ -88,7 +140,17 @@ export function OfferListCard({ entry, previewImage, storeUrl, busy, onEdit, onP
             <Pencil className="h-4 w-4" aria-hidden />
             Editar
           </button>
-          <ActionsMenu items={items} aria-label={`Acciones de ${promotion.name}`} />
+          <ActionsMenu
+            items={items}
+            aria-label={`Acciones de ${promotion.name}`}
+          />
+          <StudioActionLink source="promotion" id={promotion.id} />
+          <StudioActionLink
+            source="promotion"
+            id={promotion.id}
+            label="Compartir rápido"
+            quick
+          />
         </div>
       }
     />

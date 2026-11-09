@@ -1,7 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { Archive, ExternalLink, Pause, Pencil, Play, Repeat } from "lucide-react";
+import { StudioActionLink } from "@/features/studio/components/StudioActionLink";
+import {
+  Archive,
+  ExternalLink,
+  Pause,
+  Pencil,
+  Play,
+  Repeat,
+} from "lucide-react";
 
 import { AdminListCard } from "@/components/admin/AdminListCard";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -22,9 +30,20 @@ interface PlanListCardProps {
   onArchive: () => void;
 }
 
-export function PlanListCard({ plan, storeUrl, busy, onEdit, onPause, onActivate, onArchive }: PlanListCardProps) {
+export function PlanListCard({
+  plan,
+  storeUrl,
+  busy,
+  onEdit,
+  onPause,
+  onActivate,
+  onArchive,
+}: PlanListCardProps) {
   const meta = OFFER_STATUS_META[plan.status];
-  const pieces = (plan.items ?? []).reduce((sum, item) => sum + item.quantity, 0);
+  const pieces = (plan.items ?? []).reduce(
+    (sum, item) => sum + item.quantity,
+    0,
+  );
   const subscribers = plan.active_count ?? 0;
 
   const items: ActionsMenuItem[] = [
@@ -32,8 +51,22 @@ export function PlanListCard({ plan, storeUrl, busy, onEdit, onPause, onActivate
     plan.status === "active"
       ? { label: "Pausar", icon: Pause, onClick: onPause, disabled: busy }
       : { label: "Activar", icon: Play, onClick: onActivate, disabled: busy },
-    ...(storeUrl && plan.status === "active" ? [{ label: "Ver en tienda", icon: ExternalLink, onClick: () => window.open(storeUrl, "_blank", "noopener") }] : []),
-    { label: "Archivar", icon: Archive, onClick: onArchive, danger: true, disabled: busy },
+    ...(storeUrl && plan.status === "active"
+      ? [
+          {
+            label: "Ver en tienda",
+            icon: ExternalLink,
+            onClick: () => window.open(storeUrl, "_blank", "noopener"),
+          },
+        ]
+      : []),
+    {
+      label: "Archivar",
+      icon: Archive,
+      onClick: onArchive,
+      danger: true,
+      disabled: busy,
+    },
   ];
 
   return (
@@ -42,7 +75,13 @@ export function PlanListCard({ plan, storeUrl, busy, onEdit, onPause, onActivate
       thumbnail={
         <span className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-accent/10">
           {plan.image_url ? (
-            <Image src={plan.image_url} alt="" fill sizes="56px" className="object-cover" />
+            <Image
+              src={plan.image_url}
+              alt=""
+              fill
+              sizes="56px"
+              className="object-cover"
+            />
           ) : (
             <Repeat className="h-6 w-6 text-accent" aria-hidden />
           )}
@@ -50,16 +89,19 @@ export function PlanListCard({ plan, storeUrl, busy, onEdit, onPause, onActivate
       }
       meta={
         <span className="flex flex-col gap-0.5">
-          <span className="font-semibold text-foreground">{planPriceLabel(plan)}</span>
+          <span className="font-semibold text-foreground">
+            {planPriceLabel(plan)}
+          </span>
           <span>
-            {pieces} {pieces === 1 ? "pieza" : "piezas"} por periodo · {subscribers} {subscribers === 1 ? "suscrito" : "suscritos"}
+            {pieces} {pieces === 1 ? "pieza" : "piezas"} por periodo ·{" "}
+            {subscribers} {subscribers === 1 ? "suscrito" : "suscritos"}
             {plan.max_active_members ? ` de ${plan.max_active_members}` : ""}
           </span>
         </span>
       }
       badge={<StatusBadge tone={meta.tone} label={meta.label} />}
       actions={
-        <div className="flex w-full items-center justify-between gap-2">
+        <div className="flex w-full flex-wrap items-center justify-between gap-2">
           <button
             type="button"
             onClick={onEdit}
@@ -69,6 +111,7 @@ export function PlanListCard({ plan, storeUrl, busy, onEdit, onPause, onActivate
             Editar
           </button>
           <ActionsMenu items={items} aria-label={`Acciones de ${plan.name}`} />
+          <StudioActionLink source="subscription_plan" id={plan.id} />
         </div>
       }
     />

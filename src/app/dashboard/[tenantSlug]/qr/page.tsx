@@ -11,6 +11,7 @@ import { Notification } from "@/components/ui/Notification";
 import { FAB } from "@/components/ui/FAB";
 import { FilterTabs } from "@/components/ui/FilterTabs";
 import { EmptyState } from "@/components/admin/EmptyState";
+import { StudioActionLink } from "@/features/studio/components/StudioActionLink";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { swrFetcher } from "@/lib/swrFetcher";
 import { isAbortError } from "@/services/apiFetch";
@@ -65,7 +66,8 @@ export default function QrCodesPage() {
   // Configuration screen: only the reusable QR kinds (tables + fixed charges).
   // Single-use 'order' tickets are ephemeral and live under Órdenes, not here.
   const codes = useMemo(
-    () => (data ?? []).filter((c) => c.kind === "table" || c.kind === "payment"),
+    () =>
+      (data ?? []).filter((c) => c.kind === "table" || c.kind === "payment"),
     [data],
   );
   const visibleCodes = useMemo(() => {
@@ -91,13 +93,21 @@ export default function QrCodesPage() {
   return (
     <div className="space-y-5">
       <QrOnboardingOverlay />
+      <StudioActionLink
+        destination="publicaciones"
+        label="Anuncios y campañas del QR"
+      />
       <PageHeader
         title="Códigos QR"
         description="Genera QR para mesas y cobros libres. Imprime, comparte o escanea desde aquí."
       />
 
       {/* Único punto de creación — FAB en móvil y desktop. */}
-      <FAB onClick={() => setCreateOpen(true)} aria-label="Nuevo QR" alwaysVisible>
+      <FAB
+        onClick={() => setCreateOpen(true)}
+        aria-label="Nuevo QR"
+        alwaysVisible
+      >
         <Plus className="h-6 w-6 shrink-0" aria-hidden />
       </FAB>
 

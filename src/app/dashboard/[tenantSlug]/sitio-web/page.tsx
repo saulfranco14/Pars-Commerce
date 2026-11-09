@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { SiteWebConfigSection } from "./SiteWebConfigSection";
 import { SitePreviewPanel } from "@/features/sitio-web/components/SitePreviewPanel";
+import { StudioActionLink } from "@/features/studio/components/StudioActionLink";
 
 export default function SitioWebPage() {
   const params = useParams();
@@ -13,6 +14,12 @@ export default function SitioWebPage() {
   return (
     <div className="mx-auto w-full min-w-0 max-w-400 overflow-x-hidden">
       <div className="mb-5 border-b border-border pb-3">
+        <div className="mb-3">
+          <StudioActionLink
+            destination="publicaciones"
+            label="Anuncios de Studio en mi sitio"
+          />
+        </div>
         <Link
           href="/dashboard"
           className="inline-flex min-h-10 items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"

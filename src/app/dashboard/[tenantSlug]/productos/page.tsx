@@ -1,13 +1,34 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { StudioActionLink } from "@/features/studio/components/StudioActionLink";
+import { Notification } from "@/components/ui/Notification";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import { useActiveTenant } from "@/stores/useTenantStore";
-import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { FolderTree, GripVertical, PackagePlus, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import {
+  FolderTree,
+  GripVertical,
+  PackagePlus,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { FAB } from "@/components/ui/FAB";
 import { FilterTabs } from "@/components/ui/FilterTabs";
@@ -75,13 +96,18 @@ export default function ProductosPage() {
     () => searchParams.get("subcatalog_id") ?? "",
   );
   const [createOpen, setCreateOpen] = useState(false);
+  const [studioProductId, setStudioProductId] = useState<string | null>(null);
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
-  const [sortMode, setSortMode] = useState(() => searchParams.get("sort") ?? "manual");
+  const [sortMode, setSortMode] = useState(
+    () => searchParams.get("sort") ?? "manual",
+  );
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [reordering, setReordering] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   useEffect(() => {
@@ -100,20 +126,31 @@ export default function ProductosPage() {
     if (searchParams.get("nuevo") === "1") {
       const next = new URLSearchParams(searchParams.toString());
       next.delete("nuevo");
-      router.replace(`/dashboard/${tenantSlug}/productos${next.size ? `?${next}` : ""}`);
+      router.replace(
+        `/dashboard/${tenantSlug}/productos${next.size ? `?${next}` : ""}`,
+      );
     }
   }
 
-  function updateListUrl(next: { subcatalog?: string; q?: string; sort?: string }) {
+  function updateListUrl(next: {
+    subcatalog?: string;
+    q?: string;
+    sort?: string;
+  }) {
     const query = new URLSearchParams(searchParams.toString());
     query.delete("nuevo");
     const subcatalog = next.subcatalog ?? subcatalogFilter;
     const q = next.q ?? search;
     const sort = next.sort ?? sortMode;
-    subcatalog ? query.set("subcatalog_id", subcatalog) : query.delete("subcatalog_id");
+    subcatalog
+      ? query.set("subcatalog_id", subcatalog)
+      : query.delete("subcatalog_id");
     q.trim() ? query.set("q", q.trim()) : query.delete("q");
     sort !== "manual" ? query.set("sort", sort) : query.delete("sort");
-    router.replace(`/dashboard/${tenantSlug}/productos${query.size ? `?${query}` : ""}`, { scroll: false });
+    router.replace(
+      `/dashboard/${tenantSlug}/productos${query.size ? `?${query}` : ""}`,
+      { scroll: false },
+    );
   }
 
   function handleSubcatalogChange(value: string) {
@@ -135,7 +172,8 @@ export default function ProductosPage() {
   const [productToDelete, setProductToDelete] =
     useState<ProductListItem | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [quickUpdateProduct, setQuickUpdateProduct] = useState<ProductListItem | null>(null);
+  const [quickUpdateProduct, setQuickUpdateProduct] =
+    useState<ProductListItem | null>(null);
 
   const key = activeTenant
     ? buildProductsKey(activeTenant.id, subcatalogFilter, search)
@@ -158,21 +196,39 @@ export default function ProductosPage() {
     `/dashboard/${tenantSlug}/productos/${id}?returnTo=${encodeURIComponent(currentReturnPath)}`;
 
   async function moveProduct(sourceId: string, targetId: string) {
-    if (!activeTenant || sourceId === targetId || search.trim() || sortMode !== "manual") return;
-    const sourceIndex = visibleProducts.findIndex((item) => item.id === sourceId);
-    const targetIndex = visibleProducts.findIndex((item) => item.id === targetId);
+    if (
+      !activeTenant ||
+      sourceId === targetId ||
+      search.trim() ||
+      sortMode !== "manual"
+    )
+      return;
+    const sourceIndex = visibleProducts.findIndex(
+      (item) => item.id === sourceId,
+    );
+    const targetIndex = visibleProducts.findIndex(
+      (item) => item.id === targetId,
+    );
     if (sourceIndex < 0 || targetIndex < 0) return;
     const next = [...visibleProducts];
     const [moved] = next.splice(sourceIndex, 1);
     next.splice(targetIndex, 0, moved);
     setActionError(null);
     setReordering(true);
-    await mutate(next.map((item, index) => ({ ...item, sort_order: index })), false);
+    await mutate(
+      next.map((item, index) => ({ ...item, sort_order: index })),
+      false,
+    );
     try {
-      await reorder(activeTenant.id, next.map((item) => item.id));
+      await reorder(
+        activeTenant.id,
+        next.map((item) => item.id),
+      );
       await mutate();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "No se pudo guardar el orden");
+      setActionError(
+        e instanceof Error ? e.message : "No se pudo guardar el orden",
+      );
       await mutate();
     } finally {
       setReordering(false);
@@ -251,6 +307,18 @@ export default function ProductosPage() {
           </div>
         )}
 
+        {studioProductId && (
+          <Notification
+            tone="success"
+            title="Producto guardado"
+            message={
+              <div className="mt-2">
+                <StudioActionLink source="product" id={studioProductId} />
+              </div>
+            }
+            onDismiss={() => setStudioProductId(null)}
+          />
+        )}
         <div className="border-t border-border-soft pt-3">
           <FilterTabs
             tabs={productTabs}
@@ -262,13 +330,38 @@ export default function ProductosPage() {
         <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
           <label className="flex min-h-11 items-center gap-2 rounded-xl border border-border bg-surface-raised px-3 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15">
             <Search className="h-4 w-4 text-muted" aria-hidden />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} onBlur={() => updateListUrl({ q: search })} onKeyDown={(event) => { if (event.key === "Enter") updateListUrl({ q: search }); }} placeholder="Buscar por nombre o SKU" className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              onBlur={() => updateListUrl({ q: search })}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") updateListUrl({ q: search });
+              }}
+              placeholder="Buscar por nombre o SKU"
+              className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none"
+            />
           </label>
-          <select value={sortMode} onChange={(event) => { const value = event.target.value; setSortMode(value); updateListUrl({ sort: value }); }} className="min-h-11 rounded-xl border border-border bg-surface-raised px-3 text-sm font-medium">
-            <option value="manual">Orden de la tienda</option><option value="az">Nombre A–Z</option><option value="za">Nombre Z–A</option>
+          <select
+            value={sortMode}
+            onChange={(event) => {
+              const value = event.target.value;
+              setSortMode(value);
+              updateListUrl({ sort: value });
+            }}
+            className="min-h-11 rounded-xl border border-border bg-surface-raised px-3 text-sm font-medium"
+          >
+            <option value="manual">Orden de la tienda</option>
+            <option value="az">Nombre A–Z</option>
+            <option value="za">Nombre Z–A</option>
           </select>
         </div>
-        <p className="text-xs text-muted">{search.trim() || sortMode !== "manual" ? "Limpia la búsqueda y elige “Orden de la tienda” para acomodar los productos." : reordering ? "Guardando el nuevo orden…" : "Mantén presionado el asa y arrastra para acomodar lo que tu cliente verá primero."}</p>
+        <p className="text-xs text-muted">
+          {search.trim() || sortMode !== "manual"
+            ? "Limpia la búsqueda y elige “Orden de la tienda” para acomodar los productos."
+            : reordering
+              ? "Guardando el nuevo orden…"
+              : "Mantén presionado el asa y arrastra para acomodar lo que tu cliente verá primero."}
+        </p>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -305,7 +398,10 @@ export default function ProductosPage() {
                 if (over) void moveProduct(String(active.id), String(over.id));
               }}
             >
-              <SortableContext items={visibleProducts.map((product) => product.id)} strategy={verticalListSortingStrategy}>
+              <SortableContext
+                items={visibleProducts.map((product) => product.id)}
+                strategy={verticalListSortingStrategy}
+              >
                 <div className="space-y-3 md:hidden">
                   {visibleProducts.map((p) => (
                     <SortableCatalogCard
@@ -316,11 +412,18 @@ export default function ProductosPage() {
                       price={Number(p.price)}
                       tag={p.subcatalog?.name ?? p.theme ?? null}
                       detail={`${p.unit || "unit"}${p.sku ? ` · ${p.sku}` : ""} · Stock: ${p.stock}`}
-                      disabled={Boolean(search.trim()) || sortMode !== "manual" || reordering}
+                      disabled={
+                        Boolean(search.trim()) ||
+                        sortMode !== "manual" ||
+                        reordering
+                      }
                       editHref={editHref(p.id)}
                       deleting={deletingId === p.id}
                       onDelete={() => openDeleteModal(p)}
                       onQuickUpdate={() => setQuickUpdateProduct(p)}
+                      extraActions={
+                        <StudioActionLink source="product" id={p.id} />
+                      }
                     />
                   ))}
                 </div>
@@ -331,7 +434,9 @@ export default function ProductosPage() {
                 <table className="min-w-full">
                   <thead>
                     <tr className={tableHeaderRowClass}>
-                      <th className={tableHeaderCellClass}><span className="sr-only">Orden</span></th>
+                      <th className={tableHeaderCellClass}>
+                        <span className="sr-only">Orden</span>
+                      </th>
                       <th className={tableHeaderCellClass}>Imagen</th>
                       <th className={tableHeaderCellClass}>Nombre</th>
                       <th className={tableHeaderCellClass}>SKU</th>
@@ -343,8 +448,25 @@ export default function ProductosPage() {
                   </thead>
                   <tbody>
                     {visibleProducts.map((p) => (
-                      <tr key={p.id} draggable={!search.trim() && sortMode === "manual" && !reordering} onDragStart={() => setDraggedId(p.id)} onDragEnd={() => setDraggedId(null)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedId) void moveProduct(draggedId, p.id); }} className={`${tableBodyRowClass} ${draggedId === p.id ? "opacity-50" : ""}`}>
-                        <td className={tableBodyCellClass}><GripVertical className={`h-5 w-5 ${search.trim() || sortMode !== "manual" ? "text-muted/30" : "cursor-grab text-muted"}`} aria-hidden /></td>
+                      <tr
+                        key={p.id}
+                        draggable={
+                          !search.trim() && sortMode === "manual" && !reordering
+                        }
+                        onDragStart={() => setDraggedId(p.id)}
+                        onDragEnd={() => setDraggedId(null)}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={() => {
+                          if (draggedId) void moveProduct(draggedId, p.id);
+                        }}
+                        className={`${tableBodyRowClass} ${draggedId === p.id ? "opacity-50" : ""}`}
+                      >
+                        <td className={tableBodyCellClass}>
+                          <GripVertical
+                            className={`h-5 w-5 ${search.trim() || sortMode !== "manual" ? "text-muted/30" : "cursor-grab text-muted"}`}
+                            aria-hidden
+                          />
+                        </td>
                         <td className={tableBodyCellClass}>
                           {p.image_url ? (
                             <img
@@ -359,9 +481,9 @@ export default function ProductosPage() {
                         <td className={tableBodyCellClass}>
                           <div className="flex flex-col gap-0.5">
                             <div className="flex items-center gap-1.5">
-                            <span className="font-medium text-foreground">
-                              {p.name}
-                            </span>
+                              <span className="font-medium text-foreground">
+                                {p.name}
+                              </span>
                               <button
                                 type="button"
                                 onClick={() => setQuickUpdateProduct(p)}
@@ -410,6 +532,7 @@ export default function ProductosPage() {
                               />
                               Editar
                             </Link>
+                            <StudioActionLink source="product" id={p.id} />
                             <button
                               type="button"
                               onClick={() => openDeleteModal(p)}
@@ -455,7 +578,8 @@ export default function ProductosPage() {
         onClose={closeCreate}
         tenantId={activeTenant.id}
         initialSubcatalogId={subcatalogFilter}
-        onCreated={async () => {
+        onCreated={async (product) => {
+          setStudioProductId(product.id);
           await mutate();
           closeCreate();
         }}

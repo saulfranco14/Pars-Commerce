@@ -5,6 +5,7 @@
  */
 
 import type { QrPromotion } from "@/features/qr/interfaces/promotion";
+import type { StudioArtwork } from "@/features/studio/interfaces/studio";
 
 export interface QrSessionTenant {
   id: string;
@@ -78,6 +79,7 @@ export interface QrOutgoingMergeRequest {
 }
 
 export interface TableSessionResponse {
+  studio_campaign?: StudioArtwork | null;
   tenant: QrSessionTenant;
   qr_code: QrSessionQrCode;
   order?: QrSessionOrder | null;

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { StudioActionLink } from "@/features/studio/components/StudioActionLink";
+import { Notification } from "@/components/ui/Notification";
 import { Plus } from "lucide-react";
 
 import { useActiveTenant, usePermission } from "@/stores/useTenantStore";
@@ -26,12 +28,22 @@ export function OffersPage({ tenantSlug }: { tenantSlug: string }) {
   const can = usePermission();
   const canWrite = can("promotions.write");
 
-  const view = searchParams.get("vista") === "suscripciones" ? "suscripciones" : "promociones";
+  const view =
+    searchParams.get("vista") === "suscripciones"
+      ? "suscripciones"
+      : "promociones";
   const base = `/dashboard/${tenantSlug}/promociones`;
-  const createHref = view === "suscripciones" ? `${base}/planes/nueva` : `${base}/nueva`;
-  const createLabel = view === "suscripciones" ? "Crear suscripción" : "Crear promoción";
+  const createHref =
+    view === "suscripciones" ? `${base}/planes/nueva` : `${base}/nueva`;
+  const createLabel =
+    view === "suscripciones" ? "Crear suscripción" : "Crear promoción";
 
-  if (!tenant) return <p className="text-sm text-muted-foreground">Selecciona un negocio para continuar.</p>;
+  if (!tenant)
+    return (
+      <p className="text-sm text-muted-foreground">
+        Selecciona un negocio para continuar.
+      </p>
+    );
 
   return (
     <div className="space-y-5">
@@ -40,7 +52,10 @@ export function OffersPage({ tenantSlug }: { tenantSlug: string }) {
         description="Descuentos, 2x1, paquetes y suscripciones que tus clientes ven y compran en tu tienda en línea."
         action={
           canWrite ? (
-            <Link href={createHref} className={`${pageHeaderCta} hidden md:inline-flex`}>
+            <Link
+              href={createHref}
+              className={`${pageHeaderCta} hidden md:inline-flex`}
+            >
               <Plus className="h-4 w-4" aria-hidden />
               {createLabel}
             </Link>
@@ -48,10 +63,36 @@ export function OffersPage({ tenantSlug }: { tenantSlug: string }) {
         }
       />
 
+      {searchParams.get("anuncio") && (
+        <Notification
+          tone="success"
+          title="Promoción guardada"
+          message={
+            <div className="mt-2 flex flex-wrap gap-2">
+              <StudioActionLink
+                source="promotion"
+                id={searchParams.get("anuncio")!}
+              />
+              <StudioActionLink
+                source="promotion"
+                id={searchParams.get("anuncio")!}
+                label="Compartir rápido"
+                quick
+              />
+            </div>
+          }
+        />
+      )}
       <FilterTabs
         tabs={VIEWS}
         activeValue={view}
-        onTabChange={(next) => router.replace(next === "suscripciones" ? `${pathname}?vista=suscripciones` : pathname)}
+        onTabChange={(next) =>
+          router.replace(
+            next === "suscripciones"
+              ? `${pathname}?vista=suscripciones`
+              : pathname,
+          )
+        }
         ariaLabel="Qué quieres ver"
         density="touch"
       />

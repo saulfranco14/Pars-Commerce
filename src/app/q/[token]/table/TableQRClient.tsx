@@ -26,6 +26,8 @@ import {
 import { getReorderProducts } from "@/features/qr/helpers/getReorderProducts";
 
 import type { QrPromotion } from "@/features/qr/interfaces/promotion";
+import type { StudioArtwork } from "@/features/studio/interfaces/studio";
+import { StudioArtworkView } from "@/features/studio/components/StudioArtworkView";
 import type {
   QrIncomingMergeRequest,
   QrOutgoingMergeRequest,
@@ -37,6 +39,7 @@ import type {
 } from "@/features/qr/interfaces/tableSession";
 
 interface TableQRClientProps {
+  studioCampaign?: StudioArtwork | null;
   token: string;
   tenant: QrSessionTenant;
   qrCode: Pick<QrSessionQrCode, "id" | "label">;
@@ -53,6 +56,7 @@ interface TableQRClientProps {
 }
 
 export function TableQRClient({
+  studioCampaign = null,
   token,
   tenant,
   qrCode,
@@ -80,7 +84,9 @@ export function TableQRClient({
   });
   const [responsibilityOpen, setResponsibilityOpen] = useState(false);
   const [claimingResponsibility, setClaimingResponsibility] = useState(false);
-  const [responsibilityError, setResponsibilityError] = useState<string | null>(null);
+  const [responsibilityError, setResponsibilityError] = useState<string | null>(
+    null,
+  );
 
   async function sendCart() {
     const sent = await cart.send();
@@ -105,7 +111,9 @@ export function TableQRClient({
       setResponsibilityOpen(false);
     } catch (err) {
       setResponsibilityError(
-        err instanceof Error ? err.message : "No se pudo guardar la responsabilidad",
+        err instanceof Error
+          ? err.message
+          : "No se pudo guardar la responsabilidad",
       );
     } finally {
       setClaimingResponsibility(false);
@@ -133,8 +141,7 @@ export function TableQRClient({
   // summary, then the tracker snapshot.
   const tableFulfillment =
     order?.fulfillment_status ?? tracker.fulfillmentStatus;
-  const myFulfillment =
-    order?.my_fulfillment_status ?? tableFulfillment;
+  const myFulfillment = order?.my_fulfillment_status ?? tableFulfillment;
   const liveItemCount = order?.item_count;
   const liveReadyItemCount = order?.ready_item_count;
   const liveReceivedItemCount = order?.received_item_count;
@@ -403,6 +410,11 @@ export function TableQRClient({
         </div>
       )}
 
+      {studioCampaign && (
+        <div className="mb-4">
+          <StudioArtworkView artwork={studioCampaign} />
+        </div>
+      )}
       <TableMenuSections
         products={menu}
         categories={categories}

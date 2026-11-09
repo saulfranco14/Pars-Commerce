@@ -3,7 +3,9 @@
  * the full admin promotion row — only what the
  * PromoBanner renders, so the public payload stays lean.
  */
+import type { StudioArtwork } from "@/features/studio/interfaces/studio";
 export interface QrPromotion {
+  studio_artwork?: StudioArtwork;
   id: string;
   name: string;
   type: string;
@@ -25,5 +27,9 @@ export interface QrPromotion {
   pay_quantity: number | null;
   min_amount: number | null;
   sales_channels: string[];
-  promotion_items: Array<{ product_id: string; quantity: number; position?: number | null }>;
+  promotion_items: Array<{
+    product_id: string;
+    quantity: number;
+    position?: number | null;
+  }>;
 }
