@@ -2,14 +2,22 @@ import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database.types";
+import { clearPrivateDrafts } from "@/lib/auth/clearPrivateDrafts";
 
 let browserClient: SupabaseClient<Database> | undefined;
 
 function createBrowserSupabaseClient() {
-  return createBrowserClient<Database>(
+  const client = createBrowserClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
+  if (typeof window !== "undefined")
+    client.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") clearPrivateDrafts();
+      if (event === "SIGNED_IN" || event === "INITIAL_SESSION")
+        clearPrivateDrafts(session?.user.id);
+    });
+  return client;
 }
 
 /**

@@ -1,0 +1,733 @@
+.hero {
+  overflow: hidden;
+  background: var(--surface);
+}
+.heroTitle {
+  font-size: clamp(2.65rem, 6.2vw, 5.65rem);
+  line-height: 1.02;
+  letter-spacing: -0.065em;
+  text-wrap: balance;
+}
+.heroTitle span {
+  color: var(--accent);
+}
+.workbench {
+  position: relative;
+  isolation: isolate;
+  padding: 2rem 0 0;
+}
+.workbench::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 22% -15% 0;
+  background: var(--accent);
+  border-radius: 50% 50% 0 0 / 40% 40% 0 0;
+}
+.editor {
+  overflow: hidden;
+  border: 1px solid #334155;
+  border-radius: 1.1rem 1.1rem 0 0;
+  background: #111827;
+  color: #f8fafc;
+  box-shadow: 0 24px 70px #0f172a30;
+}
+.editorBody {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-width: 0;
+}
+.editorCanvas {
+  min-width: 0;
+  padding: 1.25rem 1rem;
+  background-color: #e5e9f0;
+  background-image: radial-gradient(#94a3b855 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+.poster {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  overflow: hidden;
+  container-type: inline-size;
+  background: #182231;
+  color: #fff;
+}
+.portrait {
+  aspect-ratio: 4 / 5;
+}
+.square {
+  aspect-ratio: 1;
+}
+.story {
+  aspect-ratio: 9 / 16;
+}
+.posterPhoto {
+  object-fit: cover;
+  object-position: 68% center;
+}
+.posterShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    #09101dd9 0%,
+    #09101d1a 50%,
+    #09101df2 100%
+  );
+}
+.cream {
+  color: #302315;
+  background: #f4ead6;
+}
+.night {
+  color: #ffffff;
+}
+.cream .posterShade {
+  background: linear-gradient(
+    180deg,
+    #f4ead6ed 0%,
+    #f4ead633 48%,
+    #f4ead6f5 100%
+  );
+}
+.posterContent {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 7%;
+}
+.posterBrand {
+  display: flex;
+  justify-content: space-between;
+  font-size: 3cqw;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.posterHeadline {
+  margin-top: 7%;
+  white-space: pre-line;
+  font-size: 15cqw;
+  line-height: 0.91;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+}
+.posterOffer {
+  margin-top: auto;
+}
+.posterDetail {
+  font-size: 3.5cqw;
+  font-weight: 500;
+}
+.posterPrice {
+  display: inline-block;
+  position: relative;
+  margin-top: 1%;
+  font-size: 14cqw;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+}
+.posterNote {
+  margin-top: 4%;
+  font-size: 2.2cqw;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+}
+.selectedPrice::after {
+  content: "";
+  position: absolute;
+  inset: -3px -8px;
+  border: 2px solid #3483fa;
+  box-shadow:
+    -3px -3px 0 -1px #fff,
+    3px 3px 0 -1px #fff;
+}
+.square .posterHeadline {
+  font-size: 13cqw;
+}
+.square .posterPrice {
+  font-size: 12cqw;
+}
+.story .posterHeadline {
+  margin-top: 16%;
+}
+.showcasePoster {
+  overflow: hidden;
+  border-radius: 0.8rem;
+  box-shadow: 0 16px 28px #0000001a;
+}
+.spotlight {
+  position: relative;
+  overflow: hidden;
+  background: #111827;
+  color: #fff;
+}
+.formatWall {
+  display: grid;
+  grid-template-columns: 1.1fr 0.85fr;
+  gap: 1rem;
+  align-items: center;
+}
+@media (min-width: 640px) {
+  .workbench {
+    padding-top: 3rem;
+  }
+  .editorCanvas {
+    padding: 2rem;
+  }
+}
+@media (min-width: 900px) {
+  .editorBody {
+    grid-template-columns: 190px minmax(0, 1fr) 200px;
+  }
+}
+.sceneEnter {
+  width: 100%;
+  min-width: 0;
+  animation: studio-scene-in 350ms ease-out both;
+}
+.stepProgress {
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  background: #60a5fa;
+  transform-origin: left;
+  animation: studio-step-progress linear both;
+}
+.buildPoster .posterPhoto {
+  animation: studio-photo-in 850ms ease-out both;
+}
+.buildPoster .posterBrand {
+  animation: studio-layer-in 500ms 200ms ease-out both;
+}
+.buildPoster .posterHeadline {
+  animation: studio-layer-in 600ms 450ms ease-out both;
+}
+.buildPoster .posterOffer {
+  animation: studio-layer-in 650ms 950ms ease-out both;
+}
+.pricePointer {
+  animation: studio-pointer-in 700ms 1300ms ease-out both;
+}
+.shareSquare {
+  animation: studio-layer-in 550ms 100ms ease-out both;
+}
+.shareStory {
+  animation: studio-layer-in 550ms 350ms ease-out both;
+}
+.galleryItem {
+  animation: studio-scene-in 450ms ease-out both;
+}
+.galleryControl {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--foreground);
+  cursor: pointer;
+}
+.galleryControl:hover {
+  background: var(--border-soft);
+}
+.galleryControl:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@keyframes studio-scene-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes studio-step-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes studio-photo-in {
+  from {
+    opacity: 0.5;
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes studio-layer-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes studio-pointer-in {
+  from {
+    opacity: 0;
+    transform: translate(14px, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sceneEnter,
+  .stepProgress,
+  .buildPoster *,
+  .pricePointer,
+  .shareSquare,
+  .shareStory,
+  .galleryItem {
+    animation: none;
+  }
+}
+
+/* The guide and slide timer share a 6.5-second timeline. */
+.guidedScene {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  height: 360px;
+  margin: auto;
+}
+.guidedStage {
+  position: relative;
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sourceCard {
+  width: 260px;
+  max-width: calc(100% - 16px);
+  padding: 12px;
+  border-radius: 16px;
+  background: white;
+  color: #0f172a;
+  box-shadow: 0 16px 32px #0f172a20;
+}
+.sourcePhoto {
+  animation: studio-source-select 6.5s both;
+}
+.sourceCheck {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: white;
+  animation: studio-check 6.5s both;
+}
+.guidedAction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: #2563eb;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  animation: studio-action-click 6.5s both;
+}
+.designStage {
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 16px 32px #0f172a30;
+}
+.designStage .posterHeadline {
+  animation: studio-headline-select 6.5s both;
+}
+.designStage .posterPrice {
+  transform-origin: left bottom;
+  animation: studio-price-adjust 6.5s both;
+}
+.shareStage {
+  width: 286px;
+  max-width: calc(100% - 16px);
+}
+.guideCursor {
+  position: absolute;
+  z-index: 5;
+  left: 88%;
+  top: 78%;
+  width: 30px;
+  height: 30px;
+  pointer-events: none;
+  animation: studio-cursor-source 6.5s both;
+}
+.guidedScene[data-step="1"] .guideCursor {
+  animation-name: studio-cursor-design;
+}
+.guidedScene[data-step="2"] .guideCursor {
+  animation-name: studio-cursor-share;
+}
+.cursorArrow {
+  position: relative;
+  filter: drop-shadow(0 2px 3px #0f172a50);
+  animation: studio-click-arrow 6.5s both;
+}
+.cursorLabel {
+  position: absolute;
+  top: 28px;
+  left: 17px;
+  padding: 3px 9px;
+  border-radius: 5px;
+  background: #2563eb;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+}
+.clickRing {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  top: -14px;
+  left: -14px;
+  border: 2px solid #2563eb;
+  border-radius: 50%;
+  opacity: 0;
+  animation: studio-click-ring 6.5s both;
+}
+.guideCaption {
+  position: absolute;
+  inset: auto 0 0;
+  height: 32px;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+}
+.guideCaption span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.guideFirst {
+  animation: studio-guide-first 6.5s both;
+}
+.guideSecond {
+  animation: studio-guide-second 6.5s both;
+}
+.guidedScene[data-playing="false"] *,
+.guidedScene[data-playing="false"] *::after {
+  animation-play-state: paused;
+}
+.guidedScene[data-reduced-motion="true"] * {
+  animation: none;
+}
+.guidedScene[data-reduced-motion="true"] .guideCursor,
+.guidedScene[data-reduced-motion="true"] .guideFirst {
+  display: none;
+}
+.exampleRail {
+  position: relative;
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding: 6px 4px 24px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.exampleSlide {
+  flex: 0 0 clamp(230px, 72vw, 290px);
+  min-width: 0;
+  scroll-snap-align: start;
+}
+.editorial .posterShade {
+  background: linear-gradient(0deg, #f4ead6 0%, #f4ead6 28%, #f4ead600 70%);
+}
+.editorial .posterOffer {
+  color: #302315;
+}
+.editorial .posterHeadline {
+  font-size: 12cqw;
+}
+.framed .posterContent {
+  inset: 5%;
+  padding: 5%;
+  border: 1px solid #ffffffa0;
+}
+.framed .posterHeadline {
+  margin-top: 14%;
+  font-size: 12.5cqw;
+}
+.framed .posterPrice {
+  font-size: 12cqw;
+}
+@keyframes studio-cursor-source {
+  0% {
+    left: 88%;
+    top: 78%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  28%,
+  43% {
+    left: 61%;
+    top: 27%;
+  }
+  65%,
+  90% {
+    left: 69%;
+    top: 84%;
+    opacity: 1;
+  }
+  100% {
+    left: 76%;
+    top: 91%;
+    opacity: 0;
+  }
+}
+@keyframes studio-cursor-design {
+  0% {
+    left: 85%;
+    top: 63%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  28%,
+  43% {
+    left: 47%;
+    top: 27%;
+  }
+  65%,
+  90% {
+    left: 43%;
+    top: 82%;
+    opacity: 1;
+  }
+  100% {
+    left: 65%;
+    top: 87%;
+    opacity: 0;
+  }
+}
+@keyframes studio-cursor-share {
+  0% {
+    left: 85%;
+    top: 66%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  28%,
+  43% {
+    left: 72%;
+    top: 35%;
+  }
+  65%,
+  90% {
+    left: 55%;
+    top: 84%;
+    opacity: 1;
+  }
+  100% {
+    left: 72%;
+    top: 91%;
+    opacity: 0;
+  }
+}
+@keyframes studio-click-ring {
+  0%,
+  29%,
+  43%,
+  66%,
+  82%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  31%,
+  68% {
+    opacity: 0.8;
+    transform: scale(0.4);
+  }
+  41%,
+  80% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+@keyframes studio-click-arrow {
+  0%,
+  29%,
+  37%,
+  66%,
+  74%,
+  100% {
+    transform: scale(1);
+  }
+  32%,
+  69% {
+    transform: scale(0.82);
+  }
+}
+@keyframes studio-source-select {
+  0%,
+  30% {
+    box-shadow: 0 0 0 0 #2563eb;
+  }
+  34%,
+  100% {
+    box-shadow: 0 0 0 3px #2563eb;
+  }
+}
+@keyframes studio-check {
+  0%,
+  30% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  35%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes studio-action-click {
+  0%,
+  66%,
+  80%,
+  100% {
+    transform: scale(1);
+  }
+  70% {
+    transform: scale(0.96);
+    background: #1e40af;
+  }
+}
+@keyframes studio-headline-select {
+  0%,
+  30%,
+  60%,
+  100% {
+    outline: 2px solid transparent;
+  }
+  34%,
+  54% {
+    outline: 2px solid #60a5fa;
+    outline-offset: 4px;
+  }
+}
+@keyframes studio-price-adjust {
+  0%,
+  66% {
+    transform: scale(0.88);
+  }
+  78%,
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes studio-guide-first {
+  0%,
+  46% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  52%,
+  100% {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+@keyframes studio-guide-second {
+  0%,
+  46% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  54%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guidedScene * {
+    animation: none;
+  }
+  .guideCursor,
+  .guideFirst {
+    display: none;
+  }
+}
+.homeShowcase {
+  background: #182231;
+  box-shadow: 0 24px 60px #02061740;
+}
+.homeStage {
+  background-color: #e5e9f0;
+  background-image: radial-gradient(#94a3b84d 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+.exampleRail::-webkit-scrollbar {
+  display: none;
+}
+.editorial.night .posterShade {
+  background: linear-gradient(
+    180deg,
+    #0f172ab8 0%,
+    #0f172a26 38%,
+    #f4ead6e6 65%,
+    #f4ead6 78%
+  );
+}
+.galleryControl {
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+.galleryControl:active {
+  transform: scale(0.94);
+}
+.exampleSlide button {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+.exampleSlide button:active {
+  transform: scale(0.985);
+}
+@media (prefers-reduced-motion: reduce) {
+  .galleryControl,
+  .exampleSlide button {
+    transition: none;
+  }
+  .galleryControl:active,
+  .exampleSlide button:active {
+    transform: none;
+  }
+}
