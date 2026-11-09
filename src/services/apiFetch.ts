@@ -1,3 +1,14 @@
+export class ApiFetchError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public code?: string,
+  ) {
+    super(message);
+    this.name = "ApiFetchError";
+  }
+}
+
 export async function apiFetch(
   url: string,
   options?: RequestInit,
@@ -12,7 +23,12 @@ export async function apiFetch(
       typeof (data as { error?: string }).error === "string"
         ? (data as { error: string }).error
         : res.statusText;
-    throw new Error(message);
+    const code = (data as { code?: unknown }).code;
+    throw new ApiFetchError(
+      message,
+      res.status,
+      typeof code === "string" ? code : undefined,
+    );
   }
   return data;
 }
