@@ -17,8 +17,15 @@ import { staffUsernameOf } from "@/lib/auth/staffLogin";
 import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
 import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
 import { GROWTH_ROLE_LABEL } from "@/features/growth/constants/growthRoles";
-import { ENGINE_PATH, FUNNEL_PATH, IMPORT_PATH, PROSPECTING_PATH, TEAM_PATH } from "@/features/growth/constants/routes";
+import {
+  ENGINE_PATH,
+  FUNNEL_PATH,
+  IMPORT_PATH,
+  PROSPECTING_PATH,
+  TEAM_PATH,
+} from "@/features/growth/constants/routes";
 import { isPlatformRoute, isProspectingRoute } from "@/lib/platformRoutes";
+import { studioBusinessVisible } from "@/features/studio/helpers/visibility";
 import {
   X,
   Download,
@@ -82,7 +89,12 @@ function NavLink({
 
 interface SidebarContentProps {
   pathname: string;
-  platformView: "operation" | "users" | "businesses" | "audit" | "liquidaciones";
+  platformView:
+    | "operation"
+    | "users"
+    | "businesses"
+    | "audit"
+    | "liquidaciones";
   slug: string | null;
   base: string;
   hasTenant: boolean;
@@ -147,10 +159,27 @@ function SidebarContent(props: SidebarContentProps) {
   const canProspect = can("prospects.work") || can("prospects.manage");
   // The business arranges its menu; each role still only sees what it can open.
   const activeTenant = useActiveTenant();
-  const menuGroups = resolveMenu(menuPreferencesOf(activeTenant?.settings), canOpen);
+  const menuGroups = resolveMenu(
+    menuPreferencesOf(activeTenant?.settings),
+    canOpen,
+  )
+    .map((group) => ({
+      ...group,
+      items: group.items.filter(
+        (item) =>
+          item.path !== "studio" || studioBusinessVisible(activeTenantId),
+      ),
+    }))
+    .filter((group) => group.items.length > 0);
   const onProspecting = Boolean(growthActor) && isProspectingRoute(pathname);
-  const onPlatform = (isPlatformAdmin && isPlatformRoute(pathname)) || onProspecting;
-  const prospectingSection = [TEAM_PATH, IMPORT_PATH, ENGINE_PATH, FUNNEL_PATH].find((path) => pathname.startsWith(path));
+  // The route decides its chrome immediately; admin authorization remains server-side.
+  const onPlatform = isPlatformRoute(pathname) || onProspecting;
+  const prospectingSection = [
+    TEAM_PATH,
+    IMPORT_PATH,
+    ENGINE_PATH,
+    FUNNEL_PATH,
+  ].find((path) => pathname.startsWith(path));
   const showTenantMenu = hasTenant && !onPlatform;
 
   function switchBusiness(
@@ -339,7 +368,11 @@ function SidebarContent(props: SidebarContentProps) {
           </NavLink>
         )}
         {isPlatformAdmin && (
-          <div className={onPlatform ? "" : "mt-3 border-t border-border-soft pt-4"}>
+          <div
+            className={
+              onPlatform ? "" : "mt-3 border-t border-border-soft pt-4"
+            }
+          >
             <div className="flex items-center justify-between px-3 pb-2">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                 Plataforma
@@ -381,6 +414,22 @@ function SidebarContent(props: SidebarContentProps) {
               Negocios
             </NavLink>
             <NavLink
+              href="/dashboard/plataforma/studio/pruebas"
+              active={pathname.startsWith("/dashboard/plataforma/studio/pruebas")}
+              icon={Sparkles}
+              onNavigate={onNavigate}
+            >
+              Probar Studio
+            </NavLink>
+            <NavLink
+              href="/dashboard/plataforma/studio"
+              active={pathname === "/dashboard/plataforma/studio"}
+              icon={ShieldCheck}
+              onNavigate={onNavigate}
+            >
+              Operación Studio
+            </NavLink>
+            <NavLink
               href="/dashboard/plataforma?view=audit"
               active={
                 pathname === "/dashboard/plataforma" && platformView === "audit"
@@ -392,7 +441,10 @@ function SidebarContent(props: SidebarContentProps) {
             </NavLink>
             <NavLink
               href="/dashboard/plataforma?view=liquidaciones"
-              active={pathname === "/dashboard/plataforma" && platformView === "liquidaciones"}
+              active={
+                pathname === "/dashboard/plataforma" &&
+                platformView === "liquidaciones"
+              }
               icon={Landmark}
               onNavigate={onNavigate}
             >
@@ -401,10 +453,17 @@ function SidebarContent(props: SidebarContentProps) {
           </div>
         )}
         {growthActor && (
-          <div className={onPlatform && !isPlatformAdmin ? "" : "mt-3 border-t border-border-soft pt-4"}>
+          <div
+            className={
+              onPlatform && !isPlatformAdmin
+                ? ""
+                : "mt-3 border-t border-border-soft pt-4"
+            }
+          >
             <div className="flex items-center justify-between px-3 pb-2">
               <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                Prospección{growthActor.tenantId ? ` · ${growthActor.workspaceName}` : ""}
+                Prospección
+                {growthActor.tenantId ? ` · ${growthActor.workspaceName}` : ""}
               </p>
               <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold text-accent">
                 {GROWTH_ROLE_LABEL[growthActor.role]}
@@ -419,22 +478,47 @@ function SidebarContent(props: SidebarContentProps) {
               Prospectos
             </NavLink>
             {growthActor.tenantId && isPlatformAdmin ? (
-              <NavLink href={`${PROSPECTING_PATH}?ws=tlaco`} active={false} icon={Target} onNavigate={onNavigate}>
+              <NavLink
+                href={`${PROSPECTING_PATH}?ws=tlaco`}
+                active={false}
+                icon={Target}
+                onNavigate={onNavigate}
+              >
                 Volver a Tlaco
               </NavLink>
             ) : null}
             {isCoordinator && (
               <>
-                <NavLink href={TEAM_PATH} active={prospectingSection === TEAM_PATH} icon={Users} onNavigate={onNavigate}>
+                <NavLink
+                  href={TEAM_PATH}
+                  active={prospectingSection === TEAM_PATH}
+                  icon={Users}
+                  onNavigate={onNavigate}
+                >
                   Equipo
                 </NavLink>
-                <NavLink href={IMPORT_PATH} active={prospectingSection === IMPORT_PATH} icon={Download} onNavigate={onNavigate}>
+                <NavLink
+                  href={IMPORT_PATH}
+                  active={prospectingSection === IMPORT_PATH}
+                  icon={Download}
+                  onNavigate={onNavigate}
+                >
                   Importar
                 </NavLink>
-                <NavLink href={ENGINE_PATH} active={prospectingSection === ENGINE_PATH} icon={Send} onNavigate={onNavigate}>
+                <NavLink
+                  href={ENGINE_PATH}
+                  active={prospectingSection === ENGINE_PATH}
+                  icon={Send}
+                  onNavigate={onNavigate}
+                >
                   Motor
                 </NavLink>
-                <NavLink href={FUNNEL_PATH} active={prospectingSection === FUNNEL_PATH} icon={Filter} onNavigate={onNavigate}>
+                <NavLink
+                  href={FUNNEL_PATH}
+                  active={prospectingSection === FUNNEL_PATH}
+                  icon={Filter}
+                  onNavigate={onNavigate}
+                >
                   Embudo
                 </NavLink>
               </>
@@ -453,7 +537,11 @@ function SidebarContent(props: SidebarContentProps) {
                   <NavLink
                     key={item.path}
                     href={href}
-                    active={pathname === href || (Boolean(item.matchChildren) && pathname.startsWith(`${href}/`))}
+                    active={
+                      pathname === href ||
+                      (Boolean(item.matchChildren) &&
+                        pathname.startsWith(`${href}/`))
+                    }
                     icon={item.icon}
                     onNavigate={onNavigate}
                   >
@@ -463,9 +551,17 @@ function SidebarContent(props: SidebarContentProps) {
               })}
             </div>
           ))}
-        {showTenantMenu && activeTenantId && canProspect && growthActor?.tenantId !== activeTenantId ? (
+        {showTenantMenu &&
+        activeTenantId &&
+        canProspect &&
+        growthActor?.tenantId !== activeTenantId ? (
           <div className="mt-4 border-t border-border-soft pt-4">
-            <NavLink href={`${PROSPECTING_PATH}?ws=${activeTenantId}`} active={false} icon={Target} onNavigate={onNavigate}>
+            <NavLink
+              href={`${PROSPECTING_PATH}?ws=${activeTenantId}`}
+              active={false}
+              icon={Target}
+              onNavigate={onNavigate}
+            >
               Prospección
             </NavLink>
           </div>
@@ -511,7 +607,9 @@ function SidebarContent(props: SidebarContentProps) {
         >
           <p className="font-medium">{profile?.display_name || "Usuario"}</p>
           {profile?.email && (
-            <p className="truncate text-xs text-muted">{staffUsernameOf(profile.email) ?? profile.email}</p>
+            <p className="truncate text-xs text-muted">
+              {staffUsernameOf(profile.email) ?? profile.email}
+            </p>
           )}
         </Link>
       </div>

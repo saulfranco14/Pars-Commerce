@@ -18,7 +18,7 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { btnPrimary } from "@/components/ui/buttonClasses";
 import { isFocusRoute } from "@/lib/focusRoutes";
 import { isPlatformRoute, isProspectingRoute } from "@/lib/platformRoutes";
-import { useIsPlatformAdmin } from "@/features/settlement/hooks/useIsPlatformAdmin";
+import { usePlatformAdminStatus } from "@/features/settlement/hooks/useIsPlatformAdmin";
 import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
 import { GrowthWorkspaceSync } from "@/features/growth/components/admin/GrowthWorkspaceSync";
 import { PROSPECTING_PATH } from "@/features/growth/constants/routes";
@@ -32,7 +32,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isPlatformAdmin = useIsPlatformAdmin();
+  const { isPlatformAdmin, isLoading: platformAdminLoading } = usePlatformAdminStatus();
   const { actor: growthActor } = useGrowthMe();
   useAuthInitializer();
   useAuthProfileAndTenants();
@@ -101,6 +101,14 @@ export default function DashboardLayout({
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <LoadingBlock message="Cargando sesión…" />
+      </div>
+    );
+  }
+
+  if (pathname === "/dashboard" && platformAdminLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <LoadingBlock message="Preparando tu panel…" />
       </div>
     );
   }
