@@ -1,9 +1,14 @@
-import Link from "next/link";
+import { FeedbackLink as Link } from "@/components/navigation/FeedbackLink";
 import { ArrowRight, Sparkles } from "lucide-react";
 
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
+import { LANDING_NAV_LINKS } from "../../constants/navigation";
+import type { LandingFooterProps } from "../../interfaces/navigation";
 
-export function LandingFooter() {
+export function LandingFooter({
+  links = LANDING_NAV_LINKS,
+  closing,
+}: LandingFooterProps = {}) {
   return (
     <footer>
       <div className="relative border-t border-border overflow-hidden py-20 sm:py-28">
@@ -27,30 +32,33 @@ export function LandingFooter() {
             <Sparkles className="h-6 w-6 text-accent" aria-hidden />
           </div>
           <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Tu cliente ya trae el celular en la mano.
+            {closing?.title ?? "Tu cliente ya trae el celular en la mano."}
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
-            Crea tu cuenta, elige tu giro y comparte tu QR o tu tienda hoy mismo.
+            {closing?.description ??
+              "Crea tu cuenta, elige tu giro y comparte tu QR o tu tienda hoy mismo."}
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
-              href="/registro"
+              href={closing?.href ?? "/registro"}
               className="group inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-base font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              Crear cuenta gratis
+              {closing?.label ?? "Crear cuenta gratis"}
               <ArrowRight
                 className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
                 aria-hidden
               />
             </Link>
             <Link
-              href="/login"
+              href={closing?.loginHref ?? "/login"}
               className="inline-flex min-h-12 cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-6 py-3.5 text-base font-medium text-foreground transition-colors duration-200 hover:bg-border-soft/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               Ya tengo cuenta
             </Link>
           </div>
-          <p className="mt-6 text-sm text-muted-foreground">$0 al mes para empezar · Sin tarjeta</p>
+          <p className="mt-6 text-sm text-muted-foreground">
+            {closing?.footnote ?? "$0 al mes para empezar · Sin tarjeta"}
+          </p>
         </div>
       </div>
 
@@ -60,34 +68,24 @@ export function LandingFooter() {
             <div className="sm:col-span-2">
               <TlacoLogo size="sm" />
               <p className="mt-2 max-w-xs text-sm text-muted-foreground leading-relaxed">
-                Todo tu negocio en un solo lugar. Tu catálogo, tus pedidos, tus cobros y tu
-                dinero, desde tu celular.
+                Todo tu negocio en un solo lugar. Tu catálogo, tus pedidos, tus
+                cobros y tu dinero, desde tu celular.
               </p>
             </div>
 
             <div>
               <p className="text-sm font-semibold text-foreground">Producto</p>
               <ul className="mt-3 space-y-2">
-                <li>
-                  <a href="#plataforma" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                    Plataforma
-                  </a>
-                </li>
-                <li>
-                  <a href="#mesas-qr" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                    Mesas y QR
-                  </a>
-                </li>
-                <li>
-                  <a href="#precios" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                    Precios
-                  </a>
-                </li>
-                <li>
-                  <a href="#como-funciona" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                    Cómo funciona
-                  </a>
-                </li>
+                {links.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="inline-flex min-h-11 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
 
@@ -95,12 +93,18 @@ export function LandingFooter() {
               <p className="text-sm font-semibold text-foreground">Legal</p>
               <ul className="mt-3 space-y-2">
                 <li>
-                  <Link href="/terminos" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                  <Link
+                    href="/terminos"
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
                     Términos de servicio
                   </Link>
                 </li>
                 <li>
-                  <Link href="/privacidad" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                  <Link
+                    href="/privacidad"
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
                     Aviso de Privacidad
                   </Link>
                 </li>
@@ -110,7 +114,8 @@ export function LandingFooter() {
 
           <div className="mt-8 border-t border-border pt-6 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
             <span className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} Tlaco. Todos los derechos reservados.
+              &copy; {new Date().getFullYear()} Tlaco. Todos los derechos
+              reservados.
             </span>
             <span className="text-xs text-muted-foreground/60">
               Hecho con amor para negocios que quieren crecer

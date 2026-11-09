@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { studioFlags } from "@/features/studio/services/studioFlags";
+import { LANDING_NAV_LINKS } from "@/features/landing/constants/navigation";
 
 import { LandingNav } from "@/features/landing/components/sections/LandingNav";
 import { LandingHero } from "@/features/landing/components/sections/LandingHero";
 import { LandingStats } from "@/features/landing/components/sections/LandingStats";
+import { LandingStudio } from "@/features/landing/components/sections/LandingStudio";
 import { LandingBusinessSolutions } from "@/features/landing/components/sections/LandingBusinessSolutions";
 import { LandingPlatform } from "@/features/landing/components/sections/LandingPlatform";
 import { LandingMesas } from "@/features/landing/components/sections/LandingMesas";
@@ -20,7 +23,11 @@ export const metadata: Metadata = {
   title: { absolute: `Tlaco · ${TITLE}` },
   description: DESCRIPTION,
   alternates: { canonical: "/" },
-  openGraph: { title: `${TITLE}. Tú lo ves al instante.`, description: DESCRIPTION, url: "/" },
+  openGraph: {
+    title: `${TITLE}. Tú lo ves al instante.`,
+    description: DESCRIPTION,
+    url: "/",
+  },
 };
 
 /**
@@ -38,22 +45,27 @@ export const metadata: Metadata = {
  * repetía la misma pregunta dos veces seguidas.
  */
 export default function Home() {
+  const studio = studioFlags().public;
+  const links = studio
+    ? [...LANDING_NAV_LINKS, { label: "Studio", href: "/studio" }]
+    : LANDING_NAV_LINKS;
   return (
     <div className="min-h-screen bg-background">
-      <LandingNav />
+      <LandingNav links={links} />
       <div className="h-13" aria-hidden />
       <main>
         <LandingHero />
         <LandingStats />
+        {studio && <LandingStudio />}
         <LandingBusinessSolutions />
-        <LandingPlatform />
+        <LandingPlatform enabledProducts={studio ? ["studio"] : []} />
         <LandingMesas />
         <LandingHowItWorks />
         <LandingPricing />
-        <LandingFaq />
+        <LandingFaq studioEnabled={studio} />
         <LandingComingSoon />
       </main>
-      <LandingFooter />
+      <LandingFooter links={links} />
     </div>
   );
 }

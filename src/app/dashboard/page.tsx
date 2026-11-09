@@ -1,4 +1,5 @@
 "use client";
+import { StudioActionLink } from "@/features/studio/components/StudioActionLink";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
@@ -6,7 +7,11 @@ import useSWR from "swr";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { PeriodSelector } from "@/components/admin/PeriodSelector";
 import { pageHeaderCta } from "@/components/admin/actionButtonClasses";
-import { useActiveTenant, useCanOpenSection, usePermission } from "@/stores/useTenantStore";
+import {
+  useActiveTenant,
+  useCanOpenSection,
+  usePermission,
+} from "@/stores/useTenantStore";
 import { ORDER_PERMISSIONS } from "@/features/orders/constants/orderPermissions";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
@@ -116,24 +121,123 @@ function FirstDashboardLaunch({
     }`;
 
   return (
-    <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5" aria-labelledby="negocio-listo-title">
+    <section
+      className="rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5"
+      aria-labelledby="negocio-listo-title"
+    >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Sitio publicado · pedidos activos</p>
-          <h2 id="negocio-listo-title" className="mt-1 text-xl font-bold tracking-tight text-foreground">{businessName} ya está funcionando</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Estas son las cuatro acciones que usarás todos los días. Empieza por la resaltada.</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+            Sitio publicado · pedidos activos
+          </p>
+          <h2
+            id="negocio-listo-title"
+            className="mt-1 text-xl font-bold tracking-tight text-foreground"
+          >
+            {businessName} ya está funcionando
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Estas son las cuatro acciones que usarás todos los días. Empieza por
+            la resaltada.
+          </p>
         </div>
-        <button type="button" onClick={dismiss} aria-label="Cerrar recorrido inicial" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted hover:bg-border-soft hover:text-foreground"><X className="h-4 w-4" /></button>
+        <button
+          type="button"
+          onClick={dismiss}
+          aria-label="Cerrar recorrido inicial"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted hover:bg-border-soft hover:text-foreground"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <button type="button" onFocus={() => setActiveAction(0)} onClick={() => void copyStore()} className={actionClass(0)}><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent text-white"><Globe2 className="h-5 w-5" /></span><span><span className="block text-xs font-semibold text-muted-foreground">1. COMPARTIR</span><span className="mt-1 block text-sm font-bold text-foreground">Copiar enlace de mi tienda</span></span></button>
-        <Link href={`/dashboard/${tenantSlug}/ordenes`} onFocus={() => setActiveAction(1)} className={actionClass(1)}><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent"><ClipboardList className="h-5 w-5" /></span><span><span className="block text-xs font-semibold text-muted-foreground">2. ATENDER</span><span className="mt-1 block text-sm font-bold text-foreground">Ver pedidos</span></span></Link>
-        <button type="button" onFocus={() => setActiveAction(2)} onClick={onCreateOrder} className={actionClass(2)}><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent"><CreditCard className="h-5 w-5" /></span><span><span className="block text-xs font-semibold text-muted-foreground">3. COBRAR</span><span className="mt-1 block text-sm font-bold text-foreground">Registrar una venta</span></span></button>
-        <Link href={`/dashboard/${tenantSlug}/productos`} onFocus={() => setActiveAction(3)} className={actionClass(3)}><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent"><ShoppingBag className="h-5 w-5" /></span><span><span className="block text-xs font-semibold text-muted-foreground">4. EDITAR</span><span className="mt-1 block text-sm font-bold text-foreground">Cambiar productos</span></span></Link>
+        <button
+          type="button"
+          onFocus={() => setActiveAction(0)}
+          onClick={() => void copyStore()}
+          className={actionClass(0)}
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent text-white">
+            <Globe2 className="h-5 w-5" />
+          </span>
+          <span>
+            <span className="block text-xs font-semibold text-muted-foreground">
+              1. COMPARTIR
+            </span>
+            <span className="mt-1 block text-sm font-bold text-foreground">
+              Copiar enlace de mi tienda
+            </span>
+          </span>
+        </button>
+        <Link
+          href={`/dashboard/${tenantSlug}/ordenes`}
+          onFocus={() => setActiveAction(1)}
+          className={actionClass(1)}
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+            <ClipboardList className="h-5 w-5" />
+          </span>
+          <span>
+            <span className="block text-xs font-semibold text-muted-foreground">
+              2. ATENDER
+            </span>
+            <span className="mt-1 block text-sm font-bold text-foreground">
+              Ver pedidos
+            </span>
+          </span>
+        </Link>
+        <button
+          type="button"
+          onFocus={() => setActiveAction(2)}
+          onClick={onCreateOrder}
+          className={actionClass(2)}
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+            <CreditCard className="h-5 w-5" />
+          </span>
+          <span>
+            <span className="block text-xs font-semibold text-muted-foreground">
+              3. COBRAR
+            </span>
+            <span className="mt-1 block text-sm font-bold text-foreground">
+              Registrar una venta
+            </span>
+          </span>
+        </button>
+        <Link
+          href={`/dashboard/${tenantSlug}/productos`}
+          onFocus={() => setActiveAction(3)}
+          className={actionClass(3)}
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+            <ShoppingBag className="h-5 w-5" />
+          </span>
+          <span>
+            <span className="block text-xs font-semibold text-muted-foreground">
+              4. EDITAR
+            </span>
+            <span className="mt-1 block text-sm font-bold text-foreground">
+              Cambiar productos
+            </span>
+          </span>
+        </Link>
       </div>
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-border-soft pt-4">
-        <span className="text-xs font-medium text-muted-foreground">Acción {activeAction + 1} de 4</span>
-        <button type="button" onClick={() => activeAction === 3 ? dismiss() : setActiveAction((current) => current + 1)} className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-accent hover:bg-accent/5">{activeAction === 3 ? "Terminar recorrido" : "Ver siguiente"}<ArrowRight className="h-4 w-4" /></button>
+        <span className="text-xs font-medium text-muted-foreground">
+          Acción {activeAction + 1} de 4
+        </span>
+        <button
+          type="button"
+          onClick={() =>
+            activeAction === 3
+              ? dismiss()
+              : setActiveAction((current) => current + 1)
+          }
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-accent hover:bg-accent/5"
+        >
+          {activeAction === 3 ? "Terminar recorrido" : "Ver siguiente"}
+          <ArrowRight className="h-4 w-4" />
+        </button>
       </div>
     </section>
   );
@@ -156,10 +260,19 @@ function FirstSaleGuide({
   storePublished: boolean;
   onCreateOrder: () => void;
 }) {
-  const completedSteps = [catalogReady, orderCreated, paymentsConnected, storePublished].filter(
-    Boolean,
-  ).length;
-  const currentStep = !catalogReady ? 1 : !orderCreated ? 2 : !paymentsConnected ? 3 : 4;
+  const completedSteps = [
+    catalogReady,
+    orderCreated,
+    paymentsConnected,
+    storePublished,
+  ].filter(Boolean).length;
+  const currentStep = !catalogReady
+    ? 1
+    : !orderCreated
+      ? 2
+      : !paymentsConnected
+        ? 3
+        : 4;
   const catalogLabel = catalogLoading
     ? "Revisando tu catálogo…"
     : catalogReady
@@ -209,7 +322,9 @@ function FirstSaleGuide({
           href={`/dashboard/${tenantSlug}/productos`}
           className={`group flex min-h-25 items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 ${stepClass(catalogReady, currentStep === 1)}`}
         >
-          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClass(catalogReady, currentStep === 1)}`}>
+          <span
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClass(catalogReady, currentStep === 1)}`}
+          >
             {catalogReady ? (
               <CheckCircle2 className="h-5 w-5" aria-hidden />
             ) : (
@@ -229,7 +344,10 @@ function FirstSaleGuide({
                 : "Crea o revisa lo que vas a vender."}
             </span>
           </span>
-          <ArrowRight className="h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5" aria-hidden />
+          <ArrowRight
+            className="h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5"
+            aria-hidden
+          />
         </Link>
 
         <button
@@ -237,7 +355,9 @@ function FirstSaleGuide({
           onClick={onCreateOrder}
           className={`group flex min-h-25 items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${stepClass(orderCreated, currentStep === 2)}`}
         >
-          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClass(orderCreated, currentStep === 2)}`}>
+          <span
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClass(orderCreated, currentStep === 2)}`}
+          >
             {orderCreated ? (
               <CheckCircle2 className="h-5 w-5" aria-hidden />
             ) : (
@@ -249,7 +369,9 @@ function FirstSaleGuide({
               2. Primera orden
             </span>
             <span className="mt-0.5 block text-sm font-semibold text-foreground">
-              {orderCreated ? "Primera orden registrada" : "Registra una venta de prueba"}
+              {orderCreated
+                ? "Primera orden registrada"
+                : "Registra una venta de prueba"}
             </span>
             <span className="mt-0.5 block text-xs text-muted-foreground">
               {orderCreated
@@ -258,7 +380,10 @@ function FirstSaleGuide({
             </span>
           </span>
           {orderCreated ? (
-            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden />
+            <CheckCircle2
+              className="h-4 w-4 shrink-0 text-emerald-700"
+              aria-hidden
+            />
           ) : (
             <Plus className="h-4 w-4 shrink-0 text-accent" aria-hidden />
           )}
@@ -268,7 +393,9 @@ function FirstSaleGuide({
           href={`/dashboard/${tenantSlug}/configuracion?tab=cobros`}
           className={`group flex min-h-25 items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 ${stepClass(paymentsConnected, currentStep === 3)}`}
         >
-          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClass(paymentsConnected, currentStep === 3)}`}>
+          <span
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClass(paymentsConnected, currentStep === 3)}`}
+          >
             {paymentsConnected ? (
               <CheckCircle2 className="h-5 w-5" aria-hidden />
             ) : (
@@ -280,7 +407,9 @@ function FirstSaleGuide({
               3. Cobros digitales
             </span>
             <span className="mt-0.5 block text-sm font-semibold text-foreground">
-              {paymentsConnected ? "Mercado Pago conectado" : "Conecta tu cuenta de Mercado Pago"}
+              {paymentsConnected
+                ? "Mercado Pago conectado"
+                : "Conecta tu cuenta de Mercado Pago"}
             </span>
             <span className="mt-0.5 block text-xs text-muted-foreground">
               {paymentsConnected
@@ -288,14 +417,19 @@ function FirstSaleGuide({
                 : "Acepta el anexo y autoriza tu propia cuenta; Tlaco no recibe esos fondos."}
             </span>
           </span>
-          <ArrowRight className="h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5" aria-hidden />
+          <ArrowRight
+            className="h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5"
+            aria-hidden
+          />
         </Link>
 
         <Link
           href={`/dashboard/${tenantSlug}/sitio-web`}
           className={`group flex min-h-25 items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 ${stepClass(storePublished, currentStep === 4)}`}
         >
-          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClass(storePublished, currentStep === 4)}`}>
+          <span
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClass(storePublished, currentStep === 4)}`}
+          >
             {storePublished ? (
               <CheckCircle2 className="h-5 w-5" aria-hidden />
             ) : (
@@ -307,7 +441,9 @@ function FirstSaleGuide({
               4. Tienda web
             </span>
             <span className="mt-0.5 block text-sm font-semibold text-foreground">
-              {storePublished ? "Tu tienda ya está publicada" : "Activa y comparte tu enlace"}
+              {storePublished
+                ? "Tu tienda ya está publicada"
+                : "Activa y comparte tu enlace"}
             </span>
             <span className="mt-0.5 block text-xs text-muted-foreground">
               {storePublished
@@ -315,23 +451,79 @@ function FirstSaleGuide({
                 : "Actívala desde Sitio web cuando esté lista."}
             </span>
           </span>
-          <ArrowRight className="h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5" aria-hidden />
+          <ArrowRight
+            className="h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5"
+            aria-hidden
+          />
         </Link>
       </div>
     </section>
   );
 }
 
-function AssistedSetupGuide({ tenantSlug, paymentsConnected }: { tenantSlug: string; paymentsConnected: boolean }) {
+function AssistedSetupGuide({
+  tenantSlug,
+  paymentsConnected,
+}: {
+  tenantSlug: string;
+  paymentsConnected: boolean;
+}) {
   return (
-    <section className="rounded-2xl border border-accent/20 bg-accent/5 p-4 shadow-sm sm:p-5" aria-labelledby="alta-asistida">
-      <p className="text-xs font-semibold uppercase tracking-wider text-accent">Alta asistida</p>
-      <h2 id="alta-asistida" className="mt-1 text-lg font-bold text-foreground">Termina de activar tu negocio</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Puedes preparar todo con calma. Los cobros y pedidos reales se habilitan cuando completes esta revisión.</p>
+    <section
+      className="rounded-2xl border border-accent/20 bg-accent/5 p-4 shadow-sm sm:p-5"
+      aria-labelledby="alta-asistida"
+    >
+      <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+        Alta asistida
+      </p>
+      <h2 id="alta-asistida" className="mt-1 text-lg font-bold text-foreground">
+        Termina de activar tu negocio
+      </h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Puedes preparar todo con calma. Los cobros y pedidos reales se habilitan
+        cuando completes esta revisión.
+      </p>
       <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <Link href={`/dashboard/${tenantSlug}/configuracion`} className="min-h-24 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent/40"><p className="text-xs font-semibold text-accent">1. Datos del negocio</p><p className="mt-1 text-sm font-semibold text-foreground">Revisa contacto y horarios</p></Link>
-        <Link href={`/dashboard/${tenantSlug}/productos`} className="min-h-24 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent/40"><p className="text-xs font-semibold text-accent">2. Catálogo</p><p className="mt-1 text-sm font-semibold text-foreground">Confirma precios e inventario</p></Link>
-        <Link href={`/dashboard/${tenantSlug}/configuracion?tab=cobros`} className={`min-h-24 rounded-xl border p-3 transition-colors ${paymentsConnected ? "border-emerald-200 bg-emerald-50 hover:border-emerald-300" : "border-border bg-surface hover:border-accent/40"}`}><p className={`text-xs font-semibold ${paymentsConnected ? "text-emerald-700" : "text-accent"}`}>3. Cobros del negocio</p><p className="mt-1 text-sm font-semibold text-foreground">{paymentsConnected ? "Mercado Pago ya está conectado" : "Conecta tu cuenta de Mercado Pago"}</p><p className="mt-1 text-xs text-muted-foreground">{paymentsConnected ? "Las ventas digitales se acreditarán directamente en tu cuenta." : "El dinero de tus ventas llega a tu cuenta, no a Tlaco."}</p></Link>
+        <Link
+          href={`/dashboard/${tenantSlug}/configuracion`}
+          className="min-h-24 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent/40"
+        >
+          <p className="text-xs font-semibold text-accent">
+            1. Datos del negocio
+          </p>
+          <p className="mt-1 text-sm font-semibold text-foreground">
+            Revisa contacto y horarios
+          </p>
+        </Link>
+        <Link
+          href={`/dashboard/${tenantSlug}/productos`}
+          className="min-h-24 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent/40"
+        >
+          <p className="text-xs font-semibold text-accent">2. Catálogo</p>
+          <p className="mt-1 text-sm font-semibold text-foreground">
+            Confirma precios e inventario
+          </p>
+        </Link>
+        <Link
+          href={`/dashboard/${tenantSlug}/configuracion?tab=cobros`}
+          className={`min-h-24 rounded-xl border p-3 transition-colors ${paymentsConnected ? "border-emerald-200 bg-emerald-50 hover:border-emerald-300" : "border-border bg-surface hover:border-accent/40"}`}
+        >
+          <p
+            className={`text-xs font-semibold ${paymentsConnected ? "text-emerald-700" : "text-accent"}`}
+          >
+            3. Cobros del negocio
+          </p>
+          <p className="mt-1 text-sm font-semibold text-foreground">
+            {paymentsConnected
+              ? "Mercado Pago ya está conectado"
+              : "Conecta tu cuenta de Mercado Pago"}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {paymentsConnected
+              ? "Las ventas digitales se acreditarán directamente en tu cuenta."
+              : "El dinero de tus ventas llega a tu cuenta, no a Tlaco."}
+          </p>
+        </Link>
       </div>
     </section>
   );
@@ -484,7 +676,9 @@ export default function DashboardPage() {
     { fallbackData: [] },
   );
   const paymentsConnected = paymentConnections.some(
-    (connection) => connection.provider === "mercadopago" && connection.status === "connected",
+    (connection) =>
+      connection.provider === "mercadopago" &&
+      connection.status === "connected",
   );
 
   if (!activeTenant) {
@@ -532,16 +726,21 @@ export default function DashboardPage() {
             : "Últimos 30 días";
   const needsAttention = unassignedCount > 0 || activeOrders > 0;
   const catalogReady =
-    (catalogStats?.products_count ?? 0) +
-      (catalogStats?.services_count ?? 0) >
+    (catalogStats?.products_count ?? 0) + (catalogStats?.services_count ?? 0) >
     0;
   const orderCreated =
     orders.length > 0 || ordersCreatedByTenant[activeTenant.id] === true;
   const storePublished = activeTenant.public_store_enabled === true;
-  const assistedSettings = activeTenant.settings as Record<string, unknown> | null | undefined;
-  const onboardingSettings = (assistedSettings?.onboarding as Record<string, unknown> | null) ?? {};
+  const assistedSettings = activeTenant.settings as
+    | Record<string, unknown>
+    | null
+    | undefined;
+  const onboardingSettings =
+    (assistedSettings?.onboarding as Record<string, unknown> | null) ?? {};
   const preparationComplete = onboardingSettings.status === "active";
-  const showFirstSaleGuide = !preparationComplete && (!catalogReady || !orderCreated || !paymentsConnected || !storePublished);
+  const showFirstSaleGuide =
+    !preparationComplete &&
+    (!catalogReady || !orderCreated || !paymentsConnected || !storePublished);
   const isAssistedOnboarding = assistedSettings?.assisted_onboarding === true;
 
   return (
@@ -549,6 +748,7 @@ export default function DashboardPage() {
       <div className="space-y-5 pb-8 sm:pb-10">
         <div className="space-y-3 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5">
           <PageHeader title={activeTenant.name} description={periodLabel} />
+          <StudioActionLink label="Crear publicidad con Studio" />
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <PeriodSelector
@@ -581,7 +781,10 @@ export default function DashboardPage() {
                   onClick={() => setCreateQuoteOpen(true)}
                   className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:border-accent/40 hover:bg-accent/5 sm:w-auto"
                 >
-                  <ClipboardList className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+                  <ClipboardList
+                    className="h-4 w-4 shrink-0 text-accent"
+                    aria-hidden
+                  />
                   Nueva cotización
                 </button>
               </>
@@ -589,7 +792,14 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {quoteMessage && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{quoteMessage}</p>}
+        {quoteMessage && (
+          <p
+            role="status"
+            className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+          >
+            {quoteMessage}
+          </p>
+        )}
 
         {canSetup && preparationComplete && (
           <FirstDashboardLaunch
@@ -631,7 +841,12 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {canSetup && isAssistedOnboarding && <AssistedSetupGuide tenantSlug={activeTenant.slug} paymentsConnected={paymentsConnected} />}
+        {canSetup && isAssistedOnboarding && (
+          <AssistedSetupGuide
+            tenantSlug={activeTenant.slug}
+            paymentsConnected={paymentsConnected}
+          />
+        )}
 
         {canSetup && showFirstSaleGuide && !isAssistedOnboarding && (
           <FirstSaleGuide
@@ -648,8 +863,18 @@ export default function DashboardPage() {
         {needsAttention && (
           <section aria-labelledby="atender-ahora">
             <div className="mb-3 flex items-baseline justify-between gap-3">
-              <h2 id="atender-ahora" className="text-sm font-semibold uppercase tracking-wider text-muted">Atiende ahora</h2>
-              <Link href={`/dashboard/${activeTenant.slug}/ordenes`} className="text-xs font-medium text-muted hover:text-foreground">Ver órdenes <ArrowRight className="inline h-3 w-3" /></Link>
+              <h2
+                id="atender-ahora"
+                className="text-sm font-semibold uppercase tracking-wider text-muted"
+              >
+                Atiende ahora
+              </h2>
+              <Link
+                href={`/dashboard/${activeTenant.slug}/ordenes`}
+                className="text-xs font-medium text-muted hover:text-foreground"
+              >
+                Ver órdenes <ArrowRight className="inline h-3 w-3" />
+              </Link>
             </div>
             <Link
               href={`/dashboard/${activeTenant.slug}/ordenes`}
@@ -662,36 +887,36 @@ export default function DashboardPage() {
                     : "grid-cols-1"
                 }`}
               >
-              {activeOrders > 0 && (
-                <div className="flex items-center gap-2.5 rounded-xl bg-amber-50 px-3 py-2">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
-                    <Clock className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-lg font-bold leading-none tabular-nums text-amber-800">
-                      {activeOrders}
-                    </p>
-                    <p className="text-[11px] font-medium text-amber-700">
-                      en progreso
-                    </p>
+                {activeOrders > 0 && (
+                  <div className="flex items-center gap-2.5 rounded-xl bg-amber-50 px-3 py-2">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                      <Clock className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-lg font-bold leading-none tabular-nums text-amber-800">
+                        {activeOrders}
+                      </p>
+                      <p className="text-[11px] font-medium text-amber-700">
+                        en progreso
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
-              {canAssign && unassignedCount > 0 && (
-                <div className="flex items-center gap-2.5 rounded-xl bg-border-soft/60 px-3 py-2">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-border-soft text-muted-foreground">
-                    <UserPlus className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-lg font-bold leading-none tabular-nums text-foreground">
-                      {unassignedCount}
-                    </p>
-                    <p className="text-[11px] font-medium text-muted-foreground">
-                      sin asignar
-                    </p>
+                )}
+                {canAssign && unassignedCount > 0 && (
+                  <div className="flex items-center gap-2.5 rounded-xl bg-border-soft/60 px-3 py-2">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-border-soft text-muted-foreground">
+                      <UserPlus className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-lg font-bold leading-none tabular-nums text-foreground">
+                        {unassignedCount}
+                      </p>
+                      <p className="text-[11px] font-medium text-muted-foreground">
+                        sin asignar
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
               </div>
               <ArrowRight className="h-4 w-4 shrink-0 text-muted" />
             </Link>
@@ -708,110 +933,115 @@ export default function DashboardPage() {
         )}
 
         {canSeeMoney && (
-        <section>
-          <div className="mb-3 flex items-baseline justify-between gap-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
-              Ventas
-            </h2>
-            <span className="text-xs text-muted">{periodLabel}</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Link
-              href={`/dashboard/${activeTenant.slug}/ordenes`}
-              className="block cursor-pointer rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted">Total vendido</p>
-                <TrendingUp className="h-4 w-4 text-accent" />
-              </div>
-              <p className="mt-1.5 text-2xl font-bold tabular-nums text-foreground">
-                ${totalSold.toFixed(2)}
-              </p>
-              <p className="mt-0.5 text-xs text-muted">
-                Cobrado · Ver órdenes <ArrowRight className="inline h-3 w-3" />
-              </p>
-            </Link>
-            <Link
-              href={`/dashboard/${activeTenant.slug}/ordenes?status=in_progress`}
-              className="block cursor-pointer rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted">Activas</p>
-                <Clock className="h-4 w-4 text-amber-500" />
-              </div>
-              <p className="mt-1.5 text-xl font-bold tabular-nums text-foreground">
-                {activeOrders}
-              </p>
-              <p className="mt-0.5 text-xs text-muted">En progreso</p>
-            </Link>
-            <Link
-              href={`/dashboard/${activeTenant.slug}/ordenes?status=completed`}
-              className="block cursor-pointer rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted">Completadas</p>
-                <div className="h-2 w-2 rounded-full bg-accent" />
-              </div>
-              <p className="mt-1.5 text-xl font-bold tabular-nums text-foreground">
-                {byStatus.completed ?? 0}
-              </p>
-              <p className="mt-0.5 text-xs text-muted">Para cobro</p>
-            </Link>
-            <Link
-              href={`/dashboard/${activeTenant.slug}/ordenes`}
-              className="block cursor-pointer rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted">Total órdenes</p>
-                <ClipboardList className="h-4 w-4 text-muted" />
-              </div>
-              <p className="mt-1.5 text-xl font-bold tabular-nums text-foreground">
-                {orders.length}
-              </p>
-              <p className="mt-0.5 text-xs text-muted">En el período</p>
-            </Link>
-          </div>
-        </section>
+          <section>
+            <div className="mb-3 flex items-baseline justify-between gap-4">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
+                Ventas
+              </h2>
+              <span className="text-xs text-muted">{periodLabel}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <Link
+                href={`/dashboard/${activeTenant.slug}/ordenes`}
+                className="block cursor-pointer rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-muted">
+                    Total vendido
+                  </p>
+                  <TrendingUp className="h-4 w-4 text-accent" />
+                </div>
+                <p className="mt-1.5 text-2xl font-bold tabular-nums text-foreground">
+                  ${totalSold.toFixed(2)}
+                </p>
+                <p className="mt-0.5 text-xs text-muted">
+                  Cobrado · Ver órdenes{" "}
+                  <ArrowRight className="inline h-3 w-3" />
+                </p>
+              </Link>
+              <Link
+                href={`/dashboard/${activeTenant.slug}/ordenes?status=in_progress`}
+                className="block cursor-pointer rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-muted">Activas</p>
+                  <Clock className="h-4 w-4 text-amber-500" />
+                </div>
+                <p className="mt-1.5 text-xl font-bold tabular-nums text-foreground">
+                  {activeOrders}
+                </p>
+                <p className="mt-0.5 text-xs text-muted">En progreso</p>
+              </Link>
+              <Link
+                href={`/dashboard/${activeTenant.slug}/ordenes?status=completed`}
+                className="block cursor-pointer rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-muted">Completadas</p>
+                  <div className="h-2 w-2 rounded-full bg-accent" />
+                </div>
+                <p className="mt-1.5 text-xl font-bold tabular-nums text-foreground">
+                  {byStatus.completed ?? 0}
+                </p>
+                <p className="mt-0.5 text-xs text-muted">Para cobro</p>
+              </Link>
+              <Link
+                href={`/dashboard/${activeTenant.slug}/ordenes`}
+                className="block cursor-pointer rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-muted">
+                    Total órdenes
+                  </p>
+                  <ClipboardList className="h-4 w-4 text-muted" />
+                </div>
+                <p className="mt-1.5 text-xl font-bold tabular-nums text-foreground">
+                  {orders.length}
+                </p>
+                <p className="mt-0.5 text-xs text-muted">En el período</p>
+              </Link>
+            </div>
+          </section>
         )}
 
         {canSeeCatalog && (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">
-            Catálogo
-          </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4">
-            <Link
-              href={`/dashboard/${activeTenant.slug}/productos`}
-              className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-border-soft text-muted">
-                <ShoppingBag className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-muted">Productos</p>
-                <p className="text-lg font-bold tabular-nums text-foreground">
-                  {catalogLoading ? "—" : (catalogStats?.products_count ?? 0)}
-                </p>
-              </div>
-              <ArrowRight className="h-4 w-4 shrink-0 text-muted" />
-            </Link>
-            <Link
-              href={`/dashboard/${activeTenant.slug}/servicios`}
-              className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-border-soft text-accent">
-                <Wrench className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-muted">Servicios</p>
-                <p className="text-lg font-bold tabular-nums text-foreground">
-                  {catalogLoading ? "—" : (catalogStats?.services_count ?? 0)}
-                </p>
-              </div>
-              <ArrowRight className="h-4 w-4 shrink-0 text-muted" />
-            </Link>
-          </div>
-        </section>
+          <section>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">
+              Catálogo
+            </h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4">
+              <Link
+                href={`/dashboard/${activeTenant.slug}/productos`}
+                className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-border-soft text-muted">
+                  <ShoppingBag className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-muted">Productos</p>
+                  <p className="text-lg font-bold tabular-nums text-foreground">
+                    {catalogLoading ? "—" : (catalogStats?.products_count ?? 0)}
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted" />
+              </Link>
+              <Link
+                href={`/dashboard/${activeTenant.slug}/servicios`}
+                className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface-raised p-4 transition-colors duration-200 hover:bg-border-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-border-soft text-accent">
+                  <Wrench className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-muted">Servicios</p>
+                  <p className="text-lg font-bold tabular-nums text-foreground">
+                    {catalogLoading ? "—" : (catalogStats?.services_count ?? 0)}
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted" />
+              </Link>
+            </div>
+          </section>
         )}
 
         {canSeeSubscriptions && activeSubsCount > 0 && (
@@ -942,136 +1172,148 @@ export default function DashboardPage() {
         )}
 
         {canSeeMoney && (
-        <section
-          className={
-            salesByItem.products.length > 0 && salesByItem.services.length > 0
-              ? "grid gap-4 lg:grid-cols-2"
-              : ""
-          }
-        >
-          {!salesByItemLoading &&
-          salesByItem.products.length === 0 &&
-          salesByItem.services.length === 0 ? (
-            <div className="rounded-xl border border-border bg-surface-raised px-4 py-3 text-center text-sm text-muted">
-              Sin ventas de productos ni servicios en el período.
-            </div>
-          ) : (
-            <>
-              {(salesByItem.products.length > 0 || salesByItemLoading) && (
-                <div
-                  className={
-                    salesByItem.products.length === 0 &&
-                    salesByItem.services.length > 0
-                      ? "hidden"
-                      : ""
-                  }
-                >
-                  <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted">
-                    <ShoppingBag className="h-4 w-4" />
-                    Lo más vendido: Productos
-                  </h2>
-                  <TableWrapper>
-                    {salesByItemLoading ? (
-                      <LoadingBlock message="Cargando productos…" />
-                    ) : salesByItem.products.length === 0 ? (
-                      <div className="p-4 text-center text-sm text-muted">
-                        Sin ventas de productos en el período.
-                      </div>
-                    ) : (
-                      <table className="min-w-full">
-                        <thead>
-                          <tr className={tableHeaderRowClass}>
-                            <th className={tableHeaderCellClass}>Producto</th>
-                            <th className={tableHeaderCellRightClass}>Cant.</th>
-                            <th className={tableHeaderCellRightClass}>Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {salesByItem.products.map((row, i) => (
-                            <tr
-                              key={row.id}
-                              className={
-                                i === 0
-                                  ? "bg-border-soft/60"
-                                  : tableBodyRowClass
-                              }
-                            >
-                              <td className={tableBodyCellClass}>{row.name}</td>
-                              <td
-                                className={`${tableBodyCellMutedClass} text-right`}
-                              >
-                                {row.quantity}
-                              </td>
-                              <td className={tableBodyCellRightClass}>
-                                ${row.total.toFixed(2)}
-                              </td>
+          <section
+            className={
+              salesByItem.products.length > 0 && salesByItem.services.length > 0
+                ? "grid gap-4 lg:grid-cols-2"
+                : ""
+            }
+          >
+            {!salesByItemLoading &&
+            salesByItem.products.length === 0 &&
+            salesByItem.services.length === 0 ? (
+              <div className="rounded-xl border border-border bg-surface-raised px-4 py-3 text-center text-sm text-muted">
+                Sin ventas de productos ni servicios en el período.
+              </div>
+            ) : (
+              <>
+                {(salesByItem.products.length > 0 || salesByItemLoading) && (
+                  <div
+                    className={
+                      salesByItem.products.length === 0 &&
+                      salesByItem.services.length > 0
+                        ? "hidden"
+                        : ""
+                    }
+                  >
+                    <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted">
+                      <ShoppingBag className="h-4 w-4" />
+                      Lo más vendido: Productos
+                    </h2>
+                    <TableWrapper>
+                      {salesByItemLoading ? (
+                        <LoadingBlock message="Cargando productos…" />
+                      ) : salesByItem.products.length === 0 ? (
+                        <div className="p-4 text-center text-sm text-muted">
+                          Sin ventas de productos en el período.
+                        </div>
+                      ) : (
+                        <table className="min-w-full">
+                          <thead>
+                            <tr className={tableHeaderRowClass}>
+                              <th className={tableHeaderCellClass}>Producto</th>
+                              <th className={tableHeaderCellRightClass}>
+                                Cant.
+                              </th>
+                              <th className={tableHeaderCellRightClass}>
+                                Total
+                              </th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                  </TableWrapper>
-                </div>
-              )}
-              {(salesByItem.services.length > 0 || salesByItemLoading) && (
-                <div
-                  className={
-                    salesByItem.services.length === 0 &&
-                    salesByItem.products.length > 0
-                      ? "hidden"
-                      : ""
-                  }
-                >
-                  <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted">
-                    <Wrench className="h-4 w-4" />
-                    Lo más vendido: Servicios
-                  </h2>
-                  <TableWrapper>
-                    {salesByItemLoading ? (
-                      <LoadingBlock message="Cargando servicios…" />
-                    ) : salesByItem.services.length === 0 ? (
-                      <div className="p-4 text-center text-sm text-muted">
-                        Sin ventas de servicios en el período.
-                      </div>
-                    ) : (
-                      <table className="min-w-full">
-                        <thead>
-                          <tr className={tableHeaderRowClass}>
-                            <th className={tableHeaderCellClass}>Servicio</th>
-                            <th className={tableHeaderCellRightClass}>Cant.</th>
-                            <th className={tableHeaderCellRightClass}>Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {salesByItem.services.map((row, i) => (
-                            <tr
-                              key={row.id}
-                              className={
-                                i === 0
-                                  ? "bg-border-soft/60"
-                                  : tableBodyRowClass
-                              }
-                            >
-                              <td className={tableBodyCellClass}>{row.name}</td>
-                              <td
-                                className={`${tableBodyCellMutedClass} text-right`}
+                          </thead>
+                          <tbody>
+                            {salesByItem.products.map((row, i) => (
+                              <tr
+                                key={row.id}
+                                className={
+                                  i === 0
+                                    ? "bg-border-soft/60"
+                                    : tableBodyRowClass
+                                }
                               >
-                                {row.quantity}
-                              </td>
-                              <td className={tableBodyCellRightClass}>
-                                ${row.total.toFixed(2)}
-                              </td>
+                                <td className={tableBodyCellClass}>
+                                  {row.name}
+                                </td>
+                                <td
+                                  className={`${tableBodyCellMutedClass} text-right`}
+                                >
+                                  {row.quantity}
+                                </td>
+                                <td className={tableBodyCellRightClass}>
+                                  ${row.total.toFixed(2)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </TableWrapper>
+                  </div>
+                )}
+                {(salesByItem.services.length > 0 || salesByItemLoading) && (
+                  <div
+                    className={
+                      salesByItem.services.length === 0 &&
+                      salesByItem.products.length > 0
+                        ? "hidden"
+                        : ""
+                    }
+                  >
+                    <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted">
+                      <Wrench className="h-4 w-4" />
+                      Lo más vendido: Servicios
+                    </h2>
+                    <TableWrapper>
+                      {salesByItemLoading ? (
+                        <LoadingBlock message="Cargando servicios…" />
+                      ) : salesByItem.services.length === 0 ? (
+                        <div className="p-4 text-center text-sm text-muted">
+                          Sin ventas de servicios en el período.
+                        </div>
+                      ) : (
+                        <table className="min-w-full">
+                          <thead>
+                            <tr className={tableHeaderRowClass}>
+                              <th className={tableHeaderCellClass}>Servicio</th>
+                              <th className={tableHeaderCellRightClass}>
+                                Cant.
+                              </th>
+                              <th className={tableHeaderCellRightClass}>
+                                Total
+                              </th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                  </TableWrapper>
-                </div>
-              )}
-            </>
-          )}
-        </section>
+                          </thead>
+                          <tbody>
+                            {salesByItem.services.map((row, i) => (
+                              <tr
+                                key={row.id}
+                                className={
+                                  i === 0
+                                    ? "bg-border-soft/60"
+                                    : tableBodyRowClass
+                                }
+                              >
+                                <td className={tableBodyCellClass}>
+                                  {row.name}
+                                </td>
+                                <td
+                                  className={`${tableBodyCellMutedClass} text-right`}
+                                >
+                                  {row.quantity}
+                                </td>
+                                <td className={tableBodyCellRightClass}>
+                                  ${row.total.toFixed(2)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </TableWrapper>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
         )}
 
         <section>
@@ -1206,7 +1448,9 @@ export default function DashboardPage() {
         onClose={() => setCreateQuoteOpen(false)}
         tenantId={activeTenant.id}
         onCreated={(quote) => {
-          setQuoteMessage(`${quote.quote_number} quedó lista para compartir. Puedes revisarla desde Cotizaciones.`);
+          setQuoteMessage(
+            `${quote.quote_number} quedó lista para compartir. Puedes revisarla desde Cotizaciones.`,
+          );
         }}
       />
     </div>

@@ -1,4 +1,8 @@
 "use client";
+import {
+  isStudioBusinessEntry,
+  studioBusinessEntryHref,
+} from "@/features/studio/helpers/entry";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -30,9 +34,18 @@ import { TlacoLogo } from "@/components/brand/TlacoLogo";
 import { SetupFulfillmentDetails } from "@/features/onboarding/components/SetupFulfillmentDetails";
 import { SetupPaymentDetails } from "@/features/onboarding/components/SetupPaymentDetails";
 import { deriveSlug } from "@/features/onboarding/helpers/deriveSlug";
-import { SETUP_TEST_STEP, resumeSetupStep } from "@/features/onboarding/helpers/setupResume";
-import { needsPickupAddress, setupCheckoutProblem } from "@/features/onboarding/helpers/setupCheckoutValidation";
-import { activateSetup, legalOpeningUrl } from "@/features/onboarding/services/setupActivationService";
+import {
+  SETUP_TEST_STEP,
+  resumeSetupStep,
+} from "@/features/onboarding/helpers/setupResume";
+import {
+  needsPickupAddress,
+  setupCheckoutProblem,
+} from "@/features/onboarding/helpers/setupCheckoutValidation";
+import {
+  activateSetup,
+  legalOpeningUrl,
+} from "@/features/onboarding/services/setupActivationService";
 import { newPickupPoint } from "@/features/configuracion/helpers/paymentsAndDeliveryForm";
 import { formatMexicanPhoneInput, normalizeMexicanPhone } from "@/lib/phone";
 import { uploadProductImage } from "@/lib/supabase/storage";
@@ -508,12 +521,23 @@ export function BusinessSetupWizard() {
     null,
   );
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
-  const [paymentMethod, setPaymentMethod] = useState<SetupPaymentMethod>("cash");
-  const [pickupPoint, setPickupPoint] = useState<PickupPointDraft>(newPickupPoint);
-  const [delivery, setDelivery] = useState<SetupDeliveryDraft>({ area: "", fee: "" });
-  const [transfer, setTransfer] = useState<SetupTransferDraft>({ bank_name: "", account_holder: "", clabe: "" });
+  const [paymentMethod, setPaymentMethod] =
+    useState<SetupPaymentMethod>("cash");
+  const [pickupPoint, setPickupPoint] =
+    useState<PickupPointDraft>(newPickupPoint);
+  const [delivery, setDelivery] = useState<SetupDeliveryDraft>({
+    area: "",
+    fee: "",
+  });
+  const [transfer, setTransfer] = useState<SetupTransferDraft>({
+    bank_name: "",
+    account_holder: "",
+    clabe: "",
+  });
   const { data: checkoutSnapshot } = useSWR<SetupCheckoutSnapshot>(
-    tenantId ? `/api/tenants/${encodeURIComponent(tenantId)}/setup-checkout` : null,
+    tenantId
+      ? `/api/tenants/${encodeURIComponent(tenantId)}/setup-checkout`
+      : null,
     swrFetcher,
     { revalidateOnFocus: false },
   );
@@ -538,7 +562,13 @@ export function BusinessSetupWizard() {
         setShowMemberships(true);
         await mutateGlobal("/api/tenants");
       })
-      .catch((value) => setError(value instanceof Error ? value.message : "No pudimos activar los pedidos"))
+      .catch((value) =>
+        setError(
+          value instanceof Error
+            ? value.message
+            : "No pudimos activar los pedidos",
+        ),
+      )
       .finally(() => setAutoActivate(false));
   }, [autoActivate, tenantId]);
 
@@ -549,9 +579,18 @@ export function BusinessSetupWizard() {
     void mutateGlobal("/api/tenants")
       .then((list) => {
         if (cancelled) return;
-        const fresh = (Array.isArray(list) ? list : []).find((item) => item.tenant_id === tenantId)?.tenant;
+        const fresh = (Array.isArray(list) ? list : []).find(
+          (item) => item.tenant_id === tenantId,
+        )?.tenant;
         const next = resumeSetupStep(fresh?.settings);
-        const saved = (fresh?.settings as { onboarding?: { fulfillment?: SetupFulfillment; payment_method?: SetupPaymentMethod } } | null)?.onboarding;
+        const saved = (
+          fresh?.settings as {
+            onboarding?: {
+              fulfillment?: SetupFulfillment;
+              payment_method?: SetupPaymentMethod;
+            };
+          } | null
+        )?.onboarding;
         if (saved?.fulfillment) setFulfillment(saved.fulfillment);
         if (saved?.payment_method) setPaymentMethod(saved.payment_method);
         setStep(next);
@@ -569,18 +608,26 @@ export function BusinessSetupWizard() {
     };
   }, [tenantId, resumed, returningFromLegal]);
 
-  const { data: prospectPrefill, error: prospectPrefillError } = useSWR<ProspectPrefill>(
-    tenantId ? `/api/tenants/${encodeURIComponent(tenantId)}/prospect-prefill` : null,
-    swrFetcher,
-    { revalidateOnFocus: false, shouldRetryOnError: false },
-  );
+  const { data: prospectPrefill, error: prospectPrefillError } =
+    useSWR<ProspectPrefill>(
+      tenantId
+        ? `/api/tenants/${encodeURIComponent(tenantId)}/prospect-prefill`
+        : null,
+      swrFetcher,
+      { revalidateOnFocus: false, shouldRetryOnError: false },
+    );
   const [addressFromProspect, setAddressFromProspect] = useState(false);
 
   // Resuming the wizard shows what the checkout already has; a claimed store starts from its known address.
   const [prefilled, setPrefilled] = useState(false);
-  if (checkoutSnapshot && (prospectPrefill || prospectPrefillError) && !prefilled) {
+  if (
+    checkoutSnapshot &&
+    (prospectPrefill || prospectPrefillError) &&
+    !prefilled
+  ) {
     setPrefilled(true);
-    if (checkoutSnapshot.pickupPoint) setPickupPoint(checkoutSnapshot.pickupPoint);
+    if (checkoutSnapshot.pickupPoint)
+      setPickupPoint(checkoutSnapshot.pickupPoint);
     else if (prospectPrefill?.pickupPoint) {
       setPickupPoint(prospectPrefill.pickupPoint);
       setAddressFromProspect(true);
@@ -634,7 +681,13 @@ export function BusinessSetupWizard() {
       ? "Ingresa un WhatsApp mexicano de 10 dígitos."
       : null;
 
-  if (!tenantsLoaded || !tenant || productsLoading || !resumed || autoActivate) {
+  if (
+    !tenantsLoaded ||
+    !tenant ||
+    productsLoading ||
+    !resumed ||
+    autoActivate
+  ) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-white">
         <div className="text-center">
@@ -764,13 +817,21 @@ export function BusinessSetupWizard() {
       document.getElementById("setup-phone")?.focus();
       throw new Error("Revisa el WhatsApp antes de continuar.");
     }
-    const checkout = { step: "fulfillment" as const, fulfillment, pickupPoint, delivery };
+    const checkout = {
+      step: "fulfillment" as const,
+      fulfillment,
+      pickupPoint,
+      delivery,
+    };
     const problem = setupCheckoutProblem(checkout);
     if (problem) throw new Error(problem);
-    await requestJson(`/api/tenants/${encodeURIComponent(tenant.id)}/setup-checkout`, {
-      method: "POST",
-      body: JSON.stringify(checkout),
-    });
+    await requestJson(
+      `/api/tenants/${encodeURIComponent(tenant.id)}/setup-checkout`,
+      {
+        method: "POST",
+        body: JSON.stringify(checkout),
+      },
+    );
     await requestJson("/api/tenants", {
       method: "PATCH",
       body: JSON.stringify({
@@ -888,13 +949,20 @@ export function BusinessSetupWizard() {
   }
 
   async function savePayment() {
-    const checkout = { step: "payment" as const, method: paymentMethod, transfer };
+    const checkout = {
+      step: "payment" as const,
+      method: paymentMethod,
+      transfer,
+    };
     const problem = setupCheckoutProblem(checkout);
     if (problem) throw new Error(problem);
-    await requestJson(`/api/tenants/${encodeURIComponent(tenant.id)}/setup-checkout`, {
-      method: "POST",
-      body: JSON.stringify(checkout),
-    });
+    await requestJson(
+      `/api/tenants/${encodeURIComponent(tenant.id)}/setup-checkout`,
+      {
+        method: "POST",
+        body: JSON.stringify(checkout),
+      },
+    );
     await requestJson("/api/tenants", {
       method: "PATCH",
       body: JSON.stringify({
@@ -915,7 +983,12 @@ export function BusinessSetupWizard() {
     try {
       if (step === 0) await saveContact();
       // Cash is only taken on pickup, so a delivery-only business starts from transfer.
-      if (step === 0 && !needsPickupAddress(fulfillment) && paymentMethod === "cash") setPaymentMethod("transfer");
+      if (
+        step === 0 &&
+        !needsPickupAddress(fulfillment) &&
+        paymentMethod === "cash"
+      )
+        setPaymentMethod("transfer");
       if (step === 1) await saveCatalog();
       if (step === 2) await saveAvailability();
       if (step === 3) await savePayment();
@@ -943,7 +1016,7 @@ export function BusinessSetupWizard() {
         return;
       }
       setActivatedSlug(result.slug);
-      setShowMemberships(true);
+      setShowMemberships(!isStudioBusinessEntry(tenant.settings));
       await mutateGlobal("/api/tenants");
     } catch (value) {
       setError(
@@ -979,10 +1052,17 @@ export function BusinessSetupWizard() {
           </p>
           <div className="mt-7 grid gap-3 sm:grid-cols-2">
             <Link
-              href={`/dashboard/${activatedSlug}`}
+              href={
+                isStudioBusinessEntry(tenant.settings)
+                  ? studioBusinessEntryHref(activatedSlug, tenant.settings)
+                  : `/dashboard/${activatedSlug}`
+              }
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-white"
             >
-              Entrar a mi negocio <ArrowRight className="h-4 w-4" />
+              {isStudioBusinessEntry(tenant.settings)
+                ? "Entrar a Studio"
+                : "Entrar a mi negocio"}{" "}
+              <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               href={publicUrl}
@@ -1092,7 +1172,9 @@ export function BusinessSetupWizard() {
                     <button
                       key={option.id}
                       type="button"
-                      onClick={() => setFulfillment(option.id as SetupFulfillment)}
+                      onClick={() =>
+                        setFulfillment(option.id as SetupFulfillment)
+                      }
                       className={`min-h-20 rounded-2xl border p-4 text-left font-semibold ${fulfillment === option.id ? "border-foreground ring-1 ring-foreground" : "border-border"}`}
                     >
                       {option.label}
@@ -1105,7 +1187,11 @@ export function BusinessSetupWizard() {
                   delivery={delivery}
                   onPickupPointChange={setPickupPoint}
                   onDeliveryChange={setDelivery}
-                  addressHint={addressFromProspect ? "Usamos la dirección registrada de tu negocio. Corrígela si no es exacta." : undefined}
+                  addressHint={
+                    addressFromProspect
+                      ? "Usamos la dirección registrada de tu negocio. Corrígela si no es exacta."
+                      : undefined
+                  }
                 />
               </fieldset>
               <fieldset className="mt-6">
@@ -1364,7 +1450,8 @@ export function BusinessSetupWizard() {
                     { id: "digital", label: "Pago digital", icon: ReceiptText },
                   ] as const
                 ).map(({ id, label, icon: Icon }) => {
-                  const unavailable = id === "cash" && !needsPickupAddress(fulfillment);
+                  const unavailable =
+                    id === "cash" && !needsPickupAddress(fulfillment);
                   return (
                     <button
                       key={id}

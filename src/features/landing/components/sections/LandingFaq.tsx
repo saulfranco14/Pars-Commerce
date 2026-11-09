@@ -4,7 +4,21 @@ import { useState } from "react";
 import { Plus, Minus } from "lucide-react";
 import { FAQS } from "@/features/landing/constants/faqs";
 
-export function LandingFaq() {
+export function LandingFaq({
+  studioEnabled = false,
+}: {
+  studioEnabled?: boolean;
+}) {
+  const faqs = studioEnabled
+    ? [
+        ...FAQS,
+        {
+          question: "¿Tlaco Gratis incluye Studio?",
+          answer:
+            "El registro y Tlaco Gratis son independientes. Studio es un complemento de pago por negocio: incluye el editor y las exportaciones. Las generaciones de IA consumen Tlacos y requieren membresía vigente y saldo. Puedes explorar Studio antes de contratar.",
+        },
+      ]
+    : FAQS;
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const toggle = (index: number) => {
@@ -28,7 +42,7 @@ export function LandingFaq() {
         </div>
 
         <div className="mt-10 space-y-3">
-          {FAQS.map((faq, i) => {
+          {faqs.map((faq, i) => {
             const isOpen = openIndex === i;
             return (
               <div

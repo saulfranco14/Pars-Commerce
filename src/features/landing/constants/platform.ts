@@ -11,12 +11,15 @@ import {
   Users,
   UsersRound,
   Wallet,
+  WandSparkles,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type PlatformGroupKey = "vender" | "cobrar" | "crecer";
 
 export interface PlatformCapability {
+  href?: string;
+  availability?: string;
   key: string;
   group: PlatformGroupKey;
   icon: LucideIcon;
@@ -57,6 +60,18 @@ export const PLATFORM_GROUPS: PlatformGroup[] = [
 ];
 
 export const PLATFORM_CAPABILITIES: PlatformCapability[] = [
+  {
+    key: "studio",
+    group: "crecer",
+    icon: WandSparkles,
+    title: "Tlaco Studio",
+    owner:
+      "Crea anuncios con tu catálogo, edita cada capa y prepara formatos para compartir. Membresía adicional por negocio.",
+    customer:
+      "Recibe anuncios y mensajes en los canales que el negocio elija compartir.",
+    href: "/studio",
+    availability: "studio",
+  },
   // ── Vender ────────────────────────────────────────────────────
   {
     key: "productos",

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { safeNextPath } from "@/lib/auth/safeNextPath";
 import { ArrowDown, CheckCircle2, ExternalLink, FileText, Landmark, Loader2, LockKeyhole, MapPin, Phone, Search, ShieldCheck } from "lucide-react";
 
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
@@ -186,7 +187,7 @@ export function LegalOpeningCard() {
   const router = useRouter();
   const params = useSearchParams();
   const tenantId = params.get("tenant") ?? "";
-  const returnTo = params.get("return") || "/dashboard";
+  const returnTo = safeNextPath(params.get("return"));
   const [profile, setProfile] = useState<LegalProfileForm>(EMPTY_PROFILE);
   const [documents, setDocuments] = useState<LegalDocument[] | null>(null);
   const [stage, setStage] = useState<Stage>("why");

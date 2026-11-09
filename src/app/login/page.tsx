@@ -5,11 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import * as yup from "yup";
 import { setPasswordSchema } from "@/features/auth/validations/setPasswordForm";
-import {
-  ArrowRight,
-  Lock,
-  Shield,
-} from "lucide-react";
+import { ArrowRight, Lock, Shield } from "lucide-react";
 import { BrandPanel } from "@/features/auth/components/BrandPanel";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { PasswordInput } from "@/components/ui/PasswordInput";
@@ -18,7 +14,11 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { MobileAuthHeader } from "@/features/auth/components/MobileAuthHeader";
 import { createClient } from "@/lib/supabase/client";
 import { safeNextPath } from "@/lib/auth/safeNextPath";
-import { isValidLoginIdentifier, loginIdentifierToEmail } from "@/lib/auth/staffLogin";
+import { studioLoginRegistrationHref } from "@/features/studio/helpers/entry";
+import {
+  isValidLoginIdentifier,
+  loginIdentifierToEmail,
+} from "@/lib/auth/staffLogin";
 import { resolveUserError } from "@/lib/errors/resolveUserError";
 
 function parseHashParams() {
@@ -45,13 +45,19 @@ type FieldErrors = Record<string, string>;
 async function resolvePostLoginDestination(next: string): Promise<string> {
   if (next !== "/dashboard") return next;
   try {
-    const response = await fetch("/api/me/platform-admin", { cache: "no-store" });
+    const response = await fetch("/api/me/platform-admin", {
+      cache: "no-store",
+    });
     if (!response.ok) return next;
     const payload = (await response.json()) as { isPlatformAdmin?: boolean };
     if (payload.isPlatformAdmin) return "/dashboard/plataforma";
-    const legalResponse = await fetch("/api/legal/status", { cache: "no-store" });
+    const legalResponse = await fetch("/api/legal/status", {
+      cache: "no-store",
+    });
     if (!legalResponse.ok) return next;
-    const legal = (await legalResponse.json()) as { pending?: { tenant_id?: string } | null };
+    const legal = (await legalResponse.json()) as {
+      pending?: { tenant_id?: string } | null;
+    };
     return legal.pending?.tenant_id
       ? `/dashboard/legal?tenant=${encodeURIComponent(legal.pending.tenant_id)}`
       : next;
@@ -504,7 +510,6 @@ function LoginForm() {
           aria-hidden
         />
         <div className="relative w-full max-w-100 animate-auth-enter pt-20 lg:pt-0">
-
           {/* Card */}
           <div className="px-2 sm:px-4 lg:px-0">
             <h1 className="text-xl font-bold text-foreground sm:text-2xl">
@@ -606,7 +611,7 @@ function LoginForm() {
             <p className="mt-5 text-center text-sm text-muted-foreground">
               ¿No tienes cuenta?{" "}
               <Link
-                href="/registro"
+                href={studioLoginRegistrationHref(next)}
                 className="font-semibold text-accent transition-colors hover:text-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 rounded"
               >
                 Regístrate gratis

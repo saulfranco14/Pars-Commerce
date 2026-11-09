@@ -1,3 +1,4 @@
+import { studioRegistrationMetadata } from "@/features/auth/registrationIntent";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { after, NextResponse } from "next/server";
@@ -29,16 +30,26 @@ export async function GET() {
     const admin = createAdminClient();
     await admin
       .from("tenant_memberships")
-      .update({ status: "active", accepted_at: new Date().toISOString(), updated_at: new Date().toISOString() } as never)
+      .update({
+        status: "active",
+        accepted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as never)
       .eq("user_id", user.id)
       .eq("status", "invited")
-      .or(`invitation_expires_at.is.null,invitation_expires_at.gt.${new Date().toISOString()}`);
+      .or(
+        `invitation_expires_at.is.null,invitation_expires_at.gt.${new Date().toISOString()}`,
+      );
     // Assisted onboarding uses the same membership acceptance proof.  Once the
     // owner has a verified session, its checklist advances to payment setup;
     // it never activates live sales by itself.
     await admin
       .from("assisted_onboardings" as never)
-      .update({ status: "payments_pending", invitation_accepted_at: new Date().toISOString(), updated_at: new Date().toISOString() } as never)
+      .update({
+        status: "payments_pending",
+        invitation_accepted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as never)
       .eq("owner_user_id", user.id)
       .eq("status", "invited");
   }
@@ -53,7 +64,7 @@ export async function GET() {
       accepted_at,
       tenant:tenants(id, name, slug, site_slug, business_type, logo_url, theme_color, description, public_store_enabled, onsite_promotions_enabled, accepting_orders, settings, whatsapp_phone, social_links, site_template_id, is_demo, whatsapp_orders_enabled, catalog_template_id, catalog_template_version, catalog_review_status, catalog_approved_at),
       role:tenant_roles(id, name, permissions)
-    `
+    `,
     )
     .eq("user_id", user.id)
     .eq("status", "active");
@@ -76,9 +87,27 @@ export async function GET() {
     .select("tenant_id, monthly_rent, monthly_sales_objective")
     .in("tenant_id", tenantIds);
 
-  const addressByTenant: Record<string, { street?: string; city?: string; state?: string; postal_code?: string; country?: string; phone?: string }> = {};
+  const addressByTenant: Record<
+    string,
+    {
+      street?: string;
+      city?: string;
+      state?: string;
+      postal_code?: string;
+      country?: string;
+      phone?: string;
+    }
+  > = {};
   for (const a of addresses ?? []) {
-    const t = a as { tenant_id: string; street?: string; city?: string; state?: string; postal_code?: string; country?: string; phone?: string };
+    const t = a as {
+      tenant_id: string;
+      street?: string;
+      city?: string;
+      state?: string;
+      postal_code?: string;
+      country?: string;
+      phone?: string;
+    };
     addressByTenant[t.tenant_id] = {
       street: t.street ?? undefined,
       city: t.city ?? undefined,
@@ -89,9 +118,16 @@ export async function GET() {
     };
   }
 
-  const salesConfigByTenant: Record<string, { monthly_rent: number; monthly_sales_objective: number }> = {};
+  const salesConfigByTenant: Record<
+    string,
+    { monthly_rent: number; monthly_sales_objective: number }
+  > = {};
   for (const s of salesConfigs ?? []) {
-    const row = s as { tenant_id: string; monthly_rent: number; monthly_sales_objective: number };
+    const row = s as {
+      tenant_id: string;
+      monthly_rent: number;
+      monthly_sales_objective: number;
+    };
     salesConfigByTenant[row.tenant_id] = {
       monthly_rent: Number(row.monthly_rent) || 0,
       monthly_sales_objective: Number(row.monthly_sales_objective) || 0,
@@ -103,11 +139,15 @@ export async function GET() {
       tenant_id: string;
       tenant: Record<string, unknown>;
     };
-    const tenantData = Array.isArray(item.tenant) ? item.tenant[0] : item.tenant;
+    const tenantData = Array.isArray(item.tenant)
+      ? item.tenant[0]
+      : item.tenant;
     return {
       ...item,
       tenant: {
-        ...(typeof tenantData === "object" && tenantData !== null ? tenantData : {}),
+        ...(typeof tenantData === "object" && tenantData !== null
+          ? tenantData
+          : {}),
         address: addressByTenant[item.tenant_id] ?? null,
         sales_config: salesConfigByTenant[item.tenant_id] ?? null,
       },
@@ -129,7 +169,14 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { name, slug, business_type, site_template_id, catalog_template_key, registration_intent } = body as {
+  const {
+    name,
+    slug,
+    business_type,
+    site_template_id,
+    catalog_template_key,
+    registration_intent,
+  } = body as {
     name: string;
     slug: string;
     business_type?: string;
@@ -141,36 +188,87 @@ export async function POST(request: Request) {
   if (!name || !slug) {
     return NextResponse.json(
       { error: "name and slug are required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const baseSlug = slug
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "") || "negocio";
+  const baseSlug =
+    slug
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "") || "negocio";
   const storedIntent = user.user_metadata?.registration_intent as
-    | { plan?: string; giro?: string; solution_key?: string; catalog_key?: string; business_name?: string; theme_key?: string; primary_goals?: string[]; catalog_start_mode?: string; onboarding_session_id?: string; phone?: string; assisted?: boolean; prospect_token?: string | null; heard_from?: string | null; consumed_at?: string; tenant_id?: string }
+    | {
+        entry_product?: string;
+        studio_plan?: string;
+        studio_action?: string;
+        entry_origin?: string;
+        plan?: string;
+        giro?: string;
+        solution_key?: string;
+        catalog_key?: string;
+        business_name?: string;
+        theme_key?: string;
+        primary_goals?: string[];
+        catalog_start_mode?: string;
+        onboarding_session_id?: string;
+        phone?: string;
+        assisted?: boolean;
+        prospect_token?: string | null;
+        heard_from?: string | null;
+        consumed_at?: string;
+        tenant_id?: string;
+      }
     | undefined;
-  const storedRegistrationIntent = storedIntent?.consumed_at ? undefined : storedIntent;
-  const effectivePlan = registration_intent?.plan ?? storedRegistrationIntent?.plan ?? "free";
-  const effectiveGiro = registration_intent?.giro ?? storedRegistrationIntent?.giro ?? "otro";
-  const effectiveSolutionKey = registration_intent?.solutionKey ?? storedRegistrationIntent?.solution_key ?? null;
-  const effectiveCatalogStartMode = registration_intent?.catalogStartMode ?? storedRegistrationIntent?.catalog_start_mode ?? "starter";
-  const effectiveOnboardingSessionId = registration_intent?.onboardingSessionId ?? storedRegistrationIntent?.onboarding_session_id ?? null;
-  const effectiveGoals = registration_intent?.primaryGoals ?? storedRegistrationIntent?.primary_goals ?? [];
+  const storedRegistrationIntent = storedIntent?.consumed_at
+    ? undefined
+    : storedIntent;
+  const effectivePlan =
+    registration_intent?.plan ?? storedRegistrationIntent?.plan ?? "free";
+  const effectiveGiro =
+    registration_intent?.giro ?? storedRegistrationIntent?.giro ?? "otro";
+  const effectiveSolutionKey =
+    registration_intent?.solutionKey ??
+    storedRegistrationIntent?.solution_key ??
+    null;
+  const effectiveCatalogStartMode =
+    registration_intent?.catalogStartMode ??
+    storedRegistrationIntent?.catalog_start_mode ??
+    "starter";
+  const effectiveOnboardingSessionId =
+    registration_intent?.onboardingSessionId ??
+    storedRegistrationIntent?.onboarding_session_id ??
+    null;
+  const effectiveGoals =
+    registration_intent?.primaryGoals ??
+    storedRegistrationIntent?.primary_goals ??
+    [];
   const effectivePhone = normalizeMexicanPhone(
     registration_intent?.phone ?? storedRegistrationIntent?.phone ?? "",
   );
-  const effectiveThemeKey = registration_intent?.themeKey ?? storedRegistrationIntent?.theme_key ?? "tlaco";
-  const effectiveAssisted = registration_intent?.assisted ?? storedRegistrationIntent?.assisted ?? false;
+  const effectiveThemeKey =
+    registration_intent?.themeKey ??
+    storedRegistrationIntent?.theme_key ??
+    "tlaco";
+  const effectiveAssisted =
+    registration_intent?.assisted ??
+    storedRegistrationIntent?.assisted ??
+    false;
   const effectiveBusinessType = business_type || effectiveGiro;
-  const requestedCatalogKey = catalog_template_key?.trim() || registration_intent?.catalogKey || storedRegistrationIntent?.catalog_key || null;
-  const effectiveCatalogKey = effectiveCatalogStartMode === "own" ? null : requestedCatalogKey;
+  const requestedCatalogKey =
+    catalog_template_key?.trim() ||
+    registration_intent?.catalogKey ||
+    storedRegistrationIntent?.catalog_key ||
+    null;
+  const effectiveCatalogKey =
+    effectiveCatalogStartMode === "own" ? null : requestedCatalogKey;
 
   if (!effectivePhone) {
     return NextResponse.json(
-      { error: "Ingresa un WhatsApp mexicano válido de 10 dígitos antes de crear el negocio." },
+      {
+        error:
+          "Ingresa un WhatsApp mexicano válido de 10 dígitos antes de crear el negocio.",
+      },
       { status: 400 },
     );
   }
@@ -221,7 +319,11 @@ export async function POST(request: Request) {
   const expansion = await getAdditionalBusinessAccess(admin, user.id);
   if (!expansion.can_create) {
     return NextResponse.json(
-      { error: expansion.requires_upgrade ? "Llegaste al límite de negocios de tu plan. Actualiza tu plan para crear otro." : "Llegaste al límite de negocios de tu plan." },
+      {
+        error: expansion.requires_upgrade
+          ? "Llegaste al límite de negocios de tu plan. Actualiza tu plan para crear otro."
+          : "Llegaste al límite de negocios de tu plan.",
+      },
       { status: 403 },
     );
   }
@@ -233,10 +335,10 @@ export async function POST(request: Request) {
       p_name: name.trim(),
       p_slug: normalizedSlug,
       p_business_type: effectiveBusinessType,
-      p_catalog_template_key: effectiveCatalogKey,
-      p_site_template_id: site_template_id ?? null,
+      // Omitted args take the function's DEFAULT NULL.
+      p_catalog_template_key: effectiveCatalogKey ?? undefined,
+      p_site_template_id: site_template_id ?? undefined,
       p_is_demo: false,
-      p_demo_key: null,
     },
   );
   const tenant = Array.isArray(created) ? created[0] : created;
@@ -245,7 +347,7 @@ export async function POST(request: Request) {
     if (tenantError.code === "23505") {
       return NextResponse.json(
         { error: "Slug already exists" },
-        { status: 409 }
+        { status: 409 },
       );
     }
     return NextResponse.json({ error: tenantError.message }, { status: 500 });
@@ -259,9 +361,19 @@ export async function POST(request: Request) {
         public_store_enabled: true,
         accepting_orders: false,
         whatsapp_phone: effectivePhone,
-        theme_color: effectiveThemeKey === "ink" ? "#18243a" : effectiveThemeKey === "terracotta" ? "#b45309" : "#3483fa",
+        theme_color:
+          effectiveThemeKey === "ink"
+            ? "#18243a"
+            : effectiveThemeKey === "terracotta"
+              ? "#b45309"
+              : "#3483fa",
         settings: {
           registration_intent: {
+            ...studioRegistrationMetadata(
+              registration_intent?.entryProduct === "studio"
+                ? registration_intent
+                : storedRegistrationIntent,
+            ),
             plan: effectivePlan,
             giro: effectiveGiro,
             solution_key: effectiveSolutionKey,
@@ -272,7 +384,13 @@ export async function POST(request: Request) {
             status: "in_progress",
             session_id: effectiveOnboardingSessionId,
             goals: effectiveGoals,
-            required_steps: ["contact", "catalog", "availability", "payment", "customer_preview"],
+            required_steps: [
+              "contact",
+              "catalog",
+              "availability",
+              "payment",
+              "customer_preview",
+            ],
             completed_steps: [],
           },
         },
@@ -290,14 +408,21 @@ export async function POST(request: Request) {
       },
     });
     // Runs after the response: growth attribution can never slow down or break a signup.
-    const heardFrom = registration_intent?.heardFrom ?? storedRegistrationIntent?.heard_from ?? null;
+    const heardFrom =
+      registration_intent?.heardFrom ??
+      storedRegistrationIntent?.heard_from ??
+      null;
     const attribution = {
       tenantId: tenant.id,
       businessName: name.trim(),
       email: user.email ?? null,
       phone: effectivePhone,
-      prospectToken: registration_intent?.prospectToken ?? storedRegistrationIntent?.prospect_token ?? null,
-      heardFrom: heardFrom && HEARD_FROM_VALUES.has(heardFrom) ? heardFrom : null,
+      prospectToken:
+        registration_intent?.prospectToken ??
+        storedRegistrationIntent?.prospect_token ??
+        null,
+      heardFrom:
+        heardFrom && HEARD_FROM_VALUES.has(heardFrom) ? heardFrom : null,
     };
     after(() => attributeRegistration(admin, attribution));
   }
@@ -361,7 +486,7 @@ export async function PATCH(request: Request) {
   if (!tenant_id) {
     return NextResponse.json(
       { error: "tenant_id is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -373,8 +498,15 @@ export async function PATCH(request: Request) {
     .eq("tenant_id", tenant_id)
     .single();
 
-  const membershipLifecycle = membership as unknown as { status?: string; role?: unknown } | null;
-  if (!membershipLifecycle || membershipLifecycle.status === "suspended" || membershipLifecycle.status === "invited") {
+  const membershipLifecycle = membership as unknown as {
+    status?: string;
+    role?: unknown;
+  } | null;
+  if (
+    !membershipLifecycle ||
+    membershipLifecycle.status === "suspended" ||
+    membershipLifecycle.status === "invited"
+  ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const rawRole = membershipLifecycle.role as
@@ -399,14 +531,15 @@ export async function PATCH(request: Request) {
   if (name !== undefined) updates.name = name.trim();
   if (description !== undefined)
     updates.description = description?.trim() ?? null;
-  if (logo_url !== undefined)
-    updates.logo_url = logo_url?.trim() || null;
+  if (logo_url !== undefined) updates.logo_url = logo_url?.trim() || null;
   if (theme_color !== undefined)
     updates.theme_color = theme_color?.trim() || null;
   if (public_store_enabled !== undefined)
     updates.public_store_enabled = public_store_enabled;
   if (onsite_promotions_enabled !== undefined)
-    (updates as TenantUpdate & { onsite_promotions_enabled?: boolean }).onsite_promotions_enabled = onsite_promotions_enabled;
+    (
+      updates as TenantUpdate & { onsite_promotions_enabled?: boolean }
+    ).onsite_promotions_enabled = onsite_promotions_enabled;
   if (site_template_id !== undefined)
     updates.site_template_id = site_template_id || null;
   const normalizedWhatsApp =
@@ -421,18 +554,48 @@ export async function PATCH(request: Request) {
     updates.whatsapp_phone = normalizedWhatsApp;
   }
   if (whatsapp_orders_enabled !== undefined) {
-    const phoneToValidate = normalizedWhatsApp || (await admin.from("tenants").select("whatsapp_phone, is_demo").eq("id", tenant_id).maybeSingle()).data?.whatsapp_phone;
-    if (whatsapp_orders_enabled && (!phoneToValidate || !/^\+[1-9]\d{7,14}$/.test(phoneToValidate))) {
-      return NextResponse.json({ error: "Configura un WhatsApp en formato internacional antes de recibir pedidos por ese canal." }, { status: 400 });
+    const phoneToValidate =
+      normalizedWhatsApp ||
+      (
+        await admin
+          .from("tenants")
+          .select("whatsapp_phone, is_demo")
+          .eq("id", tenant_id)
+          .maybeSingle()
+      ).data?.whatsapp_phone;
+    if (
+      whatsapp_orders_enabled &&
+      (!phoneToValidate || !/^\+[1-9]\d{7,14}$/.test(phoneToValidate))
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Configura un WhatsApp en formato internacional antes de recibir pedidos por ese canal.",
+        },
+        { status: 400 },
+      );
     }
-    const { data: tenantFlags } = await admin.from("tenants").select("is_demo").eq("id", tenant_id).maybeSingle();
+    const { data: tenantFlags } = await admin
+      .from("tenants")
+      .select("is_demo")
+      .eq("id", tenant_id)
+      .maybeSingle();
     if (whatsapp_orders_enabled && tenantFlags?.is_demo) {
-      return NextResponse.json({ error: "Los negocios demo no pueden activar pedidos reales por WhatsApp." }, { status: 403 });
+      return NextResponse.json(
+        {
+          error:
+            "Los negocios demo no pueden activar pedidos reales por WhatsApp.",
+        },
+        { status: 403 },
+      );
     }
-    (updates as TenantUpdate & { whatsapp_orders_enabled?: boolean }).whatsapp_orders_enabled = whatsapp_orders_enabled;
+    (
+      updates as TenantUpdate & { whatsapp_orders_enabled?: boolean }
+    ).whatsapp_orders_enabled = whatsapp_orders_enabled;
   }
   if (social_links !== undefined)
-    updates.social_links = social_links && typeof social_links === "object" ? social_links : {};
+    updates.social_links =
+      social_links && typeof social_links === "object" ? social_links : {};
 
   if (settingsPayload !== undefined) {
     const { data: existingTenant } = await admin
@@ -442,7 +605,11 @@ export async function PATCH(request: Request) {
       .single();
     const current = (existingTenant?.settings as Record<string, unknown>) ?? {};
     const nextSettings = { ...current, ...settingsPayload };
-    if (settingsPayload.onboarding && typeof settingsPayload.onboarding === "object" && !Array.isArray(settingsPayload.onboarding)) {
+    if (
+      settingsPayload.onboarding &&
+      typeof settingsPayload.onboarding === "object" &&
+      !Array.isArray(settingsPayload.onboarding)
+    ) {
       nextSettings.onboarding = {
         ...((current.onboarding as Record<string, unknown> | null) ?? {}),
         ...(settingsPayload.onboarding as Record<string, unknown>),
@@ -455,7 +622,9 @@ export async function PATCH(request: Request) {
     .from("tenants")
     .update(updates)
     .eq("id", tenant_id)
-    .select("id, name, slug, description, logo_url, theme_color, public_store_enabled, onsite_promotions_enabled, settings, whatsapp_phone, whatsapp_orders_enabled, social_links, site_template_id")
+    .select(
+      "id, name, slug, description, logo_url, theme_color, public_store_enabled, onsite_promotions_enabled, settings, whatsapp_phone, whatsapp_orders_enabled, social_links, site_template_id",
+    )
     .single();
 
   if (error) {
@@ -499,13 +668,30 @@ export async function PATCH(request: Request) {
       .single();
 
     const now = new Date().toISOString();
-    const newRent = monthly_rent !== undefined ? Math.max(0, Number(monthly_rent)) : (existingConfig ? Number((existingConfig as { monthly_rent: number }).monthly_rent) : 0);
-    const newObjective = monthly_sales_objective !== undefined ? Math.max(0, Number(monthly_sales_objective)) : (existingConfig ? Number((existingConfig as { monthly_sales_objective: number }).monthly_sales_objective) : 0);
+    const newRent =
+      monthly_rent !== undefined
+        ? Math.max(0, Number(monthly_rent))
+        : existingConfig
+          ? Number((existingConfig as { monthly_rent: number }).monthly_rent)
+          : 0;
+    const newObjective =
+      monthly_sales_objective !== undefined
+        ? Math.max(0, Number(monthly_sales_objective))
+        : existingConfig
+          ? Number(
+              (existingConfig as { monthly_sales_objective: number })
+                .monthly_sales_objective,
+            )
+          : 0;
 
     if (existingConfig) {
       await admin
         .from("tenant_sales_config")
-        .update({ monthly_rent: newRent, monthly_sales_objective: newObjective, updated_at: now })
+        .update({
+          monthly_rent: newRent,
+          monthly_sales_objective: newObjective,
+          updated_at: now,
+        })
         .eq("tenant_id", tenant_id);
     } else {
       await admin.from("tenant_sales_config").insert({

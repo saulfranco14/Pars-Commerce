@@ -5,9 +5,19 @@ export function isFocusRoute(pathname: string): boolean {
   const third = segments[2];
   const fourth = segments[3];
 
-  if (second === "crear-negocio" || second === "preparar-negocio" || second === "perfil") return true;
+  if (
+    second === "crear-negocio" ||
+    second === "preparar-negocio" ||
+    second === "perfil"
+  )
+    return true;
   if (!second || !third) return false;
 
+  if (
+    third === "studio" &&
+    (fourth === "nuevo" || (fourth === "disenos" && segments[4]))
+  )
+    return true;
   if (third === "ordenes") {
     if (fourth === "nueva") return true;
     return fourth !== undefined && fourth !== "";
