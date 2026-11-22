@@ -4,6 +4,7 @@ import { LANDING_NAV_LINKS } from "@/features/landing/constants/navigation";
 
 import { LandingNav } from "@/features/landing/components/sections/LandingNav";
 import { LandingHero } from "@/features/landing/components/sections/LandingHero";
+import { LandingTryIt } from "@/features/landing/components/sections/LandingTryIt";
 import { LandingStats } from "@/features/landing/components/sections/LandingStats";
 import { LandingStudio } from "@/features/landing/components/sections/LandingStudio";
 import { LandingBusinessSolutions } from "@/features/landing/components/sections/LandingBusinessSolutions";
@@ -14,6 +15,8 @@ import { LandingComingSoon } from "@/features/landing/components/sections/Landin
 import { LandingPricing } from "@/features/landing/components/sections/LandingPricing";
 import { LandingFaq } from "@/features/landing/components/sections/LandingFaq";
 import { LandingFooter } from "@/features/landing/components/sections/LandingFooter";
+
+import { resolveHeroScene } from "@/features/landing/helpers/resolveHeroScene";
 
 const TITLE = "Tu cliente pide y paga desde su celular";
 const DESCRIPTION =
@@ -33,7 +36,9 @@ export const metadata: Metadata = {
 /**
  * Narrativa pensada para tráfico de campañas, en este orden a propósito:
  *
- *  1. Hero        — la diferencia en una frase + la demo tocable.
+ *  1. Hero        — la diferencia en una frase + la escena animada; el giro
+ *                   sale del anuncio (`?giro=` / `utm_content`).
+ *     Pruébalo    — la demo tocable, justo debajo.
  *  2. Stats       — las promesas concretas (tiempo, costo, sin terminal).
  *  3. Soluciones  — tu giro ya viene armado: el freno "me da flojera empezar".
  *  4. Plataforma / Mesas — todo lo que hace y la función estrella a fondo.
@@ -44,7 +49,12 @@ export const metadata: Metadata = {
  * El CTA de cierre vive en el footer; tener otro bloque igual justo antes
  * repetía la misma pregunta dos veces seguidas.
  */
-export default function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const scene = resolveHeroScene(await searchParams);
   const studio = studioFlags().public;
   const links = studio
     ? [...LANDING_NAV_LINKS, { label: "Studio", href: "/studio" }]
@@ -54,7 +64,8 @@ export default function Home() {
       <LandingNav links={links} />
       <div className="h-13" aria-hidden />
       <main>
-        <LandingHero />
+        <LandingHero scene={scene} />
+        <LandingTryIt />
         <LandingStats />
         {studio && <LandingStudio />}
         <LandingBusinessSolutions />
