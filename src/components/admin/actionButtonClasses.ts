@@ -33,5 +33,17 @@ export const adminActionButtonConfirm =
  * so list pages (mesas, qr, inicio, …) import ONE string instead of each
  * copy-pasting it — the audit found this duplicated across pages.
  */
-export const pageHeaderCta =
-  "inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-2xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] transition-all";
+const pageHeaderCtaLook =
+  "min-h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90 active:scale-[0.99] transition-all";
+
+/** Full width on phones, content width from `sm`. */
+export const pageHeaderCta = `flex w-full sm:inline-flex sm:w-auto ${pageHeaderCtaLook}`;
+
+/**
+ * For a header action whose phone version is a FAB. Never append `hidden` to
+ * `pageHeaderCta`: its own display class wins and both end up on screen.
+ */
+export const pageHeaderCtaDesktop = `hidden md:inline-flex ${pageHeaderCtaLook}`;
+
+/** Secondary page-level link (e.g. Studio entry points): full width on phones. */
+export const pageSecondaryAction = `${adminActionButtonSecondary} w-full sm:w-auto`;

@@ -6,6 +6,8 @@ import { studioDb } from "@/features/studio/services/studioDb";
 import { requireStudioAccess } from "@/features/studio/services/studioAccessService";
 import { StudioProvider } from "@/features/studio/components/StudioProvider";
 import { StudioError } from "@/features/studio/services/studioErrors";
+import { studioFlags } from "@/features/studio/services/studioFlags";
+import { StudioUnavailable } from "@/features/studio/components/StudioUnavailable";
 
 export const metadata: Metadata = {
   title: "Tlaco Studio",
@@ -19,6 +21,7 @@ export default async function StudioLayout({
   params: Promise<{ tenantSlug: string }>;
 }) {
   const { tenantSlug } = await params;
+  if (!studioFlags().enabled) notFound();
   const client = await createClient();
   const {
     data: { user },
@@ -42,7 +45,11 @@ export default async function StudioLayout({
       ["FORBIDDEN", "NOT_FOUND"].includes(error.code)
     )
       notFound();
-    throw error;
+    // A missing schema or a database hiccup must not take the whole dashboard down.
+    console.error("[studio] access check failed", {
+      code: error instanceof StudioError ? error.code : "UNKNOWN",
+    });
+    return <StudioUnavailable tenantSlug={tenantSlug} />;
   }
   return (
     <StudioProvider

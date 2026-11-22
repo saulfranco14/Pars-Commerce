@@ -104,6 +104,7 @@ export default function MesasPage() {
       <StudioActionLink
         destination="publicaciones"
         label="Campañas y anuncios en mesas"
+        wide
       />
       <TablesOnboardingOverlay />
       <div className="space-y-1.5">

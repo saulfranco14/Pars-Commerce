@@ -18,6 +18,7 @@ export default function SitioWebPage() {
           <StudioActionLink
             destination="publicaciones"
             label="Anuncios de Studio en mi sitio"
+            wide
           />
         </div>
         <Link

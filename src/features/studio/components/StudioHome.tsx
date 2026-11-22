@@ -8,6 +8,7 @@ import { Notification } from "@/components/ui/Notification";
 import { FAB } from "@/components/ui/FAB";
 import {
   pageHeaderCta,
+  pageHeaderCtaDesktop,
   adminActionButtonSecondary,
 } from "@/components/admin/actionButtonClasses";
 import { STUDIO_SOURCES, STUDIO_TEMPLATES } from "../constants/studio";
@@ -41,7 +42,7 @@ export function StudioHome() {
           canCreate ? (
             summary.active ? (
               <Link
-                className={`${pageHeaderCta} hidden md:inline-flex`}
+                className={pageHeaderCtaDesktop}
                 href={`${base}/nuevo`}
               >
                 <Plus className="h-4 w-4" />
@@ -49,7 +50,7 @@ export function StudioHome() {
               </Link>
             ) : (
               <button
-                className={`${pageHeaderCta} hidden md:inline-flex`}
+                className={pageHeaderCtaDesktop}
                 onClick={create}
               >
                 <Plus className="h-4 w-4" />

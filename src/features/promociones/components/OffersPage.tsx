@@ -13,7 +13,7 @@ import { FilterTabs } from "@/components/ui/FilterTabs";
 import { PlansPanel } from "@/features/planes/components/PlansPanel";
 import { PromotionsPanel } from "@/features/promociones/components/PromotionsPanel";
 
-import { pageHeaderCta } from "@/components/admin/actionButtonClasses";
+import { pageHeaderCtaDesktop } from "@/components/admin/actionButtonClasses";
 
 const VIEWS = [
   { value: "promociones", label: "Promociones" },
@@ -54,7 +54,7 @@ export function OffersPage({ tenantSlug }: { tenantSlug: string }) {
           canWrite ? (
             <Link
               href={createHref}
-              className={`${pageHeaderCta} hidden md:inline-flex`}
+              className={pageHeaderCtaDesktop}
             >
               <Plus className="h-4 w-4" aria-hidden />
               {createLabel}

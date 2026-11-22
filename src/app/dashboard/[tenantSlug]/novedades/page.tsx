@@ -37,7 +37,7 @@ export default function NovedadesPage() {
           consume 0 Tlacos. Las generaciones de IA requieren saldo y
           confirmación previa.
         </p>
-        <StudioActionLink label="Explorar Studio" />
+        <StudioActionLink label="Explorar Studio" wide />
       </section>
       {isLoading ? (
         <LoadingBlock message="Cargando novedades…" />

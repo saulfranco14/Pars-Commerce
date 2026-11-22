@@ -748,7 +748,7 @@ export default function DashboardPage() {
       <div className="space-y-5 pb-8 sm:pb-10">
         <div className="space-y-3 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5">
           <PageHeader title={activeTenant.name} description={periodLabel} />
-          <StudioActionLink label="Crear publicidad con Studio" />
+          <StudioActionLink label="Crear publicidad con Studio" wide />
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <PeriodSelector
@@ -771,7 +771,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => setCreateOrderOpen(true)}
-                  className={`${pageHeaderCta} w-full justify-center whitespace-nowrap sm:w-auto`}
+                  className={`${pageHeaderCta} whitespace-nowrap`}
                 >
                   <Plus className="h-4 w-4 shrink-0" aria-hidden />
                   Nueva Orden

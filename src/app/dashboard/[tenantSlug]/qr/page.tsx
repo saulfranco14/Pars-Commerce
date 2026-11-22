@@ -96,6 +96,7 @@ export default function QrCodesPage() {
       <StudioActionLink
         destination="publicaciones"
         label="Anuncios y campañas del QR"
+        wide
       />
       <PageHeader
         title="Códigos QR"
