@@ -8,6 +8,7 @@ import { SolutionSelectorGrid } from "@/features/solutions/components/SolutionSe
 export const metadata: Metadata = {
   title: "Elige una solución para tu negocio",
   description: "Elige el giro de tu negocio y conoce el catálogo, pedidos, cobros y herramientas con las que puedes comenzar en Tlaco.",
+  alternates: { canonical: "/soluciones" },
 };
 
 export default function SolutionsPage() {

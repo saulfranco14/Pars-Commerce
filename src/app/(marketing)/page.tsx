@@ -20,6 +20,7 @@ import { resolveHeroScene } from "@/features/landing/helpers/resolveHeroScene";
 import { heroRegisterHref } from "@/features/landing/helpers/heroRegisterHref";
 import { homeStructuredData } from "@/features/landing/helpers/homeStructuredData";
 import { getPublicAppUrl } from "@/lib/env/appUrl";
+import { FAQS } from "@/features/landing/constants/faqs";
 
 // The tab title carries what people search for; the visible H1 keeps the campaign promise.
 const SEARCH_TITLE = "Tlaco · Pedidos y cobros con QR para tu negocio, gratis";
@@ -68,7 +69,7 @@ export default async function Home({
   const links = studio
     ? [...LANDING_NAV_LINKS, { label: "Studio", href: "/studio" }]
     : LANDING_NAV_LINKS;
-  const structured = homeStructuredData(getPublicAppUrl(), DESCRIPTION);
+  const structured = homeStructuredData(getPublicAppUrl(), DESCRIPTION, FAQS);
   return (
     <div className="min-h-screen bg-background">
       <script

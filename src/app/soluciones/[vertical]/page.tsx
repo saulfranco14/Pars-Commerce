@@ -7,6 +7,9 @@ import {
   SOLUTIONS,
   getSolutionByVertical,
 } from "@/features/solutions/solutionCatalog";
+import { SOLUTION_SEO } from "@/features/solutions/constants/solutionSeo";
+import { solutionStructuredData } from "@/features/solutions/helpers/solutionStructuredData";
+import { getPublicAppUrl } from "@/lib/env/appUrl";
 
 export function generateStaticParams() {
   return SOLUTIONS.map((solution) => ({ vertical: solution.path }));
@@ -19,8 +22,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const solution = getSolutionByVertical((await params).vertical);
   if (!solution) return {};
-  const title = `${solution.eyebrow} | Catálogo, pedidos y cobros`;
-  const description = `${solution.problem} Con Tlaco conectas tu tienda, pedidos y caja desde un solo lugar.`;
+  const { title, description } = SOLUTION_SEO[solution.path];
   return {
     title,
     description,
@@ -28,6 +30,10 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
+      url: `/soluciones/${solution.path}`,
+      locale: "es_MX",
+      siteName: "Tlaco",
+      type: "website",
       images: [
         {
           url: solution.heroImage,
@@ -50,11 +56,23 @@ export default async function SolutionPage({
   const solution = getSolutionByVertical((await params).vertical);
   if (!solution) notFound();
   const query = await searchParams;
+  const structured = solutionStructuredData(
+    getPublicAppUrl(),
+    solution.path,
+    solution.eyebrow,
+    SOLUTION_SEO[solution.path],
+  );
   return (
-    <FocusedSolutionExperience
-      solution={solution}
-      startOnboarding={query.iniciar === "1"}
-      studioEnabled={studioFlags().public}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structured).replace(/</g, "\\u003c") }}
+      />
+      <FocusedSolutionExperience
+        solution={solution}
+        startOnboarding={query.iniciar === "1"}
+        studioEnabled={studioFlags().public}
+      />
+    </>
   );
 }

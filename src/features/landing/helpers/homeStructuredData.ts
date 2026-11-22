@@ -1,5 +1,9 @@
 /** schema.org graph for the home page; serialized into a JSON-LD script tag. */
-export function homeStructuredData(base: string, description: string) {
+export function homeStructuredData(
+  base: string,
+  description: string,
+  faqs: ReadonlyArray<{ question: string; answer: string }>,
+) {
   const organization = `${base}/#organization`;
   return {
     "@context": "https://schema.org",
@@ -29,6 +33,15 @@ export function homeStructuredData(base: string, description: string) {
         inLanguage: "es-MX",
         offers: { "@type": "Offer", price: 0, priceCurrency: "MXN" },
         publisher: { "@id": organization },
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${base}/#preguntas`,
+        mainEntity: faqs.map((faq) => ({
+          "@type": "Question",
+          name: faq.question,
+          acceptedAnswer: { "@type": "Answer", text: faq.answer },
+        })),
       },
     ],
   };

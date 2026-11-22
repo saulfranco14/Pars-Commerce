@@ -20,6 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
           },
         ]
       : []),
+    { url: `${baseUrl}/soluciones`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     ...SOLUTIONS.map((solution) => ({
       url: `${baseUrl}/soluciones/${solution.path}`,
       lastModified: now,
