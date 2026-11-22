@@ -11,6 +11,132 @@
 .heroTitle span {
   color: var(--accent);
 }
+@media (min-width: 1024px) {
+  .heroTitle {
+    font-size: clamp(3.75rem, 5.6vw, 5rem);
+  }
+}
+.stage {
+  --card-w: min(58vw, 270px);
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  height: calc(var(--card-w) * 1.25 + 4rem);
+  margin-inline: auto;
+}
+.stageGlow {
+  position: absolute;
+  inset: 6% 2% 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--accent) 38%, transparent),
+    transparent
+  );
+}
+.stageCard {
+  position: absolute;
+  top: 2rem;
+  left: 50%;
+  width: var(--card-w);
+}
+.stageSwap {
+  overflow: hidden;
+  border-radius: 0.9rem;
+  box-shadow: 0 28px 60px #0f172a45;
+  animation: studio-stage-in 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.stageFront {
+  z-index: 3;
+  transform: translateX(-50%);
+}
+.stageBackLeft {
+  z-index: 1;
+  transform: translateX(-100%) rotate(-9deg) scale(0.8);
+  transform-origin: bottom right;
+}
+.stageBackRight {
+  z-index: 2;
+  transform: rotate(9deg) scale(0.8);
+  transform-origin: bottom left;
+}
+.stageBackLeft .stageSwap,
+.stageBackRight .stageSwap {
+  animation-delay: 120ms;
+  filter: saturate(0.85) brightness(0.92);
+}
+.stageChip {
+  position: absolute;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 10px 24px #0f172a2e;
+  animation: studio-float 5s ease-in-out infinite;
+}
+.stageChipTitle {
+  top: calc(2rem + var(--card-w) * 0.2);
+  right: calc(50% + var(--card-w) * 0.32);
+}
+.stageChipExport {
+  bottom: 0.9rem;
+  right: max(0px, calc(50% - var(--card-w) * 0.62));
+  animation-delay: -2.5s;
+}
+.stageCursor {
+  position: absolute;
+  z-index: 5;
+  top: calc(2rem + var(--card-w) * 1.02);
+  left: calc(50% - var(--card-w) * 0.08);
+  filter: drop-shadow(0 2px 3px #0f172a50);
+  animation: studio-float 4s ease-in-out infinite;
+  animation-delay: -1s;
+}
+.stage[data-playing="false"] .stageChip,
+.stage[data-playing="false"] .stageCursor {
+  animation-play-state: paused;
+}
+@media (min-width: 1024px) {
+  .stage {
+    --card-w: 320px;
+  }
+  .stageChip {
+    font-size: 0.8rem;
+  }
+}
+@keyframes studio-stage-in {
+  from {
+    opacity: 0;
+    translate: 0 18px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes studio-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -6px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stageSwap,
+  .stageChip,
+  .stageCursor {
+    animation: none;
+  }
+}
 .workbench {
   position: relative;
   isolation: isolate;
@@ -220,24 +346,6 @@
 }
 .galleryItem {
   animation: studio-scene-in 450ms ease-out both;
-}
-.galleryControl {
-  display: inline-flex;
-  min-width: 44px;
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  color: var(--foreground);
-  cursor: pointer;
-}
-.galleryControl:hover {
-  background: var(--border-soft);
-}
-.galleryControl:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
 }
 @keyframes studio-scene-in {
   from {
@@ -705,14 +813,6 @@
     #f4ead6 78%
   );
 }
-.galleryControl {
-  transition:
-    background-color 160ms ease,
-    transform 160ms ease;
-}
-.galleryControl:active {
-  transform: scale(0.94);
-}
 .exampleSlide button {
   transition:
     transform 180ms ease,
@@ -722,11 +822,9 @@
   transform: scale(0.985);
 }
 @media (prefers-reduced-motion: reduce) {
-  .galleryControl,
   .exampleSlide button {
     transition: none;
   }
-  .galleryControl:active,
   .exampleSlide button:active {
     transform: none;
   }

@@ -1,81 +1,42 @@
-import Link from "next/link";
-import {
-  ArrowDown,
-  Check,
-  Download,
-  ImagePlus,
-  Layers3,
-  MonitorSmartphone,
-  Share2,
-  Sparkles,
-} from "lucide-react";
+import { Check, ImagePlus, Layers3, Share2, Sparkles } from "lucide-react";
 import { STUDIO_EXAMPLES } from "../../constants/marketing";
 import { StudioEditorPreview } from "./StudioEditorPreview";
-import { StudioEntryCta } from "./StudioEntryCta";
 import { StudioExamplePoster } from "./StudioExamplePoster";
 import { StudioExamplesGallery } from "./StudioExamplesGallery";
+import { StudioHeroStage } from "./StudioHeroStage";
 import { StudioWordmark } from "./StudioWordmark";
 import styles from "./studioMarketing.module.css";
 
-export function StudioLandingHero({
-  startingPrice,
-  preview = false,
-}: {
-  startingPrice: string | null;
-  preview?: boolean;
-}) {
+export function StudioLandingHero() {
   return (
     <section className={styles.hero}>
-      <div className="mx-auto max-w-6xl px-5 pt-12 text-center sm:px-8 sm:pt-16">
-        <p className="inline-flex items-center gap-2 text-sm font-semibold">
-          <StudioWordmark />
-          <span className="mx-1 text-border" aria-hidden>
-            /
-          </span>
-          <span className="font-normal text-muted-foreground">
-            Tu espacio para crear
-          </span>
-        </p>
-        <h1 className={`${styles.heroTitle} mx-auto mt-6 max-w-5xl font-bold`}>
-          Crea anuncios para
-          <br className="hidden sm:block" /> <span>tu negocio.</span>
-          <span className="sr-only"> con Tlaco Studio</span>
-        </h1>
-        <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
-          Lo que vendes merece verse así. Transforma tu catálogo en anuncios con
-          tu foto, tu precio y toda tu personalidad.
-        </p>
-        <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <StudioEntryCta location="hero" />
-          <Link
-            href="#ejemplos"
-            className="inline-flex min-h-12 items-center gap-2 rounded-xl px-5 text-sm font-semibold hover:bg-border-soft focus-visible:ring-2 focus-visible:ring-accent"
+      <div className="mx-auto grid max-w-6xl items-center gap-8 px-5 pt-10 sm:px-8 sm:pt-14 lg:grid-cols-2 lg:gap-6 lg:pt-16">
+        <div className="text-center lg:text-left">
+          <p className="inline-flex items-center gap-2 text-sm font-semibold">
+            <StudioWordmark />
+            <span className="mx-1 text-border" aria-hidden>
+              /
+            </span>
+            <span className="font-normal text-muted-foreground">
+              Tu espacio para crear
+            </span>
+          </p>
+          <h1
+            className={`${styles.heroTitle} mx-auto mt-6 max-w-5xl font-bold lg:mx-0`}
           >
-            Explorar ideas
-            <ArrowDown className="h-4 w-4" aria-hidden />
-          </Link>
+            Crea anuncios <br className="hidden lg:block" />
+            para <br className="hidden sm:block lg:hidden" />
+            <span>tu negocio.</span>
+            <span className="sr-only"> con Tlaco Studio</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg lg:mx-0">
+            Lo que vendes merece verse así. Transforma tu catálogo en anuncios
+            con tu foto, tu precio y toda tu personalidad.
+          </p>
         </div>
-        <p className="mt-3 text-xs leading-6 text-muted-foreground">
-          {startingPrice
-            ? `${preview ? "Precio de lanzamiento previsto: " : "Requiere Studio desde "}${startingPrice} MXN al mes · IVA incluido`
-            : "Crear diseños requiere una membresía Studio por negocio."}
-        </p>
+        <StudioHeroStage />
       </div>
       <StudioEditorPreview />
-      <div className="border-b border-border bg-background">
-        <div className="mx-auto grid max-w-5xl gap-3 px-5 py-6 text-sm sm:grid-cols-3 sm:gap-6 sm:px-8">
-          {[
-            { Icon: Layers3, text: "Tu foto y texto, en capas" },
-            { Icon: Download, text: "Edición y exportación: 0 Tlacos" },
-            { Icon: MonitorSmartphone, text: "Desde tu navegador" },
-          ].map(({ Icon, text }) => (
-            <p key={text} className="flex items-center justify-center gap-2">
-              <Icon className="h-4 w-4 shrink-0 text-accent" aria-hidden />
-              {text}
-            </p>
-          ))}
-        </div>
-      </div>
     </section>
   );
 }

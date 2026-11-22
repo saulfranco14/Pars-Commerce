@@ -117,10 +117,7 @@ export default async function StudioPage() {
       />
       <div className="h-17" aria-hidden />
       <main>
-        <StudioLandingHero
-          startingPrice={starting}
-          preview={catalog.status === "preview"}
-        />
+        <StudioLandingHero />
         <StudioExamples />
         <StudioHowItWorks />
         <StudioChannels publishEnabled={flags.publish} aiEnabled={flags.ai} />

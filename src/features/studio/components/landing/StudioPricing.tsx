@@ -1,5 +1,4 @@
-import { FeedbackLink as Link } from "@/components/navigation/FeedbackLink";
-import { ArrowRight, Check, Layers3, Library, Sparkles } from "lucide-react";
+import { Check, Layers3, Library, Sparkles } from "lucide-react";
 import { formatCurrency } from "@/features/qr/helpers/format";
 import { StudioEntryCta } from "./StudioEntryCta";
 import type { StudioPack, StudioPlan } from "../../interfaces/studio";
@@ -131,16 +130,14 @@ export function StudioPricing({
               Las membresías no están disponibles en este momento.
             </p>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              Puedes seguir explorando los ejemplos y las herramientas de
-              Studio.
+              Entra a Studio con tu negocio y conoce el editor.
             </p>
-            <Link
-              href="#vista-del-editor"
-              className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-accent"
-            >
-              Probar la demostración
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
+            <div className="mt-5">
+              <StudioEntryCta
+                location="pricing_unavailable"
+                label="Entrar a Studio"
+              />
+            </div>
           </div>
         )}
         {packs.length > 0 && (

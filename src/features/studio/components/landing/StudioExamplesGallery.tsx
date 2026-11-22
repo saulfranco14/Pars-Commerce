@@ -1,14 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import {
-  ArrowLeft,
-  ArrowRight,
-  ImagePlus,
-  Pause,
-  Play,
-  RotateCcw,
-} from "lucide-react";
+import { ImagePlus } from "lucide-react";
 import { STUDIO_EXAMPLES } from "../../constants/marketing";
 import { useStudioShowcase } from "../../hooks/useStudioShowcase";
 import { StudioExamplePoster } from "./StudioExamplePoster";
@@ -28,89 +21,11 @@ export function StudioExamplesGallery() {
         behavior: show.reducedMotion ? "instant" : "smooth",
       });
   }, [show.index, show.reducedMotion]);
-  function move(delta: number) {
-    setOriginal(null);
-    const element = rail.current;
-    let nearest = show.index;
-    if (element) {
-      if (
-        delta > 0 &&
-        element.scrollLeft + element.clientWidth >= element.scrollWidth - 8
-      ) {
-        show.choose(0);
-        return;
-      }
-      if (delta < 0 && element.scrollLeft <= 8) {
-        show.choose(STUDIO_EXAMPLES.length - 1);
-        return;
-      }
-      let distance = Infinity;
-      Array.from(element.children).forEach((child, i) => {
-        const gap = Math.abs(
-          (child as HTMLElement).offsetLeft - element.scrollLeft,
-        );
-        if (gap < distance) {
-          distance = gap;
-          nearest = i;
-        }
-      });
-    }
-    show.choose(nearest + delta);
-  }
   return (
     <div ref={show.container} {...show.interaction} className="mt-8">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <p className="flex items-center gap-2 text-xs text-muted-foreground">
-          <RotateCcw className="h-4 w-4 shrink-0" aria-hidden />
-          Toca un anuncio para ver la foto con la que empezó.
-        </p>
-        <div
-          className="flex items-center gap-1"
-          aria-label="Controles de ejemplos"
-        >
-          <button
-            type="button"
-            onClick={() => move(-1)}
-            aria-label="Ver negocios anteriores"
-            className={styles.galleryControl}
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setOriginal(null);
-              show.toggle();
-            }}
-            aria-label={
-              show.enabled
-                ? "Pausar ejemplos automáticos"
-                : "Reproducir ejemplos automáticos"
-            }
-            className={styles.galleryControl}
-          >
-            {show.enabled ? (
-              <Pause className="h-4 w-4" aria-hidden />
-            ) : (
-              <Play className="h-4 w-4" aria-hidden />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => move(1)}
-            aria-label="Ver más negocios"
-            className={styles.galleryControl}
-          >
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </button>
-          <span className="ml-2 text-xs text-muted-foreground">
-            {STUDIO_EXAMPLES.length} giros para inspirarte
-          </span>
-        </div>
-      </div>
       <div
         ref={rail}
-        className={`${styles.exampleRail} mt-5`}
+        className={styles.exampleRail}
         role="region"
         aria-label="Ejemplos de anuncios por giro"
         aria-roledescription="carrusel"

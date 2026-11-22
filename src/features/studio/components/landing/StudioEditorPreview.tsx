@@ -1,5 +1,5 @@
 "use client";
-import { useId, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import {
   ArrowRight,
@@ -30,7 +30,6 @@ export function StudioEditorPreview() {
   const show = useStudioShowcase(STUDIO_EXAMPLES.length, 3, 6500, false);
   const [format, setFormat] =
     useState<(typeof FORMATS)[number]["value"]>("portrait");
-  const sectorId = useId();
   const example = STUDIO_EXAMPLES[show.index],
     step = STUDIO_WALKTHROUGH_STEPS[show.step];
   function chooseExample(next: number) {
@@ -219,45 +218,6 @@ export function StudioEditorPreview() {
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </button>
             </aside>
-          </div>
-        </div>
-      </div>
-      <div className="relative bg-accent px-4 py-5">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-2">
-          {STUDIO_EXAMPLES.slice(0, 3).map((item, i) => (
-            <button
-              key={item.id}
-              type="button"
-              aria-pressed={show.index === i}
-              onClick={() => chooseExample(i)}
-              className={`min-h-11 rounded-full border px-4 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${show.index === i ? "border-white bg-white text-slate-900" : "border-white/40 text-white hover:bg-white/15"}`}
-            >
-              {item.sector}
-            </button>
-          ))}
-          <div className="flex min-h-11 items-center gap-2 rounded-full border border-white/40 px-3">
-            <label
-              htmlFor={sectorId}
-              className="text-xs font-semibold text-white"
-            >
-              Tu giro
-            </label>
-            <select
-              id={sectorId}
-              value={show.index}
-              onChange={(event) => chooseExample(Number(event.target.value))}
-              className="min-h-11 max-w-[160px] cursor-pointer rounded bg-transparent text-xs font-semibold text-white outline-offset-2 focus-visible:outline-2 focus-visible:outline-white"
-            >
-              {STUDIO_EXAMPLES.map((item, i) => (
-                <option
-                  key={item.id}
-                  value={i}
-                  className="bg-white text-slate-900"
-                >
-                  {item.sector}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
       </div>
