@@ -17,20 +17,29 @@ import { LandingFaq } from "@/features/landing/components/sections/LandingFaq";
 import { LandingFooter } from "@/features/landing/components/sections/LandingFooter";
 
 import { resolveHeroScene } from "@/features/landing/helpers/resolveHeroScene";
+import { heroRegisterHref } from "@/features/landing/helpers/heroRegisterHref";
+import { homeStructuredData } from "@/features/landing/helpers/homeStructuredData";
+import { getPublicAppUrl } from "@/lib/env/appUrl";
 
-const TITLE = "Tu cliente pide y paga desde su celular";
+// The tab title carries what people search for; the visible H1 keeps the campaign promise.
+const SEARCH_TITLE = "Tlaco · Pedidos y cobros con QR para tu negocio, gratis";
+const HEADLINE = "Tu cliente pide y paga desde su celular. Tú lo ves al instante.";
 const DESCRIPTION =
-  "Mesas con QR, tienda en línea, cuotas y crédito en una sola cuenta. Tu cliente pide y paga desde su celular y tú lo ves en tu panel al instante. Empieza gratis.";
+  "Mesas con QR, tienda en línea, cuotas y crédito en una sola cuenta. Tu cliente pide y paga desde su celular y tú lo ves al instante. Empieza gratis.";
 
 export const metadata: Metadata = {
-  title: { absolute: `Tlaco · ${TITLE}` },
+  title: { absolute: SEARCH_TITLE },
   description: DESCRIPTION,
   alternates: { canonical: "/" },
   openGraph: {
-    title: `${TITLE}. Tú lo ves al instante.`,
+    title: HEADLINE,
     description: DESCRIPTION,
     url: "/",
+    locale: "es_MX",
+    siteName: "Tlaco",
+    type: "website",
   },
+  twitter: { card: "summary_large_image", title: HEADLINE, description: DESCRIPTION },
 };
 
 /**
@@ -59,12 +68,17 @@ export default async function Home({
   const links = studio
     ? [...LANDING_NAV_LINKS, { label: "Studio", href: "/studio" }]
     : LANDING_NAV_LINKS;
+  const structured = homeStructuredData(getPublicAppUrl(), DESCRIPTION);
   return (
     <div className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structured).replace(/</g, "\\u003c") }}
+      />
       <LandingNav links={links} />
       <div className="h-13" aria-hidden />
       <main>
-        <LandingHero scene={scene} />
+        <LandingHero scene={scene} registerHref={heroRegisterHref(scene)} />
         <LandingTryIt />
         <LandingStats />
         {studio && <LandingStudio />}

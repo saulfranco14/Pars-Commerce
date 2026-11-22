@@ -16,6 +16,7 @@ import {
 import { HERO_GUIDES } from "@/features/landing/constants/heroGuide";
 import { buildHeroPanel } from "@/features/landing/helpers/heroPanel";
 import { heroSandboxReducer, isBeatDone } from "@/features/landing/helpers/heroSandbox";
+import { trackHomeEvent } from "@/features/landing/helpers/trackHomeEvent";
 
 import type {
   HeroBeatKey,
@@ -49,6 +50,13 @@ export function useHeroDemo(): UseHeroDemoResult {
 
   const beat = HERO_BEATS[index];
   const nextIndex = (index + 1) % HERO_BEATS.length;
+
+  const reportedUse = useRef(false);
+  useEffect(() => {
+    if (!touched || reportedUse.current) return;
+    reportedUse.current = true;
+    trackHomeEvent("home_demo_use", { module: beat.key });
+  }, [touched, beat.key]);
 
   const goTo = useCallback((i: number) => {
     setPlaying(false);

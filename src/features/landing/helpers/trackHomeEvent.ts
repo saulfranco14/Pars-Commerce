@@ -2,7 +2,7 @@ import { track } from "@vercel/analytics";
 
 import { getAcquisitionProps } from "@/lib/acquisition";
 
-export type HomeEvent = "home_view" | "home_cta_click" | "home_how_click";
+export type HomeEvent = "home_view" | "home_cta_click" | "home_how_click" | "home_demo_use";
 
 export function trackHomeEvent(name: HomeEvent, props: Record<string, string>): void {
   try {

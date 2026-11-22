@@ -17,7 +17,13 @@ import type { HeroSceneSelection } from "@/features/landing/interfaces/heroScene
  * Mobile order is deliberate: headline and CTA, then the scene, then the
  * paragraph. On `lg` the paragraph moves back above the CTA.
  */
-export function HeroExperience({ initial }: { initial: HeroSceneSelection }) {
+export function HeroExperience({
+  initial,
+  registerHref,
+}: {
+  initial: HeroSceneSelection;
+  registerHref: string;
+}) {
   const { containerRef, index, scene, replayKey, paused, reducedMotion, toggle } =
     useHeroScene(initial);
 
@@ -52,7 +58,7 @@ export function HeroExperience({ initial }: { initial: HeroSceneSelection }) {
       <div className="order-3 mt-7 flex w-full flex-col items-center gap-3 lg:order-4">
         <div className="flex w-full flex-col items-center gap-2 sm:w-auto sm:flex-row sm:gap-4">
           <Link
-            href="/registro"
+            href={registerHref}
             onClick={() =>
               trackHomeEvent("home_cta_click", { location: "hero", giro: scene.key })
             }
