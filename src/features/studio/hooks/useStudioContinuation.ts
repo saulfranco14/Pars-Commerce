@@ -11,8 +11,7 @@ export function useStudioContinuation(): void {
   useEffect(() => {
     if (
       creating &&
-      summary?.active &&
-      summary.enabled &&
+      summary?.enabled &&
       summary.permissions.includes("studio.create")
     )
       router.replace(
@@ -20,7 +19,6 @@ export function useStudioContinuation(): void {
       );
   }, [
     creating,
-    summary?.active,
     summary?.enabled,
     summary?.permissions,
     tenantSlug,

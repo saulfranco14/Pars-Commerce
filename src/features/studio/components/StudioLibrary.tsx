@@ -77,7 +77,7 @@ export function StudioLibrary() {
               design={design}
               base={base}
               active={Boolean(
-                summary?.active &&
+                summary?.enabled &&
                   summary.permissions.includes("studio.create"),
               )}
               busy={library.busy}

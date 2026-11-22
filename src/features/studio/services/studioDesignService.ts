@@ -77,7 +77,7 @@ export async function createStudioDesign(raw: unknown): Promise<StudioDesign> {
   const { db, user } = await requireStudioAccess(
     input.tenant_id,
     "studio.create",
-    true,
+    "create",
   );
   if (
     !requireStudioData(
@@ -247,7 +247,7 @@ export async function saveStudioDesign(id: string, raw: unknown) {
   const { db, user } = await requireStudioAccess(
     input.tenant_id,
     "studio.create",
-    true,
+    "create",
   );
   const design = requireStudioData(
     await db
@@ -308,7 +308,7 @@ export async function createStudioVersion(
   const { db, user } = await requireStudioAccess(
     tenantId,
     "studio.create",
-    true,
+    "create",
   );
   const design = requireStudioData(
     await db
@@ -373,7 +373,7 @@ export async function duplicateStudioDesign(
   const { db, user } = await requireStudioAccess(
     tenantId,
     "studio.create",
-    true,
+    "create",
   );
   const original = requireStudioData(
     await db

@@ -9918,6 +9918,10 @@ export type Database = {
         Args: { p_provider_payment_id: string; p_refunded_mxn: number }
         Returns: boolean
       }
+      studio_grant_starter_credits: {
+        Args: { p_tenant_id: string }
+        Returns: boolean
+      }
       studio_has_permission: {
         Args: { p_actor_id?: string; p_permission: string; p_tenant_id: string }
         Returns: boolean

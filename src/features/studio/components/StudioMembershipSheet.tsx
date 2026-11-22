@@ -25,18 +25,18 @@ export function StudioMembershipSheet({
     <FormSheet
       isOpen={open}
       onClose={onClose}
-      title="Crea con Tlaco Studio"
+      title="Descarga y comparte sin límite"
       icon={WandSparkles}
-      description="Membresía adicional para este negocio. Ajustar y exportar cuesta 0 Tlacos."
+      description="Diseñar siempre es gratis y tu primer anuncio también. Con la membresía descargas y compartes todos tus diseños."
       maxWidth="max-w-3xl"
       footer={
         <button
-          className={adminActionButtonSecondary}
+          className={`${adminActionButtonSecondary} w-full sm:w-auto`}
           onClick={onClose}
           disabled={billing.busy}
         >
           <X className="h-4 w-4" />
-          Seguir explorando
+          Seguir diseñando
         </button>
       }
     >
@@ -88,7 +88,7 @@ export function StudioMembershipSheet({
                   billing.busy || !summary.owner || !summary.checkoutEnabled
                 }
                 onClick={() => void billing.subscribe(plan.code)}
-                className={`${adminActionButtonPrimary} mt-5`}
+                className={`${adminActionButtonPrimary} mt-5 w-full`}
               >
                 <CreditCard className="h-4 w-4" />
                 {billing.busy ? "Preparando…" : "Contratar"}

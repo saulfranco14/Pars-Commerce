@@ -6,10 +6,14 @@ import { studioFlags } from "./studioFlags";
 import { isStudioMembershipActive } from "../helpers/access";
 import type { StudioMembership, StudioPermission } from "../interfaces/studio";
 
+/**
+ * `write`: `"create"` needs Studio switched on (designing is free); `true`
+ * also needs an active membership (AI, placements, brand).
+ */
 export async function requireStudioAccess(
   tenantId: string,
   permission: StudioPermission = "studio.read",
-  write = false,
+  write: boolean | "create" = false,
 ) {
   const client = await createClient();
   const {
@@ -34,7 +38,7 @@ export async function requireStudioAccess(
     .maybeSingle();
   if (error) throw new StudioError("NOT_CONFIGURED");
   if (write && !studioFlags().enabled) throw new StudioError("NOT_CONFIGURED");
-  if (write && !isStudioMembershipActive(membership as StudioMembership | null))
+  if (write === true && !isStudioMembershipActive(membership as StudioMembership | null))
     throw new StudioError("MEMBERSHIP_REQUIRED");
   const { data: tenantMembership } = await db
     .from("tenant_memberships")

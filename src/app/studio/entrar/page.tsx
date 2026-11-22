@@ -9,7 +9,6 @@ import {
   studioEntryHref,
   studioLoginRegistrationHref,
 } from "@/features/studio/helpers/entry";
-import { isStudioMembershipActive } from "@/features/studio/helpers/access";
 import { uuidSchema } from "@/features/studio/validations/studioSchemas";
 import { StudioEntryDenied } from "@/features/studio/components/landing/StudioEntryDenied";
 import { TlacoLogo } from "@/components/brand/TlacoLogo";
@@ -127,7 +126,7 @@ export default async function StudioEntryPage({
     const access = await requireStudioAccess(selected.id);
     if (setup === "in_progress" && access.owner)
       redirect(`/dashboard/preparar-negocio?tenant=${selected.id}`);
-    const target = `/dashboard/${encodeURIComponent(selected.slug)}/studio${q.studio_action !== "home" && isStudioMembershipActive(access.membership) && (access.owner || access.permissions?.includes("studio.create")) ? "/nuevo" : ""}`;
+    const target = `/dashboard/${encodeURIComponent(selected.slug)}/studio${q.studio_action !== "home" && (access.owner || access.permissions?.includes("studio.create")) ? "/nuevo" : ""}`;
     const continuation = new URLSearchParams({
       studio_action: q.studio_action === "home" ? "home" : "create",
     });

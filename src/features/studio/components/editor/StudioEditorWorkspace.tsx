@@ -176,19 +176,22 @@ export default function StudioEditorWorkspace({
         source={editor.source.current}
         tenantSlug={tenantSlug}
       />
-      {!editor.canEdit &&
-        !summary?.active &&
-        summary?.permissions.includes("studio.create") && (
+      {summary &&
+        !summary.active &&
+        summary.permissions.includes("studio.create") &&
+        (summary.freeExportDesignId &&
+        summary.freeExportDesignId !== detail.design.id ? (
           <Notification
             tone="info"
             message={
               <div className="space-y-3">
                 <p>
-                  Tu composición local se conserva. Una membresía vigente
-                  permite seguir editando y crear nuevas exportaciones.
+                  Puedes seguir diseñando sin límite. Ya usaste tu descarga
+                  gratis con otro anuncio; para descargar o compartir este,
+                  activa tu membresía.
                 </p>
                 <button
-                  className={adminActionButtonSecondary}
+                  className={`${adminActionButtonSecondary} w-full sm:w-auto`}
                   onClick={() => setMembershipOpen(true)}
                 >
                   <Sparkles className="h-4 w-4" />
@@ -197,7 +200,12 @@ export default function StudioEditorWorkspace({
               </div>
             }
           />
-        )}
+        ) : (
+          <Notification
+            tone="success"
+            message="Este anuncio lo descargas y compartes gratis. Es tu regalo de bienvenida."
+          />
+        ))}
       {editor.conflict && (
         <Notification
           tone="warning"
@@ -695,8 +703,11 @@ export default function StudioEditorWorkspace({
         </button>
       </FormSheet>
       <StudioMembershipSheet
-        open={membershipOpen}
-        onClose={() => setMembershipOpen(false)}
+        open={membershipOpen || output.membershipRequired}
+        onClose={() => {
+          setMembershipOpen(false);
+          output.clearMembershipRequired();
+        }}
       />
       <StudioGenerationSheet ai={ai} />
       <ConfirmDialog

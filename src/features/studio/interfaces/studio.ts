@@ -151,6 +151,8 @@ export interface StudioSummary {
   packs: StudioPack[];
   recent: StudioDesign[];
   counts: { designs: number; ready: number; placements: number };
+  /** Design that used the one free export; null while it is still available. */
+  freeExportDesignId: string | null;
 }
 
 export interface StudioDesignDetail {

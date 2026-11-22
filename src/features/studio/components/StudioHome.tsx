@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Coins, Plus, WandSparkles } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
@@ -15,12 +14,10 @@ import { STUDIO_SOURCES, STUDIO_TEMPLATES } from "../constants/studio";
 import { useStudioContinuation } from "../hooks/useStudioContinuation";
 import { useStudioContext } from "./StudioProvider";
 import { StudioLoading } from "./StudioLoading";
-import { StudioMembershipSheet } from "./StudioMembershipSheet";
 
 export function StudioHome() {
   useStudioContinuation();
-  const { tenantSlug, summary, isLoading, error } = useStudioContext(),
-    [membershipOpen, setMembershipOpen] = useState(false);
+  const { tenantSlug, summary, isLoading, error } = useStudioContext();
   const base = `/dashboard/${tenantSlug}/studio`;
   if (isLoading) return <StudioLoading />;
   if (error || !summary)
@@ -30,8 +27,8 @@ export function StudioHome() {
         message={error?.message ?? "No pudimos cargar Studio."}
       />
     );
-  const canCreate = summary.permissions.includes("studio.create"),
-    create = () => setMembershipOpen(true);
+  const canCreate =
+    summary.enabled && summary.permissions.includes("studio.create");
   return (
     <div className="space-y-6">
       <PageHeader
@@ -40,23 +37,10 @@ export function StudioHome() {
         description="Tu producto, su precio y tu marca. Diseña una vez y prepara cada formato para compartirlo."
         action={
           canCreate ? (
-            summary.active ? (
-              <Link
-                className={pageHeaderCtaDesktop}
-                href={`${base}/nuevo`}
-              >
-                <Plus className="h-4 w-4" />
-                Crear diseño
-              </Link>
-            ) : (
-              <button
-                className={pageHeaderCtaDesktop}
-                onClick={create}
-              >
-                <Plus className="h-4 w-4" />
-                Crear diseño
-              </button>
-            )
+            <Link className={pageHeaderCtaDesktop} href={`${base}/nuevo`}>
+              <Plus className="h-4 w-4" />
+              Crear diseño
+            </Link>
           ) : undefined
         }
       />
@@ -72,22 +56,22 @@ export function StudioHome() {
           message="La creación está temporalmente no disponible. Puedes explorar Studio, consultar tu biblioteca y descargar los archivos guardados."
         />
       )}
-      {!summary.active && (
+      {!summary.active && canCreate && (
         <section className="rounded-2xl border border-accent/20 bg-accent/5 p-5 sm:p-7">
           <div className="max-w-2xl">
             <WandSparkles className="h-7 w-7 text-accent" />
             <h2 className="mt-3 text-xl font-bold">
-              Tu próximo anuncio ya tiene un punto de partida.
+              Diseña gratis. Tu primer anuncio también se descarga gratis.
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Elige un producto o promoción, ajusta foto y precio, y prepara su
-              versión para redes, sitio o mesas. Crear un diseño requiere una
-              membresía Studio para este negocio.
+              {summary.freeExportDesignId
+                ? "Ya usaste tu descarga gratis. Puedes seguir creando y editando sin límite; para descargar o compartir más anuncios activa tu membresía."
+                : "Elige un producto o promoción, ajusta foto y precio, y descarga tu primer anuncio sin costo. Además tienes Tlacos de regalo para probar la IA cuando actives tu membresía."}
             </p>
-            <button className={`${pageHeaderCta} mt-4`} onClick={create}>
+            <Link className={`${pageHeaderCta} mt-4`} href={`${base}/nuevo`}>
               <ArrowRight className="h-4 w-4" />
-              Conocer membresías
-            </button>
+              Crear mi primer diseño
+            </Link>
           </div>
         </section>
       )}
@@ -114,7 +98,7 @@ export function StudioHome() {
         <h2 className="text-lg font-bold">¿Qué quieres anunciar?</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {STUDIO_SOURCES.map((source) =>
-            summary.active && canCreate ? (
+            canCreate ? (
               <Link
                 key={source.value}
                 href={`${base}/nuevo?source=${source.value}`}
@@ -127,17 +111,15 @@ export function StudioHome() {
                 <ArrowRight className="mt-3 h-4 w-4 text-accent" />
               </Link>
             ) : (
-              <button
+              <div
                 key={source.value}
-                onClick={create}
-                className="rounded-2xl border border-border bg-surface p-4 text-left hover:border-accent"
+                className="rounded-2xl border border-border bg-surface p-4"
               >
                 <p className="font-bold">{source.label}</p>
                 <p className="mt-2 text-xs leading-5 text-muted-foreground">
                   {source.description}
                 </p>
-                <ArrowRight className="mt-3 h-4 w-4 text-accent" />
-              </button>
+              </div>
             ),
           )}
         </div>
@@ -222,20 +204,11 @@ export function StudioHome() {
           ? "Administrar membresía y Tlacos"
           : "Ver membresías y Tlacos"}
       </Link>
-      {canCreate &&
-        (summary.active ? (
-          <FAB href={`${base}/nuevo`} aria-label="Crear diseño">
-            <Plus className="h-6 w-6" />
-          </FAB>
-        ) : (
-          <FAB onClick={create} aria-label="Crear diseño">
-            <Plus className="h-6 w-6" />
-          </FAB>
-        ))}
-      <StudioMembershipSheet
-        open={membershipOpen}
-        onClose={() => setMembershipOpen(false)}
-      />
+      {canCreate && (
+        <FAB href={`${base}/nuevo`} aria-label="Crear diseño">
+          <Plus className="h-6 w-6" />
+        </FAB>
+      )}
     </div>
   );
 }

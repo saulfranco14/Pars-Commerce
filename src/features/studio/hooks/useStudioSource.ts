@@ -54,13 +54,7 @@ export function useStudioSource(
   });
   const started = useRef(false);
   useEffect(() => {
-    if (
-      quick &&
-      initialId &&
-      summary?.active &&
-      summary.enabled &&
-      !started.current
-    ) {
+    if (quick && initialId && summary?.enabled && !started.current) {
       started.current = true;
       void form.submit({
         title:
@@ -68,7 +62,7 @@ export function useStudioSource(
           "Mi anuncio",
       });
     }
-  }, [quick, initialId, summary?.active, summary?.enabled, form, sources.data]);
+  }, [quick, initialId, summary?.enabled, form, sources.data]);
   function setSource(value: StudioSourceType) {
     setSourceValue(value);
     setSourceId(null);

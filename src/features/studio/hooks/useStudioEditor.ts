@@ -94,9 +94,7 @@ export function useStudioEditor(detail: StudioDesignDetail) {
   const serialize = (value: typeof current.current) => JSON.stringify(value);
   const saved = useRef(serialize(current.current));
   const canEdit = Boolean(
-    summary?.active &&
-      summary.enabled &&
-      summary.permissions.includes("studio.create"),
+    summary?.enabled && summary.permissions.includes("studio.create"),
   );
   const setScene = useCallback(
     (scene: StudioScene) =>

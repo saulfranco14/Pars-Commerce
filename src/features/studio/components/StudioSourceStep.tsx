@@ -15,7 +15,6 @@ import { STUDIO_SOURCES } from "../constants/studio";
 import { useStudioContext } from "./StudioProvider";
 import { useStudioSource } from "../hooks/useStudioSource";
 import { StudioOptions } from "./StudioOptions";
-import { StudioMembershipSheet } from "./StudioMembershipSheet";
 import { StudioWizardProgress } from "./StudioWizardProgress";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { StudioLoading } from "./StudioLoading";
@@ -32,8 +31,7 @@ export function StudioSourceStep({
 }) {
   const { tenantSlug, summary, isLoading } = useStudioContext(),
     source = useStudioSource(initialSource, initialId, quick),
-    [search, setSearch] = useState(""),
-    [membershipOpen, setMembershipOpen] = useState(false);
+    [search, setSearch] = useState("");
   if (isLoading) return <StudioLoading />;
   if (!summary?.permissions.includes("studio.create"))
     return (
@@ -42,25 +40,12 @@ export function StudioSourceStep({
         message="Necesitas permiso para crear diseños. El propietario puede dártelo desde Equipo."
       />
     );
-  if (!summary.active || !summary.enabled)
+  if (!summary.enabled)
     return (
-      <div className="space-y-5">
-        <PageHeader
-          title="Prepara tu primer anuncio"
-          description="Crear un diseño propio requiere una membresía Studio vigente."
-        />
-        <button
-          className={adminActionButtonPrimary}
-          onClick={() => setMembershipOpen(true)}
-        >
-          <ArrowRight className="h-4 w-4" />
-          Ver membresías Studio
-        </button>
-        <StudioMembershipSheet
-          open={membershipOpen}
-          onClose={() => setMembershipOpen(false)}
-        />
-      </div>
+      <Notification
+        tone="info"
+        message="La creación está temporalmente no disponible. Tu biblioteca y tus archivos guardados se conservan."
+      />
     );
   return (
     <div className="space-y-5">

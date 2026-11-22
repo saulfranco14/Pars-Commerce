@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { ApiFetchError } from "@/services/apiFetch";
 import { exportStudioScene } from "../helpers/canvas";
 import {
   createVersion,
@@ -32,7 +33,8 @@ export function useStudioOutput(input: {
   const [output, setOutput] = useState<StudioPreparedOutput | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState<string | null>(null),
-    [success, setSuccess] = useState<string | null>(null);
+    [success, setSuccess] = useState<string | null>(null),
+    [membershipRequired, setMembershipRequired] = useState(false);
   useEffect(
     () => () => {
       if (output) URL.revokeObjectURL(output.url);
@@ -79,6 +81,8 @@ export function useStudioOutput(input: {
       setOutput(prepared);
       return prepared;
     } catch (e) {
+      if (e instanceof ApiFetchError && e.code === "MEMBERSHIP_REQUIRED")
+        setMembershipRequired(true);
       setError(
         e instanceof Error ? e.message : "No pudimos preparar la exportación.",
       );
@@ -154,6 +158,8 @@ export function useStudioOutput(input: {
   return {
     output,
     busy,
+    membershipRequired,
+    clearMembershipRequired: () => setMembershipRequired(false),
     error,
     setError,
     success,

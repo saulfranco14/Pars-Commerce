@@ -12,6 +12,8 @@ import {
 import { uuidSchema } from "../validations/studioSchemas";
 import { requireStudioAccess } from "./studioAccessService";
 import { requireStudioData, StudioError } from "./studioErrors";
+import { isStudioMembershipActive } from "../helpers/access";
+import type { StudioDb } from "./studioDb";
 import type { StudioFormat } from "../interfaces/scene";
 import type { StudioSurface } from "../interfaces/studio";
 
@@ -31,12 +33,26 @@ const assetInput = z.object({
   renderer_version: z.number().int().positive().optional(),
 });
 
+/** The design that used the one free export, or null while it is still available. */
+export async function freeExportDesignId(db: StudioDb, tenantId: string): Promise<string | null> {
+  const { data, error } = await db
+    .from("studio_renders")
+    .select("design_id")
+    .eq("tenant_id", tenantId)
+    .eq("surface", "social")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new StudioError("INTERNAL");
+  return data?.design_id ?? null;
+}
+
 export async function initiateStudioAsset(raw: unknown) {
   const input = assetInput.parse(raw);
-  const { db } = await requireStudioAccess(
+  const { db, membership } = await requireStudioAccess(
     input.tenant_id,
     "studio.create",
-    true,
+    "create",
   );
   if (
     !requireStudioData(
@@ -79,6 +95,14 @@ export async function initiateStudioAsset(raw: unknown) {
         "VALIDATION",
         "El formato no corresponde a la superficie seleccionada.",
       );
+    if (input.surface === "social" && !isStudioMembershipActive(membership)) {
+      const usedBy = await freeExportDesignId(db, input.tenant_id);
+      if (usedBy && usedBy !== input.design_id)
+        throw new StudioError(
+          "MEMBERSHIP_REQUIRED",
+          "Tu primer anuncio ya se descargó gratis. Activa tu membresía Studio para descargar y compartir este diseño.",
+        );
+    }
   }
   const id = crypto.randomUUID(),
     extension =
@@ -122,7 +146,7 @@ export async function initiateStudioAsset(raw: unknown) {
 }
 
 export async function completeStudioAsset(tenantId: string, id: string) {
-  const { db } = await requireStudioAccess(tenantId, "studio.create", true);
+  const { db } = await requireStudioAccess(tenantId, "studio.create", "create");
   const asset = requireStudioData(
     await db
       .from("studio_assets")
@@ -324,7 +348,7 @@ export async function importStudioSourceImage(
   designId: string,
   index: number,
 ) {
-  const { db } = await requireStudioAccess(tenantId, "studio.create", true);
+  const { db } = await requireStudioAccess(tenantId, "studio.create", "create");
   const design = requireStudioData(
     await db
       .from("studio_designs")

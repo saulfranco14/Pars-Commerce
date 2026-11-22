@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useSheetDrag } from "@/hooks/useSheetDrag";
 import { createPortal } from "react-dom";
 
 import type { LucideIcon } from "lucide-react";
@@ -67,6 +68,7 @@ export function FormSheet({
 }: FormSheetProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  const drag = useSheetDrag(onClose, dismissible);
 
   useBodyScrollLock(isOpen);
   useEffect(() => {
@@ -93,19 +95,26 @@ export function FormSheet({
       <div
         onClick={(e) => e.stopPropagation()}
         className={`flex max-h-[92vh] w-full ${maxWidth} flex-col overflow-hidden rounded-t-3xl border-t border-border-soft bg-surface shadow-2xl md:max-h-[88vh] md:rounded-3xl md:border ${panelClassName}`}
-        style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        style={{
+          paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
+          ...drag.panelStyle,
+        }}
       >
-        {/* Mobile grabber */}
-        <div className="flex shrink-0 justify-center pt-3 md:hidden">
-          <div
-            className="h-1 w-12 rounded-full bg-muted-foreground/30"
-            aria-hidden
-          />
-        </div>
+        {/* Mobile grabber: tap or drag down to close. */}
+        <button
+          type="button"
+          onClick={dismissible ? onClose : undefined}
+          aria-label="Cerrar"
+          disabled={!dismissible}
+          {...drag.handleProps}
+          className="flex min-h-7 w-full shrink-0 cursor-grab items-center justify-center pt-2 md:hidden"
+        >
+          <span className="h-1.5 w-12 rounded-full bg-muted-foreground/30" aria-hidden />
+        </button>
 
         {/* Header — plain title, or the "Nuevo cliente"-style icon chip
-            layout when `icon` is passed. */}
-        {!hideHeader && <div className="shrink-0 px-5 pb-3 pt-3 md:px-6 md:pt-6">
+            layout when `icon` is passed. Dragging it also closes on mobile. */}
+        {!hideHeader && <div {...drag.handleProps} className="shrink-0 px-5 pb-3 pt-1 md:px-6 md:pt-6">
           {Icon ? (
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10">

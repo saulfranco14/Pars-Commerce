@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useSheetDrag } from "@/hooks/useSheetDrag";
 import { createPortal } from "react-dom";
 
 interface BottomSheetProps {
@@ -18,6 +19,7 @@ export function BottomSheet({
   children,
 }: BottomSheetProps) {
   const [mounted, setMounted] = useState(false);
+  const drag = useSheetDrag(onClose);
 
   useEffect(() => {
     setMounted(true);
@@ -47,12 +49,19 @@ export function BottomSheet({
         onClick={onClose}
         aria-hidden
       />
-      <div className="relative z-10 flex max-h-[92vh] flex-col overflow-hidden rounded-t-xl border-t border-border bg-surface shadow-lg">
-        <div className="flex shrink-0 flex-col items-center gap-3 py-3">
-          <div
-            className="h-1 w-10 rounded-full bg-muted-foreground/30"
-            aria-hidden
-          />
+      <div
+        className="relative z-10 flex max-h-[92vh] flex-col overflow-hidden rounded-t-xl border-t border-border bg-surface shadow-lg"
+        style={drag.panelStyle}
+      >
+        <div {...drag.handleProps} className="flex shrink-0 flex-col items-center gap-2 pb-3">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="flex min-h-7 w-full cursor-grab items-center justify-center pt-2"
+          >
+            <span className="h-1.5 w-10 rounded-full bg-muted-foreground/30" aria-hidden />
+          </button>
           {title && (
             <h2
               id="bottom-sheet-title"
