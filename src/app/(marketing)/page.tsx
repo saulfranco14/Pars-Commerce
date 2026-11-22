@@ -5,7 +5,6 @@ import { LANDING_NAV_LINKS } from "@/features/landing/constants/navigation";
 import { LandingNav } from "@/features/landing/components/sections/LandingNav";
 import { LandingHero } from "@/features/landing/components/sections/LandingHero";
 import { LandingTryIt } from "@/features/landing/components/sections/LandingTryIt";
-import { LandingStats } from "@/features/landing/components/sections/LandingStats";
 import { LandingStudio } from "@/features/landing/components/sections/LandingStudio";
 import { LandingBusinessSolutions } from "@/features/landing/components/sections/LandingBusinessSolutions";
 import { LandingPlatform } from "@/features/landing/components/sections/LandingPlatform";
@@ -48,13 +47,16 @@ export const metadata: Metadata = {
  *
  *  1. Hero        — la diferencia en una frase + la escena animada; el giro
  *                   sale del anuncio (`?giro=` / `utm_content`).
- *     Pruébalo    — la demo tocable, justo debajo.
- *  2. Stats       — las promesas concretas (tiempo, costo, sin terminal).
- *  3. Soluciones  — tu giro ya viene armado: el freno "me da flojera empezar".
- *  4. Plataforma / Mesas — todo lo que hace y la función estrella a fondo.
- *  5. Cómo empezar — qué tiene que hacer él, en tres pasos.
- *  6. Precios / FAQ — objeciones. "Lo que viene" va al final: lo que aún no
- *     existe no debe interrumpir el argumento de venta.
+ *  2. Pruébalo    — la demo tocable, justo debajo.
+ *  3. Soluciones  — "¿sirve para mi giro?": tu catálogo ya viene armado.
+ *  4. Mesas / Plataforma — la función estrella a fondo y todo lo demás.
+ *  5. Studio      — complemento de pago, después de las razones para entrar.
+ *  6. Cómo empezar, Precios y FAQ — objeciones. "Lo que viene" va al final:
+ *     lo que aún no existe no debe interrumpir el argumento de venta.
+ *
+ * Las secciones alternan fondo (`LandingSection`) en vez de líneas divisorias
+ * y comparten encabezado (`SectionHeader`); el inicio, Studio y el cierre son
+ * las bandas oscuras.
  *
  * El CTA de cierre vive en el footer; tener otro bloque igual justo antes
  * repetía la misma pregunta dos veces seguidas.
@@ -81,11 +83,10 @@ export default async function Home({
       <main>
         <LandingHero scene={scene} registerHref={heroRegisterHref(scene)} />
         <LandingTryIt />
-        <LandingStats />
-        {studio && <LandingStudio />}
         <LandingBusinessSolutions />
-        <LandingPlatform enabledProducts={studio ? ["studio"] : []} />
         <LandingMesas />
+        <LandingPlatform enabledProducts={studio ? ["studio"] : []} />
+        {studio && <LandingStudio />}
         <LandingHowItWorks />
         <LandingPricing />
         <LandingFaq studioEnabled={studio} />

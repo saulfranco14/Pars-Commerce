@@ -41,14 +41,14 @@ export const SOLUTION_SEO: Record<string, SolutionSeo> = {
       "Vende alimento y accesorios en línea, recibe cada pedido en un solo flujo y ofrece planes de compra recurrente. Catálogo listo y sin tarjeta.",
   },
   ropa: {
-    title: "Sistema para boutiques: catálogo, abonos y cobros",
+    title: "Sistema para boutiques: apartados, abonos y cobros",
     description:
-      "Publica tu ropa en línea con tallas y colores, vende en abonos o a meses y cobra desde el celular. Catálogo de boutique listo y $0 al mes para empezar.",
+      "Publica tu ropa en línea por talla, registra apartados, vende en abonos o a meses y cobra desde el celular. Catálogo de boutique listo y $0 al mes.",
   },
   tenis: {
-    title: "Sistema para tiendas de tenis: tallas, abonos y cobros",
+    title: "Sistema para tiendas de tenis: apartados y cobros",
     description:
-      "Controla tallas y servicios de limpieza, y vende tus pares en línea de contado o en abonos con cobro desde el celular. Catálogo listo y sin tarjeta.",
+      "Controla tallas, apartados con anticipo y servicios de limpieza, y vende tus pares en línea con cobro desde el celular. Catálogo listo y sin tarjeta.",
   },
   cafeteria: {
     title: "Sistema para cafeterías: pedidos por QR y para llevar",

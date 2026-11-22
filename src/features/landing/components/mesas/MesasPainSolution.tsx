@@ -4,11 +4,11 @@ import { MESAS_PAINS } from "@/features/landing/constants/mesas";
 
 export function MesasPainSolution() {
   return (
-    <ul className="mt-12 grid gap-4 sm:grid-cols-2">
+    <ul className="mt-12 grid gap-4 sm:grid-cols-2 sm:gap-5">
       {MESAS_PAINS.map(({ key, pain, solution, icon: Icon }) => (
         <li
           key={key}
-          className="flex flex-col rounded-xl border border-border bg-surface p-5 transition-colors hover:border-accent/20 sm:p-6"
+          className="flex flex-col rounded-2xl border border-border bg-surface p-6"
         >
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-foreground/6 text-muted-foreground">
