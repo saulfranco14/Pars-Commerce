@@ -1,5 +1,5 @@
 "use client";
-import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
   STUDIO_EXAMPLES,
   STUDIO_WALKTHROUGH_STEPS,
@@ -19,26 +19,10 @@ export function StudioHomeShowcase() {
       {...show.interaction}
       className={`${styles.homeShowcase} min-w-0 rounded-2xl border border-white/15 p-3 sm:p-4`}
     >
-      <div className="flex items-center justify-between gap-2 px-1">
+      <div className="flex min-h-11 items-center px-1">
         <p className="text-xs font-semibold text-slate-300">
           De tu catálogo a tus redes
         </p>
-        <button
-          type="button"
-          onClick={show.toggle}
-          aria-label={
-            show.enabled
-              ? "Pausar creación automática"
-              : "Reproducir creación automática"
-          }
-          className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-300 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white"
-        >
-          {show.enabled ? (
-            <Pause className="h-4 w-4" aria-hidden />
-          ) : (
-            <Play className="h-4 w-4" aria-hidden />
-          )}
-        </button>
       </div>
       <div
         className={`${styles.homeStage} flex h-[380px] items-center justify-center rounded-xl px-2`}

@@ -28,10 +28,6 @@
   animation: hero-pop 350ms 3s ease-out both;
 }
 
-.stage[data-paused="true"] * {
-  animation-play-state: paused;
-}
-
 @keyframes hero-fade {
   from {
     opacity: 0;

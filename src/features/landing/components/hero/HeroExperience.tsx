@@ -8,7 +8,7 @@ import { ArrowDown, ArrowRight } from "lucide-react";
 import { useHeroScene } from "@/features/landing/hooks/useHeroScene";
 import { HeroStage } from "@/features/landing/components/hero/HeroStage";
 
-import { HERO_GIRO_LINKS, HERO_SCENES, HERO_STEPS } from "@/features/landing/constants/heroScenes";
+import { HERO_SCENES, HERO_STEPS } from "@/features/landing/constants/heroScenes";
 import { trackHomeEvent } from "@/features/landing/helpers/trackHomeEvent";
 
 import type { HeroSceneSelection } from "@/features/landing/interfaces/heroScene";
@@ -24,8 +24,7 @@ export function HeroExperience({
   initial: HeroSceneSelection;
   registerHref: string;
 }) {
-  const { containerRef, index, scene, replayKey, paused, reducedMotion, toggle } =
-    useHeroScene(initial);
+  const { containerRef, index, scene, replayKey } = useHeroScene(initial);
 
   useEffect(() => {
     trackHomeEvent("home_view", {
@@ -88,10 +87,7 @@ export function HeroExperience({
         <HeroStage
           scene={scene}
           replayKey={replayKey}
-          paused={paused}
-          reducedMotion={reducedMotion}
           priority={index === initial.index}
-          onToggle={toggle}
           containerRef={containerRef}
         />
       </div>
@@ -107,27 +103,6 @@ export function HeroExperience({
           </li>
         ))}
       </ol>
-
-      <nav aria-label="Tlaco por giro" className="order-7 mt-12 flex flex-col items-center gap-4 lg:mt-14">
-        <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-          Un solo sistema para cualquier giro
-        </p>
-        <ul className="flex flex-wrap justify-center gap-2.5">
-          {HERO_GIRO_LINKS.map((giro) => (
-            <li key={giro.href}>
-              <Link
-                href={giro.href}
-                className="inline-flex min-h-11 items-center gap-2.5 rounded-full border border-white/10 bg-white/5 py-1.5 pl-1.5 pr-4 text-sm text-slate-200 transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              >
-                <span className="relative h-8 w-8 overflow-hidden rounded-full">
-                  <Image src={giro.image} alt="" fill sizes="32px" className="object-cover" />
-                </span>
-                {giro.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
     </div>
   );
 }

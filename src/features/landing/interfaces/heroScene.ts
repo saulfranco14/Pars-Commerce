@@ -24,15 +24,6 @@ export interface HeroSceneSelection {
 export interface HeroStageProps {
   scene: HeroScene;
   replayKey: string;
-  paused: boolean;
-  reducedMotion: boolean;
   priority: boolean;
-  onToggle: () => void;
   containerRef: RefObject<HTMLDivElement | null>;
-}
-
-export interface HeroGiroLink {
-  label: string;
-  href: string;
-  image: string;
 }

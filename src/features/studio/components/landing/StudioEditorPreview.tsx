@@ -1,15 +1,7 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
-import {
-  ArrowRight,
-  Check,
-  ImagePlus,
-  Layers3,
-  Pause,
-  Play,
-  Type,
-} from "lucide-react";
+import { ArrowRight, Check, ImagePlus, Layers3, Type } from "lucide-react";
 import { track } from "@vercel/analytics";
 import {
   STUDIO_EXAMPLES,
@@ -62,25 +54,6 @@ export function StudioEditorPreview() {
               <Check className="h-3 w-3" aria-hidden />
               Tu foto. Tu marca. Tu diseño.
             </span>
-            <button
-              type="button"
-              onClick={show.toggle}
-              aria-label={
-                show.enabled
-                  ? "Pausar recorrido automático"
-                  : "Reproducir recorrido automático"
-              }
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-xs font-semibold text-slate-200 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-blue-400"
-            >
-              {show.enabled ? (
-                <Pause className="h-4 w-4" aria-hidden />
-              ) : (
-                <Play className="h-4 w-4" aria-hidden />
-              )}
-              <span className="hidden sm:inline">
-                {show.enabled ? "Pausar" : "Reproducir"}
-              </span>
-            </button>
           </div>
           <div className={styles.editorBody}>
             <aside

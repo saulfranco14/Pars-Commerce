@@ -45,7 +45,6 @@ export function HeroLiveDemo() {
   const {
     index,
     beat,
-    playing,
     touched,
     sandbox,
     panel,
@@ -55,19 +54,12 @@ export function HeroLiveDemo() {
     controls,
     containerRef,
     goTo,
-    toggle,
   } = useHeroDemo();
   const nextIndex = (index + 1) % HERO_BEATS.length;
 
   return (
     <div ref={containerRef} className="w-full">
-      <HeroModuleTabs
-        index={index}
-        playing={playing}
-        explored={sandbox.explored}
-        goTo={goTo}
-        toggle={toggle}
-      />
+      <HeroModuleTabs index={index} explored={sandbox.explored} goTo={goTo} />
 
       <div className="mt-3">
         <HeroGuideCard

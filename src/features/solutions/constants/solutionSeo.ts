@@ -28,27 +28,27 @@ export const SOLUTION_SEO: Record<string, SolutionSeo> = {
   taqueria: {
     title: "Sistema para taquerías: pedidos por QR y cobros",
     description:
-      "Tus clientes piden y pagan desde la mesa con un QR, sin descargar apps. Mostrador, para llevar y tienda en línea en la misma orden. Empieza gratis.",
+      "Tus clientes piden y pagan desde la mesa con un QR, sin descargar apps. Mostrador, para llevar y tienda en línea en un solo panel. Empieza gratis.",
   },
   veterinaria: {
     title: "Sistema para veterinarias: consultas y cobros",
     description:
-      "Vende alimento y accesorios, agenda la atención y envía recordatorios con enlace de pago seguro. Catálogo para veterinaria listo y $0 al mes.",
+      "Vende alimento y accesorios, agenda la atención y comparte por WhatsApp el enlace de la cita o del pago. Catálogo para veterinaria listo y $0 al mes.",
   },
   mascotas: {
     title: "Sistema para tiendas de mascotas: pedidos y cobros",
     description:
-      "Vende alimento y accesorios en línea, recibe cada pedido en un solo flujo y activa recordatorios de recompra. Catálogo listo y sin tarjeta.",
+      "Vende alimento y accesorios en línea, recibe cada pedido en un solo flujo y ofrece planes de compra recurrente. Catálogo listo y sin tarjeta.",
   },
   ropa: {
-    title: "Sistema para boutiques: catálogo, apartados y cobros",
+    title: "Sistema para boutiques: catálogo, abonos y cobros",
     description:
-      "Publica tu ropa en línea, registra apartados por talla y cobra desde el celular, también a meses. Catálogo de boutique listo y $0 al mes para empezar.",
+      "Publica tu ropa en línea con tallas y colores, vende en abonos o a meses y cobra desde el celular. Catálogo de boutique listo y $0 al mes para empezar.",
   },
   tenis: {
-    title: "Sistema para tiendas de tenis: apartados y cobros",
+    title: "Sistema para tiendas de tenis: tallas, abonos y cobros",
     description:
-      "Controla tallas, apartados y servicios de limpieza, y vende tus pares en línea con cobro desde el celular. Catálogo listo y sin tarjeta para empezar.",
+      "Controla tallas y servicios de limpieza, y vende tus pares en línea de contado o en abonos con cobro desde el celular. Catálogo listo y sin tarjeta.",
   },
   cafeteria: {
     title: "Sistema para cafeterías: pedidos por QR y para llevar",

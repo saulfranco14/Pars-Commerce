@@ -4,7 +4,8 @@ import { useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
 import { useThemeStore, type Theme } from "@/stores/useThemeStore";
 
-export function ThemeToggle() {
+/** `row` is the labelled version used inside menus. */
+export function ThemeToggle({ variant = "icon" }: { variant?: "icon" | "row" }) {
   const { theme, setTheme, initFromStorage } = useThemeStore();
 
   useEffect(() => {
@@ -16,6 +17,24 @@ export function ThemeToggle() {
     theme === "light"
       ? "Cambiar a tema oscuro"
       : "Cambiar a tema claro";
+
+  if (variant === "row") {
+    return (
+      <button
+        type="button"
+        onClick={() => setTheme(nextTheme)}
+        className="flex min-h-11 w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 text-sm font-medium hover:bg-border-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        style={{ touchAction: "manipulation" }}
+      >
+        {theme === "light" ? (
+          <Moon className="h-4 w-4" aria-hidden />
+        ) : (
+          <Sun className="h-4 w-4" aria-hidden />
+        )}
+        {theme === "light" ? "Modo oscuro" : "Modo claro"}
+      </button>
+    );
+  }
 
   return (
     <button

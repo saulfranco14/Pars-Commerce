@@ -13,7 +13,6 @@ import type { HeroSceneSelection } from "@/features/landing/interfaces/heroScene
 export function useHeroScene(initial: HeroSceneSelection) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [tick, setTick] = useState(0);
-  const [paused, setPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [onScreen, setOnScreen] = useState(true);
   const [pageVisible, setPageVisible] = useState(true);
@@ -37,7 +36,7 @@ export function useHeroScene(initial: HeroSceneSelection) {
     };
   }, []);
 
-  const running = !paused && !reducedMotion && onScreen && pageVisible;
+  const running = !reducedMotion && onScreen && pageVisible;
 
   useEffect(() => {
     if (!running) return;
@@ -54,8 +53,5 @@ export function useHeroScene(initial: HeroSceneSelection) {
     index,
     scene: HERO_SCENES[index],
     replayKey: `${index}-${tick}`,
-    paused,
-    reducedMotion,
-    toggle: () => setPaused((p) => !p),
   };
 }

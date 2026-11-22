@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Check, Pause, Play } from "lucide-react";
+import { Check } from "lucide-react";
 
 import { HeroCustomerScreen } from "@/features/landing/components/hero/HeroCustomerScreen";
 import { HeroOwnerScreen } from "@/features/landing/components/hero/HeroOwnerScreen";
@@ -22,22 +22,13 @@ function PhoneFrame({ children, className }: { children: React.ReactNode; classN
   );
 }
 
-export function HeroStage({
-  scene,
-  replayKey,
-  paused,
-  reducedMotion,
-  priority,
-  onToggle,
-  containerRef,
-}: HeroStageProps) {
+export function HeroStage({ scene, replayKey, priority, containerRef }: HeroStageProps) {
   const total = formatCurrency(sceneTotal(scene));
 
   return (
     <div ref={containerRef} className="relative mx-auto w-full max-w-5xl">
       <div
         className={`${styles.stage} relative h-110 lg:h-150`}
-        data-paused={paused}
         role="img"
         aria-label={`Ejemplo: en un ${scene.word}, el cliente paga su pedido de ${total} desde su celular y el negocio lo ve en su panel al instante.`}
       >
@@ -100,17 +91,6 @@ export function HeroStage({
           </ol>
         </div>
       </div>
-
-      {!reducedMotion && (
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-label={paused ? "Reanudar animación" : "Pausar animación"}
-          className="absolute bottom-2 left-2 z-40 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-slate-950/70 text-white/80 ring-1 ring-white/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white lg:bottom-8"
-        >
-          {paused ? <Play className="h-4 w-4" aria-hidden /> : <Pause className="h-4 w-4" aria-hidden />}
-        </button>
-      )}
     </div>
   );
 }

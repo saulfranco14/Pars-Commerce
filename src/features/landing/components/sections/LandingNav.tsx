@@ -46,6 +46,21 @@ export function LandingNav({
           ))}
         </div>
         <div className="flex items-center gap-1 sm:gap-2">
+          <Link
+            href={loginHref}
+            className="hidden min-h-11 items-center rounded-xl px-3 text-sm font-medium text-muted-foreground lg:inline-flex"
+          >
+            Iniciar sesión
+          </Link>
+          <Link
+            href={registrationHref}
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-accent px-3 py-2 text-sm font-semibold text-accent-foreground hover:bg-accent-hover focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            {registrationLabel}
+          </Link>
+          <div className="hidden lg:block">
+            <ThemeToggle />
+          </div>
           <details className="relative lg:hidden">
             <summary
               aria-label="Abrir navegación"
@@ -63,6 +78,8 @@ export function LandingNav({
                   {link.label}
                 </Link>
               ))}
+              <div className="my-1 h-px bg-border" />
+              <ThemeToggle variant="row" />
               <Link
                 href={loginHref}
                 className="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-accent"
@@ -71,21 +88,6 @@ export function LandingNav({
               </Link>
             </div>
           </details>
-          <Link
-            href={loginHref}
-            className="hidden min-h-11 items-center rounded-xl px-3 text-sm font-medium text-muted-foreground lg:inline-flex"
-          >
-            Iniciar sesión
-          </Link>
-          <Link
-            href={registrationHref}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-accent px-3 py-2 text-sm font-semibold text-accent-foreground hover:bg-accent-hover focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            {registrationLabel}
-          </Link>
-          <div className="max-[359px]:hidden">
-            <ThemeToggle />
-          </div>
         </div>
       </nav>
     </header>

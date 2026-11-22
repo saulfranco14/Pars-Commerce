@@ -1,4 +1,4 @@
-import type { HeroGiroLink, HeroScene } from "@/features/landing/interfaces/heroScene";
+import type { HeroScene } from "@/features/landing/interfaces/heroScene";
 
 export const HERO_SCENE_DURATION_MS = 6000;
 
@@ -93,14 +93,3 @@ export const HERO_SCENE_ALIASES: Record<string, string> = {
   vet: "veterinaria",
   lavado: "autolavado",
 };
-
-export const HERO_GIRO_LINKS: HeroGiroLink[] = [
-  { label: "Taquerías", href: "/soluciones/taqueria", image: "/landing/comida-hero.png" },
-  { label: "Autolavados", href: "/soluciones/autolavado", image: "/landing/autolavado-hero.png" },
-  { label: "Boutiques", href: "/soluciones/ropa", image: "/landing/moda-hero.png" },
-  { label: "Veterinarias", href: "/soluciones/veterinaria", image: "/landing/veterinaria-hero.png" },
-  { label: "Panaderías", href: "/soluciones/panaderia", image: "/landing/panaderia-hero.png" },
-  { label: "Abarrotes", href: "/soluciones/tienda", image: "/landing/tienda-hero.png" },
-  { label: "Tenis y calzado", href: "/soluciones/tenis", image: "/landing/tenis-hero.png" },
-  { label: "Mascotas", href: "/soluciones/mascotas", image: "/landing/mascotas-hero.png" },
-];
