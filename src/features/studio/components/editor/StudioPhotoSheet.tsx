@@ -1,12 +1,10 @@
 "use client";
-import { Check, Image as ImageIcon, Sparkles, Upload } from "lucide-react";
+import { Check, Image as ImageIcon, ImagePlus, Upload } from "lucide-react";
 import { FormSheet } from "@/components/ui/FormSheet";
-import { StudioAssetPicker } from "./StudioAssetPicker";
 import {
-  adminActionButtonAi,
+  actionPair,
   adminActionButtonPrimary,
   adminActionButtonSecondary,
-  actionPair,
 } from "@/components/admin/actionButtonClasses";
 import type { StudioPhotoSheetProps } from "../../interfaces/ui";
 
@@ -16,17 +14,17 @@ export function StudioPhotoSheet({
   open,
   onClose,
   disabled,
-  assets,
-  aiAvailable,
   onUpload,
-  onSelect,
-  onImprove,
 }: StudioPhotoSheetProps) {
   const upload = (kind: "image" | "logo", label: string) => (
     <label
       className={`${adminActionButtonSecondary} ${disabled ? "pointer-events-none opacity-60" : ""}`}
     >
-      <Upload className="h-4 w-4" />
+      {kind === "logo" ? (
+        <ImagePlus className="h-4 w-4" />
+      ) : (
+        <Upload className="h-4 w-4" />
+      )}
       {label}
       <input
         className="sr-only"
@@ -46,7 +44,8 @@ export function StudioPhotoSheet({
     <FormSheet
       isOpen={open}
       onClose={onClose}
-      title="Foto y logo"
+      title="Tu foto"
+      description="La IA usa la foto de tu producto para hacer tus imágenes. Entre más clara, mejor sale."
       icon={ImageIcon}
       footer={
         <button
@@ -59,37 +58,15 @@ export function StudioPhotoSheet({
         </button>
       }
     >
-      <div className="space-y-6 pb-3">
-        <section className="space-y-3">
-          <p className="text-sm leading-6 text-muted-foreground">
-            Una foto clara y con luz se nota más que cualquier adorno.
-          </p>
-          <div className={actionPair}>
-            {upload("image", "Subir")}
-            <button
-              type="button"
-              disabled={disabled || !aiAvailable}
-              onClick={onImprove}
-              className={adminActionButtonAi}
-            >
-              <Sparkles className="h-4 w-4" />
-              Mejorar
-            </button>
-          </div>
-          <StudioAssetPicker
-            assets={assets}
-            disabled={disabled}
-            onSelect={onSelect}
-          />
-        </section>
-        <section className="space-y-3">
-          <h3 className="text-sm font-bold">Logo</h3>
-          <p className="text-xs leading-5 text-muted-foreground">
-            Va en la esquina para que te reconozcan. Usa PNG con fondo
-            transparente si lo tienes.
-          </p>
-          <div className="grid">{upload("logo", "Subir logo")}</div>
-        </section>
+      <div className="space-y-4 pb-3">
+        <div className={actionPair}>
+          {upload("image", "Foto")}
+          {upload("logo", "Logo")}
+        </div>
+        <p className="text-xs leading-5 text-muted-foreground">
+          La foto nueva se usa en este anuncio y para las imágenes que generes.
+          El logo va arriba a la derecha.
+        </p>
       </div>
     </FormSheet>
   );

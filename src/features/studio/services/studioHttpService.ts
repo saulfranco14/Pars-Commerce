@@ -19,6 +19,15 @@ import {
 import { listStudioSources } from "./studioSourceService";
 import { listStudioIdeas } from "./studioIdeaService";
 import {
+  generateStudioImageNow,
+  importStudioImage,
+  listPendingStudioJobs,
+  listStudioImages,
+  runStudioJob,
+} from "./studioImageService";
+import { suggestStudioCopy } from "./studioCopyService";
+import { createStudioBatch } from "./studioBatchService";
+import {
   completeStudioAsset,
   getStudioAssetFile,
   initiateStudioAsset,
@@ -210,8 +219,26 @@ async function dispatchStudioRequest(request: Request, path: string[]) {
   if (path[0] === "ai" && method === "POST") {
     if (path[1] === "quote") return quoteStudioGeneration(body);
     if (path[1] === "generate") return startStudioGeneration(body);
+    if (path[1] === "image") return generateStudioImageNow(body);
+    if (path[1] === "copy") return suggestStudioCopy(body);
     if (path[1] === "review") return reviewStudioVersion(body);
   }
+  if (path[0] === "images") {
+    if (path.length === 1 && method === "GET")
+      return listStudioImages(tenantId);
+    if (path[1] === "import" && method === "POST")
+      return importStudioImage(body);
+  }
+  if (path[0] === "batch" && method === "POST") return createStudioBatch(body);
+  if (path[0] === "jobs" && path[1] === "pending" && method === "GET")
+    return listPendingStudioJobs(tenantId);
+  if (
+    path[0] === "jobs" &&
+    id?.success &&
+    path[2] === "run" &&
+    method === "POST"
+  )
+    return runStudioJob({ ...body, job_id: id.data });
   if (path[0] === "jobs" && path.length === 1 && method === "GET") {
     const { db } = await requireStudioAccess(tenantId);
     return requireStudioData(

@@ -27,7 +27,7 @@ export function StudioMembershipSheet({
       onClose={onClose}
       title="Descarga y comparte sin límite"
       icon={WandSparkles}
-      description="Diseñar siempre es gratis y tu primer anuncio también. Con la membresía descargas y compartes todos tus diseños."
+      description="Diseñar, descargar y compartir es gratis. Con la membresía recibes Tlacos cada mes para la IA y publicas en tu sitio."
       maxWidth="max-w-3xl"
       footer={
         <button

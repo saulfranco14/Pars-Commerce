@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { requirePermission } from "@/lib/auth/requirePermission";
 import { createStudioScene, bindStudioScene } from "../helpers/scene";
-import { STUDIO_BUCKET } from "../constants/studio";
+import { STUDIO_BUCKET, STUDIO_DEFAULT_TEMPLATE } from "../constants/studio";
 import {
   createDesignSchema,
   saveDesignSchema,
@@ -114,7 +114,7 @@ export async function createStudioDesign(raw: unknown): Promise<StudioDesign> {
     .maybeSingle();
   let scene = createStudioScene(
     source,
-    "clean",
+    STUDIO_DEFAULT_TEMPLATE,
     brand?.default_format as StudioScene["format"] | undefined,
   );
   if (brand)

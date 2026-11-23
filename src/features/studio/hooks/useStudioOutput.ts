@@ -136,7 +136,11 @@ export function useStudioOutput(input: {
   async function shareFile(file: File, target: string) {
     void audit("share_sheet_opened", target);
     try {
-      await navigator.share({ files: [file], title: input.title, text: message });
+      await navigator.share({
+        files: [file],
+        title: input.title,
+        text: message,
+      });
       void audit("share_sheet_completed", target);
       setSuccess("Listo. Revisa el envío en la aplicación que elegiste.");
     } catch (e) {

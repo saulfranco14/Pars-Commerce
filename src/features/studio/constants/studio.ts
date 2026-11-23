@@ -201,9 +201,38 @@ export const STUDIO_TEMPLATES: ReadonlyArray<
     accent: "#047857",
     layout: "split",
   },
+  {
+    id: "poster",
+    name: "Clásico",
+    background: "#111827",
+    ink: "#ffffff",
+    accent: "#ffffff",
+    layout: "poster",
+  },
+  {
+    id: "poster_bottom",
+    name: "Abajo",
+    background: "#111827",
+    ink: "#ffffff",
+    accent: "#ffffff",
+    layout: "poster_bottom",
+  },
+  {
+    id: "poster_framed",
+    name: "Con marco",
+    background: "#111827",
+    ink: "#ffffff",
+    accent: "#ffffff",
+    layout: "poster_framed",
+  },
 ];
+/** The photo-first styles of the guided editor; the flat templates stay for older designs. */
+export const STUDIO_POSTER_STYLES = STUDIO_TEMPLATES.filter((t) =>
+  t.layout.startsWith("poster"),
+);
+export const STUDIO_DEFAULT_TEMPLATE: StudioTemplateId = "poster";
 export const STUDIO_PALETTES: ReadonlyArray<StudioPalette> = [
-  ...STUDIO_TEMPLATES,
+  ...STUDIO_TEMPLATES.filter((t) => !t.layout.startsWith("poster")),
   {
     id: "night",
     name: "Noche",
@@ -233,3 +262,39 @@ export const STUDIO_PALETTES: ReadonlyArray<StudioPalette> = [
     accent: "#111111",
   },
 ];
+export const STUDIO_SCENES = [
+  {
+    id: "local",
+    label: "En tu local",
+    prompt: "inside the business's own shop, counter or workspace",
+  },
+  {
+    id: "street",
+    label: "En la calle",
+    prompt: "outdoors on a lively Mexican street with natural daylight",
+  },
+  {
+    id: "studio",
+    label: "Estudio",
+    prompt: "in a clean photo studio with a soft seamless backdrop",
+  },
+  {
+    id: "surprise",
+    label: "Sorpréndeme",
+    prompt: "in the most appealing real-world setting for this product",
+  },
+] as const;
+export const STUDIO_QUALITIES = [
+  { value: "economy", label: "Normal", cost: 1 },
+  { value: "premium", label: "Premium", cost: 2 },
+] as const;
+export const STUDIO_NOTES = [
+  "Agenda hoy",
+  "Te esperamos",
+  "Solo esta semana",
+  "Pide el tuyo",
+] as const;
+export const STUDIO_BATCH_MAX = 50;
+/** Items per request, so each call stays well inside the server time limit. */
+export const STUDIO_BATCH_CHUNK = 5;
+export const STUDIO_IMAGE_SECONDS = 20;

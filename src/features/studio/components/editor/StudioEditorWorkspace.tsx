@@ -2,47 +2,38 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { useStudioAi } from "../../hooks/useStudioAi";
 import { useStudioAssets } from "../../hooks/useStudioAssets";
 import { useStudioEditor } from "../../hooks/useStudioEditor";
 import { useStudioOutput } from "../../hooks/useStudioOutput";
 import { useStudioContext } from "../StudioProvider";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { FilterTabs } from "@/components/ui/FilterTabs";
 import { Toast } from "@/components/ui/Toast";
 import { StudioMembershipSheet } from "../StudioMembershipSheet";
 import { StudioStepper } from "../StudioStepper";
 import { StudioAdvancedEditor } from "./StudioAdvancedEditor";
-import { StudioAiProgress } from "./StudioAiProgress";
 import { StudioEditorBar } from "./StudioEditorBar";
 import { StudioEditorNotices } from "./StudioEditorNotices";
-import { StudioGenerationSheet } from "./StudioGenerationSheet";
-import { StudioQuickEditor } from "./StudioQuickEditor";
+import { StudioPosterEditor } from "./StudioPosterEditor";
 import { StudioShareStep } from "./StudioShareStep";
-import { adminActionButtonSecondary } from "@/components/admin/actionButtonClasses";
+import { adminActionButtonIcon } from "@/components/admin/actionButtonClasses";
 import { STUDIO_ACTION_BAR_SPACE } from "../../constants/studio";
 import { studioCatalogHref, studioRechargeHref } from "../../helpers/entry";
+import { reviewStudioScene } from "../../helpers/scene";
 import { studioTagline, suggestStudioCopy } from "../../helpers/sceneStyle";
 import type { StudioEditorProps, StudioStep } from "../../interfaces/ui";
-
-const MODES = [
-  { value: "simple", label: "Fácil" },
-  { value: "advanced", label: "A mano" },
-] as const;
 
 export default function StudioEditorWorkspace({
   detail,
   onRefresh,
   initialReview = false,
 }: StudioEditorProps) {
-  const { tenantId, tenantSlug, summary } = useStudioContext(),
+  const { tenantId, tenantSlug } = useStudioContext(),
     editor = useStudioEditor(detail),
     asset = useStudioAssets(detail, editor.scene, editor.setScene),
     [step, setStep] = useState<StudioStep>(2),
     [mode, setMode] = useState<"simple" | "advanced">("simple"),
-    [discardOpen, setDiscardOpen] = useState(false),
-    [membershipOpen, setMembershipOpen] = useState(false);
+    [discardOpen, setDiscardOpen] = useState(false);
   const output = useStudioOutput({
     tenantId,
     designId: detail.design.id,
@@ -54,34 +45,21 @@ export default function StudioEditorWorkspace({
     copy: editor.copy,
     destination: editor.destination,
   });
-  const image =
-    editor.selected?.kind === "image"
-      ? editor.selected
-      : editor.scene.nodes.find((n) => n.kind === "image");
-  const ai = useStudioAi({
-    tenantId,
-    designId: detail.design.id,
-    image,
-    ensureAsset: asset.ensureAsset,
-    available: summary?.balance.available ?? 0,
-  });
   const locked = !editor.canEdit || output.busy || asset.busy || editor.copying;
   editor.interactionLock.current = output.busy || asset.busy || editor.copying;
   const designPath = `/dashboard/${tenantSlug}/studio/disenos/${detail.design.id}`,
-    parts = { editor, asset, ai, tenantId, locked };
+    library = `/dashboard/${tenantSlug}/studio/disenos`,
+    parts = { editor, asset, tenantId, locked };
 
-  function suggestCopy() {
-    if (editor.canEdit && !editor.copy.trim())
-      editor.setCopy(
-        suggestStudioCopy(editor.source.current, studioTagline(editor.scene)),
-      );
-  }
   async function next() {
     if (!editor.canEdit) {
       setStep(3);
       return;
     }
-    suggestCopy();
+    if (!editor.copy.trim())
+      editor.setCopy(
+        suggestStudioCopy(editor.source.current, studioTagline(editor.scene)),
+      );
     try {
       await output.prepare();
       setStep(3);
@@ -96,61 +74,50 @@ export default function StudioEditorWorkspace({
       void next();
     }
   });
-  const status = output.busy
-    ? "Preparando tu imagen…"
-    : asset.busy
-      ? "Guardando imagen…"
-      : editor.saveState === "saving"
-        ? "Guardando…"
-        : editor.saveState === "saved"
-          ? "Borrador guardado"
-          : editor.saveState === "error"
-            ? "Cambios guardados en este dispositivo"
-            : "Cambios sin guardar";
+  const findings = reviewStudioScene(editor.scene),
+    saveText = output.busy
+      ? "Preparando tu imagen…"
+      : asset.busy
+        ? "Guardando foto…"
+        : editor.saveState === "saving"
+          ? "Guardando…"
+          : editor.saveState === "saved"
+            ? "Borrador guardado"
+            : editor.saveState === "error"
+              ? "Guardado en este dispositivo"
+              : "Cambios sin guardar",
+    status = `${saveText} · ${findings.length ? "Revisa los textos largos" : "Se lee bien"}`;
 
   return (
-    <div className={`space-y-5 ${step === 2 ? STUDIO_ACTION_BAR_SPACE : ""}`}>
+    <div className={`space-y-3 ${step === 2 ? STUDIO_ACTION_BAR_SPACE : ""}`}>
       <PageHeader
+        compact
         title={editor.title}
-        description={
-          !editor.canEdit
-            ? summary?.permissions.includes("studio.create")
-              ? "Consulta tu diseño y descarga tus archivos. Para editar necesitas Studio vigente."
-              : "Consulta el diseño y sus descargas. El propietario puede darte permiso para editar."
-            : step === 3
-              ? "Elige dónde compartirlo. El mensaje ya va escrito."
-              : "Elige un diseño y ajústalo. No gasta Tlacos."
-        }
         action={
-          <Link
-            className={`${adminActionButtonSecondary} w-full sm:w-auto`}
-            href={`/dashboard/${tenantSlug}/studio/disenos`}
-            onClick={(e) => {
-              if (editor.saveState !== "saved") {
-                e.preventDefault();
-                setDiscardOpen(true);
-              }
-            }}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Biblioteca
-          </Link>
+          <div className="flex items-center gap-2">
+            <StudioStepper compact step={step} onStep={setStep} />
+            <Link
+              className={adminActionButtonIcon}
+              aria-label="Volver a la biblioteca"
+              href={library}
+              onClick={(e) => {
+                if (editor.saveState !== "saved") {
+                  e.preventDefault();
+                  setDiscardOpen(true);
+                }
+              }}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </div>
         }
       />
-      <StudioStepper step={step} onStep={setStep} />
       <StudioEditorNotices
         editor={editor}
-        designId={detail.design.id}
         stale={detail.stale}
         locked={locked}
-        errors={[
-          editor.error,
-          asset.error,
-          ai.error,
-          step === 2 ? output.error : null,
-        ]}
+        errors={[editor.error, asset.error, step === 2 ? output.error : null]}
         onRefresh={onRefresh}
-        onMembership={() => setMembershipOpen(true)}
       />
       {step === 3 ? (
         <StudioShareStep
@@ -163,20 +130,13 @@ export default function StudioEditorWorkspace({
         />
       ) : (
         <>
-          {editor.canEdit && (
-            <FilterTabs
-              tabs={MODES}
-              activeValue={mode}
-              onTabChange={(value) => setMode(value as typeof mode)}
-              ariaLabel="Forma de editar"
-              density="touch"
-            />
-          )}
           {mode === "simple" ? (
-            <StudioQuickEditor
+            <StudioPosterEditor
               {...parts}
+              designId={detail.design.id}
               catalogHref={studioCatalogHref(editor.source.current, tenantSlug)}
               rechargeHref={studioRechargeHref(tenantSlug, designPath)}
+              onAdvanced={() => setMode("advanced")}
             />
           ) : (
             <StudioAdvancedEditor
@@ -184,9 +144,9 @@ export default function StudioEditorWorkspace({
               detail={detail}
               output={output}
               onRefresh={onRefresh}
+              onSimple={() => setMode("simple")}
             />
           )}
-          <StudioAiProgress {...parts} onRefresh={onRefresh} />
           <StudioEditorBar
             status={status}
             canEdit={editor.canEdit}
@@ -198,13 +158,9 @@ export default function StudioEditorWorkspace({
         </>
       )}
       <StudioMembershipSheet
-        open={membershipOpen || output.membershipRequired}
-        onClose={() => {
-          setMembershipOpen(false);
-          output.clearMembershipRequired();
-        }}
+        open={output.membershipRequired}
+        onClose={output.clearMembershipRequired}
       />
-      <StudioGenerationSheet ai={ai} />
       {output.success && (
         <Toast
           message={output.success}
@@ -220,7 +176,7 @@ export default function StudioEditorWorkspace({
         onConfirm={async () => {
           try {
             await editor.saveNow();
-            window.location.assign(`/dashboard/${tenantSlug}/studio/disenos`);
+            window.location.assign(library);
           } catch {
             setDiscardOpen(false);
           }

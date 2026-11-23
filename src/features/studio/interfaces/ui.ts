@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import type { useStudioAi } from "../hooks/useStudioAi";
 import type { useStudioAssets } from "../hooks/useStudioAssets";
 import type { useStudioEditor } from "../hooks/useStudioEditor";
 import type { useStudioOutput } from "../hooks/useStudioOutput";
@@ -8,15 +7,12 @@ import type {
   StudioAsset,
   StudioDesignDetail,
   StudioIdea,
+  StudioImage,
+  StudioImageRequest,
   StudioSource,
   StudioSummary,
 } from "./studio";
-import type {
-  StudioFormat,
-  StudioNode,
-  StudioScene,
-  StudioTemplateId,
-} from "./scene";
+import type { StudioFormat, StudioNode, StudioScene } from "./scene";
 
 export interface StudioScope {
   tenantId: string;
@@ -60,6 +56,8 @@ export type StudioStep = 1 | 2 | 3;
 export interface StudioStepperProps {
   step: StudioStep;
   onStep?: (step: StudioStep) => void;
+  /** Numbered dots only, for one-screen editors. */
+  compact?: boolean;
 }
 export interface StudioIdeasProps {
   ideas: StudioIdea[];
@@ -68,50 +66,68 @@ export interface StudioIdeasProps {
   disabled: boolean;
   onStart: (idea: StudioIdea) => void;
 }
-export interface StudioDesignGalleryProps extends StudioScenePreviewProps {
-  source: StudioSource;
-  disabled: boolean;
-  onPick: (template: StudioTemplateId) => void;
-}
-export interface StudioFormatPickerProps {
-  value: StudioFormat;
-  disabled: boolean;
-  onChange: (format: StudioFormat) => void;
-}
 export interface StudioSheetProps {
   open: boolean;
   onClose: () => void;
   disabled: boolean;
 }
+export interface StudioImageTileItem {
+  key: string;
+  label: string;
+  url: string | null;
+  badge?: "Tuya" | "Otro";
+  selected: boolean;
+  onPick: () => void;
+}
+export interface StudioImageTileProps {
+  tile: StudioImageTileItem;
+  disabled: boolean;
+  size?: string;
+}
+export interface StudioImageStripProps {
+  tiles: StudioImageTileItem[];
+  disabled: boolean;
+  onGenerate: () => void;
+  onSeeAll: () => void;
+}
+export type StudioGenerateOptions = Pick<
+  StudioImageRequest,
+  "quality" | "scene" | "wish"
+>;
+export interface StudioGenerateSheetProps extends StudioSheetProps {
+  balance: number;
+  rechargeHref: string;
+  onGenerate: (options: StudioGenerateOptions) => void;
+}
 export interface StudioTextSheetProps extends StudioSheetProps {
+  designId: string;
   scene: StudioScene;
   source: StudioSource;
   catalogHref: string | null;
   onApply: (scene: StudioScene) => void;
+  onMessage: (message: string) => void;
 }
-export interface StudioColorSheetProps extends StudioSheetProps {
+export interface StudioStyleSheetProps extends StudioSheetProps {
   scene: StudioScene;
+  source: StudioSource;
+  assets: StudioAsset[];
+  tenantId: string;
   onApply: (scene: StudioScene) => void;
+  onAdvanced: () => void;
+}
+export interface StudioFormatSheetProps extends StudioSheetProps {
+  value: StudioFormat;
+  onChange: (format: StudioFormat) => void;
 }
 export interface StudioPhotoSheetProps extends StudioSheetProps {
-  assets: StudioAsset[];
-  aiAvailable: boolean;
   onUpload: (file: File, kind: "image" | "logo") => void;
-  onSelect: (assetId: string) => void;
-  onImprove: () => void;
 }
-export interface StudioAiCardProps {
-  balance: number;
-  enabled: boolean;
-  hasImage: boolean;
-  disabled: boolean;
-  rechargeHref: string;
-  onImprove: () => void;
+export interface StudioImagesSheetProps extends StudioSheetProps {
+  tiles: StudioImageTileItem[];
 }
-export interface StudioQuickReviewProps {
-  scene: StudioScene;
-  disabled: boolean;
-  onFix: () => void;
+export interface StudioUseImageSheetProps {
+  image: StudioImage | null;
+  onClose: () => void;
 }
 export interface StudioActionBarProps {
   status?: string;
@@ -135,35 +151,31 @@ export interface StudioShareTileProps {
 }
 export type StudioEditorState = ReturnType<typeof useStudioEditor>;
 export type StudioAssetsState = ReturnType<typeof useStudioAssets>;
-export type StudioAiState = ReturnType<typeof useStudioAi>;
 export type StudioOutputState = ReturnType<typeof useStudioOutput>;
 export interface StudioWorkspaceParts {
   editor: StudioEditorState;
   asset: StudioAssetsState;
-  ai: StudioAiState;
   tenantId: string;
   locked: boolean;
 }
-export interface StudioQuickEditorProps extends StudioWorkspaceParts {
+export interface StudioPosterEditorProps extends StudioWorkspaceParts {
+  designId: string;
   catalogHref: string | null;
   rechargeHref: string;
+  onAdvanced: () => void;
 }
 export interface StudioAdvancedEditorProps extends StudioWorkspaceParts {
   detail: StudioDesignDetail;
   output: StudioOutputState;
   onRefresh: () => Promise<unknown>;
-}
-export interface StudioAiProgressProps extends StudioWorkspaceParts {
-  onRefresh: () => Promise<unknown>;
+  onSimple: () => void;
 }
 export interface StudioEditorNoticesProps {
   editor: StudioEditorState;
-  designId: string;
   stale: boolean;
   locked: boolean;
   errors: Array<string | null>;
   onRefresh: () => Promise<unknown>;
-  onMembership: () => void;
 }
 export interface StudioShareStepProps {
   output: StudioOutputState;
@@ -196,4 +208,13 @@ export interface StudioCanvasNodeProps {
   onSelect: () => void;
   onChange: (patch: Partial<StudioNode>) => void;
   onEdit: () => void;
+}
+export interface StudioPendingBannerProps {
+  onFinished: () => void;
+}
+export interface StudioReuseOption {
+  value: "as_is" | "with_product";
+  title: string;
+  detail: string;
+  cost: string;
 }

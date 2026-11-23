@@ -18,6 +18,7 @@ type NullableArgs<
 // The SQL handles NULL here (custom campaigns have no source, a placement may run without end); the generator marks them required.
 type NullableStudioFunctions = {
   studio_apply_placement: NullableArgs<"studio_apply_placement", "p_end">;
+  studio_finish_job: NullableArgs<"studio_finish_job", "p_asset_id" | "p_error">;
   studio_source_eligible: NullableArgs<"studio_source_eligible", "p_source_id">;
   studio_source_fingerprint: NullableArgs<
     "studio_source_fingerprint",

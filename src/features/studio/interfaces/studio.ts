@@ -1,16 +1,10 @@
 import type { StudioScene } from "./scene";
 
 export type StudioSourceType =
-  | "product"
-  | "promotion"
-  | "subscription_plan"
-  | "custom";
+  "product" | "promotion" | "subscription_plan" | "custom";
 export type StudioPlanCode = "basic" | "pro" | "business";
 export type StudioPermission =
-  | "studio.read"
-  | "studio.create"
-  | "studio.publish"
-  | "studio.manage";
+  "studio.read" | "studio.create" | "studio.publish" | "studio.manage";
 export type StudioChannel = "public_store" | "table_qr";
 export type StudioSurface =
   | "store_home_campaign"
@@ -24,11 +18,7 @@ export type StudioSurface =
 export type StudioAiOperation = "improve_photo" | "style" | "variation";
 export type StudioQuality = "economy" | "premium";
 export type StudioJobStatus =
-  | "queued"
-  | "processing"
-  | "succeeded"
-  | "failed"
-  | "cancelled";
+  "queued" | "processing" | "succeeded" | "failed" | "cancelled";
 
 export interface StudioPlan {
   code: StudioPlanCode;
@@ -61,6 +51,7 @@ export interface StudioSource {
   period: string;
   imageUrls: string[];
   logoUrl?: string | null;
+  businessName?: string;
   destinationUrl: string;
   status: string;
   validFrom: string | null;
@@ -114,11 +105,7 @@ export interface StudioMembership {
   tenant_id: string;
   plan_code: StudioPlanCode;
   status:
-    | "pending_payment"
-    | "active"
-    | "past_due"
-    | "cancelling"
-    | "cancelled";
+    "pending_payment" | "active" | "past_due" | "cancelling" | "cancelled";
   current_period_start: string | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
@@ -152,7 +139,6 @@ export interface StudioSummary {
   recent: StudioDesign[];
   counts: { designs: number; ready: number; placements: number };
   /** Design that used the one free export; null while it is still available. */
-  freeExportDesignId: string | null;
 }
 
 export interface StudioDesignDetail {
@@ -240,4 +226,46 @@ export interface StudioIdea {
   title: string;
   detail: string;
   imageUrl: string | null;
+}
+
+/** An image the AI made for this business, reusable in any ad. */
+export interface StudioImage {
+  id: string;
+  designId: string;
+  title: string;
+  url: string;
+  createdAt: string;
+}
+
+export interface StudioRunJob extends StudioJob {
+  result_url: string | null;
+}
+
+export interface StudioImageRequest {
+  tenantId: string;
+  designId: string;
+  assetId: string;
+  operation: StudioAiOperation;
+  quality: StudioQuality;
+  scene: "local" | "street" | "studio" | "surprise";
+  wish: string;
+  referenceAssetId?: string;
+}
+
+export interface StudioBatchRequest {
+  tenantId: string;
+  batchKey: string;
+  sourceType: "product" | "promotion" | "subscription_plan";
+  items: Array<{ id: string; name: string }>;
+  mode: "shared" | "each";
+  assetId?: string;
+  template: "poster" | "poster_bottom" | "poster_framed";
+  scene: StudioImageRequest["scene"];
+  quality: StudioQuality;
+}
+
+export interface StudioBatchResult {
+  designs: Array<{ id: string; title: string }>;
+  jobs: Array<{ id: string; designId: string }>;
+  skipped: Array<{ id: string; reason: string }>;
 }

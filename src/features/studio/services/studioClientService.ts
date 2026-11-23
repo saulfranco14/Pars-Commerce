@@ -11,14 +11,20 @@ import type {
   StudioBrand,
   StudioDesign,
   StudioDesignDetail,
+  StudioBatchRequest,
+  StudioBatchResult,
   StudioIdea,
+  StudioImage,
+  StudioImageRequest,
   StudioJob,
   StudioPlacement,
   StudioQuote,
+  StudioRunJob,
   StudioSummary,
   StudioVersion,
 } from "../interfaces/studio";
 import type { StudioFormat } from "../interfaces/scene";
+import type { StudioCopyIdeas } from "../helpers/aiPrompt";
 import type { StudioPlatformData } from "../interfaces/platform";
 
 function billingReturnPath() {
@@ -417,4 +423,82 @@ export async function resolveCreditReview(input: {
     method: "POST",
     body: JSON.stringify(input),
   });
+}
+
+export async function generateImage(
+  input: StudioImageRequest,
+): Promise<StudioRunJob> {
+  return (await apiFetch("/api/studio/ai/image", {
+    method: "POST",
+    body: json({
+      tenant_id: input.tenantId,
+      design_id: input.designId,
+      asset_id: input.assetId,
+      operation: input.operation,
+      quality: input.quality,
+      scene: input.scene,
+      wish: input.wish,
+      reference_asset_id: input.referenceAssetId,
+      idempotency_key: crypto.randomUUID(),
+    }),
+  })) as StudioRunJob;
+}
+export async function runJob(
+  tenantId: string,
+  jobId: string,
+  apply: boolean,
+): Promise<StudioRunJob> {
+  return (await apiFetch(`/api/studio/jobs/${jobId}/run`, {
+    method: "POST",
+    body: json({ tenant_id: tenantId, apply }),
+  })) as StudioRunJob;
+}
+export async function loadPendingJobs(tenantId: string): Promise<StudioJob[]> {
+  return (await apiFetch(
+    `/api/studio/jobs/pending?${query(tenantId)}`,
+  )) as StudioJob[];
+}
+export async function loadStudioImages(
+  tenantId: string,
+): Promise<StudioImage[]> {
+  return (await apiFetch(
+    `/api/studio/images?${query(tenantId)}`,
+  )) as StudioImage[];
+}
+export async function importImage(
+  tenantId: string,
+  designId: string,
+  assetId: string,
+): Promise<{ assetId: string; url: string }> {
+  return (await apiFetch("/api/studio/images/import", {
+    method: "POST",
+    body: json({ tenant_id: tenantId, design_id: designId, asset_id: assetId }),
+  })) as { assetId: string; url: string };
+}
+export async function suggestCopy(
+  tenantId: string,
+  designId: string,
+): Promise<StudioCopyIdeas> {
+  return (await apiFetch("/api/studio/ai/copy", {
+    method: "POST",
+    body: json({ tenant_id: tenantId, design_id: designId }),
+  })) as StudioCopyIdeas;
+}
+export async function createBatch(
+  input: StudioBatchRequest,
+): Promise<StudioBatchResult> {
+  return (await apiFetch("/api/studio/batch", {
+    method: "POST",
+    body: json({
+      tenant_id: input.tenantId,
+      batch_key: input.batchKey,
+      source_type: input.sourceType,
+      items: input.items,
+      mode: input.mode,
+      asset_id: input.assetId,
+      template: input.template,
+      scene: input.scene,
+      quality: input.quality,
+    }),
+  })) as StudioBatchResult;
 }

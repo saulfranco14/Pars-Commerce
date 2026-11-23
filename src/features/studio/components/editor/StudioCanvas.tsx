@@ -17,6 +17,7 @@ import {
   loadStudioImage,
   studioImageCrop,
   studioImageUrl,
+  studioShapeFill,
 } from "../../helpers/canvas";
 import type {
   StudioCanvasProps,
@@ -147,14 +148,7 @@ function CanvasNode({
       />
     );
   if (n.kind === "shape")
-    return (
-      <Rect
-        {...base}
-        fill={n.fill}
-        stroke={n.stroke}
-        strokeWidth={n.strokeWidth * renderScale}
-      />
-    );
+    return <Rect {...base} {...studioShapeFill(n, base.height, renderScale)} />;
   return (
     <Text
       {...base}
@@ -275,17 +269,17 @@ export default function StudioCanvas({
               />
             ))}
             {!preview && (
-            <Rect
-              x={width * 0.04}
-              y={height * 0.04}
-              width={width * 0.92}
-              height={height * 0.92}
-              stroke="#3483fa"
-              strokeWidth={1}
-              dash={[4, 4]}
-              opacity={0.4}
-              listening={false}
-            />
+              <Rect
+                x={width * 0.04}
+                y={height * 0.04}
+                width={width * 0.92}
+                height={height * 0.92}
+                stroke="#3483fa"
+                strokeWidth={1}
+                dash={[4, 4]}
+                opacity={0.4}
+                listening={false}
+              />
             )}
             {selectedId && (
               <>

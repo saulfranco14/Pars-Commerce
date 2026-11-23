@@ -22,13 +22,16 @@ export function StudioIdeas({
         </p>
       </div>
       {loading ? (
-        <div className="grid gap-2 sm:grid-cols-3" aria-label="Buscando ideas">
+        <div
+          className="grid grid-cols-1 gap-2 sm:grid-cols-3"
+          aria-label="Buscando ideas"
+        >
           <Skeleton className="h-18 rounded-xl" />
           <Skeleton className="h-18 rounded-xl" />
           <Skeleton className="h-18 rounded-xl" />
         </div>
       ) : (
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {ideas.map((idea) => {
             const Icon =
               STUDIO_SOURCES.find((s) => s.value === idea.sourceType)?.icon ??
@@ -39,7 +42,7 @@ export function StudioIdeas({
                 type="button"
                 disabled={disabled}
                 onClick={() => onStart(idea)}
-                className="flex min-h-18 cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface p-3 text-left transition-colors hover:border-accent/50 hover:bg-accent/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex min-h-18 w-full min-w-0 cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface p-3 text-left transition-colors hover:border-accent/50 hover:bg-accent/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-accent/10 text-accent">
                   {idea.imageUrl ? (

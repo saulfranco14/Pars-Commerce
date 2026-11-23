@@ -1,7 +1,14 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Check, Package, Search } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  LayoutGrid,
+  Package,
+  Search,
+} from "lucide-react";
 import { useStudioSource } from "../hooks/useStudioSource";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -73,6 +80,21 @@ export function StudioSourceStep({
           </li>
         ))}
       </ol>
+      <Link
+        href={`/dashboard/${tenantSlug}/studio/varios`}
+        className="flex min-h-16 items-center gap-3 rounded-2xl border border-accent/30 bg-accent/5 p-3 transition-colors hover:bg-accent/10"
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface text-accent">
+          <LayoutGrid className="h-5 w-5" aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-bold">Varios productos</span>
+          <span className="block text-xs text-muted-foreground">
+            Un anuncio para cada uno, con el mismo estilo
+          </span>
+        </span>
+        <ArrowRight className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+      </Link>
       <StudioIdeas
         ideas={source.ideas}
         loading={source.ideasLoading}
@@ -142,14 +164,14 @@ export function StudioSourceStep({
             )}
             {source.isLoading ? (
               <div
-                className="grid gap-2 sm:grid-cols-2"
+                className="grid grid-cols-1 gap-2 sm:grid-cols-2"
                 aria-label="Buscando en tu catálogo"
               >
                 <Skeleton className="h-14 rounded-xl" />
                 <Skeleton className="h-14 rounded-xl" />
               </div>
             ) : source.items.length ? (
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {source.items.map((item) => (
                   <button
                     key={item.id}
@@ -162,7 +184,7 @@ export function StudioSourceStep({
                         shouldValidate: true,
                       });
                     }}
-                    className={`flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 text-left text-sm ${source.sourceId === item.id ? "border-accent bg-accent/5" : "border-border"}`}
+                    className={`flex min-h-14 w-full min-w-0 cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 text-left text-sm ${source.sourceId === item.id ? "border-accent bg-accent/5" : "border-border"}`}
                   >
                     <span className="min-w-0 truncate">{item.name}</span>
                     {source.sourceId === item.id && (

@@ -1,5 +1,5 @@
 "use client";
-import { ArrowRight, Copy, Redo2, Sparkles, Undo2, X } from "lucide-react";
+import { ArrowRight, Copy, Redo2, Undo2, X } from "lucide-react";
 import { useStudioContext } from "../StudioProvider";
 import { Notification } from "@/components/ui/Notification";
 import {
@@ -11,49 +11,14 @@ import type { StudioEditorNoticesProps } from "../../interfaces/ui";
 
 export function StudioEditorNotices({
   editor,
-  designId,
   stale,
   locked,
   errors,
   onRefresh,
-  onMembership,
 }: StudioEditorNoticesProps) {
-  const { tenantSlug, summary } = useStudioContext(),
-    canCreate = summary?.permissions.includes("studio.create");
+  const { tenantSlug } = useStudioContext();
   return (
     <>
-      {summary &&
-        !summary.active &&
-        canCreate &&
-        (summary.freeExportDesignId &&
-        summary.freeExportDesignId !== designId ? (
-          <Notification
-            tone="info"
-            message={
-              <div className="space-y-3">
-                <p>
-                  Puedes seguir diseñando sin límite. Ya usaste tu descarga
-                  gratis con otro anuncio; para compartir este, activa tu
-                  membresía.
-                </p>
-                <button
-                  type="button"
-                  className={`${adminActionButtonSecondary} w-full sm:w-auto`}
-                  onClick={onMembership}
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Membresías
-                </button>
-              </div>
-            }
-          />
-        ) : (
-          <Notification
-            tone="success"
-            title="Tu primera descarga es gratis"
-            message="Este anuncio lo descargas y compartes sin costo. Es tu regalo de bienvenida."
-          />
-        ))}
       {editor.conflict && (
         <Notification
           tone="warning"

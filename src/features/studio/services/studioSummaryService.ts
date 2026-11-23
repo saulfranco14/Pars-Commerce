@@ -2,7 +2,6 @@ import "server-only";
 import { roleHasPermission } from "@/lib/auth/permissions";
 import { getStudioCatalog } from "./studioCatalogService";
 import { requireStudioAccess } from "./studioAccessService";
-import { freeExportDesignId } from "./studioAssetService";
 import { requireStudioData } from "./studioErrors";
 import { studioFlags } from "./studioFlags";
 import { isStudioMembershipActive } from "../helpers/access";
@@ -20,11 +19,15 @@ export async function getStudioSummary(
   const flags = studioFlags();
   if (flags.enabled) {
     // Idempotent in SQL; a failure only delays the gift until the next visit.
-    const starter = await db.rpc("studio_grant_starter_credits", { p_tenant_id: tenantId });
+    const starter = await db.rpc("studio_grant_starter_credits", {
+      p_tenant_id: tenantId,
+    });
     if (starter.error)
-      console.error("[studio] starter credits failed", { code: starter.error.code });
+      console.error("[studio] starter credits failed", {
+        code: starter.error.code,
+      });
   }
-  const [catalog, grants, recent, designs, ready, placements, freeExport] =
+  const [catalog, grants, recent, designs, ready, placements] =
     await Promise.all([
       getStudioCatalog(),
       db
@@ -52,7 +55,6 @@ export async function getStudioSummary(
         .select("id", { count: "exact", head: true })
         .eq("tenant_id", tenantId)
         .eq("is_active", true),
-      freeExportDesignId(db, tenantId),
     ]);
   const balance = {
     monthly: 0,
@@ -100,6 +102,5 @@ export async function getStudioSummary(
       ready: ready.count ?? 0,
       placements: placements.count ?? 0,
     },
-    freeExportDesignId: freeExport,
   };
 }

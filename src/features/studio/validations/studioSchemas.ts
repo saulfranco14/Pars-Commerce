@@ -21,7 +21,19 @@ export const studioNodeSchema = z
     binding: z
       .enum(["name", "price", "badge", "validity", "period", "conditions"])
       .optional(),
-    role: z.enum(["headline", "tagline", "cta"]).optional(),
+    role: z
+      .enum([
+        "headline",
+        "phrase",
+        "tagline",
+        "cta",
+        "brand",
+        "backdrop",
+        "shade",
+        "frame",
+      ])
+      .optional(),
+    shade: z.enum(["poster", "bottom"]).optional(),
     color,
     fill: color,
     fontSize: z.number().finite().min(0.005).max(0.5),
@@ -45,7 +57,17 @@ export const studioSceneSchema = z
   .object({
     schemaVersion: z.literal(1),
     format: z.enum(["square", "portrait", "story", "banner"]),
-    template: z.enum(["clean", "premium", "offer", "fresh"]).optional(),
+    template: z
+      .enum([
+        "clean",
+        "premium",
+        "offer",
+        "fresh",
+        "poster",
+        "poster_bottom",
+        "poster_framed",
+      ])
+      .optional(),
     background: color,
     nodes: z
       .array(studioNodeSchema)
@@ -84,7 +106,9 @@ export const generationSchema = z.object({
   asset_id: uuidSchema,
   operation: z.enum(["improve_photo", "style", "variation"]),
   quality: z.enum(["economy", "premium"]),
-  instructions: z.string().trim().min(1).max(1000),
+  scene: z.enum(["local", "street", "studio", "surprise"]).default("local"),
+  wish: z.string().max(300).default(""),
+  reference_asset_id: uuidSchema.optional(),
 });
 export const brandSchema = z.object({
   colors: z.array(color).min(1).max(6),

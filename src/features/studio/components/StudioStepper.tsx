@@ -3,7 +3,53 @@ import { Check } from "lucide-react";
 import { STUDIO_STEPS } from "../constants/studio";
 import type { StudioStep, StudioStepperProps } from "../interfaces/ui";
 
-export function StudioStepper({ step, onStep }: StudioStepperProps) {
+export function StudioStepper({
+  step,
+  onStep,
+  compact = false,
+}: StudioStepperProps) {
+  if (compact)
+    return (
+      <ol
+        aria-label={`Paso ${step} de ${STUDIO_STEPS.length}: ${STUDIO_STEPS[step - 1]}`}
+        className="flex items-center gap-1"
+      >
+        {STUDIO_STEPS.map((label, i) => {
+          const number = (i + 1) as StudioStep,
+            done = step > number,
+            current = step === number,
+            dot = (
+              <span
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${done || current ? "bg-accent text-accent-foreground" : "border-2 border-border bg-surface text-muted-foreground"}`}
+              >
+                {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : number}
+              </span>
+            );
+          return (
+            <li key={label} className="flex items-center gap-1">
+              {i > 0 && (
+                <span
+                  aria-hidden
+                  className={`h-0.5 w-3 ${step >= number ? "bg-accent" : "bg-border"}`}
+                />
+              )}
+              {done && onStep && number > 1 ? (
+                <button
+                  type="button"
+                  onClick={() => onStep(number)}
+                  aria-label={`Volver a ${label}`}
+                  className="cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                >
+                  {dot}
+                </button>
+              ) : (
+                dot
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    );
   return (
     <nav
       aria-label="Pasos del anuncio"

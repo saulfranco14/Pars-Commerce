@@ -14,7 +14,11 @@ type SlotKey =
   | "tagline"
   | "period"
   | "conditions"
-  | "validity";
+  | "validity"
+  | "phrase"
+  | "brand"
+  | "shade"
+  | "frame";
 type Slot = Pick<StudioNode, "x" | "y" | "width" | "height"> & {
   fontSize?: number;
 };
@@ -30,8 +34,11 @@ interface Present {
 }
 
 const LINE_KEYS: SlotKey[] = ["period", "conditions", "validity"];
-const SINGLE_LINE = new Set<SlotKey>(["price", "badge", "tagline"]);
+const SINGLE_LINE = new Set<SlotKey>(["price", "badge", "tagline", "brand"]);
+const FULL = { x: 0, y: 0, width: 1, height: 1 };
 const LINE_STEP = 0.047;
+/** A call to action ("Conoce más") borrows the price slot but must not shout like a price. */
+const CTA_MAX_FONT = 0.07;
 
 export function studioTemplate(id?: string) {
   return STUDIO_TEMPLATES.find((t) => t.id === id) ?? STUDIO_TEMPLATES[0];
@@ -42,7 +49,135 @@ export function studioSlotKey(node: StudioNode): SlotKey | null {
   if (node.role === "headline") return "name";
   if (node.role === "tagline") return "tagline";
   if (node.role === "cta") return "price";
+  if (
+    node.role === "phrase" ||
+    node.role === "brand" ||
+    node.role === "shade" ||
+    node.role === "frame"
+  )
+    return node.role;
   return node.binding ?? null;
+}
+
+/**
+ * Photo-first layout like the Studio landing examples: full-bleed photo under a
+ * dark shade, business name on top, a big phrase, and the offer at the bottom.
+ */
+function posterSlots(layout: StudioLayout, p: Present, wide: boolean): Slots {
+  const framed = layout === "poster_framed",
+    slots: Slots = { image: FULL, shade: FULL };
+  if (framed) slots.frame = { x: 0.045, y: 0.045, width: 0.91, height: 0.91 };
+  const lines: SlotKey[] = [
+    ...(p.tagline ? ["tagline" as const] : []),
+    ...p.lines,
+  ];
+  if (wide) {
+    const col = 0.55;
+    slots.logo = { x: 0.86, y: 0.07, width: 0.1, height: 0.2 };
+    slots.brand = {
+      x: 0.05,
+      y: 0.08,
+      width: col,
+      height: 0.07,
+      fontSize: 0.045,
+    };
+    slots.phrase = {
+      x: 0.05,
+      y: 0.17,
+      width: col,
+      height: 0.36,
+      fontSize: 0.15,
+    };
+    slots.name = {
+      x: 0.05,
+      y: 0.55,
+      width: col,
+      height: 0.08,
+      fontSize: 0.055,
+    };
+    const priceKey = p.price ? "price" : p.badge ? "badge" : null;
+    if (priceKey)
+      slots[priceKey] = {
+        x: 0.05,
+        y: 0.64,
+        width: col,
+        height: 0.17,
+        fontSize: 0.15,
+      };
+    if (p.price && p.badge)
+      slots.badge = {
+        x: 0.62,
+        y: 0.64,
+        width: 0.3,
+        height: 0.1,
+        fontSize: 0.06,
+      };
+    lines.slice(0, 2).forEach((key, i) => {
+      slots[key] = {
+        x: 0.05,
+        y: 0.84 + i * 0.065,
+        width: col,
+        height: 0.06,
+        fontSize: 0.04,
+      };
+    });
+    return slots;
+  }
+  const inset = framed ? 0.1 : 0.07,
+    width = 1 - inset * 2,
+    end = 1 - inset + 0.01,
+    lineH = 0.04,
+    linesStart = end - lines.length * lineH;
+  slots.logo = {
+    x: 1 - inset - 0.12,
+    y: inset - 0.015,
+    width: 0.12,
+    height: 0.1,
+  };
+  slots.brand = {
+    x: inset,
+    y: inset,
+    width: width - 0.15,
+    height: 0.045,
+    fontSize: 0.03,
+  };
+  lines.forEach((key, i) => {
+    slots[key] = {
+      x: inset,
+      y: linesStart + i * lineH,
+      width,
+      height: lineH,
+      fontSize: key === "conditions" ? 0.021 : 0.024,
+    };
+  });
+  const priceY = linesStart - 0.13,
+    detailY = priceY - 0.055,
+    priceKey = p.price ? "price" : p.badge ? "badge" : null;
+  if (priceKey)
+    slots[priceKey] = {
+      x: inset,
+      y: priceY,
+      width,
+      height: 0.125,
+      fontSize: 0.11,
+    };
+  slots.name = { x: inset, y: detailY, width, height: 0.05, fontSize: 0.036 };
+  let phraseEnd = detailY - 0.01;
+  if (p.price && p.badge) {
+    slots.badge = {
+      x: inset,
+      y: detailY - 0.055,
+      width,
+      height: 0.05,
+      fontSize: 0.036,
+    };
+    phraseEnd = detailY - 0.065;
+  }
+  slots.phrase =
+    layout === "poster_bottom"
+      ? { x: inset, y: phraseEnd - 0.29, width, height: 0.29, fontSize: 0.115 }
+      : { x: inset, y: inset + 0.075, width, height: 0.3, fontSize: 0.12 };
+  return slots;
 }
 
 function bottomLines(present: Present, x: number, width: number): Slots {
@@ -216,7 +351,7 @@ function wideSlots(p: Present): Slots {
 
 /** Largest font (as a share of height) that keeps one line of text inside its box. */
 function fitOneLine(base: number, width: number, text: string, aspect: number) {
-  return Math.min(base, (width * aspect) / (0.58 * Math.max(1, text.length)));
+  return Math.min(base, (width * aspect) / (0.62 * Math.max(1, text.length)));
 }
 
 /** Places every managed layer for the scene's format; free layers keep their position. */
@@ -244,7 +379,11 @@ export function arrangeStudioScene(
     lines: LINE_KEYS.filter((key) => owners.has(key)),
     nameLength: owners.get("name")?.content.length ?? 0,
   };
-  const slots = wide ? wideSlots(present) : tallSlots(layout, present);
+  const slots = layout.startsWith("poster")
+    ? posterSlots(layout, present, wide)
+    : wide
+      ? wideSlots(present)
+      : tallSlots(layout, present);
   return {
     ...scene,
     nodes: scene.nodes.map((node) => {
@@ -261,9 +400,11 @@ export function arrangeStudioScene(
       if (!key || !slot) return node;
       const { fontSize, ...box } = slot;
       if (fontSize === undefined) return { ...node, ...box, rotation: 0 };
-      const size = SINGLE_LINE.has(key)
-        ? fitOneLine(fontSize, box.width, node.content, aspect)
-        : fontSize;
+      const base =
+          node.role === "cta" ? Math.min(fontSize, CTA_MAX_FONT) : fontSize,
+        size = SINGLE_LINE.has(key)
+          ? fitOneLine(base, box.width, node.content, aspect)
+          : base;
       return {
         ...node,
         ...box,

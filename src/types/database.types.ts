@@ -5828,6 +5828,7 @@ export type Database = {
           quality: string
           queue_message_id: number | null
           quote_id: string
+          reference_asset_id: string | null
           requested_by: string
           reserved_tlacos: number
           result_asset_id: string | null
@@ -5857,6 +5858,7 @@ export type Database = {
           quality: string
           queue_message_id?: number | null
           quote_id: string
+          reference_asset_id?: string | null
           requested_by: string
           reserved_tlacos: number
           result_asset_id?: string | null
@@ -5885,6 +5887,7 @@ export type Database = {
           quality?: string
           queue_message_id?: number | null
           quote_id?: string
+          reference_asset_id?: string | null
           requested_by?: string
           reserved_tlacos?: number
           result_asset_id?: string | null
@@ -5944,6 +5947,7 @@ export type Database = {
           instructions: string
           operation: string
           quality: string
+          reference_asset_id: string | null
           requested_by: string
           route_id: string
           route_snapshot: NonNullable<Json>
@@ -5962,6 +5966,7 @@ export type Database = {
           instructions: string
           operation: string
           quality: string
+          reference_asset_id?: string | null
           requested_by: string
           route_id: string
           route_snapshot: NonNullable<Json>
@@ -5979,6 +5984,7 @@ export type Database = {
           instructions?: string
           operation?: string
           quality?: string
+          reference_asset_id?: string | null
           requested_by?: string
           route_id?: string
           route_snapshot?: NonNullable<Json>

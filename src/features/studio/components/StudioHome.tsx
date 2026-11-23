@@ -1,23 +1,38 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Coins, Plus, WandSparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Coins,
+  LayoutGrid,
+  Plus,
+  WandSparkles,
+} from "lucide-react";
+import { useStudioContinuation } from "../hooks/useStudioContinuation";
+import { useStudioImages } from "../hooks/useStudioImages";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { Notification } from "@/components/ui/Notification";
-import { FAB } from "@/components/ui/FAB";
-import {
-  pageHeaderCta,
-  pageHeaderCtaDesktop,
-  adminActionButtonSecondary,
-} from "@/components/admin/actionButtonClasses";
-import { STUDIO_SOURCES, STUDIO_TEMPLATES } from "../constants/studio";
-import { useStudioContinuation } from "../hooks/useStudioContinuation";
 import { useStudioContext } from "./StudioProvider";
 import { StudioLoading } from "./StudioLoading";
+import { StudioPendingBanner } from "./StudioPendingBanner";
+import { StudioUseImageSheet } from "./StudioUseImageSheet";
+import { StudioScenePreview } from "./editor/StudioScenePreview";
+import { StudioImagesSheet } from "./editor/StudioImagesSheet";
+import {
+  actionPair,
+  adminActionButtonPrimary,
+  adminActionButtonSecondary,
+} from "@/components/admin/actionButtonClasses";
+import type { StudioImage } from "../interfaces/studio";
 
 export function StudioHome() {
   useStudioContinuation();
-  const { tenantSlug, summary, isLoading, error } = useStudioContext();
+  const { tenantId, tenantSlug, summary, isLoading, error, refresh } =
+      useStudioContext(),
+    library = useStudioImages(),
+    [using, setUsing] = useState<StudioImage | null>(null),
+    [allOpen, setAllOpen] = useState(false);
   const base = `/dashboard/${tenantSlug}/studio`;
   if (isLoading) return <StudioLoading />;
   if (error || !summary)
@@ -29,186 +44,153 @@ export function StudioHome() {
     );
   const canCreate =
     summary.enabled && summary.permissions.includes("studio.create");
+  const tiles = library.images.map((image) => ({
+    key: image.id,
+    label: image.title || "Imagen",
+    url: image.url,
+    selected: false,
+    onPick: () => setUsing(image),
+  }));
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Tlaco Studio"
-        eyebrow="Del catálogo al anuncio"
-        description="Tu producto, su precio y tu marca. Diseña una vez y prepara cada formato para compartirlo."
+        compact
+        title="Studio"
         action={
-          canCreate ? (
-            <Link className={pageHeaderCtaDesktop} href={`${base}/nuevo`}>
-              <Plus className="h-4 w-4" />
-              Crear diseño
-            </Link>
-          ) : undefined
+          <Link
+            href={`${base}/tlacos`}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-accent/10 px-3 text-sm font-bold text-accent"
+          >
+            <Coins className="h-4 w-4" aria-hidden />
+            {summary.balance.available} Tlacos
+          </Link>
         }
       />
+      {canCreate && (
+        <div className={actionPair}>
+          <Link href={`${base}/varios`} className={adminActionButtonSecondary}>
+            <LayoutGrid className="h-4 w-4" />
+            Varios productos
+          </Link>
+          <Link href={`${base}/nuevo`} className={adminActionButtonPrimary}>
+            <Plus className="h-4 w-4" />
+            Crear
+          </Link>
+        </div>
+      )}
       {summary.membership?.ai_blocked && (
         <Notification
           tone="warning"
-          message="Hay un pago en revisión. Las generaciones están pausadas y tu contenido se conserva."
+          message="Hay un pago en revisión. Las imágenes con IA están pausadas y tu contenido se conserva."
         />
       )}
       {!summary.enabled && (
         <Notification
           tone="info"
-          message="La creación está temporalmente no disponible. Puedes explorar Studio, consultar tu biblioteca y descargar los archivos guardados."
+          message="La creación está temporalmente no disponible. Puedes consultar tu biblioteca y descargar tus archivos."
         />
       )}
-      {!summary.active && canCreate && (
-        <section className="rounded-2xl border border-accent/20 bg-accent/5 p-5 sm:p-7">
-          <div className="max-w-2xl">
-            <WandSparkles className="h-7 w-7 text-accent" />
-            <h2 className="mt-3 text-xl font-bold">
-              Diseña gratis. Tu primer anuncio también se descarga gratis.
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {summary.freeExportDesignId
-                ? "Ya usaste tu descarga gratis. Puedes seguir creando y editando sin límite; para descargar o compartir más anuncios activa tu membresía."
-                : "Elige un producto o promoción, ajusta foto y precio, y descarga tu primer anuncio sin costo. Además tienes Tlacos de regalo para probar la IA cuando actives tu membresía."}
-            </p>
-            <Link className={`${pageHeaderCta} mt-4`} href={`${base}/nuevo`}>
-              <ArrowRight className="h-4 w-4" />
-              Crear mi primer diseño
-            </Link>
-          </div>
-        </section>
-      )}
-      <section
-        aria-label="Resumen de Studio"
-        className="grid grid-cols-2 gap-3 lg:grid-cols-4"
-      >
-        {[
-          { label: "Diseños creados", value: summary.counts.designs },
-          { label: "Listos", value: summary.counts.ready },
-          { label: "Colocaciones guardadas", value: summary.counts.placements },
-          { label: "Tlacos disponibles", value: summary.balance.available },
-        ].map((item) => (
-          <div
-            key={item.label}
-            className="rounded-2xl border border-border bg-surface p-4"
-          >
-            <p className="text-xs text-muted-foreground">{item.label}</p>
-            <p className="mt-2 text-3xl font-bold tabular-nums">{item.value}</p>
-          </div>
-        ))}
-      </section>
-      <section>
-        <h2 className="text-lg font-bold">¿Qué quieres anunciar?</h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {STUDIO_SOURCES.map((source) =>
-            canCreate ? (
-              <Link
-                key={source.value}
-                href={`${base}/nuevo?source=${source.value}`}
-                className="rounded-2xl border border-border bg-surface p-4 hover:border-accent"
-              >
-                <p className="font-bold">{source.label}</p>
-                <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                  {source.description}
-                </p>
-                <ArrowRight className="mt-3 h-4 w-4 text-accent" />
-              </Link>
-            ) : (
-              <div
-                key={source.value}
-                className="rounded-2xl border border-border bg-surface p-4"
-              >
-                <p className="font-bold">{source.label}</p>
-                <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                  {source.description}
-                </p>
-              </div>
-            ),
+      <StudioPendingBanner onFinished={() => void library.refresh()} />
+      <section className="space-y-2">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-lg font-bold">Tus imágenes</h2>
+          {library.images.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setAllOpen(true)}
+              className="min-h-11 cursor-pointer text-sm font-semibold text-accent"
+            >
+              Ver todas ({library.images.length})
+            </button>
           )}
         </div>
+        {library.images.length ? (
+          <div className="flex snap-x gap-3 overflow-x-auto pr-10 pb-2 mask-[linear-gradient(90deg,#000_85%,transparent)]">
+            {library.images.slice(0, 12).map((image) => (
+              <button
+                key={image.id}
+                type="button"
+                onClick={() => setUsing(image)}
+                className="flex w-28 shrink-0 cursor-pointer snap-start flex-col gap-1 text-left"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={image.url}
+                  alt=""
+                  loading="lazy"
+                  className="aspect-square w-full rounded-xl object-cover"
+                />
+                <span className="truncate text-xs text-muted-foreground">
+                  {image.title}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-2xl bg-border-soft/60 p-4 text-sm text-muted-foreground">
+            Aquí aparecen las imágenes que hagas con la IA. Puedes usarlas en
+            cualquier producto, promoción o combo.
+          </p>
+        )}
       </section>
-      <section>
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-bold">Retoma tu trabajo</h2>
+      <section className="space-y-2">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-lg font-bold">Tus anuncios</h2>
           <Link
             href={`${base}/disenos`}
-            className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-accent"
+            className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-accent"
           >
-            Ver biblioteca
+            Ver todos
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
         {summary.recent.length ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {summary.recent.map((design) => (
               <Link
                 key={design.id}
                 href={`${base}/disenos/${design.id}`}
-                className="rounded-2xl border border-border bg-surface p-4"
+                className="flex min-w-0 flex-col gap-1.5"
               >
-                <p className="font-bold">{design.title}</p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {design.status === "ready"
-                    ? "Listo para compartir"
-                    : "Borrador guardado"}
-                </p>
+                <span className="pointer-events-none block overflow-hidden rounded-xl">
+                  <StudioScenePreview
+                    scene={design.draft_scene}
+                    assets={[]}
+                    tenantId={tenantId}
+                  />
+                </span>
+                <span className="flex items-center justify-between gap-2 text-xs font-semibold">
+                  <span className="truncate">{design.title}</span>
+                  <span
+                    className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold ${design.status === "ready" ? "bg-emerald-500/10 text-emerald-600" : "bg-border-soft text-muted-foreground"}`}
+                  >
+                    {design.status === "ready" ? "Listo" : "Borrador"}
+                  </span>
+                </span>
               </Link>
             ))}
           </div>
         ) : (
           <EmptyState
             icon={WandSparkles}
-            title="Tu primer diseño empieza con lo que ya vendes"
-            description="También puedes preparar una campaña libre con una fotografía propia."
+            title="Tu primer anuncio empieza con lo que ya vendes"
+            description="Toca Crear, elige un producto y te lo damos hecho."
           />
         )}
       </section>
-      <section>
-        <h2 className="text-lg font-bold">Plantillas para empezar</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Ejemplos de estilo. Aplicar una plantilla y ajustar tus capas consume
-          0 Tlacos.
-        </p>
-        <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {STUDIO_TEMPLATES.map((template) => (
-            <div
-              key={template.id}
-              className="overflow-hidden rounded-2xl border border-border"
-            >
-              <div
-                className="flex aspect-[4/3] flex-col justify-between p-4"
-                style={{ background: template.background, color: template.ink }}
-              >
-                <span className="text-[10px] font-bold uppercase">
-                  Ejemplo · Tu marca
-                </span>
-                <p className="text-xl font-bold">
-                  Tu producto,
-                  <br />
-                  bien presentado.
-                </p>
-                <span
-                  className="text-sm font-bold"
-                  style={{ color: template.accent }}
-                >
-                  {template.name}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-      <Link
-        href={`${base}/tlacos`}
-        className={`${adminActionButtonSecondary} w-full sm:w-auto`}
-      >
-        <Coins className="h-4 w-4" />
-        {summary.active
-          ? "Administrar membresía y Tlacos"
-          : "Ver membresías y Tlacos"}
-      </Link>
-      {canCreate && (
-        <FAB href={`${base}/nuevo`} aria-label="Crear diseño">
-          <Plus className="h-6 w-6" />
-        </FAB>
-      )}
+      <StudioImagesSheet
+        open={allOpen}
+        onClose={() => setAllOpen(false)}
+        disabled={false}
+        tiles={tiles}
+      />
+      <StudioUseImageSheet
+        image={using}
+        onClose={() => {
+          setUsing(null);
+          void refresh();
+        }}
+      />
     </div>
   );
 }

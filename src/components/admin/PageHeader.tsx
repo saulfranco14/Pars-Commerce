@@ -5,6 +5,8 @@ interface PageHeaderProps {
   description?: string;
   action?: ReactNode;
   eyebrow?: string;
+  /** One row on phones too: for focused editors that must fit on one screen. */
+  compact?: boolean;
 }
 
 export function PageHeader({
@@ -12,7 +14,17 @@ export function PageHeader({
   description,
   action,
   eyebrow,
+  compact = false,
 }: PageHeaderProps) {
+  if (compact)
+    return (
+      <header className="flex items-center gap-3">
+        <h1 className="min-w-0 flex-1 truncate text-lg font-bold tracking-tight text-foreground sm:text-xl">
+          {title}
+        </h1>
+        {action && <div className="shrink-0">{action}</div>}
+      </header>
+    );
   return (
     <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">

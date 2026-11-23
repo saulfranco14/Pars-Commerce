@@ -1,22 +1,27 @@
 export type StudioFormat = "square" | "portrait" | "story" | "banner";
 export type StudioNodeKind =
-  | "text"
-  | "price"
-  | "image"
-  | "logo"
-  | "qr"
-  | "shape";
-export type StudioTemplateId = "clean" | "premium" | "offer" | "fresh";
-export type StudioLayout = "stack" | "price" | "split";
-/** Managed copy that is not bound to the catalog: an overridden name, a short phrase or a call to action. */
-export type StudioRole = "headline" | "tagline" | "cta";
+  "text" | "price" | "image" | "logo" | "qr" | "shape";
+export type StudioPosterId = "poster" | "poster_bottom" | "poster_framed";
+export type StudioTemplateId =
+  "clean" | "premium" | "offer" | "fresh" | StudioPosterId;
+export type StudioLayout =
+  "stack" | "price" | "split" | "poster" | "poster_bottom" | "poster_framed";
+/**
+ * Managed layers that are not bound to the catalog: an overridden name, the big
+ * phrase, a short closing line, a call to action, the business name, and the
+ * full-bleed photo, shade and frame of a poster.
+ */
+export type StudioRole =
+  | "headline"
+  | "phrase"
+  | "tagline"
+  | "cta"
+  | "brand"
+  | "backdrop"
+  | "shade"
+  | "frame";
 export type StudioBinding =
-  | "name"
-  | "price"
-  | "badge"
-  | "validity"
-  | "period"
-  | "conditions";
+  "name" | "price" | "badge" | "validity" | "period" | "conditions";
 
 export interface StudioNode {
   id: string;
@@ -33,6 +38,8 @@ export interface StudioNode {
   imageUrl?: string;
   binding?: StudioBinding;
   role?: StudioRole;
+  /** Shape filled with the poster's dark gradient instead of a flat color. */
+  shade?: "poster" | "bottom";
   color: string;
   fill: string;
   fontSize: number;

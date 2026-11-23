@@ -2,6 +2,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import {
+  ArrowLeft,
   Check,
   ImagePlus,
   Images,
@@ -16,7 +17,6 @@ import {
   Undo2,
   Upload,
 } from "lucide-react";
-import { useStudioContext } from "../StudioProvider";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { FormInput } from "@/components/ui/FormInput";
 import { FormSheet } from "@/components/ui/FormSheet";
@@ -45,15 +45,14 @@ type Panel = "properties" | "layers" | "assets" | null;
 export function StudioAdvancedEditor({
   editor,
   asset,
-  ai,
   tenantId,
   locked,
   detail,
   output,
   onRefresh,
+  onSimple,
 }: StudioAdvancedEditorProps) {
-  const { summary } = useStudioContext(),
-    [panel, setPanel] = useState<Panel>(null),
+  const [panel, setPanel] = useState<Panel>(null),
     [restoreId, setRestoreId] = useState<string | null>(null),
     image =
       editor.selected?.kind === "image"
@@ -106,6 +105,14 @@ export function StudioAdvancedEditor({
   );
   return (
     <div className="space-y-4">
+      <button
+        type="button"
+        className={`${adminActionButtonSecondary} w-full sm:w-auto`}
+        onClick={onSimple}
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Fácil
+      </button>
       <div className="flex items-end gap-2">
         <div className="min-w-0 flex-1">
           <FormInput
@@ -174,17 +181,14 @@ export function StudioAdvancedEditor({
               editor.setScene({ ...editor.scene, background: e.target.value })
             }
           />
-          {summary?.aiEnabled && (
-            <button
-              type="button"
-              className={`${adminActionButtonAi} w-full`}
-              disabled={locked || !image || !summary.balance.available}
-              onClick={() => ai.setOpen(true)}
-            >
-              <Sparkles className="h-4 w-4" />
-              Mejorar
-            </button>
-          )}
+          <button
+            type="button"
+            className={`${adminActionButtonAi} w-full`}
+            onClick={onSimple}
+          >
+            <Sparkles className="h-4 w-4" />
+            Imágenes
+          </button>
           <div className="hidden xl:block">{layers}</div>
         </aside>
         <main className="order-1 min-w-0 rounded-2xl border border-border bg-border-soft/40 p-3 sm:p-5 xl:order-2">
@@ -229,7 +233,7 @@ export function StudioAdvancedEditor({
           <StudioAiReviewPanel
             scene={editor.scene}
             tenantId={tenantId}
-            enabled={Boolean(summary?.aiEnabled && editor.canEdit)}
+            enabled={false}
             disabled={locked}
             prepareVersion={async () => (await output.prepare()).version.id}
             onApply={(finding) =>

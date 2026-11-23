@@ -28,6 +28,34 @@ export function studioTagline(scene: StudioScene): string {
   return scene.nodes.find((n) => n.role === "tagline")?.content ?? "";
 }
 
+export function isStudioPoster(scene: StudioScene): boolean {
+  return studioTemplate(scene.template).layout.startsWith("poster");
+}
+
+export function studioPhrase(scene: StudioScene): string {
+  return scene.nodes.find((n) => n.role === "phrase")?.content ?? "";
+}
+
+/** The big poster phrase; once it differs from the product name, the name shows as the detail line. */
+export function setStudioPhrase(
+  scene: StudioScene,
+  source: StudioSource,
+  text: string,
+): StudioScene {
+  const value = text.trim().slice(0, 80) || source.name,
+    showName = value !== source.name;
+  return arrangeStudioScene({
+    ...scene,
+    nodes: scene.nodes.map((n) =>
+      n.role === "phrase"
+        ? { ...n, content: value }
+        : n.binding === "name"
+          ? { ...n, visible: showName }
+          : n,
+    ),
+  });
+}
+
 export function studioPaletteId(scene: StudioScene): string | null {
   const background = scene.background.toLowerCase();
   return (
@@ -114,6 +142,8 @@ export function restyleStudioScene(
     logo = scene.nodes.find((n) => n.kind === "logo"),
     tagline = scene.nodes.find((n) => n.role === "tagline"),
     font = headlineNode(scene)?.fontFamily,
+    fromPoster = isStudioPoster(scene),
+    toPoster = template.layout.startsWith("poster"),
     carried = new Set<StudioNode>();
   const previousOf = (node: StudioNode) => {
     if (node.kind === "image") return image;
@@ -136,6 +166,10 @@ export function restyleStudioScene(
         cropY: previous.cropY,
         cropScale: previous.cropScale,
       };
+    if (previous.role === "phrase" || previous.role === "brand")
+      return { ...styled, id: previous.id, content: previous.content };
+    if (node.binding === "name" && fromPoster && toPoster)
+      return { ...styled, id: previous.id, visible: previous.visible };
     return previous.role === "headline"
       ? {
           ...styled,
@@ -173,4 +207,45 @@ export function suggestStudioCopy(source: StudioSource, tagline = ""): string {
   return [offer, phrase && `${phrase}.`, "Aquí los detalles:"]
     .filter(Boolean)
     .join(" ");
+}
+
+/** Puts an image on the poster photo (or the first photo of older designs); adds the poster photo if missing. */
+export function setStudioBackdrop(
+  scene: StudioScene,
+  picture: string | { imageUrl: string },
+): StudioScene {
+  const target =
+    scene.nodes.find((n) => n.role === "backdrop") ??
+    scene.nodes.find((n) => n.kind === "image");
+  const image = {
+    assetId: typeof picture === "string" ? picture : undefined,
+    imageUrl: typeof picture === "string" ? undefined : picture.imageUrl,
+    cropX: 0.5,
+    cropY: 0.5,
+    cropScale: 1,
+  };
+  if (target)
+    return {
+      ...scene,
+      nodes: scene.nodes.map((n) => (n === target ? { ...n, ...image } : n)),
+    };
+  if (!isStudioPoster(scene)) return scene;
+  return arrangeStudioScene({
+    ...scene,
+    nodes: [
+      { ...createStudioNode("image"), role: "backdrop", ...image },
+      ...scene.nodes,
+    ],
+  });
+}
+
+/** What the poster photo shows now: a stored image or a catalog photo URL. */
+export function studioBackdrop(scene: StudioScene): {
+  assetId: string | null;
+  imageUrl: string | null;
+} {
+  const node =
+    scene.nodes.find((n) => n.role === "backdrop") ??
+    scene.nodes.find((n) => n.kind === "image");
+  return { assetId: node?.assetId ?? null, imageUrl: node?.imageUrl ?? null };
 }

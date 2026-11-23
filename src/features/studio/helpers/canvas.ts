@@ -151,9 +151,7 @@ export async function exportStudioScene(
         layer.add(
           new Konva.Rect({
             ...base,
-            fill: n.fill,
-            stroke: n.stroke,
-            strokeWidth: n.strokeWidth,
+            ...studioShapeFill(n, base.height, 1),
           }),
         );
       else
@@ -200,4 +198,51 @@ export async function exportStudioScene(
     stage.destroy();
     container.remove();
   }
+}
+
+const SHADE_STOPS = {
+  poster: [
+    0,
+    "rgba(8,10,16,0.78)",
+    0.42,
+    "rgba(8,10,16,0.15)",
+    0.58,
+    "rgba(8,10,16,0.2)",
+    1,
+    "rgba(8,10,16,0.88)",
+  ],
+  bottom: [
+    0,
+    "rgba(8,10,16,0.45)",
+    0.35,
+    "rgba(8,10,16,0.08)",
+    0.55,
+    "rgba(8,10,16,0.35)",
+    1,
+    "rgba(8,10,16,0.92)",
+  ],
+} as const;
+
+/** Konva fill for a shape layer: the poster shade gradient, an empty frame, or a flat color. */
+export function studioShapeFill(
+  node: StudioNode,
+  height: number,
+  strokeScale: number,
+) {
+  if (node.role === "frame")
+    return {
+      stroke: node.stroke,
+      strokeWidth: Math.max(1, node.strokeWidth * strokeScale),
+    };
+  if (node.shade)
+    return {
+      fillLinearGradientStartPoint: { x: 0, y: 0 },
+      fillLinearGradientEndPoint: { x: 0, y: height },
+      fillLinearGradientColorStops: [...SHADE_STOPS[node.shade]],
+    };
+  return {
+    fill: node.fill,
+    stroke: node.stroke,
+    strokeWidth: node.strokeWidth * strokeScale,
+  };
 }

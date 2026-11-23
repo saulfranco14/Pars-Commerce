@@ -52,6 +52,7 @@ export async function getStudioSource(
     items: [],
   };
   base.logoUrl = tenant.logo_url;
+  base.businessName = tenant.name;
   if (type === "custom") return base;
   if (!id) throw new StudioError("NOT_FOUND");
   if (type === "product") {

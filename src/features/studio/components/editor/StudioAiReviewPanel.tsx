@@ -56,8 +56,7 @@ export function StudioAiReviewPanel({
     <section className="space-y-3">
       <h3 className="text-sm font-bold">Diagnóstico de tu anuncio</h3>
       <p className="text-xs leading-5 text-muted-foreground">
-        Comprobaciones locales sin Tlacos. El análisis visual con IA es una
-        recomendación y no garantiza el resultado.
+        Comprobaciones automáticas, sin costo.
       </p>
       {!findings.length ? (
         <p className="flex items-center gap-2 text-sm">
@@ -84,19 +83,15 @@ export function StudioAiReviewPanel({
           </div>
         ))
       )}
-      <button
-        className={`${adminActionButtonAi} w-full sm:w-auto`}
-        disabled={!enabled || disabled || busy}
-        onClick={() => setConsent(true)}
-      >
-        <ScanEye className="h-4 w-4" />
-        {busy ? "Analizando…" : "Analizar"}
-      </button>
-      {!enabled && (
-        <p className="text-xs text-muted-foreground">
-          El análisis visual requiere la integración IA habilitada y membresía
-          vigente.
-        </p>
+      {enabled && (
+        <button
+          className={`${adminActionButtonAi} w-full sm:w-auto`}
+          disabled={disabled || busy}
+          onClick={() => setConsent(true)}
+        >
+          <ScanEye className="h-4 w-4" />
+          {busy ? "Analizando…" : "Analizar"}
+        </button>
       )}
       {error && <Notification tone="error" message={error} />}{" "}
       {review && (

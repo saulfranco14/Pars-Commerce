@@ -1,40 +1,50 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { Check, ExternalLink, Type } from "lucide-react";
+import { Check, ExternalLink, Loader2, Sparkles, Type } from "lucide-react";
 import { useSchemaForm } from "@/lib/forms/useSchemaForm";
+import { useStudioCopyIdeas } from "../../hooks/useStudioCopyIdeas";
 import { FormInput } from "@/components/ui/FormInput";
 import { FormSheet } from "@/components/ui/FormSheet";
 import { Notification } from "@/components/ui/Notification";
-import { adminActionButtonPrimary } from "@/components/admin/actionButtonClasses";
-import { STUDIO_TAGLINES } from "../../constants/studio";
-import { studioValidity } from "../../helpers/scene";
 import {
-  setStudioHeadline,
+  adminActionButtonAi,
+  adminActionButtonPrimary,
+} from "@/components/admin/actionButtonClasses";
+import { STUDIO_NOTES } from "../../constants/studio";
+import {
+  setStudioPhrase,
   setStudioTagline,
-  studioHeadline,
+  studioPhrase,
   studioTagline,
 } from "../../helpers/sceneStyle";
 import { studioTextFields } from "../../validations/studioTextFields";
 import type { StudioTextSheetProps } from "../../interfaces/ui";
 
+const chip = (on: boolean) =>
+  `min-h-10 max-w-full cursor-pointer truncate rounded-full border px-3 text-sm font-semibold transition-colors ${on ? "border-accent bg-accent/10 text-accent" : "border-border bg-surface"}`;
+
 export function StudioTextSheet({
   open,
   onClose,
   disabled,
+  designId,
   scene,
   source,
   catalogHref,
   onApply,
+  onMessage,
 }: StudioTextSheetProps) {
-  const form = useSchemaForm<{ headline: string; tagline: string }>(
+  const copy = useStudioCopyIdeas(designId);
+  const form = useSchemaForm<{ phrase: string; tagline: string }>(
     studioTextFields,
     async (values) => {
       onApply(
         setStudioTagline(
-          setStudioHeadline(scene, source, values.headline),
+          setStudioPhrase(scene, source, values.phrase),
           values.tagline,
         ),
       );
+      if (copy.ideas?.message) onMessage(copy.ideas.message);
       onClose();
     },
   );
@@ -44,19 +54,19 @@ export function StudioTextSheet({
   useEffect(() => {
     if (open)
       reset({
-        headline: studioHeadline(latest.current),
+        phrase: studioPhrase(latest.current),
         tagline: studioTagline(latest.current),
       });
   }, [open, reset]);
-  const tagline = form.watch("tagline"),
-    details = [source.conditions, studioValidity(source), source.period]
-      .filter(Boolean)
-      .join(" · ");
+  const phrase = form.watch("phrase"),
+    tagline = form.watch("tagline"),
+    phrases = copy.ideas?.phrases ?? [],
+    notes = copy.ideas?.notes.length ? copy.ideas.notes : [...STUDIO_NOTES];
   return (
     <FormSheet
       isOpen={open}
       onClose={onClose}
-      title="Textos del anuncio"
+      title="Textos"
       icon={Type}
       footer={
         <button
@@ -75,24 +85,83 @@ export function StudioTextSheet({
         onSubmit={form.handleSubmit(form.submit)}
         className="space-y-5 pb-3"
       >
-        <FormInput
-          label="Nombre en el anuncio"
-          disabled={disabled}
-          maxLength={120}
-          {...form.register("headline")}
-          error={form.errors.headline?.message}
-        />
+        <div className="space-y-2">
+          <FormInput
+            label="Frase grande"
+            disabled={disabled}
+            maxLength={80}
+            {...form.register("phrase")}
+            error={form.errors.phrase?.message}
+          />
+          {phrases.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {phrases.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  aria-pressed={phrase === p}
+                  onClick={() =>
+                    form.setValue("phrase", p, { shouldValidate: true })
+                  }
+                  className={chip(phrase === p)}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          )}
+          <button
+            type="button"
+            disabled={disabled || copy.busy}
+            onClick={() => void copy.suggest()}
+            className={`${adminActionButtonAi} w-full`}
+          >
+            {copy.busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {copy.busy ? "Pensando…" : "Sugerir"}
+          </button>
+          <p className="text-xs text-muted-foreground">
+            Sugerir escribe frases para este producto. Es gratis.
+          </p>
+          {copy.error && <Notification tone="error" message={copy.error} />}
+        </div>
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Frase final
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {notes.map((note) => (
+              <button
+                key={note}
+                type="button"
+                aria-pressed={tagline === note}
+                onClick={() =>
+                  form.setValue("tagline", tagline === note ? "" : note, {
+                    shouldValidate: true,
+                  })
+                }
+                className={chip(tagline === note)}
+              >
+                {note}
+              </button>
+            ))}
+          </div>
+          <FormInput
+            label="O escribe la tuya"
+            disabled={disabled}
+            maxLength={60}
+            {...form.register("tagline")}
+            error={form.errors.tagline?.message}
+          />
+        </div>
         {(source.priceLabel || source.badge) && (
           <div className="space-y-1 rounded-xl bg-border-soft/60 p-3 text-sm">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Precio
-            </p>
             <p className="font-bold">{source.badge || source.priceLabel}</p>
-            {details && (
-              <p className="text-xs text-muted-foreground">{details}</p>
-            )}
             <p className="text-xs leading-5 text-muted-foreground">
-              Viene de tu catálogo; si cambia allá, cambia aquí.
+              El precio viene de tu catálogo; si cambia allá, cambia aquí.
             </p>
             {catalogHref && (
               <a
@@ -107,40 +176,6 @@ export function StudioTextSheet({
             )}
           </div>
         )}
-        <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Frase corta
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {STUDIO_TAGLINES.map((phrase) => (
-              <button
-                key={phrase}
-                type="button"
-                disabled={disabled}
-                aria-pressed={tagline === phrase}
-                onClick={() =>
-                  form.setValue("tagline", tagline === phrase ? "" : phrase, {
-                    shouldValidate: true,
-                  })
-                }
-                className={`min-h-10 cursor-pointer rounded-full border px-3 text-sm font-semibold transition-colors ${tagline === phrase ? "border-accent bg-accent/10 text-accent" : "border-border bg-surface"}`}
-              >
-                {phrase}
-              </button>
-            ))}
-          </div>
-          <FormInput
-            label="O escribe la tuya"
-            disabled={disabled}
-            maxLength={60}
-            {...form.register("tagline")}
-            error={form.errors.tagline?.message}
-          />
-          <p className="text-xs leading-5 text-muted-foreground">
-            Una invitación corta hace que te escriban. Déjala vacía si no la
-            quieres.
-          </p>
-        </div>
         {form.submitError && (
           <Notification tone="error" message={form.submitError} />
         )}

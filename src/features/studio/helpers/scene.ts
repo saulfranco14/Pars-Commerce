@@ -75,12 +75,48 @@ export function createStudioScene(
       color: template.ink,
       ...extra,
     });
-  const nodes: StudioNode[] = [];
+  const nodes: StudioNode[] = [],
+    poster = template.layout.startsWith("poster");
+  if (poster) {
+    if (source.imageUrls[0])
+      nodes.push({
+        ...createStudioNode("image"),
+        role: "backdrop",
+        imageUrl: source.imageUrls[0],
+      });
+    nodes.push({
+      ...createStudioNode("shape"),
+      role: "shade",
+      shade: template.layout === "poster_bottom" ? "bottom" : "poster",
+      fill: "#000000",
+      locked: true,
+    });
+    if (template.layout === "poster_framed")
+      nodes.push({
+        ...createStudioNode("shape"),
+        role: "frame",
+        fill: "#000000",
+        stroke: "#ffffff",
+        strokeWidth: 2,
+        opacity: 0.8,
+        locked: true,
+      });
+  }
   if (source.logoUrl)
     nodes.push({ ...createStudioNode("logo"), imageUrl: source.logoUrl });
-  if (source.imageUrls[0])
+  if (!poster && source.imageUrls[0])
     nodes.push({ ...createStudioNode("image"), imageUrl: source.imageUrls[0] });
-  nodes.push(text(source.name, { binding: "name" }));
+  if (poster) {
+    if (source.businessName)
+      nodes.push(
+        text(source.businessName.toUpperCase(), {
+          role: "brand",
+          fontSize: 0.03,
+        }),
+      );
+    nodes.push(text(source.name, { role: "phrase", lineHeight: 0.95 }));
+  }
+  nodes.push(text(source.name, { binding: "name", visible: !poster }));
   if (source.priceLabel)
     nodes.push({
       ...createStudioNode("price", source.priceLabel),
@@ -88,7 +124,9 @@ export function createStudioScene(
       color: template.accent,
     });
   if (source.badge)
-    nodes.push(text(source.badge, { binding: "badge", color: template.accent }));
+    nodes.push(
+      text(source.badge, { binding: "badge", color: template.accent }),
+    );
   if (source.period)
     nodes.push(text(source.period, { binding: "period", fontStyle: "normal" }));
   if (source.conditions)
@@ -102,7 +140,7 @@ export function createStudioScene(
         fontStyle: "normal",
       }),
     );
-  if (!source.priceLabel)
+  if (!source.priceLabel && !(poster && source.badge))
     nodes.push(text("Conoce más", { role: "cta", color: template.accent }));
   return arrangeStudioScene(
     {
@@ -149,10 +187,12 @@ export function reviewStudioScene(scene: StudioScene): StudioFinding[] {
   const findings: StudioFinding[] = [];
   for (const node of scene.nodes.filter((n) => n.visible)) {
     if (
-      node.x < 0.025 ||
-      node.y < 0.025 ||
-      node.x + node.width > 0.975 ||
-      node.y + node.height > 0.975
+      node.role !== "backdrop" &&
+      node.role !== "shade" &&
+      (node.x < 0.025 ||
+        node.y < 0.025 ||
+        node.x + node.width > 0.975 ||
+        node.y + node.height > 0.975)
     )
       findings.push({
         code: "OUTSIDE_SAFE_AREA",

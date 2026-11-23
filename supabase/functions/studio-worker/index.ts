@@ -261,11 +261,6 @@ async function processReview(
     `${route.provider}:${model}:${route.config_version}`
   )
     throw new StudioProviderError("REVIEW_CONFIG_CHANGED");
-  const membership = await db.rpc("studio_membership_active", {
-    p_tenant_id: review.tenant_id,
-  });
-  check(membership.error);
-  if (!membership.data) throw new StudioProviderError("MEMBERSHIP_REQUIRED");
   const source = await assetBytes(
     render.asset_id,
     review.tenant_id,

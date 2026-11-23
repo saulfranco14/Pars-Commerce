@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { STUDIO_PALETTES, STUDIO_TEMPLATES } from "../constants/studio";
+import {
+  STUDIO_FORMATS as STUDIO_FORMATS_FOR_TEST,
+  STUDIO_PALETTES,
+  STUDIO_TEMPLATES,
+} from "../constants/studio";
 import {
   applyStudioFindings,
   bindStudioScene,
@@ -10,10 +14,14 @@ import {
 import {
   recolorStudioScene,
   restyleStudioScene,
+  setStudioBackdrop,
   setStudioHeadline,
+  setStudioPhrase,
+  studioBackdrop,
   setStudioTagline,
   studioHeadline,
   studioPaletteId,
+  studioPhrase,
   studioTagline,
   suggestStudioCopy,
 } from "./sceneStyle";
@@ -51,8 +59,10 @@ const promotion: StudioSource = {
   validUntil: "2026-12-01T06:00:00Z",
 };
 const FORMATS: StudioFormat[] = ["square", "portrait", "story", "banner"];
-const node = (scene: StudioScene, pick: (n: StudioScene["nodes"][0]) => boolean) =>
-  scene.nodes.find(pick)!;
+const node = (
+  scene: StudioScene,
+  pick: (n: StudioScene["nodes"][0]) => boolean,
+) => scene.nodes.find(pick)!;
 
 describe("Studio ready-made designs", () => {
   it("builds every design in every format inside the safe area and without clipped copy", () => {
@@ -71,6 +81,19 @@ describe("Studio ready-made designs", () => {
             `${source.type} · ${template.id} · ${format}`,
           ).toEqual([]);
         }
+  });
+  it("keeps the call to action on one line when there is no price", () => {
+    const promo = { ...promotion, priceLabel: "", price: null, badge: "" };
+    for (const template of STUDIO_TEMPLATES)
+      for (const format of FORMATS) {
+        const scene = createStudioScene(promo, template.id, format),
+          cta = node(scene, (n) => n.role === "cta"),
+          size = STUDIO_FORMATS_FOR_TEST[format],
+          charWidth = cta.fontSize * size.height * 0.62;
+        expect(cta.content.length * charWidth).toBeLessThanOrEqual(
+          cta.width * size.width + 1,
+        );
+      }
   });
   it("gives each design its own arrangement", () => {
     const price = (id: string) =>
@@ -164,6 +187,60 @@ describe("Studio easy adjustments", () => {
         (f) => f.code === "OUTSIDE_SAFE_AREA",
       ),
     ).toBe(false);
+  });
+});
+
+describe("Studio posters", () => {
+  const poster = () => createStudioScene(product, "poster");
+  it("covers the canvas with the photo and the shade, and starts with the name as the phrase", () => {
+    const scene = poster();
+    expect(node(scene, (n) => n.role === "backdrop")).toMatchObject({
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 1,
+      imageUrl: product.imageUrls[0],
+    });
+    expect(node(scene, (n) => n.role === "shade").shade).toBe("poster");
+    expect(studioPhrase(scene)).toBe(product.name);
+    expect(node(scene, (n) => n.binding === "name").visible).toBe(false);
+  });
+  it("shows the product name as detail once the phrase changes, and hides it again when restored", () => {
+    const changed = setStudioPhrase(poster(), product, "Siempre impecable.");
+    expect(studioPhrase(changed)).toBe("Siempre impecable.");
+    expect(node(changed, (n) => n.binding === "name").visible).toBe(true);
+    const restored = setStudioPhrase(changed, product, "");
+    expect(node(restored, (n) => n.binding === "name").visible).toBe(false);
+  });
+  it("swaps the poster photo for a generated image, or adds one when there was no photo", () => {
+    const assetId = "30000000-0000-4000-8000-000000000004";
+    const withImage = setStudioBackdrop(poster(), assetId);
+    expect(studioBackdrop(withImage)).toEqual({ assetId, imageUrl: null });
+    const noPhoto = createStudioScene({ ...product, imageUrls: [] }, "poster");
+    const added = setStudioBackdrop(noPhoto, assetId);
+    expect(added.nodes[0]).toMatchObject({
+      role: "backdrop",
+      assetId,
+      width: 1,
+    });
+    expect(studioSceneSchema.safeParse(added).success).toBe(true);
+  });
+  it("changes poster style keeping image, phrase and the detail line", () => {
+    const assetId = "30000000-0000-4000-8000-000000000005";
+    const scene = setStudioBackdrop(
+      setStudioPhrase(poster(), product, "Siempre impecable."),
+      assetId,
+    );
+    const framed = restyleStudioScene(scene, product, "poster_framed");
+    expect(framed.nodes.some((n) => n.role === "frame")).toBe(true);
+    expect(studioBackdrop(framed).assetId).toBe(assetId);
+    expect(studioPhrase(framed)).toBe("Siempre impecable.");
+    expect(node(framed, (n) => n.binding === "name").visible).toBe(true);
+    const bottom = restyleStudioScene(framed, product, "poster_bottom");
+    expect(bottom.nodes.some((n) => n.role === "frame")).toBe(false);
+    expect(node(bottom, (n) => n.role === "phrase").y).toBeGreaterThan(
+      node(framed, (n) => n.role === "phrase").y,
+    );
   });
 });
 

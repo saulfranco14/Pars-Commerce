@@ -58,10 +58,10 @@ export function StudioShareStep({
     ready = Boolean(prepared) && !output.busy,
     canPlace = Boolean(
       prepared &&
-        !prepared.version.is_preparation &&
-        !readOnly &&
-        summary?.publishEnabled &&
-        summary.permissions.includes("studio.publish"),
+      !prepared.version.is_preparation &&
+      !readOnly &&
+      summary?.publishEnabled &&
+      summary.permissions.includes("studio.publish"),
     );
   const tiles: StudioShareTileProps[] = [
     {
