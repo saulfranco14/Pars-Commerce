@@ -225,7 +225,7 @@ export function StudioChannels({
                 </p>
               </div>
               <p className="shrink-0 text-sm leading-7">
-                <strong className="text-lg">1 o 2 Tlacos</strong>
+                <strong className="text-lg">1 o 3 Tlacos</strong>
                 <br />
                 <span className="text-slate-400">
                   Según la calidad elegida.

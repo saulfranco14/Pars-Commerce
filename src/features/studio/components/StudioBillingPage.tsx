@@ -166,8 +166,8 @@ export function StudioBillingPage() {
           )}
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
           Al vencer, conservas la biblioteca, tus descargas y las publicaciones
-          que sigan vigentes. Crear, editar, generar y aplicar nuevos diseños
-          requiere reactivar.
+          que sigan vigentes. Crear, editar, descargar y generar con tus Tlacos
+          sigue disponible; publicar en tu sitio requiere reactivar.
         </p>
         {summary.owner &&
           sub &&
@@ -220,8 +220,8 @@ export function StudioBillingPage() {
                 IVA incluido · {p.monthly_tlacos} Tlacos mensuales
               </p>
               <p className="mt-3 text-sm text-muted-foreground">
-                Editor y exportaciones incluidos. IA económica: 1 Tlaco;
-                premium: 2 Tlacos.
+                Imagen con IA: 1 Tlaco; Premium: 3 Tlacos. Frases, edición y
+                descargas: gratis.
               </p>
               <button
                 disabled={
@@ -247,8 +247,8 @@ export function StudioBillingPage() {
       <section>
         <h2 className="text-lg font-bold">Recarga cuando lo necesites</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Compra única. Se consume después del saldo mensual y se conserva al
-          vencer Studio.
+          Compra única, sin membresía. Se usa después del saldo mensual y no
+          vence.
         </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {summary.packs.map((p) => (
@@ -267,15 +267,12 @@ export function StudioBillingPage() {
               <button
                 className={`${adminActionButtonSecondary} mt-4`}
                 disabled={
-                  !summary.active ||
-                  !canManage ||
-                  !summary.checkoutEnabled ||
-                  billing.busy
+                  !canManage || !summary.checkoutEnabled || billing.busy
                 }
                 onClick={() => setPackCode(p.code)}
               >
                 <CreditCard className="h-4 w-4" />
-                Comprar recarga
+                Comprar
               </button>
             </article>
           ))}

@@ -502,3 +502,11 @@ export async function createBatch(
     }),
   })) as StudioBatchResult;
 }
+export async function verifyPacks(
+  tenantId: string,
+): Promise<{ credited: number }> {
+  return (await apiFetch("/api/studio/packs/verify", {
+    method: "POST",
+    body: json({ tenant_id: tenantId }),
+  })) as { credited: number };
+}

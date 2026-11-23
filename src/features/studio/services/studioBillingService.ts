@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { getPublicAppUrl } from "@/lib/env/appUrl";
+import { STUDIO_QA_BRANCH } from "../constants/qaEnvironment";
 import { requireStudioOwner, requireStudioAccess } from "./studioAccessService";
 import { requireStudioData, StudioError } from "./studioErrors";
 import { studioFlags } from "./studioFlags";
@@ -25,12 +26,12 @@ async function studioReturnUrl(tenantId: string, raw?: string) {
   );
   const base = `/dashboard/${encodeURIComponent(tenant.slug)}/studio`,
     next = safeNextPath(raw),
-    parsed = new URL(next, getPublicAppUrl());
+    parsed = new URL(next, studioAppUrl());
   const url = new URL(
     parsed.pathname === base || parsed.pathname.startsWith(`${base}/`)
       ? next
       : base,
-    getPublicAppUrl(),
+    studioAppUrl(),
   );
   url.searchParams.set("payment", "pending");
   return url.toString();
@@ -135,7 +136,7 @@ export async function createStudioPackCheckout(raw: unknown) {
   const { db, user } = await requireStudioAccess(
     input.tenant_id,
     "studio.manage",
-    true,
+    "create",
   );
   if (
     !requireStudioData(
@@ -190,7 +191,7 @@ export async function createStudioPackCheckout(raw: unknown) {
       "Tu solicitud está en preparación. Revisa el historial antes de volver a comprar.",
       409,
     );
-  const base = getPublicAppUrl(),
+  const base = studioAppUrl(),
     back = await studioReturnUrl(input.tenant_id, input.return_to);
   const preference = await studioMpRequest<{ id: string; init_point: string }>(
     "checkout/preferences",
@@ -447,4 +448,12 @@ export async function reconcileStudioPlanChange(subscriptionId: string) {
     }),
   );
   if (!confirmed) throw new StudioError("PAYMENT_PENDING");
+}
+
+/** QA builds send buyers and Mercado Pago back to QA itself; everything else uses the public domain. */
+function studioAppUrl(): string {
+  const branchUrl = process.env.VERCEL_BRANCH_URL;
+  return process.env.VERCEL_GIT_COMMIT_REF === STUDIO_QA_BRANCH && branchUrl
+    ? `https://${branchUrl}`
+    : getPublicAppUrl();
 }

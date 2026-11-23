@@ -286,7 +286,7 @@ export const STUDIO_SCENES = [
 ] as const;
 export const STUDIO_QUALITIES = [
   { value: "economy", label: "Normal", cost: 1 },
-  { value: "premium", label: "Premium", cost: 2 },
+  { value: "premium", label: "Premium", cost: 3 },
 ] as const;
 export const STUDIO_NOTES = [
   "Agenda hoy",

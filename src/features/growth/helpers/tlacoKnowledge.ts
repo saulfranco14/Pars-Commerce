@@ -148,7 +148,7 @@ export function buildKnowledge(
             (p) =>
               `- ${p.name}: ${money(p.amount_mxn)} MXN al mes, IVA incluido; ${p.monthly_tlacos} Tlacos mensuales.`,
           ),
-          "Crear y editar requiere membresía Studio vigente por negocio. Edición manual y exportación: 0 Tlacos. IA económica 1, premium 2, con costo confirmado. Mensuales vencen por periodo; recargas se conservan. Al vencer se consulta y descarga lo existente. No publica automáticamente en redes. Información: /studio.",
+          "Crear, editar, descargar y compartir es gratis. Imagen con IA: 1 Tlaco (Premium 3), con costo a la vista; frases con IA gratis. Cada negocio empieza con 5 Tlacos. Mensuales vencen por periodo; recargas se conservan. Al vencer se consulta y descarga lo existente. No publica automáticamente en redes. Información: /studio.",
           studioAvailability.ai
             ? "Generación y diagnóstico IA habilitados, sujetos a membresía, saldo y cuotas."
             : "La IA no está habilitada en este momento. No ofrecer generaciones ni diagnósticos como disponibles.",

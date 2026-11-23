@@ -1,6 +1,7 @@
 import "server-only";
 import { timingSafeEqual } from "node:crypto";
 import { studioDb } from "./studioDb";
+import { requireStudioAccess } from "./studioAccessService";
 import { requireStudioData, StudioError } from "./studioErrors";
 import { dispatchStudioWebhook } from "./studioWebhookService";
 import {
@@ -243,4 +244,49 @@ async function reconcileBatch(deadline: number) {
       503,
     );
   return { state, payments, failures, cleaned };
+}
+
+/** Credits a business's own paid recharges when the buyer returns, even if Mercado Pago's notice never arrived. */
+export async function verifyStudioCreditOrders(tenantId: string) {
+  const { db } = await requireStudioAccess(tenantId);
+  if (
+    !requireStudioData(
+      await db.rpc("studio_rate_limit", {
+        p_scope: `verify:${tenantId}`,
+        p_limit: 10,
+      }),
+    )
+  )
+    throw new StudioError("RATE_LIMIT");
+  const orders = requireStudioData(
+    await db
+      .from("studio_credit_orders")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .eq("status", "pending")
+      .gte("created_at", new Date(Date.now() - 7 * 86_400_000).toISOString())
+      .order("created_at", { ascending: false })
+      .limit(3),
+  );
+  let credited = 0;
+  await withStudioPaymentDeadline(Date.now() + 20_000, async () => {
+    for (const order of orders) {
+      const reference = `studio_credit_pack:${order.id}`;
+      const result = await studioMpRequest<{ results: StudioMpPayment[] }>(
+        `v1/payments/search?external_reference=${encodeURIComponent(reference)}&limit=10&sort=date_created&criteria=desc`,
+      );
+      for (const payment of result.results ?? [])
+        if (
+          payment.external_reference === reference &&
+          payment.status === "approved" &&
+          (await dispatchStudioWebhook(
+            "payment",
+            String(payment.id),
+            "reconcile",
+          ))
+        )
+          credited++;
+    }
+  });
+  return { credited };
 }

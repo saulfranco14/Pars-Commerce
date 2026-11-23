@@ -27,6 +27,7 @@ import {
 } from "./studioImageService";
 import { suggestStudioCopy } from "./studioCopyService";
 import { createStudioBatch } from "./studioBatchService";
+import { verifyStudioCreditOrders } from "./studioReconcileService";
 import {
   completeStudioAsset,
   getStudioAssetFile,
@@ -276,6 +277,8 @@ async function dispatchStudioRequest(request: Request, path: string[]) {
     if (method === "POST" && path[1] === "change-plan")
       return changeStudioPlan(body);
   }
+  if (path[0] === "packs" && path[1] === "verify" && method === "POST")
+    return verifyStudioCreditOrders(tenantId);
   if (path[0] === "packs" && path[1] === "checkout" && method === "POST")
     return createStudioPackCheckout(body);
   if (path[0] === "credits" && method === "GET") {
