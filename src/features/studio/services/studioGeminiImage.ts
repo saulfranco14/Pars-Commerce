@@ -15,9 +15,9 @@ export function studioModelFor(modelEnv: string): string | null {
 
 export function studioGeminiKey(): string | null {
   return (
-    process.env.STUDIO_GEMINI_API_KEY ??
-    process.env.GEMINI_API_KEY ??
-    process.env.IA_GEMINI ??
+    process.env.STUDIO_GEMINI_API_KEY?.trim() ||
+    process.env.GEMINI_API_KEY?.trim() ||
+    process.env.IA_GEMINI?.trim() ||
     null
   );
 }

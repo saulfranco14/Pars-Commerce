@@ -64,11 +64,19 @@ export async function createStudioQuote(
       Number(r.estimated_cost_usd) > 0,
   );
   const route = available[0];
-  if (!route)
+  if (!route) {
+    console.error("[studio] no usable AI route", {
+      operation: input.operation,
+      quality: input.quality,
+      activeRoutes: routes.length,
+      geminiKey: Boolean(studioGeminiKey()),
+      models: routes.map((r) => [r.model_env, studioModelFor(r.model_env)]),
+    });
     throw new StudioError(
       "NOT_CONFIGURED",
       "La IA de imágenes todavía no está activa. Avísale a soporte de Tlaco.",
     );
+  }
   const snapshot = available
     .filter((r) => r.tlacos === route.tlacos)
     .map((r) => ({
