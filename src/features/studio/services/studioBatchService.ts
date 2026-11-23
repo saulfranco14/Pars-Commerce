@@ -91,7 +91,7 @@ export async function createStudioBatch(raw: unknown) {
     tenant.name,
     input.items.map((item) => item.name),
   );
-  const designs: Array<{ id: string; title: string }> = [],
+  const designs: Array<{ id: string; title: string; sourceId: string }> = [],
     jobs: Array<{ id: string; designId: string }> = [],
     skipped: Array<{ id: string; reason: string }> = [];
   for (const [index, item] of input.items.entries()) {
@@ -103,7 +103,7 @@ export async function createStudioBatch(raw: unknown) {
         title: item.name,
         idempotency_key: itemKey(input.batch_key, item.id, "design"),
       });
-      designs.push({ id: design.id, title: design.title });
+      designs.push({ id: design.id, title: design.title, sourceId: item.id });
       const source = design.source_snapshot as unknown as StudioSource;
       let scene = setStudioPhrase(
         restyleStudioScene(design.draft_scene, source, input.template),

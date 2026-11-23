@@ -7,16 +7,14 @@ import { useStudioImages } from "../hooks/useStudioImages";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { FilterTabs } from "@/components/ui/FilterTabs";
-import { Notification } from "@/components/ui/Notification";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useStudioContext } from "./StudioProvider";
 import { StudioActionBar } from "./StudioActionBar";
+import { StudioBatchProgress } from "./StudioBatchProgress";
 import { StudioImageTile } from "./editor/StudioImageStrip";
 import {
-  actionPair,
   adminActionButtonIcon,
   adminActionButtonPrimary,
-  adminActionButtonSecondary,
 } from "@/components/admin/actionButtonClasses";
 import {
   STUDIO_ACTION_BAR_SPACE,
@@ -55,61 +53,15 @@ export function StudioBatchPage() {
     return (
       <div className="space-y-5">
         <PageHeader compact title="Varios productos" />
-        <section className="space-y-3 rounded-2xl border border-border bg-surface p-5">
-          <p className="text-lg font-bold">
-            {batch.phase === "creating"
-              ? `Creando ${batch.progress.total} anuncios`
-              : `Listo: ${batch.created} anuncios`}
-          </p>
-          <div className="h-2 overflow-hidden rounded-full bg-border-soft">
-            <div
-              className="h-full rounded-full bg-accent transition-all"
-              style={{
-                width: `${batch.progress.total ? Math.round((batch.progress.done / batch.progress.total) * 100) : 0}%`,
-              }}
-            />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {batch.phase === "creating"
-              ? `${batch.progress.done} de ${batch.progress.total}. Mantén esta pantalla abierta.`
-              : "Ya están en tu biblioteca, listos para revisar y compartir."}
-          </p>
-          {batch.skipped.length > 0 && (
-            <Notification
-              tone="warning"
-              title="Algunos no se crearon"
-              message={
-                <ul className="list-disc space-y-1 pl-4">
-                  {batch.skipped.map((s) => (
-                    <li key={`${s.name}:${s.reason}`}>
-                      {s.name}: {s.reason}
-                    </li>
-                  ))}
-                </ul>
-              }
-            />
-          )}
-          {batch.error && <Notification tone="error" message={batch.error} />}
-          {batch.phase === "done" && (
-            <div className={actionPair}>
-              <button
-                type="button"
-                className={adminActionButtonSecondary}
-                onClick={batch.reset}
-              >
-                <LayoutGrid className="h-4 w-4" />
-                Otra tanda
-              </button>
-              <Link
-                href={`${base}/disenos`}
-                className={adminActionButtonPrimary}
-              >
-                <Check className="h-4 w-4" />
-                Biblioteca
-              </Link>
-            </div>
-          )}
-        </section>
+        <StudioBatchProgress
+          phase={batch.phase}
+          mode={batch.runMode}
+          rows={batch.rows}
+          imageStartedAt={batch.imageStartedAt}
+          error={batch.error}
+          base={base}
+          onReset={batch.reset}
+        />
       </div>
     );
   return (

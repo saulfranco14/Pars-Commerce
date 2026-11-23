@@ -312,5 +312,7 @@ export const STUDIO_NOTES = [
 export const STUDIO_BATCH_MAX = 50;
 /** Items per request, so each call stays well inside the server time limit. */
 export const STUDIO_BATCH_CHUNK = 5;
+/** Typical time of one image; only paces the batch bar, never shown as a promise. */
+export const STUDIO_BATCH_IMAGE_ESTIMATE_MS = 25_000;
 /** Below this many pixels on the short side a photo looks blurry on a 1080 px ad. */
 export const STUDIO_SHARP_PHOTO_PX = 600;

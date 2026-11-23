@@ -233,3 +233,29 @@ export interface StudioReuseOption {
   detail: string;
   cost: string;
 }
+export type StudioBatchPhase = "pick" | "creating" | "done";
+export interface StudioBatchRow {
+  /** The catalog item the ad is for. */
+  id: string;
+  name: string;
+  status:
+    | "waiting"
+    | "creating"
+    | "queued"
+    | "image"
+    | "done"
+    | "failed"
+    | "later";
+  designId?: string;
+  imageUrl?: string;
+  reason?: string;
+}
+export interface StudioBatchProgressProps {
+  phase: StudioBatchPhase;
+  mode: "shared" | "each";
+  rows: StudioBatchRow[];
+  imageStartedAt: number | null;
+  error: string | null;
+  base: string;
+  onReset: () => void;
+}

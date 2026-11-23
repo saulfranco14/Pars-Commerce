@@ -8,9 +8,9 @@ import {
 } from "../services/studioClientService";
 import { STUDIO_BATCH_CHUNK, STUDIO_BATCH_MAX } from "../constants/studio";
 import type { StudioBatchRequest } from "../interfaces/studio";
+import type { StudioBatchPhase, StudioBatchRow } from "../interfaces/ui";
 
 type BatchItem = { id: string; name: string };
-type BatchPhase = "pick" | "creating" | "done";
 
 /** Loads up to the batch maximum of items, then creates ads in small chunks and runs their images one by one. */
 export function useStudioBatch() {
@@ -20,13 +20,22 @@ export function useStudioBatch() {
     [items, setItems] = useState<BatchItem[]>([]),
     [loading, setLoading] = useState(true),
     [selected, setSelected] = useState<string[]>([]),
-    [phase, setPhase] = useState<BatchPhase>("pick"),
-    [progress, setProgress] = useState({ done: 0, total: 0 }),
-    [created, setCreated] = useState(0),
-    [skipped, setSkipped] = useState<Array<{ name: string; reason: string }>>(
-      [],
-    ),
+    [phase, setPhase] = useState<StudioBatchPhase>("pick"),
+    [runMode, setRunMode] = useState<StudioBatchRequest["mode"]>("shared"),
+    [rows, setRows] = useState<StudioBatchRow[]>([]),
+    [imageStartedAt, setImageStartedAt] = useState<number | null>(null),
     [error, setError] = useState<string | null>(null);
+  const patch = (
+    ids: string[],
+    change: (row: StudioBatchRow) => Partial<StudioBatchRow> | null,
+  ) =>
+    setRows((current) =>
+      current.map((row) => {
+        if (!ids.includes(row.id)) return row;
+        const next = change(row);
+        return next ? { ...row, ...next } : row;
+      }),
+    );
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -76,16 +85,18 @@ export function useStudioBatch() {
     >,
   ) {
     const chosen = items.filter((item) => selected.includes(item.id)),
-      batchKey = crypto.randomUUID();
+      batchKey = crypto.randomUUID(),
+      jobs: Array<{ jobId: string; rowId: string }> = [];
     setPhase("creating");
+    setRunMode(options.mode);
     setError(null);
-    setSkipped([]);
-    setCreated(0);
-    setProgress({ done: 0, total: chosen.length });
-    const jobs: string[] = [];
+    setImageStartedAt(null);
+    setRows(chosen.map((c) => ({ id: c.id, name: c.name, status: "waiting" })));
     try {
       for (let i = 0; i < chosen.length; i += STUDIO_BATCH_CHUNK) {
-        const chunk = chosen.slice(i, i + STUDIO_BATCH_CHUNK);
+        const chunk = chosen.slice(i, i + STUDIO_BATCH_CHUNK),
+          ids = chunk.map((c) => c.id);
+        patch(ids, () => ({ status: "creating" }));
         const result = await createBatch({
           tenantId,
           batchKey,
@@ -93,24 +104,43 @@ export function useStudioBatch() {
           items: chunk,
           ...options,
         });
-        jobs.push(...result.jobs.map((job) => job.id));
-        setCreated((n) => n + result.designs.length);
-        setSkipped((current) => [
-          ...current,
-          ...result.skipped.map((s) => ({
-            name: chunk.find((c) => c.id === s.id)?.name ?? "",
-            reason: s.reason,
-          })),
-        ]);
-        if (options.mode === "shared")
-          setProgress((p) => ({ ...p, done: p.done + chunk.length }));
-      }
-      if (options.mode === "each") {
-        setProgress({ done: 0, total: jobs.length });
-        for (const job of jobs) {
-          await runJob(tenantId, job, true).catch(() => {});
-          setProgress((p) => ({ ...p, done: p.done + 1 }));
+        for (const design of result.designs) {
+          const job = result.jobs.find((j) => j.designId === design.id);
+          if (job) jobs.push({ jobId: job.id, rowId: design.sourceId });
+          patch([design.sourceId], () => ({
+            designId: design.id,
+            status: job
+              ? "queued"
+              : options.mode === "shared"
+                ? "done"
+                : "failed",
+          }));
         }
+        for (const skip of result.skipped)
+          patch([skip.id], () => ({ status: "failed", reason: skip.reason }));
+        patch(ids, (row) =>
+          row.status === "creating"
+            ? { status: "failed", reason: "No se pudo crear." }
+            : null,
+        );
+      }
+      for (const { jobId, rowId } of jobs) {
+        patch([rowId], () => ({ status: "image" }));
+        setImageStartedAt(Date.now());
+        const job = await runJob(tenantId, jobId, true).catch(() => null);
+        patch([rowId], () =>
+          job?.status === "succeeded"
+            ? { status: "done", imageUrl: job.result_url ?? undefined }
+            : job?.status === "failed" || job?.status === "cancelled"
+              ? {
+                  status: "failed",
+                  reason: "No salió la imagen. No se cobró ningún Tlaco.",
+                }
+              : {
+                  status: "later",
+                  reason: "Se termina cuando vuelvas a Studio.",
+                },
+        );
       }
     } catch (e) {
       setError(
@@ -118,7 +148,15 @@ export function useStudioBatch() {
           ? e.message
           : "La tanda se detuvo. Lo creado se conserva.",
       );
+      setRows((current) =>
+        current.map((row) =>
+          row.status === "waiting" || row.status === "creating"
+            ? { ...row, status: "failed", reason: "No se creó." }
+            : row,
+        ),
+      );
     } finally {
+      setImageStartedAt(null);
       setPhase("done");
       void refresh();
     }
@@ -132,9 +170,9 @@ export function useStudioBatch() {
     toggle,
     selectAll,
     phase,
-    progress,
-    created,
-    skipped,
+    runMode,
+    rows,
+    imageStartedAt,
     error,
     start,
     reset: () => setPhase("pick"),

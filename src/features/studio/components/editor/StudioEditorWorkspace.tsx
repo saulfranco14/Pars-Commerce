@@ -41,6 +41,7 @@ export default function StudioEditorWorkspace({
     assets: asset.assets,
     revision: editor.revision,
     saveNow: editor.saveNow,
+    resync: editor.resync,
     title: editor.title,
     copy: editor.copy,
     destination: editor.destination,

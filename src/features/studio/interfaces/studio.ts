@@ -265,7 +265,7 @@ export interface StudioBatchRequest {
 }
 
 export interface StudioBatchResult {
-  designs: Array<{ id: string; title: string }>;
+  designs: Array<{ id: string; title: string; sourceId: string }>;
   jobs: Array<{ id: string; designId: string }>;
   skipped: Array<{ id: string; reason: string }>;
 }

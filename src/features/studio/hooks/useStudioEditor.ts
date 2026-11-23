@@ -7,7 +7,12 @@ import {
   reflowStudioScene,
 } from "../helpers/scene";
 import { ApiFetchError } from "@/services/apiFetch";
-import { duplicateDesign, saveDesign } from "../services/studioClientService";
+import {
+  duplicateDesign,
+  loadDesign,
+  saveDesign,
+} from "../services/studioClientService";
+import { setStudioBackdrop, studioBackdrop } from "../helpers/sceneStyle";
 import { useStudioContext } from "../components/StudioProvider";
 import { studioSceneSchema } from "../validations/studioSchemas";
 import type { StudioSource, StudioDesignDetail } from "../interfaces/studio";
@@ -85,6 +90,8 @@ export function useStudioEditor(detail: StudioDesignDetail) {
       destination: string;
     } | null>(null);
   const revision = useRef(design.revision),
+    /** The scene the server had at the last load or save; tells our edits from the server's. */
+    base = useRef(design.draft_scene),
     source = useRef(design.source_snapshot),
     interactionLock = useRef(false),
     saving = useRef<Promise<void> | null>(null),
@@ -132,6 +139,33 @@ export function useStudioEditor(detail: StudioDesignDetail) {
     design.destination_url,
   ]);
 
+  /**
+   * Catches up with a newer revision on the server, usually a batch image that
+   * landed while the ad was open: keeps every local edit and takes the server's
+   * new photo unless the person changed the photo here too.
+   */
+  const rebase = useCallback(async () => {
+    const latest = (await loadDesign(tenantId, design.id)).design,
+      local = current.current.scene,
+      mine = studioBackdrop(local),
+      known = studioBackdrop(base.current),
+      theirs = studioBackdrop(latest.draft_scene),
+      same = (a: typeof mine, b: typeof mine) =>
+        a.assetId === b.assetId && a.imageUrl === b.imageUrl;
+    revision.current = latest.revision;
+    base.current = latest.draft_scene;
+    if (same(mine, known) && !same(theirs, known)) {
+      const merged = theirs.assetId
+        ? setStudioBackdrop(local, theirs.assetId)
+        : theirs.imageUrl
+          ? setStudioBackdrop(local, { imageUrl: theirs.imageUrl })
+          : local;
+      current.current = { ...current.current, scene: merged };
+      dispatch({ type: "set", scene: merged });
+    }
+    saved.current = "";
+  }, [design.id, tenantId]);
+
   const saveNow = useCallback(async (): Promise<void> => {
     if (saving.current) {
       await saving.current;
@@ -149,16 +183,29 @@ export function useStudioEditor(detail: StudioDesignDetail) {
     setError(null);
     const task = (async () => {
       try {
-        const updated = await saveDesign(design.id, {
-          tenant_id: tenantId,
-          revision: revision.current,
-          scene: payload.scene,
-          title: payload.title,
-          copy: payload.copy,
-          destination_url: payload.destination,
-        });
+        const send = (value: typeof payload) =>
+          saveDesign(design.id, {
+            tenant_id: tenantId,
+            revision: revision.current,
+            scene: value.scene,
+            title: value.title,
+            copy: value.copy,
+            destination_url: value.destination,
+          });
+        let sent = payload,
+          updated;
+        try {
+          updated = await send(sent);
+        } catch (e) {
+          if (!(e instanceof ApiFetchError && e.code === "REVISION_CONFLICT"))
+            throw e;
+          await rebase();
+          sent = current.current;
+          updated = await send(sent);
+        }
         revision.current = updated.revision;
-        saved.current = fingerprint;
+        base.current = sent.scene;
+        saved.current = JSON.stringify(sent);
         setSaveState("saved");
         setConflict(false);
         try {
@@ -182,7 +229,7 @@ export function useStudioEditor(detail: StudioDesignDetail) {
     } finally {
       saving.current = null;
     }
-  }, [cacheKey, canEdit, design.id, tenantId]);
+  }, [cacheKey, canEdit, design.id, tenantId, rebase]);
 
   useEffect(() => {
     const value = current.current;
@@ -280,6 +327,7 @@ export function useStudioEditor(detail: StudioDesignDetail) {
       refresh_source: true,
     });
     revision.current = updated.revision;
+    base.current = updated.draft_scene;
     source.current = updated.source_snapshot;
     const scene = bindStudioScene(updated.draft_scene, updated.source_snapshot);
     setScene(scene);
@@ -373,6 +421,11 @@ export function useStudioEditor(detail: StudioDesignDetail) {
     error,
     setError,
     saveNow,
+    /** Catches up with the server and saves; for actions that hit a stale revision. */
+    resync: async () => {
+      await rebase();
+      await saveNow();
+    },
     revision,
     source,
     updateNode,

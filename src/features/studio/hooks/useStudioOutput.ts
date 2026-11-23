@@ -26,6 +26,8 @@ export function useStudioOutput(input: {
   assets: StudioAsset[];
   revision: React.RefObject<number>;
   saveNow: () => Promise<void>;
+  /** Catches up with a newer server revision (an image that landed meanwhile). */
+  resync: () => Promise<void>;
   title: string;
   copy: string;
   destination: string;
@@ -50,7 +52,16 @@ export function useStudioOutput(input: {
         input.tenantId,
         input.designId,
         input.revision.current,
-      );
+      ).catch(async (e) => {
+        if (!(e instanceof ApiFetchError && e.code === "REVISION_CONFLICT"))
+          throw e;
+        await input.resync();
+        return createVersion(
+          input.tenantId,
+          input.designId,
+          input.revision.current,
+        );
+      });
       const scene = version.scene_json;
       const blob = await exportStudioScene(
         scene,
