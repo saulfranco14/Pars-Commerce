@@ -343,15 +343,17 @@ function SidebarContent(props: SidebarContentProps) {
               </div>
             )}
             {userRole === "owner" && (
-              <button
-                type="button"
-                onClick={() => void createAnotherBusiness()}
-                disabled={checkingExpansion}
-                className={`${memberships.length > 1 ? "mt-2" : ""} inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2`}
-              >
-                <Plus className="h-4 w-4 shrink-0 text-accent" aria-hidden />
-                {checkingExpansion ? "Validando plan…" : "Crear otro negocio"}
-              </button>
+              <div className="shrink-0 px-4 pt-3">
+                <button
+                  type="button"
+                  onClick={() => void createAnotherBusiness()}
+                  disabled={checkingExpansion}
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm font-semibold whitespace-nowrap text-foreground transition-colors hover:bg-border-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+                >
+                  <Plus className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+                  {checkingExpansion ? "Validando…" : "Nuevo negocio"}
+                </button>
+              </div>
             )}
           </>
         )
@@ -415,7 +417,9 @@ function SidebarContent(props: SidebarContentProps) {
             </NavLink>
             <NavLink
               href="/dashboard/plataforma/studio/pruebas"
-              active={pathname.startsWith("/dashboard/plataforma/studio/pruebas")}
+              active={pathname.startsWith(
+                "/dashboard/plataforma/studio/pruebas",
+              )}
               icon={Sparkles}
               onNavigate={onNavigate}
             >
