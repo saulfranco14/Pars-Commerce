@@ -5,13 +5,16 @@ import {
   LayoutTemplate,
   RotateCw,
   Smartphone,
+  Sparkles,
   Type,
 } from "lucide-react";
 import { useStudioGenerate } from "../../hooks/useStudioGenerate";
+import { useStudioImageSize } from "../../hooks/useStudioImageSize";
 import { useStudioImages } from "../../hooks/useStudioImages";
 import { useStudioContext } from "../StudioProvider";
 import { Notification } from "@/components/ui/Notification";
 import { StudioFormatSheet } from "./StudioFormatSheet";
+import { StudioGeneratingOverlay } from "./StudioGeneratingOverlay";
 import { StudioGenerateSheet } from "./StudioGenerateSheet";
 import { StudioImageStrip } from "./StudioImageStrip";
 import { StudioImagesSheet } from "./StudioImagesSheet";
@@ -23,7 +26,8 @@ import {
   importImage,
   importSourceImage,
 } from "../../services/studioClientService";
-import { STUDIO_FORMATS, STUDIO_IMAGE_SECONDS } from "../../constants/studio";
+import { adminActionButtonPrimary } from "@/components/admin/actionButtonClasses";
+import { STUDIO_FORMATS, STUDIO_SHARP_PHOTO_PX } from "../../constants/studio";
 import { setStudioBackdrop, studioBackdrop } from "../../helpers/sceneStyle";
 import type {
   StudioImageTileItem,
@@ -47,6 +51,7 @@ export function StudioPosterEditor({
     library = useStudioImages(),
     [sheet, setSheet] = useState<Sheet | null>(null),
     [notice, setNotice] = useState<string | null>(null),
+    [revealed, setRevealed] = useState(0),
     scene = editor.scene,
     source = editor.source.current,
     latest = useRef(scene);
@@ -75,6 +80,7 @@ export function StudioPosterEditor({
     onImage: (job) => {
       asset.register(job.result_asset_id!, job.result_url!, "generated");
       editor.setScene(setStudioBackdrop(latest.current, job.result_asset_id!));
+      setRevealed((n) => n + 1);
       void library.refresh();
     },
   });
@@ -133,6 +139,12 @@ export function StudioPosterEditor({
   const aiReady = Boolean(summary?.aiEnabled && editor.canEdit),
     format = STUDIO_FORMATS[scene.format],
     close = () => setSheet(null);
+  const shownUrl = shown.assetId ? urlOf(shown.assetId) : shown.imageUrl,
+    photoSize = useStudioImageSize(shownUrl),
+    blurry =
+      !shownIsAi &&
+      photoSize !== null &&
+      Math.min(photoSize.width, photoSize.height) < STUDIO_SHARP_PHOTO_PX;
   function openGenerate() {
     if (!aiReady) {
       setNotice("La IA de imágenes todavía no está activa en tu cuenta.");
@@ -154,7 +166,10 @@ export function StudioPosterEditor({
           maxWidth: `min(100%, calc(${PREVIEW_MAX_VH}vh * ${format.width / format.height}))`,
         }}
       >
-        <div className="overflow-hidden rounded-2xl shadow-sm">
+        <div
+          key={revealed}
+          className={`overflow-hidden rounded-2xl shadow-sm ${revealed ? "studio-reveal" : ""}`}
+        >
           <StudioScenePreview
             scene={scene}
             assets={asset.assets}
@@ -162,13 +177,7 @@ export function StudioPosterEditor({
           />
         </div>
         {gen.busy ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-2xl bg-slate-900/60 p-4 text-center text-sm font-semibold text-white">
-            <RotateCw className="h-6 w-6 animate-spin" aria-hidden />
-            Poniendo tu producto en escena…
-            <span className="text-xs font-normal">
-              Tarda unos {STUDIO_IMAGE_SECONDS} segundos
-            </span>
-          </div>
+          <StudioGeneratingOverlay />
         ) : shownIsAi && editor.canEdit ? (
           <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-2 rounded-xl bg-surface/95 py-1.5 pr-1.5 pl-3 text-sm font-semibold shadow-lg">
             ¿No te convence?
@@ -188,6 +197,30 @@ export function StudioPosterEditor({
           </span>
         ) : null}
       </div>
+      {blurry && !gen.busy && editor.canEdit && (
+        <Notification
+          tone="info"
+          title="Tu foto es chica y se ve borrosa"
+          message={
+            <div className="space-y-2">
+              <p>
+                Mide {photoSize?.width} × {photoSize?.height} px y el anuncio
+                sale a {format.width} px. Genera una imagen con IA (sale nítida)
+                o sube una foto de al menos {STUDIO_SHARP_PHOTO_PX} px.
+              </p>
+              <button
+                type="button"
+                onClick={openGenerate}
+                disabled={locked}
+                className={`${adminActionButtonPrimary} w-full sm:w-auto`}
+              >
+                <Sparkles className="h-4 w-4" />
+                Generar
+              </button>
+            </div>
+          }
+        />
+      )}
       {(gen.error || notice) && (
         <Notification
           tone="warning"

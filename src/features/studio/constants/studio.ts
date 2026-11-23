@@ -298,3 +298,11 @@ export const STUDIO_BATCH_MAX = 50;
 /** Items per request, so each call stays well inside the server time limit. */
 export const STUDIO_BATCH_CHUNK = 5;
 export const STUDIO_IMAGE_SECONDS = 20;
+export const STUDIO_GENERATING_STEPS = [
+  "Mirando tu producto",
+  "Armando la escena",
+  "Acomodando la luz",
+  "Afinando detalles",
+] as const;
+/** Below this many pixels on the short side a photo looks blurry on a 1080 px ad. */
+export const STUDIO_SHARP_PHOTO_PX = 600;

@@ -162,6 +162,30 @@
   .ai-busy::after, .ai-line { animation: none; }
 }
 
+/* Studio: a moving glow over the photo while Gemini works, then the new image comes into focus. */
+@keyframes studio-glow {
+  from { background-position: 0% 50%; }
+  to { background-position: 200% 50%; }
+}
+@keyframes studio-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: .75; }
+}
+@keyframes studio-reveal {
+  from { filter: blur(16px) saturate(.5); opacity: .5; transform: scale(1.03); }
+  to { filter: none; opacity: 1; transform: none; }
+}
+.studio-generating {
+  background: linear-gradient(115deg, rgb(52 131 250 / .55), rgb(139 92 246 / .5), rgb(236 72 153 / .42), rgb(250 204 21 / .35), rgb(52 131 250 / .55));
+  background-size: 200% 200%;
+  animation: studio-glow 2.8s linear infinite;
+}
+.studio-pulse { animation: studio-pulse 1.6s ease-in-out infinite; }
+.studio-reveal { animation: studio-reveal .9s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .studio-generating, .studio-pulse, .studio-reveal { animation: none; }
+}
+
 /* Tlaco IA's coin blinks now and then, and looks up with raised brows while it thinks. */
 @keyframes tlaco-mascot-blink {
   0%, 94%, 100% { transform: scaleY(1); }

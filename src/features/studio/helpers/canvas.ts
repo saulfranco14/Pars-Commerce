@@ -18,7 +18,18 @@ export function studioImageUrl(
   return node.imageUrl ?? null;
 }
 
-export async function loadStudioImage(url: string): Promise<HTMLImageElement> {
+export type StudioImageSource = HTMLImageElement | ImageBitmap;
+const UPSCALE_TARGET_PX = 1080;
+
+/**
+ * Loads an image for the canvas. Small photos are enlarged once with the
+ * browser's high-quality resampling, so a 232 px catalog photo looks soft on a
+ * 1080 px ad instead of blocky. QR codes are never resampled.
+ */
+export async function loadStudioImage(
+  url: string,
+  upscale = false,
+): Promise<StudioImageSource> {
   const image = new window.Image();
   image.crossOrigin = "anonymous";
   await new Promise<void>((resolve, reject) => {
@@ -31,10 +42,26 @@ export async function loadStudioImage(url: string): Promise<HTMLImageElement> {
       );
     image.src = url;
   });
-  return image;
+  const longest = Math.max(image.naturalWidth, image.naturalHeight);
+  if (
+    !upscale ||
+    longest >= UPSCALE_TARGET_PX ||
+    !("createImageBitmap" in window)
+  )
+    return image;
+  const scale = UPSCALE_TARGET_PX / longest;
+  try {
+    return await createImageBitmap(image, {
+      resizeWidth: Math.round(image.naturalWidth * scale),
+      resizeHeight: Math.round(image.naturalHeight * scale),
+      resizeQuality: "high",
+    });
+  } catch {
+    return image;
+  }
 }
 
-export function studioImageCrop(node: StudioNode, image: HTMLImageElement) {
+export function studioImageCrop(node: StudioNode, image: StudioImageSource) {
   const ratio = node.width / node.height;
   const width = Math.min(image.width, image.height * ratio) / node.cropScale;
   const height = Math.min(image.height, image.width / ratio) / node.cropScale;
@@ -94,7 +121,7 @@ export async function exportStudioScene(
             }),
           );
         const url = studioImageUrl(node, assets, tenantId);
-        return url ? loadStudioImage(url) : null;
+        return url ? loadStudioImage(url, node.kind === "image") : null;
       }),
     );
     for (let i = 0; i < scene.nodes.length; i++) {

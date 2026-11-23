@@ -19,6 +19,7 @@ import {
   studioImageUrl,
   studioShapeFill,
 } from "../../helpers/canvas";
+import type { StudioImageSource } from "../../helpers/canvas";
 import type {
   StudioCanvasProps,
   StudioCanvasNodeProps,
@@ -35,7 +36,7 @@ function CanvasNode({
   onChange,
   onEdit,
 }: StudioCanvasNodeProps) {
-  const [image, setImage] = useState<HTMLImageElement | null>(null),
+  const [image, setImage] = useState<StudioImageSource | null>(null),
     [failed, setFailed] = useState(false);
   useEffect(() => {
     let cancelled = false;
@@ -46,7 +47,7 @@ function CanvasNode({
             margin: 1,
           }).then(loadStudioImage)
         : url
-          ? loadStudioImage(url)
+          ? loadStudioImage(url, n.kind === "image")
           : Promise.resolve(null);
     task
       .then((value) => {
