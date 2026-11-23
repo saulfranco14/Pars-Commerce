@@ -1,5 +1,6 @@
 "use client";
 import { ArrowRight, Download, Save } from "lucide-react";
+import { StudioActionBar } from "../StudioActionBar";
 import {
   actionPair,
   adminActionButtonPrimary,
@@ -16,10 +17,7 @@ export function StudioEditorBar({
   onNext,
 }: StudioEditorBarProps) {
   return (
-    <div className="sticky bottom-0 z-20 space-y-2 border-t border-border bg-surface p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:flex sm:items-center sm:justify-between sm:gap-3 sm:space-y-0">
-      <p className="text-xs text-muted-foreground" role="status">
-        {status}
-      </p>
+    <StudioActionBar status={status}>
       {canEdit ? (
         <div className={actionPair}>
           <button
@@ -44,7 +42,7 @@ export function StudioEditorBar({
       ) : (
         <button
           type="button"
-          className={`${adminActionButtonPrimary} w-full sm:w-auto`}
+          className={`${adminActionButtonPrimary} w-full md:w-auto`}
           disabled={nextDisabled}
           onClick={onNext}
         >
@@ -52,6 +50,6 @@ export function StudioEditorBar({
           Descargas
         </button>
       )}
-    </div>
+    </StudioActionBar>
   );
 }

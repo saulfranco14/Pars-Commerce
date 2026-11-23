@@ -23,7 +23,7 @@ export async function quoteStudioGeneration(raw: unknown) {
   const { db, user } = await requireStudioAccess(
     input.tenant_id,
     "studio.create",
-    true,
+    "create",
   );
   if (!studioFlags().ai) throw new StudioError("NOT_CONFIGURED");
   const limited = requireStudioData(
@@ -120,7 +120,7 @@ export async function startStudioGeneration(raw: unknown) {
   const { db, user } = await requireStudioAccess(
     input.tenant_id,
     "studio.create",
-    true,
+    "create",
   );
   if (!studioFlags().ai) throw new StudioError("NOT_CONFIGURED");
   requireStudioData(
@@ -187,7 +187,7 @@ export async function reviewStudioVersion(raw: unknown) {
   const { db, user } = await requireStudioAccess(
     input.tenant_id,
     "studio.create",
-    true,
+    "create",
   );
   if (!studioFlags().ai) throw new StudioError("NOT_CONFIGURED");
   const routes = requireStudioData(

@@ -9,6 +9,7 @@ import { FormInput } from "@/components/ui/FormInput";
 import { Notification } from "@/components/ui/Notification";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useStudioContext } from "./StudioProvider";
+import { StudioActionBar } from "./StudioActionBar";
 import { StudioIdeas } from "./StudioIdeas";
 import { StudioLoading } from "./StudioLoading";
 import { StudioStepper } from "./StudioStepper";
@@ -18,7 +19,11 @@ import {
   adminActionButtonPrimary,
   adminActionButtonSecondary,
 } from "@/components/admin/actionButtonClasses";
-import { STUDIO_HOW_IT_WORKS, STUDIO_SOURCES } from "../constants/studio";
+import {
+  STUDIO_ACTION_BAR_SPACE,
+  STUDIO_HOW_IT_WORKS,
+  STUDIO_SOURCES,
+} from "../constants/studio";
 import type { StudioSourceType } from "../interfaces/studio";
 
 export function StudioSourceStep({
@@ -49,7 +54,7 @@ export function StudioSourceStep({
       />
     );
   return (
-    <div className="space-y-5">
+    <div className={`space-y-5 ${STUDIO_ACTION_BAR_SPACE}`}>
       <PageHeader
         title="¿Qué vas a anunciar?"
         description="Usamos los datos reales de tu catálogo. Tú solo eliges."
@@ -194,6 +199,7 @@ export function StudioSourceStep({
         )}
       </section>
       <form
+        id="studio-source-form"
         onSubmit={source.form.handleSubmit(source.form.submit)}
         className="space-y-5"
       >
@@ -206,7 +212,7 @@ export function StudioSourceStep({
         {source.form.submitError && (
           <Notification tone="error" message={source.form.submitError} />
         )}
-        <div className="sticky bottom-0 z-20 border-t border-border bg-surface p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <StudioActionBar>
           <div className={actionPair}>
             <Link
               href={`/dashboard/${tenantSlug}/studio`}
@@ -216,6 +222,8 @@ export function StudioSourceStep({
               Atrás
             </Link>
             <button
+              type="submit"
+              form="studio-source-form"
               disabled={
                 source.busy || (source.source !== "custom" && !source.sourceId)
               }
@@ -225,7 +233,7 @@ export function StudioSourceStep({
               {source.form.submitting ? "Creando…" : "Diseñar"}
             </button>
           </div>
-        </div>
+        </StudioActionBar>
       </form>
     </div>
   );

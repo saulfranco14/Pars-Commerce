@@ -113,6 +113,10 @@ export interface StudioQuickReviewProps {
   disabled: boolean;
   onFix: () => void;
 }
+export interface StudioActionBarProps {
+  status?: string;
+  children: ReactNode;
+}
 export interface StudioEditorBarProps {
   status: string;
   canEdit: boolean;

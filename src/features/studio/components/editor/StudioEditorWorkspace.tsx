@@ -21,6 +21,7 @@ import { StudioGenerationSheet } from "./StudioGenerationSheet";
 import { StudioQuickEditor } from "./StudioQuickEditor";
 import { StudioShareStep } from "./StudioShareStep";
 import { adminActionButtonSecondary } from "@/components/admin/actionButtonClasses";
+import { STUDIO_ACTION_BAR_SPACE } from "../../constants/studio";
 import { studioCatalogHref, studioRechargeHref } from "../../helpers/entry";
 import { studioTagline, suggestStudioCopy } from "../../helpers/sceneStyle";
 import type { StudioEditorProps, StudioStep } from "../../interfaces/ui";
@@ -108,7 +109,7 @@ export default function StudioEditorWorkspace({
             : "Cambios sin guardar";
 
   return (
-    <div className="space-y-5">
+    <div className={`space-y-5 ${step === 2 ? STUDIO_ACTION_BAR_SPACE : ""}`}>
       <PageHeader
         title={editor.title}
         description={

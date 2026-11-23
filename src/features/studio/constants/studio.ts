@@ -86,6 +86,8 @@ export const STUDIO_HOW_IT_WORKS = [
   { title: "Te lo damos hecho", detail: "con tu foto y tu precio" },
   { title: "Compártelo", detail: "en WhatsApp o redes" },
 ] as const;
+/** Bottom room so the floating phone action bar never covers the last content. */
+export const STUDIO_ACTION_BAR_SPACE = "pb-44 md:pb-0";
 export const STUDIO_STEPS = [
   "Qué anuncias",
   "Elige y ajusta",
