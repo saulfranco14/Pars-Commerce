@@ -16,10 +16,10 @@ export function StudioImageTile({
       disabled={disabled}
       aria-pressed={tile.selected}
       onClick={tile.onPick}
-      className="flex shrink-0 cursor-pointer snap-start flex-col items-center gap-1 text-[11px] font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+      className="flex shrink-0 cursor-pointer snap-start flex-col items-center gap-1 rounded-xl text-[11px] font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span
-        className={`relative block overflow-hidden rounded-xl bg-border-soft ${size} ${tile.selected ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : "ring-1 ring-border"}`}
+        className={`relative block overflow-hidden rounded-xl border-2 bg-border-soft ${size} ${tile.selected ? "border-accent" : "border-muted/50"}`}
       >
         {tile.url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -68,14 +68,14 @@ export function StudioImageStrip({
           </span>
         )}
       </div>
-      <div className="flex snap-x gap-2 overflow-x-auto pr-8 pb-1.5 mask-[linear-gradient(90deg,#000_85%,transparent)] [scrollbar-width:thin]">
+      <div className="-mx-1 flex snap-x scroll-px-1 gap-2 overflow-x-auto px-1 pt-1 pb-1.5 [scrollbar-width:thin]">
         <button
           type="button"
           disabled={disabled}
           onClick={onGenerate}
-          className="flex shrink-0 cursor-pointer snap-start flex-col items-center gap-1 text-[11px] font-bold text-accent disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex shrink-0 cursor-pointer snap-start flex-col items-center gap-1 rounded-xl text-[11px] font-bold text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <span className="flex h-16 w-16 items-center justify-center rounded-xl bg-accent/10 ring-1 ring-accent/40">
+          <span className="flex h-16 w-16 items-center justify-center rounded-xl border-2 border-accent/65 bg-accent/10">
             <Sparkles className="h-5 w-5" aria-hidden />
           </span>
           Generar

@@ -244,7 +244,7 @@ export function StudioPosterEditor({
             type="button"
             disabled={locked}
             onClick={() => setSheet(key)}
-            className="flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-border bg-surface text-xs font-semibold transition-colors hover:bg-border-soft/60 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-muted/50 bg-surface text-xs font-semibold transition-colors hover:border-accent hover:bg-accent/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Icon className="h-5 w-5 text-accent" aria-hidden />
             {label}
