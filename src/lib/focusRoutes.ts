@@ -13,11 +13,8 @@ export function isFocusRoute(pathname: string): boolean {
     return true;
   if (!second || !third) return false;
 
-  if (
-    third === "studio" &&
-    (fourth === "nuevo" || (fourth === "disenos" && segments[4]))
-  )
-    return true;
+  // Studio keeps its own bottom action bar on every screen.
+  if (third === "studio") return true;
   if (third === "ordenes") {
     if (fourth === "nueva") return true;
     return fourth !== undefined && fourth !== "";
