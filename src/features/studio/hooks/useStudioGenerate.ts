@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { useStudioContext } from "../components/StudioProvider";
 import { generateImage } from "../services/studioClientService";
+import { studioGenerationError } from "../helpers/aiPrompt";
 import type { StudioImageRequest, StudioRunJob } from "../interfaces/studio";
 
 type GenerateOptions = Pick<
@@ -36,9 +37,7 @@ export function useStudioGenerate(input: {
       });
       if (job.status === "succeeded" && job.result_asset_id) input.onImage(job);
       else if (job.status === "failed")
-        setError(
-          "No pudimos hacer la imagen esta vez. No se cobró ningún Tlaco; intenta de nuevo.",
-        );
+        setError(studioGenerationError(job.error_code));
       else
         setError(
           "Tu imagen sigue en proceso. Aparecerá en Tus imágenes en unos minutos.",

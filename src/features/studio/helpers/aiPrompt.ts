@@ -80,3 +80,15 @@ export function parseStudioCopyIdeas(raw: string): StudioCopyIdeas | null {
     return null;
   }
 }
+
+/** What the business reads when an image fails; a failed image never charges Tlacos. */
+export function studioGenerationError(code: string | null): string {
+  const free = " No se cobró ningún Tlaco.";
+  if (code === "PROVIDER_HTTP_429")
+    return `La IA de imágenes llegó a su límite por ahora.${free} Intenta más tarde; si sigue igual, avísale a soporte de Tlaco.`;
+  if (code === "PROVIDER_SAFETY")
+    return `La IA no aceptó esta foto o escena.${free} Prueba con otra escena u otra foto.`;
+  if (code === "PROVIDER_TIMEOUT" || code?.startsWith("PROVIDER_HTTP_5"))
+    return `La IA tardó demasiado en responder.${free} Intenta de nuevo en un momento.`;
+  return `No pudimos hacer la imagen esta vez.${free} Intenta de nuevo.`;
+}

@@ -3,6 +3,7 @@ import {
   buildStudioImagePrompt,
   cleanStudioWish,
   parseStudioCopyIdeas,
+  studioGenerationError,
 } from "./aiPrompt";
 
 describe("Studio image instructions", () => {
@@ -51,5 +52,20 @@ describe("Studio copy ideas", () => {
   it("rejects answers without phrases or with broken JSON", () => {
     expect(parseStudioCopyIdeas('{"phrases":[]}')).toBeNull();
     expect(parseStudioCopyIdeas("no es json")).toBeNull();
+  });
+});
+
+describe("Studio generation errors", () => {
+  it("explains quota, safety and timeouts, and always says nothing was charged", () => {
+    for (const code of [
+      "PROVIDER_HTTP_429",
+      "PROVIDER_SAFETY",
+      "PROVIDER_TIMEOUT",
+      "PROVIDER_HTTP_503",
+      null,
+    ])
+      expect(studioGenerationError(code)).toContain("No se cobró ningún Tlaco");
+    expect(studioGenerationError("PROVIDER_HTTP_429")).toContain("límite");
+    expect(studioGenerationError("PROVIDER_SAFETY")).toContain("otra escena");
   });
 });
