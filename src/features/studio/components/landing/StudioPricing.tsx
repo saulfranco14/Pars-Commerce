@@ -31,8 +31,8 @@ export function StudioPricing({
           </h2>
           <p className="mt-5 text-base leading-7 text-muted-foreground">
             {aiEnabled
-              ? "Un editor completo en cada membresía. Elige cuántos Tlacos quieres tener para tus propuestas con IA."
-              : "Tu editor, las plantillas y las descargas están incluidos en todas las membresías."}
+              ? "Diseñar y descargar es gratis. Elige cuántas imágenes con IA quieres cada mes."
+              : "Diseñar, descargar y compartir es gratis para todos los negocios."}
           </p>
           <p className="mt-3 text-xs leading-6 text-muted-foreground">
             Complemento por negocio, contratado por separado de tu plan
@@ -95,10 +95,10 @@ export function StudioPricing({
                   </p>
                   <ul className="my-7 space-y-4 text-sm">
                     {[
-                      "Editor de capas y plantillas",
-                      "Todos los formatos",
-                      "Edición y descargas: 0 Tlacos",
-                      "Biblioteca y versiones de tus diseños",
+                      `Hasta ${plan.monthly_tlacos} imágenes con IA al mes`,
+                      "Frases y mensajes con IA: gratis",
+                      "Usa tus imágenes en todo tu catálogo",
+                      "Publica en tu sitio y en tus mesas",
                     ].map((text) => (
                       <li key={text} className="flex items-start gap-2.5">
                         <Check
@@ -185,9 +185,9 @@ export function StudioPricing({
                       ? "Generar una imagen cuesta "
                       : "Cuando la IA esté disponible, generar una imagen costará "}
                     <strong className="text-foreground">
-                      1 Tlaco en económica
+                      1 Tlaco la normal
                     </strong>{" "}
-                    o <strong className="text-foreground">2 en premium</strong>.
+                    o <strong className="text-foreground">3 en Premium</strong>.
                     Confirmas el costo antes de generar.
                   </p>
                 </div>
@@ -197,8 +197,8 @@ export function StudioPricing({
                     Seguir creando: 0 Tlacos
                   </p>
                   <p className="mt-2 text-xs leading-6 text-muted-foreground">
-                    Con tu membresía, editar textos, colores y formatos y volver
-                    a descargar consume{" "}
+                    Editar textos, estilo y formato, sugerir frases y volver a
+                    descargar consume{" "}
                     <strong className="text-foreground">0 Tlacos</strong>. Usa
                     también tus propias fotos sin generar con IA.
                   </p>
@@ -209,9 +209,9 @@ export function StudioPricing({
                     Tus diseños se quedan contigo
                   </p>
                   <p className="mt-2 text-xs leading-6 text-muted-foreground">
-                    Conservas tu biblioteca y puedes descargar archivos ya
-                    guardados aunque termine la membresía. Para seguir editando,
-                    necesitas una membresía vigente.
+                    Tu biblioteca y tus imágenes con IA se quedan contigo, con o
+                    sin membresía. Reúsalas en otros productos sin pagar de
+                    nuevo.
                   </p>
                 </div>
               </div>
@@ -220,7 +220,8 @@ export function StudioPricing({
         )}
         <p className="mx-auto mt-7 max-w-3xl text-center text-xs leading-6 text-muted-foreground">
           Los Tlacos mensuales vencen al terminar el periodo; se usan antes de
-          los comprados. La IA requiere membresía vigente y saldo. Cancela la
+          los comprados. La IA solo necesita saldo: cada negocio empieza con 5
+          Tlacos. Cancela la
           renovación cuando quieras y conserva tu periodo pagado. Los cambios de
           plan aplican al renovar, sin prorrateo.
         </p>

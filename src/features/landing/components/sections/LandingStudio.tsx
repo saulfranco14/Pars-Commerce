@@ -22,7 +22,7 @@ export function LandingStudio() {
           </p>
           <p className="mt-5 flex items-center justify-center gap-2 text-sm text-slate-300 lg:justify-start">
             <Check className="h-4 w-4 shrink-0 text-blue-300" aria-hidden />
-            Edición manual y descargas: 0 Tlacos.
+            Diseña y descarga gratis. Imágenes con IA desde 1 Tlaco.
           </p>
           <Link
             href="/studio"
@@ -31,7 +31,7 @@ export function LandingStudio() {
             Conoce Tlaco Studio
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
-          <p className="mt-1 text-xs text-slate-400">Membresía adicional por negocio.</p>
+          <p className="mt-1 text-xs text-slate-400">Empiezas con 5 Tlacos de regalo.</p>
         </div>
         <StudioHomeShowcase />
       </div>

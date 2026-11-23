@@ -17,11 +17,11 @@ export function StudioFaq({
         {[
           {
             q: "¿Puedo entrar sin membresía?",
-            a: "Sí. Puedes explorar las herramientas y ejemplos. Iniciar un diseño propio requiere una membresía Studio vigente para tu negocio.",
+            a: "Sí. Crear, editar, descargar y compartir tus anuncios es gratis, y cada negocio empieza con 5 Tlacos para imágenes con IA. La membresía te da Tlacos cada mes y te deja publicar en tu sitio.",
           },
           {
             q: "¿Cada cambio consume Tlacos?",
-            a: `No. Editar texto, tamaño, composición y fotografía, usar plantillas y exportar consume 0 Tlacos. ${aiEnabled ? "Una nueva generación con IA requiere saldo y confirmación del costo." : "La generación con IA no está habilitada en este momento."}`,
+            a: `No. Editar textos, estilo, formato y foto, sugerir frases y descargar es gratis. ${aiEnabled ? "Solo una imagen nueva con IA usa Tlacos: 1 la normal y 3 la Premium, y ves el costo antes." : "La generación con IA no está habilitada en este momento."}`,
           },
           {
             q: "¿Studio cambia mis precios o promociones?",
@@ -29,7 +29,7 @@ export function StudioFaq({
           },
           {
             q: "¿Qué pasa cuando vence?",
-            a: "Conservas biblioteca, descargas, recargas y publicaciones que sigan siendo elegibles. Crear, editar y generar de nuevo requiere reactivar Studio.",
+            a: "Sigues creando, editando y descargando. Conservas tu biblioteca, tus imágenes y los Tlacos que compraste. Publicar en tu sitio o mesas requiere reactivar.",
           },
           {
             q: "¿Publica automáticamente en Instagram o Facebook?",

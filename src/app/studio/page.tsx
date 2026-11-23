@@ -144,7 +144,7 @@ export default async function StudioPage() {
           footnote:
             starting && catalog.status === "live"
               ? `Studio desde ${starting} MXN al mes, IVA incluido. Registro en Tlaco sin tarjeta.`
-              : "Crear diseños requiere una membresía Studio.",
+              : "Crear y descargar es gratis. Empiezas con 5 Tlacos para la IA.",
         }}
       />
     </div>
