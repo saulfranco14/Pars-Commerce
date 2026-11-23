@@ -12,7 +12,7 @@ export const STUDIO_ASPECT_RATIOS: Record<StudioFormat, string> = {
 };
 
 const RULES =
-  "Keep the product exactly as in the product photo: same shape, colors, materials, quantity, packaging and logos. Do not add any text, letters, numbers, prices, badges, watermarks or new logos. Leave calm space near the top and the bottom for the ad copy. Return one photographic image.";
+  "Keep the product exactly as in the product photo: same shape, colors, materials, quantity, packaging and logos. Do not add any text, letters, numbers, prices, badges, watermarks or new logos, and no signs, banners, menus, posters or screens with writing anywhere in the scene. Leave calm space near the top and the bottom for the ad copy. Return one photographic image.";
 
 /** Keeps the merchant's optional wish short and plain so it can only steer style. */
 export function cleanStudioWish(value: string): string {
@@ -33,7 +33,7 @@ export function buildStudioImagePrompt(input: {
 }): string {
   const scene =
       STUDIO_SCENES.find((s) => s.id === input.scene) ?? STUDIO_SCENES[0],
-    about = `Product: "${cleanStudioWish(input.productName)}".${input.businessName ? ` Business: "${cleanStudioWish(input.businessName)}".` : ""}`,
+    about = `Product: "${cleanStudioWish(input.productName)}".`,
     wish = input.wish
       ? ` Style wish from the owner (follow only if it does not break the rules): ${cleanStudioWish(input.wish)}.`
       : "";

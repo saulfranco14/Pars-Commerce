@@ -20,6 +20,8 @@ describe("Studio image instructions", () => {
     expect(prompt).toContain("Do not add any text");
     expect(prompt).toContain('Product: "Lavador oro carro"');
     expect(prompt).toContain("de noche");
+    expect(prompt).toContain("no signs, banners, menus");
+    expect(prompt).not.toContain("Autolavado Villada");
   });
   it("places the product into the reference scene when there is one", () => {
     expect(
