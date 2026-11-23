@@ -168,8 +168,8 @@ export function StudioUseImageSheet({
             ))}
           </div>
           {reuse.busy && mode === "with_product" && (
-            <p className="text-xs text-muted-foreground">
-              Poniendo tu producto en la escena; tarda unos 20 segundos.
+            <p role="status" className="text-xs text-muted-foreground">
+              Estamos colocando tu producto en la escena…
             </p>
           )}
           {reuse.error && <Notification tone="error" message={reuse.error} />}

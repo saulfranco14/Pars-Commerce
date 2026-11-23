@@ -41,7 +41,7 @@ export function StudioBatchPage() {
     [mode, setMode] = useState<StudioBatchRequest["mode"]>("shared"),
     [assetId, setAssetId] = useState<string | null>(null),
     [template, setTemplate] =
-      useState<StudioBatchRequest["template"]>("poster"),
+      useState<StudioBatchRequest["template"]>("impact"),
     [scene, setScene] = useState<StudioBatchRequest["scene"]>("local");
   const base = `/dashboard/${tenantSlug}/studio`,
     count = batch.selected.length,

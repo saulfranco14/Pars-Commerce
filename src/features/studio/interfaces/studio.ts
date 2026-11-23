@@ -1,4 +1,4 @@
-import type { StudioScene } from "./scene";
+import type { StudioDesignId, StudioScene } from "./scene";
 
 export type StudioSourceType =
   "product" | "promotion" | "subscription_plan" | "custom";
@@ -259,7 +259,7 @@ export interface StudioBatchRequest {
   items: Array<{ id: string; name: string }>;
   mode: "shared" | "each";
   assetId?: string;
-  template: "poster" | "poster_bottom" | "poster_framed";
+  template: StudioDesignId;
   scene: StudioImageRequest["scene"];
   quality: StudioQuality;
 }

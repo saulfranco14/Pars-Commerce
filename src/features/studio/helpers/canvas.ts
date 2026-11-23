@@ -2,7 +2,13 @@ import Konva from "konva";
 import QRCode from "qrcode";
 import { validStudioDestination } from "./access";
 import { STUDIO_FORMATS } from "../constants/studio";
-import type { StudioNode, StudioScene } from "../interfaces/scene";
+import { studioPosterFont } from "../constants/studioFont";
+import { hexToRgb, studioPaletteFromPixels } from "./palette";
+import type {
+  StudioNode,
+  StudioPhotoPalette,
+  StudioScene,
+} from "../interfaces/scene";
 import type { StudioAsset } from "../interfaces/studio";
 
 export function studioImageUrl(
@@ -79,7 +85,7 @@ export async function exportStudioScene(
   tenantId: string,
   preparation = false,
 ): Promise<Blob> {
-  await document.fonts.ready;
+  await loadStudioFonts();
   const size = STUDIO_FORMATS[scene.format],
     container = document.createElement("div");
   container.style.cssText =
@@ -164,6 +170,7 @@ export async function exportStudioScene(
             new Konva.Image({
               ...base,
               image,
+              cornerRadius: studioCornerRadius(n, base.width, base.height),
               ...(n.kind === "qr"
                 ? {}
                 : {
@@ -178,23 +185,14 @@ export async function exportStudioScene(
         layer.add(
           new Konva.Rect({
             ...base,
-            ...studioShapeFill(n, base.height, 1),
+            ...studioShapeFill(n, base.width, base.height, 1),
           }),
         );
       else
         layer.add(
           new Konva.Text({
             ...base,
-            text: n.content,
-            fontSize: n.fontSize * size.height,
-            fontFamily: n.fontFamily,
-            fontStyle: n.fontStyle,
-            align: n.align,
-            fill: n.color,
-            stroke: n.stroke,
-            strokeWidth: n.strokeWidth,
-            lineHeight: n.lineHeight,
-            wrap: "word",
+            ...studioTextProps(n, size.height, 1),
           }),
         );
     }
@@ -227,32 +225,34 @@ export async function exportStudioScene(
   }
 }
 
-const SHADE_STOPS = {
-  poster: [
-    0,
-    "rgba(8,10,16,0.78)",
-    0.42,
-    "rgba(8,10,16,0.15)",
-    0.58,
-    "rgba(8,10,16,0.2)",
-    1,
-    "rgba(8,10,16,0.88)",
-  ],
-  bottom: [
-    0,
-    "rgba(8,10,16,0.45)",
-    0.35,
-    "rgba(8,10,16,0.08)",
-    0.55,
-    "rgba(8,10,16,0.35)",
-    1,
-    "rgba(8,10,16,0.92)",
-  ],
-} as const;
+/** Shade opacity along its height (or from its center outwards for "center"). */
+const SHADE_STOPS: Record<NonNullable<StudioNode["shade"]>, number[][]> = {
+  poster: [[0, 0.78], [0.42, 0.15], [0.58, 0.2], [1, 0.88]],
+  bottom: [[0, 0.45], [0.35, 0.08], [0.55, 0.35], [1, 0.92]],
+  top: [[0, 0.94], [0.36, 0.7], [0.62, 0], [1, 0]],
+  center: [[0, 0.78], [1, 0.4]],
+};
 
-/** Konva fill for a shape layer: the poster shade gradient, an empty frame, or a flat color. */
+function shadeStops(node: StudioNode) {
+  const [r, g, b] = hexToRgb(node.fill);
+  return SHADE_STOPS[node.shade!].flatMap(([at, alpha]) => [
+    at,
+    `rgba(${r},${g},${b},${alpha})`,
+  ]);
+}
+
+export function studioCornerRadius(
+  node: StudioNode,
+  width: number,
+  height: number,
+) {
+  return (node.radius ?? 0) * Math.min(width, height);
+}
+
+/** Konva fill for a shape layer: a shade gradient in its color, an empty frame, or a flat color. */
 export function studioShapeFill(
   node: StudioNode,
+  width: number,
   height: number,
   strokeScale: number,
 ) {
@@ -261,15 +261,84 @@ export function studioShapeFill(
       stroke: node.stroke,
       strokeWidth: Math.max(1, node.strokeWidth * strokeScale),
     };
+  if (node.shade === "center")
+    return {
+      fillRadialGradientStartPoint: { x: width / 2, y: height / 2 },
+      fillRadialGradientEndPoint: { x: width / 2, y: height / 2 },
+      fillRadialGradientStartRadius: 0,
+      fillRadialGradientEndRadius: Math.max(width, height) * 0.62,
+      fillRadialGradientColorStops: shadeStops(node),
+    };
   if (node.shade)
     return {
       fillLinearGradientStartPoint: { x: 0, y: 0 },
       fillLinearGradientEndPoint: { x: 0, y: height },
-      fillLinearGradientColorStops: [...SHADE_STOPS[node.shade]],
+      fillLinearGradientColorStops: shadeStops(node),
     };
   return {
     fill: node.fill,
     stroke: node.stroke,
     strokeWidth: node.strokeWidth * strokeScale,
+    cornerRadius: studioCornerRadius(node, width, height),
   };
+}
+
+const POSTER_WEIGHT = { bold: "800", normal: "600", italic: "italic 600" };
+
+/** Text props shared by the editor and the export, so both draw the same letters. */
+export function studioTextProps(
+  node: StudioNode,
+  height: number,
+  renderScale: number,
+) {
+  const fontSize = node.fontSize * height,
+    poster = node.fontFamily === "Inter Tight";
+  return {
+    text: node.caps ? node.content.toLocaleUpperCase("es-MX") : node.content,
+    fontSize,
+    fontFamily: poster ? studioPosterFont.style.fontFamily : node.fontFamily,
+    fontStyle: poster ? POSTER_WEIGHT[node.fontStyle] : node.fontStyle,
+    letterSpacing: (node.letterSpacing ?? 0) * fontSize,
+    align: node.align,
+    fill: node.color,
+    stroke: node.stroke,
+    strokeWidth: node.strokeWidth * renderScale,
+    lineHeight: node.lineHeight,
+    wrap: "word" as const,
+  };
+}
+
+/** Resolves once the designs' typeface is ready, so nothing is drawn with a fallback. */
+export async function loadStudioFonts(): Promise<void> {
+  const family = studioPosterFont.style.fontFamily;
+  try {
+    await Promise.all([
+      document.fonts.load(`800 48px ${family}`),
+      document.fonts.load(`600 48px ${family}`),
+    ]);
+  } catch {
+    /* A missing font falls back to the system sans; the ad still exports. */
+  }
+  await document.fonts.ready;
+}
+
+/** Reads the photo's tones from a 40 px copy; null when the image can't be read. */
+export async function sampleStudioPalette(
+  url: string,
+  photo: string,
+): Promise<StudioPhotoPalette | null> {
+  try {
+    const image = await loadStudioImage(url),
+      canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 40;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) return null;
+    context.drawImage(image, 0, 0, 40, 40);
+    return studioPaletteFromPixels(
+      context.getImageData(0, 0, 40, 40).data,
+      photo,
+    );
+  } catch {
+    return null;
+  }
 }

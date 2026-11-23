@@ -2,25 +2,27 @@
 import { useRef, useState } from "react";
 import {
   Image as ImageIcon,
-  LayoutTemplate,
+  Loader2,
+  Move,
+  RefreshCw,
   RotateCw,
   Smartphone,
   Sparkles,
   Type,
 } from "lucide-react";
+import { useStudioDesigns } from "../../hooks/useStudioDesigns";
 import { useStudioGenerate } from "../../hooks/useStudioGenerate";
 import { useStudioImageSize } from "../../hooks/useStudioImageSize";
 import { useStudioImages } from "../../hooks/useStudioImages";
 import { useStudioContext } from "../StudioProvider";
 import { Notification } from "@/components/ui/Notification";
+import { StudioDesignCarousel } from "./StudioDesignCarousel";
 import { StudioFormatSheet } from "./StudioFormatSheet";
 import { StudioGeneratingOverlay } from "./StudioGeneratingOverlay";
 import { StudioGenerateSheet } from "./StudioGenerateSheet";
 import { StudioImageStrip } from "./StudioImageStrip";
 import { StudioImagesSheet } from "./StudioImagesSheet";
 import { StudioPhotoSheet } from "./StudioPhotoSheet";
-import { StudioScenePreview } from "./StudioScenePreview";
-import { StudioStyleSheet } from "./StudioStyleSheet";
 import { StudioTextSheet } from "./StudioTextSheet";
 import {
   importImage,
@@ -34,8 +36,7 @@ import type {
   StudioPosterEditorProps,
 } from "../../interfaces/ui";
 
-type Sheet = "generate" | "text" | "style" | "format" | "photo" | "images";
-const PREVIEW_MAX_VH = 42;
+type Sheet = "generate" | "text" | "format" | "photo" | "images";
 
 export function StudioPosterEditor({
   editor,
@@ -140,6 +141,7 @@ export function StudioPosterEditor({
     format = STUDIO_FORMATS[scene.format],
     close = () => setSheet(null);
   const shownUrl = shown.assetId ? urlOf(shown.assetId) : shown.imageUrl,
+    designs = useStudioDesigns(editor, designId, shownUrl),
     photoSize = useStudioImageSize(shownUrl),
     blurry =
       !shownIsAi &&
@@ -153,50 +155,63 @@ export function StudioPosterEditor({
     setSheet("generate");
   }
   const tools = [
-    { key: "text" as const, label: "Textos", Icon: Type },
-    { key: "style" as const, label: "Estilo", Icon: LayoutTemplate },
-    { key: "format" as const, label: "Formato", Icon: Smartphone },
-    { key: "photo" as const, label: "Foto", Icon: ImageIcon },
+    { key: "text", label: "Textos", Icon: Type, onClick: () => setSheet("text") },
+    { key: "format", label: "Formato", Icon: Smartphone, onClick: () => setSheet("format") },
+    { key: "photo", label: "Foto", Icon: ImageIcon, onClick: () => setSheet("photo") },
+    { key: "hand", label: "A mano", Icon: Move, onClick: onAdvanced },
   ];
+  const linkClass =
+    "inline-flex min-h-11 cursor-pointer items-center gap-1.5 font-bold text-accent disabled:cursor-not-allowed disabled:opacity-60";
   return (
     <div className="flex flex-col gap-3">
-      <div
-        className="relative mx-auto w-full"
-        style={{
-          maxWidth: `min(100%, calc(${PREVIEW_MAX_VH}vh * ${format.width / format.height}))`,
-        }}
-      >
-        <div
-          key={revealed}
-          className={`overflow-hidden rounded-2xl shadow-sm ${revealed ? "studio-reveal" : ""}`}
-        >
-          <StudioScenePreview
-            scene={scene}
-            assets={asset.assets}
-            tenantId={tenantId}
-          />
-        </div>
-        {gen.busy ? (
-          <StudioGeneratingOverlay />
-        ) : shownIsAi && editor.canEdit ? (
-          <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-2 rounded-xl bg-surface/95 py-1.5 pr-1.5 pl-3 text-sm font-semibold shadow-lg">
-            ¿No te convence?
+      <StudioDesignCarousel
+        options={designs.options}
+        active={designs.activeIndex}
+        onPick={designs.pick}
+        assets={asset.assets}
+        tenantId={tenantId}
+        disabled={locked || !editor.canEdit}
+        overlay={gen.busy ? <StudioGeneratingOverlay /> : undefined}
+        revealKey={revealed}
+      />
+      {editor.canEdit && (
+        <div className="flex items-start justify-between gap-3 text-sm">
+          <div className="flex min-w-0 flex-col">
+            <button
+              type="button"
+              onClick={() => void designs.more()}
+              disabled={locked || designs.busy || designs.moreLeft <= 0}
+              className={linkClass}
+            >
+              {designs.busy ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <RefreshCw className="h-4 w-4" aria-hidden />
+              )}
+              Otras frases
+            </button>
+            <span className="text-xs text-muted-foreground">
+              {designs.moreLeft > 0
+                ? "Gratis: la IA escribe 6 nuevas"
+                : "Ya pediste 3 veces; cambia la frase en Textos"}
+            </span>
+          </div>
+          <div className="flex min-w-0 flex-col items-end text-right">
             <button
               type="button"
               onClick={openGenerate}
-              disabled={locked}
-              className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3 font-bold text-accent disabled:opacity-60"
+              disabled={locked || gen.busy}
+              className={linkClass}
             >
-              <RotateCw className="h-4 w-4" />
-              Otro
+              <RotateCw className="h-4 w-4" aria-hidden />
+              Otra imagen
             </button>
+            <span className="text-xs text-muted-foreground">
+              Desde 1 Tlaco
+            </span>
           </div>
-        ) : shown.imageUrl || ownPhoto?.id === shown.assetId ? (
-          <span className="absolute top-2 left-2 rounded-lg bg-slate-900/75 px-2 py-0.5 text-xs font-semibold text-white">
-            Tu foto del catálogo
-          </span>
-        ) : null}
-      </div>
+        </div>
+      )}
       {blurry && !gen.busy && editor.canEdit && (
         <Notification
           tone="info"
@@ -221,12 +236,13 @@ export function StudioPosterEditor({
           }
         />
       )}
-      {(gen.error || notice) && (
+      {(gen.error || notice || designs.error) && (
         <Notification
           tone="warning"
-          message={gen.error ?? notice}
+          message={gen.error ?? notice ?? designs.error}
           onDismiss={() => {
             gen.clearError();
+            designs.clearError();
             setNotice(null);
           }}
         />
@@ -238,12 +254,12 @@ export function StudioPosterEditor({
         onSeeAll={() => setSheet("images")}
       />
       <div className="grid grid-cols-4 gap-2">
-        {tools.map(({ key, label, Icon }) => (
+        {tools.map(({ key, label, Icon, onClick }) => (
           <button
             key={key}
             type="button"
             disabled={locked}
-            onClick={() => setSheet(key)}
+            onClick={onClick}
             className="flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-muted/50 bg-surface text-xs font-semibold transition-colors hover:border-accent hover:bg-accent/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Icon className="h-5 w-5 text-accent" aria-hidden />
@@ -273,20 +289,6 @@ export function StudioPosterEditor({
         onApply={editor.setScene}
         onMessage={(message) => {
           if (!editor.copy.trim()) editor.setCopy(message);
-        }}
-      />
-      <StudioStyleSheet
-        open={sheet === "style"}
-        onClose={close}
-        disabled={locked}
-        scene={scene}
-        source={source}
-        assets={asset.assets}
-        tenantId={tenantId}
-        onApply={editor.setScene}
-        onAdvanced={() => {
-          close();
-          onAdvanced();
         }}
       />
       <StudioFormatSheet

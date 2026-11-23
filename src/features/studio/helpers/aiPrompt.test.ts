@@ -45,10 +45,10 @@ describe("Studio image instructions", () => {
 describe("Studio copy ideas", () => {
   it("reads the JSON even inside a code fence and caps every list", () => {
     const ideas = parseStudioCopyIdeas(
-      '```json\n{"phrases":["Siempre impecable.","Brilla como nuevo.","Listo para lucirlo.","Extra."],"notes":["Agenda hoy"],"message":"Lavado oro a $130."}\n```',
+      '```json\n{"phrases":["Siempre impecable.","Todo por $130.","Hoy hay lugar.","Brilla como nuevo.","Lo cuidamos.","Recién lavado.","Extra.","Siempre impecable."],"notes":["Agenda hoy","Te esperamos","Pide el tuyo","Extra"],"message":"Lavado oro a $130."}\n```',
     );
-    expect(ideas?.phrases).toHaveLength(3);
-    expect(ideas?.notes).toEqual(["Agenda hoy"]);
+    expect(ideas?.phrases).toHaveLength(6);
+    expect(ideas?.notes).toHaveLength(3);
     expect(ideas?.message).toBe("Lavado oro a $130.");
   });
   it("rejects answers without phrases or with broken JSON", () => {

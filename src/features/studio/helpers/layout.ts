@@ -1,5 +1,10 @@
+import { STUDIO_DESIGN_IDS } from "../constants/designs";
 import { STUDIO_FORMATS, STUDIO_TEMPLATES } from "../constants/studio";
+import { arrangeStudioDesign } from "./designLayout";
+import { studioDesignColors } from "./palette";
+import type { StudioDesignInput } from "./designLayout";
 import type {
+  StudioDesignId,
   StudioLayout,
   StudioNode,
   StudioScene,
@@ -18,7 +23,8 @@ type SlotKey =
   | "phrase"
   | "brand"
   | "shade"
-  | "frame";
+  | "frame"
+  | "plate";
 type Slot = Pick<StudioNode, "x" | "y" | "width" | "height"> & {
   fontSize?: number;
 };
@@ -44,6 +50,15 @@ export function studioTemplate(id?: string) {
   return STUDIO_TEMPLATES.find((t) => t.id === id) ?? STUDIO_TEMPLATES[0];
 }
 
+export function isStudioDesign(layout?: string): layout is StudioDesignId {
+  return (STUDIO_DESIGN_IDS as readonly string[]).includes(layout ?? "");
+}
+
+/** Layouts built over a full photo: the older posters and the six designs. */
+export function isStudioPhotoLayout(layout: StudioLayout): boolean {
+  return layout.startsWith("poster") || isStudioDesign(layout);
+}
+
 /** Which layout slot a text node fills; null for free layers added by hand. */
 export function studioSlotKey(node: StudioNode): SlotKey | null {
   if (node.role === "headline") return "name";
@@ -53,7 +68,8 @@ export function studioSlotKey(node: StudioNode): SlotKey | null {
     node.role === "phrase" ||
     node.role === "brand" ||
     node.role === "shade" ||
-    node.role === "frame"
+    node.role === "frame" ||
+    node.role === "plate"
   )
     return node.role;
   return node.binding ?? null;
@@ -370,6 +386,8 @@ export function arrangeStudioScene(
     const key = studioSlotKey(node);
     if (key && !owners.has(key)) owners.set(key, node);
   }
+  if (isStudioDesign(layout))
+    return arrangeDesignScene(scene, layout, owners, image, logo);
   const present: Present = {
     logo: Boolean(logo),
     image: Boolean(image),
@@ -410,6 +428,79 @@ export function arrangeStudioScene(
         ...box,
         rotation: 0,
         fontSize: Math.max(0.005, size * heightScale),
+      };
+    }),
+  };
+}
+
+/** Places every managed layer of one of the six designs and paints it with the photo's colors. */
+function arrangeDesignScene(
+  scene: StudioScene,
+  layout: StudioDesignId,
+  owners: Map<SlotKey, StudioNode>,
+  image: StudioNode | undefined,
+  logo: StudioNode | undefined,
+): StudioScene {
+  const format = STUDIO_FORMATS[scene.format],
+    shown = (key: SlotKey) => {
+      const node = owners.get(key);
+      return node?.visible && node.content.trim() ? node : undefined;
+    };
+  const phrase = owners.get("phrase"),
+    name = owners.get("name"),
+    price = shown("price"),
+    badge = shown("badge"),
+    offer = price ?? badge,
+    phraseText = (phrase?.visible ? phrase.content : name?.content) ?? "",
+    notes: StudioDesignInput["notes"] = [];
+  if (price && badge) notes.push({ key: "badge", text: badge.content });
+  for (const key of ["tagline", "validity", "period", "conditions"] as const) {
+    const node = shown(key);
+    if (node) notes.push({ key, text: node.content });
+  }
+  const { background, placements } = arrangeStudioDesign({
+    layout,
+    width: format.width,
+    height: format.height,
+    logo: Boolean(logo?.visible),
+    brand: shown("brand")?.content ?? "",
+    phrase: phraseText,
+    name:
+      name?.content.trim() && phraseText.trim() !== name.content.trim()
+        ? name.content
+        : null,
+    offer: offer
+      ? {
+          key: offer === price ? "price" : "badge",
+          text: offer.content,
+          cta: offer.role === "cta",
+        }
+      : null,
+    notes,
+    colors: studioDesignColors(scene.palette),
+  });
+  return {
+    ...scene,
+    background,
+    nodes: scene.nodes.map((node) => {
+      const slotKey = studioSlotKey(node),
+        key =
+          node === image
+            ? "image"
+            : node === logo
+              ? "logo"
+              : slotKey && owners.get(slotKey) === node
+                ? slotKey
+                : null,
+        placement = key ? placements[key] : undefined;
+      if (!placement) return node;
+      return {
+        ...node,
+        ...(placement.box ? { ...placement.box, rotation: 0 } : {}),
+        ...(placement.fontSize === undefined
+          ? {}
+          : { fontSize: Math.max(0.005, Math.min(0.5, placement.fontSize)) }),
+        ...placement.style,
       };
     }),
   };

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { validStudioDestination } from "../helpers/access";
+import { STUDIO_DESIGN_IDS } from "../constants/designs";
 
 export const uuidSchema = z.string().uuid();
 const color = z.string().regex(/^#[0-9a-fA-F]{6}$/);
@@ -31,13 +32,17 @@ export const studioNodeSchema = z
         "backdrop",
         "shade",
         "frame",
+        "plate",
       ])
       .optional(),
-    shade: z.enum(["poster", "bottom"]).optional(),
+    shade: z.enum(["poster", "bottom", "top", "center"]).optional(),
+    letterSpacing: z.number().finite().min(-0.2).max(0.5).optional(),
+    caps: z.boolean().optional(),
+    radius: z.number().finite().min(0).max(0.5).optional(),
     color,
     fill: color,
     fontSize: z.number().finite().min(0.005).max(0.5),
-    fontFamily: z.enum(["Arial", "Georgia", "Verdana"]),
+    fontFamily: z.enum(["Arial", "Georgia", "Verdana", "Inter Tight"]),
     fontStyle: z.enum(["normal", "bold", "italic"]),
     align: z.enum(["left", "center", "right"]),
     opacity: unit,
@@ -66,7 +71,17 @@ export const studioSceneSchema = z
         "poster",
         "poster_bottom",
         "poster_framed",
+        ...STUDIO_DESIGN_IDS,
       ])
+      .optional(),
+    palette: z
+      .object({
+        photo: z.string().max(2048),
+        dark: color,
+        light: color,
+        accent: color,
+      })
+      .strict()
       .optional(),
     background: color,
     nodes: z

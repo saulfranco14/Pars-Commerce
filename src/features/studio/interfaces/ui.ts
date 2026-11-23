@@ -12,7 +12,12 @@ import type {
   StudioSource,
   StudioSummary,
 } from "./studio";
-import type { StudioFormat, StudioNode, StudioScene } from "./scene";
+import type {
+  StudioDesignId,
+  StudioFormat,
+  StudioNode,
+  StudioScene,
+} from "./scene";
 
 export interface StudioScope {
   tenantId: string;
@@ -107,13 +112,23 @@ export interface StudioTextSheetProps extends StudioSheetProps {
   onApply: (scene: StudioScene) => void;
   onMessage: (message: string) => void;
 }
-export interface StudioStyleSheetProps extends StudioSheetProps {
+export interface StudioDesignOption {
+  id: StudioDesignId;
+  name: string;
   scene: StudioScene;
-  source: StudioSource;
+}
+export interface StudioDesignCarouselProps {
+  options: StudioDesignOption[];
+  /** Index of the design the ad uses now; -1 for an older template. */
+  active: number;
+  onPick: (index: number) => void;
   assets: StudioAsset[];
   tenantId: string;
-  onApply: (scene: StudioScene) => void;
-  onAdvanced: () => void;
+  disabled: boolean;
+  /** Shown over the chosen design while a new image is being made. */
+  overlay?: ReactNode;
+  /** Changes when a new image lands, to replay the reveal. */
+  revealKey: number;
 }
 export interface StudioFormatSheetProps extends StudioSheetProps {
   value: StudioFormat;

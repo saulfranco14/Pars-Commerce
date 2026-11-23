@@ -14,10 +14,13 @@ import Konva from "konva";
 import QRCode from "qrcode";
 import { STUDIO_FORMATS } from "../../constants/studio";
 import {
+  loadStudioFonts,
   loadStudioImage,
+  studioCornerRadius,
   studioImageCrop,
   studioImageUrl,
   studioShapeFill,
+  studioTextProps,
 } from "../../helpers/canvas";
 import type { StudioImageSource } from "../../helpers/canvas";
 import type {
@@ -131,6 +134,7 @@ function CanvasNode({
       <CanvasImage
         {...base}
         image={image}
+        cornerRadius={studioCornerRadius(n, base.width, base.height)}
         crop={
           n.kind === "qr"
             ? undefined
@@ -149,22 +153,13 @@ function CanvasNode({
       />
     );
   if (n.kind === "shape")
-    return <Rect {...base} {...studioShapeFill(n, base.height, renderScale)} />;
-  return (
-    <Text
-      {...base}
-      text={n.content}
-      fontFamily={n.fontFamily}
-      fontStyle={n.fontStyle}
-      fontSize={n.fontSize * height}
-      fill={n.color}
-      align={n.align}
-      lineHeight={n.lineHeight}
-      stroke={n.stroke}
-      strokeWidth={n.strokeWidth * renderScale}
-      wrap="word"
-    />
-  );
+    return (
+      <Rect
+        {...base}
+        {...studioShapeFill(n, base.width, base.height, renderScale)}
+      />
+    );
+  return <Text {...base} {...studioTextProps(n, height, renderScale)} />;
 }
 
 export default function StudioCanvas({
@@ -181,12 +176,20 @@ export default function StudioCanvas({
     stage = useRef<Konva.Stage>(null),
     transformer = useRef<Konva.Transformer>(null);
   const [width, setWidth] = useState(320),
+    [fontsReady, setFontsReady] = useState(false),
     [editing, setEditing] = useState<{ id: string; value: string } | null>(
       null,
     );
   const size = STUDIO_FORMATS[scene.format],
     height = (width * size.height) / size.width,
     selected = scene.nodes.find((n) => n.id === selectedId);
+  useEffect(() => {
+    let active = true;
+    void loadStudioFonts().then(() => active && setFontsReady(true));
+    return () => {
+      active = false;
+    };
+  }, []);
   useEffect(() => {
     if (!container.current) return;
     const observer = new ResizeObserver(([entry]) =>
@@ -241,7 +244,7 @@ export default function StudioCanvas({
             if (e.target.name() === "canvas-background") onSelect(null);
           }}
         >
-          <Layer>
+          <Layer key={fontsReady ? "fonts" : "fallback"}>
             <Rect
               name="canvas-background"
               width={width}

@@ -1,7 +1,7 @@
 import "server-only";
 import { getPublicAppUrl } from "@/lib/env/appUrl";
 import { formatOfferLabel } from "@/lib/offers/formatOfferLabel";
-import { formatCurrency } from "@/features/qr/helpers/format";
+import { studioPriceLabel } from "../helpers/scene";
 import { StudioError, requireStudioData } from "./studioErrors";
 import type { StudioDb } from "./studioDb";
 import type { StudioSource, StudioSourceType } from "../interfaces/studio";
@@ -87,7 +87,7 @@ export async function getStudioSource(
       name: p.name,
       description: p.description ?? "",
       price,
-      priceLabel: `${variantPrices.length ? "Desde " : ""}${formatCurrency(price)}`,
+      priceLabel: `${variantPrices.length ? "Desde " : ""}${studioPriceLabel(price)}`,
       imageUrls: images?.length
         ? images.map((i) => i.url)
         : p.image_url
@@ -126,7 +126,7 @@ export async function getStudioSource(
       name: p.name,
       description: p.description ?? "",
       price: Number(p.price),
-      priceLabel: formatCurrency(Number(p.price)),
+      priceLabel: studioPriceLabel(Number(p.price)),
       period: `Cada ${p.interval_count} ${p.interval_unit === "week" ? "semana(s)" : "mes(es)"}`,
       status: p.status,
       imageUrls: p.image_url
@@ -196,7 +196,7 @@ export async function getStudioSource(
     description: row.description ?? "",
     conditions: [
       Number(row.min_amount) > 0
-        ? `Compra mínima ${formatCurrency(Number(row.min_amount))}`
+        ? `Compra mínima ${studioPriceLabel(Number(row.min_amount))}`
         : "",
       ...(items ?? []).map(
         (item) =>
@@ -207,7 +207,7 @@ export async function getStudioSource(
       .join(" · ")
       .slice(0, 500),
     price: priced ? Number(row.value) : null,
-    priceLabel: priced ? formatCurrency(Number(row.value)) : "",
+    priceLabel: priced ? studioPriceLabel(Number(row.value)) : "",
     badge: formatOfferLabel({ ...row, value: Number(row.value) }),
     status: row.status,
     validFrom: row.valid_from,

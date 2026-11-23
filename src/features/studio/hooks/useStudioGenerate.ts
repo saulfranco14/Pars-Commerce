@@ -40,7 +40,7 @@ export function useStudioGenerate(input: {
         setError(studioGenerationError(job.error_code));
       else
         setError(
-          "Tu imagen sigue en proceso. Aparecerá en Tus imágenes en unos minutos.",
+          "Tu imagen sigue en proceso. Cuando esté lista, aparecerá en Tus imágenes.",
         );
     } catch (e) {
       setError(e instanceof Error ? e.message : "No pudimos hacer la imagen.");

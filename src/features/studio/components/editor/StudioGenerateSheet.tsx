@@ -122,7 +122,8 @@ export function StudioGenerateSheet({
           )}
         </p>
         <p className="text-xs leading-5 text-muted-foreground">
-          Si la imagen no sale, no se cobra. Tarda unos 20 segundos.
+          El tiempo de generación puede variar. Si la imagen no se genera, no te
+          cobramos.
         </p>
       </div>
     </FormSheet>

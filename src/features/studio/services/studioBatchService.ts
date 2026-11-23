@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { STUDIO_DESIGN_IDS } from "../constants/designs";
 import { STUDIO_BATCH_CHUNK } from "../constants/studio";
 import {
   restyleStudioScene,
@@ -32,9 +33,7 @@ const batchSchema = z.object({
     .max(STUDIO_BATCH_CHUNK),
   mode: z.enum(["shared", "each"]),
   asset_id: uuidSchema.optional(),
-  template: z
-    .enum(["poster", "poster_bottom", "poster_framed"])
-    .default("poster"),
+  template: z.enum(STUDIO_DESIGN_IDS).default("impact"),
   scene: z.enum(["local", "street", "studio", "surprise"]).default("local"),
   quality: z.enum(["economy", "premium"]).default("economy"),
 });

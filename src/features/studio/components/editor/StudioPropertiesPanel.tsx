@@ -1,7 +1,7 @@
 "use client";
 import { FormInput } from "@/components/ui/FormInput";
 import { LockKeyhole } from "lucide-react";
-import { STUDIO_FONTS } from "../../constants/studio";
+import { STUDIO_EDITOR_FONTS } from "../../constants/studio";
 import { StudioOptions } from "../StudioOptions";
 import type { StudioPropertiesProps } from "../../interfaces/ui";
 
@@ -80,7 +80,10 @@ export function StudioPropertiesPanel({
           <StudioOptions
             label="Tipografía"
             value={node.fontFamily}
-            options={STUDIO_FONTS.map((font) => ({ value: font, label: font }))}
+            options={STUDIO_EDITOR_FONTS.map((font) => ({
+              value: font,
+              label: font,
+            }))}
             onChange={(fontFamily) => update({ fontFamily })}
           />
           <StudioOptions

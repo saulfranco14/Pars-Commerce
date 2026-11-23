@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { generateText } from "@/lib/ai/gemini";
+import { STUDIO_PHRASE_ANGLES } from "../constants/designs";
 import { parseStudioCopyIdeas } from "../helpers/aiPrompt";
 import { uuidSchema } from "../validations/studioSchemas";
 import { requireStudioAccess } from "./studioAccessService";
@@ -27,7 +28,7 @@ function describe(source: Partial<StudioSource>) {
     .join("\n");
 }
 
-/** Free text ideas for one ad: big phrases, closing lines and the WhatsApp message. */
+/** Free text ideas for one ad: one big phrase per design, closing lines and the WhatsApp message. */
 export async function suggestStudioCopy(
   raw: unknown,
 ): Promise<StudioCopyIdeas> {
@@ -58,11 +59,11 @@ export async function suggestStudioCopy(
   );
   const prompt = `${describe(design.source_snapshot as Partial<StudioSource>)}
 
-Devuelve {"phrases":[3 frases grandes para el anuncio, de 2 a 4 palabras, que terminen en punto, que antojen o den ganas],"notes":[3 cierres cortos de máximo 3 palabras que inviten a actuar],"message":"mensaje de WhatsApp de máximo 200 caracteres que presente la oferta; no incluyas enlaces"}`;
+Devuelve {"phrases":[6 frases grandes para el anuncio, de 2 a 4 palabras, que terminen en punto, en este orden y cada una con su enfoque: ${STUDIO_PHRASE_ANGLES.join(", ")}; todas distintas entre sí],"notes":[3 cierres cortos de máximo 3 palabras que inviten a actuar],"message":"mensaje de WhatsApp de máximo 200 caracteres que presente la oferta; no incluyas enlaces"}`;
   try {
     const ideas = parseStudioCopyIdeas(
       await generateText(SYSTEM, prompt, {
-        maxOutputTokens: 500,
+        maxOutputTokens: 700,
         thinkingLevel: "minimal",
       }),
     );

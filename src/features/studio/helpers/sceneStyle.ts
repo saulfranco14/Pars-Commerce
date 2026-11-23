@@ -1,10 +1,18 @@
 import { STUDIO_PALETTES } from "../constants/studio";
-import { arrangeStudioScene, studioSlotKey, studioTemplate } from "./layout";
+import {
+  arrangeStudioScene,
+  isStudioDesign,
+  isStudioPhotoLayout,
+  studioSlotKey,
+  studioTemplate,
+} from "./layout";
 import { createStudioNode, createStudioScene } from "./scene";
 import type { StudioPalette } from "../constants/studio";
 import type {
+  StudioDesignId,
   StudioFormat,
   StudioNode,
+  StudioPhotoPalette,
   StudioScene,
   StudioTemplateId,
 } from "../interfaces/scene";
@@ -29,7 +37,7 @@ export function studioTagline(scene: StudioScene): string {
 }
 
 export function isStudioPoster(scene: StudioScene): boolean {
-  return studioTemplate(scene.template).layout.startsWith("poster");
+  return isStudioPhotoLayout(studioTemplate(scene.template).layout);
 }
 
 export function studioPhrase(scene: StudioScene): string {
@@ -141,9 +149,10 @@ export function restyleStudioScene(
     image = scene.nodes.find((n) => n.kind === "image"),
     logo = scene.nodes.find((n) => n.kind === "logo"),
     tagline = scene.nodes.find((n) => n.role === "tagline"),
-    font = headlineNode(scene)?.fontFamily,
+    toDesign = isStudioDesign(template.layout),
+    font = toDesign ? undefined : headlineNode(scene)?.fontFamily,
     fromPoster = isStudioPoster(scene),
-    toPoster = template.layout.startsWith("poster"),
+    toPoster = isStudioPhotoLayout(template.layout),
     carried = new Set<StudioNode>();
   const previousOf = (node: StudioNode) => {
     if (node.kind === "image") return image;
@@ -191,9 +200,38 @@ export function restyleStudioScene(
   }
   const free = scene.nodes.filter((n) => !carried.has(n) && !studioSlotKey(n));
   return arrangeStudioScene(
-    { ...fresh, nodes: [...nodes, ...free] },
+    { ...fresh, palette: scene.palette, nodes: [...nodes, ...free] },
     template.layout,
   );
+}
+
+/** One of the six designs over the same photo, optionally with its own phrase. */
+export function applyStudioDesign(
+  scene: StudioScene,
+  source: StudioSource,
+  design: StudioDesignId,
+  phrase?: string,
+): StudioScene {
+  const styled =
+    scene.template === design
+      ? scene
+      : restyleStudioScene(scene, source, design);
+  return phrase ? setStudioPhrase(styled, source, phrase) : styled;
+}
+
+/** Repaints a design with the colors of its photo; older templates keep theirs. */
+export function applyStudioPalette(
+  scene: StudioScene,
+  palette: StudioPhotoPalette,
+): StudioScene {
+  if (!isStudioDesign(scene.template)) return { ...scene, palette };
+  return arrangeStudioScene({ ...scene, palette });
+}
+
+/** The image the palette must come from: the stored asset id or the photo URL. */
+export function studioPhotoKey(scene: StudioScene): string | null {
+  const { assetId, imageUrl } = studioBackdrop(scene);
+  return assetId ?? imageUrl;
 }
 
 /** The message that goes with the image; the share actions append the link. */

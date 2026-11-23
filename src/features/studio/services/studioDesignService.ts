@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { requirePermission } from "@/lib/auth/requirePermission";
 import { createStudioScene, bindStudioScene } from "../helpers/scene";
+import { isStudioDesign } from "../helpers/layout";
 import { STUDIO_BUCKET, STUDIO_DEFAULT_TEMPLATE } from "../constants/studio";
 import {
   createDesignSchema,
@@ -117,7 +118,8 @@ export async function createStudioDesign(raw: unknown): Promise<StudioDesign> {
     STUDIO_DEFAULT_TEMPLATE,
     brand?.default_format as StudioScene["format"] | undefined,
   );
-  if (brand)
+  // The six designs carry their own typeface and photo colors.
+  if (brand && !isStudioDesign(scene.template))
     scene = {
       ...scene,
       nodes: scene.nodes.map((node) => ({

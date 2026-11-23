@@ -1,5 +1,13 @@
+import { formatCurrency } from "@/features/qr/helpers/format";
 import { STUDIO_FORMATS } from "../constants/studio";
-import { arrangeStudioScene, studioSlotKey, studioTemplate } from "./layout";
+import {
+  arrangeStudioScene,
+  isStudioDesign,
+  isStudioPhotoLayout,
+  studioSlotKey,
+  studioTemplate,
+} from "./layout";
+import { contrastRatio } from "./palette";
 import type {
   StudioFinding,
   StudioFormat,
@@ -39,6 +47,11 @@ export function createStudioNode(
   };
 }
 
+/** Ad prices drop zero cents: $130, not $130.00, reads faster at a glance. */
+export function studioPriceLabel(value: number): string {
+  return formatCurrency(value).replace(/.00$/, "");
+}
+
 export function studioValidity(source: StudioSource): string {
   if (!source.validUntil) return "";
   return `Válido hasta ${new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short", timeZone: "America/Mexico_City" }).format(new Date(source.validUntil))}`;
@@ -70,13 +83,16 @@ export function createStudioScene(
   format: StudioFormat = "square",
 ): StudioScene {
   const template = studioTemplate(templateId),
+    design = isStudioDesign(template.layout),
+    font: Partial<StudioNode> = design ? { fontFamily: "Inter Tight" } : {},
     text = (content: string, extra: Partial<StudioNode>): StudioNode => ({
       ...createStudioNode("text", content),
       color: template.ink,
+      ...font,
       ...extra,
     });
   const nodes: StudioNode[] = [],
-    poster = template.layout.startsWith("poster");
+    poster = isStudioPhotoLayout(template.layout);
   if (poster) {
     if (source.imageUrls[0])
       nodes.push({
@@ -101,6 +117,13 @@ export function createStudioScene(
         opacity: 0.8,
         locked: true,
       });
+    if (design)
+      nodes.push({
+        ...createStudioNode("shape"),
+        role: "plate",
+        fill: template.accent,
+        locked: true,
+      });
   }
   if (source.logoUrl)
     nodes.push({ ...createStudioNode("logo"), imageUrl: source.logoUrl });
@@ -120,6 +143,7 @@ export function createStudioScene(
   if (source.priceLabel)
     nodes.push({
       ...createStudioNode("price", source.priceLabel),
+      ...font,
       binding: "price",
       color: template.accent,
     });
@@ -176,11 +200,21 @@ export function reflowStudioScene(
   });
 }
 
-function luminance(hex: string): number {
-  const channels = [1, 3, 5]
-    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
-    .map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
-  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+/** The flat color a text sits on: a solid plate under it, or the scene background. */
+function groundOf(scene: StudioScene, node: StudioNode): string {
+  const cx = node.x + node.width / 2,
+    cy = node.y + node.height / 2,
+    plate = scene.nodes.find(
+      (n) =>
+        n.role === "plate" &&
+        n.visible &&
+        n.opacity >= 0.8 &&
+        cx >= n.x &&
+        cx <= n.x + n.width &&
+        cy >= n.y &&
+        cy <= n.y + n.height,
+    );
+  return plate?.fill ?? scene.background;
 }
 
 export function reviewStudioScene(scene: StudioScene): StudioFinding[] {
@@ -214,7 +248,8 @@ export function reviewStudioScene(scene: StudioScene): StudioFinding[] {
         characters = Math.max(
           1,
           Math.floor(
-            (node.width * size.width) / (node.fontSize * size.height * 0.58),
+            (node.width * size.width) /
+              (node.fontSize * size.height * (0.58 + (node.letterSpacing ?? 0))),
           ),
         );
       const lines = node.content
@@ -234,9 +269,7 @@ export function reviewStudioScene(scene: StudioScene): StudioFinding[] {
               : "Este texto puede quedar recortado. Revisa su caja en la vista previa.",
           severity: "warning",
         });
-      const a = luminance(node.color),
-        b = luminance(scene.background);
-      if ((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) < 3)
+      if (contrastRatio(node.color, groundOf(scene, node)) < 3)
         findings.push({
           code: "LOW_CONTRAST",
           nodeId: node.id,

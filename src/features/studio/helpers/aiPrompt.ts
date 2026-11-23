@@ -1,3 +1,4 @@
+import { STUDIO_DESIGNS } from "../constants/designs";
 import { STUDIO_SCENES } from "../constants/studio";
 import type { StudioFormat } from "../interfaces/scene";
 import type { StudioAiOperation } from "../interfaces/studio";
@@ -57,16 +58,19 @@ export function parseStudioCopyIdeas(raw: string): StudioCopyIdeas | null {
     const data = JSON.parse(json) as Partial<
       Record<keyof StudioCopyIdeas, unknown>
     >;
-    const list = (value: unknown, max: number) =>
+    const list = (value: unknown, max: number, count: number) =>
       Array.isArray(value)
-        ? value
-            .filter((v): v is string => typeof v === "string")
-            .map((v) => v.trim().slice(0, max))
-            .filter(Boolean)
-            .slice(0, 3)
+        ? [
+            ...new Set(
+              value
+                .filter((v): v is string => typeof v === "string")
+                .map((v) => v.trim().slice(0, max))
+                .filter(Boolean),
+            ),
+          ].slice(0, count)
         : [];
-    const phrases = list(data.phrases, 40),
-      notes = list(data.notes, 30);
+    const phrases = list(data.phrases, 40, STUDIO_DESIGNS.length),
+      notes = list(data.notes, 30, 3);
     if (!phrases.length) return null;
     return {
       phrases,

@@ -6,6 +6,7 @@ import type {
   StudioTemplateId,
 } from "../interfaces/scene";
 import type { StudioSourceType, StudioSurface } from "../interfaces/studio";
+import { STUDIO_DESIGN_IDS, STUDIO_DESIGNS } from "./designs";
 
 export const STUDIO_CONTENT_UPDATED_AT = "2026-11-02T14:01:57Z";
 export const STUDIO_BUCKET = "studio-assets";
@@ -159,6 +160,8 @@ export const STUDIO_SURFACES: Record<
   },
 };
 export const STUDIO_FONTS = ["Arial", "Georgia", "Verdana"] as const;
+/** The editor also offers the designs' typeface; brand settings keep the three system fonts. */
+export const STUDIO_EDITOR_FONTS = ["Inter Tight", ...STUDIO_FONTS] as const;
 export interface StudioPalette {
   id: string;
   name: string;
@@ -225,14 +228,26 @@ export const STUDIO_TEMPLATES: ReadonlyArray<
     accent: "#ffffff",
     layout: "poster_framed",
   },
+  ...STUDIO_DESIGNS.map((design) => ({
+    id: design.id,
+    name: design.name,
+    background: design.onPhoto ? "#0b1220" : "#f4efe6",
+    ink: design.onPhoto ? "#ffffff" : "#1f1a14",
+    accent: "#3483fa",
+    layout: design.id,
+  })),
 ];
-/** The photo-first styles of the guided editor; the flat templates stay for older designs. */
+/** The six designs of the guided editor and batches; the older templates stay for existing ads. */
 export const STUDIO_POSTER_STYLES = STUDIO_TEMPLATES.filter((t) =>
-  t.layout.startsWith("poster"),
+  (STUDIO_DESIGN_IDS as readonly string[]).includes(t.id),
 );
-export const STUDIO_DEFAULT_TEMPLATE: StudioTemplateId = "poster";
+export const STUDIO_DEFAULT_TEMPLATE: StudioTemplateId = "impact";
 export const STUDIO_PALETTES: ReadonlyArray<StudioPalette> = [
-  ...STUDIO_TEMPLATES.filter((t) => !t.layout.startsWith("poster")),
+  ...STUDIO_TEMPLATES.filter(
+    (t) =>
+      !t.layout.startsWith("poster") &&
+      !(STUDIO_DESIGN_IDS as readonly string[]).includes(t.id),
+  ),
   {
     id: "night",
     name: "Noche",
@@ -297,12 +312,5 @@ export const STUDIO_NOTES = [
 export const STUDIO_BATCH_MAX = 50;
 /** Items per request, so each call stays well inside the server time limit. */
 export const STUDIO_BATCH_CHUNK = 5;
-export const STUDIO_IMAGE_SECONDS = 20;
-export const STUDIO_GENERATING_STEPS = [
-  "Mirando tu producto",
-  "Armando la escena",
-  "Acomodando la luz",
-  "Afinando detalles",
-] as const;
 /** Below this many pixels on the short side a photo looks blurry on a 1080 px ad. */
 export const STUDIO_SHARP_PHOTO_PX = 600;
