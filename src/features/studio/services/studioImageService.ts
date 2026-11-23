@@ -8,7 +8,11 @@ import { setStudioBackdrop } from "../helpers/sceneStyle";
 import { generationSchema, uuidSchema } from "../validations/studioSchemas";
 import { requireStudioAccess } from "./studioAccessService";
 import { createStudioQuote } from "./studioAiService";
-import { requireStudioData, StudioError } from "./studioErrors";
+import {
+  requireStudioData,
+  requireStudioSuccess,
+  StudioError,
+} from "./studioErrors";
 import { studioFlags } from "./studioFlags";
 import {
   generateStudioGeminiImage,
@@ -171,7 +175,7 @@ async function processJob(db: StudioDb, jobId: string) {
       .upload(path, output.bytes, { contentType: mime, upsert: false });
     if (upload.error && !/already exists/i.test(upload.error.message))
       throw new StudioProviderFailure("STORAGE_FAILED");
-    requireStudioData(
+    requireStudioSuccess(
       await db.from("studio_assets").upsert(
         {
           id: job.id,
@@ -191,7 +195,7 @@ async function processJob(db: StudioDb, jobId: string) {
         { onConflict: "id", ignoreDuplicates: true },
       ),
     );
-    requireStudioData(
+    const finished = requireStudioData(
       await db.rpc("studio_finish_job", {
         p_job_id: job.id,
         p_lease_token: job.lease_token,
@@ -201,7 +205,10 @@ async function processJob(db: StudioDb, jobId: string) {
     );
     await db
       .from("studio_ai_attempts")
-      .update({ status: "succeeded", finished_at: new Date().toISOString() })
+      .update({
+        status: finished ? "succeeded" : "unknown",
+        finished_at: new Date().toISOString(),
+      })
       .eq("id", attemptId);
   } catch (error) {
     const code =
@@ -421,7 +428,7 @@ export async function copyStudioImage(
     .from(STUDIO_BUCKET)
     .copy(asset.storage_path, path);
   if (copied.error) throw new StudioError("INTERNAL");
-  requireStudioData(
+  requireStudioSuccess(
     await db
       .from("studio_assets")
       .insert({

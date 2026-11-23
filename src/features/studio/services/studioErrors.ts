@@ -136,6 +136,22 @@ export class StudioError extends Error {
   }
 }
 
+export function requireStudioSuccess(result: {
+  error: { message: string; code?: string } | null;
+}): void {
+  const { error } = result;
+  if (error) {
+    if (error.code === "PGRST116") throw new StudioError("NOT_FOUND");
+    const code = error.message.match(/STUDIO_([A-Z_]+)/)?.[1];
+    if (code && MESSAGES[code]) throw new StudioError(code);
+    console.error("[studio] database operation failed", {
+      code: error.code,
+      message: error.message,
+    });
+    throw new StudioError("INTERNAL");
+  }
+}
+
 // Generic over the whole response so the call site never steers supabase's select() inference.
 export function requireStudioData<
   R extends {
@@ -143,16 +159,7 @@ export function requireStudioData<
     error: { message: string; code?: string } | null;
   },
 >(result: R): NonNullable<R["data"]> {
-  if (result.error) {
-    if (result.error.code === "PGRST116") throw new StudioError("NOT_FOUND");
-    const code = result.error.message.match(/STUDIO_([A-Z_]+)/)?.[1];
-    if (code && MESSAGES[code]) throw new StudioError(code);
-    console.error("[studio] database operation failed", {
-      code: result.error.code,
-      message: result.error.message,
-    });
-    throw new StudioError("INTERNAL");
-  }
+  requireStudioSuccess(result);
   if (result.data == null) throw new StudioError("NOT_FOUND");
   return result.data as NonNullable<R["data"]>;
 }
