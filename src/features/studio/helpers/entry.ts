@@ -1,3 +1,4 @@
+import type { StudioSource } from "../interfaces/studio";
 export function studioEntryHref(plan?: string, action = "create"): string {
   const q = new URLSearchParams({
     studio_action: action === "home" ? "home" : "create",
@@ -45,4 +46,20 @@ export function studioBusinessEntryHref(
   )
     query.set("studio_plan", intent.studio_plan);
   return `/dashboard/${encodeURIComponent(slug)}/studio?${query}`;
+}
+
+/** Where the merchant fixes the ad's catalog data (price, photo, name). */
+export function studioCatalogHref(
+  source: Pick<StudioSource, "id" | "type">,
+  tenantSlug: string,
+): string | null {
+  if (!source.id) return null;
+  const base = `/dashboard/${encodeURIComponent(tenantSlug)}`;
+  return source.type === "product"
+    ? `${base}/productos/${source.id}`
+    : `${base}/promociones`;
+}
+
+export function studioRechargeHref(tenantSlug: string, returnTo: string) {
+  return `/dashboard/${tenantSlug}/studio/tlacos?return_to=${encodeURIComponent(returnTo)}`;
 }

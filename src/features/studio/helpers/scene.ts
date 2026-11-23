@@ -1,4 +1,5 @@
-import { STUDIO_FORMATS, STUDIO_TEMPLATES } from "../constants/studio";
+import { STUDIO_FORMATS } from "../constants/studio";
+import { arrangeStudioScene, studioSlotKey, studioTemplate } from "./layout";
 import type {
   StudioFinding,
   StudioFormat,
@@ -68,97 +69,50 @@ export function createStudioScene(
   templateId = "clean",
   format: StudioFormat = "square",
 ): StudioScene {
-  const template =
-    STUDIO_TEMPLATES.find((t) => t.id === templateId) ?? STUDIO_TEMPLATES[0];
+  const template = studioTemplate(templateId),
+    text = (content: string, extra: Partial<StudioNode>): StudioNode => ({
+      ...createStudioNode("text", content),
+      color: template.ink,
+      ...extra,
+    });
   const nodes: StudioNode[] = [];
   if (source.logoUrl)
-    nodes.push({
-      ...createStudioNode("logo"),
-      x: 0.8,
-      y: 0.04,
-      width: 0.14,
-      height: 0.1,
-      imageUrl: source.logoUrl,
-    });
+    nodes.push({ ...createStudioNode("logo"), imageUrl: source.logoUrl });
   if (source.imageUrls[0])
-    nodes.push({
-      ...createStudioNode("image"),
-      x: 0.08,
-      y: source.badge ? 0.3 : 0.25,
-      width: 0.84,
-      height: source.badge ? 0.4 : 0.45,
-      imageUrl: source.imageUrls[0],
-    });
-  nodes.push({
-    ...createStudioNode("text", source.name),
-    binding: "name",
-    color: template.ink,
-    y: 0.06,
-    height: 0.16,
-    fontSize: source.name.length > 35 ? 0.042 : 0.06,
-  });
+    nodes.push({ ...createStudioNode("image"), imageUrl: source.imageUrls[0] });
+  nodes.push(text(source.name, { binding: "name" }));
   if (source.priceLabel)
     nodes.push({
       ...createStudioNode("price", source.priceLabel),
       binding: "price",
-      y: 0.74,
-      height: 0.12,
       color: template.accent,
-      fontSize: 0.095,
     });
   if (source.badge)
-    nodes.push({
-      ...createStudioNode("text", source.badge),
-      binding: "badge",
-      y: 0.23,
-      width: 0.84,
-      height: 0.06,
-      fontSize: 0.045,
-      color: template.accent,
-    });
+    nodes.push(text(source.badge, { binding: "badge", color: template.accent }));
   if (source.period)
-    nodes.push({
-      ...createStudioNode("text", source.period),
-      binding: "period",
-      y: 0.86,
-      height: 0.05,
-      fontSize: 0.03,
-      color: template.ink,
-    });
+    nodes.push(text(source.period, { binding: "period", fontStyle: "normal" }));
   if (source.conditions)
-    nodes.push({
-      ...createStudioNode("text", source.conditions),
-      binding: "conditions",
-      y: 0.85,
-      height: 0.06,
-      fontSize: 0.021,
-      color: template.ink,
-    });
+    nodes.push(
+      text(source.conditions, { binding: "conditions", fontStyle: "normal" }),
+    );
   if (source.validUntil)
-    nodes.push({
-      ...createStudioNode("text", studioValidity(source)),
-      binding: "validity",
-      y: 0.91,
-      height: 0.05,
-      fontSize: 0.025,
-      color: template.ink,
-    });
+    nodes.push(
+      text(studioValidity(source), {
+        binding: "validity",
+        fontStyle: "normal",
+      }),
+    );
   if (!source.priceLabel)
-    nodes.push({
-      ...createStudioNode("text", "Conoce más"),
-      y: 0.8,
-      height: 0.1,
-      color: template.accent,
-      fontSize: 0.055,
-    });
-  return reflowStudioScene(
+    nodes.push(text("Conoce más", { role: "cta", color: template.accent }));
+  return arrangeStudioScene(
     {
       schemaVersion: 1,
-      format: "square",
+      format,
+      template: template.id,
       background: template.background,
       nodes,
     },
-    format,
+    template.layout,
   );
 }
 
@@ -167,63 +121,21 @@ export function reflowStudioScene(
   format: StudioFormat,
 ): StudioScene {
   if (scene.format === format) return scene;
-  const banner = format === "banner",
-    from = STUDIO_FORMATS[scene.format],
+  const from = STUDIO_FORMATS[scene.format],
     to = STUDIO_FORMATS[format],
     fontScale = to.width / to.height / (from.width / from.height);
-  return {
+  return arrangeStudioScene({
     ...scene,
     format,
-    nodes: scene.nodes.map((node) => {
-      if (node.kind === "logo")
-        return { ...node, x: 0.8, y: 0.04, width: 0.14, height: 0.1 };
-      if (node.kind === "image")
-        return {
-          ...node,
-          x: banner ? 0.52 : 0.08,
-          y: banner ? 0.08 : 0.3,
-          width: banner ? 0.42 : 0.84,
-          height: banner ? 0.84 : 0.4,
-        };
-      if (node.kind === "shape" || node.kind === "qr" || !node.binding)
-        return {
-          ...node,
-          fontSize: Math.max(0.005, Math.min(0.5, node.fontSize * fontScale)),
-        };
-      const positions = banner
+    nodes: scene.nodes.map((node) =>
+      ["text", "price"].includes(node.kind) && !studioSlotKey(node)
         ? {
-            name: { y: 0.08, height: 0.25 },
-            price: { y: 0.57, height: 0.18 },
-            badge: { y: 0.38, height: 0.1 },
-            validity: { y: 0.91, height: 0.04 },
-            period: { y: 0.78, height: 0.06 },
-            conditions: { y: 0.78, height: 0.1 },
+            ...node,
+            fontSize: Math.max(0.005, Math.min(0.5, node.fontSize * fontScale)),
           }
-        : {
-            name: { y: 0.05, height: 0.16 },
-            price: { y: 0.74, height: 0.1 },
-            badge: { y: 0.23, height: 0.06 },
-            validity: { y: 0.92, height: 0.04 },
-            period: { y: 0.86, height: 0.04 },
-            conditions: { y: 0.85, height: 0.06 },
-          };
-      return {
-        ...node,
-        x: 0.06,
-        width: banner
-          ? 0.43
-          : node.binding === "name" &&
-              scene.nodes.some((n) => n.kind === "logo")
-            ? 0.67
-            : 0.86,
-        ...positions[node.binding],
-        fontSize: Math.max(
-          0.005,
-          Math.min(node.fontSize * fontScale, banner ? 0.15 : 0.095),
-        ),
-      };
-    }),
-  };
+        : node,
+    ),
+  });
 }
 
 function luminance(hex: string): number {
@@ -322,4 +234,11 @@ export function applyStudioFinding(
       return node;
     }),
   };
+}
+
+/** Applies every automatic fix the local review offers, in one step. */
+export function applyStudioFindings(scene: StudioScene): StudioScene {
+  return reviewStudioScene(scene)
+    .filter((finding) => finding.action)
+    .reduce(applyStudioFinding, scene);
 }

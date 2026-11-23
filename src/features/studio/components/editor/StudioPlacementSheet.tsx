@@ -258,7 +258,7 @@ export function StudioPlacementSheet({
           onClick={() => void prepare()}
         >
           <Eye className="h-4 w-4" />
-          {preparing ? "Preparando vistas…" : "Preparar vistas de los destinos"}
+          {preparing ? "Preparando…" : "Vista previa"}
         </button>
         <div className="grid gap-4 sm:grid-cols-2">
           {previews.map((p) => (
@@ -301,7 +301,7 @@ export function StudioPlacementSheet({
           disabled={!previews.length || preparing || form.submitting}
         >
           <Globe className="h-4 w-4" />
-          {form.submitting ? "Aplicando…" : "Aplicar las vistas revisadas"}
+          {form.submitting ? "Publicando…" : "Publicar"}
         </button>
       </form>
     </FormSheet>

@@ -4,6 +4,7 @@ import { Check, Download, Image as ImageIcon } from "lucide-react";
 import {
   adminActionButtonSecondary,
   adminActionButtonPrimary,
+  actionStack,
 } from "@/components/admin/actionButtonClasses";
 export function StudioVariantCompare({
   original,
@@ -51,14 +52,14 @@ export function StudioVariantCompare({
         vendes. Usar una variante cambia la imagen de esta composición, sin
         reemplazar el catálogo.
       </p>
-      <div className="flex flex-wrap gap-2">
+      <div className={actionStack}>
         <a
           href={result}
           download="variante"
           className={adminActionButtonSecondary}
         >
           <Download className="h-4 w-4" />
-          Descargar variante
+          Descargar
         </a>
         <button
           className={adminActionButtonSecondary}
@@ -66,7 +67,7 @@ export function StudioVariantCompare({
           disabled={disabled}
         >
           <ImageIcon className="h-4 w-4" />
-          Conservar anterior
+          Original
         </button>
         <button
           className={adminActionButtonPrimary}
@@ -74,7 +75,7 @@ export function StudioVariantCompare({
           disabled={disabled}
         >
           <Check className="h-4 w-4" />
-          Usar propuesta
+          Usar
         </button>
       </div>
     </section>

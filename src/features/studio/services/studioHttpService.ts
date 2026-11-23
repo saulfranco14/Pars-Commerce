@@ -17,6 +17,7 @@ import {
   saveStudioDesign,
 } from "./studioDesignService";
 import { listStudioSources } from "./studioSourceService";
+import { listStudioIdeas } from "./studioIdeaService";
 import {
   completeStudioAsset,
   getStudioAssetFile,
@@ -124,6 +125,10 @@ async function dispatchStudioRequest(request: Request, path: string[]) {
   const id = path[1] ? uuidSchema.safeParse(path[1]) : null;
   if (path[0] === "summary" && method === "GET")
     return getStudioSummary(tenantId);
+  if (path[0] === "ideas" && method === "GET") {
+    const { db, user } = await requireStudioAccess(tenantId, "studio.create");
+    return { items: await listStudioIdeas(db, user.id, tenantId) };
+  }
   if (path[0] === "sources" && method === "GET") {
     const type = z
       .enum(["product", "promotion", "subscription_plan", "custom"])

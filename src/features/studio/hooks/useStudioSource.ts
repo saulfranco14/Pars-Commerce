@@ -3,10 +3,14 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { useSchemaForm } from "@/lib/forms/useSchemaForm";
-import { createDesign, loadSources } from "../services/studioClientService";
+import {
+  createDesign,
+  loadIdeas,
+  loadSources,
+} from "../services/studioClientService";
 import { useStudioContext } from "../components/StudioProvider";
 import type { FieldSchema } from "@/lib/forms/fieldSchema";
-import type { StudioSourceType } from "../interfaces/studio";
+import type { StudioIdea, StudioSourceType } from "../interfaces/studio";
 
 const fields: FieldSchema[] = [
   {
@@ -28,7 +32,9 @@ export function useStudioSource(
   const [source, setSourceValue] = useState(initialSource),
     [sourceId, setSourceId] = useState<string | null>(initialId),
     [query, setQuery] = useState(""),
-    [cursor, setCursor] = useState<string | undefined>();
+    [cursor, setCursor] = useState<string | undefined>(),
+    [startingIdea, setStartingIdea] = useState<StudioIdea["key"] | null>(null),
+    [ideaError, setIdeaError] = useState<string | null>(null);
   const key = useRef<string | null>(null);
   const sources = useSWR(
     source === "custom"
@@ -36,22 +42,53 @@ export function useStudioSource(
       : ["studio-sources", tenantId, source, query, cursor],
     () => loadSources(tenantId, source, query, cursor),
   );
+  const ideas = useSWR(quick ? null : ["studio-ideas", tenantId], () =>
+    loadIdeas(tenantId),
+  );
+  async function create(
+    type: StudioSourceType,
+    id: string | null,
+    title: string,
+    idempotencyKey: string,
+    open = quick,
+  ) {
+    const design = await createDesign({
+      tenant_id: tenantId,
+      source_type: type,
+      source_id: id,
+      title,
+      idempotency_key: idempotencyKey,
+    });
+    await refresh();
+    router.push(
+      `/dashboard/${tenantSlug}/studio/disenos/${design.id}${open ? "?compartir=1" : ""}`,
+    );
+  }
   const form = useSchemaForm<{ title: string }>(fields, async (values) => {
     if (source !== "custom" && !sourceId)
       throw new Error("Selecciona qué vas a anunciar.");
     key.current ??= crypto.randomUUID();
-    const design = await createDesign({
-      tenant_id: tenantId,
-      source_type: source,
-      source_id: sourceId,
-      title: values.title,
-      idempotency_key: key.current,
-    });
-    await refresh();
-    router.push(
-      `/dashboard/${tenantSlug}/studio/disenos/${design.id}${quick ? "?compartir=1" : ""}`,
-    );
+    await create(source, sourceId, values.title, key.current);
   });
+  async function startIdea(idea: StudioIdea) {
+    if (startingIdea) return;
+    setStartingIdea(idea.key);
+    setIdeaError(null);
+    try {
+      await create(
+        idea.sourceType,
+        idea.sourceId,
+        idea.title,
+        crypto.randomUUID(),
+        false,
+      );
+    } catch (e) {
+      setIdeaError(
+        e instanceof Error ? e.message : "No pudimos preparar esta idea.",
+      );
+      setStartingIdea(null);
+    }
+  }
   const started = useRef(false);
   useEffect(() => {
     if (quick && initialId && summary?.enabled && !started.current) {
@@ -84,6 +121,12 @@ export function useStudioSource(
     hasNext: Boolean(sources.data?.nextCursor),
     isLoading: sources.isLoading,
     sourceError: sources.error,
+    ideas: ideas.data ?? [],
+    ideasLoading: ideas.isLoading,
+    startIdea,
+    startingIdea,
+    ideaError,
+    busy: form.submitting || Boolean(startingIdea),
     form,
   };
 }

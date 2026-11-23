@@ -180,6 +180,7 @@ export default function StudioCanvas({
   readOnly,
   onSelect,
   onChange,
+  preview = false,
 }: StudioCanvasProps) {
   const container = useRef<HTMLDivElement>(null),
     stage = useRef<Konva.Stage>(null),
@@ -194,11 +195,13 @@ export default function StudioCanvas({
   useEffect(() => {
     if (!container.current) return;
     const observer = new ResizeObserver(([entry]) =>
-      setWidth(Math.min(760, Math.max(200, entry.contentRect.width))),
+      setWidth(
+        Math.min(760, Math.max(preview ? 40 : 200, entry.contentRect.width)),
+      ),
     );
     observer.observe(container.current);
     return () => observer.disconnect();
-  }, []);
+  }, [preview]);
   useEffect(() => {
     const node = selectedId ? stage.current?.findOne(`#${selectedId}`) : null;
     transformer.current?.nodes(
@@ -215,8 +218,13 @@ export default function StudioCanvas({
     <div
       ref={container}
       className="w-full"
-      role="region"
-      aria-label="Lienzo del anuncio. Usa el panel de capas y propiedades para editar con teclado."
+      role={preview ? undefined : "region"}
+      aria-hidden={preview || undefined}
+      aria-label={
+        preview
+          ? undefined
+          : "Lienzo del anuncio. Usa el panel de capas y propiedades para editar con teclado."
+      }
     >
       <div
         className="relative mx-auto overflow-hidden rounded-lg border border-border shadow-sm"
@@ -224,6 +232,7 @@ export default function StudioCanvas({
       >
         <Stage
           ref={stage}
+          listening={!preview}
           width={width}
           height={height}
           onMouseDown={(e) => {
@@ -265,6 +274,7 @@ export default function StudioCanvas({
                 }}
               />
             ))}
+            {!preview && (
             <Rect
               x={width * 0.04}
               y={height * 0.04}
@@ -276,6 +286,7 @@ export default function StudioCanvas({
               opacity={0.4}
               listening={false}
             />
+            )}
             {selectedId && (
               <>
                 <Line

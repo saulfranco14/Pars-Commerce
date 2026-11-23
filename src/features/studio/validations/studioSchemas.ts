@@ -21,6 +21,7 @@ export const studioNodeSchema = z
     binding: z
       .enum(["name", "price", "badge", "validity", "period", "conditions"])
       .optional(),
+    role: z.enum(["headline", "tagline", "cta"]).optional(),
     color,
     fill: color,
     fontSize: z.number().finite().min(0.005).max(0.5),
@@ -44,6 +45,7 @@ export const studioSceneSchema = z
   .object({
     schemaVersion: z.literal(1),
     format: z.enum(["square", "portrait", "story", "banner"]),
+    template: z.enum(["clean", "premium", "offer", "fresh"]).optional(),
     background: color,
     nodes: z
       .array(studioNodeSchema)

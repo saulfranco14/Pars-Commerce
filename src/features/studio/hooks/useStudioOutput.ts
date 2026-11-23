@@ -122,38 +122,49 @@ export function useStudioOutput(input: {
       );
     }
   }
-  async function share() {
-    if (!output) return;
-    const file = new File([output.blob], `${input.title || "anuncio"}.png`, {
-      type: "image/png",
-    });
-    if (!navigator.share || !navigator.canShare?.({ files: [file] })) {
-      download();
-      setSuccess(
-        "Descarga iniciada. Abre tu red social y adjunta el PNG manualmente.",
-      );
-      return;
-    }
-    void audit("share_sheet_opened", "native");
+  const message = [input.copy, input.destination].filter(Boolean).join("\n"),
+    whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  function imageFile() {
+    return output
+      ? new File([output.blob], `${input.title || "anuncio"}.png`, {
+          type: "image/png",
+        })
+      : null;
+  }
+  const canShareFiles = (file: File) =>
+    "share" in navigator && Boolean(navigator.canShare?.({ files: [file] }));
+  async function shareFile(file: File, target: string) {
+    void audit("share_sheet_opened", target);
     try {
-      await navigator.share({
-        files: [file],
-        title: input.title,
-        text: [input.copy, input.destination].filter(Boolean).join("\n"),
-      });
-      void audit("share_sheet_completed", "native");
-      setSuccess(
-        "El archivo se entregó a la opción de compartir. Revisa su envío en la aplicación elegida.",
-      );
+      await navigator.share({ files: [file], title: input.title, text: message });
+      void audit("share_sheet_completed", target);
+      setSuccess("Listo. Revisa el envío en la aplicación que elegiste.");
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") {
-        void audit("share_sheet_cancelled", "native");
+        void audit("share_sheet_cancelled", target);
         return;
       }
       setError(
-        "No pudimos compartir el archivo. Puedes descargarlo y adjuntarlo manualmente.",
+        "No pudimos compartir el archivo. Descárgalo y adjúntalo a mano.",
       );
     }
+  }
+  async function share() {
+    const file = imageFile();
+    if (!file) return;
+    if (canShareFiles(file)) return shareFile(file, "native");
+    download();
+    setSuccess("Descargamos la imagen. Súbela desde tu red social.");
+  }
+  /** Phones get the share sheet with image and text; elsewhere the image downloads and WhatsApp opens with the text. */
+  async function shareWhatsapp() {
+    const file = imageFile();
+    if (!file) return;
+    if (canShareFiles(file)) return shareFile(file, "whatsapp");
+    download();
+    void audit("whatsapp_opened", "whatsapp");
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    setSuccess("Descargamos la imagen. Adjúntala en el chat de WhatsApp.");
   }
   return {
     output,
@@ -168,7 +179,6 @@ export function useStudioOutput(input: {
     download,
     copyText,
     share,
-    whatsappUrl: `https://wa.me/?text=${encodeURIComponent([input.copy, input.destination].filter(Boolean).join("\n"))}`,
-    recordWhatsapp: () => void audit("whatsapp_opened", "whatsapp"),
+    shareWhatsapp,
   };
 }

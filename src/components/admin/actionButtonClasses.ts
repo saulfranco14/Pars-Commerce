@@ -47,3 +47,10 @@ export const pageHeaderCtaDesktop = `hidden md:inline-flex ${pageHeaderCtaLook}`
 
 /** Secondary page-level link (e.g. Studio entry points): full width on phones. */
 export const pageSecondaryAction = `${adminActionButtonSecondary} w-full sm:w-auto`;
+
+/** Two actions side by side: equal halves on phones, content width from `sm`. */
+export const actionPair =
+  "grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end";
+
+/** Three or more actions: one per row on phones, a wrapped row from `sm`. */
+export const actionStack = "grid grid-cols-1 gap-2 sm:flex sm:flex-wrap";

@@ -347,6 +347,47 @@ bot de Telegram, WhatsApp a un toque, correo desde Gmail y embudo en
 
 ---
 
+## Ancho de botones (todo el producto)
+
+Un botón con texto nunca queda "a medio ancho" en el teléfono ni con un
+ancho distinto al de su vecino. Clases en
+`@/components/admin/actionButtonClasses`:
+
+- **Teléfono (< `sm`):** todo botón con texto ocupa el ancho de su
+  contenedor (`w-full`).
+  - Uno solo → `w-full sm:w-auto` (`pageSecondaryAction` / `pageHeaderCta`).
+  - Dos juntos → contenedor `actionPair`: dos mitades iguales, secundaria a
+    la izquierda y principal a la derecha.
+  - Tres o más → contenedor `actionStack`: uno por renglón, el principal
+    primero. Si son destinos (compartir, descargar…), mejor una cuadrícula
+    de tarjetas 2×2 que una lista de botones.
+- **Desde `sm`:** ancho del contenido; el grupo alineado a un solo borde,
+  la acción principal al final (derecha).
+- **Barra fija abajo (sticky):** en teléfono una sola principal `w-full` o
+  un `actionPair`. Nunca un botón suelto pegado a un lado.
+- Los botones de solo ícono (`adminActionButtonIcon`) no entran en la
+  regla: siempre cuadrados de 44px.
+- No mezcles `flex flex-wrap` con botones de texto en teléfono: el wrap deja
+  renglones disparejos (un botón ancho y uno angosto). Usa las clases de
+  grupo.
+
+### Texto del botón: una palabra, un renglón
+
+- La etiqueta es **una palabra clara**: el verbo o el destino. `Guardar`,
+  `Compartir`, `Descargar`, `Copiar`, `Editar`, `Crear`, `Cotizar`,
+  `Publicar`, `Siguiente`, `Atrás`, `Listo`, `WhatsApp`.
+- Dos palabras solo si una sola no se entiende (`Subir logo`, `Mi sitio`).
+  Nunca una frase: nada de `Ver costo y crear`, `Aplicar las vistas
+  revisadas`, `Conservar como copia`.
+- **Nunca dos renglones.** Si no cabe, la etiqueta es demasiado larga: el
+  título o el texto de la tarjeta explica el resto.
+- El costo, la cantidad o la condición van fuera del botón (en el texto de
+  la tarjeta o en el diálogo de confirmación), no en la etiqueta:
+  `Mejorar` + "Desde 1 Tlaco" debajo, no `Mejorar con IA · 1 Tlaco`.
+- Estados de carga igual de cortos: `Guardando…`, `Publicando…`.
+
+---
+
 ## Organización de imports
 
 ```ts

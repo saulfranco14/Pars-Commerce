@@ -231,3 +231,13 @@ export interface StudioBrand {
   font: "Arial" | "Georgia" | "Verdana";
   default_format: StudioScene["format"];
 }
+
+/** A ready-to-design suggestion built from the tenant's own catalog. */
+export interface StudioIdea {
+  key: "top_product" | "active_promotion" | "notice";
+  sourceType: StudioSourceType;
+  sourceId: string | null;
+  title: string;
+  detail: string;
+  imageUrl: string | null;
+}

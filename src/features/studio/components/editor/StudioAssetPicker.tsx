@@ -43,8 +43,7 @@ export function StudioAssetPicker({
             )}
           </div>
           <p className="p-3 text-xs font-semibold">
-            {asset.kind === "generated" ? "Variante IA" : "Original"} · Usar
-            imagen
+            {asset.kind === "generated" ? "Variante IA" : "Original"}
           </p>
         </button>
       ))}

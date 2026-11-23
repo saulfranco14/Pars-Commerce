@@ -5,6 +5,7 @@ import {
   uploadStudioAsset,
 } from "../services/studioClientService";
 import { createStudioNode } from "../helpers/scene";
+import { arrangeStudioScene } from "../helpers/layout";
 import type { StudioAsset, StudioDesignDetail } from "../interfaces/studio";
 import type { StudioNode, StudioScene } from "../interfaces/scene";
 
@@ -73,7 +74,12 @@ export function useStudioAssets(
           ],
     );
   }
-  async function upload(file: File, kind: "image" | "logo" = "image") {
+  /** `replace` swaps the ad's current photo or logo instead of adding a new layer. */
+  async function upload(
+    file: File,
+    kind: "image" | "logo" = "image",
+    replace = false,
+  ) {
     setBusy(true);
     setError(null);
     try {
@@ -97,10 +103,30 @@ export function useStudioAssets(
         width: kind === "logo" ? 0.16 : 0.84,
         height: kind === "logo" ? 0.12 : 0.45,
       };
-      setScene({
-        ...currentScene.current,
-        nodes: [...currentScene.current.nodes, node],
-      });
+      const current = currentScene.current,
+        target = replace
+          ? current.nodes.find((n) => n.kind === kind)
+          : undefined;
+      if (target)
+        setScene({
+          ...current,
+          nodes: current.nodes.map((n) =>
+            n === target
+              ? {
+                  ...n,
+                  assetId: result.assetId,
+                  imageUrl: undefined,
+                  cropX: 0.5,
+                  cropY: 0.5,
+                  cropScale: 1,
+                }
+              : n,
+          ),
+        });
+      else {
+        const next = { ...current, nodes: [...current.nodes, node] };
+        setScene(replace ? arrangeStudioScene(next) : next);
+      }
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "No pudimos subir la fotografía.",

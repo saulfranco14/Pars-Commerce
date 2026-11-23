@@ -6,6 +6,10 @@ export type StudioNodeKind =
   | "logo"
   | "qr"
   | "shape";
+export type StudioTemplateId = "clean" | "premium" | "offer" | "fresh";
+export type StudioLayout = "stack" | "price" | "split";
+/** Managed copy that is not bound to the catalog: an overridden name, a short phrase or a call to action. */
+export type StudioRole = "headline" | "tagline" | "cta";
 export type StudioBinding =
   | "name"
   | "price"
@@ -28,6 +32,7 @@ export interface StudioNode {
   assetId?: string;
   imageUrl?: string;
   binding?: StudioBinding;
+  role?: StudioRole;
   color: string;
   fill: string;
   fontSize: number;
@@ -50,6 +55,7 @@ export interface StudioNode {
 export interface StudioScene {
   schemaVersion: 1;
   format: StudioFormat;
+  template?: StudioTemplateId;
   background: string;
   nodes: StudioNode[];
 }

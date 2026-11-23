@@ -11,6 +11,7 @@ import type {
   StudioBrand,
   StudioDesign,
   StudioDesignDetail,
+  StudioIdea,
   StudioJob,
   StudioPlacement,
   StudioQuote,
@@ -77,6 +78,12 @@ export async function loadSources(
     items: Array<{ id: string; name: string }>;
     nextCursor: string | null;
   };
+}
+export async function loadIdeas(tenantId: string): Promise<StudioIdea[]> {
+  const result = (await apiFetch(`/api/studio/ideas?${query(tenantId)}`)) as {
+    items: StudioIdea[];
+  };
+  return result.items;
 }
 export async function loadLibrary(
   tenantId: string,

@@ -72,9 +72,12 @@ export function StudioGenerationSheet({
             tu fotografía, continúa con la foto intacta y cambia la plantilla o
             el fondo manualmente.
           </p>
-          <button disabled={ai.form.submitting} className={adminActionButtonAi}>
+          <button
+            disabled={ai.form.submitting}
+            className={`${adminActionButtonAi} w-full`}
+          >
             <Sparkles className="h-4 w-4" />
-            {ai.form.submitting ? "Consultando costo…" : "Revisar costo"}
+            {ai.form.submitting ? "Cotizando…" : "Cotizar"}
           </button>
         </form>
       </FormSheet>
@@ -84,7 +87,7 @@ export function StudioGenerationSheet({
         onConfirm={ai.confirm}
         title={`Esta generación cuesta ${ai.quote?.cost ?? 0} ${ai.quote?.cost === 1 ? "Tlaco" : "Tlacos"}`}
         description="Reservaremos el saldo al confirmar. Se consume cuando la imagen está lista; un fallo definitivo libera la reserva."
-        confirmLabel="Confirmar generación"
+        confirmLabel="Crear"
         loading={ai.busy}
         icon={Sparkles}
       />

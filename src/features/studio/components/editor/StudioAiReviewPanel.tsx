@@ -73,24 +73,24 @@ export function StudioAiReviewPanel({
             <p className="text-xs leading-5">{finding.message}</p>
             {finding.action && (
               <button
-                className={`${adminActionButtonSecondary} mt-2`}
+                className={`${adminActionButtonSecondary} mt-2 w-full sm:w-auto`}
                 disabled={disabled}
                 onClick={() => onApply(finding)}
               >
                 <Wrench className="h-4 w-4" />
-                Corregir · 0 Tlacos
+                Corregir
               </button>
             )}
           </div>
         ))
       )}
       <button
-        className={adminActionButtonAi}
+        className={`${adminActionButtonAi} w-full sm:w-auto`}
         disabled={!enabled || disabled || busy}
         onClick={() => setConsent(true)}
       >
         <ScanEye className="h-4 w-4" />
-        {busy ? "Evaluando…" : "Evaluar con visión IA"}
+        {busy ? "Analizando…" : "Analizar"}
       </button>
       {!enabled && (
         <p className="text-xs text-muted-foreground">
@@ -132,7 +132,7 @@ export function StudioAiReviewPanel({
         onClose={() => setConsent(false)}
         title="Analizar esta composición con IA"
         description="Enviaremos una imagen de tu anuncio al proveedor configurado. Se incluyen hasta dos diagnósticos por diseño, sujetos a tu cuota mensual. No consume Tlacos."
-        confirmLabel="Aceptar y evaluar"
+        confirmLabel="Analizar"
         loading={busy}
         onConfirm={evaluate}
         icon={ScanEye}
