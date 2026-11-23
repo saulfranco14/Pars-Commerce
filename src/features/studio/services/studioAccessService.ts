@@ -7,8 +7,8 @@ import { isStudioMembershipActive } from "../helpers/access";
 import type { StudioMembership, StudioPermission } from "../interfaces/studio";
 
 /**
- * `write`: `"create"` needs Studio switched on (designing is free); `true`
- * also needs an active membership (AI, placements, brand).
+ * `write`: `"create"` needs Studio switched on (designing, AI and publishing
+ * are free; AI spends Tlacos); `true` also needs an active membership.
  */
 export async function requireStudioAccess(
   tenantId: string,

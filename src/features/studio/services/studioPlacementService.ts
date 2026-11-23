@@ -40,7 +40,7 @@ export async function applyStudioPlacements(raw: unknown) {
   const { db, user } = await requireStudioAccess(
     input.tenant_id,
     "studio.publish",
-    true,
+    "create",
   );
   if (!studioFlags().publish) throw new StudioError("NOT_CONFIGURED");
   if (

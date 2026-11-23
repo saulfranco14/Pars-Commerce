@@ -105,6 +105,8 @@ export const STUDIO_SURFACES: Record<
   StudioSurface,
   {
     label: string;
+    /** Where the person's customers will see it. */
+    hint: string;
     channel: "public_store" | "table_qr";
     format: StudioFormat;
     sources: StudioSourceType[];
@@ -112,48 +114,56 @@ export const STUDIO_SURFACES: Record<
 > = {
   store_home_campaign: {
     label: "Campaña en portada",
+    hint: "Arriba en tu tienda en línea: lo primero que ven.",
     channel: "public_store",
     format: "banner",
     sources: ["product", "promotion", "subscription_plan", "custom"],
   },
   promotion_card: {
     label: "Tarjeta de promoción",
+    hint: "En la lista de promociones de tu tienda.",
     channel: "public_store",
     format: "square",
     sources: ["promotion"],
   },
   promotion_detail: {
     label: "Detalle de promoción",
+    hint: "Al abrir la promoción en tu tienda.",
     channel: "public_store",
     format: "portrait",
     sources: ["promotion"],
   },
   product_campaign: {
     label: "Detalle del producto",
+    hint: "Al abrir este producto en tu tienda.",
     channel: "public_store",
     format: "banner",
     sources: ["product"],
   },
   plan_card: {
     label: "Tarjeta del plan",
+    hint: "En la lista de planes de tu tienda.",
     channel: "public_store",
     format: "square",
     sources: ["subscription_plan"],
   },
   plan_detail: {
     label: "Detalle del plan",
+    hint: "Al abrir el plan en tu tienda.",
     channel: "public_store",
     format: "banner",
     sources: ["subscription_plan"],
   },
   qr_promotion: {
     label: "Promoción en mesas / QR",
+    hint: "En la pantalla que ven tus clientes al escanear el QR.",
     channel: "table_qr",
     format: "banner",
     sources: ["promotion"],
   },
   qr_menu_campaign: {
     label: "Campaña en mesas / QR",
+    hint: "Arriba en la pantalla del QR de tus mesas.",
     channel: "table_qr",
     format: "banner",
     sources: ["product", "promotion", "subscription_plan", "custom"],

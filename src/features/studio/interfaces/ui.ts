@@ -2,7 +2,10 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { useStudioAssets } from "../hooks/useStudioAssets";
 import type { useStudioEditor } from "../hooks/useStudioEditor";
-import type { useStudioOutput } from "../hooks/useStudioOutput";
+import type {
+  StudioPreparedOutput,
+  useStudioOutput,
+} from "../hooks/useStudioOutput";
 import type {
   StudioAsset,
   StudioDesignDetail,
@@ -258,4 +261,14 @@ export interface StudioBatchProgressProps {
   error: string | null;
   base: string;
   onReset: () => void;
+}
+export interface StudioPlacementSheetProps {
+  open: boolean;
+  onClose: () => void;
+  output: StudioPreparedOutput;
+  tenantId: string;
+  assets: StudioAsset[];
+  title: string;
+  destination: string;
+  onSuccess: (message: string) => void;
 }
