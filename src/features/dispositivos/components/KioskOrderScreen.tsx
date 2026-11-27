@@ -42,7 +42,7 @@ export function KioskOrderScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { data, isLoading } = useSWR<KioskCatalog>(
+  const { data, isLoading, mutate } = useSWR<KioskCatalog>(
     "/api/kiosk/catalog",
     swrFetcher,
   );
@@ -75,7 +75,9 @@ export function KioskOrderScreen() {
     setScheduledFor("");
     setTicket(null);
     setError(null);
-  }, [cart]);
+    // Back on the waiting screen, newly published ads show up without a reload.
+    void mutate();
+  }, [cart, mutate]);
 
   // El reloj corre solo mientras el cliente arma su pedido: en la portada no hay
   // nada que borrar y en el ticket el cliente lo está fotografiando.
@@ -163,8 +165,13 @@ export function KioskOrderScreen() {
       <KioskAttractScreen
         tenantName={tenantName}
         tenantLogoUrl={tenantLogoUrl}
-        products={products}
-        onStart={() => setStarted(true)}
+        products={displayProducts}
+        ads={data?.ads ?? []}
+        onStart={(productId) => {
+          setStarted(true);
+          const picked = displayProducts.find((p) => p.id === productId);
+          if (picked) setDetail(picked);
+        }}
       />
     );
   }

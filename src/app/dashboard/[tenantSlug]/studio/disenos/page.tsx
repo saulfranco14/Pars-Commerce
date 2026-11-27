@@ -1,4 +1,4 @@
-import { StudioLibrary } from "@/features/studio/components/StudioLibrary";
+import { StudioAdsPage } from "@/features/studio/components/StudioAdsPage";
 export default function Page() {
-  return <StudioLibrary />;
+  return <StudioAdsPage />;
 }

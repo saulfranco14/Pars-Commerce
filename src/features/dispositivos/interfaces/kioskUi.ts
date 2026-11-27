@@ -1,5 +1,5 @@
 import type { KioskCartLine } from "@/features/dispositivos/hooks/useKioskCart";
-import type { KioskCategory } from "@/features/dispositivos/interfaces/kiosk";
+import type { KioskAd, KioskCategory } from "@/features/dispositivos/interfaces/kiosk";
 import type { BusinessHours } from "@/features/configuracion/interfaces/businessHours";
 import type { PickupSchedulingConfig } from "@/features/checkout/interfaces/pickupSchedule";
 import type { MenuItem } from "@/features/qr/interfaces/tableCart";
@@ -18,7 +18,10 @@ export interface KioskAttractScreenProps {
   tenantLogoUrl: string | null;
   /** Fotos que desfilan de fondo. Sin fotos cae a un fondo de marca. */
   products: MenuItem[];
-  onStart: () => void;
+  /** Con anuncios de Studio, la pantalla los pasa uno por uno. */
+  ads: KioskAd[];
+  /** Tocar mientras se ve un anuncio abre ese producto. */
+  onStart: (productId?: string) => void;
 }
 
 export interface KioskCategoryRailProps {
@@ -65,4 +68,13 @@ export interface KioskCartPanelProps {
   businessHours: BusinessHours | null;
   scheduledFor: string;
   onScheduleChange: (value: string) => void;
+}
+
+export interface KioskAdReelProps {
+  tenantName: string;
+  tenantLogoUrl: string | null;
+  ads: KioskAd[];
+  /** Para el nombre y el precio en vivo junto al anuncio. */
+  products: MenuItem[];
+  onStart: (productId?: string) => void;
 }

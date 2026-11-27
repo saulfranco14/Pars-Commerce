@@ -5,7 +5,10 @@ import type { useStudioEditor } from "../hooks/useStudioEditor";
 import type { useStudioPhotos } from "../hooks/useStudioPhotos";
 import type { useStudioDesigns } from "../hooks/useStudioDesigns";
 import type { useStudioAd } from "../hooks/useStudioAd";
-import type { STUDIO_AD_AI_TEXT } from "../constants/studio";
+import type {
+  STUDIO_AD_AI_TEXT,
+  StudioAdStatus,
+} from "../constants/studio";
 import type {
   StudioPreparedOutput,
   useStudioOutput,
@@ -21,6 +24,7 @@ import type {
   StudioSource,
   StudioSummary,
   StudioSurface,
+  StudioVersion,
 } from "./studio";
 import type {
   StudioDesignId,
@@ -196,6 +200,8 @@ export interface StudioShareTileProps {
   detail: string;
   tone?: "accent" | "success";
   disabled?: boolean;
+  /** The image is still being made: the tile looks normal and shows progress. */
+  waiting?: boolean;
   onClick: () => void;
 }
 export type StudioEditorState = ReturnType<typeof useStudioEditor>;
@@ -229,6 +235,8 @@ export interface StudioAdvancedEditorProps extends StudioWorkspaceParts {
 export interface StudioEditorNoticesProps {
   editor: StudioEditorState;
   stale: boolean;
+  /** Taking the catalog's new data on its own; the manual notice waits. */
+  updating?: boolean;
   locked: boolean;
   errors: Array<string | null>;
   onRefresh: () => Promise<unknown>;
@@ -317,7 +325,6 @@ export interface StudioAiToggleProps {
   reason: "ready" | "inactive" | "empty";
   rechargeHref: string;
 }
-export type StudioHomeTab = "catalog" | "ads";
 export type StudioAdAiKind = keyof typeof STUDIO_AD_AI_TEXT;
 export type StudioDesignsState = ReturnType<typeof useStudioDesigns>;
 export interface StudioAdInput extends StudioPhotoInput {
@@ -370,6 +377,16 @@ export interface StudioAdViewProps extends StudioWorkspaceParts {
   autoAi: boolean;
   saveText: string;
   onByHand: () => void;
+  /** The saved version that still matches the ad; it opens ready to share. */
+  reusable: StudioVersion | null;
+  lastSharedAt: string | null;
+  /** The ad is taking the product's new name and price. */
+  updating: boolean;
+}
+export interface StudioAdReadyProps {
+  scene: StudioScene;
+  assets: StudioAsset[];
+  tenantId: string;
 }
 export type StudioChangeTab = "design" | "photo" | "phrase";
 export type StudioPublishPhase = "drawing" | "uploading" | "ready";
@@ -398,4 +415,26 @@ export interface StudioAdsSectionProps {
   canPublish: boolean;
   /** After a bulk publish, so the summary catches up. */
   onChanged: () => void;
+}
+export interface StudioAdCardProps {
+  design: StudioDesign;
+  state: StudioAdStatus;
+  href: string;
+  tenantId: string;
+  selecting: boolean;
+  picked: boolean;
+  /** Why it cannot be picked; null when it can. */
+  blocked: string | null;
+  sent: boolean;
+  onToggle: () => void;
+}
+export interface StudioMultiShareSheetProps {
+  open: boolean;
+  onClose: () => void;
+  count: number;
+  /** Some picked images are still being made. */
+  waiting: boolean;
+  busy: boolean;
+  error: string | null;
+  onShare: (kind: "chats" | "status") => void;
 }

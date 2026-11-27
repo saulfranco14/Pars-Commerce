@@ -107,7 +107,7 @@ export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPag
     showcase: items
       .filter((item) => item.imageUrl)
       .slice(0, 3)
-      .map((item) => ({ id: item.id, name: item.name, price: item.price, image: item.imageUrl as string, href: "#productos" })),
+      .map((item) => ({ id: item.id, name: item.name, price: item.price, image: item.imageUrl as string, ad: false, href: "#productos" })),
     counts: {
       products: pool.filter((item) => item.type === "product").length,
       services: pool.filter((item) => item.type === "service").length,

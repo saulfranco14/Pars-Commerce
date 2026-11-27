@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import useSWRInfinite from "swr/infinite";
 import { useStudioContext } from "../components/StudioProvider";
 import {
@@ -84,6 +84,7 @@ export function useStudioLibrary() {
     });
   }
   return {
+    refresh: useCallback(() => mutate(), [mutate]),
     items: data?.flatMap((page) => page.items) ?? [],
     isLoading,
     error: error ?? loadError?.message,

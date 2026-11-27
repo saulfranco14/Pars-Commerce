@@ -15,7 +15,6 @@ import { useStudioSizes } from "../../hooks/useStudioSizes";
 import { useStudioContext } from "../StudioProvider";
 import { FormSheet } from "@/components/ui/FormSheet";
 import { Notification } from "@/components/ui/Notification";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { StudioPlacementSheet } from "./StudioPlacementSheet";
 import { StudioScenePreview } from "./StudioScenePreview";
 import { StudioShareTile } from "./StudioShareTile";
@@ -65,7 +64,6 @@ export function StudioShareSheet({
   }, [open]);
 
   const image = prepared ? output.output : null,
-    ready = Boolean(image) && !disabled,
     storeUrl = editor.source.current.destinationUrl,
     publishable = Boolean(
       image &&
@@ -79,7 +77,8 @@ export function StudioShareSheet({
         ? "Necesitas permiso para publicar"
         : "En tu tienda en línea";
 
-  const sizes = useStudioSizes(image, assets, tenantId, open);
+  const sizes = useStudioSizes(image, assets, tenantId, Boolean(image)),
+    waiting = !image && !disabled;
 
   async function downloadSize(size: (typeof STUDIO_DOWNLOAD_SIZES)[number]) {
     if (!image || saving) return;
@@ -126,7 +125,7 @@ export function StudioShareSheet({
                   className={adminActionButtonSecondary}
                 >
                   <ExternalLink className="h-4 w-4" />
-                  Ver tienda
+                  Tienda
                 </a>
               ) : (
                 <button
@@ -153,7 +152,7 @@ export function StudioShareSheet({
                 ? "Ya lo ven tus clientes en tu tienda en línea."
                 : draft
                   ? "Va marcado como borrador porque la promoción no está vigente."
-                  : "Con tu anuncio y el mensaje listo. Lo encuentras en Tus anuncios."}
+                  : "Con tu anuncio y el mensaje listo. Lo encuentras en Anuncios."}
             </p>
           ) : choosing && image ? (
             <>
@@ -196,22 +195,33 @@ export function StudioShareSheet({
             </>
           ) : (
             <>
-              {image ? (
-                <div className="flex items-center gap-3 rounded-xl bg-emerald-500/10 p-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={image.url}
-                    alt=""
-                    className="h-12 w-12 rounded-lg object-cover"
-                  />
-                  Lista en alta calidad
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 rounded-xl bg-border-soft/60 p-3 text-sm text-muted-foreground">
-                  <Skeleton className="h-12 w-12 rounded-lg" />
-                  Preparando tu imagen en alta calidad…
-                </div>
-              )}
+              <div
+                className={`flex items-center gap-3 rounded-xl p-2 text-sm font-semibold ${image ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-accent/5 text-foreground"}`}
+                role="status"
+              >
+                <span className="relative block h-12 w-12 shrink-0 overflow-hidden rounded-lg">
+                  {image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={image.url}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <>
+                      <span className="studio-reveal pointer-events-none block">
+                        <StudioScenePreview
+                          scene={editor.scene}
+                          assets={assets}
+                          tenantId={tenantId}
+                        />
+                      </span>
+                      <span className="studio-reveal-light absolute inset-0" />
+                    </>
+                  )}
+                </span>
+                {image ? "Lista en alta calidad" : "Dejándola lista…"}
+              </div>
               {output.error && (
                 <Notification tone="error" message={output.error} />
               )}
@@ -221,7 +231,8 @@ export function StudioShareSheet({
                   tone="success"
                   title="WhatsApp"
                   detail="A tus clientes"
-                  disabled={!ready}
+                  disabled={disabled}
+                  waiting={waiting}
                   onClick={() =>
                     void output.shareWhatsapp().then(() => finish("whatsapp"))
                   }
@@ -229,10 +240,9 @@ export function StudioShareSheet({
                 <StudioShareTile
                   icon={Share2}
                   title="Estado"
-                  detail={
-                    sizes.story ? "Pantalla completa, 9:16" : "Preparando…"
-                  }
-                  disabled={!ready || !sizes.story}
+                  detail="Pantalla completa, 9:16"
+                  disabled={disabled}
+                  waiting={waiting || !sizes.story}
                   onClick={() =>
                     void output
                       .share(sizes.story!, "status")
@@ -243,14 +253,16 @@ export function StudioShareSheet({
                   icon={Globe}
                   title="Tu tienda"
                   detail={storeDetail}
-                  disabled={!ready || !publishable}
+                  disabled={Boolean(image) && !publishable}
+                  waiting={waiting}
                   onClick={() => setPlacementOpen(true)}
                 />
                 <StudioShareTile
                   icon={Download}
                   title="Descargar"
                   detail="Cuadrado, vertical o historia"
-                  disabled={!ready}
+                  disabled={disabled}
+                  waiting={waiting}
                   onClick={() => setChoosing(true)}
                 />
               </div>

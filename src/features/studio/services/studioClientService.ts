@@ -22,6 +22,7 @@ import type {
   StudioRunJob,
   StudioShelfItem,
   StudioSummary,
+  StudioSurface,
   StudioVersion,
 } from "../interfaces/studio";
 import type { StudioFormat } from "../interfaces/scene";
@@ -134,6 +135,7 @@ export async function loadRenders(
   Array<{
     id: string;
     asset_id: string;
+    design_version_id: string;
     url: string;
     format: StudioFormat;
     surface: string;
@@ -144,6 +146,7 @@ export async function loadRenders(
   )) as Array<{
     id: string;
     asset_id: string;
+    design_version_id: string;
     url: string;
     format: StudioFormat;
     surface: string;
@@ -235,6 +238,14 @@ export async function loadPlacements(
   return (await apiFetch(
     `/api/studio/placements?${query(tenantId)}`,
   )) as StudioPlacement[];
+}
+/** Published ads whose product changed and need drawing again. */
+export async function loadStaleAds(
+  tenantId: string,
+): Promise<Array<{ design_id: string; surfaces: StudioSurface[] }>> {
+  return (await apiFetch(
+    `/api/studio/placements/stale?${query(tenantId)}`,
+  )) as Array<{ design_id: string; surfaces: StudioSurface[] }>;
 }
 export async function removePlacement(tenantId: string, id: string) {
   return apiFetch("/api/studio/placements", {

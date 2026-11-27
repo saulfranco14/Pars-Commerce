@@ -40,7 +40,7 @@ export function StudioPublishedSheet({
               className={adminActionButtonSecondary}
             >
               <ExternalLink className="h-4 w-4" />
-              Ver tienda
+              Tienda
             </a>
           ) : (
             <button

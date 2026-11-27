@@ -5,7 +5,7 @@ export type StudioSourceType =
 export type StudioPlanCode = "basic" | "pro" | "business";
 export type StudioPermission =
   "studio.read" | "studio.create" | "studio.publish" | "studio.manage";
-export type StudioChannel = "public_store" | "table_qr";
+export type StudioChannel = "public_store" | "table_qr" | "kiosk";
 export type StudioSurface =
   | "store_home_campaign"
   | "promotion_card"
@@ -14,7 +14,9 @@ export type StudioSurface =
   | "plan_card"
   | "plan_detail"
   | "qr_promotion"
-  | "qr_menu_campaign";
+  | "qr_menu_campaign"
+  | "kiosk_story"
+  | "kiosk_card";
 export type StudioAiOperation = "improve_photo" | "style" | "variation";
 export type StudioQuality = "economy" | "premium";
 export type StudioJobStatus =
@@ -139,6 +141,8 @@ export interface StudioSummary {
   plans: StudioPlan[];
   packs: StudioPack[];
   recent: StudioDesign[];
+  /** The business has an approved kiosk, so «Tu kiosco» is offered when publishing. */
+  hasKiosk: boolean;
   counts: { designs: number; ready: number; placements: number };
   /** Design that used the one free export; null while it is still available. */
 }
@@ -147,6 +151,8 @@ export interface StudioDesignDetail {
   design: StudioDesign;
   source: StudioSource | null;
   stale: boolean;
+  /** Last time it went out by share sheet, WhatsApp or download. */
+  lastSharedAt: string | null;
   versions: StudioVersion[];
   assets: StudioAsset[];
 }
@@ -212,6 +218,8 @@ export interface StudioArtwork {
   alt: string;
   href: string | null;
   expiresAt: string | null;
+  /** When it was published, for newest-first lists. */
+  publishedAt: string;
   width: number;
   height: number;
 }

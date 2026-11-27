@@ -23,6 +23,7 @@ import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
 import { GrowthWorkspaceSync } from "@/features/growth/components/admin/GrowthWorkspaceSync";
 import { PROSPECTING_PATH } from "@/features/growth/constants/routes";
 import { LegalDeferredNotice } from "@/features/legal/components/LegalDeferredNotice";
+import { StudioAutoRefresh } from "@/features/studio/components/StudioAutoRefresh";
 
 export default function DashboardLayout({
   children,
@@ -122,6 +123,7 @@ export default function DashboardLayout({
   return (
     <div className="dashboard-root no-print flex min-h-screen bg-background">
       <Suspense fallback={null}><GrowthWorkspaceSync /></Suspense>
+      {activeTenantId && <StudioAutoRefresh tenantId={activeTenantId} />}
       <div className="no-print md:fixed md:left-0 md:top-0 md:z-20 md:h-screen md:w-64">
         <Sidebar
           tenantSlug={tenantSlug}

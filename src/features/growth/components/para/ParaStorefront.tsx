@@ -41,7 +41,7 @@ export function ParaStorefront({ token, data }: ParaInteractiveProps) {
               subtitle={hero.subtitle}
               imageUrl={null}
               showcase={data.showcase}
-              primary={{ href: "#productos", label: "Ver productos" }}
+              primary={{ href: "#productos", label: "Productos" }}
             />
 
             {data.items.length > 0 ? (

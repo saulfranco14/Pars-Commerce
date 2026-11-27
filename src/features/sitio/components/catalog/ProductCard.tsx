@@ -8,7 +8,7 @@ import { useCartAdd } from "@/features/sitio/hooks/useCartAdd";
 
 import { addItem } from "@/services/publicCartService";
 import { formatCurrency } from "@/features/qr/helpers/format";
-import { storeFocusRing } from "@/features/sitio/constants/storeClasses";
+import { storeDisplayFont, storeFocusRing } from "@/features/sitio/constants/storeClasses";
 import { productHref } from "@/features/sitio/helpers/storeLinks";
 
 import type { ProductCardProps } from "@/features/sitio/interfaces/storeComponents";
@@ -84,8 +84,11 @@ export function ProductCard({ product, promotion, tenantId, slug, priority = fal
               quality={75}
             />
           ) : (
-            <span className="flex h-full items-center justify-center">
-              <FallbackIcon className="h-10 w-10 text-(--store-ink-2) opacity-40" aria-hidden />
+            <span
+              aria-hidden
+              className={`flex h-full items-center justify-center bg-linear-to-br from-accent to-accent/75 text-6xl font-bold text-accent-foreground ${storeDisplayFont}`}
+            >
+              {product.name.trim().charAt(0).toUpperCase()}
             </span>
           )}
           {badge ? <span className={`absolute left-3 top-3 ${BADGE}`}>{badge}</span> : null}

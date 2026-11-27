@@ -51,15 +51,18 @@ export function resolveHeroCopy(
 }
 
 /** Products first: they are what a photo sells best. */
+/** Published Studio ads lead the hero, whole; the rest keep their photo. */
 export function pickShowcase(slug: string, products: CatalogItem[], services: CatalogItem[]): HeroShowcaseItem[] {
-  return [...products, ...services]
-    .filter((item) => item.image_urls.length > 0)
+  const items = [...products, ...services];
+  return [...items.filter((item) => item.studio_ad_url), ...items.filter((item) => !item.studio_ad_url)]
+    .filter((item) => item.studio_ad_url || item.image_urls.length > 0)
     .slice(0, 3)
     .map((item) => ({
       id: item.id,
       name: item.name,
       price: item.promotion?.finalPrice ?? Number(item.price),
-      image: item.image_urls[0],
+      image: item.studio_ad_url ?? item.image_urls[0],
+      ad: Boolean(item.studio_ad_url),
       href: productHref(slug, item),
     }));
 }

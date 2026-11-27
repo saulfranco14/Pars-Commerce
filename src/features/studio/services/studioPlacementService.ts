@@ -107,6 +107,59 @@ export async function listStudioPlacements(tenantId: string) {
   );
 }
 
+/**
+ * Ads whose product changed since they were published (price, name…): the
+ * store already stopped showing them, and the browser draws them again with
+ * the new data. Only the newest placement per ad and place counts, so an ad
+ * the merchant retired is never brought back.
+ */
+export async function listStaleStudioAds(
+  tenantId: string,
+): Promise<Array<{ design_id: string; surfaces: StudioSurface[] }>> {
+  const { db } = await requireStudioAccess(tenantId, "studio.publish");
+  const rows = requireStudioData(
+    await db
+      .from("studio_placements")
+      .select(
+        "design_id,surface,source_type,source_id,source_hash,is_active,disabled_reason",
+      )
+      .eq("tenant_id", tenantId)
+      .neq("source_type", "custom")
+      .order("created_at", { ascending: false })
+      .limit(300),
+  );
+  const newest = new Map<string, (typeof rows)[number]>();
+  for (const row of rows) {
+    const key = `${row.design_id}:${row.surface}`;
+    if (!newest.has(key)) newest.set(key, row);
+  }
+  const candidates = [...newest.values()].filter(
+    (row) => row.is_active || row.disabled_reason === "source_changed",
+  );
+  const fingerprints = new Map<string, string | null>();
+  for (const row of candidates) {
+    const key = `${row.source_type}:${row.source_id}`;
+    if (fingerprints.has(key)) continue;
+    const { data } = await db.rpc("studio_source_fingerprint", {
+      p_tenant_id: tenantId,
+      p_type: row.source_type,
+      p_source_id: row.source_id,
+    });
+    fingerprints.set(key, typeof data === "string" ? data : null);
+  }
+  const stale = new Map<string, StudioSurface[]>();
+  for (const row of candidates) {
+    const current = fingerprints.get(`${row.source_type}:${row.source_id}`);
+    // A deleted product has no fingerprint: nothing to redraw.
+    if (!current || current === row.source_hash) continue;
+    stale.set(row.design_id, [
+      ...(stale.get(row.design_id) ?? []),
+      row.surface as StudioSurface,
+    ]);
+  }
+  return [...stale].map(([design_id, surfaces]) => ({ design_id, surfaces }));
+}
+
 export async function removeStudioPlacement(tenantId: string, id: string) {
   const { db, user } = await requireStudioAccess(tenantId, "studio.publish");
   requireStudioData(
@@ -177,6 +230,7 @@ export async function resolveStudioArtworkBatch(
         alt: p.alt_text,
         href: p.destination_url || null,
         expiresAt: p.ends_at,
+        publishedAt: p.created_at,
         width: asset.width,
         height: asset.height,
       });

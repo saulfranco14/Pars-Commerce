@@ -1123,6 +1123,19 @@ body {
   .studio-ai-text { animation: none; }
 }
 
+/* Studio: the share image coming into focus while it is made. */
+.studio-reveal {
+  filter: blur(5px) saturate(0.75);
+  transform: scale(1.06);
+}
+.studio-reveal-light {
+  background: linear-gradient(115deg, transparent 20%, rgb(120 170 255 / .5) 40%, rgb(200 140 255 / .5) 55%, transparent 75%) 0 0 / 260% 100%;
+  animation: studio-shimmer 2.2s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .studio-reveal-light { animation: none; }
+}
+
 /* Studio: the empty ad while it is being prepared, on the dark screen. */
 .studio-skeleton-dark {
   background: linear-gradient(115deg, #1a2540 20%, #2a3a60 45%, #1a2540 70%) 0 0 / 260% 100%;

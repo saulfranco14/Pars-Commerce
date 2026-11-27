@@ -208,7 +208,7 @@ export async function getStudioDesign(
       .eq("id", id)
       .single(),
   ) as unknown as StudioDesign;
-  const [versions, assets, source] = await Promise.all([
+  const [versions, assets, source, shared] = await Promise.all([
     db
       .from("studio_design_versions")
       .select("*")
@@ -237,11 +237,20 @@ export async function getStudioDesign(
         return null;
       throw error;
     }),
+    db
+      .from("studio_share_events")
+      .select("created_at")
+      .eq("tenant_id", tenantId)
+      .eq("design_id", id)
+      .in("action", ["share_sheet_completed", "whatsapp_opened", "exported"])
+      .order("created_at", { ascending: false })
+      .limit(1),
   ]);
   return {
     design,
     source,
     stale: !source || source.commercialHash !== design.source_hash,
+    lastSharedAt: shared.data?.[0]?.created_at ?? null,
     versions: requireStudioData(versions) as unknown as StudioVersion[],
     assets: requireStudioData(assets).map(({ metadata, ...a }) => ({
       ...a,

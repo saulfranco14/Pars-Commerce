@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Hand } from "lucide-react";
 
 import { BrandImage } from "@/features/qr/components/BrandImage";
+import { KioskAdReel } from "@/features/dispositivos/components/kiosk/KioskAdReel";
 
 import type { KioskAttractScreenProps } from "@/features/dispositivos/interfaces/kioskUi";
 
@@ -19,6 +20,7 @@ export function KioskAttractScreen({
   tenantName,
   tenantLogoUrl,
   products,
+  ads,
   onStart,
 }: KioskAttractScreenProps) {
   const withPhoto = useMemo(
@@ -33,6 +35,17 @@ export function KioskAttractScreen({
         : Array.from({ length: MARQUEE_LOOPS }, () => withPhoto).flat(),
     [withPhoto],
   );
+
+  if (ads.length > 0)
+    return (
+      <KioskAdReel
+        tenantName={tenantName}
+        tenantLogoUrl={tenantLogoUrl}
+        ads={ads}
+        products={products}
+        onStart={onStart}
+      />
+    );
 
   return (
     <div className="relative flex h-dvh w-full flex-col items-center justify-center overflow-hidden bg-linear-to-br from-accent via-accent to-accent/80 px-8 text-center">
@@ -89,7 +102,7 @@ export function KioskAttractScreen({
           envolviendo al contenido: un <button> no puede contener un <h1>. */}
       <button
         type="button"
-        onClick={onStart}
+        onClick={() => onStart()}
         aria-label={`Empezar un pedido en ${tenantName}`}
         className="absolute inset-0 z-10 cursor-pointer"
       />

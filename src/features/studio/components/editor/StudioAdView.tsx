@@ -1,6 +1,15 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { CalendarClock, EyeOff, Palette, Share2, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Archive,
+  CalendarClock,
+  EyeOff,
+  Globe,
+  Palette,
+  Share2,
+  Sparkles,
+} from "lucide-react";
 import { useStudioAd } from "../../hooks/useStudioAd";
 import { useStudioDesignPlacements } from "../../hooks/useStudioDesignPlacements";
 import { useStudioDesigns } from "../../hooks/useStudioDesigns";
@@ -10,6 +19,7 @@ import { useStudioContext } from "../StudioProvider";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Notification } from "@/components/ui/Notification";
 import { StudioActionBar } from "../StudioActionBar";
+import { StudioAdReady } from "./StudioAdReady";
 import { StudioAskCard } from "./StudioAskCard";
 import { StudioChangeSheet } from "./StudioChangeSheet";
 import { StudioDesignCarousel } from "./StudioDesignCarousel";
@@ -26,18 +36,21 @@ import {
   adminActionButtonSecondary,
 } from "@/components/admin/actionButtonClasses";
 import { trackStudioFunnel } from "../../services/studioAnalyticsClient";
+import { saveDesign } from "../../services/studioClientService";
+import { revalidateStudioAds } from "../../services/studioAutoRefresh";
 import {
   STUDIO_ACTION_BAR_SPACE,
   STUDIO_SURFACES,
 } from "../../constants/studio";
 import { STUDIO_TEXT_ONLY_DESIGNS } from "../../constants/designs";
 import { studioRechargeHref } from "../../helpers/entry";
+import { studioSharedAgo } from "../../helpers/adState";
 import { studioTagline, suggestStudioCopy } from "../../helpers/sceneStyle";
 import type { StudioDesignId } from "../../interfaces/scene";
 import type { StudioAdViewProps } from "../../interfaces/ui";
 import type { StudioSurface } from "../../interfaces/studio";
 
-type Sheet = "change" | "share" | "validity" | "published";
+type Sheet = "change" | "share" | "validity" | "published" | "archive";
 /** Quiet time after the last change before the share image is prepared. */
 const PREPARE_AFTER_MS = 2000;
 
@@ -51,8 +64,12 @@ export function StudioAdView({
   autoAi,
   saveText,
   onByHand,
+  reusable,
+  lastSharedAt,
+  updating,
 }: StudioAdViewProps) {
-  const { tenantSlug } = useStudioContext(),
+  const { tenantSlug, summary } = useStudioContext(),
+    router = useRouter(),
     photos = useStudioPhotos({ editor, asset, tenantId, designId }),
     designs = useStudioDesigns(editor, designId, photos.shownUrl),
     ad = useStudioAd({
@@ -67,6 +84,10 @@ export function StudioAdView({
     [sheet, setSheet] = useState<Sheet | null>(null),
     [retireOpen, setRetireOpen] = useState(false),
     [publishedTo, setPublishedTo] = useState<StudioSurface[]>([]),
+    /** A finished ad opens on its own, ready to share; Cambiar brings back the designs. */
+    [finished, setFinished] = useState(Boolean(reusable) && !autoAi),
+    [restoring, setRestoring] = useState(Boolean(reusable) && !autoAi),
+    [archiving, setArchiving] = useState(false),
     published = useStudioDesignPlacements(designId),
     source = editor.source.current,
     locked = !editor.canEdit || asset.busy || ad.waiting,
@@ -87,16 +108,38 @@ export function StudioAdView({
       designs.pick(target.index);
       trackStudioFunnel("studio_design_changed", { design: target.option.id });
     },
-    aiKind = photos.hasPhoto ? "photo" : ad.canIllustrate ? "scene" : null;
+    aiKind = photos.hasPhoto ? "photo" : ad.canIllustrate ? "scene" : null,
+    sharedText = lastSharedAt
+      ? `Compartido ${studioSharedAgo(lastSharedAt)}`
+      : null,
+    canPublish = Boolean(
+      summary?.publishEnabled &&
+      summary.permissions.includes("studio.publish") &&
+      !ad.draft,
+    );
 
   // The ad's own screen (or its AI wait) has taken over from the creating screen.
   useEffect(endStudioCreating, []);
 
   /* The share image is made in the background once the ad settles, so Compartir opens ready. */
   const sceneKey = JSON.stringify(editor.scene),
-    preparedFor = useRef<string | null>(null);
+    preparedFor = useRef<string | null>(null),
+    latestKey = useRef(sceneKey);
+  latestKey.current = sceneKey;
+  useEffect(() => {
+    if (!restoring || !reusable) return;
+    void output
+      .restore(reusable)
+      .then((ok) => {
+        if (ok) preparedFor.current = latestKey.current;
+      })
+      .finally(() => setRestoring(false));
+    // Once, with the version the ad opened with.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   function prepareShare() {
-    if (preparedFor.current === sceneKey && output.output) return;
+    if (restoring || (preparedFor.current === sceneKey && output.output))
+      return;
     preparedFor.current = sceneKey;
     if (!editor.copy.trim())
       editor.setCopy(suggestStudioCopy(source, studioTagline(editor.scene)));
@@ -105,12 +148,20 @@ export function StudioAdView({
     });
   }
   useEffect(() => {
-    if (!editor.canEdit || ad.waiting || sheet || output.busy) return;
+    if (
+      !editor.canEdit ||
+      ad.waiting ||
+      sheet ||
+      output.busy ||
+      restoring ||
+      updating
+    )
+      return;
     const timer = setTimeout(prepareShare, PREPARE_AFTER_MS);
     return () => clearTimeout(timer);
     // Waits for the ad to settle; the scene key is what changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sceneKey, ad.waiting, sheet]);
+  }, [sceneKey, ad.waiting, sheet, restoring, updating]);
   const prepared =
     Boolean(output.output) && preparedFor.current === sceneKey && !output.busy;
 
@@ -196,9 +247,14 @@ export function StudioAdView({
           message={
             <div className="space-y-2">
               <p>
-                {published.live
-                  .map((p) => STUDIO_SURFACES[p.surface]?.label ?? p.surface)
-                  .join(" · ")}
+                {[
+                  ...new Set(
+                    published.live.map(
+                      (p) => STUDIO_SURFACES[p.surface]?.label ?? p.surface,
+                    ),
+                  ),
+                  ...(sharedText ? [sharedText] : []),
+                ].join(" · ")}
               </p>
               <button
                 type="button"
@@ -210,6 +266,31 @@ export function StudioAdView({
                 {published.retiring ? "Retirando…" : "Retirar"}
               </button>
               {published.error && <p>{published.error}</p>}
+            </div>
+          }
+        />
+      )}
+      {finished && !published.live.length && (
+        <Notification
+          tone="info"
+          title="Listo para compartir"
+          message={
+            <div className="space-y-2">
+              <p>{sharedText ?? "Todavía no lo compartes."}</p>
+              {canPublish && (
+                <button
+                  type="button"
+                  className={`${adminActionButtonSecondary} w-full sm:w-auto`}
+                  disabled={locked}
+                  onClick={() => {
+                    setSheet("share");
+                    prepareShare();
+                  }}
+                >
+                  <Globe className="h-4 w-4" />
+                  Publicar
+                </button>
+              )}
             </div>
           }
         />
@@ -232,7 +313,27 @@ export function StudioAdView({
           }}
         />
       )}
-      {!ad.waiting && carousel(false)}
+      {!ad.waiting &&
+        (finished ? (
+          <StudioAdReady
+            scene={editor.scene}
+            assets={asset.assets}
+            tenantId={tenantId}
+          />
+        ) : (
+          carousel(false)
+        ))}
+      {finished && editor.canEdit && (
+        <button
+          type="button"
+          className="mx-auto flex min-h-11 cursor-pointer items-center gap-1.5 px-3 text-sm font-semibold text-muted-foreground hover:text-foreground"
+          disabled={locked || archiving}
+          onClick={() => setSheet("archive")}
+        >
+          <Archive className="h-4 w-4" />
+          Archivar
+        </button>
+      )}
       {ad.hint && (
         <p className="text-center text-sm text-muted-foreground" role="status">
           {ad.hint}
@@ -254,8 +355,12 @@ export function StudioAdView({
           <button
             type="button"
             className={adminActionButtonSecondary}
-            disabled={locked}
+            disabled={locked || updating}
             onClick={() => {
+              if (finished) {
+                setFinished(false);
+                return;
+              }
               setSheet("change");
               trackStudioFunnel("studio_change_opened");
             }}
@@ -266,7 +371,7 @@ export function StudioAdView({
           <button
             type="button"
             className={adminActionButtonPrimary}
-            disabled={ad.waiting || asset.busy}
+            disabled={ad.waiting || asset.busy || updating}
             onClick={() => {
               setSheet("share");
               prepareShare();
@@ -324,6 +429,43 @@ export function StudioAdView({
         tenantId={tenantId}
         storeUrl={source.destinationUrl}
         homeHref={home}
+      />
+      <ConfirmDialog
+        isOpen={sheet === "archive"}
+        onClose={close}
+        title="Archivar anuncio"
+        description={
+          published.live.length
+            ? "Lo quitamos de tu tienda y de Anuncios. Tus clientes vuelven a ver la foto del producto."
+            : "Lo quitamos de Anuncios. Puedes crear otro cuando quieras."
+        }
+        confirmLabel="Archivar"
+        onConfirm={async () => {
+          setArchiving(true);
+          try {
+            if (published.live.length && !(await published.retireAll()))
+              return;
+            await editor.saveNow();
+            await saveDesign(designId, {
+              tenant_id: tenantId,
+              revision: editor.revision.current,
+              scene: editor.scene,
+              title: editor.title,
+              copy: editor.copy,
+              destination_url: editor.destination,
+              status: "archived",
+            });
+            revalidateStudioAds(tenantId);
+            router.push(`${home}/disenos`);
+          } catch (e) {
+            editor.setError(
+              e instanceof Error ? e.message : "No pudimos archivarlo.",
+            );
+          } finally {
+            setArchiving(false);
+            close();
+          }
+        }}
       />
       <ConfirmDialog
         isOpen={retireOpen}

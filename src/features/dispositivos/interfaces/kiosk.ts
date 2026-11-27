@@ -27,6 +27,17 @@ export interface KioskCatalog {
   businessHours: BusinessHours | null;
   /** Segundos sin toques antes de que la pantalla se reinicie. */
   idleResetSeconds: number;
+  /** Anuncios de Studio para la pantalla de espera. */
+  ads: KioskAd[];
+}
+
+/** Un anuncio de Studio publicado en el kiosco, en sus dos formas. */
+export interface KioskAd {
+  productId: string;
+  /** 9:16, para pantallas verticales. */
+  storyUrl: string | null;
+  /** 4:5, junto al precio en pantallas horizontales. */
+  cardUrl: string | null;
 }
 
 export interface CreateKioskOrderInput {

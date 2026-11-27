@@ -1,4 +1,9 @@
-import { StudioPublicationList } from "@/features/studio/components/StudioPublicationList";
-export default function Page() {
-  return <StudioPublicationList />;
+import { redirect } from "next/navigation";
+// Where each ad is published now lives in «Anuncios».
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ tenantSlug: string }>;
+}) {
+  redirect(`/dashboard/${(await params).tenantSlug}/studio/disenos`);
 }

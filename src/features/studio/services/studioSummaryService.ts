@@ -27,7 +27,7 @@ export async function getStudioSummary(
         code: starter.error.code,
       });
   }
-  const [catalog, grants, recent, designs, ready, placements] =
+  const [catalog, grants, recent, designs, ready, placements, kiosks] =
     await Promise.all([
       getStudioCatalog(),
       db
@@ -55,6 +55,12 @@ export async function getStudioSummary(
         .select("id", { count: "exact", head: true })
         .eq("tenant_id", tenantId)
         .eq("is_active", true),
+      db
+        .from("tenant_devices")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", tenantId)
+        .eq("kind", "kiosk")
+        .eq("status", "approved"),
     ]);
   const balance = {
     monthly: 0,
@@ -97,6 +103,7 @@ export async function getStudioSummary(
     balance,
     ...catalog,
     recent: requireStudioData(recent) as unknown as StudioDesign[],
+    hasKiosk: (kiosks.count ?? 0) > 0,
     counts: {
       designs: designs.count ?? 0,
       ready: ready.count ?? 0,

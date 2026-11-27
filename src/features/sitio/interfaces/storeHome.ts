@@ -13,6 +13,8 @@ export interface HeroShowcaseItem {
   name: string;
   price: number;
   image: string;
+  /** A square Studio ad: shown whole, it already carries the price. */
+  ad: boolean;
   href: string;
 }
 

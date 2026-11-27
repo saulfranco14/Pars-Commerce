@@ -4,6 +4,8 @@ import { ApiFetchError } from "@/services/apiFetch";
 import { exportStudioScene } from "../helpers/canvas";
 import {
   createVersion,
+  downloadStudioBlob,
+  loadRenders,
   recordShare,
   uploadStudioAsset,
 } from "../services/studioClientService";
@@ -96,6 +98,36 @@ export function useStudioOutput(input: {
         e instanceof Error ? e.message : "No pudimos preparar la exportación.",
       );
       throw e;
+    } finally {
+      setBusy(false);
+    }
+  }
+  /**
+   * Picks up the image already stored for this version, so an ad that was
+   * shared before opens ready: no new version, no second upload.
+   */
+  async function restore(version: StudioVersion): Promise<boolean> {
+    setBusy(true);
+    try {
+      const render = (await loadRenders(input.tenantId, input.designId)).find(
+        (r) =>
+          r.design_version_id === version.id &&
+          r.surface === "social" &&
+          r.format === version.scene_json.format,
+      );
+      if (!render) return false;
+      const blob = await downloadStudioBlob(render.url);
+      setOutput({
+        version,
+        scene: version.scene_json,
+        blob,
+        url: URL.createObjectURL(blob),
+        renderId: render.id,
+        assetId: render.asset_id,
+      });
+      return true;
+    } catch {
+      return false;
     } finally {
       setBusy(false);
     }
@@ -193,6 +225,7 @@ export function useStudioOutput(input: {
     success,
     setSuccess,
     prepare,
+    restore,
     download,
     copyText,
     share,

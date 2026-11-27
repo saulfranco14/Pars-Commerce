@@ -9,6 +9,7 @@ import {
   studioSummaryKey,
 } from "../services/studioClientService";
 import { useStudioTelemetry } from "../hooks/useStudioTelemetry";
+import { STUDIO_NAV } from "../constants/studio";
 import type { StudioSummary } from "../interfaces/studio";
 import type { StudioContextValue, StudioScope } from "../interfaces/ui";
 
@@ -55,22 +56,16 @@ export function StudioProvider({
         {!editing && (
           <nav
             aria-label="Tlaco Studio"
-            className="flex flex-wrap gap-1 border-b border-border-soft pb-3"
+            className="grid grid-cols-4 gap-1 rounded-xl bg-border-soft/70 p-1"
           >
-            {[
-              { path: "", label: "Studio" },
-              { path: "/disenos", label: "Mis diseños" },
-              { path: "/publicaciones", label: "Publicaciones" },
-              { path: "/tlacos", label: "Membresía y Tlacos" },
-              { path: "/configuracion", label: "Marca" },
-            ].map((item) => (
+            {STUDIO_NAV.map((item) => (
               <Link
                 key={item.path}
                 href={`${base}${item.path}`}
                 aria-current={
                   pathname === `${base}${item.path}` ? "page" : undefined
                 }
-                className={`inline-flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold ${pathname === `${base}${item.path}` ? "bg-accent/10 text-accent" : "text-muted-foreground hover:bg-border-soft"}`}
+                className={`inline-flex min-h-10 min-w-0 items-center justify-center truncate rounded-lg px-1 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-accent ${pathname === `${base}${item.path}` ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
               >
                 {item.label}
               </Link>

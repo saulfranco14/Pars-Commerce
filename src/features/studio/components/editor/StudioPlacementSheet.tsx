@@ -4,6 +4,7 @@ import { Check, Globe, Loader2 } from "lucide-react";
 import { FormSheet } from "@/components/ui/FormSheet";
 import { FormInput } from "@/components/ui/FormInput";
 import { Notification } from "@/components/ui/Notification";
+import { useStudioContext } from "../StudioProvider";
 import { StudioPublishSteps } from "./StudioPublishSteps";
 import { adminActionButtonPrimary } from "@/components/admin/actionButtonClasses";
 import { useSchemaForm } from "@/lib/forms/useSchemaForm";
@@ -27,6 +28,10 @@ import type { FieldSchema } from "@/lib/forms/fieldSchema";
 
 const FORM_ID = "studio-placement-form";
 
+/** A tick and the shapes that ride on it (the kiosk publishes two). */
+const withPairs = (surfaces: StudioSurface[]) =>
+  surfaces.flatMap((s) => [s, ...(STUDIO_SURFACES[s].pairs ?? [])]);
+
 /** Local datetime value (yyyy-mm-ddThh:mm) for a datetime-local input. */
 const localValue = (date: Date) =>
   new Date(date.getTime() - date.getTimezoneOffset() * 60000)
@@ -44,7 +49,8 @@ export function StudioPlacementSheet({
   destination,
   onSuccess,
 }: StudioPlacementSheetProps) {
-  const [selected, setSelected] = useState<StudioSurface[]>([]),
+  const { summary } = useStudioContext(),
+    [selected, setSelected] = useState<StudioSurface[]>([]),
     [jobs, setJobs] = useState<
       Partial<Record<StudioSurface, StudioPublishPhase>>
     >({}),
@@ -69,6 +75,8 @@ export function StudioPlacementSheet({
   ).filter(
     ([surface, s]) =>
       !STUDIO_RETIRED_SURFACES.includes(surface) &&
+      !s.hidden &&
+      (s.channel !== "kiosk" || Boolean(summary?.hasKiosk)) &&
       s.sources.includes(source.type) &&
       (source.type !== "promotion" ||
         source.channels.includes(
@@ -114,16 +122,17 @@ export function StudioPlacementSheet({
     fields,
     async (values) => {
       setPublishing(true);
-      const ids = await Promise.all(
-        selected.map((surface) => pending.current[surface] ?? render(surface)),
-      );
+      const all = withPairs(selected),
+        ids = await Promise.all(
+          all.map((surface) => pending.current[surface] ?? render(surface)),
+        );
       if (ids.some((id) => !id)) {
         setPublishing(false);
         throw new Error(
           "No pudimos preparar un espacio. Toca Publicar otra vez.",
         );
       }
-      const targets = selected.map((surface, i) => ({
+      const targets = all.map((surface, i) => ({
         surface,
         render_id: ids[i]!,
       }));
@@ -220,19 +229,21 @@ export function StudioPlacementSheet({
       return;
     }
     setSelected((current) => [...current, surface]);
-    if (!pending.current[surface]) void render(surface);
+    for (const s of withPairs([surface]))
+      if (!pending.current[s]) void render(s);
   }
 
   const started = useRef(false);
   useEffect(() => {
     if (!open || started.current) return;
     started.current = true;
-    const preferred = STUDIO_DEFAULT_SURFACE[source.type];
-    if (options.some(([surface]) => surface === preferred)) {
-      setSelected([preferred]);
-      void render(preferred);
-    }
-    // Ticks the item's own page once, when the sheet first opens.
+    const preferred = [
+      STUDIO_DEFAULT_SURFACE[source.type],
+      "kiosk_story",
+    ].filter((p) => options.some(([surface]) => surface === p)) as StudioSurface[];
+    setSelected(preferred);
+    for (const s of withPairs(preferred)) void render(s);
+    // Ticks the item's own page (and its kiosk) once, when the sheet first opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -284,7 +295,9 @@ export function StudioPlacementSheet({
       >
         {publishing ? (
           <StudioPublishSteps
-            phases={selected.map((surface) => jobs[surface] ?? "drawing")}
+            phases={withPairs(selected).map(
+              (surface) => jobs[surface] ?? "drawing",
+            )}
           />
         ) : (
           <>
@@ -362,8 +375,8 @@ export function StudioPlacementSheet({
           <ul className="list-disc space-y-1 pl-4 text-xs leading-5 text-muted-foreground">
             <li>Reemplaza lo que hoy esté publicado en ese espacio.</li>
             <li>
-              Si la promoción se pausa, vence o cambia de precio, se retira
-              sola.
+              Si cambias el precio o el nombre, lo actualizamos solo. Si la
+              promoción se pausa o vence, se retira sola.
             </li>
             <li>Al retirarlo vuelve lo que había antes.</li>
           </ul>

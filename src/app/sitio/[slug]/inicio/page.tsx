@@ -103,7 +103,7 @@ export default async function InicioPage({ params }: PageProps) {
           showcase={pickShowcase(slug, products, services)}
           primary={{
             href: catalogHref(slug, { type: onlyServices ? "service" : null }),
-            label: onlyServices ? "Ver servicios" : "Ver catálogo",
+            label: onlyServices ? "Servicios" : "Catálogo",
           }}
           secondary={
             promotions.length > 0
@@ -111,7 +111,7 @@ export default async function InicioPage({ params }: PageProps) {
               : counts.services > 0 && !onlyServices
                 ? {
                     href: catalogHref(slug, { type: "service" }),
-                    label: "Ver servicios",
+                    label: "Servicios",
                   }
                 : undefined
           }

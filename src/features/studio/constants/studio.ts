@@ -5,7 +5,11 @@ import type {
   StudioLayout,
   StudioTemplateId,
 } from "../interfaces/scene";
-import type { StudioSourceType, StudioSurface } from "../interfaces/studio";
+import type {
+  StudioChannel,
+  StudioSourceType,
+  StudioSurface,
+} from "../interfaces/studio";
 import { STUDIO_DESIGN_IDS, STUDIO_DESIGNS } from "./designs";
 
 export const STUDIO_CONTENT_UPDATED_AT = "2026-11-02T14:01:57Z";
@@ -107,9 +111,13 @@ export const STUDIO_SURFACES: Record<
     label: string;
     /** Where the person's customers will see it. */
     hint: string;
-    channel: "public_store" | "table_qr";
+    channel: StudioChannel;
     format: StudioFormat;
     sources: StudioSourceType[];
+    /** Published together with this one, under one tick. */
+    pairs?: StudioSurface[];
+    /** Never its own tick: it rides on the surface that pairs it. */
+    hidden?: boolean;
   }
 > = {
   store_home_campaign: {
@@ -168,7 +176,30 @@ export const STUDIO_SURFACES: Record<
     format: "banner",
     sources: ["product", "promotion", "subscription_plan", "custom"],
   },
+  kiosk_story: {
+    label: "Tu kiosco",
+    hint: "En la pantalla de espera; al tocarlo abre el producto.",
+    channel: "kiosk",
+    format: "story",
+    sources: ["product"],
+    pairs: ["kiosk_card"],
+  },
+  kiosk_card: {
+    label: "Tu kiosco",
+    hint: "Junto al precio en kioscos horizontales.",
+    channel: "kiosk",
+    format: "portrait",
+    sources: ["product"],
+    hidden: true,
+  },
 };
+/** The kiosk's two shapes: 9:16 for vertical screens, 4:5 beside the price on horizontal ones. */
+export const STUDIO_KIOSK_SURFACES: readonly StudioSurface[] = [
+  "kiosk_story",
+  "kiosk_card",
+];
+/** Most images in one share; what WhatsApp, Facebook and Instagram all take. */
+export const STUDIO_SHARE_MAX = 10;
 export const STUDIO_FONTS = ["Arial", "Georgia", "Verdana"] as const;
 /** The editor also offers the designs' typeface; brand settings keep the three system fonts. */
 export const STUDIO_EDITOR_FONTS = ["Inter Tight", ...STUDIO_FONTS] as const;
@@ -361,9 +392,12 @@ export const STUDIO_SHELF_STATE_LABELS = {
   paused: "Pausada",
   draft: "Borrador",
 } as const;
-export const STUDIO_HOME_TABS = [
-  { id: "catalog", label: "Catálogo" },
-  { id: "ads", label: "Tus anuncios" },
+/** Studio's four tabs: one word each, one row on a phone. */
+export const STUDIO_NAV = [
+  { path: "", label: "Crear" },
+  { path: "/disenos", label: "Anuncios" },
+  { path: "/tlacos", label: "Tlacos" },
+  { path: "/configuracion", label: "Marca" },
 ] as const;
 /** Ticked when the publish sheet opens: the item's own page, never the whole store. */
 export const STUDIO_DEFAULT_SURFACE = {
@@ -382,9 +416,24 @@ export const STUDIO_DOWNLOAD_SIZES = [
 ] as const;
 /** Spaces Studio no longer offers; what is already published there stays until retired. */
 export const STUDIO_RETIRED_SURFACES: readonly StudioSurface[] = ["store_home_campaign"];
-/** What the merchant sees on each ad in «Tus anuncios». */
+/** What the merchant sees on each ad in «Anuncios». */
 export const STUDIO_AD_STATES = {
   live: { label: "En tu tienda", tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" },
   ready: { label: "Listo", tone: "bg-accent/10 text-accent" },
   unfinished: { label: "Sin terminar", tone: "bg-border-soft text-muted-foreground" },
+  updating: { label: "Actualizando", tone: "bg-amber-500/10 text-amber-700 dark:text-amber-400" },
 } as const;
+export type StudioAdStatus = keyof typeof STUDIO_AD_STATES;
+/** Filters on «Anuncios»; «Actualizando» only shows up when some ad is. */
+export const STUDIO_AD_FILTERS = [
+  { id: "all", label: "Todos" },
+  { id: "live", label: "En tu tienda" },
+  { id: "ready", label: "Listos" },
+  { id: "unfinished", label: "Sin terminar" },
+  { id: "updating", label: "Actualizando" },
+] as const;
+/** The two ways to share several ads at once. */
+export const STUDIO_MULTI_SHARE = [
+  { id: "chats", label: "Chats", detail: "WhatsApp, Facebook e Instagram", format: null },
+  { id: "status", label: "Estado", detail: "Estado e historias, 9:16", format: "story" },
+] as const;

@@ -12,6 +12,7 @@ import type { StudioEditorNoticesProps } from "../../interfaces/ui";
 export function StudioEditorNotices({
   editor,
   stale,
+  updating,
   locked,
   errors,
   onRefresh,
@@ -51,6 +52,13 @@ export function StudioEditorNotices({
               </button>
             </div>
           }
+        />
+      )}
+      {updating && (
+        <Notification
+          tone="info"
+          title="Actualizando tu anuncio"
+          message="Tomamos el nombre y el precio nuevos de tu catálogo. La imagen se queda igual."
         />
       )}
       {stale && (

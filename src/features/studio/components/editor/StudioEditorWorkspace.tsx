@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { useStudioAssets } from "../../hooks/useStudioAssets";
 import { useStudioEditor } from "../../hooks/useStudioEditor";
 import { useStudioOutput } from "../../hooks/useStudioOutput";
+import { useStudioStaleRefresh } from "../../hooks/useStudioStaleRefresh";
 import { useStudioContext } from "../StudioProvider";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -21,6 +22,7 @@ import { adminActionButtonIcon } from "@/components/admin/actionButtonClasses";
 import { STUDIO_ACTION_BAR_SPACE } from "../../constants/studio";
 import { studioCatalogHref, studioRechargeHref } from "../../helpers/entry";
 import { reviewStudioScene } from "../../helpers/scene";
+import { reusableStudioVersion } from "../../helpers/adState";
 import { studioTagline, suggestStudioCopy } from "../../helpers/sceneStyle";
 import type { StudioEditorProps, StudioStep } from "../../interfaces/ui";
 
@@ -50,6 +52,10 @@ export default function StudioEditorWorkspace({
     copy: editor.copy,
     destination: editor.destination,
   });
+  const fresh = useStudioStaleRefresh(detail, editor, tenantId, onRefresh),
+    [reusable] = useState(() =>
+      fresh.updating ? null : reusableStudioVersion(detail),
+    );
   const locked = !editor.canEdit || output.busy || asset.busy || editor.copying;
   editor.interactionLock.current = output.busy || asset.busy || editor.copying;
   const designPath = `/dashboard/${tenantSlug}/studio/disenos/${detail.design.id}`,
@@ -138,7 +144,8 @@ export default function StudioEditorWorkspace({
         />
         <StudioEditorNotices
           editor={editor}
-          stale={detail.stale}
+          stale={detail.stale && !fresh.updating}
+          updating={fresh.updating}
           locked={locked}
           errors={[editor.error, asset.error]}
           onRefresh={onRefresh}
@@ -149,6 +156,9 @@ export default function StudioEditorWorkspace({
           output={output}
           autoAi={autoAi}
           saveText={saveText}
+          reusable={reusable}
+          lastSharedAt={detail.lastSharedAt}
+          updating={fresh.updating}
           onByHand={() => {
             setMode("simple");
             setQuick(false);
@@ -194,7 +204,7 @@ export default function StudioEditorWorkspace({
       />
       <StudioEditorNotices
         editor={editor}
-        stale={detail.stale}
+        stale={detail.stale && !fresh.updating}
         locked={locked}
         errors={[editor.error, asset.error, step === 2 ? output.error : null]}
         onRefresh={onRefresh}

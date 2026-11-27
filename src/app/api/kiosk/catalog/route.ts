@@ -6,6 +6,8 @@ import { readPickupScheduling } from "@/features/checkout/helpers/pickupSchedule
 import { readBusinessHours } from "@/features/configuracion/helpers/businessHours";
 import { DEFAULT_IDLE_RESET_SECONDS } from "@/features/dispositivos/constants/kiosk";
 import { filterActivePromotions } from "@/features/qr/helpers/filterActivePromotions";
+import { KIOSK_MAX_ADS } from "@/features/dispositivos/constants/kiosk";
+import { resolveStudioArtworkBatch } from "@/features/studio/services/studioPlacementService";
 
 /**
  * Todo lo que la pantalla necesita, en una sola llamada. Se autentica con el
@@ -91,6 +93,23 @@ export async function GET() {
     }
   }
 
+  // Anuncios de Studio para la pantalla de espera; sin Studio la lista llega vacía.
+  const [stories, cards] = await Promise.all([
+    resolveStudioArtworkBatch(tenant.id, "kiosk", "kiosk_story", productIds),
+    resolveStudioArtworkBatch(tenant.id, "kiosk", "kiosk_card", productIds),
+  ]);
+  const publishedAt = (id: string) =>
+    (stories.get(id) ?? cards.get(id))?.publishedAt ?? "";
+  const ads = productIds
+    .filter((id) => stories.has(id) || cards.has(id))
+    .sort((a, b) => publishedAt(b).localeCompare(publishedAt(a)))
+    .slice(0, KIOSK_MAX_ADS)
+    .map((id) => ({
+      productId: id,
+      storyUrl: stories.get(id)?.url ?? null,
+      cardUrl: cards.get(id)?.url ?? null,
+    }));
+
   const settings = (tenant.settings as Record<string, unknown> | null) ?? {};
   const { data: promotionRows } = tenant.onsite_promotions_enabled === false
     ? { data: [] }
@@ -118,5 +137,6 @@ export async function GET() {
     businessHours: readBusinessHours(settings),
     idleResetSeconds:
       Number(settings.kiosk_idle_seconds) || DEFAULT_IDLE_RESET_SECONDS,
+    ads,
   });
 }

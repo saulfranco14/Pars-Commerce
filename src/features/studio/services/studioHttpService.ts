@@ -49,6 +49,7 @@ import {
 } from "./studioAiService";
 import {
   applyStudioPlacements,
+  listStaleStudioAds,
   listStudioPlacements,
   removeStudioPlacement,
 } from "./studioPlacementService";
@@ -273,6 +274,8 @@ async function dispatchStudioRequest(request: Request, path: string[]) {
       return cancelStudioJob(tenantId, id.data);
   }
   if (path[0] === "placements") {
+    if (path[1] === "stale" && method === "GET")
+      return listStaleStudioAds(tenantId);
     if (method === "GET") return listStudioPlacements(tenantId);
     if (method === "POST") return applyStudioPlacements(body);
     if (method === "DELETE")

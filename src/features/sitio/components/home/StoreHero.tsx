@@ -7,24 +7,25 @@ import { storeDisplayFont, storeFocusRing } from "@/features/sitio/constants/sto
 
 import type { HeroShowcaseItem, StoreHeroProps } from "@/features/sitio/interfaces/storeHome";
 
-const PRIMARY = `inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-accent-foreground px-6 text-[15px] font-bold text-accent shadow-lg shadow-black/10 transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-[0.98] ${storeFocusRing}`;
-const SECONDARY = `inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-bold text-accent-foreground ring-2 ring-accent-foreground/35 transition-colors hover:bg-accent-foreground/10 ${storeFocusRing}`;
+const PRIMARY = `inline-flex min-h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-accent-foreground px-4 sm:px-6 text-[15px] font-bold text-accent shadow-lg shadow-black/10 transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-[0.98] ${storeFocusRing}`;
+const SECONDARY = `inline-flex min-h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 sm:px-6 text-[15px] font-bold text-accent-foreground ring-2 ring-accent-foreground/35 transition-colors hover:bg-accent-foreground/10 ${storeFocusRing}`;
 
 function ShowcaseCard({ item, large, priority }: { item: HeroShowcaseItem; large?: boolean; priority?: boolean }) {
   return (
     <Link
       href={item.href}
-      className={`group relative block h-full overflow-hidden rounded-2xl bg-black/10 shadow-2xl shadow-black/25 ring-1 ring-white/20 sm:rounded-3xl ${storeFocusRing}`}
+      aria-label={item.ad ? `${item.name}, ${formatCurrency(item.price)}` : undefined}
+      className={`group relative block h-full overflow-hidden rounded-2xl bg-black/25 shadow-2xl shadow-black/25 ring-1 ring-white/20 sm:rounded-3xl ${storeFocusRing}`}
     >
       <Image
         src={item.image}
-        alt={item.name}
+        alt={item.ad ? `Anuncio de ${item.name}` : item.name}
         fill
         priority={priority}
         sizes={large ? "(max-width: 1024px) 60vw, 34vw" : "(max-width: 1024px) 40vw, 20vw"}
-        className="object-cover motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-105"
+        className={`${item.ad ? "object-contain" : "object-cover"} motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-105`}
       />
-      <span
+      {item.ad ? null : <span
         className={`absolute bottom-2 flex items-center justify-between gap-2 rounded-xl bg-white/95 px-3 py-2 text-neutral-950 shadow-lg backdrop-blur sm:inset-x-3 sm:bottom-3 ${
           large ? "inset-x-2" : "right-2 sm:left-3"
         }`}
@@ -35,7 +36,7 @@ function ShowcaseCard({ item, large, priority }: { item: HeroShowcaseItem; large
         <span className={`shrink-0 font-bold tabular-nums ${large ? "text-sm sm:text-base" : "text-xs sm:text-sm"}`}>
           {formatCurrency(item.price)}
         </span>
-      </span>
+      </span>}
     </Link>
   );
 }
@@ -71,16 +72,16 @@ export function StoreHero({ tenantName, logoUrl, title, subtitle, imageUrl, show
               {subtitle}
             </p>
           ) : null}
-          <div className={`mt-7 flex flex-col gap-3 sm:flex-row ${hasVisual ? "" : "sm:justify-center"}`}>
-            <Link href={primary.href} className={PRIMARY}>
-              {primary.label}
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
+          <div className={`mt-7 ${secondary ? "grid grid-cols-2" : "flex flex-col"} gap-3 sm:flex ${hasVisual ? "" : "sm:justify-center"}`}>
             {secondary ? (
               <Link href={secondary.href} className={SECONDARY}>
                 {secondary.label}
               </Link>
             ) : null}
+            <Link href={primary.href} className={PRIMARY}>
+              {primary.label}
+              <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+            </Link>
           </div>
         </div>
 
@@ -94,6 +95,19 @@ export function StoreHero({ tenantName, logoUrl, title, subtitle, imageUrl, show
               sizes="(max-width: 1024px) 100vw, 50vw"
               className="object-cover"
             />
+          </div>
+        ) : lead?.ad ? (
+          <div className={`grid gap-3 ${rest.length > 0 ? "grid-cols-[2fr_1fr]" : "mx-auto w-full max-w-sm grid-cols-1"}`}>
+            <div className="aspect-square">
+              <ShowcaseCard item={lead} large priority />
+            </div>
+            {rest.length > 0 ? (
+              <div className={rest.length > 1 ? "grid grid-rows-2 gap-3" : "aspect-square self-start"}>
+                {rest.slice(0, 2).map((item, index) => (
+                  <ShowcaseCard key={item.id} item={item} priority={index === 0} />
+                ))}
+              </div>
+            ) : null}
           </div>
         ) : lead ? (
           <div
