@@ -158,6 +158,7 @@ export function StudioPlacementSheet({
           good === 1
             ? "Listo: tu anuncio ya está publicado."
             : `Listo: tu anuncio ya está en ${good} espacios.`,
+          selected,
         );
         onClose();
       } else {

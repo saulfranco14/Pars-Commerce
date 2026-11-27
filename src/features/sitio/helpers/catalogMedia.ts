@@ -12,5 +12,5 @@ export function groupCatalogByType(items: CatalogItem[]): { id: string; title: s
 
 /** A row of empty image wells reads as broken; without photos the cards go text-first. */
 export function collectionLayout(items: CatalogItem[]): "media" | "text" {
-  return items.some((item) => item.image_urls.length > 0 || item.image_url) ? "media" : "text";
+  return items.some((item) => item.studio_ad_url || item.image_urls.length > 0 || item.image_url) ? "media" : "text";
 }

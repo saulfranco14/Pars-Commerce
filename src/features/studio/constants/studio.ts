@@ -134,8 +134,8 @@ export const STUDIO_SURFACES: Record<
     sources: ["promotion"],
   },
   product_campaign: {
-    label: "Detalle del producto",
-    hint: "Primera foto al abrir este producto en tu tienda.",
+    label: "Tu tienda en línea",
+    hint: "Foto principal del producto en tu catálogo y en su página.",
     channel: "public_store",
     format: "square",
     sources: ["product"],
@@ -155,15 +155,15 @@ export const STUDIO_SURFACES: Record<
     sources: ["subscription_plan"],
   },
   qr_promotion: {
-    label: "Promoción en mesas / QR",
+    label: "Promoción en tus mesas",
     hint: "En la pantalla que ven tus clientes al escanear el QR.",
     channel: "table_qr",
     format: "square",
     sources: ["promotion"],
   },
   qr_menu_campaign: {
-    label: "Campaña en mesas / QR",
-    hint: "Arriba en la pantalla del QR de tus mesas.",
+    label: "Tus mesas con QR",
+    hint: "Arriba en la pantalla que ven al escanear.",
     channel: "table_qr",
     format: "banner",
     sources: ["product", "promotion", "subscription_plan", "custom"],
@@ -341,11 +341,13 @@ export const STUDIO_SHELF_KIND_LABELS = {
 } as const;
 /** What the status line says while the AI works, per kind of job. */
 export const STUDIO_AD_AI_TEXT = {
-  photo: "La IA hace tu imagen",
-  improve: "La IA mejora tu foto sin cambiar el producto",
-  camera: "La IA deja lista la foto que tomaste",
-  scene: "La IA crea una escena ilustrativa del servicio",
+  photo: "Creando tu imagen",
+  improve: "Creando tu imagen",
+  camera: "Creando tu imagen",
+  scene: "Creando la escena de tu servicio",
 } as const;
+/** New ads are born vertical: the shape that fills a phone when shared; each place gets its own size. */
+export const STUDIO_NEW_AD_FORMAT = "portrait" as const;
 export const STUDIO_AD_SHARE_DONE = {
   whatsapp: "Abriendo WhatsApp",
   status: "Abriendo para compartir",
@@ -380,3 +382,9 @@ export const STUDIO_DOWNLOAD_SIZES = [
 ] as const;
 /** Spaces Studio no longer offers; what is already published there stays until retired. */
 export const STUDIO_RETIRED_SURFACES: readonly StudioSurface[] = ["store_home_campaign"];
+/** What the merchant sees on each ad in «Tus anuncios». */
+export const STUDIO_AD_STATES = {
+  live: { label: "En tu tienda", tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" },
+  ready: { label: "Listo", tone: "bg-accent/10 text-accent" },
+  unfinished: { label: "Sin terminar", tone: "bg-border-soft text-muted-foreground" },
+} as const;

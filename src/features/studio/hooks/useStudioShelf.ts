@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { useStudioContext } from "../components/StudioProvider";
 import { createDesign, loadShelf } from "../services/studioClientService";
 import { trackStudioFunnel } from "../services/studioAnalyticsClient";
+import { endStudioCreating, startStudioCreating } from "./useStudioCreating";
 import type { StudioShelfItem } from "../interfaces/studio";
 
 /** The catalog Studio opens on; one tap on Crear makes the ad and opens it. */
@@ -27,6 +28,7 @@ export function useStudioShelf() {
     if (creating) return;
     setCreating(item.id);
     setError(null);
+    startStudioCreating(item.name);
     trackStudioFunnel("studio_create", {
       type: item.type,
       kind: item.kind,
@@ -46,6 +48,7 @@ export function useStudioShelf() {
         `/dashboard/${tenantSlug}/studio/disenos/${design.id}${ai ? "?ia=1" : ""}`,
       );
     } catch (e) {
+      endStudioCreating();
       setError(e instanceof Error ? e.message : "No pudimos crear el anuncio.");
       setCreating(null);
     }

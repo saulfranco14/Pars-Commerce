@@ -33,7 +33,7 @@ export async function searchStoreCatalog(
       name: item.name,
       href: productHref(slug, item),
       price: item.promotion?.finalPrice ?? Number(item.price),
-      image: item.image_urls[0] ?? null,
+      image: item.studio_ad_url ?? item.image_urls[0] ?? null,
       type: item.type === "service" ? "service" : "product",
     })),
   };

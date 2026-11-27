@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { LayoutGrid, Megaphone, Package, Plus, Search } from "lucide-react";
 import { useStudioAiPreference } from "../hooks/useStudioAiPreference";
+import { useStudioCreating } from "../hooks/useStudioCreating";
 import { useStudioShelf } from "../hooks/useStudioShelf";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { FormInput } from "@/components/ui/FormInput";
@@ -9,6 +10,7 @@ import { Notification } from "@/components/ui/Notification";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useStudioContext } from "./StudioProvider";
 import { StudioAiToggle } from "./StudioAiToggle";
+import { StudioCreatingScreen } from "./StudioCreatingScreen";
 import { StudioShelfRow } from "./StudioShelfRow";
 import {
   actionPair,
@@ -27,9 +29,11 @@ export function StudioShelf() {
       : (summary.balance.available ?? 0) < 1
         ? "empty"
         : "ready",
-    [ai, setAi] = useStudioAiPreference(tenantId, reason === "ready");
+    [ai, setAi] = useStudioAiPreference(tenantId, reason === "ready"),
+    creatingName = useStudioCreating();
   return (
     <div className="space-y-4">
+      {creatingName && <StudioCreatingScreen name={creatingName} />}
       <StudioAiToggle
         on={ai}
         onChange={setAi}

@@ -65,17 +65,19 @@ export function StudioGeneratingScreen({
         </div>
       ) : (
         <>
-          <p
-            className="studio-ai-text px-5 text-center text-lg font-bold"
-            role="status"
-          >
-            {STUDIO_AD_AI_TEXT[kind]}…
-          </p>
-          {carousel}
-          <p className="px-6 text-center text-sm text-white/65">
-            Mientras tanto, desliza y elige tu diseño.
-          </p>
-          <div className="mt-auto flex flex-col gap-2 px-5">
+          <div className="flex flex-1 flex-col justify-center gap-4">
+            <p
+              className="studio-ai-text px-5 text-center text-xl font-bold"
+              role="status"
+            >
+              {STUDIO_AD_AI_TEXT[kind]}…
+            </p>
+            {carousel}
+            <p className="px-6 text-center text-sm text-white/65">
+              Mientras tanto, desliza y elige tu diseño.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 px-5">
             {ad.slow && (
               <>
                 <p className="text-center text-sm text-white/75">

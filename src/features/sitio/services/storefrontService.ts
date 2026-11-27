@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- site_slug, has_variants and the commerce columns are not in the generated Supabase types yet. */
 import { cache } from "react";
-import { resolveStudioArtworkBatch } from "@/features/studio/services/studioPlacementService";
 import { headers } from "next/headers";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enrichProducts, type ProductBase } from "@/lib/enrichProducts";
+import { resolveStudioArtworkBatch } from "@/features/studio/services/studioPlacementService";
 import { readBusinessHours } from "@/features/configuracion/helpers/businessHours";
 import { listPublicPlans } from "@/features/planes/services/planQueryService";
 import {
@@ -253,17 +253,16 @@ async function enrichCatalogRows(
   rows: ProductBase[],
 ): Promise<CatalogItem[]> {
   if (rows.length === 0) return [];
-  const [imagesRes, promotions] = await Promise.all([
+  const ids = rows.map((row) => row.id);
+  const [imagesRes, promotions, ads] = await Promise.all([
     db()
       .from("product_images")
       .select("product_id, url, position")
-      .in(
-        "product_id",
-        rows.map((row) => row.id),
-      ),
+      .in("product_id", ids),
     getActivePromotions(tenantId),
+    resolveStudioArtworkBatch(tenantId, "public_store", "product_campaign", ids),
   ]);
-  return enrichProducts(
+  const items = enrichProducts(
     rows.map((row) => ({
       ...row,
       price: Number(row.price),
@@ -276,6 +275,12 @@ async function enrichCatalogRows(
     }>,
     toPromotionsForPrice(promotions),
   );
+  return items.map((item) => {
+    const ad = ads.get(item.id);
+    // Wide ads published before the square slot would be cropped in a card; those keep the photo.
+    const square = ad && Math.abs(ad.width / ad.height - 1) <= 0.05;
+    return square ? { ...item, studio_ad_url: ad.url } : item;
+  });
 }
 
 export async function listCatalogItems(

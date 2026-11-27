@@ -267,11 +267,10 @@ export function StudioShareSheet({
           assets={assets}
           title={editor.title}
           destination={editor.destination}
-          onSuccess={(message) => {
-            output.setSuccess(message);
+          onSuccess={(_message, surfaces) => {
             setPlacementOpen(false);
-            onPublished();
-            finish("store");
+            trackStudioFunnel("studio_shared", { channel: "store", draft });
+            onPublished(surfaces);
           }}
         />
       )}

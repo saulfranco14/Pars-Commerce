@@ -18,7 +18,9 @@ const BADGE = "rounded-full bg-(--store-ink) px-2.5 py-1 text-xs font-semibold t
 
 export function ProductCard({ product, promotion, tenantId, slug, priority = false, layout = "media" }: ProductCardProps) {
   const href = productHref(slug, product);
-  const image = product.image_urls[0] ?? product.image_url;
+  const image = product.studio_ad_url ?? product.image_urls[0] ?? product.image_url;
+  // Photo cards stay compact: name and price in two short lines beside the add button, nothing over the image.
+  const media = layout !== "text";
   const basePrice = Number(product.price);
   const price = promotion?.finalPrice ?? basePrice;
   const discounted = price < basePrice;
@@ -40,6 +42,26 @@ export function ProductCard({ product, promotion, tenantId, slug, priority = fal
         ? `No se pudo agregar ${product.name}, intenta de nuevo`
         : `Agregar ${product.name} al carrito`;
 
+  const addControl = product.has_variants ? (
+    <Link
+      href={href}
+      aria-label={`Elegir opciones de ${product.name}`}
+      className={`relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-(--store-well) text-(--store-ink) shadow-md transition-colors hover:bg-accent hover:text-accent-foreground ${storeFocusRing}`}
+    >
+      <SlidersHorizontal className="h-4.5 w-4.5" aria-hidden />
+    </Link>
+  ) : (
+    <button
+      type="button"
+      onClick={trigger}
+      disabled={!ready || status === "adding"}
+      aria-label={addLabel}
+      className={`relative z-10 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md transition-colors hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60 motion-safe:active:scale-95 ${storeFocusRing}`}
+    >
+      <AddIcon className={`h-5 w-5 ${status === "adding" ? "animate-spin" : ""}`} aria-hidden />
+    </button>
+  );
+
   return (
     <article className="group relative flex h-full flex-col overflow-hidden rounded-(--store-radius) bg-(--store-surface) shadow-sm ring-1 ring-(--store-hairline) transition-[box-shadow,transform] duration-200 hover:shadow-xl motion-safe:hover:-translate-y-1">
       {layout === "text" ? (
@@ -54,7 +76,7 @@ export function ProductCard({ product, promotion, tenantId, slug, priority = fal
           {image ? (
             <Image
               src={image}
-              alt={product.name}
+              alt={product.studio_ad_url ? `Anuncio de ${product.name}` : product.name}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px"
               className="object-cover motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-[1.03]"
@@ -70,7 +92,30 @@ export function ProductCard({ product, promotion, tenantId, slug, priority = fal
         </div>
       )}
 
-      <div className={`flex flex-1 flex-col gap-1 p-3.5 sm:p-4 ${layout === "text" ? "min-h-36" : ""}`}>
+      {media ? (
+        <div className="flex items-center justify-between gap-2 px-3 py-2.5 sm:px-3.5">
+          <div className="min-w-0">
+            <h3 className="truncate text-[14px] font-bold leading-snug text-(--store-ink)">
+              <Link
+                href={href}
+                className={`rounded-sm after:absolute after:inset-0 after:content-[''] ${storeFocusRing}`}
+              >
+                {product.name}
+              </Link>
+            </h3>
+            <p className="flex items-baseline gap-1.5 tabular-nums">
+              <span className="text-[15px] font-bold text-(--store-ink)">{formatCurrency(price)}</span>
+              {discounted ? (
+                <span className="text-[11px] text-(--store-ink-2) line-through">
+                  {formatCurrency(basePrice)}
+                </span>
+              ) : null}
+            </p>
+          </div>
+          {addControl}
+        </div>
+      ) : (
+      <div className="flex min-h-36 flex-1 flex-col gap-1 p-3.5 sm:p-4">
         <h3 className="line-clamp-2 text-[15px] font-bold leading-snug text-(--store-ink)">
           <Link
             href={href}
@@ -95,27 +140,10 @@ export function ProductCard({ product, promotion, tenantId, slug, priority = fal
             ) : null}
           </p>
 
-          {product.has_variants ? (
-            <Link
-              href={href}
-              aria-label={`Elegir opciones de ${product.name}`}
-              className={`relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-(--store-well) text-(--store-ink) transition-colors hover:bg-accent hover:text-accent-foreground ${storeFocusRing}`}
-            >
-              <SlidersHorizontal className="h-4.5 w-4.5" aria-hidden />
-            </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={trigger}
-              disabled={!ready || status === "adding"}
-              aria-label={addLabel}
-              className={`relative z-10 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-accent text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60 motion-safe:active:scale-95 ${storeFocusRing}`}
-            >
-              <AddIcon className={`h-5 w-5 ${status === "adding" ? "animate-spin" : ""}`} aria-hidden />
-            </button>
-          )}
+          {addControl}
         </div>
       </div>
+      )}
       <span className="sr-only" aria-live="polite">
         {status === "added" ? `${product.name} agregado al carrito` : ""}
       </span>

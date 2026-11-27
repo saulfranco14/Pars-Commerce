@@ -1,18 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Coins, WandSparkles } from "lucide-react";
+import { Coins } from "lucide-react";
 import { useStudioContinuation } from "../hooks/useStudioContinuation";
 import { useStudioImages } from "../hooks/useStudioImages";
 import { PageHeader } from "@/components/admin/PageHeader";
-import { EmptyState } from "@/components/admin/EmptyState";
 import { Notification } from "@/components/ui/Notification";
 import { useStudioContext } from "./StudioProvider";
 import { StudioLoading } from "./StudioLoading";
 import { StudioPendingBanner } from "./StudioPendingBanner";
+import { StudioAdsSection } from "./StudioAdsSection";
 import { StudioShelf } from "./StudioShelf";
 import { StudioUseImageSheet } from "./StudioUseImageSheet";
-import { StudioScenePreview } from "./editor/StudioScenePreview";
 import { StudioImagesSheet } from "./editor/StudioImagesSheet";
 import { STUDIO_HOME_TABS } from "../constants/studio";
 import type { StudioImage } from "../interfaces/studio";
@@ -27,6 +26,12 @@ export function StudioHome() {
     [allOpen, setAllOpen] = useState(false),
     [tab, setTab] = useState<StudioHomeTab>("catalog");
   const base = `/dashboard/${tenantSlug}/studio`;
+  // Back from an ad, the list shows what was just published or finished.
+  useEffect(() => {
+    void refresh();
+    // Once per visit to Studio's home.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   if (isLoading) return <StudioLoading />;
   if (error || !summary)
     return (
@@ -137,51 +142,16 @@ export function StudioHome() {
               </p>
             )}
           </section>
-          <section className="space-y-2">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className="text-lg font-bold">Tus anuncios</h2>
-              <Link
-                href={`${base}/disenos`}
-                className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-accent"
-              >
-                Ver todos
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-            {summary.recent.length ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                {summary.recent.map((design) => (
-                  <Link
-                    key={design.id}
-                    href={`${base}/disenos/${design.id}`}
-                    className="flex min-w-0 flex-col gap-1.5"
-                  >
-                    <span className="pointer-events-none block overflow-hidden rounded-xl">
-                      <StudioScenePreview
-                        scene={design.draft_scene}
-                        assets={[]}
-                        tenantId={tenantId}
-                      />
-                    </span>
-                    <span className="flex items-center justify-between gap-2 text-xs font-semibold">
-                      <span className="truncate">{design.title}</span>
-                      <span
-                        className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold ${design.status === "ready" ? "bg-emerald-500/10 text-emerald-600" : "bg-border-soft text-muted-foreground"}`}
-                      >
-                        {design.status === "ready" ? "Listo" : "Borrador"}
-                      </span>
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                icon={WandSparkles}
-                title="Tu primer anuncio empieza con lo que ya vendes"
-                description="En Catálogo toca Crear en un producto y te lo damos hecho."
-              />
+          <StudioAdsSection
+            designs={summary.recent}
+            base={base}
+            tenantId={tenantId}
+            canPublish={Boolean(
+              summary.publishEnabled &&
+              summary.permissions.includes("studio.publish"),
             )}
-          </section>
+            onChanged={() => void refresh()}
+          />
         </>
       )}
       <StudioImagesSheet

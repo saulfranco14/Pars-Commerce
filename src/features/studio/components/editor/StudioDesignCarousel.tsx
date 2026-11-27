@@ -21,6 +21,8 @@ export function StudioDesignCarousel({
   generating = false,
   dark = false,
   endCard,
+  cardShare = CARD_SHARE,
+  maxVh = CARD_MAX_VH,
 }: StudioDesignCarouselProps) {
   const track = useRef<HTMLDivElement>(null),
     activeRef = useRef(active),
@@ -32,7 +34,7 @@ export function StudioDesignCarousel({
   activeRef.current = active;
   const format = STUDIO_FORMATS[options[0]?.scene.format ?? "square"],
     ratio = format.width / format.height,
-    card = Math.min(rowWidth * CARD_SHARE, viewport * CARD_MAX_VH * ratio),
+    card = Math.min(rowWidth * cardShare, viewport * maxVh * ratio),
     pad = Math.max(0, (rowWidth - card) / 2);
 
   useEffect(() => {
@@ -120,7 +122,7 @@ export function StudioDesignCarousel({
             aria-selected={chosen}
             aria-label={`${option.name}, diseño ${i + 1} de ${options.length}`}
             className={`flex shrink-0 snap-center flex-col gap-1.5 transition-opacity duration-200 motion-reduce:transition-none ${i === centered ? "" : "opacity-55"}`}
-            style={{ width: card || `${CARD_SHARE * 100}%` }}
+            style={{ width: card || `${cardShare * 100}%` }}
           >
             <button
               type="button"
@@ -160,7 +162,7 @@ export function StudioDesignCarousel({
       {endCard && (
         <div
           className="flex shrink-0 snap-center flex-col"
-          style={{ width: card || `${CARD_SHARE * 100}%` }}
+          style={{ width: card || `${cardShare * 100}%` }}
         >
           {endCard}
         </div>

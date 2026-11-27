@@ -3,7 +3,11 @@ import { z } from "zod";
 import { requirePermission } from "@/lib/auth/requirePermission";
 import { createStudioScene, bindStudioScene } from "../helpers/scene";
 import { isStudioDesign } from "../helpers/layout";
-import { STUDIO_BUCKET, STUDIO_DEFAULT_TEMPLATE } from "../constants/studio";
+import {
+  STUDIO_BUCKET,
+  STUDIO_DEFAULT_TEMPLATE,
+  STUDIO_NEW_AD_FORMAT,
+} from "../constants/studio";
 import {
   createDesignSchema,
   saveDesignSchema,
@@ -113,10 +117,12 @@ export async function createStudioDesign(raw: unknown): Promise<StudioDesign> {
     .select("colors,font,default_format")
     .eq("tenant_id", input.tenant_id)
     .maybeSingle();
+  // Square was the old implicit brand default; only a deliberate other size overrides the vertical start.
+  const brandFormat = brand?.default_format as StudioScene["format"] | undefined;
   let scene = createStudioScene(
     source,
     STUDIO_DEFAULT_TEMPLATE,
-    brand?.default_format as StudioScene["format"] | undefined,
+    brandFormat && brandFormat !== "square" ? brandFormat : STUDIO_NEW_AD_FORMAT,
   );
   // The six designs carry their own typeface and photo colors.
   if (brand && !isStudioDesign(scene.template))

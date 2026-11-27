@@ -1122,3 +1122,12 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .studio-ai-text { animation: none; }
 }
+
+/* Studio: the empty ad while it is being prepared, on the dark screen. */
+.studio-skeleton-dark {
+  background: linear-gradient(115deg, #1a2540 20%, #2a3a60 45%, #1a2540 70%) 0 0 / 260% 100%;
+  animation: studio-shimmer 1.6s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .studio-skeleton-dark { animation: none; }
+}

@@ -4,6 +4,7 @@ import { CalendarClock, EyeOff, Palette, Share2, Sparkles } from "lucide-react";
 import { useStudioAd } from "../../hooks/useStudioAd";
 import { useStudioDesignPlacements } from "../../hooks/useStudioDesignPlacements";
 import { useStudioDesigns } from "../../hooks/useStudioDesigns";
+import { endStudioCreating } from "../../hooks/useStudioCreating";
 import { useStudioPhotos } from "../../hooks/useStudioPhotos";
 import { useStudioContext } from "../StudioProvider";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -15,6 +16,7 @@ import { StudioDesignCarousel } from "./StudioDesignCarousel";
 import { StudioGeneratingScreen } from "./StudioGeneratingScreen";
 import { StudioMoreCard } from "./StudioMoreCard";
 import { StudioNoPhotoSheet } from "./StudioNoPhotoSheet";
+import { StudioPublishedSheet } from "./StudioPublishedSheet";
 import { StudioShareSheet } from "./StudioShareSheet";
 import { StudioValiditySheet } from "./StudioValiditySheet";
 import {
@@ -33,8 +35,9 @@ import { studioRechargeHref } from "../../helpers/entry";
 import { studioTagline, suggestStudioCopy } from "../../helpers/sceneStyle";
 import type { StudioDesignId } from "../../interfaces/scene";
 import type { StudioAdViewProps } from "../../interfaces/ui";
+import type { StudioSurface } from "../../interfaces/studio";
 
-type Sheet = "change" | "share" | "validity";
+type Sheet = "change" | "share" | "validity" | "published";
 /** Quiet time after the last change before the share image is prepared. */
 const PREPARE_AFTER_MS = 2000;
 
@@ -63,6 +66,7 @@ export function StudioAdView({
     }),
     [sheet, setSheet] = useState<Sheet | null>(null),
     [retireOpen, setRetireOpen] = useState(false),
+    [publishedTo, setPublishedTo] = useState<StudioSurface[]>([]),
     published = useStudioDesignPlacements(designId),
     source = editor.source.current,
     locked = !editor.canEdit || asset.busy || ad.waiting,
@@ -84,6 +88,9 @@ export function StudioAdView({
       trackStudioFunnel("studio_design_changed", { design: target.option.id });
     },
     aiKind = photos.hasPhoto ? "photo" : ad.canIllustrate ? "scene" : null;
+
+  // The ad's own screen (or its AI wait) has taken over from the creating screen.
+  useEffect(endStudioCreating, []);
 
   /* The share image is made in the background once the ad settles, so Compartir opens ready. */
   const sceneKey = JSON.stringify(editor.scene),
@@ -126,6 +133,8 @@ export function StudioAdView({
       disabled={!editor.canEdit}
       generating={generating}
       dark={generating}
+      cardShare={generating ? 0.9 : 0.86}
+      maxVh={generating ? 0.62 : 0.56}
       overlay={generating ? undefined : draftStamp}
       endCard={
         generating || !aiKind || !ad.aiActive ? undefined : (
@@ -224,9 +233,11 @@ export function StudioAdView({
         />
       )}
       {!ad.waiting && carousel(false)}
-      <p className="text-center text-sm text-muted-foreground" role="status">
-        {ad.hint}
-      </p>
+      {ad.hint && (
+        <p className="text-center text-sm text-muted-foreground" role="status">
+          {ad.hint}
+        </p>
+      )}
       {ad.small && !ad.running && ad.aiActive && (
         <button
           type="button"
@@ -298,7 +309,21 @@ export function StudioAdView({
         assets={asset.assets}
         draft={ad.draft}
         homeHref={home}
-        onPublished={published.refresh}
+        onPublished={(surfaces) => {
+          setPublishedTo(surfaces);
+          setSheet("published");
+          published.refresh();
+        }}
+      />
+      <StudioPublishedSheet
+        open={sheet === "published"}
+        onClose={close}
+        surfaces={publishedTo}
+        scene={output.output?.scene ?? null}
+        assets={asset.assets}
+        tenantId={tenantId}
+        storeUrl={source.destinationUrl}
+        homeHref={home}
       />
       <ConfirmDialog
         isOpen={retireOpen}

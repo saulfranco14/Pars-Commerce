@@ -12,6 +12,7 @@ import type {
 } from "../hooks/useStudioOutput";
 import type {
   StudioAsset,
+  StudioDesign,
   StudioDesignDetail,
   StudioIdea,
   StudioImage,
@@ -19,6 +20,7 @@ import type {
   StudioShelfItem,
   StudioSource,
   StudioSummary,
+  StudioSurface,
 } from "./studio";
 import type {
   StudioDesignId,
@@ -143,6 +145,10 @@ export interface StudioDesignCarouselProps {
   dark?: boolean;
   /** A last card after the designs, such as «Otra imagen». */
   endCard?: ReactNode;
+  /** Share of the row one design takes, so the next one peeks in. */
+  cardShare?: number;
+  /** Tallest a design may get, as a share of the screen height. */
+  maxVh?: number;
 }
 export interface StudioGeneratingScreenProps {
   ad: StudioAdState;
@@ -296,7 +302,7 @@ export interface StudioPlacementSheetProps {
   assets: StudioAsset[];
   title: string;
   destination: string;
-  onSuccess: (message: string) => void;
+  onSuccess: (message: string, surfaces: StudioSurface[]) => void;
 }
 export interface StudioShelfRowProps {
   item: StudioShelfItem;
@@ -355,8 +361,8 @@ export interface StudioShareSheetProps extends StudioSheetProps {
   assets: StudioAsset[];
   draft: boolean;
   homeHref: string;
-  /** Called after publishing, so the ad shows where it is live. */
-  onPublished: () => void;
+  /** Called after publishing with the places it went to. */
+  onPublished: (surfaces: StudioSurface[]) => void;
 }
 export interface StudioAdViewProps extends StudioWorkspaceParts {
   designId: string;
@@ -370,4 +376,26 @@ export type StudioPublishPhase = "drawing" | "uploading" | "ready";
 export interface StudioPublishStepsProps {
   /** One phase per ticked space. */
   phases: StudioPublishPhase[];
+}
+export interface StudioPublishedSheetProps {
+  open: boolean;
+  onClose: () => void;
+  surfaces: StudioSurface[];
+  /** The published scene, drawn again in the size of each place. */
+  scene: StudioScene | null;
+  assets: StudioAsset[];
+  tenantId: string;
+  storeUrl: string;
+  homeHref: string;
+}
+export interface StudioCreatingScreenProps {
+  name: string;
+}
+export interface StudioAdsSectionProps {
+  designs: StudioDesign[];
+  base: string;
+  tenantId: string;
+  canPublish: boolean;
+  /** After a bulk publish, so the summary catches up. */
+  onChanged: () => void;
 }

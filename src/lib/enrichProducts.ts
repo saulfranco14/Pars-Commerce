@@ -19,6 +19,8 @@ export interface ProductBase {
 export interface EnrichedProduct extends ProductBase {
   image_urls: string[];
   promotion?: ProductPromotionResult;
+  /** The Studio ad published for this item, when it is square; storefront cards lead with it. */
+  studio_ad_url?: string | null;
 }
 
 function groupImagesByProduct(

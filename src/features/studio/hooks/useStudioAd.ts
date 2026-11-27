@@ -71,6 +71,10 @@ export function useStudioAd({
     } | null>(null),
     /** The person chose to go on without waiting; a late image is kept, not applied. */
     [skipped, setSkipped] = useState(false),
+    /** Crear asked for an image and the wait is already on screen, before the request starts. */
+    [pending, setPending] = useState(
+      () => autoAi && !autoAiSpent.has(designId),
+    ),
     [failed, setFailed] = useState<StudioAdAiKind | null>(null),
     [slow, setSlow] = useState(false),
     [message, setMessage] = useState<string | null>(null),
@@ -98,8 +102,8 @@ export function useStudioAd({
       void photos.show(job.result_asset_id!, job.result_url!);
       setMessage(
         kind.current === "scene"
-          ? "Escena lista. Es ilustrativa: muestra el servicio, no tu local."
-          : "Listo. Tu foto del catálogo sigue en Cambiar › Foto.",
+          ? "Escena ilustrativa: muestra el servicio, no tu local."
+          : null,
       );
     },
   });
@@ -127,6 +131,7 @@ export function useStudioAd({
       return false;
     }
     kind.current = next;
+    setPending(false);
     skippedRef.current = false;
     setSkipped(false);
     setFailed(null);
@@ -185,12 +190,14 @@ export function useStudioAd({
     if (started.current || !editor.canEdit) return;
     if (!photos.hasPhoto) {
       started.current = true;
+      setPending(false);
       if (!photoAsked && !photos.uploads.length && !photos.generated.length)
         setNoPhotoOpen(true);
       return;
     }
     if (!autoAi || autoAiSpent.has(designId) || photos.generated.length) {
       started.current = true;
+      setPending(false);
       return;
     }
     if (!size) return;
@@ -199,6 +206,7 @@ export function useStudioAd({
     // A reload must not spend another Tlaco on the same ad.
     window.history.replaceState(null, "", window.location.pathname);
     if (aiOn) void runAi(small ? "improve" : "photo");
+    else setPending(false);
     // Runs once, as soon as the photo size is known.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [size, photos.hasPhoto, autoAi, editor.canEdit]);
@@ -288,12 +296,12 @@ export function useStudioAd({
       ? "Anuncio solo con texto, con tus colores. Agrega foto en Cambiar › Foto."
       : small
         ? "Tu foto es chica y se verá borrosa."
-        : "Listo para compartir.");
+        : "");
 
   return {
     running,
     /** The full-screen wait: the AI is working, or it just failed, and the person has not moved on. */
-    waiting: Boolean((running || failed) && !skipped),
+    waiting: Boolean((pending || running || failed) && !skipped),
     slow,
     failed,
     failText: failed ? (gen.error ?? error ?? "No salió la imagen.") : null,

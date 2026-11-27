@@ -1,5 +1,11 @@
+"use client";
+import { useStudioCreating } from "../hooks/useStudioCreating";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { StudioCreatingScreen } from "./StudioCreatingScreen";
+
 export function StudioLoading() {
+  const creating = useStudioCreating();
+  if (creating) return <StudioCreatingScreen name={creating} />;
   return (
     <div aria-label="Cargando Studio" className="space-y-5">
       <Skeleton className="h-9 w-56" />
