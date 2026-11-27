@@ -162,7 +162,10 @@ export default async function ProductoDetallePage({ params }: PageProps) {
 
   const images = imagesRes.data ?? [];
   // A Studio ad published for this product leads the gallery; the real photos follow it.
-  const adUrl = artwork.get(product.id)?.url ?? null;
+  const ad = artwork.get(product.id),
+    adUrl = ad?.url ?? null,
+    // Ads published before the product slot became square are wide; they are shown whole, never cropped.
+    adWide = Boolean(ad && Math.abs(ad.width / ad.height - 1) > 0.05);
   const imageUrls = [
     ...(adUrl ? [adUrl] : []),
     ...(images.length
@@ -261,6 +264,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
               <ProductImageGallery
                 imageUrls={imageUrls}
                 adUrl={adUrl}
+                adWide={adWide}
                 productName={product.name}
                 accentColor={accentColor}
               />

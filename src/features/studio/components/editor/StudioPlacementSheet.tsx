@@ -9,6 +9,7 @@ import { adminActionButtonPrimary } from "@/components/admin/actionButtonClasses
 import { useSchemaForm } from "@/lib/forms/useSchemaForm";
 import {
   STUDIO_DEFAULT_SURFACE,
+  STUDIO_RETIRED_SURFACES,
   STUDIO_SURFACES,
 } from "../../constants/studio";
 import { reflowStudioScene } from "../../helpers/scene";
@@ -66,7 +67,8 @@ export function StudioPlacementSheet({
       [StudioSurface, (typeof STUDIO_SURFACES)[StudioSurface]]
     >
   ).filter(
-    ([, s]) =>
+    ([surface, s]) =>
+      !STUDIO_RETIRED_SURFACES.includes(surface) &&
       s.sources.includes(source.type) &&
       (source.type !== "promotion" ||
         source.channels.includes(

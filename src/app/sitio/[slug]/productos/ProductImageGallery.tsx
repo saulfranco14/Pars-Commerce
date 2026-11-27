@@ -8,6 +8,8 @@ interface ProductImageGalleryProps {
   imageUrls: string[];
   /** The Studio ad, shown first and edge to edge; it is served by our own route. */
   adUrl?: string | null;
+  /** A wide ad from before: shown whole over a blurred copy of itself. */
+  adWide?: boolean;
   productName: string;
   accentColor: string;
 }
@@ -15,6 +17,7 @@ interface ProductImageGalleryProps {
 export default function ProductImageGallery({
   imageUrls,
   adUrl = null,
+  adWide = false,
   productName,
   accentColor,
 }: ProductImageGalleryProps) {
@@ -38,13 +41,24 @@ export default function ProductImageGallery({
   return (
     <div className="space-y-3">
       <div className="group relative aspect-square w-full overflow-hidden rounded-[22px] bg-white shadow-[0_16px_44px_-34px_rgba(15,23,42,0.55)]">
+        {mainIsAd && adWide && (
+          <Image
+            src={mainUrl}
+            alt=""
+            fill
+            sizes="(max-width: 768px) 100vw, 620px"
+            className="scale-110 object-cover blur-xl brightness-75"
+            unoptimized
+            aria-hidden
+          />
+        )}
         <Image
           key={mainUrl}
           src={mainUrl}
           alt={mainIsAd ? `Anuncio de ${productName}` : productName}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 52vw, 620px"
-          className={`transition-transform duration-500 ${mainIsAd ? "object-cover" : "object-contain p-2 sm:p-3"}`}
+          className={`transition-transform duration-500 ${mainIsAd ? (adWide ? "object-contain" : "object-cover") : "object-contain p-2 sm:p-3"}`}
           priority
           quality={80}
           unoptimized={mainIsAd}
@@ -105,7 +119,9 @@ export default function ProductImageGallery({
                 fill
                 sizes="64px"
                 className={
-                  url === adUrl ? "object-cover" : "object-contain p-0.5"
+                  url === adUrl && !adWide
+                    ? "object-cover"
+                    : "object-contain p-0.5"
                 }
                 loading="lazy"
                 quality={60}

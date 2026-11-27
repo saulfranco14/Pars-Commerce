@@ -1,10 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { CalendarClock, Palette, Share2, Sparkles } from "lucide-react";
+import { CalendarClock, EyeOff, Palette, Share2, Sparkles } from "lucide-react";
 import { useStudioAd } from "../../hooks/useStudioAd";
+import { useStudioDesignPlacements } from "../../hooks/useStudioDesignPlacements";
 import { useStudioDesigns } from "../../hooks/useStudioDesigns";
 import { useStudioPhotos } from "../../hooks/useStudioPhotos";
 import { useStudioContext } from "../StudioProvider";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Notification } from "@/components/ui/Notification";
 import { StudioActionBar } from "../StudioActionBar";
 import { StudioAskCard } from "./StudioAskCard";
@@ -22,7 +24,10 @@ import {
   adminActionButtonSecondary,
 } from "@/components/admin/actionButtonClasses";
 import { trackStudioFunnel } from "../../services/studioAnalyticsClient";
-import { STUDIO_ACTION_BAR_SPACE } from "../../constants/studio";
+import {
+  STUDIO_ACTION_BAR_SPACE,
+  STUDIO_SURFACES,
+} from "../../constants/studio";
 import { STUDIO_TEXT_ONLY_DESIGNS } from "../../constants/designs";
 import { studioRechargeHref } from "../../helpers/entry";
 import { studioTagline, suggestStudioCopy } from "../../helpers/sceneStyle";
@@ -57,6 +62,8 @@ export function StudioAdView({
       autoAi,
     }),
     [sheet, setSheet] = useState<Sheet | null>(null),
+    [retireOpen, setRetireOpen] = useState(false),
+    published = useStudioDesignPlacements(designId),
     source = editor.source.current,
     locked = !editor.canEdit || asset.busy || ad.waiting,
     close = () => setSheet(null),
@@ -173,6 +180,31 @@ export function StudioAdView({
           }
         />
       )}
+      {published.live.length > 0 && (
+        <Notification
+          tone="success"
+          title="Publicado en tu tienda"
+          message={
+            <div className="space-y-2">
+              <p>
+                {published.live
+                  .map((p) => STUDIO_SURFACES[p.surface]?.label ?? p.surface)
+                  .join(" · ")}
+              </p>
+              <button
+                type="button"
+                className={`${adminActionButtonSecondary} w-full sm:w-auto`}
+                disabled={published.retiring}
+                onClick={() => setRetireOpen(true)}
+              >
+                <EyeOff className="h-4 w-4" />
+                {published.retiring ? "Retirando…" : "Retirar"}
+              </button>
+              {published.error && <p>{published.error}</p>}
+            </div>
+          }
+        />
+      )}
       {ad.needsDescription && (
         <StudioAskCard
           name={source.name}
@@ -266,6 +298,18 @@ export function StudioAdView({
         assets={asset.assets}
         draft={ad.draft}
         homeHref={home}
+        onPublished={published.refresh}
+      />
+      <ConfirmDialog
+        isOpen={retireOpen}
+        onClose={() => setRetireOpen(false)}
+        title="Retirar de tu tienda"
+        description="Tus clientes dejarán de verlo y vuelve lo que había antes. El anuncio se queda en Studio para usarlo cuando quieras."
+        confirmLabel="Retirar"
+        onConfirm={async () => {
+          await published.retireAll();
+          setRetireOpen(false);
+        }}
       />
       <StudioValiditySheet
         open={sheet === "validity"}

@@ -81,7 +81,7 @@ export function StudioShareStep({
       icon: Download,
       title: "Descargar",
       detail: "Guarda la imagen en tu equipo",
-      onClick: output.download,
+      onClick: () => output.download(),
     },
     canPlace
       ? {

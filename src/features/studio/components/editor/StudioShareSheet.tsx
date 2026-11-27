@@ -11,11 +11,13 @@ import {
   Plus,
   Share2,
 } from "lucide-react";
+import { useStudioSizes } from "../../hooks/useStudioSizes";
 import { useStudioContext } from "../StudioProvider";
 import { FormSheet } from "@/components/ui/FormSheet";
 import { Notification } from "@/components/ui/Notification";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { StudioPlacementSheet } from "./StudioPlacementSheet";
+import { StudioScenePreview } from "./StudioScenePreview";
 import { StudioShareTile } from "./StudioShareTile";
 import {
   actionPair,
@@ -23,7 +25,11 @@ import {
   adminActionButtonSecondary,
 } from "@/components/admin/actionButtonClasses";
 import { trackStudioFunnel } from "../../services/studioAnalyticsClient";
-import { STUDIO_AD_SHARE_DONE } from "../../constants/studio";
+import {
+  STUDIO_AD_SHARE_DONE,
+  STUDIO_DOWNLOAD_SIZES,
+} from "../../constants/studio";
+import { reflowStudioScene } from "../../helpers/scene";
 import type { StudioShareSheetProps } from "../../interfaces/ui";
 
 type Channel = keyof typeof STUDIO_AD_SHARE_DONE;
@@ -39,14 +45,18 @@ export function StudioShareSheet({
   assets,
   draft,
   homeHref,
+  onPublished,
 }: StudioShareSheetProps) {
   const { tenantId, summary } = useStudioContext(),
     [placementOpen, setPlacementOpen] = useState(false),
+    [choosing, setChoosing] = useState(false),
+    [saving, setSaving] = useState<string | null>(null),
     [done, setDone] = useState<Channel | null>(null);
 
   useEffect(() => {
     if (!open) {
       setDone(null);
+      setChoosing(false);
       return;
     }
     trackStudioFunnel("studio_share_opened", { draft, ready: prepared });
@@ -69,6 +79,24 @@ export function StudioShareSheet({
         ? "Necesitas permiso para publicar"
         : "En tu tienda en línea";
 
+  const sizes = useStudioSizes(image, assets, tenantId, open);
+
+  async function downloadSize(size: (typeof STUDIO_DOWNLOAD_SIZES)[number]) {
+    if (!image || saving) return;
+    setSaving(size.format);
+    try {
+      const blob = await sizes.render(size.format);
+      output.download(
+        blob === image.blob ? undefined : { blob, suffix: size.suffix },
+      );
+      finish("download");
+    } catch {
+      output.setError("No pudimos preparar esa medida. Intenta otra vez.");
+    } finally {
+      setSaving(null);
+    }
+  }
+
   function finish(channel: Channel) {
     trackStudioFunnel("studio_shared", { channel, draft });
     setDone(channel);
@@ -79,7 +107,13 @@ export function StudioShareSheet({
       <FormSheet
         isOpen={open && !placementOpen}
         onClose={onClose}
-        title={done ? STUDIO_AD_SHARE_DONE[done] : "Compartir"}
+        title={
+          done
+            ? STUDIO_AD_SHARE_DONE[done]
+            : choosing
+              ? "Descargar"
+              : "Compartir"
+        }
         icon={done ? CheckCircle2 : Share2}
         footer={
           done ? (
@@ -121,6 +155,45 @@ export function StudioShareSheet({
                   ? "Va marcado como borrador porque la promoción no está vigente."
                   : "Con tu anuncio y el mensaje listo. Lo encuentras en Tus anuncios."}
             </p>
+          ) : choosing && image ? (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Elige la medida. Se dibuja en tu teléfono, al momento.
+              </p>
+              <div className="grid grid-cols-3 items-end gap-2">
+                {STUDIO_DOWNLOAD_SIZES.map((size) => (
+                  <button
+                    key={size.format}
+                    type="button"
+                    disabled={Boolean(saving)}
+                    onClick={() => void downloadSize(size)}
+                    className="flex min-w-0 cursor-pointer flex-col gap-1.5 rounded-xl p-1.5 text-left transition-colors hover:bg-border-soft/60 focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-60"
+                  >
+                    <span className="pointer-events-none block overflow-hidden rounded-lg shadow-sm">
+                      <StudioScenePreview
+                        scene={reflowStudioScene(image.scene, size.format)}
+                        assets={assets}
+                        tenantId={tenantId}
+                      />
+                    </span>
+                    <span className="text-sm font-bold">
+                      {saving === size.format ? "Bajando…" : size.label}
+                    </span>
+                    <span className="text-xs leading-snug text-muted-foreground">
+                      {size.detail}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className={`${adminActionButtonSecondary} w-full sm:w-auto`}
+                onClick={() => setChoosing(false)}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Atrás
+              </button>
+            </>
           ) : (
             <>
               {image ? (
@@ -156,10 +229,14 @@ export function StudioShareSheet({
                 <StudioShareTile
                   icon={Share2}
                   title="Estado"
-                  detail="Estado, Instagram y más"
-                  disabled={!ready}
+                  detail={
+                    sizes.story ? "Pantalla completa, 9:16" : "Preparando…"
+                  }
+                  disabled={!ready || !sizes.story}
                   onClick={() =>
-                    void output.share().then(() => finish("status"))
+                    void output
+                      .share(sizes.story!, "status")
+                      .then(() => finish("status"))
                   }
                 />
                 <StudioShareTile
@@ -172,12 +249,9 @@ export function StudioShareSheet({
                 <StudioShareTile
                   icon={Download}
                   title="Descargar"
-                  detail="Para Instagram o Facebook"
+                  detail="Cuadrado, vertical o historia"
                   disabled={!ready}
-                  onClick={() => {
-                    output.download();
-                    finish("download");
-                  }}
+                  onClick={() => setChoosing(true)}
                 />
               </div>
             </>
@@ -196,6 +270,7 @@ export function StudioShareSheet({
           onSuccess={(message) => {
             output.setSuccess(message);
             setPlacementOpen(false);
+            onPublished();
             finish("store");
           }}
         />

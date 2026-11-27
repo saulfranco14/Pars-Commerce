@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { StudioCampaign } from "@/features/studio/components/StudioCampaign";
 import { notFound } from "next/navigation";
 import { ArrowRight, Truck } from "lucide-react";
 
@@ -94,7 +93,6 @@ export default async function InicioPage({ params }: PageProps) {
 
   return (
     <div className="space-y-14 sm:space-y-20">
-      <StudioCampaign tenantId={tenant.id} />
       <div className="space-y-4 sm:space-y-5">
         <StoreHero
           tenantName={tenant.name}

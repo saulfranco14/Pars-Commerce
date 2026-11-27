@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   STUDIO_DEFAULT_SURFACE,
   STUDIO_FORMATS,
+  STUDIO_RETIRED_SURFACES,
   STUDIO_SURFACES,
 } from "../constants/studio";
 import { STUDIO_TEXT_ONLY_DESIGNS } from "../constants/designs";
@@ -146,5 +147,15 @@ describe("Studio publish defaults", () => {
       expect(STUDIO_SURFACES[surface].sources, type).toContain(type);
     expect(STUDIO_DEFAULT_SURFACE.product).toBe("product_campaign");
     expect(STUDIO_SURFACES.product_campaign.format).toBe("square");
+  });
+});
+
+describe("Studio places", () => {
+  it("never ticks a retired space and gives each place its own size", () => {
+    for (const surface of Object.values(STUDIO_DEFAULT_SURFACE))
+      expect(STUDIO_RETIRED_SURFACES).not.toContain(surface);
+    expect(STUDIO_RETIRED_SURFACES).toContain("store_home_campaign");
+    expect(STUDIO_SURFACES.qr_promotion.format).toBe("square");
+    expect(STUDIO_SURFACES.qr_menu_campaign.format).toBe("banner");
   });
 });

@@ -158,7 +158,7 @@ export const STUDIO_SURFACES: Record<
     label: "Promoción en mesas / QR",
     hint: "En la pantalla que ven tus clientes al escanear el QR.",
     channel: "table_qr",
-    format: "banner",
+    format: "square",
     sources: ["promotion"],
   },
   qr_menu_campaign: {
@@ -368,7 +368,15 @@ export const STUDIO_DEFAULT_SURFACE = {
   product: "product_campaign",
   promotion: "promotion_detail",
   subscription_plan: "plan_detail",
-  custom: "store_home_campaign",
+  custom: "qr_menu_campaign",
 } as const;
 /** After this long the full-screen wait offers to go on without the AI image. */
 export const STUDIO_AI_SLOW_MS = 40_000;
+/** Sizes offered when downloading; each is drawn on the device from the same ad. */
+export const STUDIO_DOWNLOAD_SIZES = [
+  { format: "square", label: "Cuadrado", detail: "Publicación de Instagram y Facebook", suffix: "cuadrado" },
+  { format: "portrait", label: "Vertical", detail: "Feed vertical, se ve más grande", suffix: "vertical" },
+  { format: "story", label: "Historia", detail: "Estado de WhatsApp e historias", suffix: "historia" },
+] as const;
+/** Spaces Studio no longer offers; what is already published there stays until retired. */
+export const STUDIO_RETIRED_SURFACES: readonly StudioSurface[] = ["store_home_campaign"];

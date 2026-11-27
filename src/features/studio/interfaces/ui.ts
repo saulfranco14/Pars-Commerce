@@ -355,6 +355,8 @@ export interface StudioShareSheetProps extends StudioSheetProps {
   assets: StudioAsset[];
   draft: boolean;
   homeHref: string;
+  /** Called after publishing, so the ad shows where it is live. */
+  onPublished: () => void;
 }
 export interface StudioAdViewProps extends StudioWorkspaceParts {
   designId: string;

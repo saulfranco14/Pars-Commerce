@@ -109,13 +109,16 @@ export function useStudioOutput(input: {
         target,
       ).catch(() => {});
   }
-  function download() {
+  /** Downloads the prepared image, or another size of it drawn on this device. */
+  function download(other?: { blob: Blob; suffix: string }) {
     if (!output) return;
-    const a = document.createElement("a");
-    a.href = output.url;
-    a.download = `${input.title || "anuncio"}.png`;
+    const a = document.createElement("a"),
+      url = other ? URL.createObjectURL(other.blob) : output.url;
+    a.href = url;
+    a.download = `${input.title || "anuncio"}${other ? ` ${other.suffix}` : ""}.png`;
     a.click();
-    void audit("exported", "download");
+    if (other) setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    void audit("exported", other ? `download_${other.suffix}` : "download");
     setSuccess("Tu archivo PNG está preparado y la descarga se inició.");
   }
   async function copyText() {
@@ -133,9 +136,9 @@ export function useStudioOutput(input: {
   }
   const message = [input.copy, input.destination].filter(Boolean).join("\n"),
     whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-  function imageFile() {
+  function imageFile(blob?: Blob) {
     return output
-      ? new File([output.blob], `${input.title || "anuncio"}.png`, {
+      ? new File([blob ?? output.blob], `${input.title || "anuncio"}.png`, {
           type: "image/png",
         })
       : null;
@@ -162,11 +165,12 @@ export function useStudioOutput(input: {
       );
     }
   }
-  async function share() {
-    const file = imageFile();
+  /** Opens the phone's share sheet; `blob` sends another size, such as the 9:16 for Estado. */
+  async function share(blob?: Blob, target = "native") {
+    const file = imageFile(blob);
     if (!file) return;
-    if (canShareFiles(file)) return shareFile(file, "native");
-    download();
+    if (canShareFiles(file)) return shareFile(file, target);
+    download(blob ? { blob, suffix: target } : undefined);
     setSuccess("Descargamos la imagen. Súbela desde tu red social.");
   }
   /** Phones get the share sheet with image and text; elsewhere the image downloads and WhatsApp opens with the text. */
