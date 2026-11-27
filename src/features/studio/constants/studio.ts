@@ -135,9 +135,9 @@ export const STUDIO_SURFACES: Record<
   },
   product_campaign: {
     label: "Detalle del producto",
-    hint: "Al abrir este producto en tu tienda.",
+    hint: "Primera foto al abrir este producto en tu tienda.",
     channel: "public_store",
-    format: "banner",
+    format: "square",
     sources: ["product"],
   },
   plan_card: {
@@ -363,3 +363,12 @@ export const STUDIO_HOME_TABS = [
   { id: "catalog", label: "Catálogo" },
   { id: "ads", label: "Tus anuncios" },
 ] as const;
+/** Ticked when the publish sheet opens: the item's own page, never the whole store. */
+export const STUDIO_DEFAULT_SURFACE = {
+  product: "product_campaign",
+  promotion: "promotion_detail",
+  subscription_plan: "plan_detail",
+  custom: "store_home_campaign",
+} as const;
+/** After this long the full-screen wait offers to go on without the AI image. */
+export const STUDIO_AI_SLOW_MS = 40_000;

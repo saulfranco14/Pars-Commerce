@@ -6,7 +6,6 @@ import {
   createVersion,
   recordShare,
   uploadStudioAsset,
-  downloadStudioBlob,
 } from "../services/studioClientService";
 import type { StudioAsset, StudioVersion } from "../interfaces/studio";
 import type { StudioScene } from "../interfaces/scene";
@@ -80,12 +79,11 @@ export function useStudioOutput(input: {
       });
       if (!render.renderId)
         throw new Error("La exportación todavía no está disponible.");
-      const storedBlob = await downloadStudioBlob(render.url);
       const prepared = {
         version,
         scene,
-        blob: storedBlob,
-        url: URL.createObjectURL(storedBlob),
+        blob,
+        url: URL.createObjectURL(blob),
         renderId: render.renderId,
         assetId: render.assetId,
       };

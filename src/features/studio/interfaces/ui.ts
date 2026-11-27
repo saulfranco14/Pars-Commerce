@@ -135,8 +135,28 @@ export interface StudioDesignCarouselProps {
   assets: StudioAsset[];
   tenantId: string;
   disabled: boolean;
-  /** Shown over the chosen design while a new image is being made. */
+  /** Shown over the chosen design (the draft stamp, for one). */
   overlay?: ReactNode;
+  /** Veils every design with a moving light while the AI makes the image. */
+  generating?: boolean;
+  /** Labels in light text, for the full-screen wait. */
+  dark?: boolean;
+  /** A last card after the designs, such as «Otra imagen». */
+  endCard?: ReactNode;
+}
+export interface StudioGeneratingScreenProps {
+  ad: StudioAdState;
+  title: string;
+  carousel: ReactNode;
+  /** Label of the way out: «Usar mi foto», or «Seguir con texto» with no photo. */
+  goOnLabel: string;
+}
+export interface StudioMoreCardProps {
+  disabled: boolean;
+  /** Why the AI cannot run now, shown instead of the button. */
+  blocked: string | null;
+  rechargeHref: string;
+  onGenerate: () => void;
 }
 export interface StudioFormatSheetProps extends StudioSheetProps {
   value: StudioFormat;
@@ -301,11 +321,6 @@ export interface StudioAdInput extends StudioPhotoInput {
   autoAi: boolean;
 }
 export type StudioAdState = ReturnType<typeof useStudioAd>;
-export interface StudioAiStatusProps {
-  running: { kind: StudioAdAiKind; startedAt: number } | null;
-  landed: boolean;
-  onUndo: () => void;
-}
 export interface StudioNoPhotoSheetProps extends StudioSheetProps {
   name: string;
   canIllustrate: boolean;
@@ -333,6 +348,8 @@ export interface StudioChangeSheetProps extends StudioSheetProps {
   onByHand: () => void;
 }
 export interface StudioShareSheetProps extends StudioSheetProps {
+  /** The share image matches the ad on screen; until then the tiles wait. */
+  prepared: boolean;
   output: StudioOutputState;
   editor: StudioEditorState;
   assets: StudioAsset[];
@@ -347,3 +364,8 @@ export interface StudioAdViewProps extends StudioWorkspaceParts {
   onByHand: () => void;
 }
 export type StudioChangeTab = "design" | "photo" | "phrase";
+export type StudioPublishPhase = "drawing" | "uploading" | "ready";
+export interface StudioPublishStepsProps {
+  /** One phase per ticked space. */
+  phases: StudioPublishPhase[];
+}

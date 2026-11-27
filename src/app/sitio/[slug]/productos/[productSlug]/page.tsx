@@ -1,4 +1,4 @@
-import { StudioCampaign } from "@/features/studio/components/StudioCampaign";
+import { resolveStudioArtworkBatch } from "@/features/studio/services/studioPlacementService";
 /* eslint-disable @typescript-eslint/no-explicit-any -- Commerce schema types are regenerated after the migration rollout. */
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -133,6 +133,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
     initialReviewsRes,
     catalog,
     baseUrl,
+    artwork,
   ] = await Promise.all([
     supabase
       .from("product_images")
@@ -154,14 +155,22 @@ export default async function ProductoDetallePage({ params }: PageProps) {
       .limit(4),
     listCatalogItems({ tenantId: tenant.id, limit: RELATED_LIMIT * 2 + 1 }),
     getRequestBaseUrl(),
+    resolveStudioArtworkBatch(tenant.id, "public_store", "product_campaign", [
+      product.id,
+    ]),
   ]);
 
   const images = imagesRes.data ?? [];
-  const imageUrls = images.length
-    ? images.map((image) => image.url)
-    : product.image_url
-      ? [product.image_url]
-      : [];
+  // A Studio ad published for this product leads the gallery; the real photos follow it.
+  const adUrl = artwork.get(product.id)?.url ?? null;
+  const imageUrls = [
+    ...(adUrl ? [adUrl] : []),
+    ...(images.length
+      ? images.map((image) => image.url)
+      : product.image_url
+        ? [product.image_url]
+        : []),
+  ];
 
   const basePrice = Number(product.price);
   const promotion = buildProductPromoMap(
@@ -226,11 +235,6 @@ export default async function ProductoDetallePage({ params }: PageProps) {
 
   return (
     <div className="space-y-12 pb-[calc(10rem+env(safe-area-inset-bottom))] sm:space-y-16 md:pb-16">
-      <StudioCampaign
-        tenantId={tenant.id}
-        sourceId={product.id}
-        surface="product_campaign"
-      />
       <div>
         <Link
           href={catalogHref(slug, { type: isService ? "service" : "product" })}
@@ -256,6 +260,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
               ) : null}
               <ProductImageGallery
                 imageUrls={imageUrls}
+                adUrl={adUrl}
                 productName={product.name}
                 accentColor={accentColor}
               />

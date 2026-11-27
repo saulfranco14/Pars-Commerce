@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { STUDIO_FORMATS } from "../constants/studio";
+import {
+  STUDIO_DEFAULT_SURFACE,
+  STUDIO_FORMATS,
+  STUDIO_SURFACES,
+} from "../constants/studio";
 import { STUDIO_TEXT_ONLY_DESIGNS } from "../constants/designs";
 import { buildStudioImagePrompt } from "./aiPrompt";
 import { createStudioScene, reviewStudioScene, studioProductPrice } from "./scene";
@@ -133,5 +137,14 @@ describe("Studio illustrative scenes", () => {
     expect(prompt).toContain("illustrative");
     expect(prompt).toContain("only a color reference");
     expect(prompt).toContain("Pulido de faros");
+  });
+});
+
+describe("Studio publish defaults", () => {
+  it("ticks the item's own page, a space that accepts that item", () => {
+    for (const [type, surface] of Object.entries(STUDIO_DEFAULT_SURFACE))
+      expect(STUDIO_SURFACES[surface].sources, type).toContain(type);
+    expect(STUDIO_DEFAULT_SURFACE.product).toBe("product_campaign");
+    expect(STUDIO_SURFACES.product_campaign.format).toBe("square");
   });
 });

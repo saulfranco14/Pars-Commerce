@@ -9,10 +9,13 @@ import {
   uploadStudioAsset,
 } from "../services/studioClientService";
 import { trackStudioFunnel } from "../services/studioAnalyticsClient";
-import { STUDIO_AUTO_SCENE, STUDIO_SHARP_PHOTO_PX } from "../constants/studio";
+import {
+  STUDIO_AI_SLOW_MS,
+  STUDIO_AUTO_SCENE,
+  STUDIO_SHARP_PHOTO_PX,
+} from "../constants/studio";
 import { studioSeedImage } from "../helpers/canvas";
 import { studioDesignColors } from "../helpers/palette";
-import { studioBackdrop } from "../helpers/sceneStyle";
 import { studioSourceIsDraft } from "../helpers/shelf";
 import type { StudioAdAiKind, StudioAdInput } from "../interfaces/ui";
 
@@ -45,8 +48,8 @@ function useOnce(key: string): [boolean, () => void] {
 }
 
 /**
- * The short path: the ad is ready at once with what the catalog has, the AI
- * improves it in the background, and every gap gets one question at most.
+ * The short path: while the AI makes the image the whole screen is for it,
+ * with the designs to browse; every gap gets one question at most.
  */
 export function useStudioAd({
   editor,
@@ -66,29 +69,38 @@ export function useStudioAd({
       kind: StudioAdAiKind;
       startedAt: number;
     } | null>(null),
-    [landed, setLanded] = useState<{
-      kind: StudioAdAiKind;
-      before: ReturnType<typeof studioBackdrop>;
-    } | null>(null),
+    /** The person chose to go on without waiting; a late image is kept, not applied. */
+    [skipped, setSkipped] = useState(false),
+    [failed, setFailed] = useState<StudioAdAiKind | null>(null),
+    [slow, setSlow] = useState(false),
     [message, setMessage] = useState<string | null>(null),
     [error, setError] = useState<string | null>(null),
     [noPhotoOpen, setNoPhotoOpen] = useState(false),
     [saving, setSaving] = useState(false),
     [asked, markAsked] = useOnce(`tlaco:studio:asked:${designId}`),
     [photoAsked, markPhotoAsked] = useOnce(`tlaco:studio:photo:${designId}`),
-    kind = useRef<StudioAdAiKind>("photo");
+    kind = useRef<StudioAdAiKind>("photo"),
+    skippedRef = useRef(false);
 
   const gen = useStudioGenerate({
     designId,
     productPhoto: photos.productPhoto,
     onImage: (job) => {
-      setLanded({
-        kind: kind.current,
-        before: studioBackdrop(photos.latest.current),
-      });
       asset.register(job.result_asset_id!, job.result_url!, "generated");
+      trackStudioFunnel("studio_ai_image_ready", {
+        kind: kind.current,
+        skipped: skippedRef.current,
+      });
+      if (skippedRef.current) {
+        setMessage("Llegó la imagen de la IA: está en Cambiar › Foto.");
+        return;
+      }
       void photos.show(job.result_asset_id!, job.result_url!);
-      trackStudioFunnel("studio_ai_image_ready", { kind: kind.current });
+      setMessage(
+        kind.current === "scene"
+          ? "Escena lista. Es ilustrativa: muestra el servicio, no tu local."
+          : "Listo. Tu foto del catálogo sigue en Cambiar › Foto.",
+      );
     },
   });
 
@@ -98,17 +110,26 @@ export function useStudioAd({
       size !== null &&
       Math.min(size.width, size.height) < STUDIO_SHARP_PHOTO_PX;
 
+  useEffect(() => {
+    if (!running) return;
+    setSlow(false);
+    const timer = setTimeout(() => setSlow(true), STUDIO_AI_SLOW_MS);
+    return () => clearTimeout(timer);
+  }, [running]);
+
   async function runAi(next: StudioAdAiKind, assetId?: string) {
     if (!aiActive) {
       setMessage("La IA de imágenes todavía no está activa en tu cuenta.");
-      return;
+      return false;
     }
     if (!affordable) {
       setMessage("Te quedaste sin Tlacos. Recarga para usar la IA.");
-      return;
+      return false;
     }
     kind.current = next;
-    setLanded(null);
+    skippedRef.current = false;
+    setSkipped(false);
+    setFailed(null);
     setMessage(null);
     setRunning({ kind: next, startedAt: Date.now() });
     try {
@@ -134,13 +155,29 @@ export function useStudioAd({
         assetId: input,
       });
       if (next === "scene") markPhotoAsked();
+      if (!ok && !skippedRef.current) setFailed(next);
       return ok;
     } catch (e) {
       setError(errorText(e, "No pudimos hacer la imagen."));
+      if (!skippedRef.current) setFailed(next);
       return false;
     } finally {
       setRunning(null);
     }
+  }
+
+  /** Leaves the wait with what the ad already has; the AI may still finish. */
+  function goOn() {
+    skippedRef.current = true;
+    setSkipped(true);
+    setFailed(null);
+    gen.clearError();
+    trackStudioFunnel("studio_ai_wait_skipped", { kind: kind.current });
+    setMessage(
+      photos.hasPhoto
+        ? "Va con tu foto. Si la imagen de la IA llega, quedará en Cambiar › Foto."
+        : "Va solo con texto. Puedes agregar foto en Cambiar › Foto.",
+    );
   }
 
   const started = useRef(false);
@@ -174,17 +211,6 @@ export function useStudioAd({
     // Once per opened ad.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [designId]);
-
-  function undo() {
-    if (!landed) return;
-    const { assetId, imageUrl } = landed.before;
-    if (assetId) void photos.show(assetId, photos.urlOf(assetId));
-    else if (imageUrl) void photos.show({ imageUrl }, imageUrl);
-    else photos.clear();
-    setLanded(null);
-    setMessage("Volvió la anterior. La nueva sigue en Cambiar › Foto.");
-    trackStudioFunnel("studio_ai_image_undone", { kind: kind.current });
-  }
 
   /** Writes an answer to the catalog, then the ad picks it up. */
   async function writeBack(change: Parameters<typeof updateDesignSource>[2]) {
@@ -256,24 +282,24 @@ export function useStudioAd({
     }
   }
 
-  const hint = running
-    ? "Ya puedes compartirlo. Si esperas, sale con la imagen nueva."
-    : landed
-      ? landed.kind === "scene"
-        ? "Escena lista. Es ilustrativa: muestra el servicio, no tu local."
-        : "Llegó la imagen nueva. Si te gustaba más la anterior, toca Deshacer."
-      : (message ??
-        (!photos.hasPhoto
-          ? "Anuncio solo con texto, con tus colores. Agrega foto en Cambiar › Foto."
-          : small
-            ? "Tu foto es chica y se verá borrosa."
-            : "Listo para compartir."));
+  const hint =
+    message ??
+    (!photos.hasPhoto
+      ? "Anuncio solo con texto, con tus colores. Agrega foto en Cambiar › Foto."
+      : small
+        ? "Tu foto es chica y se verá borrosa."
+        : "Listo para compartir.");
 
   return {
     running,
+    /** The full-screen wait: the AI is working, or it just failed, and the person has not moved on. */
+    waiting: Boolean((running || failed) && !skipped),
+    slow,
+    failed,
+    failText: failed ? (gen.error ?? error ?? "No salió la imagen.") : null,
+    goOn,
+    retry: () => failed && void runAi(failed),
     aiOn,
-    landed: Boolean(landed),
-    undo,
     runAi,
     aiActive,
     affordable,

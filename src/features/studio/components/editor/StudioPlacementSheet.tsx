@@ -1,14 +1,16 @@
 "use client";
-import { useMemo, useRef, useState } from "react";
-import Image from "next/image";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Globe, Loader2 } from "lucide-react";
 import { FormSheet } from "@/components/ui/FormSheet";
 import { FormInput } from "@/components/ui/FormInput";
 import { Notification } from "@/components/ui/Notification";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { StudioPublishSteps } from "./StudioPublishSteps";
 import { adminActionButtonPrimary } from "@/components/admin/actionButtonClasses";
 import { useSchemaForm } from "@/lib/forms/useSchemaForm";
-import { STUDIO_SURFACES } from "../../constants/studio";
+import {
+  STUDIO_DEFAULT_SURFACE,
+  STUDIO_SURFACES,
+} from "../../constants/studio";
 import { reflowStudioScene } from "../../helpers/scene";
 import { exportStudioScene } from "../../helpers/canvas";
 import {
@@ -16,11 +18,13 @@ import {
   uploadStudioAsset,
 } from "../../services/studioClientService";
 import type { StudioSurface } from "../../interfaces/studio";
-import type { StudioPlacementSheetProps } from "../../interfaces/ui";
+import type {
+  StudioPlacementSheetProps,
+  StudioPublishPhase,
+} from "../../interfaces/ui";
 import type { FieldSchema } from "@/lib/forms/fieldSchema";
 
 const FORM_ID = "studio-placement-form";
-type Preview = { renderId: string; url: string };
 
 /** Local datetime value (yyyy-mm-ddThh:mm) for a datetime-local input. */
 const localValue = (date: Date) =>
@@ -28,7 +32,7 @@ const localValue = (date: Date) =>
     .toISOString()
     .slice(0, 16);
 
-/** Pick the spaces, see each one ready to go, publish with one button. */
+/** Tick the spaces and publish; files are prepared quietly and the steps show what is left. */
 export function StudioPlacementSheet({
   open,
   onClose,
@@ -40,15 +44,18 @@ export function StudioPlacementSheet({
   onSuccess,
 }: StudioPlacementSheetProps) {
   const [selected, setSelected] = useState<StudioSurface[]>([]),
-    [previews, setPreviews] = useState<Partial<Record<StudioSurface, Preview>>>(
-      {},
-    ),
-    [preparing, setPreparing] = useState<StudioSurface[]>([]),
+    [jobs, setJobs] = useState<
+      Partial<Record<StudioSurface, StudioPublishPhase>>
+    >({}),
+    [publishing, setPublishing] = useState(false),
     [error, setError] = useState<string | null>(null),
     [results, setResults] = useState<
       Array<{ surface: string; ok: boolean; error?: string }>
     >([]);
   const source = output.version.source_snapshot,
+    pending = useRef<Partial<Record<StudioSurface, Promise<string | null>>>>(
+      {},
+    ),
     request = useRef<{
       signature: string;
       key: string;
@@ -101,16 +108,22 @@ export function StudioPlacementSheet({
     ],
     [title, source.type, source.validUntil],
   );
-  const ready =
-    selected.length > 0 && selected.every((surface) => previews[surface]);
   const form = useSchemaForm<{ alt: string; start: string; end: string }>(
     fields,
     async (values) => {
-      if (!ready)
-        throw new Error("Espera a que estén listas las vistas para publicar.");
-      const targets = selected.map((surface) => ({
+      setPublishing(true);
+      const ids = await Promise.all(
+        selected.map((surface) => pending.current[surface] ?? render(surface)),
+      );
+      if (ids.some((id) => !id)) {
+        setPublishing(false);
+        throw new Error(
+          "No pudimos preparar un espacio. Toca Publicar otra vez.",
+        );
+      }
+      const targets = selected.map((surface, i) => ({
         surface,
-        render_id: previews[surface]!.renderId,
+        render_id: ids[i]!,
       }));
       const signature = JSON.stringify({
         version: output.version.id,
@@ -145,15 +158,28 @@ export function StudioPlacementSheet({
             : `Listo: tu anuncio ya está en ${good} espacios.`,
         );
         onClose();
-      } else
+      } else {
+        setPublishing(false);
         throw new Error(
           "Algunos espacios no se publicaron. Revisa cada uno abajo; tu selección se conserva para reintentar.",
         );
+      }
     },
   );
 
-  async function render(surface: StudioSurface) {
-    setPreparing((current) => [...current, surface]);
+  function render(surface: StudioSurface): Promise<string | null> {
+    const task = draw(surface);
+    pending.current[surface] = task;
+    void task.then((id) => {
+      if (!id) delete pending.current[surface];
+    });
+    return task;
+  }
+
+  async function draw(surface: StudioSurface): Promise<string | null> {
+    const phase = (next: StudioPublishPhase) =>
+      setJobs((current) => ({ ...current, [surface]: next }));
+    phase("drawing");
     setError(null);
     try {
       const scene = reflowStudioScene(
@@ -161,6 +187,7 @@ export function StudioPlacementSheet({
           STUDIO_SURFACES[surface].format,
         ),
         blob = await exportStudioScene(scene, assets, tenantId);
+      phase("uploading");
       const stored = await uploadStudioAsset({
         tenantId,
         designId: output.version.design_id,
@@ -172,17 +199,14 @@ export function StudioPlacementSheet({
       });
       if (!stored.renderId)
         throw new Error("No pudimos preparar este espacio.");
-      setPreviews((current) => ({
-        ...current,
-        [surface]: { renderId: stored.renderId!, url: stored.url },
-      }));
+      phase("ready");
+      return stored.renderId;
     } catch (e) {
-      setSelected((current) => current.filter((s) => s !== surface));
+      setJobs((current) => ({ ...current, [surface]: undefined }));
       setError(
         e instanceof Error ? e.message : "No pudimos preparar este espacio.",
       );
-    } finally {
-      setPreparing((current) => current.filter((s) => s !== surface));
+      return null;
     }
   }
 
@@ -193,18 +217,28 @@ export function StudioPlacementSheet({
       return;
     }
     setSelected((current) => [...current, surface]);
-    if (!previews[surface] && !preparing.includes(surface))
-      void render(surface);
+    if (!pending.current[surface]) void render(surface);
   }
 
-  const busy = preparing.length > 0 || form.submitting,
+  const started = useRef(false);
+  useEffect(() => {
+    if (!open || started.current) return;
+    started.current = true;
+    const preferred = STUDIO_DEFAULT_SURFACE[source.type];
+    if (options.some(([surface]) => surface === preferred)) {
+      setSelected([preferred]);
+      void render(preferred);
+    }
+    // Ticks the item's own page once, when the sheet first opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const busy = form.submitting,
     status = !selected.length
       ? "Elige al menos un espacio."
-      : preparing.length
-        ? "Preparando cómo se verá…"
-        : selected.length === 1
-          ? "Se publica en 1 espacio."
-          : `Se publica en ${selected.length} espacios.`;
+      : selected.length === 1
+        ? "Se publica en 1 espacio. Publicar no cuesta."
+        : `Se publica en ${selected.length} espacios. Publicar no cuesta.`;
   return (
     <FormSheet
       isOpen={open}
@@ -227,7 +261,7 @@ export function StudioPlacementSheet({
               type="submit"
               form={FORM_ID}
               className={`${adminActionButtonPrimary} w-full sm:w-auto`}
-              disabled={!ready || busy}
+              disabled={!selected.length || busy}
             >
               {form.submitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -245,86 +279,71 @@ export function StudioPlacementSheet({
         onSubmit={form.handleSubmit(form.submit)}
         className="space-y-5 pb-2"
       >
-        <fieldset className="space-y-2">
-          <legend className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Dónde
-          </legend>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {options.map(([surface, s]) => {
-              const on = selected.includes(surface),
-                preview = previews[surface],
-                loading = preparing.includes(surface);
-              return (
-                <button
-                  key={surface}
-                  type="button"
-                  aria-pressed={on}
-                  disabled={form.submitting}
-                  onClick={() => toggle(surface)}
-                  className={`flex min-w-0 cursor-pointer flex-col gap-2 rounded-xl border p-3 text-left transition-colors disabled:cursor-not-allowed ${on ? "border-accent bg-accent/5" : "border-border hover:border-accent/50"}`}
-                >
-                  <span className="flex items-start justify-between gap-3">
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold">
-                        {s.label}
-                      </span>
-                      <span className="block text-xs text-muted-foreground">
-                        {s.hint}
-                      </span>
-                    </span>
-                    <span
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${on ? "border-accent bg-accent text-accent-foreground" : "border-border"}`}
+        {publishing ? (
+          <StudioPublishSteps
+            phases={selected.map((surface) => jobs[surface] ?? "drawing")}
+          />
+        ) : (
+          <>
+            <fieldset className="space-y-2">
+              <legend className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Dónde
+              </legend>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {options.map(([surface, s]) => {
+                  const on = selected.includes(surface);
+                  return (
+                    <button
+                      key={surface}
+                      type="button"
+                      aria-pressed={on}
+                      disabled={form.submitting}
+                      onClick={() => toggle(surface)}
+                      className={`flex min-w-0 cursor-pointer flex-col gap-2 rounded-xl border p-3 text-left transition-colors disabled:cursor-not-allowed ${on ? "border-accent bg-accent/5" : "border-border hover:border-accent/50"}`}
                     >
-                      {on && <Check className="h-3.5 w-3.5" aria-hidden />}
-                    </span>
-                  </span>
-                  {on &&
-                    (loading || !preview ? (
-                      <Skeleton
-                        className={`w-full rounded-lg ${s.format === "banner" ? "aspect-16/7" : "aspect-square"}`}
-                      />
-                    ) : (
-                      <Image
-                        src={preview.url}
-                        alt=""
-                        width={1600}
-                        height={
-                          s.format === "banner"
-                            ? 700
-                            : s.format === "square"
-                              ? 1600
-                              : 2000
-                        }
-                        unoptimized
-                        className="h-auto w-full rounded-lg border border-border object-contain"
-                      />
-                    ))}
-                </button>
-              );
-            })}
-          </div>
-        </fieldset>
-        <FormInput
-          label="Descripción de la imagen"
-          hint="La leen quienes usan lector de pantalla."
-          {...form.register("alt")}
-          error={form.errors.alt?.message}
-        />
-        <FormInput
-          label={
-            source.type === "custom"
-              ? "Hasta cuándo (obligatorio)"
-              : "Hasta cuándo"
-          }
-          hint={
-            source.type === "custom"
-              ? undefined
-              : "Si lo dejas vacío, sigue hasta que lo retires."
-          }
-          type="datetime-local"
-          {...form.register("end")}
-          error={form.errors.end?.message}
-        />
+                      <span className="flex items-start justify-between gap-3">
+                        <span className="min-w-0">
+                          <span className="block text-sm font-semibold">
+                            {s.label}
+                          </span>
+                          <span className="block text-xs text-muted-foreground">
+                            {s.hint}
+                          </span>
+                        </span>
+                        <span
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${on ? "border-accent bg-accent text-accent-foreground" : "border-border"}`}
+                        >
+                          {on && <Check className="h-3.5 w-3.5" aria-hidden />}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+            <FormInput
+              label="Descripción de la imagen"
+              hint="La leen quienes usan lector de pantalla."
+              {...form.register("alt")}
+              error={form.errors.alt?.message}
+            />
+            <FormInput
+              label={
+                source.type === "custom"
+                  ? "Hasta cuándo (obligatorio)"
+                  : "Hasta cuándo"
+              }
+              hint={
+                source.type === "custom"
+                  ? undefined
+                  : "Si lo dejas vacío, sigue hasta que lo retires."
+              }
+              type="datetime-local"
+              {...form.register("end")}
+              error={form.errors.end?.message}
+            />
+          </>
+        )}
         {error && <Notification tone="error" message={error} />}
         {form.submitError && (
           <Notification tone="error" message={form.submitError} />
@@ -336,13 +355,16 @@ export function StudioPlacementSheet({
             message={`${STUDIO_SURFACES[r.surface as StudioSurface]?.label}: ${r.ok ? "publicado" : r.error}`}
           />
         ))}
-        <ul className="list-disc space-y-1 pl-4 text-xs leading-5 text-muted-foreground">
-          <li>Reemplaza lo que hoy esté publicado en ese espacio.</li>
-          <li>
-            Si la promoción se pausa, vence o cambia de precio, se retira sola.
-          </li>
-          <li>Al retirarlo vuelve lo que había antes.</li>
-        </ul>
+        {!publishing && (
+          <ul className="list-disc space-y-1 pl-4 text-xs leading-5 text-muted-foreground">
+            <li>Reemplaza lo que hoy esté publicado en ese espacio.</li>
+            <li>
+              Si la promoción se pausa, vence o cambia de precio, se retira
+              sola.
+            </li>
+            <li>Al retirarlo vuelve lo que había antes.</li>
+          </ul>
+        )}
       </form>
     </FormSheet>
   );

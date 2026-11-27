@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
   CheckCircle2,
   Download,
+  ExternalLink,
   Globe,
   MessageCircle,
   Plus,
@@ -23,16 +24,16 @@ import {
 } from "@/components/admin/actionButtonClasses";
 import { trackStudioFunnel } from "../../services/studioAnalyticsClient";
 import { STUDIO_AD_SHARE_DONE } from "../../constants/studio";
-import { studioTagline, suggestStudioCopy } from "../../helpers/sceneStyle";
 import type { StudioShareSheetProps } from "../../interfaces/ui";
 
 type Channel = keyof typeof STUDIO_AD_SHARE_DONE;
 
-/** Four destinations, no steps in between. The image is prepared as the sheet opens. */
+/** Four destinations, no steps in between; the image is usually ready before the sheet opens. */
 export function StudioShareSheet({
   open,
   onClose,
   disabled,
+  prepared,
   output,
   editor,
   assets,
@@ -41,34 +42,24 @@ export function StudioShareSheet({
 }: StudioShareSheetProps) {
   const { tenantId, summary } = useStudioContext(),
     [placementOpen, setPlacementOpen] = useState(false),
-    [done, setDone] = useState<Channel | null>(null),
-    preparedFor = useRef<string | null>(null);
+    [done, setDone] = useState<Channel | null>(null);
 
   useEffect(() => {
     if (!open) {
       setDone(null);
       return;
     }
-    trackStudioFunnel("studio_share_opened", { draft });
-    const key = JSON.stringify(editor.scene);
-    if (output.output && preparedFor.current === key) return;
-    preparedFor.current = key;
-    if (!editor.copy.trim())
-      editor.setCopy(
-        suggestStudioCopy(editor.source.current, studioTagline(editor.scene)),
-      );
-    void output.prepare().catch(() => {
-      preparedFor.current = null;
-    });
-    // Prepares once per opening and only when the ad changed since the last one.
+    trackStudioFunnel("studio_share_opened", { draft, ready: prepared });
+    // Counts each opening, and whether the image was already waiting.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const prepared = output.output,
-    ready = Boolean(prepared) && !output.busy && !disabled,
+  const image = prepared ? output.output : null,
+    ready = Boolean(image) && !disabled,
+    storeUrl = editor.source.current.destinationUrl,
     publishable = Boolean(
-      prepared &&
-      !prepared.version.is_preparation &&
+      image &&
+      !image.version.is_preparation &&
       summary?.publishEnabled &&
       summary.permissions.includes("studio.publish"),
     ),
@@ -76,7 +67,7 @@ export function StudioShareSheet({
       ? "Vencida: cambia la vigencia"
       : !summary?.permissions.includes("studio.publish")
         ? "Necesitas permiso para publicar"
-        : "Arriba en tu sitio";
+        : "En tu tienda en línea";
 
   function finish(channel: Channel) {
     trackStudioFunnel("studio_shared", { channel, draft });
@@ -93,14 +84,26 @@ export function StudioShareSheet({
         footer={
           done ? (
             <div className={actionPair}>
-              <button
-                type="button"
-                className={adminActionButtonSecondary}
-                onClick={onClose}
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Volver
-              </button>
+              {done === "store" && storeUrl ? (
+                <a
+                  href={storeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={adminActionButtonSecondary}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Ver tienda
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  className={adminActionButtonSecondary}
+                  onClick={onClose}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Volver
+                </button>
+              )}
               <Link href={homeHref} className={adminActionButtonPrimary}>
                 <Plus className="h-4 w-4" />
                 Otro
@@ -113,14 +116,24 @@ export function StudioShareSheet({
           {done ? (
             <p className="text-sm leading-6 text-muted-foreground">
               {done === "store"
-                ? "Ya lo ven tus clientes arriba en tu sitio."
+                ? "Ya lo ven tus clientes en tu tienda en línea."
                 : draft
                   ? "Va marcado como borrador porque la promoción no está vigente."
                   : "Con tu anuncio y el mensaje listo. Lo encuentras en Tus anuncios."}
             </p>
           ) : (
             <>
-              {!prepared && output.busy && (
+              {image ? (
+                <div className="flex items-center gap-3 rounded-xl bg-emerald-500/10 p-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={image.url}
+                    alt=""
+                    className="h-12 w-12 rounded-lg object-cover"
+                  />
+                  Lista en alta calidad
+                </div>
+              ) : (
                 <div className="flex items-center gap-3 rounded-xl bg-border-soft/60 p-3 text-sm text-muted-foreground">
                   <Skeleton className="h-12 w-12 rounded-lg" />
                   Preparando tu imagen en alta calidad…
@@ -171,11 +184,11 @@ export function StudioShareSheet({
           )}
         </div>
       </FormSheet>
-      {prepared && (
+      {image && (
         <StudioPlacementSheet
           open={placementOpen}
           onClose={() => setPlacementOpen(false)}
-          output={prepared}
+          output={image}
           tenantId={tenantId}
           assets={assets}
           title={editor.title}

@@ -6,17 +6,21 @@ import { Package, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ProductImageGalleryProps {
   imageUrls: string[];
+  /** The Studio ad, shown first and edge to edge; it is served by our own route. */
+  adUrl?: string | null;
   productName: string;
   accentColor: string;
 }
 
 export default function ProductImageGallery({
   imageUrls,
+  adUrl = null,
   productName,
   accentColor,
 }: ProductImageGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const mainUrl = imageUrls[selectedIndex] ?? imageUrls[0];
+  const mainUrl = imageUrls[selectedIndex] ?? imageUrls[0],
+    mainIsAd = mainUrl === adUrl;
 
   if (imageUrls.length === 0) {
     return (
@@ -26,8 +30,10 @@ export default function ProductImageGallery({
     );
   }
 
-  const goPrev = () => setSelectedIndex((i) => (i > 0 ? i - 1 : imageUrls.length - 1));
-  const goNext = () => setSelectedIndex((i) => (i < imageUrls.length - 1 ? i + 1 : 0));
+  const goPrev = () =>
+    setSelectedIndex((i) => (i > 0 ? i - 1 : imageUrls.length - 1));
+  const goNext = () =>
+    setSelectedIndex((i) => (i < imageUrls.length - 1 ? i + 1 : 0));
 
   return (
     <div className="space-y-3">
@@ -35,12 +41,13 @@ export default function ProductImageGallery({
         <Image
           key={mainUrl}
           src={mainUrl}
-          alt={productName}
+          alt={mainIsAd ? `Anuncio de ${productName}` : productName}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 52vw, 620px"
-          className="object-contain p-2 transition-transform duration-500 sm:p-3"
+          className={`transition-transform duration-500 ${mainIsAd ? "object-cover" : "object-contain p-2 sm:p-3"}`}
           priority
           quality={80}
+          unoptimized={mainIsAd}
         />
         {imageUrls.length > 1 && (
           <>
@@ -97,9 +104,12 @@ export default function ProductImageGallery({
                 alt={`${productName} ${i + 1}`}
                 fill
                 sizes="64px"
-                className="object-contain p-0.5"
+                className={
+                  url === adUrl ? "object-cover" : "object-contain p-0.5"
+                }
                 loading="lazy"
                 quality={60}
+                unoptimized={url === adUrl}
               />
             </button>
           ))}

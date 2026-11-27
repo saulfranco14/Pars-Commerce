@@ -1085,3 +1085,40 @@ body {
     animation: none;
   }
 }
+
+/* Studio: a bar that shimmers while a step runs. */
+@keyframes studio-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+.studio-shimmer {
+  background: linear-gradient(90deg, rgb(52 131 250 / .15), rgb(52 131 250 / .45), rgb(52 131 250 / .15));
+  background-size: 200% 100%;
+  animation: studio-shimmer 1.4s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .studio-shimmer { animation: none; }
+}
+
+/* Studio: the veil over each design while the AI makes the image. */
+.studio-generating-veil {
+  background:
+    linear-gradient(115deg, transparent 20%, rgb(120 170 255 / .38) 40%, rgb(200 140 255 / .38) 55%, transparent 75%) 0 0 / 260% 100%,
+    rgb(10 16 32 / .38);
+  animation: studio-shimmer 2.2s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .studio-generating-veil { animation: none; }
+}
+
+/* Studio: the line that says what the AI is doing shimmers like the cards. */
+.studio-ai-text {
+  background: linear-gradient(90deg, #9fb6ff, #d6b8ff, #9fe0f0, #9fb6ff) 0 0 / 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: studio-shimmer 3s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .studio-ai-text { animation: none; }
+}

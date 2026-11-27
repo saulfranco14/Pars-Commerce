@@ -18,6 +18,9 @@ export function StudioDesignCarousel({
   tenantId,
   disabled,
   overlay,
+  generating = false,
+  dark = false,
+  endCard,
 }: StudioDesignCarouselProps) {
   const track = useRef<HTMLDivElement>(null),
     activeRef = useRef(active),
@@ -80,7 +83,12 @@ export function StudioDesignCarousel({
       setCentered(nearest);
       if (settle.current) clearTimeout(settle.current);
       settle.current = setTimeout(() => {
-        if (!disabled && nearest !== activeRef.current) onPick(nearest);
+        if (
+          !disabled &&
+          nearest < options.length &&
+          nearest !== activeRef.current
+        )
+          onPick(nearest);
       }, SETTLE_MS);
     });
   }
@@ -128,9 +136,17 @@ export function StudioDesignCarousel({
                 assets={assets}
                 tenantId={tenantId}
               />
+              {generating && (
+                <span
+                  className="studio-generating-veil pointer-events-none absolute inset-0"
+                  aria-hidden
+                />
+              )}
               {chosen && overlay}
             </button>
-            <p className="flex items-center justify-center gap-2 text-sm font-semibold">
+            <p
+              className={`flex items-center justify-center gap-2 text-sm font-semibold ${dark ? "text-white/85" : ""}`}
+            >
               {option.name}
               {i === 0 && (
                 <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-bold text-accent">
@@ -141,6 +157,14 @@ export function StudioDesignCarousel({
           </div>
         );
       })}
+      {endCard && (
+        <div
+          className="flex shrink-0 snap-center flex-col"
+          style={{ width: card || `${CARD_SHARE * 100}%` }}
+        >
+          {endCard}
+        </div>
+      )}
     </div>
   );
 }

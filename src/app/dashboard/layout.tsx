@@ -44,6 +44,8 @@ export default function DashboardLayout({
   const activeTenant = useActiveTenant();
   const isPreparingBusiness = pathname === "/dashboard/preparar-negocio";
   const onPlatform = isPlatformRoute(pathname) || isProspectingRoute(pathname);
+  // Studio never takes orders, so the legal-data notice for orders stays out of it.
+  const onStudio = /^\/dashboard\/[^/]+\/studio(\/|$)/.test(pathname);
 
   const pathParts = pathname.split("/").filter(Boolean);
   const tenantSlug =
@@ -155,7 +157,7 @@ export default function DashboardLayout({
             isFocusRoute(pathname) ? "pb-6" : "pb-24"
           }`}
         >
-          {!onPlatform && <Suspense fallback={null}><LegalDeferredNotice /></Suspense>}
+          {!onPlatform && !onStudio && <Suspense fallback={null}><LegalDeferredNotice /></Suspense>}
           {pathname === "/dashboard/crear-negocio" ||
           pathname === "/dashboard/perfil" ||
           pathname === "/dashboard/legal" ||
