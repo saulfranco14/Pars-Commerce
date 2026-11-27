@@ -2,6 +2,10 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { useStudioAssets } from "../hooks/useStudioAssets";
 import type { useStudioEditor } from "../hooks/useStudioEditor";
+import type { useStudioPhotos } from "../hooks/useStudioPhotos";
+import type { useStudioDesigns } from "../hooks/useStudioDesigns";
+import type { useStudioAd } from "../hooks/useStudioAd";
+import type { STUDIO_AD_AI_TEXT } from "../constants/studio";
 import type {
   StudioPreparedOutput,
   useStudioOutput,
@@ -12,6 +16,7 @@ import type {
   StudioIdea,
   StudioImage,
   StudioImageRequest,
+  StudioShelfItem,
   StudioSource,
   StudioSummary,
 } from "./studio";
@@ -40,6 +45,8 @@ export interface StudioContextValue {
   refresh: () => Promise<unknown>;
 }
 export interface StudioEditorProps {
+  /** Crear asked for a new AI image; the ad view spends it once. */
+  autoAi?: boolean;
   detail: StudioDesignDetail;
   onRefresh: () => Promise<unknown>;
   initialReview?: boolean;
@@ -130,8 +137,6 @@ export interface StudioDesignCarouselProps {
   disabled: boolean;
   /** Shown over the chosen design while a new image is being made. */
   overlay?: ReactNode;
-  /** Changes when a new image lands, to replay the reveal. */
-  revealKey: number;
 }
 export interface StudioFormatSheetProps extends StudioSheetProps {
   value: StudioFormat;
@@ -176,6 +181,13 @@ export interface StudioWorkspaceParts {
   tenantId: string;
   locked: boolean;
 }
+export interface StudioPhotoInput {
+  editor: StudioEditorState;
+  asset: StudioAssetsState;
+  tenantId: string;
+  designId: string;
+}
+export type StudioPhotosState = ReturnType<typeof useStudioPhotos>;
 export interface StudioPosterEditorProps extends StudioWorkspaceParts {
   designId: string;
   catalogHref: string | null;
@@ -242,13 +254,7 @@ export interface StudioBatchRow {
   id: string;
   name: string;
   status:
-    | "waiting"
-    | "creating"
-    | "queued"
-    | "image"
-    | "done"
-    | "failed"
-    | "later";
+    "waiting" | "creating" | "queued" | "image" | "done" | "failed" | "later";
   designId?: string;
   imageUrl?: string;
   reason?: string;
@@ -272,3 +278,72 @@ export interface StudioPlacementSheetProps {
   destination: string;
   onSuccess: (message: string) => void;
 }
+export interface StudioShelfRowProps {
+  item: StudioShelfItem;
+  creating: boolean;
+  disabled: boolean;
+  onCreate: () => void;
+}
+export interface StudioAiToggleProps {
+  on: boolean;
+  onChange: (on: boolean) => void;
+  /** Off when the AI is not active for the account or there are no Tlacos. */
+  reason: "ready" | "inactive" | "empty";
+  rechargeHref: string;
+}
+export type StudioHomeTab = "catalog" | "ads";
+export type StudioAdAiKind = keyof typeof STUDIO_AD_AI_TEXT;
+export type StudioDesignsState = ReturnType<typeof useStudioDesigns>;
+export interface StudioAdInput extends StudioPhotoInput {
+  photos: StudioPhotosState;
+  designs: StudioDesignsState;
+  /** Set when Crear asked for a new AI image; spent once per ad. */
+  autoAi: boolean;
+}
+export type StudioAdState = ReturnType<typeof useStudioAd>;
+export interface StudioAiStatusProps {
+  running: { kind: StudioAdAiKind; startedAt: number } | null;
+  landed: boolean;
+  onUndo: () => void;
+}
+export interface StudioNoPhotoSheetProps extends StudioSheetProps {
+  name: string;
+  canIllustrate: boolean;
+  aiOn: boolean;
+  onCamera: (file: File) => void;
+  onScene: () => void;
+  onText: () => void;
+}
+export interface StudioAskCardProps {
+  name: string;
+  saving: boolean;
+  onSave: (text: string) => void;
+  onSkip: () => void;
+}
+export interface StudioValiditySheetProps extends StudioSheetProps {
+  saving: boolean;
+  onSave: (day: string) => Promise<boolean>;
+}
+export interface StudioChangeSheetProps extends StudioSheetProps {
+  photos: StudioPhotosState;
+  designs: StudioDesignsState;
+  ad: StudioAdState;
+  assets: StudioAsset[];
+  tenantId: string;
+  onByHand: () => void;
+}
+export interface StudioShareSheetProps extends StudioSheetProps {
+  output: StudioOutputState;
+  editor: StudioEditorState;
+  assets: StudioAsset[];
+  draft: boolean;
+  homeHref: string;
+}
+export interface StudioAdViewProps extends StudioWorkspaceParts {
+  designId: string;
+  output: StudioOutputState;
+  autoAi: boolean;
+  saveText: string;
+  onByHand: () => void;
+}
+export type StudioChangeTab = "design" | "photo" | "phrase";

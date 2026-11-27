@@ -82,15 +82,30 @@ describe("Studio ready-made designs", () => {
           ).toEqual([]);
         }
   });
-  it("keeps the call to action on one line when there is no price", () => {
+  it("keeps the call to action on one line when there is no price (two only in the stamp)", () => {
     const promo = { ...promotion, priceLabel: "", price: null, badge: "" };
+    const longestLine = (text: string, lines: number) => {
+      if (lines === 1) return text.length;
+      const words = text.split(" ");
+      return Math.min(
+        ...words
+          .slice(1)
+          .map((_, i) =>
+            Math.max(
+              words.slice(0, i + 1).join(" ").length,
+              words.slice(i + 1).join(" ").length,
+            ),
+          ),
+      );
+    };
     for (const template of STUDIO_TEMPLATES)
       for (const format of FORMATS) {
         const scene = createStudioScene(promo, template.id, format),
           cta = node(scene, (n) => n.role === "cta"),
           size = STUDIO_FORMATS_FOR_TEST[format],
-          charWidth = cta.fontSize * size.height * 0.62;
-        expect(cta.content.length * charWidth).toBeLessThanOrEqual(
+          charWidth = cta.fontSize * size.height * 0.62,
+          lines = template.id === "stamp" ? 2 : 1;
+        expect(longestLine(cta.content, lines) * charWidth).toBeLessThanOrEqual(
           cta.width * size.width + 1,
         );
       }

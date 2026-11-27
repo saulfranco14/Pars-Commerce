@@ -478,6 +478,7 @@ function arrangeDesignScene(
       : null,
     notes,
     colors: studioDesignColors(scene.palette),
+    photo: Boolean(image?.visible && (image.assetId || image.imageUrl)),
   });
   return {
     ...scene,

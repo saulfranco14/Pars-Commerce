@@ -1,3 +1,4 @@
+import { STUDIO_TEXT_ONLY_DESIGNS } from "../constants/designs";
 import type { StudioDesignColors } from "./palette";
 import type { StudioDesignId, StudioNode } from "../interfaces/scene";
 
@@ -37,6 +38,8 @@ export interface StudioDesignInput {
   /** Closing lines in order: a second badge, the tagline, validity, period, conditions. */
   notes: Array<{ key: StudioDesignKey; text: string }>;
   colors: StudioDesignColors;
+  /** False when the ad goes out with text only; defaults to a photo ad. */
+  photo?: boolean;
 }
 
 export interface StudioDesignResult {
@@ -119,8 +122,31 @@ const fitLine = (text: string, width: number, base: number, glyph: number) =>
 const textWidth = (text: string, font: number, glyph: number) =>
   text.length * font * glyph;
 const lineHeight = (font: number) => font * 1.3;
+/** Characters on the longer line when a short text is split in two at the best space. */
+function twoLineWidth(text: string) {
+  const words = text.split(" ");
+  let best = text.length;
+  for (let i = 1; i < words.length; i++)
+    best = Math.min(best, Math.max(words.slice(0, i).join(" ").length, words.slice(i).join(" ").length));
+  return best;
+}
 
+/** Without a photo the full-bleed designs fade from the dark color into the accent. */
 export function arrangeStudioDesign(input: StudioDesignInput): StudioDesignResult {
+  const result = placeStudioDesign(input),
+    shade = result.placements.shade;
+  if (input.photo !== false || !shade || !STUDIO_TEXT_ONLY_DESIGNS.includes(input.layout))
+    return result;
+  return {
+    ...result,
+    placements: {
+      ...result.placements,
+      shade: { ...shade, style: { ...shade.style, shade: "fade", fill: input.colors.accent, opacity: 0.8 } },
+    },
+  };
+}
+
+function placeStudioDesign(input: StudioDesignInput): StudioDesignResult {
   const m = Math.min(input.width, input.height),
     W = input.width / m,
     H = input.height / m,
@@ -289,15 +315,19 @@ export function arrangeStudioDesign(input: StudioDesignInput): StudioDesignResul
         { ...style, rotation: STAMP_TILT },
       );
     };
+    /* A call to action takes two lines in the stamp so it stays readable. */
     const [first, ...rest] = input.notes,
-      offer = offerFont(0.12, D * 0.78),
+      lines = input.offer?.cta ? 2 : 1,
+      offer = input.offer?.cta
+        ? fitLine(input.offer.text.slice(0, twoLineWidth(input.offer.text)), D * 0.74, 0.06, GLYPH.price)
+        : offerFont(0.12, D * 0.78),
       noteFont = first ? fitLine(first.text, D * 0.7, 0.024, GLYPH.note) : 0,
-      total = offer * 1.05 + (first ? lineHeight(noteFont) : 0),
+      total = offer * 1.05 * lines + (first ? lineHeight(noteFont) : 0),
       top = cy - total / 2;
     if (input.offer)
-      turn(input.offer.key, cx - D * 0.42, top, D * 0.84, offer * 1.08, offer, { ...PRICE, color: c.onAccent, align: "center" });
+      turn(input.offer.key, cx - D * 0.42, top, D * 0.84, offer * 1.08 * lines, offer, { ...PRICE, color: c.onAccent, align: "center" });
     if (first)
-      turn(first.key, cx - D * 0.42, top + offer * 1.05, D * 0.84, lineHeight(noteFont), noteFont, { ...NOTE, color: c.onAccent, align: "center" });
+      turn(first.key, cx - D * 0.42, top + offer * 1.05 * lines, D * 0.84, lineHeight(noteFont), noteFont, { ...NOTE, color: c.onAccent, align: "center" });
     let y = notesUp(rest, PAD, H - PAD, col, { color: white });
     if (input.name) {
       const font = fitLine(input.name, col, 0.034, GLYPH.text);

@@ -52,6 +52,23 @@ export function studioPriceLabel(value: number): string {
   return formatCurrency(value).replace(/.00$/, "");
 }
 
+/** A product at $0 has no price yet: the ad asks for a quote instead of showing $0. */
+export function studioProductPrice(
+  base: number,
+  variantPrices: Array<number | string | null>,
+): { price: number | null; priceLabel: string } {
+  const variants = variantPrices.flatMap((v) =>
+    v === null || !(Number(v) > 0) ? [] : [Number(v)],
+  );
+  if (variants.length) {
+    const price = Math.min(...variants);
+    return { price, priceLabel: `Desde ${studioPriceLabel(price)}` };
+  }
+  return base > 0
+    ? { price: base, priceLabel: studioPriceLabel(base) }
+    : { price: null, priceLabel: "" };
+}
+
 export function studioValidity(source: StudioSource): string {
   if (!source.validUntil) return "";
   return `Válido hasta ${new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short", timeZone: "America/Mexico_City" }).format(new Date(source.validUntil))}`;
@@ -165,7 +182,12 @@ export function createStudioScene(
       }),
     );
   if (!source.priceLabel && !(poster && source.badge))
-    nodes.push(text("Conoce más", { role: "cta", color: template.accent }));
+    nodes.push(
+      text(source.type === "custom" ? "Conoce más" : "Pide tu cotización", {
+        role: "cta",
+        color: template.accent,
+      }),
+    );
   return arrangeStudioScene(
     {
       schemaVersion: 1,

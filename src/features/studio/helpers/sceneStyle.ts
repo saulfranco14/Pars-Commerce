@@ -247,14 +247,25 @@ export function suggestStudioCopy(source: StudioSource, tagline = ""): string {
     .join(" ");
 }
 
-/** Puts an image on the poster photo (or the first photo of older designs); adds the poster photo if missing. */
+/**
+ * Puts an image on the poster photo (or the first photo of older designs);
+ * adds the poster photo if missing, and `null` takes it out for a text-only ad.
+ */
 export function setStudioBackdrop(
   scene: StudioScene,
-  picture: string | { imageUrl: string },
+  picture: string | { imageUrl: string } | null,
 ): StudioScene {
   const target =
     scene.nodes.find((n) => n.role === "backdrop") ??
     scene.nodes.find((n) => n.kind === "image");
+  const design = isStudioDesign(scene.template);
+  if (picture === null) {
+    if (!target) return scene;
+    const nodes = scene.nodes.filter((n) => n !== target);
+    return design
+      ? arrangeStudioScene({ ...scene, nodes, palette: undefined })
+      : { ...scene, nodes };
+  }
   const image = {
     assetId: typeof picture === "string" ? picture : undefined,
     imageUrl: typeof picture === "string" ? undefined : picture.imageUrl,
@@ -262,11 +273,13 @@ export function setStudioBackdrop(
     cropY: 0.5,
     cropScale: 1,
   };
-  if (target)
-    return {
+  if (target) {
+    const next = {
       ...scene,
       nodes: scene.nodes.map((n) => (n === target ? { ...n, ...image } : n)),
     };
+    return design ? arrangeStudioScene(next) : next;
+  }
   if (!isStudioPoster(scene)) return scene;
   return arrangeStudioScene({
     ...scene,

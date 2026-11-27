@@ -32,7 +32,7 @@ export type StudioRole =
   | "shade"
   | "frame"
   | "plate";
-export type StudioShade = "poster" | "bottom" | "top" | "center";
+export type StudioShade = "poster" | "bottom" | "top" | "center" | "fade";
 export type StudioBinding =
   "name" | "price" | "badge" | "validity" | "period" | "conditions";
 

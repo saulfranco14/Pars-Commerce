@@ -17,8 +17,12 @@ Responde solo JSON.`;
 function describe(source: Partial<StudioSource>) {
   return [
     `Negocio: ${source.businessName ?? "sin nombre"}`,
-    `Qué se anuncia: ${source.name ?? ""}`,
-    source.priceLabel ? `Precio: ${source.priceLabel}` : "",
+    `Qué se anuncia: ${source.name ?? ""}${source.kind === "service" ? " (es un servicio)" : ""}`,
+    source.priceLabel
+      ? `Precio: ${source.priceLabel}`
+      : source.badge
+        ? ""
+        : "Sin precio publicado: no menciones precios; el anuncio invita a pedir cotización.",
     source.badge ? `Oferta: ${source.badge}` : "",
     source.description
       ? `Descripción: ${source.description.slice(0, 300)}`

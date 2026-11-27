@@ -213,7 +213,7 @@ export async function getStudioDesign(
     db
       .from("studio_assets")
       .select(
-        "id,design_id,kind,status,width,height,mime_type,source_asset_id,created_at",
+        "id,design_id,kind,status,width,height,mime_type,source_asset_id,created_at,metadata",
       )
       .eq("tenant_id", tenantId)
       .eq("design_id", id)
@@ -237,8 +237,11 @@ export async function getStudioDesign(
     source,
     stale: !source || source.commercialHash !== design.source_hash,
     versions: requireStudioData(versions) as unknown as StudioVersion[],
-    assets: requireStudioData(assets).map((a) => ({
+    assets: requireStudioData(assets).map(({ metadata, ...a }) => ({
       ...a,
+      fromCatalog: Boolean(
+        (metadata as { source_url?: string } | null)?.source_url,
+      ),
       url: `/api/studio/assets/${a.id}/file?tenant_id=${tenantId}`,
     })) as StudioDesignDetail["assets"],
   };

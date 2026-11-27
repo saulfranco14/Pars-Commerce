@@ -87,9 +87,20 @@ export async function createStudioQuote(
       config_version: r.config_version,
     }));
   const source = design.source_snapshot as {
+    type?: string;
+    kind?: string;
     name?: string;
     businessName?: string;
   };
+  if (
+    input.scene === "illustrate" &&
+    source.type !== "custom" &&
+    source.kind !== "service"
+  )
+    throw new StudioError(
+      "VALIDATION",
+      "La escena con IA es solo para servicios. Para un producto, usa tu foto.",
+    );
   const instructions = buildStudioImagePrompt({
     operation: input.operation,
     scene: input.scene,

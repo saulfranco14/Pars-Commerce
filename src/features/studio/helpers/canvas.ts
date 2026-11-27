@@ -4,6 +4,8 @@ import { validStudioDestination } from "./access";
 import { STUDIO_FORMATS } from "../constants/studio";
 import { studioPosterFont } from "../constants/studioFont";
 import { hexToRgb, studioPaletteFromPixels } from "./palette";
+import { isStudioDesign } from "./layout";
+import { applyStudioPalette, setStudioBackdrop } from "./sceneStyle";
 import type {
   StudioNode,
   StudioPhotoPalette,
@@ -32,9 +34,32 @@ const UPSCALE_TARGET_PX = 1080;
  * browser's high-quality resampling, so a 232 px catalog photo looks soft on a
  * 1080 px ad instead of blocky. QR codes are never resampled.
  */
-export async function loadStudioImage(
+const IMAGE_CACHE_SIZE = 24;
+const imageCache = new Map<string, Promise<StudioImageSource>>();
+
+/** Decodes each photo once, so six design previews and the export share it. */
+export function loadStudioImage(
   url: string,
   upscale = false,
+): Promise<StudioImageSource> {
+  const key = `${upscale ? "1" : "0"}:${url}`,
+    cached = imageCache.get(key);
+  if (cached) {
+    imageCache.delete(key);
+    imageCache.set(key, cached);
+    return cached;
+  }
+  const task = decodeStudioImage(url, upscale);
+  imageCache.set(key, task);
+  task.catch(() => imageCache.delete(key));
+  if (imageCache.size > IMAGE_CACHE_SIZE)
+    imageCache.delete(imageCache.keys().next().value!);
+  return task;
+}
+
+async function decodeStudioImage(
+  url: string,
+  upscale: boolean,
 ): Promise<StudioImageSource> {
   const image = new window.Image();
   image.crossOrigin = "anonymous";
@@ -231,6 +256,7 @@ const SHADE_STOPS: Record<NonNullable<StudioNode["shade"]>, number[][]> = {
   bottom: [[0, 0.45], [0.35, 0.08], [0.55, 0.35], [1, 0.92]],
   top: [[0, 0.94], [0.36, 0.7], [0.62, 0], [1, 0]],
   center: [[0, 0.78], [1, 0.4]],
+  fade: [[0, 0], [0.45, 0.22], [1, 0.95]],
 };
 
 function shadeStops(node: StudioNode) {
@@ -341,4 +367,53 @@ export async function sampleStudioPalette(
   } catch {
     return null;
   }
+}
+
+/**
+ * Decodes a new photo and reads its colors first, then hands back one change
+ * that sets both, so the ad switches once instead of photo-then-colors.
+ */
+export async function prepareStudioPhoto(
+  picture: string | { imageUrl: string },
+  url: string,
+): Promise<(scene: StudioScene) => StudioScene> {
+  const key = typeof picture === "string" ? picture : picture.imageUrl;
+  const [palette] = await Promise.all([
+    sampleStudioPalette(url, key),
+    loadStudioImage(url, true).catch(() => null),
+  ]);
+  return (scene) => {
+    const next = setStudioBackdrop(scene, picture);
+    return palette && isStudioDesign(next.template)
+      ? applyStudioPalette(next, palette)
+      : next;
+  };
+}
+
+/**
+ * A plain gradient in the ad's colors. The AI needs an input image; for an
+ * illustrative service scene this one only carries the colors, never content.
+ */
+export async function studioSeedImage(
+  dark: string,
+  accent: string,
+): Promise<Blob> {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 512;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Tu navegador no pudo preparar la escena.");
+  const gradient = context.createLinearGradient(0, 0, 0, 512);
+  gradient.addColorStop(0, dark);
+  gradient.addColorStop(1, accent);
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 512, 512);
+  return new Promise((resolve, reject) =>
+    canvas.toBlob(
+      (blob) =>
+        blob
+          ? resolve(blob)
+          : reject(new Error("Tu navegador no pudo preparar la escena.")),
+      "image/png",
+    ),
+  );
 }

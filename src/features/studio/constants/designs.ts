@@ -42,3 +42,11 @@ export const STUDIO_DEFAULT_PALETTE = {
 
 /** "Otras frases" asks the AI again at most this many times per open design. */
 export const STUDIO_MORE_PHRASES_MAX = 3;
+
+/** Designs that still read well with no photo: Franja and Marco leave an empty photo area. */
+export const STUDIO_TEXT_ONLY_DESIGNS: readonly StudioDesignId[] = [
+  "impact",
+  "stamp",
+  "statement",
+  "top",
+];

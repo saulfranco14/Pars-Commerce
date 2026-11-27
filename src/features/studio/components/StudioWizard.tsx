@@ -12,9 +12,11 @@ const Workspace = dynamic(() => import("./editor/StudioEditorWorkspace"), {
 export function StudioWizard({
   designId,
   initialReview = false,
+  autoAi = false,
 }: {
   designId: string;
   initialReview?: boolean;
+  autoAi?: boolean;
 }) {
   const {
       tenantId,
@@ -43,6 +45,7 @@ export function StudioWizard({
       detail={data}
       onRefresh={() => mutate()}
       initialReview={initialReview}
+      autoAi={autoAi}
     />
   );
 }

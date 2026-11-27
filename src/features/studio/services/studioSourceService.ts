@@ -1,7 +1,7 @@
 import "server-only";
 import { getPublicAppUrl } from "@/lib/env/appUrl";
 import { formatOfferLabel } from "@/lib/offers/formatOfferLabel";
-import { studioPriceLabel } from "../helpers/scene";
+import { studioPriceLabel, studioProductPrice } from "../helpers/scene";
 import { StudioError, requireStudioData } from "./studioErrors";
 import type { StudioDb } from "./studioDb";
 import type { StudioSource, StudioSourceType } from "../interfaces/studio";
@@ -59,7 +59,9 @@ export async function getStudioSource(
     const p = requireStudioData(
       await db
         .from("products")
-        .select("id,name,slug,description,price,image_url,is_public,deleted_at")
+        .select(
+          "id,name,slug,type,description,price,image_url,is_public,deleted_at",
+        )
         .eq("tenant_id", tenantId)
         .eq("id", id)
         .is("deleted_at", null)
@@ -76,18 +78,17 @@ export async function getStudioSource(
       .eq("product_id", id)
       .eq("is_active", true)
       .is("archived_at", null);
-    const variantPrices = (variants ?? []).flatMap((v) =>
-        v.price === null ? [] : [Number(v.price)],
-      ),
-      price = variantPrices.length
-        ? Math.min(...variantPrices)
-        : Number(p.price);
+    const { price, priceLabel } = studioProductPrice(
+      Number(p.price),
+      (variants ?? []).map((v) => v.price),
+    );
     return {
       ...base,
+      kind: p.type === "service" ? "service" : "product",
       name: p.name,
       description: p.description ?? "",
       price,
-      priceLabel: `${variantPrices.length ? "Desde " : ""}${studioPriceLabel(price)}`,
+      priceLabel,
       imageUrls: images?.length
         ? images.map((i) => i.url)
         : p.image_url

@@ -35,7 +35,7 @@ export const studioNodeSchema = z
         "plate",
       ])
       .optional(),
-    shade: z.enum(["poster", "bottom", "top", "center"]).optional(),
+    shade: z.enum(["poster", "bottom", "top", "center", "fade"]).optional(),
     letterSpacing: z.number().finite().min(-0.2).max(0.5).optional(),
     caps: z.boolean().optional(),
     radius: z.number().finite().min(0).max(0.5).optional(),
@@ -121,7 +121,9 @@ export const generationSchema = z.object({
   asset_id: uuidSchema,
   operation: z.enum(["improve_photo", "style", "variation"]),
   quality: z.enum(["economy", "premium"]),
-  scene: z.enum(["local", "street", "studio", "surprise"]).default("local"),
+  scene: z
+    .enum(["local", "street", "studio", "surprise", "illustrate"])
+    .default("local"),
   wish: z.string().max(300).default(""),
   reference_asset_id: uuidSchema.optional(),
 });

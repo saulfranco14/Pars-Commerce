@@ -326,3 +326,40 @@ export const STUDIO_BATCH_CHUNK = 5;
 export const STUDIO_BATCH_IMAGE_ESTIMATE_MS = 25_000;
 /** Below this many pixels on the short side a photo looks blurry on a 1080 px ad. */
 export const STUDIO_SHARP_PHOTO_PX = 600;
+/** The AI picks the setting from the business's own line; changeable in Cambiar › Foto. */
+export const STUDIO_AUTO_SCENE = "surprise" as const;
+export const STUDIO_SHELF_GAP_LABELS = {
+  photo: "Sin foto",
+  price: "Sin precio",
+  description: "Sin descripción",
+} as const;
+export const STUDIO_SHELF_KIND_LABELS = {
+  product: "Producto",
+  service: "Servicio",
+  promotion: "Promoción",
+  plan: "Plan",
+} as const;
+/** What the status line says while the AI works, per kind of job. */
+export const STUDIO_AD_AI_TEXT = {
+  photo: "La IA hace tu imagen",
+  improve: "La IA mejora tu foto sin cambiar el producto",
+  camera: "La IA deja lista la foto que tomaste",
+  scene: "La IA crea una escena ilustrativa del servicio",
+} as const;
+export const STUDIO_AD_SHARE_DONE = {
+  whatsapp: "Abriendo WhatsApp",
+  status: "Abriendo para compartir",
+  store: "Publicado en tu tienda",
+  download: "Descargado",
+} as const;
+export const STUDIO_SHELF_STATE_LABELS = {
+  active: "",
+  scheduled: "Programada",
+  expired: "Vencida",
+  paused: "Pausada",
+  draft: "Borrador",
+} as const;
+export const STUDIO_HOME_TABS = [
+  { id: "catalog", label: "Catálogo" },
+  { id: "ads", label: "Tus anuncios" },
+] as const;

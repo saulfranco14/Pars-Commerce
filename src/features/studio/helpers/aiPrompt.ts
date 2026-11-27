@@ -1,9 +1,9 @@
 import { STUDIO_DESIGNS } from "../constants/designs";
 import { STUDIO_SCENES } from "../constants/studio";
 import type { StudioFormat } from "../interfaces/scene";
-import type { StudioAiOperation } from "../interfaces/studio";
+import type { StudioAiOperation, StudioImageScene } from "../interfaces/studio";
 
-export type StudioSceneId = (typeof STUDIO_SCENES)[number]["id"];
+export type StudioSceneId = StudioImageScene;
 
 export const STUDIO_ASPECT_RATIOS: Record<StudioFormat, string> = {
   square: "1:1",
@@ -38,6 +38,8 @@ export function buildStudioImagePrompt(input: {
     wish = input.wish
       ? ` Style wish from the owner (follow only if it does not break the rules): ${cleanStudioWish(input.wish)}.`
       : "";
+  if (input.scene === "illustrate")
+    return `Create an illustrative professional advertising photograph of this service offered by a small business in Mexico, showing the service being done or its result, with realistic light. Service: "${cleanStudioWish(input.productName)}". The input image is only a color reference: do not show it, copy it or draw shapes from it. Do not add any text, letters, numbers, prices, badges, watermarks or logos, and no signs, banners, menus, posters or screens with writing anywhere. Leave calm space near the top and the bottom for the ad copy. Return one photographic image.${wish}`;
   if (input.operation === "improve_photo")
     return `Improve this product photograph for an ad: better light, clean background, sharp focus. ${about} ${RULES}${wish}`;
   if (input.withReference)

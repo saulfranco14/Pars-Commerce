@@ -2,10 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStudioContext } from "../components/StudioProvider";
 import { suggestCopy } from "../services/studioClientService";
-import {
-  STUDIO_DESIGNS,
-  STUDIO_MORE_PHRASES_MAX,
-} from "../constants/designs";
+import { STUDIO_DESIGNS, STUDIO_MORE_PHRASES_MAX } from "../constants/designs";
 import { sampleStudioPalette } from "../helpers/canvas";
 import { isStudioDesign } from "../helpers/layout";
 import {
@@ -19,10 +16,7 @@ import {
 } from "../helpers/sceneStyle";
 import type { StudioCopyIdeas } from "../helpers/aiPrompt";
 import type { StudioPhotoPalette, StudioScene } from "../interfaces/scene";
-import type {
-  StudioDesignOption,
-  StudioEditorState,
-} from "../interfaces/ui";
+import type { StudioDesignOption, StudioEditorState } from "../interfaces/ui";
 
 /**
  * The six designs of the open ad: colors from its photo, one AI phrase per
@@ -135,9 +129,10 @@ export function useStudioDesigns(
     }));
   }, [scene, source, palette, phrases, custom, activeIndex]);
 
-  async function more() {
-    if (asked >= STUDIO_MORE_PHRASES_MAX || busy) return;
-    setAsked((n) => n + 1);
+  /** New phrases for the design on the ad; `counted` spends one of the free asks. */
+  async function more(counted = true) {
+    if (busy || (counted && asked >= STUDIO_MORE_PHRASES_MAX)) return;
+    if (counted) setAsked((n) => n + 1);
     const found = await ask();
     const now = latest.current,
       index = STUDIO_DESIGNS.findIndex((d) => d.id === now.template);
@@ -149,7 +144,13 @@ export function useStudioDesigns(
     options,
     activeIndex,
     pick: (index: number) => editor.setScene(options[index].scene),
-    more,
+    more: () => more(true),
+    /** After the merchant tells what the item includes: free, it is a better brief. */
+    rewrite: () => more(false),
+    phrases,
+    current,
+    choosePhrase: (text: string) =>
+      editor.setScene(setStudioPhrase(latest.current, source, text)),
     moreLeft: STUDIO_MORE_PHRASES_MAX - asked,
     busy,
     error,

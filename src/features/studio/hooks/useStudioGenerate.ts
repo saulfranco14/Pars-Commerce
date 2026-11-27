@@ -8,7 +8,7 @@ import type { StudioImageRequest, StudioRunJob } from "../interfaces/studio";
 type GenerateOptions = Pick<
   StudioImageRequest,
   "quality" | "scene" | "wish" | "operation" | "referenceAssetId"
->;
+> & { assetId?: string };
 
 /**
  * One tap, one image: prices, reserves and generates on the server, then hands
@@ -23,8 +23,12 @@ export function useStudioGenerate(input: {
     [busy, setBusy] = useState(false),
     [error, setError] = useState<string | null>(null),
     running = useRef(false);
-  async function generate(options: GenerateOptions) {
-    if (running.current) return;
+  /** Resolves true when the image landed on the ad. */
+  async function generate({
+    assetId,
+    ...options
+  }: GenerateOptions): Promise<boolean> {
+    if (running.current) return false;
     running.current = true;
     setBusy(true);
     setError(null);
@@ -32,18 +36,22 @@ export function useStudioGenerate(input: {
       const job = await generateImage({
         tenantId,
         designId: input.designId,
-        assetId: await input.productPhoto(),
+        assetId: assetId ?? (await input.productPhoto()),
         ...options,
       });
-      if (job.status === "succeeded" && job.result_asset_id) input.onImage(job);
-      else if (job.status === "failed")
+      if (job.status === "succeeded" && job.result_asset_id) {
+        input.onImage(job);
+        return true;
+      } else if (job.status === "failed")
         setError(studioGenerationError(job.error_code));
       else
         setError(
           "Tu imagen sigue en proceso. Cuando esté lista, aparecerá en Tus imágenes.",
         );
+      return false;
     } catch (e) {
       setError(e instanceof Error ? e.message : "No pudimos hacer la imagen.");
+      return false;
     } finally {
       running.current = false;
       setBusy(false);

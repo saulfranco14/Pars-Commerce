@@ -6,14 +6,16 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ designId: string }>;
-  searchParams: Promise<{ compartir?: string }>;
+  searchParams: Promise<{ compartir?: string; ia?: string }>;
 }) {
   const parsed = uuidSchema.safeParse((await params).designId);
   if (!parsed.success) notFound();
+  const query = await searchParams;
   return (
     <StudioWizard
       designId={parsed.data}
-      initialReview={(await searchParams).compartir === "1"}
+      initialReview={query.compartir === "1"}
+      autoAi={query.ia === "1"}
     />
   );
 }

@@ -42,6 +42,8 @@ export interface StudioPack {
 export interface StudioSource {
   type: StudioSourceType;
   id: string | null;
+  /** Products only: services may get an illustrative AI scene, goods never. */
+  kind?: "product" | "service";
   name: string;
   description: string;
   conditions?: string;
@@ -160,6 +162,8 @@ export interface StudioAsset {
   url?: string;
   source_asset_id: string | null;
   created_at: string;
+  /** A copy of a catalog photo, already offered as that photo. */
+  fromCatalog?: boolean;
 }
 
 export interface StudioJob {
@@ -241,13 +245,17 @@ export interface StudioRunJob extends StudioJob {
   result_url: string | null;
 }
 
+/** `illustrate` draws the service itself when there is no photo; never for goods. */
+export type StudioImageScene =
+  "local" | "street" | "studio" | "surprise" | "illustrate";
+
 export interface StudioImageRequest {
   tenantId: string;
   designId: string;
   assetId: string;
   operation: StudioAiOperation;
   quality: StudioQuality;
-  scene: "local" | "street" | "studio" | "surprise";
+  scene: StudioImageScene;
   wish: string;
   referenceAssetId?: string;
 }
@@ -269,3 +277,20 @@ export interface StudioBatchResult {
   jobs: Array<{ id: string; designId: string }>;
   skipped: Array<{ id: string; reason: string }>;
 }
+
+/** What a catalog item lacks for an ad; each gap has its own path in Studio. */
+export type StudioShelfGap = "photo" | "price" | "description";
+
+export interface StudioShelfItem {
+  type: Exclude<StudioSourceType, "custom">;
+  id: string;
+  name: string;
+  kind: "product" | "service" | "promotion" | "plan";
+  priceLabel: string;
+  imageUrl: string | null;
+  gaps: StudioShelfGap[];
+  /** Anything but active goes out as a draft and stays off the store. */
+  state: StudioShelfState;
+}
+export type StudioShelfState =
+  "active" | "scheduled" | "expired" | "paused" | "draft";

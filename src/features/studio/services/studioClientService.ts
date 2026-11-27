@@ -20,6 +20,7 @@ import type {
   StudioPlacement,
   StudioQuote,
   StudioRunJob,
+  StudioShelfItem,
   StudioSummary,
   StudioVersion,
 } from "../interfaces/studio";
@@ -509,4 +510,31 @@ export async function verifyPacks(
     method: "POST",
     body: json({ tenant_id: tenantId }),
   })) as { credited: number };
+}
+export async function loadShelf(
+  tenantId: string,
+): Promise<{ items: StudioShelfItem[] }> {
+  return (await apiFetch(`/api/studio/shelf?${query(tenantId)}`)) as {
+    items: StudioShelfItem[];
+  };
+}
+/** Writes back to the catalog what the merchant answered inside Studio. */
+export async function updateDesignSource(
+  tenantId: string,
+  designId: string,
+  change:
+    | { kind: "describe"; description: string }
+    | { kind: "validity"; validUntil: string }
+    | { kind: "catalog-photo"; assetId: string },
+): Promise<{ saved: boolean }> {
+  const body =
+    change.kind === "describe"
+      ? { description: change.description }
+      : change.kind === "validity"
+        ? { valid_until: change.validUntil }
+        : { asset_id: change.assetId };
+  return (await apiFetch(`/api/studio/designs/${designId}/${change.kind}`, {
+    method: "POST",
+    body: json({ tenant_id: tenantId, ...body }),
+  })) as { saved: boolean };
 }

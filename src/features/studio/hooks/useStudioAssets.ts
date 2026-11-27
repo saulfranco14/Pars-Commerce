@@ -4,6 +4,7 @@ import {
   importSourceImage,
   uploadStudioAsset,
 } from "../services/studioClientService";
+import { prepareStudioPhoto } from "../helpers/canvas";
 import { createStudioNode } from "../helpers/scene";
 import { arrangeStudioScene } from "../helpers/layout";
 import type { StudioAsset, StudioDesignDetail } from "../interfaces/studio";
@@ -53,6 +54,7 @@ export function useStudioAssets(
     id: string,
     url: string,
     kind: StudioAsset["kind"] = "original",
+    extra: Partial<StudioAsset> = {},
   ) {
     setAssets((current) =>
       current.some((a) => a.id === id)
@@ -70,6 +72,7 @@ export function useStudioAssets(
               source_asset_id: null,
               created_at: new Date().toISOString(),
               url,
+              ...extra,
             },
           ],
     );
@@ -79,7 +82,7 @@ export function useStudioAssets(
     file: File,
     kind: "image" | "logo" = "image",
     replace = false,
-  ) {
+  ): Promise<string | null> {
     setBusy(true);
     setError(null);
     try {
@@ -95,6 +98,11 @@ export function useStudioAssets(
         kind: "original",
       });
       register(result.assetId, result.url);
+      if (kind === "image" && replace) {
+        const apply = await prepareStudioPhoto(result.assetId, result.url);
+        setScene(apply(currentScene.current));
+        return result.assetId;
+      }
       const node = {
         ...createStudioNode(kind),
         assetId: result.assetId,
@@ -127,10 +135,12 @@ export function useStudioAssets(
         const next = { ...current, nodes: [...current.nodes, node] };
         setScene(replace ? arrangeStudioScene(next) : next);
       }
+      return result.assetId;
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "No pudimos subir la fotografía.",
       );
+      return null;
     } finally {
       setBusy(false);
     }

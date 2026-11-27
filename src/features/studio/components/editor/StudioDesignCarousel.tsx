@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { StudioScenePreview } from "./StudioScenePreview";
+import { StudioFadingPreview } from "./StudioFadingPreview";
 import { STUDIO_FORMATS } from "../../constants/studio";
 import type { StudioDesignCarouselProps } from "../../interfaces/ui";
 
@@ -18,7 +18,6 @@ export function StudioDesignCarousel({
   tenantId,
   disabled,
   overlay,
-  revealKey,
 }: StudioDesignCarouselProps) {
   const track = useRef<HTMLDivElement>(null),
     activeRef = useRef(active),
@@ -124,16 +123,11 @@ export function StudioDesignCarousel({
               }}
               className={`relative block cursor-pointer overflow-hidden rounded-2xl shadow-sm ring-accent ring-offset-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 disabled:cursor-default ${chosen ? "ring-2" : ""}`}
             >
-              <span
-                key={chosen ? revealKey : undefined}
-                className={`pointer-events-none block ${chosen && revealKey ? "studio-reveal" : ""}`}
-              >
-                <StudioScenePreview
-                  scene={option.scene}
-                  assets={assets}
-                  tenantId={tenantId}
-                />
-              </span>
+              <StudioFadingPreview
+                scene={option.scene}
+                assets={assets}
+                tenantId={tenantId}
+              />
               {chosen && overlay}
             </button>
             <p className="flex items-center justify-center gap-2 text-sm font-semibold">

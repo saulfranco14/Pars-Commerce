@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   Image as ImageIcon,
   Loader2,
@@ -14,6 +14,7 @@ import { useStudioDesigns } from "../../hooks/useStudioDesigns";
 import { useStudioGenerate } from "../../hooks/useStudioGenerate";
 import { useStudioImageSize } from "../../hooks/useStudioImageSize";
 import { useStudioImages } from "../../hooks/useStudioImages";
+import { useStudioPhotos } from "../../hooks/useStudioPhotos";
 import { useStudioContext } from "../StudioProvider";
 import { Notification } from "@/components/ui/Notification";
 import { StudioDesignCarousel } from "./StudioDesignCarousel";
@@ -24,17 +25,9 @@ import { StudioImageStrip } from "./StudioImageStrip";
 import { StudioImagesSheet } from "./StudioImagesSheet";
 import { StudioPhotoSheet } from "./StudioPhotoSheet";
 import { StudioTextSheet } from "./StudioTextSheet";
-import {
-  importImage,
-  importSourceImage,
-} from "../../services/studioClientService";
 import { adminActionButtonPrimary } from "@/components/admin/actionButtonClasses";
 import { STUDIO_FORMATS, STUDIO_SHARP_PHOTO_PX } from "../../constants/studio";
-import { setStudioBackdrop, studioBackdrop } from "../../helpers/sceneStyle";
-import type {
-  StudioImageTileItem,
-  StudioPosterEditorProps,
-} from "../../interfaces/ui";
+import type { StudioPosterEditorProps } from "../../interfaces/ui";
 
 type Sheet = "generate" | "text" | "format" | "photo" | "images";
 
@@ -52,99 +45,26 @@ export function StudioPosterEditor({
     library = useStudioImages(),
     [sheet, setSheet] = useState<Sheet | null>(null),
     [notice, setNotice] = useState<string | null>(null),
-    [revealed, setRevealed] = useState(0),
     scene = editor.scene,
     source = editor.source.current,
-    latest = useRef(scene);
-  latest.current = scene;
-  const urlOf = (id: string) =>
-    asset.assets.find((a) => a.id === id)?.url ??
-    `/api/studio/assets/${id}/file?tenant_id=${tenantId}`;
-  const byNewest = [...asset.assets]
-    .filter((a) => a.status === "ready")
-    .sort((a, b) => b.created_at.localeCompare(a.created_at));
-  const generated = byNewest.filter((a) => a.kind === "generated"),
-    ownPhoto = byNewest.find((a) => a.kind === "original"),
-    shown = studioBackdrop(scene),
-    shownIsAi = generated.some((a) => a.id === shown.assetId);
-  async function productPhoto() {
-    if (ownPhoto) return ownPhoto.id;
-    if (!source.imageUrls.length)
-      throw new Error("Sube la foto de tu producto en Foto para usar la IA.");
-    const imported = await importSourceImage(tenantId, designId, 0);
-    asset.register(imported.assetId, imported.url);
-    return imported.assetId;
-  }
+    photos = useStudioPhotos({ editor, asset, tenantId, designId });
   const gen = useStudioGenerate({
     designId,
-    productPhoto,
+    productPhoto: photos.productPhoto,
     onImage: (job) => {
       asset.register(job.result_asset_id!, job.result_url!, "generated");
-      editor.setScene(setStudioBackdrop(latest.current, job.result_asset_id!));
-      setRevealed((n) => n + 1);
+      void photos.show(job.result_asset_id!, job.result_url!);
       void library.refresh();
     },
   });
-  async function reuseImage(id: string) {
-    try {
-      const copy = await importImage(tenantId, designId, id);
-      asset.register(copy.assetId, copy.url, "generated");
-      editor.setScene(setStudioBackdrop(latest.current, copy.assetId));
-    } catch (e) {
-      setNotice(e instanceof Error ? e.message : "No pudimos usar esa imagen.");
-    }
-  }
-  const tiles: StudioImageTileItem[] = (() => {
-    const mine = generated.map((a, i) => ({
-      key: a.id,
-      label: i === 0 ? "Nueva" : `Imagen ${generated.length - i}`,
-      url: urlOf(a.id),
-      badge: "Tuya" as const,
-      selected: shown.assetId === a.id,
-      onPick: () => editor.setScene(setStudioBackdrop(latest.current, a.id)),
-    }));
-    const photoUrl = ownPhoto
-      ? urlOf(ownPhoto.id)
-      : (source.imageUrls[0] ?? null);
-    const photo: StudioImageTileItem[] = photoUrl
-      ? [
-          {
-            key: "photo",
-            label: "Tu foto",
-            url: photoUrl,
-            selected: ownPhoto
-              ? shown.assetId === ownPhoto.id
-              : shown.imageUrl === photoUrl,
-            onPick: () =>
-              editor.setScene(
-                setStudioBackdrop(
-                  latest.current,
-                  ownPhoto ? ownPhoto.id : { imageUrl: photoUrl },
-                ),
-              ),
-          },
-        ]
-      : [];
-    const others = library.images
-      .filter((img) => img.designId !== designId)
-      .map((img) => ({
-        key: img.id,
-        label: img.title || "Otro",
-        url: img.url,
-        badge: "Otro" as const,
-        selected: false,
-        onPick: () => void reuseImage(img.id),
-      }));
-    return [...mine, ...photo, ...others];
-  })();
-  const aiReady = Boolean(summary?.aiEnabled && editor.canEdit),
+  const tiles = photos.tiles,
+    aiReady = Boolean(summary?.aiEnabled && editor.canEdit),
     format = STUDIO_FORMATS[scene.format],
     close = () => setSheet(null);
-  const shownUrl = shown.assetId ? urlOf(shown.assetId) : shown.imageUrl,
-    designs = useStudioDesigns(editor, designId, shownUrl),
-    photoSize = useStudioImageSize(shownUrl),
+  const designs = useStudioDesigns(editor, designId, photos.shownUrl),
+    photoSize = useStudioImageSize(photos.shownUrl),
     blurry =
-      !shownIsAi &&
+      !photos.shownIsAi &&
       photoSize !== null &&
       Math.min(photoSize.width, photoSize.height) < STUDIO_SHARP_PHOTO_PX;
   function openGenerate() {
@@ -155,9 +75,24 @@ export function StudioPosterEditor({
     setSheet("generate");
   }
   const tools = [
-    { key: "text", label: "Textos", Icon: Type, onClick: () => setSheet("text") },
-    { key: "format", label: "Formato", Icon: Smartphone, onClick: () => setSheet("format") },
-    { key: "photo", label: "Foto", Icon: ImageIcon, onClick: () => setSheet("photo") },
+    {
+      key: "text",
+      label: "Textos",
+      Icon: Type,
+      onClick: () => setSheet("text"),
+    },
+    {
+      key: "format",
+      label: "Formato",
+      Icon: Smartphone,
+      onClick: () => setSheet("format"),
+    },
+    {
+      key: "photo",
+      label: "Foto",
+      Icon: ImageIcon,
+      onClick: () => setSheet("photo"),
+    },
     { key: "hand", label: "A mano", Icon: Move, onClick: onAdvanced },
   ];
   const linkClass =
@@ -172,7 +107,6 @@ export function StudioPosterEditor({
         tenantId={tenantId}
         disabled={locked || !editor.canEdit}
         overlay={gen.busy ? <StudioGeneratingOverlay /> : undefined}
-        revealKey={revealed}
       />
       {editor.canEdit && (
         <div className="flex items-start justify-between gap-3 text-sm">
@@ -206,9 +140,7 @@ export function StudioPosterEditor({
               <RotateCw className="h-4 w-4" aria-hidden />
               Otra imagen
             </button>
-            <span className="text-xs text-muted-foreground">
-              Desde 1 Tlaco
-            </span>
+            <span className="text-xs text-muted-foreground">Desde 1 Tlaco</span>
           </div>
         </div>
       )}

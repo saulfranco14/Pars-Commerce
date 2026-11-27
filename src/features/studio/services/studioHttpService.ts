@@ -17,6 +17,12 @@ import {
   saveStudioDesign,
 } from "./studioDesignService";
 import { listStudioSources } from "./studioSourceService";
+import { listStudioShelf } from "./studioShelfService";
+import {
+  describeStudioSource,
+  extendStudioPromotion,
+  saveStudioPhotoToCatalog,
+} from "./studioSourceUpdateService";
 import { listStudioIdeas } from "./studioIdeaService";
 import {
   generateStudioImageNow,
@@ -139,6 +145,7 @@ async function dispatchStudioRequest(request: Request, path: string[]) {
     const { db, user } = await requireStudioAccess(tenantId, "studio.create");
     return { items: await listStudioIdeas(db, user.id, tenantId) };
   }
+  if (path[0] === "shelf" && method === "GET") return listStudioShelf(tenantId);
   if (path[0] === "sources" && method === "GET") {
     const type = z
       .enum(["product", "promotion", "subscription_plan", "custom"])
@@ -179,6 +186,12 @@ async function dispatchStudioRequest(request: Request, path: string[]) {
         designId,
         z.number().int().positive().parse(body.revision),
       );
+    if (path[2] === "describe" && method === "POST")
+      return describeStudioSource(designId, body);
+    if (path[2] === "validity" && method === "POST")
+      return extendStudioPromotion(designId, body);
+    if (path[2] === "catalog-photo" && method === "POST")
+      return saveStudioPhotoToCatalog(designId, body);
     if (path[2] === "duplicate" && method === "POST")
       return duplicateStudioDesign(
         tenantId,

@@ -15,6 +15,7 @@ import { StudioAdvancedEditor } from "./StudioAdvancedEditor";
 import { StudioEditorBar } from "./StudioEditorBar";
 import { StudioEditorNotices } from "./StudioEditorNotices";
 import { StudioPosterEditor } from "./StudioPosterEditor";
+import { StudioAdView } from "./StudioAdView";
 import { StudioShareStep } from "./StudioShareStep";
 import { adminActionButtonIcon } from "@/components/admin/actionButtonClasses";
 import { STUDIO_ACTION_BAR_SPACE } from "../../constants/studio";
@@ -27,12 +28,15 @@ export default function StudioEditorWorkspace({
   detail,
   onRefresh,
   initialReview = false,
+  autoAi = false,
 }: StudioEditorProps) {
   const { tenantId, tenantSlug } = useStudioContext(),
     editor = useStudioEditor(detail),
     asset = useStudioAssets(detail, editor.scene, editor.setScene),
     [step, setStep] = useState<StudioStep>(2),
     [mode, setMode] = useState<"simple" | "advanced">("simple"),
+    /** The short path shows the finished ad; the step editor is "A mano". */
+    [quick, setQuick] = useState(!initialReview),
     [discardOpen, setDiscardOpen] = useState(false);
   const output = useStudioOutput({
     tenantId,
@@ -75,6 +79,27 @@ export default function StudioEditorWorkspace({
       void next();
     }
   });
+  const home = `/dashboard/${tenantSlug}/studio`;
+  const toast = output.success && (
+    <Toast message={output.success} onDone={() => output.setSuccess(null)} />
+  );
+  const discard = (
+    <ConfirmDialog
+      isOpen={discardOpen}
+      onClose={() => setDiscardOpen(false)}
+      title="Guarda antes de salir"
+      description="Guardamos tus cambios y te llevamos a Studio. Si hay un conflicto, tu diseño se conserva en este dispositivo."
+      confirmLabel="Guardar"
+      onConfirm={async () => {
+        try {
+          await editor.saveNow();
+          window.location.assign(quick ? home : library);
+        } catch {
+          setDiscardOpen(false);
+        }
+      }}
+    />
+  );
   const findings = reviewStudioScene(editor.scene),
     saveText = output.busy
       ? "Preparando tu imagen…"
@@ -89,6 +114,54 @@ export default function StudioEditorWorkspace({
               : "Cambios sin guardar",
     status = `${saveText} · ${findings.length ? "Revisa los textos largos" : "Se lee bien"}`;
 
+  if (quick && editor.canEdit)
+    return (
+      <div className="space-y-3">
+        <PageHeader
+          compact
+          title={editor.title}
+          action={
+            <Link
+              className={adminActionButtonIcon}
+              aria-label="Volver a Studio"
+              href={home}
+              onClick={(e) => {
+                if (editor.saveState !== "saved") {
+                  e.preventDefault();
+                  setDiscardOpen(true);
+                }
+              }}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          }
+        />
+        <StudioEditorNotices
+          editor={editor}
+          stale={detail.stale}
+          locked={locked}
+          errors={[editor.error, asset.error]}
+          onRefresh={onRefresh}
+        />
+        <StudioAdView
+          {...parts}
+          designId={detail.design.id}
+          output={output}
+          autoAi={autoAi}
+          saveText={saveText}
+          onByHand={() => {
+            setMode("simple");
+            setQuick(false);
+          }}
+        />
+        {discard}
+        {toast}
+        <StudioMembershipSheet
+          open={output.membershipRequired}
+          onClose={output.clearMembershipRequired}
+        />
+      </div>
+    );
   return (
     <div className={`space-y-3 ${step === 2 ? STUDIO_ACTION_BAR_SPACE : ""}`}>
       <PageHeader
@@ -99,10 +172,16 @@ export default function StudioEditorWorkspace({
             <StudioStepper compact step={step} onStep={setStep} />
             <Link
               className={adminActionButtonIcon}
-              aria-label="Volver a la biblioteca"
+              aria-label={
+                editor.canEdit ? "Volver al anuncio" : "Volver a la biblioteca"
+              }
               href={library}
               onClick={(e) => {
-                if (editor.saveState !== "saved") {
+                if (editor.canEdit) {
+                  e.preventDefault();
+                  setStep(2);
+                  setQuick(true);
+                } else if (editor.saveState !== "saved") {
                   e.preventDefault();
                   setDiscardOpen(true);
                 }
@@ -162,27 +241,8 @@ export default function StudioEditorWorkspace({
         open={output.membershipRequired}
         onClose={output.clearMembershipRequired}
       />
-      {output.success && (
-        <Toast
-          message={output.success}
-          onDone={() => output.setSuccess(null)}
-        />
-      )}
-      <ConfirmDialog
-        isOpen={discardOpen}
-        onClose={() => setDiscardOpen(false)}
-        title="Guarda antes de salir"
-        description="Guardamos tus cambios y te llevamos a la biblioteca. Si hay un conflicto, tu diseño se conserva en este dispositivo."
-        confirmLabel="Guardar"
-        onConfirm={async () => {
-          try {
-            await editor.saveNow();
-            window.location.assign(library);
-          } catch {
-            setDiscardOpen(false);
-          }
-        }}
-      />
+      {toast}
+      {discard}
     </div>
   );
 }
