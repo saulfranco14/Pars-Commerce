@@ -363,7 +363,9 @@ export async function importStudioSourceImage(
   } catch {
     throw new StudioError(
       "VALIDATION",
-      "Sube esta fotografía o logo como JPG, PNG o WebP para conservarlo en Studio.",
+      index === -1
+        ? "Sube tu logo como JPG, PNG o WebP para usarlo en Studio."
+        : "Este producto aún no tiene foto propia. Tómala o súbela y la IA la usa.",
     );
   }
   const { data: existing } = await db

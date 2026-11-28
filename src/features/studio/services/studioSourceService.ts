@@ -2,6 +2,7 @@ import "server-only";
 import { getPublicAppUrl } from "@/lib/env/appUrl";
 import { formatOfferLabel } from "@/lib/offers/formatOfferLabel";
 import { studioPriceLabel, studioProductPrice } from "../helpers/scene";
+import { studioOwnPhotos } from "../helpers/photos";
 import { StudioError, requireStudioData } from "./studioErrors";
 import type { StudioDb } from "./studioDb";
 import type { StudioSource, StudioSourceType } from "../interfaces/studio";
@@ -89,11 +90,10 @@ export async function getStudioSource(
       description: p.description ?? "",
       price,
       priceLabel,
-      imageUrls: images?.length
-        ? images.map((i) => i.url)
-        : p.image_url
-          ? [p.image_url]
-          : [],
+      imageUrls: studioOwnPhotos(
+        (images ?? []).map((i) => i.url),
+        [p.image_url],
+      ),
       destinationUrl: base.destinationUrl
         ? `${base.destinationUrl}/productos/${p.slug}`
         : "",
@@ -130,9 +130,10 @@ export async function getStudioSource(
       priceLabel: studioPriceLabel(Number(p.price)),
       period: `Cada ${p.interval_count} ${p.interval_unit === "week" ? "semana(s)" : "mes(es)"}`,
       status: p.status,
-      imageUrls: p.image_url
-        ? [p.image_url]
-        : (products ?? []).flatMap((x) => (x.image_url ? [x.image_url] : [])),
+      imageUrls: studioOwnPhotos(
+        [p.image_url],
+        (products ?? []).map((x) => x.image_url),
+      ),
       destinationUrl: base.destinationUrl
         ? `${base.destinationUrl}/planes/${p.slug}`
         : "",
@@ -214,9 +215,10 @@ export async function getStudioSource(
     validFrom: row.valid_from,
     validUntil: row.valid_until,
     channels: row.sales_channels ?? [],
-    imageUrls: row.image_url
-      ? [row.image_url]
-      : (products ?? []).flatMap((x) => (x.image_url ? [x.image_url] : [])),
+    imageUrls: studioOwnPhotos(
+      [row.image_url],
+      (products ?? []).map((x) => x.image_url),
+    ),
     destinationUrl: base.destinationUrl
       ? `${base.destinationUrl}/promociones/${row.slug ?? id}`
       : "",
