@@ -1,10 +1,20 @@
-import type { HeroShowcaseItem } from "@/features/sitio/interfaces/storeHome";
-import type { StoreCatalogCounts } from "@/features/sitio/interfaces/storefront";
 
 /** `para_seconds` only arrives from pages cached before `para_left` replaced it. */
-export type ParaLinkEvent = "para_viewed" | "para_seconds" | "para_left" | "claim_clicked" | "help_clicked" | "objection_chosen" | "visit_requested";
+export type ParaLinkEvent =
+  | "para_viewed"
+  | "para_seconds"
+  | "para_left"
+  | "claim_clicked"
+  | "help_clicked"
+  | "objection_chosen"
+  | "visit_requested"
+  | "ad_edited"
+  | "ads_downloaded"
+  | "ads_shared"
+  | "zone_opened"
+  | "signup_started";
 
-export type ParaSection = "intro" | "tienda" | "productos" | "dudas" | "cierre";
+export type ParaSection = "anuncios" | "zona" | "intro" | "tienda" | "productos" | "dudas" | "cierre";
 
 export type ParaObjection = "costo" | "tiempo" | "duda" | "whatsapp";
 
@@ -65,44 +75,6 @@ export interface ParaItem {
   type: "product" | "service";
 }
 
-export interface ParaPageData {
-  kind: "store";
-  businessName: string;
-  giroLabel: string;
-  place: string;
-  headline: string;
-  sender: ParaSender | null;
-  items: ParaItem[];
-  showcase: HeroShowcaseItem[];
-  counts: StoreCatalogCounts;
-  claimUrl: string;
-  helpUrl: string | null;
-  helpLabel: string;
-  /** Only for businesses in the zones where visits are made. */
-  visit: ParaVisitOffer | null;
-}
-
-export interface ParaActionsProps {
-  claimUrl: string;
-  helpUrl: string | null;
-  helpLabel: string;
-  /** `bar` is the sticky strip, `intro` the owner card and `block` the closing call to action. */
-  layout: "bar" | "intro" | "block";
-  /** Extra action for the closing block, shown between activating and WhatsApp. */
-  children?: React.ReactNode;
-}
-
-export interface ParaVisitButtonProps {
-  token: string;
-  offer: ParaVisitOffer;
-  placement: ParaPlacement;
-}
-
-export interface ParaInteractiveProps {
-  token: string;
-  data: ParaPageData;
-}
-
 /** «Para ti» sent by a business that prospects with Tlaco: its offer and products, not a sample store. */
 export interface ParaOfferData {
   kind: "offer";
@@ -119,32 +91,4 @@ export interface ParaOfferData {
 
 export interface ParaOfferProps {
   data: ParaOfferData;
-}
-
-export type ParaDesign = "clasica" | "tienda" | "hazla";
-
-/** How each «Para ti» design does with the people who opened it (growth_para_design_stats). */
-export interface ParaDesignStats {
-  design: ParaDesign;
-  visitors: number;
-  median_seconds: number;
-  reached_store: number;
-  claimed: number;
-  registered: number;
-}
-
-export interface ParaStickyCtaProps {
-  claimUrl: string;
-  helpUrl: string | null;
-  helpLabel: string;
-}
-
-export type ParaColorKey = "azul" | "rojo" | "verde" | "morado" | "negro";
-export type ParaHoursKey = "manana" | "dia" | "tarde" | "siempre";
-
-/** What the owner picked in «Hazla tuya»; null until they touch that step. */
-export interface ParaCustomization {
-  color: ParaColorKey | null;
-  price: number | null;
-  hours: ParaHoursKey | null;
 }

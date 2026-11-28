@@ -40,7 +40,6 @@ export const myDayKey = `${BASE}/my-day`;
 export const importsKey = `${BASE}/imports`;
 export const activationKey = (owner?: string) => `${BASE}/activation${owner ? `?owner=${encodeURIComponent(owner)}` : ""}`;
 export const templatesKey = `${BASE}/templates`;
-export const paraDesignsKey = `${BASE}/para-designs`;
 export const variantStatsKey = (step: string) => `${BASE}/templates/stats?step=${encodeURIComponent(step)}`;
 export const funnelKey = (days: number) => `${BASE}/funnel?days=${days}`;
 

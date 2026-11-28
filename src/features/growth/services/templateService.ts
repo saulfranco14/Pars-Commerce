@@ -1,6 +1,7 @@
 import { leadLinkSlug } from "@/features/growth/helpers/leadLinkToken";
 import { renderTemplate } from "@/features/growth/helpers/renderTemplate";
 import { buildTemplateVars } from "@/features/growth/helpers/templateVars";
+import type { TemplateExtra } from "@/features/growth/helpers/templateVars";
 import { validateTemplate } from "@/features/growth/helpers/validateTemplate";
 import { TLACO_WORKSPACE_ID } from "@/features/growth/constants/workspace";
 import { internalError } from "@/features/growth/services/growthDb";
@@ -82,7 +83,7 @@ export async function workspaceCopy(db: GrowthDb, workspaceId: string): Promise<
 export function renderForLead(
   template: Pick<GrowthTemplate, "subject" | "body">,
   lead: Pick<GrowthLead, "business_name" | "giro" | "municipio" | "colonia" | "address">,
-  extra: { link: string; firma: string; espacio?: string; oferta?: string; now?: Date },
+  extra: TemplateExtra,
 ): { subject: string | null; body: string } {
   const vars = buildTemplateVars(lead, extra);
   return {

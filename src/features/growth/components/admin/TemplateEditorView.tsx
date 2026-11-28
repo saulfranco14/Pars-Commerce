@@ -11,7 +11,6 @@ import { FilterTabs } from "@/components/ui/FilterTabs";
 import { FormInput } from "@/components/ui/FormInput";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
-import { ParaDesignStatsPanel } from "@/features/growth/components/admin/ParaDesignStatsPanel";
 import { VariantStatsPanel } from "@/features/growth/components/admin/VariantStatsPanel";
 
 import { GIRO_COPY, GIRO_KEYS } from "@/features/growth/constants/giroCopy";
@@ -128,7 +127,6 @@ export function TemplateEditorView() {
         </section>
       ) : null}
 
-      {selection.channel === "whatsapp" ? <ParaDesignStatsPanel /> : null}
     </div>
   );
 }

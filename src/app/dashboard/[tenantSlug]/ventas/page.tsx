@@ -14,6 +14,7 @@ import { VentasPagosTab } from "@/components/ventas/VentasPagosTab";
 import { VentasCortesTab } from "@/components/ventas/VentasCortesTab";
 import { SalesOnboardingOverlay } from "@/components/onboarding/SalesOnboardingOverlay";
 import { ExportReportSheet } from "@/components/ventas/ExportReportSheet";
+import { WeekReportCard } from "@/features/ventas/components/WeekReportCard";
 
 const VentasResumen = dynamic(
   () =>
@@ -512,13 +513,16 @@ export default function VentasPage() {
         ) : loading ? (
           <LoadingBlock message="Cargando ventas…" />
         ) : activeTab === "resumen" ? (
-          <VentasResumen
-            summary={summary}
-            analytics={analyticsData ?? null}
-            analyticsLoading={analyticsLoading}
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-          />
+          <div className="grid gap-5">
+            {activeTenant ? <WeekReportCard tenantId={activeTenant.id} tenantSlug={tenantSlug} /> : null}
+            <VentasResumen
+              summary={summary}
+              analytics={analyticsData ?? null}
+              analyticsLoading={analyticsLoading}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+            />
+          </div>
         ) : activeTab === "por-persona" ? (
           <VentasPorPersona byPerson={byPerson} />
         ) : activeTab === "por-orden" ? (

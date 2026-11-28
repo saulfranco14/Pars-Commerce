@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import { requireGrowthMember } from "@/app/api/growth/_lib";
 import { getPublicAppUrl } from "@/lib/env/appUrl";
 
-import { setWebhook } from "@/features/growth/services/telegramApi";
+import { MINI_APP_PATH } from "@/features/growth/constants/miniApp";
+import { setMiniAppMenuButton, setWebhook } from "@/features/growth/services/telegramApi";
 
 /** Points the bot at this deployment; Telegram then sends the secret header on every update. */
 export async function POST() {
@@ -19,5 +20,7 @@ export async function POST() {
   }
   const response = await setWebhook(url, secret);
   if (!response.ok) return NextResponse.json({ error: `Telegram rechazó el webhook: ${response.description ?? "sin detalle"}` }, { status: 502 });
+  // The mini app is a bonus: a failure here leaves the bot working as before.
+  await setMiniAppMenuButton(`${getPublicAppUrl()}${MINI_APP_PATH}`);
   return NextResponse.json({ url });
 }

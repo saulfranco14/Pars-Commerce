@@ -29,7 +29,8 @@ export type TelegramAction =
 export type InlineButton =
   | { text: string; callback_data: string }
   | { text: string; url: string }
-  | { text: string; copy_text: { text: string } };
+  | { text: string; copy_text: { text: string } }
+  | { text: string; web_app: { url: string } };
 
 export interface OutgoingMessage {
   text: string;

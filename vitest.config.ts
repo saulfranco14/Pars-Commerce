@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 const srcPath = fileURLToPath(new URL("./src", import.meta.url));
 
 export default defineConfig({
+  // Same JSX runtime as Next, so services that draw images with JSX run in tests too.
+  esbuild: { jsx: "automatic" },
   resolve: {
     alias: {
       "server-only": fileURLToPath(

@@ -7,7 +7,8 @@ import { createTestAnonClient, sql } from "@/test/integration/setup";
 import type { TransactionSql } from "postgres";
 
 const read = (path: string) => readFileSync(fileURLToPath(new URL(path, import.meta.url)), "utf8");
-const ROLLBACK = read("../../../../supabase/snippets/growth_rollback.sql").replace(/^\s*(BEGIN|COMMIT);\s*$/gim, "");
+// Newest first: the prospect-ads tables point at growth_leads and must go before it.
+const ROLLBACK = [read("../../../../supabase/snippets/growth_prospect_ads_rollback.sql"), read("../../../../supabase/snippets/growth_rollback.sql")].join("\n").replace(/^\s*(BEGIN|COMMIT);\s*$/gim, "");
 
 class RolledBack extends Error {}
 

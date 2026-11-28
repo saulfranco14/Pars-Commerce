@@ -23,3 +23,9 @@ export function formatBusinessName(raw: string): string {
     })
     .join(" ");
 }
+
+const GENERIC_NAME = /^(miscel[aá]nea|abarrotes|tienda|tienda de abarrotes|sin nombre|ninguno|n\/?a|s\/?n|taquer[ií]a|tacos|ferreter[ií]a|tlapaler[ií]a|panader[ií]a|cafeter[ií]a|est[eé]tica|veterinaria|autolavado|lavado de autos|boutique|ropa|zapater[ií]a|dep[oó]sito)$/i;
+
+export function isGenericBusinessName(name: string): boolean {
+  return GENERIC_NAME.test(name.trim());
+}

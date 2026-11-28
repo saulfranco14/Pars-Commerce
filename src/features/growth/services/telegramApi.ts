@@ -52,6 +52,11 @@ export function replaceButtons(chatId: number, messageId: number, buttons: Inlin
   return telegramCall("editMessageReplyMarkup", { chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: buttons } });
 }
 
+/** The «Abrir app» button next to the chat's text box opens the mini app. */
+export function setMiniAppMenuButton(url: string) {
+  return telegramCall("setChatMenuButton", { menu_button: { type: "web_app", text: "Abrir app", web_app: { url } } });
+}
+
 export function setWebhook(url: string, secret: string) {
   return telegramCall("setWebhook", {
     url,

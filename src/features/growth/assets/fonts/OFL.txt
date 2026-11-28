@@ -1,0 +1,3 @@
+Inter Tight, Copyright 2020 The Inter Project Authors (https://github.com/rsms/inter).
+Licensed under the SIL Open Font License, Version 1.1: https://openfontlicense.org
+Files: Fontsource latin subset, weights 600 and 800, used by the ad image renderer.

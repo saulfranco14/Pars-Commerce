@@ -3,6 +3,7 @@ import {
   StudioHomeBanner,
   StudioHomeLink,
 } from "@/features/studio/components/StudioHomeBanner";
+import { ProspectWelcomeCard } from "@/features/growth/components/welcome/ProspectWelcomeCard";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
@@ -749,6 +750,7 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto">
       <div className="space-y-5 pb-8 sm:pb-10">
+        <ProspectWelcomeCard />
         <StudioHomeBanner />
         <div className="space-y-3 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5">
           <PageHeader title={activeTenant.name} description={periodLabel} />

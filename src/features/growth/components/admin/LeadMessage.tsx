@@ -3,15 +3,18 @@
 import { useState } from "react";
 import { MessageCircle, Pencil, RefreshCw, RotateCcw, Sparkles } from "lucide-react";
 
+import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
 import { useWhatsappDraft } from "@/features/growth/hooks/useWhatsappDraft";
 import { adminActionButtonAi, adminActionButtonPrimary, adminActionButtonText } from "@/components/admin/actionButtonClasses";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Notification } from "@/components/ui/Notification";
 import { AiWritingState } from "@/features/growth/components/admin/AiWritingState";
 import { LeadActionBar } from "@/features/growth/components/admin/LeadActionBar";
+import { AdImagesStrip } from "@/features/growth/components/ads/AdImagesStrip";
 
 import { sameTabOnPhones } from "@/features/growth/helpers/openWhatsapp";
-import { TEMPLATE_STEPS, WHATSAPP_MAX_CHARS } from "@/features/growth/constants/templateVariables";
+import { AD_STEPS, TEMPLATE_STEPS, WHATSAPP_MAX_CHARS } from "@/features/growth/constants/templateVariables";
+import { leadAdImageUrl, nextLeadAdBackground } from "@/features/growth/services/adsClient";
 
 import type { LeadMessageProps } from "@/features/growth/interfaces/leadActions";
 import type { WhatsappStep } from "@/features/growth/interfaces/whatsapp";
@@ -23,7 +26,10 @@ const fieldClass = "input-form w-full rounded-xl border border-border bg-surface
 /** The suggested WhatsApp, folded and editable; sending opens WhatsApp and counts it as sent right away. */
 export function LeadMessage({ leadId, busy, followUp, shortcuts, onOpenActions, onOutcome }: LeadMessageProps) {
   const composer = useWhatsappDraft(leadId);
+  const { actor } = useGrowthMe();
   const { draft } = composer;
+  // Gift ads are Tlaco's prospecting; a business prospecting with its own offer sends its page.
+  const showAds = Boolean(actor && !actor.tenantId && draft && AD_STEPS.includes(draft.step));
   const [editing, setEditing] = useState(false);
   const writing = composer.aiBusy && !composer.aiWritten;
   const variants = draft?.variants ?? [];
@@ -118,6 +124,8 @@ export function LeadMessage({ leadId, busy, followUp, shortcuts, onOpenActions, 
           ) : null}
         </div>
       ) : null}
+
+      {draft && showAds ? <AdImagesStrip urlFor={(kind, version) => leadAdImageUrl(leadId, kind, version)} onNext={() => nextLeadAdBackground(leadId)} /> : null}
 
       <div className="hidden md:grid">{sendLink("min-h-13 w-full text-base")}</div>
       {shortcuts}

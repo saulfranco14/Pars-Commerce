@@ -24,6 +24,8 @@ export const DASHBOARD_SECTION_PERMISSIONS: Record<string, readonly string[]> =
     // The tenant home is a business summary (sales, setup, catalog). Roles that
     // only operate (waiter, preparer, courier) land on their work instead.
     inicio: ["reports.read"],
+    // Zone report of a business that came from its gift ads; a business summary like the home.
+    zona: ["reports.read"],
     // Catalog and stock are for who manages them. Order takers still pick products
     // inside the order sheet, which reads the catalog through its own API.
     productos: ["products.read"],

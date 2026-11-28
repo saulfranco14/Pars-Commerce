@@ -1,4 +1,10 @@
 import { buildWaLink } from "@/features/growth/helpers/buildWaLink";
+import { MINI_APP_PATH } from "@/features/growth/constants/miniApp";
+import { REPLY_INTENT_LABEL } from "@/features/growth/constants/replyIntents";
+import { leadLinkUrl } from "@/features/growth/services/leadLinkService";
+import { recentlyMessaged } from "@/features/growth/services/miniAppService";
+import { assistReply } from "@/features/growth/services/replyAssistService";
+import { getPublicAppUrl } from "@/lib/env/appUrl";
 import { decodeCallback, encodeCallback } from "@/features/growth/helpers/parseTelegramUpdate";
 import { GIRO_COPY, GIRO_KEYS } from "@/features/growth/constants/giroCopy";
 import { ZONES, zoneBySlug } from "@/features/growth/constants/zoneCopy";
@@ -25,7 +31,65 @@ const HELP = [
   "/hoy · cómo va el día",
   "/registros · registros de hoy y de la semana",
   "/pausa y /reanudar · detiene o reanuda el correo automático",
+  "/app · la app con tus tarjetas, sus anuncios y respuestas con IA",
+  "Reenvíame lo que te contestó un negocio y la IA te deja la respuesta",
 ].join("\n");
+
+function miniAppButton(): InlineButton[][] {
+  return [[{ text: "Abrir app", web_app: { url: `${getPublicAppUrl()}${MINI_APP_PATH}` } }]];
+}
+
+/** A reply forwarded from WhatsApp carries no sender: keep it and ask whose it is. */
+async function handleReplyText(db: GrowthDb, actor: GrowthActor, chatId: number, text: string) {
+  const recent = await recentlyMessaged(db, actor, 6);
+  if (!recent.length) {
+    await reply(chatId, "No encontré a quién le escribiste últimamente. Marca primero el envío en su tarjeta.");
+    return;
+  }
+  const { data, error } = await db.from("growth_bot_inbox").insert({ chat_id: chatId, workspace_id: actor.workspaceId, user_id: actor.userId, text: text.slice(0, 2000) }).select("id").single();
+  if (error || !data) {
+    await reply(chatId, "No pude guardar el mensaje. Intenta de nuevo.");
+    return;
+  }
+  await reply(chatId, {
+    text: "¿De quién es esta respuesta?",
+    buttons: recent.map((lead) => [{ text: `${lead.businessName} · ${lead.giroLabel}`.slice(0, 60), callback_data: encodeCallback("rp", String(data.id), lead.leadId) }]),
+  });
+}
+
+async function handleReplyPick(db: GrowthDb, actor: GrowthActor, chatId: number, messageId: number | null, inboxId: string, leadId: string) {
+  const { data: entry } = await db.from("growth_bot_inbox").select("id, text, chat_id, lead_id").eq("id", Number(inboxId)).maybeSingle();
+  if (!entry || entry.chat_id !== chatId) {
+    await reply(chatId, "Ese mensaje ya no está. Reenvíamelo otra vez.");
+    return;
+  }
+  if (messageId) await replaceButtons(chatId, messageId, [[{ text: "Leyendo con IA…", callback_data: "x" }]]);
+  const result = await assistReply(db, actor, leadId, entry.text as string);
+  if (!result.ok) {
+    await reply(chatId, result.error.message);
+    return;
+  }
+  await db.from("growth_bot_inbox").update({ lead_id: leadId }).eq("id", entry.id);
+  const suggestion = result.data;
+  if (messageId) await replaceButtons(chatId, messageId, [[{ text: `✓ ${suggestion.businessName}`, callback_data: "x" }]]);
+  if (suggestion.intent === "rechazo") {
+    await reply(chatId, `<b>${escapeHtml(suggestion.businessName)}</b> no quiere. Quedó de baja en todos los canales; no hay nada más que mandar.`);
+    return;
+  }
+  const buttons: InlineButton[][] = [];
+  if (suggestion.phone) buttons.push([{ text: "Enviar por WhatsApp", url: buildWaLink(suggestion.phone, suggestion.reply) }]);
+  buttons.push([{ text: "Copiar texto", copy_text: { text: suggestion.reply.slice(0, 256) } }]);
+  if (suggestion.price) buttons.push([{ text: "Ver sus anuncios", url: leadLinkUrl(suggestion.token, "para") }]);
+  await reply(chatId, {
+    text: [
+      `<b>${escapeHtml(suggestion.businessName)}</b> · ${escapeHtml(REPLY_INTENT_LABEL[suggestion.intent])}`,
+      suggestion.price ? `Ya rehíce su anuncio con $${escapeHtml(suggestion.price)}.` : null,
+      "",
+      `<i>${escapeHtml(suggestion.reply)}</i>`,
+    ].filter((line) => line !== null).join("\n"),
+    buttons,
+  });
+}
 
 const OUTCOME_BY_CODE: Record<string, { outcome: LeadOutcome; label: string; reason?: string }> = {
   s: { outcome: "whatsapp_sent", label: "Enviado" },
@@ -129,7 +193,10 @@ async function handleCommand(db: GrowthDb, actor: GrowthActor, chatId: number, c
     case "start":
     case "ayuda":
     case "help":
-      await reply(chatId, HELP);
+      await reply(chatId, { text: HELP, buttons: miniAppButton() });
+      return;
+    case "app":
+      await reply(chatId, { text: "Tus tarjetas con sus anuncios, respuestas con IA, ruta y números.", buttons: miniAppButton() });
       return;
     case "lote":
       await zonePicker(chatId);
@@ -249,6 +316,7 @@ async function handleCallback(db: GrowthDb, actor: GrowthActor, action: Extract<
   if (verb === "l") return giroPicker(action.chatId, args[0]);
   if (verb === "lg") return sendBatch(db, actor, action.chatId, "whatsapp", args[0], args[1]);
   if (verb === "o") return handleOutcome(db, actor, action.chatId, action.messageId, args[0], args[1]);
+  if (verb === "rp") return handleReplyPick(db, actor, action.chatId, action.messageId, args[0], args[1]);
   if (verb === "vd") {
     const [kind, days, leadId] = args;
     const result = await recordOutcome(db, {
@@ -307,5 +375,5 @@ export async function handleTelegramAction(db: GrowthDb, action: TelegramAction)
   if (action.kind === "command") return handleCommand(db, actor, action.chatId, action.command, action.args);
   if (action.kind === "callback") return handleCallback(db, actor, action);
   if (action.kind === "location") return handleLocation(db, actor, action.chatId, action.lat, action.lng);
-  await reply(action.chatId, HELP);
+  return handleReplyText(db, actor, action.chatId, action.text);
 }

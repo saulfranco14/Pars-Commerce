@@ -1,28 +1,32 @@
 import { cache } from "react";
 
-import { claimPath, leadCatalog } from "@/features/growth/helpers/claimLink";
-import { GENERIC_CATALOG_IMAGE } from "@/features/catalog/constants/catalogImages";
+import { leadCatalog } from "@/features/growth/helpers/claimLink";
 import { PARA_OBJECTION_LABEL, PARA_VISIT_SLOT_LABEL } from "@/features/growth/constants/para";
+import { AD_KINDS } from "@/features/growth/constants/prospectAds";
 import { giroCopy } from "@/features/growth/constants/giroCopy";
 import { zoneByMunicipio } from "@/features/growth/constants/zoneCopy";
 import { buildMapsLink, buildMapsSearchLink, buildWaLink } from "@/features/growth/helpers/buildWaLink";
 import { describeParaSession, formatVisitSeconds, paraOutcome, parsePlacement, sanitizeParaSession } from "@/features/growth/helpers/paraSession";
 import { senderFromSignature } from "@/features/growth/helpers/paraSender";
-import { parseObjection, parseVisitRequest, visitDayLong, visitDayOptions } from "@/features/growth/helpers/paraVisit";
+import { parseObjection, parseVisitRequest, visitDayLong } from "@/features/growth/helpers/paraVisit";
 import { isLeadLinkToken } from "@/features/growth/helpers/leadLinkToken";
-import { pickParaItems } from "@/features/growth/helpers/pickParaItems";
+import { adBusinessName } from "@/features/growth/helpers/prospectAds";
 import { hashPreviewToken } from "@/features/preview/previewLinks";
 import { findLinkLead } from "@/features/growth/services/leadLinkService";
 import { growthDb, isGrowthEnabled } from "@/features/growth/services/growthDb";
 import { leadAlertTarget, notifyOperators } from "@/features/growth/services/operatorService";
 import { memberContact } from "@/features/growth/services/memberService";
+import { AD_LEAD_COLUMNS, adSourceFor, zoneCountsFor } from "@/features/growth/services/prospectAdsService";
 import { getSettings } from "@/features/growth/services/settingsService";
 import { escapeHtml } from "@/features/growth/services/telegramApi";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { GrowthDb } from "@/features/growth/services/growthDb";
 import type { GrowthSettings } from "@/features/growth/interfaces/settings";
-import type { ParaEventInput, ParaItem, ParaLinkEvent, ParaOfferData, ParaPageData, ParaSessionPayload, ParaVisitRequest } from "@/features/growth/interfaces/para";
+import type { ParaEventInput, ParaLinkEvent, ParaOfferData, ParaSessionPayload, ParaVisitRequest } from "@/features/growth/interfaces/para";
+import type { ParaAdsPageData } from "@/features/growth/interfaces/paraAds";
+import type { AdLead } from "@/features/growth/services/prospectAdsService";
+import type { InlineButton } from "@/features/growth/interfaces/telegram";
 import type { ServiceResult } from "@/features/qr/services/tablePaymentService";
 
 const PARA_ITEMS_LIMIT = 8;
@@ -60,66 +64,45 @@ async function loadOfferPage(db: GrowthDb, lead: { business_name: string; worksp
   };
 }
 
-export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaPageData | ParaOfferData | null> {
+/** Tlaco's own prospects get their four gift ads, editable, plus how many of their giro are around them. */
+async function loadAdsPage(db: GrowthDb, lead: AdLead & { catalog_template_key: string | null }): Promise<ParaAdsPageData> {
+  const [source, zone, settings, owner] = await Promise.all([
+    adSourceFor(db, lead),
+    zoneCountsFor(db, lead),
+    loadSettings(db),
+    lead.owner_user_id ? memberContact(db, lead.workspace_id, lead.owner_user_id) : Promise.resolve(null),
+  ]);
+  const catalog = leadCatalog(lead);
+  const displayName = adBusinessName(lead.business_name, lead.giro);
+  // The person who works this prospect signs the page and answers its WhatsApp.
+  const sender = senderFromSignature(owner?.signature ?? owner?.displayName ?? settings?.signature);
+  const helpNumber = (owner?.whatsappE164 ?? process.env.GROWTH_WHATSAPP_NUMBER)?.replace(/\D/g, "");
+  const helpText = `Hola${sender ? ` ${sender.firstName}` : ""}, vi los anuncios que le hicieron a ${displayName ?? "mi negocio"} y tengo una duda.`;
+  return {
+    kind: "ads",
+    source,
+    displayName,
+    giroLabel: giroCopy(lead.giro).label,
+    zone: zone ? { within500: zone.within500, plural: giroCopy(lead.giro).plural } : null,
+    sender,
+    helpUrl: helpNumber ? buildWaLink(`+${helpNumber}`, helpText) : null,
+    prefill: {
+      businessName: displayName ?? "",
+      phone: lead.phone_e164?.slice(3) ?? "",
+      businessType: catalog?.businessType ?? lead.giro,
+      catalogKey: catalog?.key ?? null,
+    },
+  };
+}
+
+export async function loadParaPage(db: GrowthDb, token: string): Promise<ParaAdsPageData | ParaOfferData | null> {
   const link = await findLinkLead(db, token, "para");
   if (!link) return null;
-  const { data: lead } = await db
-    .from("growth_leads")
-    .select("business_name, giro, catalog_template_key, municipio, colonia, phone_e164, workspace_id, owner_user_id")
-    .eq("id", link.leadId)
-    .maybeSingle();
+  const { data: lead } = await db.from("growth_leads").select(`${AD_LEAD_COLUMNS}, catalog_template_key`).eq("id", link.leadId).maybeSingle();
   if (!lead) return null;
   const { data: workspace } = await db.from("growth_workspaces").select("name, tenant_id").eq("id", lead.workspace_id).maybeSingle();
   if (workspace?.tenant_id) return loadOfferPage(db, lead, workspace);
-
-  const catalog = leadCatalog({ giro: lead.giro as string, catalog_template_key: lead.catalog_template_key as string | null });
-  // $0 starter items (e.g. "Entrega local") read as free products in a preview.
-  const pool = catalog ? [...catalog.products, ...catalog.services].filter((item) => item.isPublic !== false && item.price > 0) : [];
-  const items: ParaItem[] = pickParaItems(pool, PARA_ITEMS_LIMIT).map((item, index) => ({
-    id: `item-${index}`,
-    name: item.name,
-    price: item.price,
-    // The shared placeholder reads as an empty mock-up; the card shows initials instead.
-    imageUrl: item.imageUrl && item.imageUrl !== GENERIC_CATALOG_IMAGE ? item.imageUrl : null,
-    category: item.category ?? null,
-    type: item.type,
-  }));
-  const zone = zoneByMunicipio(lead.municipio as string);
-
-
-  const settings = await loadSettings(db);
-  // The person who works this prospect signs the page and answers its WhatsApp.
-  const owner = lead.owner_user_id ? await memberContact(db, lead.workspace_id as string, lead.owner_user_id as string) : null;
-  const sender = senderFromSignature(owner?.signature ?? owner?.displayName ?? settings?.signature);
-  const visits = Boolean(settings?.visit_municipios.includes(lead.municipio as string));
-  const helpNumber = (owner?.whatsappE164 ?? process.env.GROWTH_WHATSAPP_NUMBER)?.replace(/\D/g, "");
-  const helpText = `Hola${sender ? ` ${sender.firstName}` : ""}, vi la tienda de ejemplo de ${lead.business_name} y quiero que me ayuden a activarla.`;
-
-  return {
-    kind: "store",
-    businessName: lead.business_name as string,
-    giroLabel: giroCopy(lead.giro as string).label,
-    place: [lead.colonia, zone?.label ?? lead.municipio].filter(Boolean).join(", "),
-    headline: giroCopy(catalog?.key ?? (lead.giro as string)).titular,
-    sender,
-    items,
-    // Items alternate categories, so the first photos already make a varied hero collage.
-    showcase: items
-      .filter((item) => item.imageUrl)
-      .slice(0, 3)
-      .map((item) => ({ id: item.id, name: item.name, price: item.price, image: item.imageUrl as string, ad: false, href: "#productos" })),
-    counts: {
-      products: pool.filter((item) => item.type === "product").length,
-      services: pool.filter((item) => item.type === "service").length,
-    },
-    claimUrl: claimPath(lead, token),
-    helpUrl: helpNumber ? buildWaLink(`+${helpNumber}`, helpText) : null,
-    helpLabel: sender ? `Escribirle a ${sender.firstName} por WhatsApp` : "Escribirnos por WhatsApp",
-    visit:
-      visits && settings
-        ? { days: visitDayOptions(new Date(), settings.timezone), label: sender ? `Que ${sender.firstName} pase a mi local` : "Que pasen a mi local" }
-        : null,
-  };
+  return loadAdsPage(db, lead as AdLead & { catalog_template_key: string | null });
 }
 
 /** One load per request, shared by the page and its link-preview metadata. */
@@ -133,15 +116,41 @@ async function loadSettings(db: GrowthDb): Promise<GrowthSettings | null> {
   }
 }
 
+/** «Abrir chat» under a live alert; nothing when the prospect has no phone. */
+async function chatButton(db: GrowthDb, leadId: string): Promise<InlineButton[][] | undefined> {
+  const { data } = await db.from("growth_leads").select("phone_e164").eq("id", leadId).maybeSingle();
+  const phone = (data?.phone_e164 as string | null) ?? null;
+  return phone ? [[{ text: "Abrir chat", url: buildWaLink(phone) }]] : undefined;
+}
+
 function placeOf(row: { municipio: string }): string {
   return escapeHtml(zoneByMunicipio(row.municipio)?.label ?? row.municipio);
 }
 
-function clickPayload(event: ParaLinkEvent, raw: unknown): { placement: string } | null {
-  if (event !== "claim_clicked" && event !== "help_clicked") return null;
-  const placement = parsePlacement((raw as { placement?: unknown } | null)?.placement);
-  return placement ? { placement } : null;
+function clickPayload(event: ParaLinkEvent, raw: unknown): Record<string, string | number> | null {
+  const source = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  if (event === "claim_clicked" || event === "help_clicked") {
+    const placement = parsePlacement(source.placement);
+    return placement ? { placement } : null;
+  }
+  if (event === "ad_edited") {
+    const kind = AD_KINDS.find((value) => value === source.kind);
+    const field = (["text", "price", "place"] as const).find((value) => value === source.field);
+    return kind && field ? { kind, field } : null;
+  }
+  if (event === "ads_downloaded" || event === "ads_shared") {
+    const count = typeof source.count === "number" && Number.isInteger(source.count) ? Math.min(Math.max(source.count, 1), AD_KINDS.length) : null;
+    return count ? { count } : null;
+  }
+  return null;
 }
+
+/** The moments worth an alert while the prospect is still on the page. */
+const LIVE_ALERT: Partial<Record<ParaLinkEvent, string>> = {
+  ads_downloaded: "descargó sus anuncios",
+  ads_shared: "compartió sus anuncios",
+  signup_started: "está creando su cuenta",
+};
 
 function visitSummary(name: string, zone: string, seconds: number, payload: ParaSessionPayload): string {
   const time = formatVisitSeconds(seconds);
@@ -190,6 +199,8 @@ export async function trackParaEvent(
       await notifyOperators(db, { text: visitSummary(name, zone, seconds ?? 0, session) }, target);
     } else if (objection) {
       await notifyOperators(db, { text: `<b>${name}</b> (${zone}) respondió «${escapeHtml(PARA_OBJECTION_LABEL[objection])}».` }, target);
+    } else if (LIVE_ALERT[event]) {
+      await notifyOperators(db, { text: `<b>${name}</b> (${zone}) ${LIVE_ALERT[event]}. Buen momento para escribirle.`, buttons: await chatButton(db, row.lead_id) }, target);
     }
   }
   return { ok: true, data: { tracked: true } };

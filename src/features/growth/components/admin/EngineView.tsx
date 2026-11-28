@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { AlertTriangle, Bot, Mail, MessageSquareText, Pause, Play, Plus } from "lucide-react";
+import { AlertTriangle, Bot, ImageIcon, Mail, MessageSquareText, Pause, Play, Plus } from "lucide-react";
 
 import { useGrowthEngine } from "@/features/growth/hooks/useGrowthEngine";
 import { useGrowthMe } from "@/features/growth/hooks/useGrowthMe";
@@ -17,7 +17,7 @@ import { Notification } from "@/components/ui/Notification";
 import { MailboxSheet } from "@/features/growth/components/admin/MailboxSheet";
 
 import { engineSettingsSchema, offerSchema } from "@/features/growth/validations/engineSchemas";
-import { TEMPLATES_PATH } from "@/features/growth/constants/routes";
+import { AD_BACKGROUNDS_PATH, TEMPLATES_PATH } from "@/features/growth/constants/routes";
 
 import type { EngineSettingsFormValues, OfferFormValues } from "@/features/growth/validations/engineSchemas";
 import type { GrowthSettings } from "@/features/growth/interfaces/settings";
@@ -177,6 +177,13 @@ export function EngineView() {
         <span className="inline-flex items-center gap-2"><MessageSquareText className="h-4 w-4" aria-hidden />Mensajes: edita lo que se envía</span>
         <span className="text-sm text-accent">Abrir</span>
       </Link>
+
+      {!isBusiness ? (
+        <Link href={AD_BACKGROUNDS_PATH} className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 font-semibold text-foreground hover:border-accent/40 sm:p-5">
+          <span className="inline-flex items-center gap-2"><ImageIcon className="h-4 w-4" aria-hidden />Fondos: imágenes de los anuncios</span>
+          <span className="text-sm text-accent">Abrir</span>
+        </Link>
+      ) : null}
 
       <MailboxSheet isOpen={sheetOpen} nextIndex={mailboxes.length + 1} busy={engine.busy === "mailbox"} onClose={() => setSheetOpen(false)} onSubmit={(values) => engine.addMailbox(values)} />
     </div>

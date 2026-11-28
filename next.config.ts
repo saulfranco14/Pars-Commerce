@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
     process.env.VERCEL_GIT_COMMIT_REF,
     process.env.VERCEL_ENV,
   ),
+  // The ad renderer reads its typeface from disk, and tracing does not follow process.cwd() paths.
+  outputFileTracingIncludes: {
+    "/para/**": ["./src/features/growth/assets/fonts/**"],
+    "/api/**": ["./src/features/growth/assets/fonts/**"],
+  },
   async redirects() {
     return [
       {

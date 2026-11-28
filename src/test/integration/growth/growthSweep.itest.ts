@@ -65,11 +65,13 @@ describe("growth: WhatsApp sweep", () => {
     });
   });
 
-  it("ships formal WhatsApp copy with a sign-off", async () => {
+  it("ships the gift-ads copy: free, no photos of their place, and a way out", async () => {
     const live = await sql`
       select step, body from growth_templates
       where channel = 'whatsapp' and giro is null and status = 'active' and created_by is null and step in ('m1', 'seguimiento', 'si')`;
-    expect(live.map((row) => row.step).sort()).toEqual(["m1", "m1", "m1", "seguimiento", "si"]);
-    expect(live.every((row) => row.body.includes("Quedo a sus órdenes.\n{firma}") && !/le late|¡Va!/.test(row.body))).toBe(true);
+    expect(live.map((row) => row.step).sort()).toEqual(["m1", "m1", "seguimiento", "si"]);
+    const first = live.filter((row) => row.step === "m1");
+    expect(first.every((row) => row.body.includes("sin costo") && row.body.includes("No usé fotos de su local") && row.body.includes("no le vuelvo a escribir"))).toBe(true);
+    expect(live.find((row) => row.step === "si")?.body).toContain("{link}");
   });
 });

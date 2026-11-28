@@ -69,10 +69,13 @@ describe("growth: cold leads, bulk drop and variant stats", () => {
     });
   });
 
-  it("leaves every active first message with the store link", async () => {
+  it("splits the first message: A asks the price without a link, B brings the link", async () => {
     const rows = await sql`select variant, body from growth_templates where workspace_id = ${TLACO} and channel = 'whatsapp' and step = 'm1' and giro is null and status = 'active' and created_by is null`;
-    expect(rows.map((row) => row.variant).sort()).toEqual(expect.arrayContaining(["A", "B", "C"]));
-    for (const row of rows) expect(row.body).toContain("{link}");
+    const byVariant = Object.fromEntries(rows.map((row) => [row.variant as string, row.body as string]));
+    expect(Object.keys(byVariant).sort()).toEqual(["A", "B"]);
+    expect(byVariant.A).toContain("{pregunta_precio}");
+    expect(byVariant.A).not.toContain("{link}");
+    expect(byVariant.B).toContain("{link}");
   });
 
   it("reverts cleanly", async () => {

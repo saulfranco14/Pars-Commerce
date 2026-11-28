@@ -3,6 +3,10 @@ import type { WhatsappStep } from "@/features/growth/interfaces/whatsapp";
 
 export const TEMPLATE_VARIABLES: Array<{ key: string; label: string }> = [
   { key: "saludo", label: "Buenos días / tardes / noches" },
+  { key: "saludo_negocio", label: "Saludo y «¿es {negocio}?» (sin nombre, solo el saludo)" },
+  { key: "pregunta_precio", label: "Pregunta de precio del giro («¿A cómo da…?»)" },
+  { key: "promo", label: "Su promoción con su precio" },
+  { key: "zona", label: "Cuántos de su giro hay a 500 m" },
   { key: "negocio", label: "Nombre del negocio" },
   { key: "colonia", label: "Colonia" },
   { key: "municipio", label: "Municipio" },
@@ -45,6 +49,12 @@ export const TEMPLATE_STEPS: Record<TemplateChannel, Array<{ value: TemplateStep
     { value: "d7", label: "Correo 3 · día 7" },
   ],
 };
+
+/** Messages that go out with the prospect's four gift ads. */
+export const AD_STEPS: WhatsappStep[] = ["m1", "si", "seguimiento", "ultimo"];
+
+/** Steps under a fair A/B test: variants split by lead, without leaning to the one that opens best. */
+export const EVEN_SPLIT_STEPS: TemplateStep[] = ["m1"];
 
 /** Steps that only make sense with the prospect's link in them. */
 export const STEPS_REQUIRING_LINK: TemplateStep[] = ["seguimiento", "si", "vio_tienda", "objecion_costo", "objecion_whatsapp", "post_visita", "ultimo", "d3", "d7"];

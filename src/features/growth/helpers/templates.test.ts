@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { renderTemplate, templatePlaceholders } from "@/features/growth/helpers/renderTemplate";
-import { buildTemplateVars, greetingFor, isGenericBusinessName } from "@/features/growth/helpers/templateVars";
+import { isGenericBusinessName } from "@/features/growth/helpers/formatBusinessName";
+import { buildTemplateVars, greetingFor, zonePhrase } from "@/features/growth/helpers/templateVars";
 import { validateTemplate } from "@/features/growth/helpers/validateTemplate";
 
 const lead = { business_name: "Ferretería El Clavo", giro: "materiales", municipio: "Chimalhuacán", colonia: "Xochitenco", address: "Calle Hidalgo 12" };
@@ -58,5 +59,27 @@ describe("validateTemplate", () => {
   it("caps WhatsApp length", () => {
     const errors = validateTemplate({ channel: "whatsapp", giro: null, step: "m1", variant: "A", subject: null, body: "x".repeat(1001) });
     expect(errors[0]).toMatch(/1000 caracteres/);
+  });
+});
+
+describe("ads copy variables", () => {
+  const lead = { business_name: "CAFE LA ESQUINA", giro: "cafeteria", municipio: "Nezahualcóyotl", colonia: null, address: null };
+  const base = { link: "https://tlaco.app/para/x", firma: "Saúl · Tlaco", now: new Date("2026-11-28T16:00:00Z") };
+
+  it("greets by name only when there is a real one", () => {
+    expect(buildTemplateVars(lead, base).saludo_negocio).toBe("Buenos días, ¿es Cafe La Esquina?");
+    expect(buildTemplateVars({ ...lead, business_name: "CAFETERIA" }, base).saludo_negocio).toBe("Buenos días.");
+  });
+
+  it("quotes the owner's promo price and the zone count", () => {
+    const vars = buildTemplateVars(lead, { ...base, adEdits: { promo: { price: "35" } }, nearby: 17 });
+    expect(vars.promo).toBe("2 cafés por $35");
+    expect(vars.zona).toBe("hay 17 cafeterías a 500 m de usted");
+    expect(vars.pregunta_precio).toBe("¿A cómo da el café de olla?");
+  });
+
+  it("words the zone without a count or with nobody around", () => {
+    expect(zonePhrase(null, "cafeteria")).toBe("hay otros negocios de su giro cerca de usted");
+    expect(zonePhrase(0, "cafeteria")).toBe("no hay otro negocio de su giro a 500 m de usted");
   });
 });

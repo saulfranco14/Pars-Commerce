@@ -68,3 +68,45 @@ export async function generateText(system: string, prompt: string, options: Gene
     throw error instanceof GeminiError ? error : new GeminiError(502, "No pudimos comunicarnos con la IA.");
   }
 }
+
+export interface GroundedSource {
+  title: string;
+  url: string;
+}
+
+/** One generation with Google Search: the model reads the web and returns the pages it used. */
+export async function generateGroundedText(system: string, prompt: string, options: GenerateOptions = {}): Promise<{ text: string; sources: GroundedSource[] }> {
+  const response = await fetch(`${BASE_URL}/${PRIMARY_MODEL}:generateContent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey() },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      tools: [{ google_search: {} }],
+      store: false,
+      generationConfig: {
+        maxOutputTokens: options.maxOutputTokens ?? 900,
+        temperature: 0.3,
+        ...(options.thinkingLevel ? { thinkingConfig: { thinkingLevel: options.thinkingLevel } } : {}),
+      },
+    }),
+    signal: AbortSignal.timeout(45_000),
+  }).catch(() => {
+    throw new GeminiError(504, "La IA tardó demasiado en buscar. Intenta en unos minutos.");
+  });
+  const data = (await response.json().catch(() => null)) as {
+    candidates?: Array<{
+      content?: { parts?: Array<{ text?: string }> };
+      groundingMetadata?: { groundingChunks?: Array<{ web?: { uri?: string; title?: string } }> };
+    }>;
+    error?: { message?: string };
+  } | null;
+  if (!response.ok) throw friendlyError(response.status, data?.error?.message);
+  const candidate = data?.candidates?.[0];
+  const text = candidate?.content?.parts?.map((part) => part.text ?? "").join("").trim();
+  if (!text) throw new GeminiError(502, "La IA no devolvió texto. Intenta de nuevo.");
+  const sources = (candidate?.groundingMetadata?.groundingChunks ?? [])
+    .flatMap((chunk) => (chunk.web?.uri ? [{ title: chunk.web.title?.trim() || "Fuente", url: chunk.web.uri }] : []))
+    .filter((source, index, all) => all.findIndex((other) => other.url === source.url) === index);
+  return { text, sources };
+}
