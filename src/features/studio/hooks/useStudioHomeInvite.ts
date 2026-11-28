@@ -17,7 +17,7 @@ function readClosed() {
   }
 }
 
-/** Shared by the home banner and the header link so only one of them shows. */
+/** Shared by the home banner and the header link so only one of them shows; the banner stays until closed. */
 export function useStudioHomeInvite(): StudioHomeInvite {
   const tenant = useActiveTenant(),
     can = usePermission(),
@@ -45,7 +45,8 @@ export function useStudioHomeInvite(): StudioHomeInvite {
     window.dispatchEvent(new Event(CLOSED_EVENT));
   };
   return {
-    show: visible && !closed && summary.data?.counts.designs === 0,
+    show: visible && !closed && Boolean(summary.data),
+    first: summary.data?.counts.designs === 0,
     tlacos: summary.data?.balance.available ?? STUDIO_GIFT_TLACOS,
     href: tenant ? `/dashboard/${tenant.slug}/studio` : "",
     close,

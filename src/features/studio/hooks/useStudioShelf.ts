@@ -14,6 +14,7 @@ export function useStudioShelf() {
     router = useRouter(),
     shelf = useSWR(["studio-shelf", tenantId], () => loadShelf(tenantId)),
     [query, setQuery] = useState(""),
+    [view, setView] = useState<"todo" | "done">("todo"),
     [creating, setCreating] = useState<string | null>(null),
     [error, setError] = useState<string | null>(null);
   const items = useMemo(() => {
@@ -56,8 +57,11 @@ export function useStudioShelf() {
 
   return {
     items,
+    todo: items.filter((i) => !i.ad),
+    done: items.filter((i) => i.ad),
+    view,
+    setView,
     total: shelf.data?.items.length ?? 0,
-    withAd: shelf.data?.items.filter((i) => i.ad).length ?? 0,
     isLoading: shelf.isLoading,
     loadError: shelf.error ? "No pudimos cargar tu catálogo." : null,
     query,

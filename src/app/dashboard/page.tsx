@@ -749,6 +749,7 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto">
       <div className="space-y-5 pb-8 sm:pb-10">
+        <StudioHomeBanner />
         <div className="space-y-3 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5">
           <PageHeader title={activeTenant.name} description={periodLabel} />
           <StudioHomeLink />
@@ -794,8 +795,6 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
-
-        <StudioHomeBanner />
 
         {quoteMessage && (
           <p

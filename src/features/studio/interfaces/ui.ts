@@ -445,6 +445,8 @@ export interface StudioMultiShareSheetProps {
 /** The business home's invitation to Studio, until the first ad or until closed. */
 export interface StudioHomeInvite {
   show: boolean;
+  /** No ad yet: the banner invites to the first one. */
+  first: boolean;
   tlacos: number;
   href: string;
   close: () => void;

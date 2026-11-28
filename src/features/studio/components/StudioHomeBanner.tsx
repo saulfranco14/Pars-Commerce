@@ -4,9 +4,9 @@ import { ArrowRight, Coins, Package, WandSparkles, X } from "lucide-react";
 import { useStudioHomeInvite } from "../hooks/useStudioHomeInvite";
 import { StudioActionLink } from "./StudioActionLink";
 
-/** Business home, above everything: the invitation to make the first ad. */
+/** Business home, above everything: the invitation to Studio until it is closed. */
 export function StudioHomeBanner() {
-  const { show, tlacos, href, close } = useStudioHomeInvite();
+  const { show, first, tlacos, href, close } = useStudioHomeInvite();
   if (!show) return null;
   return (
     <section
@@ -54,7 +54,7 @@ export function StudioHomeBanner() {
             id="studio-home-banner"
             className="mt-3 text-2xl font-bold tracking-tight text-balance sm:text-3xl"
           >
-            Haz tu primer anuncio
+            {first ? "Haz tu primer anuncio" : "Haz tu siguiente anuncio"}
           </h2>
           <p className="mt-1.5 max-w-xl text-sm text-white/85 sm:text-base">
             Elige un producto y Studio lo arma con tu precio y tu logo, listo

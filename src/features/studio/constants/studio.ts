@@ -399,6 +399,11 @@ export const STUDIO_SEEN_KEY = "tlaco_studio_seen_v1";
 /** Set when the person closes the «Haz tu primer anuncio» card on the home. */
 export const STUDIO_HOME_CARD_KEY = "tlaco_studio_home_card_v1";
 /** Studio's four tabs: one word each, one row on a phone. */
+/** The two halves of Crear's list. */
+export const STUDIO_SHELF_VIEWS = [
+  { key: "todo", label: "Por hacer" },
+  { key: "done", label: "Con anuncio" },
+] as const;
 export const STUDIO_NAV = [
   { path: "", label: "Crear" },
   { path: "/disenos", label: "Anuncios" },
