@@ -442,3 +442,10 @@ export interface StudioMultiShareSheetProps {
   error: string | null;
   onShare: (kind: "chats" | "status") => void;
 }
+/** The business home's invitation to Studio, until the first ad or until closed. */
+export interface StudioHomeInvite {
+  show: boolean;
+  tlacos: number;
+  href: string;
+  close: () => void;
+}
