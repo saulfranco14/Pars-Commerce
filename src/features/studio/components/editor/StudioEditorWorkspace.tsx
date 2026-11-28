@@ -20,7 +20,11 @@ import { StudioAdView } from "./StudioAdView";
 import { StudioShareStep } from "./StudioShareStep";
 import { adminActionButtonIcon } from "@/components/admin/actionButtonClasses";
 import { STUDIO_ACTION_BAR_SPACE } from "../../constants/studio";
-import { studioCatalogHref, studioRechargeHref } from "../../helpers/entry";
+import {
+  studioBackHref,
+  studioCatalogHref,
+  studioRechargeHref,
+} from "../../helpers/entry";
 import { reviewStudioScene } from "../../helpers/scene";
 import { reusableStudioVersion } from "../../helpers/adState";
 import { studioTagline, suggestStudioCopy } from "../../helpers/sceneStyle";
@@ -31,6 +35,7 @@ export default function StudioEditorWorkspace({
   onRefresh,
   initialReview = false,
   autoAi = false,
+  fromAds = false,
 }: StudioEditorProps) {
   const { tenantId, tenantSlug } = useStudioContext(),
     editor = useStudioEditor(detail),
@@ -85,7 +90,7 @@ export default function StudioEditorWorkspace({
       void next();
     }
   });
-  const home = `/dashboard/${tenantSlug}/studio`;
+  const home = studioBackHref(tenantSlug, fromAds);
   const toast = output.success && (
     <Toast message={output.success} onDone={() => output.setSuccess(null)} />
   );
@@ -129,7 +134,7 @@ export default function StudioEditorWorkspace({
           action={
             <Link
               className={adminActionButtonIcon}
-              aria-label="Volver a Studio"
+              aria-label={fromAds ? "Volver a Anuncios" : "Volver a Crear"}
               href={home}
               onClick={(e) => {
                 if (editor.saveState !== "saved") {
@@ -159,6 +164,7 @@ export default function StudioEditorWorkspace({
           reusable={reusable}
           lastSharedAt={detail.lastSharedAt}
           updating={fresh.updating}
+          fromAds={fromAds}
           onByHand={() => {
             setMode("simple");
             setQuick(false);

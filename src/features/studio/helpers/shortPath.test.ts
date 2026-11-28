@@ -46,6 +46,7 @@ const item = (over: Partial<StudioShelfItem>): StudioShelfItem => ({
   imageUrl: "https://example.com/x.jpg",
   gaps: [],
   state: "active",
+  ad: null,
   ...over,
 });
 

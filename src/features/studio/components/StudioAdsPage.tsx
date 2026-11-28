@@ -35,6 +35,7 @@ import {
 } from "../constants/studio";
 import { canShareStudioAd, toggleStudioPick } from "../helpers/adState";
 import { trackStudioFunnel } from "../services/studioAnalyticsClient";
+import { STUDIO_FROM_ADS } from "../helpers/entry";
 
 /**
  * Everything the merchant has made: find one, see where it is, and pick
@@ -161,7 +162,7 @@ export function StudioAdsPage() {
                 key={design.id}
                 design={design}
                 state={state}
-                href={`${base}/disenos/${design.id}`}
+                href={`${base}/disenos/${design.id}?${STUDIO_FROM_ADS}`}
                 tenantId={tenantId}
                 selecting={selecting}
                 picked={isPicked}

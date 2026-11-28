@@ -53,7 +53,7 @@ export function StudioPublishedSheet({
           )}
           <Link href={homeHref} className={adminActionButtonPrimary}>
             <Plus className="h-4 w-4" />
-            Otro
+            Crear
           </Link>
         </div>
       }

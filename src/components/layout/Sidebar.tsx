@@ -26,6 +26,7 @@ import {
 } from "@/features/growth/constants/routes";
 import { isPlatformRoute, isProspectingRoute } from "@/lib/platformRoutes";
 import { studioBusinessVisible } from "@/features/studio/helpers/visibility";
+import { useStudioSeen } from "@/features/studio/hooks/useStudioSeen";
 import {
   X,
   Download,
@@ -90,11 +91,7 @@ function NavLink({
 interface SidebarContentProps {
   pathname: string;
   platformView:
-    | "operation"
-    | "users"
-    | "businesses"
-    | "audit"
-    | "liquidaciones";
+    "operation" | "users" | "businesses" | "audit" | "liquidaciones";
   slug: string | null;
   base: string;
   hasTenant: boolean;
@@ -157,6 +154,7 @@ function SidebarContent(props: SidebarContentProps) {
   const can = usePermission();
   // Owners pass every permission; a custom role needs one of the prospecting ones.
   const canProspect = can("prospects.work") || can("prospects.manage");
+  const studioSeen = useStudioSeen();
   // The business arranges its menu; each role still only sees what it can open.
   const activeTenant = useActiveTenant();
   const menuGroups = resolveMenu(
@@ -550,6 +548,11 @@ function SidebarContent(props: SidebarContentProps) {
                     onNavigate={onNavigate}
                   >
                     {item.label}
+                    {item.path === "studio" && !studioSeen && (
+                      <span className="ml-auto rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-accent-foreground">
+                        Nuevo
+                      </span>
+                    )}
                   </NavLink>
                 );
               })}
@@ -557,6 +560,7 @@ function SidebarContent(props: SidebarContentProps) {
           ))}
         {showTenantMenu &&
         activeTenantId &&
+        isPlatformAdmin &&
         canProspect &&
         growthActor?.tenantId !== activeTenantId ? (
           <div className="mt-4 border-t border-border-soft pt-4">

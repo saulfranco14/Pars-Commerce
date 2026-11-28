@@ -106,7 +106,12 @@ export function revalidateStudioAds(tenantId: string) {
     (key) =>
       Array.isArray(key) &&
       key[1] === tenantId &&
-      ["studio-placements", "studio-stale", "studio-library"].includes(
+      [
+        "studio-placements",
+        "studio-stale",
+        "studio-library",
+        "studio-shelf",
+      ].includes(
         key[0] as string,
       ),
   );

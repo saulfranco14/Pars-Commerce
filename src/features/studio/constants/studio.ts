@@ -392,6 +392,12 @@ export const STUDIO_SHELF_STATE_LABELS = {
   paused: "Pausada",
   draft: "Borrador",
 } as const;
+/** Tlacos every business gets the first time it opens Studio (`studio_grant_starter_credits`). */
+export const STUDIO_GIFT_TLACOS = 30;
+/** Set once the person opened Studio; until then the menu marks it «Nuevo». */
+export const STUDIO_SEEN_KEY = "tlaco_studio_seen_v1";
+/** Set when the person closes the «Haz tu primer anuncio» card on the home. */
+export const STUDIO_HOME_CARD_KEY = "tlaco_studio_home_card_v1";
 /** Studio's four tabs: one word each, one row on a phone. */
 export const STUDIO_NAV = [
   { path: "", label: "Crear" },

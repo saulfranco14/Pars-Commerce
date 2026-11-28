@@ -60,6 +60,15 @@ export function studioCatalogHref(
     : `${base}/promociones`;
 }
 
+/** Opening an ad from «Anuncios» adds this, so going back returns there. */
+export const STUDIO_FROM_ADS = "desde=anuncios";
+
+/** Where the back arrow of an ad goes: the list it was opened from. */
+export function studioBackHref(tenantSlug: string, fromAds: boolean): string {
+  const base = `/dashboard/${tenantSlug}/studio`;
+  return fromAds ? `${base}/disenos` : base;
+}
+
 export function studioRechargeHref(tenantSlug: string, returnTo: string) {
   return `/dashboard/${tenantSlug}/studio/tlacos?return_to=${encodeURIComponent(returnTo)}`;
 }

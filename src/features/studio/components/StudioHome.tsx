@@ -9,11 +9,11 @@ import { useStudioContext } from "./StudioProvider";
 import { StudioLoading } from "./StudioLoading";
 import { StudioPendingBanner } from "./StudioPendingBanner";
 import { StudioShelf } from "./StudioShelf";
+import { StudioWelcome } from "./StudioWelcome";
 
 export function StudioHome() {
   useStudioContinuation();
-  const { tenantSlug, summary, isLoading, error, refresh } =
-    useStudioContext();
+  const { tenantSlug, summary, isLoading, error, refresh } = useStudioContext();
   const base = `/dashboard/${tenantSlug}/studio`;
   // Back from an ad, the list shows what was just published or finished.
   useEffect(() => {
@@ -59,6 +59,7 @@ export function StudioHome() {
         />
       )}
       <StudioPendingBanner onFinished={() => void refresh()} />
+      {canCreate && <StudioWelcome />}
       {canCreate ? (
         <StudioShelf />
       ) : summary.enabled ? (

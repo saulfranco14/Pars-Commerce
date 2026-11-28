@@ -7,6 +7,7 @@ import {
   Download,
   ExternalLink,
   Globe,
+  LayoutGrid,
   MessageCircle,
   Plus,
   Share2,
@@ -44,6 +45,7 @@ export function StudioShareSheet({
   assets,
   draft,
   homeHref,
+  adsHref,
   onPublished,
 }: StudioShareSheetProps) {
   const { tenantId, summary } = useStudioContext(),
@@ -128,18 +130,14 @@ export function StudioShareSheet({
                   Tienda
                 </a>
               ) : (
-                <button
-                  type="button"
-                  className={adminActionButtonSecondary}
-                  onClick={onClose}
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Volver
-                </button>
+                <Link href={adsHref} className={adminActionButtonSecondary}>
+                  <LayoutGrid className="h-4 w-4" />
+                  Anuncios
+                </Link>
               )}
               <Link href={homeHref} className={adminActionButtonPrimary}>
                 <Plus className="h-4 w-4" />
-                Otro
+                Crear
               </Link>
             </div>
           ) : undefined

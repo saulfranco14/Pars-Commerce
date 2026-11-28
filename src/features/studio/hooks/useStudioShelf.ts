@@ -57,6 +57,7 @@ export function useStudioShelf() {
   return {
     items,
     total: shelf.data?.items.length ?? 0,
+    withAd: shelf.data?.items.filter((i) => i.ad).length ?? 0,
     isLoading: shelf.isLoading,
     loadError: shelf.error ? "No pudimos cargar tu catálogo." : null,
     query,

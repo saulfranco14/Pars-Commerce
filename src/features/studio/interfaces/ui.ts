@@ -5,10 +5,7 @@ import type { useStudioEditor } from "../hooks/useStudioEditor";
 import type { useStudioPhotos } from "../hooks/useStudioPhotos";
 import type { useStudioDesigns } from "../hooks/useStudioDesigns";
 import type { useStudioAd } from "../hooks/useStudioAd";
-import type {
-  STUDIO_AD_AI_TEXT,
-  StudioAdStatus,
-} from "../constants/studio";
+import type { STUDIO_AD_AI_TEXT, StudioAdStatus } from "../constants/studio";
 import type {
   StudioPreparedOutput,
   useStudioOutput,
@@ -56,6 +53,8 @@ export interface StudioEditorProps {
   detail: StudioDesignDetail;
   onRefresh: () => Promise<unknown>;
   initialReview?: boolean;
+  /** Opened from «Anuncios»: going back returns there. */
+  fromAds?: boolean;
 }
 export interface StudioCanvasProps {
   scene: StudioScene;
@@ -314,6 +313,9 @@ export interface StudioPlacementSheetProps {
 }
 export interface StudioShelfRowProps {
   item: StudioShelfItem;
+  tenantId: string;
+  /** Set when the item already has an ad: the row opens it. */
+  adHref?: string;
   creating: boolean;
   disabled: boolean;
   onCreate: () => void;
@@ -368,6 +370,7 @@ export interface StudioShareSheetProps extends StudioSheetProps {
   assets: StudioAsset[];
   draft: boolean;
   homeHref: string;
+  adsHref: string;
   /** Called after publishing with the places it went to. */
   onPublished: (surfaces: StudioSurface[]) => void;
 }
@@ -382,6 +385,7 @@ export interface StudioAdViewProps extends StudioWorkspaceParts {
   lastSharedAt: string | null;
   /** The ad is taking the product's new name and price. */
   updating: boolean;
+  fromAds: boolean;
 }
 export interface StudioAdReadyProps {
   scene: StudioScene;

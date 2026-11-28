@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import {
   Archive,
   CalendarClock,
+  CopyPlus,
   EyeOff,
   Globe,
   Palette,
@@ -19,6 +20,7 @@ import { useStudioContext } from "../StudioProvider";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Notification } from "@/components/ui/Notification";
 import { StudioActionBar } from "../StudioActionBar";
+import { StudioNav } from "../StudioNav";
 import { StudioAdReady } from "./StudioAdReady";
 import { StudioAskCard } from "./StudioAskCard";
 import { StudioChangeSheet } from "./StudioChangeSheet";
@@ -36,21 +38,22 @@ import {
   adminActionButtonSecondary,
 } from "@/components/admin/actionButtonClasses";
 import { trackStudioFunnel } from "../../services/studioAnalyticsClient";
-import { saveDesign } from "../../services/studioClientService";
+import { createDesign, saveDesign } from "../../services/studioClientService";
 import { revalidateStudioAds } from "../../services/studioAutoRefresh";
 import {
   STUDIO_ACTION_BAR_SPACE,
   STUDIO_SURFACES,
 } from "../../constants/studio";
 import { STUDIO_TEXT_ONLY_DESIGNS } from "../../constants/designs";
-import { studioRechargeHref } from "../../helpers/entry";
+import { studioBackHref, studioRechargeHref } from "../../helpers/entry";
 import { studioSharedAgo } from "../../helpers/adState";
 import { studioTagline, suggestStudioCopy } from "../../helpers/sceneStyle";
 import type { StudioDesignId } from "../../interfaces/scene";
 import type { StudioAdViewProps } from "../../interfaces/ui";
 import type { StudioSurface } from "../../interfaces/studio";
 
-type Sheet = "change" | "share" | "validity" | "published" | "archive";
+type Sheet =
+  "change" | "share" | "validity" | "published" | "archive" | "another";
 /** Quiet time after the last change before the share image is prepared. */
 const PREPARE_AFTER_MS = 2000;
 
@@ -67,6 +70,7 @@ export function StudioAdView({
   reusable,
   lastSharedAt,
   updating,
+  fromAds,
 }: StudioAdViewProps) {
   const { tenantSlug, summary } = useStudioContext(),
     router = useRouter(),
@@ -88,11 +92,13 @@ export function StudioAdView({
     [finished, setFinished] = useState(Boolean(reusable) && !autoAi),
     [restoring, setRestoring] = useState(Boolean(reusable) && !autoAi),
     [archiving, setArchiving] = useState(false),
+    [copying, setCopying] = useState(false),
     published = useStudioDesignPlacements(designId),
     source = editor.source.current,
     locked = !editor.canEdit || asset.busy || ad.waiting,
     close = () => setSheet(null),
-    home = `/dashboard/${tenantSlug}/studio`;
+    home = `/dashboard/${tenantSlug}/studio`,
+    back = studioBackHref(tenantSlug, fromAds);
 
   const shown = designs.options
       .map((option, index) => ({ option, index }))
@@ -209,6 +215,9 @@ export function StudioAdView({
 
   return (
     <div className={`space-y-3 ${STUDIO_ACTION_BAR_SPACE}`}>
+      {finished && !ad.waiting && (
+        <StudioNav current={fromAds ? "/disenos" : ""} />
+      )}
       {ad.draft && (
         <Notification
           tone="warning"
@@ -324,15 +333,28 @@ export function StudioAdView({
           carousel(false)
         ))}
       {finished && editor.canEdit && (
-        <button
-          type="button"
-          className="mx-auto flex min-h-11 cursor-pointer items-center gap-1.5 px-3 text-sm font-semibold text-muted-foreground hover:text-foreground"
-          disabled={locked || archiving}
-          onClick={() => setSheet("archive")}
-        >
-          <Archive className="h-4 w-4" />
-          Archivar
-        </button>
+        <div className="flex justify-center gap-2">
+          {source.id && (
+            <button
+              type="button"
+              className="flex min-h-11 cursor-pointer items-center gap-1.5 px-3 text-sm font-semibold text-muted-foreground hover:text-foreground"
+              disabled={locked || copying}
+              onClick={() => setSheet("another")}
+            >
+              <CopyPlus className="h-4 w-4" />
+              Otro
+            </button>
+          )}
+          <button
+            type="button"
+            className="flex min-h-11 cursor-pointer items-center gap-1.5 px-3 text-sm font-semibold text-muted-foreground hover:text-foreground"
+            disabled={locked || archiving}
+            onClick={() => setSheet("archive")}
+          >
+            <Archive className="h-4 w-4" />
+            Archivar
+          </button>
+        </div>
       )}
       {ad.hint && (
         <p className="text-center text-sm text-muted-foreground" role="status">
@@ -414,6 +436,7 @@ export function StudioAdView({
         assets={asset.assets}
         draft={ad.draft}
         homeHref={home}
+        adsHref={`${home}/disenos`}
         onPublished={(surfaces) => {
           setPublishedTo(surfaces);
           setSheet("published");
@@ -443,8 +466,7 @@ export function StudioAdView({
         onConfirm={async () => {
           setArchiving(true);
           try {
-            if (published.live.length && !(await published.retireAll()))
-              return;
+            if (published.live.length && !(await published.retireAll())) return;
             await editor.saveNow();
             await saveDesign(designId, {
               tenant_id: tenantId,
@@ -456,7 +478,7 @@ export function StudioAdView({
               status: "archived",
             });
             revalidateStudioAds(tenantId);
-            router.push(`${home}/disenos`);
+            router.push(back);
           } catch (e) {
             editor.setError(
               e instanceof Error ? e.message : "No pudimos archivarlo.",
@@ -464,6 +486,35 @@ export function StudioAdView({
           } finally {
             setArchiving(false);
             close();
+          }
+        }}
+      />
+      <ConfirmDialog
+        isOpen={sheet === "another"}
+        onClose={close}
+        title={`¿Hacer otro de ${source.name}?`}
+        description="El que ya tienes se queda igual. El nuevo empieza con la foto del catálogo."
+        confirmLabel="Crear"
+        onConfirm={async () => {
+          if (source.type === "custom" || !source.id) return;
+          setCopying(true);
+          try {
+            const created = await createDesign({
+              tenant_id: tenantId,
+              source_type: source.type,
+              source_id: source.id,
+              title: source.name,
+              idempotency_key: crypto.randomUUID(),
+            });
+            revalidateStudioAds(tenantId);
+            router.push(`${home}/disenos/${created.id}`);
+          } catch (e) {
+            editor.setError(
+              e instanceof Error ? e.message : "No pudimos crear el otro.",
+            );
+            close();
+          } finally {
+            setCopying(false);
           }
         }}
       />

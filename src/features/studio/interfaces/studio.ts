@@ -299,6 +299,13 @@ export interface StudioShelfItem {
   gaps: StudioShelfGap[];
   /** Anything but active goes out as a draft and stays off the store. */
   state: StudioShelfState;
+  /** Its newest ad that is not archived; opening it beats making a copy by mistake. */
+  ad: StudioShelfAd | null;
+}
+export interface StudioShelfAd {
+  designId: string;
+  state: "live" | "ready" | "unfinished" | "updating";
+  scene: StudioScene;
 }
 export type StudioShelfState =
   "active" | "scheduled" | "expired" | "paused" | "draft";

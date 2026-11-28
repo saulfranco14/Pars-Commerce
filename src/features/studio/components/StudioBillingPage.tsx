@@ -99,6 +99,13 @@ export function StudioBillingPage() {
           message="Hay un pago en revisión. Tu saldo e historial se conservan; las generaciones están pausadas hasta resolverlo."
         />
       )}
+      {!summary.checkoutEnabled && (
+        <Notification
+          tone="info"
+          title="Las recargas abren pronto"
+          message="Mientras, usa tus Tlacos de regalo. Diseñar, cambiar textos y compartir no cuesta nada."
+        />
+      )}
       {billing.error && <Notification tone="error" message={billing.error} />}
       {billing.message && (
         <Notification tone="success" message={billing.message} />
@@ -117,7 +124,7 @@ export function StudioBillingPage() {
               : "Membresía activa"
             : sub?.status === "pending_payment"
               ? "Pago pendiente de confirmación"
-              : "Activa Studio para crear"}
+              : "Crear es gratis; la IA usa Tlacos"}
         </h2>
         {sub?.current_period_end && (
           <p className="mt-2 text-sm text-muted-foreground">
@@ -185,7 +192,7 @@ export function StudioBillingPage() {
       <section className="grid gap-3 sm:grid-cols-3">
         {[
           { label: "Mensuales disponibles", value: summary.balance.monthly },
-          { label: "Comprados disponibles", value: summary.balance.purchased },
+          { label: "Comprados y de regalo", value: summary.balance.purchased },
           { label: "Reservados en trabajos", value: summary.balance.reserved },
         ].map((row) => (
           <div
@@ -278,12 +285,6 @@ export function StudioBillingPage() {
           ))}
         </div>
       </section>
-      {!summary.checkoutEnabled && (
-        <Notification
-          tone="info"
-          message="El checkout todavía no está habilitado. No se acreditan Tlacos ni se activa Studio desde una URL de retorno."
-        />
-      )}
       {canManage && (
         <section>
           <h2 className="text-lg font-bold">Movimientos</h2>

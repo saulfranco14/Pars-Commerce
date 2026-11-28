@@ -30,7 +30,9 @@ export function StudioShelf() {
         ? "empty"
         : "ready",
     [ai, setAi] = useStudioAiPreference(tenantId, reason === "ready"),
-    creatingName = useStudioCreating();
+    creatingName = useStudioCreating(),
+    todo = shelf.items.filter((item) => !item.ad),
+    done = shelf.items.filter((item) => item.ad);
   return (
     <div className="space-y-4">
       {creatingName && <StudioCreatingScreen name={creatingName} />}
@@ -65,17 +67,44 @@ export function StudioShelf() {
           <Skeleton className="h-18 rounded-2xl" />
         </div>
       ) : shelf.items.length ? (
-        <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-          {shelf.items.map((item) => (
-            <StudioShelfRow
-              key={`${item.type}:${item.id}`}
-              item={item}
-              creating={shelf.creating === item.id}
-              disabled={Boolean(shelf.creating)}
-              onCreate={() => void shelf.create(item, ai)}
-            />
-          ))}
-        </div>
+        [
+          { key: "todo", label: "Por hacer", items: todo },
+          { key: "done", label: "Ya tienen anuncio", items: done },
+        ]
+          .filter((group) => group.items.length)
+          .map((group) => (
+            <section key={group.key} className="space-y-2">
+              {done.length > 0 && (
+                <h2 className="flex items-center justify-between gap-2 text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                  <span>
+                    {group.label} · {group.items.length}
+                  </span>
+                  {group.key === "todo" && (
+                    <span className="font-semibold tracking-normal normal-case">
+                      {shelf.withAd} de {shelf.total} con anuncio
+                    </span>
+                  )}
+                </h2>
+              )}
+              <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                {group.items.map((item) => (
+                  <StudioShelfRow
+                    key={`${item.type}:${item.id}`}
+                    item={item}
+                    tenantId={tenantId}
+                    adHref={
+                      item.ad
+                        ? `${base}/disenos/${item.ad.designId}`
+                        : undefined
+                    }
+                    creating={shelf.creating === item.id}
+                    disabled={Boolean(shelf.creating)}
+                    onCreate={() => void shelf.create(item, ai)}
+                  />
+                ))}
+              </div>
+            </section>
+          ))
       ) : shelf.total ? (
         <p className="rounded-2xl bg-border-soft/60 p-4 text-sm text-muted-foreground">
           Nada coincide con «{shelf.query}».

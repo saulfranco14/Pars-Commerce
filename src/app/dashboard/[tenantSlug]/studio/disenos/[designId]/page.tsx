@@ -6,7 +6,7 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ designId: string }>;
-  searchParams: Promise<{ compartir?: string; ia?: string }>;
+  searchParams: Promise<{ compartir?: string; ia?: string; desde?: string }>;
 }) {
   const parsed = uuidSchema.safeParse((await params).designId);
   if (!parsed.success) notFound();
@@ -16,6 +16,7 @@ export default async function Page({
       designId={parsed.data}
       initialReview={query.compartir === "1"}
       autoAi={query.ia === "1"}
+      fromAds={query.desde === "anuncios"}
     />
   );
 }

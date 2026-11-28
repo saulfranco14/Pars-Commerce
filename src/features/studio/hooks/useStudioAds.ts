@@ -3,10 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import { useStudioContext } from "../components/StudioProvider";
 import { useStudioLibrary } from "./useStudioLibrary";
-import {
-  loadPlacements,
-  loadStaleAds,
-} from "../services/studioClientService";
+import { loadPlacements, loadStaleAds } from "../services/studioClientService";
 import { studioAdStateOf } from "../helpers/adState";
 import type { STUDIO_AD_FILTERS } from "../constants/studio";
 
@@ -21,15 +18,36 @@ export function useStudioAds() {
       summary?.publishEnabled && summary.permissions.includes("studio.publish"),
     ),
     library = useStudioLibrary(),
-    placements = useSWR(canPublish ? ["studio-placements", tenantId] : null, () =>
-      loadPlacements(tenantId),
+    placements = useSWR(
+      canPublish ? ["studio-placements", tenantId] : null,
+      () => loadPlacements(tenantId),
     ),
     stale = useSWR(canPublish ? ["studio-stale", tenantId] : null, () =>
       loadStaleAds(tenantId),
     ),
     [search, setSearch] = useState(""),
     [filter, setFilter] = useState<StudioAdFilter>("all");
-  const { setQuery } = library;
+  const { setQuery } = library,
+    memoryKey = `studio-ads:${tenantId}`;
+  // Back from an ad, the list keeps the search and filter it had.
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(memoryKey) ?? "null");
+      if (typeof saved?.search === "string") setSearch(saved.search);
+      // «Actualizando» is over by the time they come back.
+      if (typeof saved?.filter === "string" && saved.filter !== "updating")
+        setFilter(saved.filter);
+    } catch {
+      /* storage blocked */
+    }
+  }, [memoryKey]);
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(memoryKey, JSON.stringify({ search, filter }));
+    } catch {
+      /* storage blocked */
+    }
+  }, [memoryKey, search, filter]);
   useEffect(() => {
     const timer = setTimeout(() => setQuery(search.trim()), SEARCH_DELAY_MS);
     return () => clearTimeout(timer);

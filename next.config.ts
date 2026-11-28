@@ -1,10 +1,7 @@
 import type { NextConfig } from "next";
 import withSerwistInit from "@serwist/next";
 
-import {
-  STUDIO_QA_BRANCH,
-  STUDIO_QA_ENV,
-} from "./src/features/studio/constants/qaEnvironment";
+import { studioBuildEnv } from "./src/features/studio/constants/qaEnvironment";
 
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
@@ -17,14 +14,32 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
-  env:
-    process.env.VERCEL_GIT_COMMIT_REF === STUDIO_QA_BRANCH ? STUDIO_QA_ENV : {},
+  env: studioBuildEnv(
+    process.env.VERCEL_GIT_COMMIT_REF,
+    process.env.VERCEL_ENV,
+  ),
   async redirects() {
     return [
-      { source: "/dashboard/plataforma/prospectos", destination: "/dashboard/prospeccion", permanent: true },
-      { source: "/dashboard/plataforma/prospectos/:path*", destination: "/dashboard/prospeccion/:path*", permanent: true },
-      { source: "/dashboard/plataforma/motor/:path*", destination: "/dashboard/prospeccion/motor/:path*", permanent: true },
-      { source: "/dashboard/plataforma/embudo", destination: "/dashboard/prospeccion/embudo", permanent: true },
+      {
+        source: "/dashboard/plataforma/prospectos",
+        destination: "/dashboard/prospeccion",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/plataforma/prospectos/:path*",
+        destination: "/dashboard/prospeccion/:path*",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/plataforma/motor/:path*",
+        destination: "/dashboard/prospeccion/motor/:path*",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/plataforma/embudo",
+        destination: "/dashboard/prospeccion/embudo",
+        permanent: true,
+      },
       { source: "/demo", destination: "/soluciones/tienda", permanent: true },
       {
         source: "/demo/abarrotes",

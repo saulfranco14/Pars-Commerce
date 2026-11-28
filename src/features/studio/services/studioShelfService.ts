@@ -6,8 +6,16 @@ import { offerDisplayStatus } from "@/features/promociones/helpers/offerStatus";
 import { requireStudioAccess } from "./studioAccessService";
 import { requireStudioData } from "./studioErrors";
 import { studioPriceLabel, studioProductPrice } from "../helpers/scene";
-import { sortStudioShelf, studioShelfGaps } from "../helpers/shelf";
-import type { StudioShelfItem, StudioShelfState } from "../interfaces/studio";
+import {
+  sortStudioShelf,
+  studioShelfAds,
+  studioShelfGaps,
+} from "../helpers/shelf";
+import type {
+  StudioDesign,
+  StudioShelfItem,
+  StudioShelfState,
+} from "../interfaces/studio";
 
 const LIMIT = 80;
 const STATES = new Set<StudioShelfState>([
@@ -61,7 +69,7 @@ export async function listStudioShelf(
           .limit(LIMIT)
       : null,
   ]);
-  const items: StudioShelfItem[] = [];
+  const items: Array<Omit<StudioShelfItem, "ad">> = [];
   if (productRows) {
     const rows = requireStudioData(productRows),
       ids = rows.map((r) => r.id);
@@ -159,5 +167,52 @@ export async function listStudioShelf(
         state: shelfState(row.status),
       });
     }
-  return { items: sortStudioShelf(items) };
+  const ads = await shelfAds(
+    db,
+    tenantId,
+    items.map((i) => i.id),
+  );
+  return {
+    items: sortStudioShelf(
+      items.map((item) => ({ ...item, ad: ads.get(item.id) ?? null })),
+    ),
+  };
+}
+
+/** Which catalog items already have an ad, so Crear opens it instead of making a copy. */
+async function shelfAds(
+  db: Awaited<ReturnType<typeof requireStudioAccess>>["db"],
+  tenantId: string,
+  sourceIds: string[],
+) {
+  if (!sourceIds.length) return new Map();
+  const designs = requireStudioData(
+    await db
+      .from("studio_designs")
+      .select("id,source_id,status,updated_at,draft_scene")
+      .eq("tenant_id", tenantId)
+      .neq("status", "archived")
+      .in("source_id", sourceIds)
+      .order("updated_at", { ascending: false })
+      .limit(300),
+  ) as unknown as Array<
+    Pick<
+      StudioDesign,
+      "id" | "source_id" | "status" | "updated_at" | "draft_scene"
+    >
+  >;
+  if (!designs.length) return new Map();
+  const placements = requireStudioData(
+    await db
+      .from("studio_placements")
+      .select("design_id,surface,is_active,disabled_reason,created_at")
+      .eq("tenant_id", tenantId)
+      .in(
+        "design_id",
+        designs.map((d) => d.id),
+      )
+      .order("created_at", { ascending: false })
+      .limit(600),
+  );
+  return studioShelfAds(designs, placements);
 }

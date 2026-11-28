@@ -84,7 +84,7 @@ const MESSAGES: Record<string, { status: number; message: string }> = {
   BUDGET_EXCEEDED: {
     status: 429,
     message:
-      "La generación alcanzó su límite operativo. Intenta más tarde; tu saldo se conserva.",
+      "Hoy ya se hicieron muchas imágenes. Mañana tienes cupo otra vez; tus Tlacos se quedan.",
   },
   CHECKOUT_IN_PROGRESS: {
     status: 409,

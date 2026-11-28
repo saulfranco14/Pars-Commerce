@@ -13,10 +13,12 @@ export function StudioWizard({
   designId,
   initialReview = false,
   autoAi = false,
+  fromAds = false,
 }: {
   designId: string;
   initialReview?: boolean;
   autoAi?: boolean;
+  fromAds?: boolean;
 }) {
   const {
       tenantId,
@@ -46,6 +48,7 @@ export function StudioWizard({
       onRefresh={() => mutate()}
       initialReview={initialReview}
       autoAi={autoAi}
+      fromAds={fromAds}
     />
   );
 }
